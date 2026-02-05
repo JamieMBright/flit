@@ -38,6 +38,9 @@ jobs:
       - name: Get dependencies
         run: flutter pub get 2>&1 | tee flutter-pub-get.log
 
+      - name: Format code
+        run: dart format lib/ test/ --fix
+
       - name: Build web release
         run: |
           flutter build web --release --base-href "/flit/" 2>&1 | tee flutter-build.log
