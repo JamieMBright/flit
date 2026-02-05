@@ -49,9 +49,7 @@ app.*.map.json
 /ios/Runner.xcworkspace/xcuserdata/
 /ios/Runner/GeneratedPluginRegistrant.*
 
-# Web
-/web/favicon.png
-/web/icons/
+# Web (keep favicon.png and icons/ - needed for PWA)
 
 # Generated files
 *.g.dart
