@@ -32,8 +32,18 @@ jobs:
 
       - name: Generate missing Flutter files
         run: |
-          # Generate web platform files if missing
+          # Back up our custom assets
+          cp -r web/icons /tmp/icons-backup || true
+          cp web/manifest.json /tmp/manifest-backup.json || true
+          cp web/favicon.png /tmp/favicon-backup.png || true
+
+          # Generate Flutter web files (will create default index.html)
           flutter create --platform=web . --project-name=flit 2>&1 | tee flutter-create.log || true
+
+          # Restore our custom assets
+          cp -r /tmp/icons-backup/* web/icons/ || true
+          cp /tmp/manifest-backup.json web/manifest.json || true
+          cp /tmp/favicon-backup.png web/favicon.png || true
 
       - name: Get dependencies
         run: flutter pub get 2>&1 | tee flutter-pub-get.log
