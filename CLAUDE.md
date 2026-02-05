@@ -135,41 +135,71 @@ Never use:
 
 ---
 
-## Build Commands
+## Build Commands (Flutter)
 
 ```bash
 # Development
-npm run dev              # Start dev server
-npm run dev:ios          # iOS simulator
-npm run dev:android      # Android emulator
+flutter run -d chrome        # Run on web
+flutter run -d ios           # Run on iOS simulator
+flutter run -d android       # Run on Android emulator
 
 # Testing (run ALL before commit)
-npm run test             # All tests
-npm run test:unit        # Unit only
-npm run test:security    # Security audit
-npm run test:integration # All platform integration
-npm run test:deploy      # Deployment simulation
+./scripts/test.sh            # All tests
+./scripts/test.sh unit       # Unit only
+./scripts/test.sh security   # Security audit
+./scripts/test.sh integration # All platform builds
 
 # Production
-npm run build            # Production build (all platforms)
-npm run build:profile    # Build with performance profiling
+./scripts/build.sh           # Build all platforms
+./scripts/build.sh web       # Web only
+./scripts/build.sh android   # Android only
+./scripts/build.sh ios       # iOS only (macOS only)
 
 # Quality
-npm run lint             # Check linting
-npm run lint:fix         # Auto-fix linting issues
-npm run typecheck        # TypeScript validation
+./scripts/lint.sh            # Check linting
+dart format lib/ test/ --fix # Auto-fix formatting
+flutter analyze              # Static analysis
 ```
 
 ---
 
 ## Commit Protocol
 
-1. Run full test suite: `npm run test`
-2. Run linting: `npm run lint`
-3. Run typecheck: `npm run typecheck`
-4. Verify cross-platform: integration tests for 2+ platforms
-5. Commit with descriptive message
-6. Push only after all checks pass
+1. Run full test suite: `./scripts/test.sh`
+2. Run linting: `./scripts/lint.sh`
+3. Verify cross-platform: integration tests for 2+ platforms
+4. Commit with descriptive message
+5. Push only after all checks pass
+
+---
+
+## PR Workflow
+
+**ALWAYS provide the PR URL when pushing a branch.**
+
+After pushing:
+```
+Pushed to: claude/feature-name-XXXXX
+
+Create PR: https://github.com/JamieMBright/flit/pull/new/claude/feature-name-XXXXX
+```
+
+User is on iOS Claude Code app - they need the direct link to merge.
+
+---
+
+## Pre-Push Validation (No Flutter Locally)
+
+Since Flutter isn't available in this environment, do these checks before committing:
+
+1. **Syntax** - Verify all brackets, parentheses, semicolons balanced
+2. **Imports** - Check all import paths exist and are spelled correctly
+3. **File references** - Verify referenced files exist
+4. **Known patterns** - Avoid APIs that don't work on web (SystemChrome, etc.)
+5. **Lint rules** - Only use lint rules known to exist in flutter_lints
+6. **Dependencies** - Only add packages known to work on web
+
+CI is the final gate, but minimize round-trips by being careful.
 
 ---
 
