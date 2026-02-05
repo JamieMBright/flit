@@ -1,12 +1,12 @@
-import 'package:flame/game.dart';
 import 'package:flame/components.dart';
+import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/flit_colors.dart';
 
 /// Main game class for Flit.
 /// Handles the game loop, rendering, and input.
-class FlitGame extends FlameGame with HasKeyboardHandlerComponents {
+class FlitGame extends FlameGame {
   FlitGame({
     required this.onGameReady,
   });
