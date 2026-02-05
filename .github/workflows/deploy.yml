@@ -30,11 +30,28 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
+      - name: Generate missing Flutter files
+        run: |
+          # Generate web platform files if missing
+          flutter create --platform=web . --project-name=flit 2>&1 | tee flutter-create.log || true
+
       - name: Get dependencies
-        run: flutter pub get
+        run: flutter pub get 2>&1 | tee flutter-pub-get.log
 
       - name: Build web release
-        run: flutter build web --release --base-href "/flit/"
+        run: |
+          flutter build web --release --base-href "/flit/" 2>&1 | tee flutter-build.log
+
+      - name: Upload build logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            flutter-create.log
+            flutter-pub-get.log
+            flutter-build.log
+          retention-days: 7
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
