@@ -1,0 +1,29 @@
+#!/bin/bash
+# Pre-commit hook: Fast checks before commit
+# Runs: format check, analyze, unit tests
+
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+# Check if Flutter is available
+if ! command -v flutter &> /dev/null; then
+    echo "⚠️  Flutter not found locally - skipping local checks"
+    echo "   CI will run full validation on push"
+    exit 0
+fi
+
+echo ""
+echo "📝 Checking format..."
+dart format --set-exit-if-changed lib/ test/
+
+echo ""
+echo "🔎 Running analyzer..."
+flutter analyze --no-fatal-infos
+
+echo ""
+echo "🧪 Running unit tests..."
+flutter test --coverage
+
+echo ""
+echo "✅ Pre-commit checks passed!"
