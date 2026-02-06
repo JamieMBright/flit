@@ -217,8 +217,7 @@ class _AvatarPainter extends CustomPainter {
 
     // Simple mouth - a small smile arc.
     final mouthPaint = Paint()
-      ..color = _skinColors[config.skin]!.withValues(alpha: 1.0) ==
-              _skinColors[AvatarSkin.dark]
+      ..color = _skinColors[config.skin] == _skinColors[AvatarSkin.dark]
           ? const Color(0xFF3A1E08)
           : const Color(0xFF8B4513)
       ..style = PaintingStyle.stroke
@@ -449,7 +448,7 @@ class _AvatarPainter extends CustomPainter {
 
     // Style-specific collar details.
     final detailPaint = Paint()
-      ..color = color.withValues(alpha: 0.6)
+      ..color = color.withOpacity(0.6)
       ..style = PaintingStyle.stroke
       ..strokeWidth = s * 0.015;
 
