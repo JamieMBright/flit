@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/flit_game.dart';
+import '../debug/debug_screen.dart';
 import '../friends/friends_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
 import '../play/region_select_screen.dart';
@@ -110,6 +111,16 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (context) => const ShopScreen(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _MenuButton(
+            label: 'Debug',
+            icon: Icons.bug_report_rounded,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const DebugScreen(),
               ),
             ),
           ),

@@ -1,46 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/providers/account_provider.dart';
 import '../../game/map/region.dart';
 import 'play_screen.dart';
 
 /// Screen for selecting which region to play.
-class RegionSelectScreen extends StatelessWidget {
+class RegionSelectScreen extends ConsumerWidget {
   const RegionSelectScreen({super.key});
 
-  // Placeholder player level - will be replaced with actual user data
-  static const int _playerLevel = 5;
-
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: FlitColors.backgroundDark,
-        appBar: AppBar(
-          backgroundColor: FlitColors.backgroundMid,
-          title: const Text('Select Region'),
-          centerTitle: true,
-        ),
-        body: ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: GameRegion.values.length,
-          itemBuilder: (context, index) {
-            final region = GameRegion.values[index];
-            final isUnlocked = _playerLevel >= region.requiredLevel;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playerLevel = ref.watch(currentLevelProvider);
 
-            return _RegionCard(
-              region: region,
-              isUnlocked: isUnlocked,
-              playerLevel: _playerLevel,
-              onTap: isUnlocked
-                  ? () => Navigator.of(context).pushReplacement(
-                        MaterialPageRoute<void>(
-                          builder: (context) => PlayScreen(region: region),
-                        ),
-                      )
-                  : null,
-            );
-          },
-        ),
-      );
+    return Scaffold(
+      backgroundColor: FlitColors.backgroundDark,
+      appBar: AppBar(
+        backgroundColor: FlitColors.backgroundMid,
+        title: const Text('Select Region'),
+        centerTitle: true,
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: GameRegion.values.length,
+        itemBuilder: (context, index) {
+          final region = GameRegion.values[index];
+          final isUnlocked = playerLevel >= region.requiredLevel;
+
+          return _RegionCard(
+            region: region,
+            isUnlocked: isUnlocked,
+            playerLevel: playerLevel,
+            onTap: isUnlocked
+                ? () => Navigator.of(context).pushReplacement(
+                      MaterialPageRoute<void>(
+                        builder: (context) => PlayScreen(region: region),
+                      ),
+                    )
+                : null,
+          );
+        },
+      ),
+    );
+  }
 }
 
 class _RegionCard extends StatelessWidget {
