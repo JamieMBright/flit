@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/profanity_filter.dart';
+import '../../data/models/avatar_config.dart';
 import '../../data/models/player.dart';
 import '../avatar/avatar_editor_screen.dart';
+import '../avatar/avatar_widget.dart';
 import '../license/license_screen.dart';
 
 /// Profile screen showing player stats and settings.
@@ -25,6 +28,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     bestTime: const Duration(seconds: 14, milliseconds: 230),
     createdAt: DateTime.now().subtract(const Duration(days: 30)),
   );
+
+  AvatarConfig _avatarConfig = const AvatarConfig();
 
   bool _notificationsEnabled = true;
   bool _soundEnabled = true;
@@ -127,97 +132,160 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final displayNameController =
         TextEditingController(text: _player.displayName ?? '');
     final usernameController = TextEditingController(text: _player.username);
+    String? displayNameError;
+    String? usernameError;
 
     showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: FlitColors.cardBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: FlitColors.cardBorder),
-        ),
-        title: const Text(
-          'Edit Profile',
-          style: TextStyle(color: FlitColors.textPrimary),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: displayNameController,
-              style: const TextStyle(color: FlitColors.textPrimary),
-              decoration: InputDecoration(
-                labelText: 'Display Name',
-                labelStyle: const TextStyle(color: FlitColors.textSecondary),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: FlitColors.cardBorder),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          backgroundColor: FlitColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: FlitColors.cardBorder),
+          ),
+          title: const Text(
+            'Edit Profile',
+            style: TextStyle(color: FlitColors.textPrimary),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: displayNameController,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'Display Name',
+                  labelStyle:
+                      const TextStyle(color: FlitColors.textSecondary),
+                  errorText: displayNameError,
+                  errorStyle: const TextStyle(color: FlitColors.error),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: FlitColors.cardBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: FlitColors.accent),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: FlitColors.error),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: FlitColors.error),
+                  ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: FlitColors.accent),
+                onChanged: (_) {
+                  if (displayNameError != null) {
+                    setDialogState(() => displayNameError = null);
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: usernameController,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'Username',
+                  labelStyle:
+                      const TextStyle(color: FlitColors.textSecondary),
+                  prefixText: '@',
+                  prefixStyle: const TextStyle(color: FlitColors.textMuted),
+                  errorText: usernameError,
+                  errorStyle: const TextStyle(color: FlitColors.error),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: FlitColors.cardBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: FlitColors.accent),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: FlitColors.error),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: FlitColors.error),
+                  ),
                 ),
+                onChanged: (_) {
+                  if (usernameError != null) {
+                    setDialogState(() => usernameError = null);
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: FlitColors.textSecondary),
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: usernameController,
-              style: const TextStyle(color: FlitColors.textPrimary),
-              decoration: InputDecoration(
-                labelText: 'Username',
-                labelStyle: const TextStyle(color: FlitColors.textSecondary),
-                prefixText: '@',
-                prefixStyle: const TextStyle(color: FlitColors.textMuted),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: FlitColors.cardBorder),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: FlitColors.accent),
-                ),
+            TextButton(
+              onPressed: () {
+                final filter = ProfanityFilter.instance;
+                final displayName = displayNameController.text.trim();
+                final username = usernameController.text.trim();
+                var hasError = false;
+
+                // Validate display name for profanity.
+                if (displayName.isNotEmpty &&
+                    filter.containsProfanity(displayName)) {
+                  setDialogState(() {
+                    displayNameError = 'Inappropriate language detected';
+                  });
+                  hasError = true;
+                }
+
+                // Validate username for profanity and format.
+                if (username.isNotEmpty &&
+                    filter.isInappropriateUsername(username)) {
+                  setDialogState(() {
+                    usernameError =
+                        'Username contains inappropriate content or '
+                        'invalid characters';
+                  });
+                  hasError = true;
+                }
+
+                if (hasError) return;
+
+                setState(() {
+                  _player = _player.copyWith(
+                    displayName:
+                        displayName.isEmpty ? null : displayName,
+                    username:
+                        username.isEmpty ? _player.username : username,
+                  );
+                });
+                Navigator.of(dialogContext).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Profile updated'),
+                    backgroundColor: FlitColors.success,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                );
+              },
+              child: const Text(
+                'Save',
+                style: TextStyle(color: FlitColors.accent),
               ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: FlitColors.textSecondary),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _player = _player.copyWith(
-                  displayName: displayNameController.text.trim().isEmpty
-                      ? null
-                      : displayNameController.text.trim(),
-                  username: usernameController.text.trim().isEmpty
-                      ? _player.username
-                      : usernameController.text.trim(),
-                );
-              });
-              Navigator.of(dialogContext).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Profile updated'),
-                  backgroundColor: FlitColors.success,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              );
-            },
-            child: const Text(
-              'Save',
-              style: TextStyle(color: FlitColors.accent),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -289,7 +357,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             children: [
               // Avatar and name
-              _ProfileHeader(player: _player),
+              _ProfileHeader(
+                player: _player,
+                avatarConfig: _avatarConfig,
+              ),
               const SizedBox(height: 24),
               // Level progress
               _LevelProgress(player: _player),
@@ -339,36 +410,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 }
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.player});
+  const _ProfileHeader({
+    required this.player,
+    required this.avatarConfig,
+  });
 
   final Player player;
+  final AvatarConfig avatarConfig;
 
   @override
   Widget build(BuildContext context) => Column(
         children: [
           // Avatar
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: FlitColors.accent,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: FlitColors.cardBorder,
-                width: 3,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                player.name[0].toUpperCase(),
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
+          AvatarWidget(config: avatarConfig, size: 100),
           const SizedBox(height: 16),
           // Name
           Text(
