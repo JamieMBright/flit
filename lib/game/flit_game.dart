@@ -31,6 +31,7 @@ class FlitGame extends FlameGame
   bool get isPlaying => _isPlaying;
   bool get isHighAltitude => _plane.isHighAltitude;
   PlaneComponent get plane => _plane;
+  String? get currentClue => _currentClue;
 
   @override
   Color backgroundColor() => FlitColors.ocean;
@@ -100,6 +101,9 @@ class FlitGame extends FlameGame
     RawKeyEvent event,
     Set<LogicalKeyboardKey> keysPressed,
   ) {
+    // Propagate to child keyboard handlers first
+    final superResult = super.onKeyEvent(event, keysPressed);
+
     double direction = 0;
 
     if (keysPressed.contains(LogicalKeyboardKey.arrowLeft) ||
@@ -121,7 +125,10 @@ class FlitGame extends FlameGame
       }
     }
 
-    return KeyEventResult.handled;
+    // If any child handled it, return that; otherwise mark as handled
+    return superResult == KeyEventResult.handled
+        ? superResult
+        : KeyEventResult.handled;
   }
 
   /// Start a new game/challenge
