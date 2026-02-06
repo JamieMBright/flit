@@ -5,6 +5,7 @@ import '../../data/models/avatar_config.dart';
 
 /// A pixel-art avatar portrait drawn entirely on a [Canvas].
 ///
+/// Uses a 64x64 pixel grid for detailed pixel-art portraits.
 /// Pass an [AvatarConfig] to control every visual aspect of the character.
 /// The widget sizes itself to [size] x [size] logical pixels and is safe
 /// to use anywhere a square widget is expected (lists, cards, profiles).
@@ -15,10 +16,7 @@ class AvatarWidget extends StatelessWidget {
     this.size = 96,
   });
 
-  /// The avatar configuration that drives every visual element.
   final AvatarConfig config;
-
-  /// Width and height of the square avatar. Defaults to 96.
   final double size;
 
   @override
@@ -35,7 +33,7 @@ class AvatarWidget extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Painter
+// Painter — 64x64 pixel grid
 // ---------------------------------------------------------------------------
 
 class _AvatarPainter extends CustomPainter {
@@ -53,8 +51,7 @@ class _AvatarPainter extends CustomPainter {
     AvatarSkin.dark: Color(0xFF5C3310),
   };
 
-  // Skin shadow (slightly darker variant)
-  static const Map<AvatarSkin, Color> _skinShadowColors = {
+  static const Map<AvatarSkin, Color> _skinShadow = {
     AvatarSkin.light: Color(0xFFE8D0AA),
     AvatarSkin.fair: Color(0xFFDCB890),
     AvatarSkin.medium: Color(0xFFBB8C5E),
@@ -63,8 +60,17 @@ class _AvatarPainter extends CustomPainter {
     AvatarSkin.dark: Color(0xFF462808),
   };
 
+  static const Map<AvatarSkin, Color> _skinHighlight = {
+    AvatarSkin.light: Color(0xFFFFF0DC),
+    AvatarSkin.fair: Color(0xFFFDE0C0),
+    AvatarSkin.medium: Color(0xFFE0B888),
+    AvatarSkin.tan: Color(0xFFD4A070),
+    AvatarSkin.brown: Color(0xFFA06830),
+    AvatarSkin.dark: Color(0xFF6E3E18),
+  };
+
   // ---- Hair palette ----
-  static const Map<AvatarHair, Color> _hairColors = {
+  static const Map<AvatarHair, Color> _hairBase = {
     AvatarHair.none: Color(0x00000000),
     AvatarHair.short: Color(0xFF3B2717),
     AvatarHair.medium: Color(0xFF5A3A1A),
@@ -75,8 +81,7 @@ class _AvatarPainter extends CustomPainter {
     AvatarHair.ponytail: Color(0xFF5A3A1A),
   };
 
-  // Hair highlight
-  static const Map<AvatarHair, Color> _hairHighlightColors = {
+  static const Map<AvatarHair, Color> _hairLight = {
     AvatarHair.none: Color(0x00000000),
     AvatarHair.short: Color(0xFF5A3E28),
     AvatarHair.medium: Color(0xFF7A5A30),
@@ -87,8 +92,19 @@ class _AvatarPainter extends CustomPainter {
     AvatarHair.ponytail: Color(0xFF7A5A30),
   };
 
+  static const Map<AvatarHair, Color> _hairDark = {
+    AvatarHair.none: Color(0x00000000),
+    AvatarHair.short: Color(0xFF2A1A0C),
+    AvatarHair.medium: Color(0xFF3E2810),
+    AvatarHair.long: Color(0xFF0E0E0E),
+    AvatarHair.mohawk: Color(0xFFB04030),
+    AvatarHair.curly: Color(0xFF2A1A0C),
+    AvatarHair.afro: Color(0xFF0E0E0E),
+    AvatarHair.ponytail: Color(0xFF3E2810),
+  };
+
   // ---- Outfit palette ----
-  static const Map<AvatarOutfit, Color> _outfitColors = {
+  static const Map<AvatarOutfit, Color> _outfitBase = {
     AvatarOutfit.tshirt: Color(0xFF5C7A52),
     AvatarOutfit.pilot: Color(0xFF2A5674),
     AvatarOutfit.suit: Color(0xFF1A2A32),
@@ -97,7 +113,7 @@ class _AvatarPainter extends CustomPainter {
     AvatarOutfit.captain: Color(0xFF1E3340),
   };
 
-  static const Map<AvatarOutfit, Color> _outfitHighlightColors = {
+  static const Map<AvatarOutfit, Color> _outfitLight = {
     AvatarOutfit.tshirt: Color(0xFF7A9E6D),
     AvatarOutfit.pilot: Color(0xFF3D7A9E),
     AvatarOutfit.suit: Color(0xFF2A3A42),
@@ -106,74 +122,59 @@ class _AvatarPainter extends CustomPainter {
     AvatarOutfit.captain: Color(0xFF2A4A58),
   };
 
+  static const Map<AvatarOutfit, Color> _outfitDark = {
+    AvatarOutfit.tshirt: Color(0xFF4A6438),
+    AvatarOutfit.pilot: Color(0xFF1E4050),
+    AvatarOutfit.suit: Color(0xFF101820),
+    AvatarOutfit.leather: Color(0xFF3E2810),
+    AvatarOutfit.spacesuit: Color(0xFFB0B0B0),
+    AvatarOutfit.captain: Color(0xFF142028),
+  };
+
   @override
   void paint(Canvas canvas, Size size) {
     final double s = size.width;
-    final double p = s / 32; // pixel size — 32x32 grid
+    final double p = s / 64; // pixel unit — 64x64 grid
 
-    // Save canvas so we can clip to a circle.
     canvas.save();
-    final circlePath = Path()
-      ..addOval(Rect.fromCircle(center: Offset(s / 2, s / 2), radius: s / 2));
-    canvas.clipPath(circlePath);
+    canvas.clipPath(Path()
+      ..addOval(Rect.fromCircle(center: Offset(s / 2, s / 2), radius: s / 2)));
 
-    // -- Background --
     _drawBackground(canvas, s, p);
-
-    // -- Outfit (behind head) --
     _drawOutfit(canvas, s, p);
-
-    // -- Neck --
     _drawNeck(canvas, s, p);
-
-    // -- Ears --
     _drawEars(canvas, s, p);
-
-    // -- Face --
     _drawFace(canvas, s, p);
-
-    // -- Eyes --
+    _drawEyebrows(canvas, s, p);
     _drawEyes(canvas, s, p);
-
-    // -- Nose + Mouth --
-    _drawNoseMouth(canvas, s, p);
-
-    // -- Glasses (over eyes) --
+    _drawNose(canvas, s, p);
+    _drawMouth(canvas, s, p);
     _drawGlasses(canvas, s, p);
-
-    // -- Hair --
     _drawHair(canvas, s, p);
-
-    // -- Hat (over hair) --
     _drawHat(canvas, s, p);
-
-    // -- Accessory --
     _drawAccessory(canvas, s, p);
-
-    // -- Companion --
     _drawCompanion(canvas, s, p);
 
     canvas.restore();
 
-    // -- Circular border --
     _drawBorder(canvas, s);
   }
 
-  /// Draw a single pixel-art block.
-  void _px(Canvas canvas, double p, double col, double row, Color color) {
-    canvas.drawRect(
-      Rect.fromLTWH(col * p, row * p, p, p),
-      Paint()..color = color,
-    );
+  // -- Helpers --
+
+  void _px(Canvas c, double p, double x, double y, Color color) {
+    c.drawRect(Rect.fromLTWH(x * p, y * p, p, p), Paint()..color = color);
   }
 
-  /// Draw a filled rectangle of pixel blocks.
-  void _pxRect(Canvas canvas, double p, double col, double row, double w,
-      double h, Color color) {
-    canvas.drawRect(
-      Rect.fromLTWH(col * p, row * p, w * p, h * p),
-      Paint()..color = color,
-    );
+  void _rect(Canvas c, double p, double x, double y, double w, double h,
+      Color color) {
+    c.drawRect(
+        Rect.fromLTWH(x * p, y * p, w * p, h * p), Paint()..color = color);
+  }
+
+  // Horizontal line of pixels
+  void _hline(Canvas c, double p, double x, double y, double w, Color color) {
+    _rect(c, p, x, y, w, 1, color);
   }
 
   // ---------- Background ----------
@@ -181,18 +182,17 @@ class _AvatarPainter extends CustomPainter {
   void _drawBackground(Canvas canvas, double s, double p) {
     canvas.drawRect(
         Rect.fromLTWH(0, 0, s, s), Paint()..color = FlitColors.backgroundDark);
-    // Subtle gradient overlay for depth
     canvas.drawRect(
-      Rect.fromLTWH(0, 0, s, s),
+      Rect.fromLTWH(0, 0, s, s * 0.6),
       Paint()
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            FlitColors.backgroundLight.withOpacity(0.3),
+            FlitColors.backgroundLight.withOpacity(0.25),
             Colors.transparent,
           ],
-        ).createShader(Rect.fromLTWH(0, 0, s, s)),
+        ).createShader(Rect.fromLTWH(0, 0, s, s * 0.6)),
     );
   }
 
@@ -200,180 +200,316 @@ class _AvatarPainter extends CustomPainter {
 
   void _drawNeck(Canvas canvas, double s, double p) {
     final skin = _skinColors[config.skin]!;
-    final shadow = _skinShadowColors[config.skin]!;
-    // Neck: 4px wide, 3px tall, centered
-    _pxRect(canvas, p, 14, 22, 4, 3, skin);
-    // Shadow on sides
-    _px(canvas, p, 14, 23, shadow);
-    _px(canvas, p, 17, 23, shadow);
+    final shd = _skinShadow[config.skin]!;
+    // Neck: 8px wide, 5px tall
+    _rect(canvas, p, 28, 44, 8, 5, skin);
+    // Shadow edges
+    _rect(canvas, p, 28, 46, 2, 3, shd);
+    _rect(canvas, p, 34, 46, 2, 3, shd);
   }
 
   // ---------- Ears ----------
 
   void _drawEars(Canvas canvas, double s, double p) {
     final skin = _skinColors[config.skin]!;
-    final shadow = _skinShadowColors[config.skin]!;
+    final shd = _skinShadow[config.skin]!;
+    final hl = _skinHighlight[config.skin]!;
     // Left ear
-    _pxRect(canvas, p, 8, 14, 2, 3, skin);
-    _px(canvas, p, 8, 15, shadow);
+    _rect(canvas, p, 16, 28, 3, 6, skin);
+    _rect(canvas, p, 17, 30, 1, 2, shd);
+    _px(canvas, p, 16, 28, hl);
     // Right ear
-    _pxRect(canvas, p, 22, 14, 2, 3, skin);
-    _px(canvas, p, 23, 15, shadow);
+    _rect(canvas, p, 45, 28, 3, 6, skin);
+    _rect(canvas, p, 46, 30, 1, 2, shd);
+    _px(canvas, p, 47, 28, hl);
   }
 
   // ---------- Face ----------
 
   void _drawFace(Canvas canvas, double s, double p) {
     final skin = _skinColors[config.skin]!;
-    final shadow = _skinShadowColors[config.skin]!;
+    final shd = _skinShadow[config.skin]!;
+    final hl = _skinHighlight[config.skin]!;
 
     switch (config.face) {
       case AvatarFace.round:
-        // 12px wide round face
-        _pxRect(canvas, p, 11, 10, 10, 1, skin); // top
-        _pxRect(canvas, p, 10, 11, 12, 10, skin); // main block
-        _pxRect(canvas, p, 11, 21, 10, 1, skin); // chin
-        // Cheek shading
-        _pxRect(canvas, p, 10, 17, 2, 2, shadow);
-        _pxRect(canvas, p, 20, 17, 2, 2, shadow);
+        _hline(canvas, p, 22, 19, 20, skin);
+        _hline(canvas, p, 21, 20, 22, skin);
+        _rect(canvas, p, 20, 21, 24, 18, skin);
+        _hline(canvas, p, 21, 39, 22, skin);
+        _hline(canvas, p, 22, 40, 20, skin);
+        _hline(canvas, p, 23, 41, 18, skin);
+        _hline(canvas, p, 25, 42, 14, skin);
+        _hline(canvas, p, 27, 43, 10, skin);
+        // Cheek shadow
+        _rect(canvas, p, 20, 33, 3, 4, shd);
+        _rect(canvas, p, 41, 33, 3, 4, shd);
+        // Cheek blush
+        _rect(canvas, p, 21, 34, 2, 2, const Color(0x20E88080));
+        _rect(canvas, p, 41, 34, 2, 2, const Color(0x20E88080));
+        // Highlight on forehead
+        _rect(canvas, p, 28, 20, 8, 2, hl);
         // Chin shadow
-        _pxRect(canvas, p, 12, 20, 8, 1, shadow);
+        _hline(canvas, p, 25, 41, 14, shd);
 
       case AvatarFace.oval:
-        // Taller, narrower face
-        _pxRect(canvas, p, 12, 9, 8, 1, skin);
-        _pxRect(canvas, p, 11, 10, 10, 1, skin);
-        _pxRect(canvas, p, 10, 11, 12, 8, skin);
-        _pxRect(canvas, p, 11, 19, 10, 2, skin);
-        _pxRect(canvas, p, 12, 21, 8, 1, skin);
-        _pxRect(canvas, p, 13, 22, 6, 1, skin);
+        _hline(canvas, p, 24, 17, 16, skin);
+        _hline(canvas, p, 23, 18, 18, skin);
+        _hline(canvas, p, 22, 19, 20, skin);
+        _rect(canvas, p, 21, 20, 22, 16, skin);
+        _rect(canvas, p, 22, 36, 20, 3, skin);
+        _hline(canvas, p, 23, 39, 18, skin);
+        _hline(canvas, p, 24, 40, 16, skin);
+        _hline(canvas, p, 25, 41, 14, skin);
+        _hline(canvas, p, 26, 42, 12, skin);
+        _hline(canvas, p, 27, 43, 10, skin);
+        _hline(canvas, p, 28, 44, 8, skin);
         // Cheek shadow
-        _pxRect(canvas, p, 10, 16, 2, 2, shadow);
-        _pxRect(canvas, p, 20, 16, 2, 2, shadow);
+        _rect(canvas, p, 21, 32, 3, 4, shd);
+        _rect(canvas, p, 40, 32, 3, 4, shd);
+        // Forehead highlight
+        _rect(canvas, p, 28, 18, 8, 2, hl);
+        // Chin
+        _hline(canvas, p, 26, 42, 12, shd);
 
       case AvatarFace.square:
-        // Blocky face
-        _pxRect(canvas, p, 10, 10, 12, 12, skin);
-        // Jawline shadow
-        _pxRect(canvas, p, 10, 20, 12, 1, shadow);
-        _px(canvas, p, 10, 19, shadow);
-        _px(canvas, p, 21, 19, shadow);
+        _rect(canvas, p, 20, 19, 24, 24, skin);
+        _hline(canvas, p, 21, 18, 22, skin);
+        // Jaw shadow
+        _rect(canvas, p, 20, 39, 24, 2, shd);
+        _rect(canvas, p, 20, 37, 2, 2, shd);
+        _rect(canvas, p, 42, 37, 2, 2, shd);
+        // Forehead hl
+        _rect(canvas, p, 27, 19, 10, 2, hl);
 
       case AvatarFace.heart:
-        // Wide forehead, narrow chin
-        _pxRect(canvas, p, 10, 10, 12, 1, skin);
-        _pxRect(canvas, p, 10, 11, 12, 6, skin);
-        _pxRect(canvas, p, 11, 17, 10, 2, skin);
-        _pxRect(canvas, p, 12, 19, 8, 1, skin);
-        _pxRect(canvas, p, 13, 20, 6, 1, skin);
-        _pxRect(canvas, p, 14, 21, 4, 1, skin);
-        // Cheek blush
-        _pxRect(canvas, p, 10, 14, 2, 2, shadow);
-        _pxRect(canvas, p, 20, 14, 2, 2, shadow);
+        _hline(canvas, p, 20, 19, 24, skin);
+        _rect(canvas, p, 19, 20, 26, 12, skin);
+        _rect(canvas, p, 20, 32, 24, 4, skin);
+        _rect(canvas, p, 21, 36, 22, 2, skin);
+        _rect(canvas, p, 23, 38, 18, 2, skin);
+        _rect(canvas, p, 25, 40, 14, 1, skin);
+        _rect(canvas, p, 27, 41, 10, 1, skin);
+        _rect(canvas, p, 28, 42, 8, 1, skin);
+        _rect(canvas, p, 29, 43, 6, 1, skin);
+        // Cheek shadow
+        _rect(canvas, p, 19, 26, 3, 4, shd);
+        _rect(canvas, p, 42, 26, 3, 4, shd);
+        // Forehead hl
+        _rect(canvas, p, 27, 20, 10, 2, hl);
+        // Chin
+        _hline(canvas, p, 27, 41, 10, shd);
 
       case AvatarFace.diamond:
-        // Narrow top and bottom, wide middle
-        _pxRect(canvas, p, 14, 9, 4, 1, skin);
-        _pxRect(canvas, p, 13, 10, 6, 1, skin);
-        _pxRect(canvas, p, 12, 11, 8, 1, skin);
-        _pxRect(canvas, p, 11, 12, 10, 1, skin);
-        _pxRect(canvas, p, 10, 13, 12, 4, skin);
-        _pxRect(canvas, p, 11, 17, 10, 1, skin);
-        _pxRect(canvas, p, 12, 18, 8, 1, skin);
-        _pxRect(canvas, p, 13, 19, 6, 1, skin);
-        _pxRect(canvas, p, 14, 20, 4, 1, skin);
+        _hline(canvas, p, 28, 17, 8, skin);
+        _hline(canvas, p, 26, 18, 12, skin);
+        _hline(canvas, p, 24, 19, 16, skin);
+        _hline(canvas, p, 22, 20, 20, skin);
+        _rect(canvas, p, 20, 21, 24, 6, skin);
+        _rect(canvas, p, 19, 27, 26, 6, skin);
+        _rect(canvas, p, 20, 33, 24, 3, skin);
+        _hline(canvas, p, 22, 36, 20, skin);
+        _hline(canvas, p, 24, 37, 16, skin);
+        _hline(canvas, p, 26, 38, 12, skin);
+        _hline(canvas, p, 28, 39, 8, skin);
+        _hline(canvas, p, 29, 40, 6, skin);
         // Side shadow
-        _px(canvas, p, 10, 14, shadow);
-        _px(canvas, p, 21, 14, shadow);
+        _rect(canvas, p, 19, 28, 2, 4, shd);
+        _rect(canvas, p, 43, 28, 2, 4, shd);
+        // Forehead
+        _rect(canvas, p, 29, 18, 6, 2, hl);
     }
+  }
+
+  // ---------- Eyebrows ----------
+
+  void _drawEyebrows(Canvas canvas, double s, double p) {
+    final dark = _skinShadow[config.skin]!;
+    // Left brow
+    _hline(canvas, p, 23, 26, 7, dark);
+    _px(canvas, p, 22, 27, dark);
+    // Right brow
+    _hline(canvas, p, 34, 26, 7, dark);
+    _px(canvas, p, 41, 27, dark);
   }
 
   // ---------- Eyes ----------
 
   void _drawEyes(Canvas canvas, double s, double p) {
     const white = Color(0xFFF5F5F5);
-    const pupil = Color(0xFF1A1A1A);
-    const iris = Color(0xFF4A6741);
+    const pupil = Color(0xFF111111);
+    const iris1 = Color(0xFF4A6741);
+    const iris2 = Color(0xFF3A5530);
+    const outline = Color(0xFF1A1A1A);
 
     switch (config.eyes) {
       case AvatarEyes.round:
-        // Left eye: 3x3 with white, iris, pupil
-        _pxRect(canvas, p, 12, 14, 3, 3, white);
-        _px(canvas, p, 13, 14, iris);
-        _px(canvas, p, 13, 15, pupil);
-        _px(canvas, p, 12, 14, pupil); // top-left outline
-        _px(canvas, p, 14, 14, pupil); // top-right outline
+        // Left eye: 6x5 rounded
+        _hline(canvas, p, 24, 28, 5, outline);
+        _px(canvas, p, 23, 29, outline);
+        _rect(canvas, p, 24, 29, 5, 3, white);
+        _px(canvas, p, 29, 29, outline);
+        _px(canvas, p, 23, 30, outline);
+        _px(canvas, p, 29, 30, outline);
+        _px(canvas, p, 23, 31, outline);
+        _px(canvas, p, 29, 31, outline);
+        _hline(canvas, p, 24, 32, 5, outline);
+        // Iris + pupil
+        _rect(canvas, p, 25, 29, 3, 3, iris1);
+        _rect(canvas, p, 26, 29, 2, 1, iris2);
+        _rect(canvas, p, 26, 30, 2, 2, pupil);
         // Highlight
-        _px(canvas, p, 12, 14, white);
+        _px(canvas, p, 25, 29, white);
+
         // Right eye
-        _pxRect(canvas, p, 17, 14, 3, 3, white);
-        _px(canvas, p, 18, 14, iris);
-        _px(canvas, p, 18, 15, pupil);
-        _px(canvas, p, 17, 14, pupil);
-        _px(canvas, p, 19, 14, pupil);
-        _px(canvas, p, 17, 14, white);
+        _hline(canvas, p, 35, 28, 5, outline);
+        _px(canvas, p, 34, 29, outline);
+        _rect(canvas, p, 35, 29, 5, 3, white);
+        _px(canvas, p, 40, 29, outline);
+        _px(canvas, p, 34, 30, outline);
+        _px(canvas, p, 40, 30, outline);
+        _px(canvas, p, 34, 31, outline);
+        _px(canvas, p, 40, 31, outline);
+        _hline(canvas, p, 35, 32, 5, outline);
+        _rect(canvas, p, 36, 29, 3, 3, iris1);
+        _rect(canvas, p, 37, 29, 2, 1, iris2);
+        _rect(canvas, p, 37, 30, 2, 2, pupil);
+        _px(canvas, p, 36, 29, white);
 
       case AvatarEyes.almond:
-        // Almond shape: 4x2
-        _px(canvas, p, 12, 15, white);
-        _pxRect(canvas, p, 12, 14, 4, 2, white);
-        _px(canvas, p, 13, 14, iris);
-        _px(canvas, p, 14, 15, pupil);
-        _px(canvas, p, 13, 15, pupil);
+        // Left: tapered 7x3
+        _px(canvas, p, 23, 29, outline);
+        _hline(canvas, p, 24, 28, 5, outline);
+        _px(canvas, p, 29, 29, outline);
+        _rect(canvas, p, 24, 29, 5, 2, white);
+        _px(canvas, p, 23, 30, outline);
+        _hline(canvas, p, 24, 31, 5, outline);
+        _px(canvas, p, 29, 30, outline);
+        // Iris
+        _rect(canvas, p, 25, 29, 3, 2, iris1);
+        _rect(canvas, p, 26, 29, 2, 2, pupil);
+        _px(canvas, p, 25, 29, white);
+
         // Right
-        _px(canvas, p, 17, 15, white);
-        _pxRect(canvas, p, 17, 14, 4, 2, white);
-        _px(canvas, p, 18, 14, iris);
-        _px(canvas, p, 19, 15, pupil);
-        _px(canvas, p, 18, 15, pupil);
+        _px(canvas, p, 34, 29, outline);
+        _hline(canvas, p, 35, 28, 5, outline);
+        _px(canvas, p, 40, 29, outline);
+        _rect(canvas, p, 35, 29, 5, 2, white);
+        _px(canvas, p, 34, 30, outline);
+        _hline(canvas, p, 35, 31, 5, outline);
+        _px(canvas, p, 40, 30, outline);
+        _rect(canvas, p, 36, 29, 3, 2, iris1);
+        _rect(canvas, p, 37, 29, 2, 2, pupil);
+        _px(canvas, p, 36, 29, white);
 
       case AvatarEyes.wide:
-        // Big 4x3 eyes
-        _pxRect(canvas, p, 11, 13, 4, 3, white);
-        _pxRect(canvas, p, 12, 14, 2, 2, iris);
-        _px(canvas, p, 13, 14, pupil);
-        _px(canvas, p, 11, 13, const Color(0xFF222222)); // outline
+        // Left: big 8x5
+        _hline(canvas, p, 22, 27, 7, outline);
+        _px(canvas, p, 21, 28, outline);
+        _rect(canvas, p, 22, 28, 7, 4, white);
+        _px(canvas, p, 29, 28, outline);
+        _px(canvas, p, 21, 29, outline);
+        _px(canvas, p, 29, 29, outline);
+        _px(canvas, p, 21, 30, outline);
+        _px(canvas, p, 29, 30, outline);
+        _px(canvas, p, 21, 31, outline);
+        _px(canvas, p, 29, 31, outline);
+        _hline(canvas, p, 22, 32, 7, outline);
+        _rect(canvas, p, 24, 28, 4, 4, iris1);
+        _rect(canvas, p, 25, 29, 3, 3, pupil);
+        _px(canvas, p, 24, 28, white);
+        _px(canvas, p, 25, 28, white);
+
         // Right
-        _pxRect(canvas, p, 17, 13, 4, 3, white);
-        _pxRect(canvas, p, 18, 14, 2, 2, iris);
-        _px(canvas, p, 18, 14, pupil);
-        _px(canvas, p, 20, 13, const Color(0xFF222222));
+        _hline(canvas, p, 35, 27, 7, outline);
+        _px(canvas, p, 34, 28, outline);
+        _rect(canvas, p, 35, 28, 7, 4, white);
+        _px(canvas, p, 42, 28, outline);
+        _px(canvas, p, 34, 29, outline);
+        _px(canvas, p, 42, 29, outline);
+        _px(canvas, p, 34, 30, outline);
+        _px(canvas, p, 42, 30, outline);
+        _px(canvas, p, 34, 31, outline);
+        _px(canvas, p, 42, 31, outline);
+        _hline(canvas, p, 35, 32, 7, outline);
+        _rect(canvas, p, 37, 28, 4, 4, iris1);
+        _rect(canvas, p, 38, 29, 3, 3, pupil);
+        _px(canvas, p, 37, 28, white);
+        _px(canvas, p, 38, 28, white);
 
       case AvatarEyes.narrow:
-        // Horizontal slits: 4x1
-        _pxRect(canvas, p, 12, 15, 4, 1, const Color(0xFF222222));
-        _px(canvas, p, 13, 15, pupil);
-        _px(canvas, p, 14, 15, pupil);
-        // Right
-        _pxRect(canvas, p, 17, 15, 4, 1, const Color(0xFF222222));
-        _px(canvas, p, 18, 15, pupil);
-        _px(canvas, p, 19, 15, pupil);
+        // Thin slits: 7x2
+        _hline(canvas, p, 23, 29, 7, outline);
+        _hline(canvas, p, 23, 30, 7, outline);
+        _rect(canvas, p, 24, 29, 5, 2, const Color(0xFF222222));
+        _rect(canvas, p, 25, 29, 3, 2, pupil);
+        // Slit highlight
+        _px(canvas, p, 24, 29, const Color(0xFF444444));
+
+        _hline(canvas, p, 34, 29, 7, outline);
+        _hline(canvas, p, 34, 30, 7, outline);
+        _rect(canvas, p, 35, 29, 5, 2, const Color(0xFF222222));
+        _rect(canvas, p, 36, 29, 3, 2, pupil);
+        _px(canvas, p, 35, 29, const Color(0xFF444444));
 
       case AvatarEyes.wink:
-        // Left eye open
-        _pxRect(canvas, p, 12, 14, 3, 3, white);
-        _px(canvas, p, 13, 14, iris);
-        _px(canvas, p, 13, 15, pupil);
-        _px(canvas, p, 12, 14, white);
-        // Right eye winking (^)
-        _px(canvas, p, 17, 15, const Color(0xFF222222));
-        _px(canvas, p, 18, 14, const Color(0xFF222222));
-        _px(canvas, p, 19, 15, const Color(0xFF222222));
+        // Left eye open (same as round)
+        _hline(canvas, p, 24, 28, 5, outline);
+        _px(canvas, p, 23, 29, outline);
+        _rect(canvas, p, 24, 29, 5, 3, white);
+        _px(canvas, p, 29, 29, outline);
+        _px(canvas, p, 23, 30, outline);
+        _px(canvas, p, 29, 30, outline);
+        _px(canvas, p, 23, 31, outline);
+        _px(canvas, p, 29, 31, outline);
+        _hline(canvas, p, 24, 32, 5, outline);
+        _rect(canvas, p, 25, 29, 3, 3, iris1);
+        _rect(canvas, p, 26, 30, 2, 2, pupil);
+        _px(canvas, p, 25, 29, white);
+
+        // Right eye winking (^) — chevron shape
+        _px(canvas, p, 34, 31, outline);
+        _px(canvas, p, 35, 30, outline);
+        _px(canvas, p, 36, 29, outline);
+        _px(canvas, p, 37, 28, outline);
+        _px(canvas, p, 38, 29, outline);
+        _px(canvas, p, 39, 30, outline);
+        _px(canvas, p, 40, 31, outline);
     }
   }
 
-  // ---------- Nose + Mouth ----------
+  // ---------- Nose ----------
 
-  void _drawNoseMouth(Canvas canvas, double s, double p) {
-    final shadow = _skinShadowColors[config.skin]!;
-    // Nose: 2 pixels
-    _px(canvas, p, 15, 17, shadow);
-    _px(canvas, p, 16, 17, shadow);
-    // Mouth: small line
-    _pxRect(canvas, p, 14, 19, 4, 1, shadow);
+  void _drawNose(Canvas canvas, double s, double p) {
+    final shd = _skinShadow[config.skin]!;
+    final hl = _skinHighlight[config.skin]!;
+    // Nose bridge highlight
+    _rect(canvas, p, 31, 32, 2, 3, hl);
+    // Nostrils
+    _px(canvas, p, 30, 35, shd);
+    _px(canvas, p, 31, 35, shd);
+    _px(canvas, p, 32, 35, shd);
+    _px(canvas, p, 33, 35, shd);
+    // Nostril shadow
+    _px(canvas, p, 30, 36, shd);
+    _px(canvas, p, 33, 36, shd);
+  }
+
+  // ---------- Mouth ----------
+
+  void _drawMouth(Canvas canvas, double s, double p) {
+    final shd = _skinShadow[config.skin]!;
+    const lip = Color(0xFFBB5555);
+    const lipHl = Color(0xFFCC7777);
+    const lipDark = Color(0xFF994444);
+    // Upper lip line
+    _hline(canvas, p, 28, 38, 8, shd);
+    // Lips
+    _hline(canvas, p, 29, 39, 6, lip);
+    _hline(canvas, p, 30, 40, 4, lipDark);
     // Lip highlight
-    _px(canvas, p, 15, 19, const Color(0xFFCC6666));
-    _px(canvas, p, 16, 19, const Color(0xFFCC6666));
+    _px(canvas, p, 31, 39, lipHl);
+    _px(canvas, p, 32, 39, lipHl);
   }
 
   // ---------- Hair ----------
@@ -381,166 +517,250 @@ class _AvatarPainter extends CustomPainter {
   void _drawHair(Canvas canvas, double s, double p) {
     if (config.hair == AvatarHair.none) return;
 
-    final hair = _hairColors[config.hair]!;
-    final highlight = _hairHighlightColors[config.hair]!;
+    final base = _hairBase[config.hair]!;
+    final light = _hairLight[config.hair]!;
+    final dark = _hairDark[config.hair]!;
 
     switch (config.hair) {
       case AvatarHair.none:
         break;
 
       case AvatarHair.short:
-        // Flat top hair
-        _pxRect(canvas, p, 10, 8, 12, 3, hair);
-        _pxRect(canvas, p, 9, 10, 2, 3, hair);
-        _pxRect(canvas, p, 21, 10, 2, 3, hair);
-        // Highlight on top
-        _pxRect(canvas, p, 12, 8, 4, 1, highlight);
+        // Flat top with fade on sides
+        _hline(canvas, p, 22, 15, 20, base);
+        _rect(canvas, p, 20, 16, 24, 5, base);
+        // Side fade
+        _rect(canvas, p, 18, 20, 3, 6, base);
+        _rect(canvas, p, 43, 20, 3, 6, base);
+        _rect(canvas, p, 18, 25, 2, 3, dark);
+        _rect(canvas, p, 44, 25, 2, 3, dark);
+        // Top highlight
+        _rect(canvas, p, 26, 15, 12, 2, light);
+        // Texture lines
+        _hline(canvas, p, 22, 17, 4, light);
+        _hline(canvas, p, 36, 17, 4, light);
 
       case AvatarHair.medium:
-        // Side-parted
-        _pxRect(canvas, p, 10, 7, 12, 4, hair);
-        _pxRect(canvas, p, 9, 10, 2, 6, hair);
-        _pxRect(canvas, p, 21, 10, 2, 6, hair);
+        // Side-parted, ear length
+        _hline(canvas, p, 22, 14, 20, base);
+        _rect(canvas, p, 20, 15, 24, 7, base);
+        // Side hair covering ears
+        _rect(canvas, p, 17, 20, 4, 12, base);
+        _rect(canvas, p, 43, 20, 4, 12, base);
         // Part line
-        _pxRect(canvas, p, 13, 7, 1, 3, highlight);
-        // Highlight
-        _pxRect(canvas, p, 14, 7, 4, 1, highlight);
+        _rect(canvas, p, 27, 14, 2, 5, light);
+        // Top highlight
+        _rect(canvas, p, 29, 14, 8, 2, light);
+        // Volume/texture
+        _hline(canvas, p, 22, 16, 4, dark);
+        _hline(canvas, p, 38, 16, 4, dark);
+        _rect(canvas, p, 17, 26, 2, 4, dark);
+        _rect(canvas, p, 45, 26, 2, 4, dark);
 
       case AvatarHair.long:
-        // Long flowing hair
-        _pxRect(canvas, p, 10, 7, 12, 4, hair);
-        _pxRect(canvas, p, 8, 10, 3, 12, hair);
-        _pxRect(canvas, p, 21, 10, 3, 12, hair);
+        // Long flowing hair past shoulders
+        _hline(canvas, p, 22, 13, 20, base);
+        _rect(canvas, p, 20, 14, 24, 8, base);
+        // Sides flowing down
+        _rect(canvas, p, 16, 20, 5, 28, base);
+        _rect(canvas, p, 43, 20, 5, 28, base);
         // Top highlight
-        _pxRect(canvas, p, 12, 7, 6, 1, highlight);
-        // Side strands
-        _pxRect(canvas, p, 8, 18, 2, 4, highlight);
-        _pxRect(canvas, p, 22, 18, 2, 4, highlight);
+        _rect(canvas, p, 26, 13, 12, 2, light);
+        // Texture strands
+        _rect(canvas, p, 16, 30, 2, 8, light);
+        _rect(canvas, p, 46, 30, 2, 8, light);
+        _rect(canvas, p, 18, 34, 1, 6, dark);
+        _rect(canvas, p, 45, 34, 1, 6, dark);
+        // Inner shadow near face
+        _rect(canvas, p, 19, 22, 2, 10, dark);
+        _rect(canvas, p, 43, 22, 2, 10, dark);
 
       case AvatarHair.mohawk:
-        // Tall strip
-        _pxRect(canvas, p, 14, 3, 4, 8, hair);
-        _pxRect(canvas, p, 13, 5, 1, 4, hair);
-        _pxRect(canvas, p, 18, 5, 1, 4, hair);
-        // Highlight
-        _pxRect(canvas, p, 15, 3, 2, 2, highlight);
+        // Tall central strip
+        _rect(canvas, p, 27, 4, 10, 18, base);
+        _rect(canvas, p, 26, 8, 2, 10, base);
+        _rect(canvas, p, 36, 8, 2, 10, base);
+        // Tip highlight
+        _rect(canvas, p, 29, 4, 6, 4, light);
+        // Texture
+        _rect(canvas, p, 28, 10, 2, 4, dark);
+        _rect(canvas, p, 34, 10, 2, 4, dark);
+        // Side stubble
+        _rect(canvas, p, 20, 18, 6, 2, dark);
+        _rect(canvas, p, 38, 18, 6, 2, dark);
 
       case AvatarHair.curly:
-        // Curly clusters on top and sides
-        _pxRect(canvas, p, 10, 7, 12, 4, hair);
-        // Curl bumps on top
-        _px(canvas, p, 11, 6, hair);
-        _px(canvas, p, 13, 5, hair);
-        _px(canvas, p, 15, 6, hair);
-        _px(canvas, p, 17, 5, hair);
-        _px(canvas, p, 19, 6, hair);
-        _px(canvas, p, 21, 7, hair);
+        // Curly volume on top and sides
+        _rect(canvas, p, 20, 13, 24, 8, base);
+        // Curl bumps on top (staggered)
+        _rect(canvas, p, 21, 11, 4, 3, base);
+        _rect(canvas, p, 26, 10, 4, 3, base);
+        _rect(canvas, p, 31, 9, 4, 3, base);
+        _rect(canvas, p, 36, 10, 4, 3, base);
+        _rect(canvas, p, 41, 12, 3, 2, base);
         // Side curls
-        _pxRect(canvas, p, 9, 10, 2, 5, hair);
-        _pxRect(canvas, p, 21, 10, 2, 5, hair);
-        _px(canvas, p, 8, 12, hair);
-        _px(canvas, p, 23, 12, hair);
-        // Highlights
-        _px(canvas, p, 13, 6, highlight);
-        _px(canvas, p, 17, 6, highlight);
+        _rect(canvas, p, 17, 19, 4, 10, base);
+        _rect(canvas, p, 43, 19, 4, 10, base);
+        _rect(canvas, p, 16, 22, 2, 6, base);
+        _rect(canvas, p, 46, 22, 2, 6, base);
+        // Highlight curls
+        _rect(canvas, p, 27, 10, 2, 2, light);
+        _rect(canvas, p, 33, 9, 2, 2, light);
+        _rect(canvas, p, 22, 12, 2, 2, light);
+        _rect(canvas, p, 39, 11, 2, 2, light);
+        // Dark depth
+        _rect(canvas, p, 18, 25, 2, 3, dark);
+        _rect(canvas, p, 44, 25, 2, 3, dark);
 
       case AvatarHair.afro:
         // Big round afro
-        _pxRect(canvas, p, 10, 4, 12, 2, hair);
-        _pxRect(canvas, p, 8, 6, 16, 6, hair);
-        _pxRect(canvas, p, 7, 8, 2, 8, hair);
-        _pxRect(canvas, p, 23, 8, 2, 8, hair);
-        _pxRect(canvas, p, 9, 12, 2, 4, hair);
-        _pxRect(canvas, p, 21, 12, 2, 4, hair);
+        _hline(canvas, p, 22, 6, 20, base);
+        _hline(canvas, p, 20, 7, 24, base);
+        _rect(canvas, p, 18, 8, 28, 4, base);
+        _rect(canvas, p, 16, 12, 32, 6, base);
+        _rect(canvas, p, 14, 16, 36, 6, base);
+        _rect(canvas, p, 14, 22, 6, 10, base);
+        _rect(canvas, p, 44, 22, 6, 10, base);
         // Highlights
-        _pxRect(canvas, p, 12, 4, 4, 1, highlight);
-        _pxRect(canvas, p, 10, 6, 2, 2, highlight);
-        _pxRect(canvas, p, 20, 6, 2, 2, highlight);
+        _rect(canvas, p, 26, 7, 12, 2, light);
+        _rect(canvas, p, 20, 10, 4, 3, light);
+        _rect(canvas, p, 40, 10, 4, 3, light);
+        _rect(canvas, p, 16, 16, 3, 3, light);
+        _rect(canvas, p, 45, 16, 3, 3, light);
+        // Depth
+        _rect(canvas, p, 14, 26, 3, 4, dark);
+        _rect(canvas, p, 47, 26, 3, 4, dark);
+        _rect(canvas, p, 22, 8, 3, 2, dark);
+        _rect(canvas, p, 39, 8, 3, 2, dark);
 
       case AvatarHair.ponytail:
-        // Top + ponytail to right
-        _pxRect(canvas, p, 10, 7, 12, 4, hair);
-        _pxRect(canvas, p, 9, 10, 2, 3, hair);
+        // Top hair + flowing ponytail to right
+        _hline(canvas, p, 22, 14, 20, base);
+        _rect(canvas, p, 20, 15, 24, 6, base);
+        _rect(canvas, p, 18, 19, 3, 5, base);
         // Ponytail band
-        _pxRect(canvas, p, 22, 10, 2, 2, const Color(0xFFCC4444));
-        // Ponytail flowing
-        _pxRect(canvas, p, 23, 11, 3, 2, hair);
-        _pxRect(canvas, p, 24, 13, 3, 2, hair);
-        _pxRect(canvas, p, 25, 15, 2, 3, hair);
-        _pxRect(canvas, p, 24, 18, 2, 2, hair);
-        // Highlight
-        _pxRect(canvas, p, 12, 7, 4, 1, highlight);
-        _px(canvas, p, 25, 14, highlight);
+        _rect(canvas, p, 44, 19, 3, 3, const Color(0xFFCC4444));
+        // Ponytail flowing right and down
+        _rect(canvas, p, 46, 20, 5, 3, base);
+        _rect(canvas, p, 48, 23, 5, 3, base);
+        _rect(canvas, p, 49, 26, 4, 4, base);
+        _rect(canvas, p, 48, 30, 4, 4, base);
+        _rect(canvas, p, 47, 34, 3, 4, base);
+        // Ponytail highlights
+        _rect(canvas, p, 49, 21, 2, 2, light);
+        _rect(canvas, p, 50, 27, 2, 2, light);
+        _rect(canvas, p, 48, 32, 2, 2, light);
+        // Top highlight
+        _rect(canvas, p, 26, 14, 10, 2, light);
+        // Texture
+        _rect(canvas, p, 47, 24, 2, 2, dark);
+        _rect(canvas, p, 48, 35, 2, 2, dark);
     }
   }
 
   // ---------- Outfit ----------
 
   void _drawOutfit(Canvas canvas, double s, double p) {
-    final color = _outfitColors[config.outfit]!;
-    final hl = _outfitHighlightColors[config.outfit]!;
+    final base = _outfitBase[config.outfit]!;
+    final light = _outfitLight[config.outfit]!;
+    final dark = _outfitDark[config.outfit]!;
 
-    // Base torso/shoulders visible below the chin
-    _pxRect(canvas, p, 6, 24, 20, 8, color);
+    // Torso/shoulders
+    _rect(canvas, p, 12, 48, 40, 16, base);
     // Shoulder curve
-    _pxRect(canvas, p, 4, 25, 2, 7, color);
-    _pxRect(canvas, p, 26, 25, 2, 7, color);
-    _pxRect(canvas, p, 3, 27, 1, 5, color);
-    _pxRect(canvas, p, 28, 27, 1, 5, color);
-
-    // Collar / neckline highlight
-    _pxRect(canvas, p, 13, 24, 6, 1, hl);
+    _rect(canvas, p, 8, 50, 4, 14, base);
+    _rect(canvas, p, 52, 50, 4, 14, base);
+    _rect(canvas, p, 6, 52, 2, 12, base);
+    _rect(canvas, p, 56, 52, 2, 12, base);
+    // Collar area highlight
+    _hline(canvas, p, 26, 48, 12, light);
+    _hline(canvas, p, 27, 47, 10, light);
+    // Shoulder highlights
+    _rect(canvas, p, 12, 48, 6, 2, light);
+    _rect(canvas, p, 46, 48, 6, 2, light);
+    // Lower shadow
+    _rect(canvas, p, 12, 58, 40, 6, dark);
 
     switch (config.outfit) {
       case AvatarOutfit.tshirt:
-        // Simple round neckline
-        _pxRect(canvas, p, 14, 23, 4, 1, hl);
+        // Simple collar
+        _hline(canvas, p, 28, 46, 8, light);
+        // Sleeve seams
+        _rect(canvas, p, 12, 50, 1, 6, dark);
+        _rect(canvas, p, 51, 50, 1, 6, dark);
 
       case AvatarOutfit.pilot:
-        // Lapels
-        _pxRect(canvas, p, 12, 25, 2, 3, FlitColors.gold);
-        _pxRect(canvas, p, 18, 25, 2, 3, FlitColors.gold);
+        // Gold lapels
+        _rect(canvas, p, 24, 49, 4, 6, FlitColors.gold);
+        _rect(canvas, p, 36, 49, 4, 6, FlitColors.gold);
         // Epaulettes
-        _pxRect(canvas, p, 6, 24, 3, 1, FlitColors.gold);
-        _pxRect(canvas, p, 23, 24, 3, 1, FlitColors.gold);
+        _rect(canvas, p, 10, 48, 6, 2, FlitColors.gold);
+        _rect(canvas, p, 48, 48, 6, 2, FlitColors.gold);
+        // Breast pocket
+        _rect(canvas, p, 20, 52, 3, 3, dark);
+        // Wings badge
+        _rect(canvas, p, 38, 53, 2, 1, FlitColors.gold);
+        _hline(canvas, p, 36, 54, 6, FlitColors.gold);
+        _rect(canvas, p, 38, 55, 2, 1, FlitColors.gold);
 
       case AvatarOutfit.suit:
-        // V-shaped lapel
-        _px(canvas, p, 14, 24, hl);
-        _px(canvas, p, 13, 25, hl);
-        _px(canvas, p, 12, 26, hl);
-        _px(canvas, p, 17, 24, hl);
-        _px(canvas, p, 18, 25, hl);
-        _px(canvas, p, 19, 26, hl);
+        // V lapels
+        for (var i = 0; i < 6; i++) {
+          _px(canvas, p, 28 - i, 48 + i, light);
+          _px(canvas, p, 27 - i, 48 + i, light);
+          _px(canvas, p, 35 + i, 48 + i, light);
+          _px(canvas, p, 36 + i, 48 + i, light);
+        }
         // Tie
-        _px(canvas, p, 15, 25, FlitColors.accent);
-        _px(canvas, p, 16, 25, FlitColors.accent);
-        _pxRect(canvas, p, 15, 26, 2, 4, FlitColors.accent);
+        _rect(canvas, p, 31, 48, 2, 2, FlitColors.accent);
+        _rect(canvas, p, 30, 50, 4, 1, FlitColors.accent);
+        _rect(canvas, p, 31, 51, 2, 8, FlitColors.accent);
+        _px(canvas, p, 31, 52, FlitColors.accentLight);
+        // Pocket square
+        _rect(canvas, p, 21, 52, 3, 2, FlitColors.textSecondary);
 
       case AvatarOutfit.leather:
-        // Zip line
-        _pxRect(canvas, p, 16, 24, 1, 8, const Color(0xFF888888));
-        // Collar flap
-        _pxRect(canvas, p, 12, 24, 3, 2, hl);
-        _pxRect(canvas, p, 17, 24, 3, 2, hl);
+        // Diagonal zip
+        for (var i = 0; i < 10; i++) {
+          _px(canvas, p, 30 + (i ~/ 2), 48 + i, const Color(0xFF888888));
+        }
+        // Collar flaps
+        _rect(canvas, p, 24, 47, 6, 3, light);
+        _rect(canvas, p, 34, 47, 6, 3, light);
+        // Pocket
+        _rect(canvas, p, 20, 54, 4, 3, dark);
+        _hline(canvas, p, 20, 54, 4, const Color(0xFF888888));
 
       case AvatarOutfit.spacesuit:
         // Helmet collar ring
-        _pxRect(canvas, p, 11, 23, 10, 1, const Color(0xFF999999));
-        _pxRect(canvas, p, 11, 24, 1, 1, const Color(0xFF999999));
-        _pxRect(canvas, p, 20, 24, 1, 1, const Color(0xFF999999));
-        // Chest panel
-        _pxRect(canvas, p, 14, 26, 4, 3, const Color(0xFF4A90B8));
+        _rect(canvas, p, 22, 45, 20, 3, const Color(0xFF999999));
+        _hline(canvas, p, 21, 46, 22, const Color(0xFF777777));
+        // Chest panel with lights
+        _rect(canvas, p, 28, 52, 8, 6, const Color(0xFF4A90B8));
+        _rect(canvas, p, 29, 53, 6, 4, const Color(0xFF3A7090));
+        // LED lights
+        _px(canvas, p, 30, 54, const Color(0xFF44CC44));
+        _px(canvas, p, 32, 54, const Color(0xFFCC4444));
+        _px(canvas, p, 34, 54, const Color(0xFF4488CC));
+        // Seam lines
+        _rect(canvas, p, 24, 48, 1, 16, const Color(0xFFB0B0B0));
+        _rect(canvas, p, 39, 48, 1, 16, const Color(0xFFB0B0B0));
 
       case AvatarOutfit.captain:
-        // Double buttons
-        for (var i = 0; i < 3; i++) {
-          _px(canvas, p, 14, 25 + i.toDouble() * 2, FlitColors.gold);
-          _px(canvas, p, 17, 25 + i.toDouble() * 2, FlitColors.gold);
+        // Double row of gold buttons
+        for (var i = 0; i < 4; i++) {
+          final y = 50 + i.toDouble() * 3;
+          _rect(canvas, p, 28, y, 2, 2, FlitColors.gold);
+          _rect(canvas, p, 34, y, 2, 2, FlitColors.gold);
         }
-        // Shoulder stripes
-        _pxRect(canvas, p, 5, 25, 4, 1, FlitColors.gold);
-        _pxRect(canvas, p, 23, 25, 4, 1, FlitColors.gold);
+        // Shoulder epaulettes
+        _rect(canvas, p, 9, 49, 7, 2, FlitColors.gold);
+        _rect(canvas, p, 48, 49, 7, 2, FlitColors.gold);
+        // Gold trim
+        _hline(canvas, p, 26, 48, 12, FlitColors.gold);
+        // Breast badge
+        _rect(canvas, p, 20, 52, 4, 3, FlitColors.gold);
+        _rect(canvas, p, 21, 53, 2, 1, FlitColors.goldLight);
     }
   }
 
@@ -555,85 +775,100 @@ class _AvatarPainter extends CustomPainter {
 
       case AvatarHat.cap:
         // Baseball cap
-        _pxRect(canvas, p, 9, 7, 14, 3, FlitColors.accent);
-        _pxRect(canvas, p, 10, 6, 12, 1, FlitColors.accent);
+        _rect(canvas, p, 20, 13, 24, 6, FlitColors.accent);
+        _hline(canvas, p, 19, 12, 26, FlitColors.accent);
+        _hline(canvas, p, 21, 11, 22, FlitColors.accent);
         // Brim
-        _pxRect(canvas, p, 7, 10, 14, 1, FlitColors.accent);
-        _pxRect(canvas, p, 6, 10, 1, 1, FlitColors.accentDark);
+        _rect(canvas, p, 14, 19, 26, 2, FlitColors.accent);
+        _hline(canvas, p, 12, 19, 2, FlitColors.accentDark);
         // Highlight
-        _pxRect(canvas, p, 12, 6, 4, 1, FlitColors.accentLight);
+        _rect(canvas, p, 25, 11, 14, 2, FlitColors.accentLight);
         // Button on top
-        _px(canvas, p, 15, 6, FlitColors.accentLight);
+        _rect(canvas, p, 31, 10, 2, 2, FlitColors.accentLight);
+        // Brim shadow
+        _hline(canvas, p, 14, 20, 26, FlitColors.accentDark);
 
       case AvatarHat.aviator:
-        // Leather aviator cap
         const leather = Color(0xFF5A3A1A);
-        const leatherHl = Color(0xFF7A5A30);
-        _pxRect(canvas, p, 10, 7, 12, 4, leather);
-        _pxRect(canvas, p, 9, 9, 1, 3, leather);
-        _pxRect(canvas, p, 22, 9, 1, 3, leather);
+        const leatherHL = Color(0xFF7A5A30);
+        const leatherDK = Color(0xFF3E2810);
+        // Cap dome
+        _rect(canvas, p, 20, 13, 24, 8, leather);
+        _hline(canvas, p, 22, 12, 20, leather);
+        _rect(canvas, p, 18, 18, 3, 5, leather);
+        _rect(canvas, p, 43, 18, 3, 5, leather);
         // Ear flaps
-        _pxRect(canvas, p, 8, 11, 2, 5, leather);
-        _pxRect(canvas, p, 22, 11, 2, 5, leather);
+        _rect(canvas, p, 15, 22, 4, 10, leather);
+        _rect(canvas, p, 45, 22, 4, 10, leather);
+        _rect(canvas, p, 16, 28, 2, 4, leatherDK);
+        _rect(canvas, p, 46, 28, 2, 4, leatherDK);
         // Goggles strap
-        _pxRect(canvas, p, 10, 10, 12, 1, FlitColors.gold);
-        // Goggles
-        _pxRect(canvas, p, 11, 9, 3, 2, const Color(0xFF4A90B8));
-        _pxRect(canvas, p, 18, 9, 3, 2, const Color(0xFF4A90B8));
-        // Highlight
-        _pxRect(canvas, p, 12, 7, 4, 1, leatherHl);
+        _hline(canvas, p, 19, 19, 26, FlitColors.gold);
+        _hline(canvas, p, 19, 20, 26, FlitColors.gold);
+        // Goggles lenses
+        _rect(canvas, p, 22, 17, 6, 3, const Color(0xFF4A90B8));
+        _rect(canvas, p, 36, 17, 6, 3, const Color(0xFF4A90B8));
+        _rect(canvas, p, 23, 17, 2, 1, const Color(0xFF8CC8E8)); // glint
+        _rect(canvas, p, 37, 17, 2, 1, const Color(0xFF8CC8E8));
+        // Top highlight
+        _rect(canvas, p, 26, 12, 12, 2, leatherHL);
 
       case AvatarHat.tophat:
-        const hatColor = Color(0xFF1A1A1A);
+        const hat = Color(0xFF1A1A1A);
+        const hatHL = Color(0xFF333333);
         // Brim
-        _pxRect(canvas, p, 8, 8, 16, 1, hatColor);
+        _rect(canvas, p, 16, 16, 32, 2, hat);
+        _hline(canvas, p, 15, 17, 34, hat);
         // Crown
-        _pxRect(canvas, p, 11, 2, 10, 6, hatColor);
-        _pxRect(canvas, p, 10, 3, 12, 4, hatColor);
+        _rect(canvas, p, 21, 4, 22, 12, hat);
+        _rect(canvas, p, 20, 6, 24, 8, hat);
         // Band
-        _pxRect(canvas, p, 11, 6, 10, 1, FlitColors.accent);
+        _rect(canvas, p, 21, 13, 22, 2, FlitColors.accent);
         // Highlight
-        _pxRect(canvas, p, 12, 3, 2, 1, const Color(0xFF333333));
+        _rect(canvas, p, 24, 5, 6, 2, hatHL);
+        _rect(canvas, p, 22, 7, 2, 4, hatHL);
 
       case AvatarHat.crown:
         // Crown base
-        _pxRect(canvas, p, 10, 7, 12, 2, FlitColors.gold);
-        // Crown points
-        _px(canvas, p, 10, 5, FlitColors.gold);
-        _px(canvas, p, 10, 6, FlitColors.gold);
-        _px(canvas, p, 13, 4, FlitColors.gold);
-        _px(canvas, p, 13, 5, FlitColors.gold);
-        _px(canvas, p, 13, 6, FlitColors.gold);
-        _px(canvas, p, 16, 3, FlitColors.gold);
-        _px(canvas, p, 15, 4, FlitColors.gold);
-        _px(canvas, p, 16, 4, FlitColors.gold);
-        _px(canvas, p, 16, 5, FlitColors.gold);
-        _px(canvas, p, 16, 6, FlitColors.gold);
-        _px(canvas, p, 19, 4, FlitColors.gold);
-        _px(canvas, p, 19, 5, FlitColors.gold);
-        _px(canvas, p, 19, 6, FlitColors.gold);
-        _px(canvas, p, 21, 5, FlitColors.gold);
-        _px(canvas, p, 21, 6, FlitColors.gold);
+        _rect(canvas, p, 19, 14, 26, 4, FlitColors.gold);
+        // Points
+        _rect(canvas, p, 20, 10, 3, 4, FlitColors.gold);
+        _rect(canvas, p, 26, 8, 3, 6, FlitColors.gold);
+        _rect(canvas, p, 31, 6, 3, 8, FlitColors.gold);
+        _rect(canvas, p, 36, 8, 3, 6, FlitColors.gold);
+        _rect(canvas, p, 41, 10, 3, 4, FlitColors.gold);
         // Jewels
-        _px(canvas, p, 13, 5, FlitColors.accent);
-        _px(canvas, p, 16, 4, const Color(0xFF4A90B8));
-        _px(canvas, p, 19, 5, FlitColors.accent);
-        // Band
-        _pxRect(canvas, p, 10, 8, 12, 1, FlitColors.goldLight);
+        _rect(canvas, p, 21, 11, 2, 2, FlitColors.accent);
+        _rect(canvas, p, 27, 9, 2, 2, const Color(0xFF4A90B8));
+        _rect(canvas, p, 31, 7, 3, 2, FlitColors.accent);
+        _rect(canvas, p, 37, 9, 2, 2, const Color(0xFF2ECC40));
+        _rect(canvas, p, 42, 11, 2, 2, FlitColors.accent);
+        // Gold highlight band
+        _hline(canvas, p, 19, 17, 26, FlitColors.goldLight);
+        // Shadow on base
+        _hline(canvas, p, 19, 16, 26, const Color(0xFFB08820));
 
       case AvatarHat.helmet:
         const helm = Color(0xFF606060);
-        const helmHl = Color(0xFF808080);
+        const helmHL = Color(0xFF888888);
+        const helmDK = Color(0xFF444444);
         // Dome
-        _pxRect(canvas, p, 10, 5, 12, 6, helm);
-        _pxRect(canvas, p, 9, 7, 1, 4, helm);
-        _pxRect(canvas, p, 22, 7, 1, 4, helm);
+        _hline(canvas, p, 22, 8, 20, helm);
+        _rect(canvas, p, 20, 9, 24, 10, helm);
+        _rect(canvas, p, 18, 12, 3, 8, helm);
+        _rect(canvas, p, 43, 12, 3, 8, helm);
         // Visor slit
-        _pxRect(canvas, p, 11, 10, 10, 1, const Color(0xFF333333));
+        _rect(canvas, p, 21, 19, 22, 2, helmDK);
         // Center stripe
-        _pxRect(canvas, p, 15, 5, 2, 5, FlitColors.accent);
+        _rect(canvas, p, 30, 8, 4, 11, FlitColors.accent);
+        // Ventilation holes
+        _px(canvas, p, 24, 13, helmDK);
+        _px(canvas, p, 26, 13, helmDK);
+        _px(canvas, p, 37, 13, helmDK);
+        _px(canvas, p, 39, 13, helmDK);
         // Highlight
-        _pxRect(canvas, p, 11, 6, 3, 1, helmHl);
+        _rect(canvas, p, 22, 9, 6, 2, helmHL);
+        _rect(canvas, p, 20, 11, 2, 4, helmHL);
     }
   }
 
@@ -648,80 +883,109 @@ class _AvatarPainter extends CustomPainter {
 
       case AvatarGlasses.round:
         const frame = Color(0xFF222222);
-        // Left lens circle
-        _pxRect(canvas, p, 11, 13, 5, 1, frame);
-        _px(canvas, p, 11, 14, frame);
-        _px(canvas, p, 15, 14, frame);
-        _px(canvas, p, 11, 15, frame);
-        _px(canvas, p, 15, 15, frame);
-        _pxRect(canvas, p, 11, 16, 5, 1, frame);
-        // Right lens circle
-        _pxRect(canvas, p, 16, 13, 5, 1, frame);
-        _px(canvas, p, 16, 14, frame);
-        _px(canvas, p, 20, 14, frame);
-        _px(canvas, p, 16, 15, frame);
-        _px(canvas, p, 20, 15, frame);
-        _pxRect(canvas, p, 16, 16, 5, 1, frame);
+        // Left lens: circular 8x6
+        _hline(canvas, p, 23, 27, 7, frame);
+        _px(canvas, p, 22, 28, frame);
+        _px(canvas, p, 30, 28, frame);
+        _px(canvas, p, 22, 29, frame);
+        _px(canvas, p, 30, 29, frame);
+        _px(canvas, p, 22, 30, frame);
+        _px(canvas, p, 30, 30, frame);
+        _px(canvas, p, 22, 31, frame);
+        _px(canvas, p, 30, 31, frame);
+        _hline(canvas, p, 23, 32, 7, frame);
+        // Right lens
+        _hline(canvas, p, 34, 27, 7, frame);
+        _px(canvas, p, 33, 28, frame);
+        _px(canvas, p, 41, 28, frame);
+        _px(canvas, p, 33, 29, frame);
+        _px(canvas, p, 41, 29, frame);
+        _px(canvas, p, 33, 30, frame);
+        _px(canvas, p, 41, 30, frame);
+        _px(canvas, p, 33, 31, frame);
+        _px(canvas, p, 41, 31, frame);
+        _hline(canvas, p, 34, 32, 7, frame);
         // Bridge
-        _px(canvas, p, 15, 14, frame);
-        _px(canvas, p, 16, 14, frame);
+        _hline(canvas, p, 30, 29, 3, frame);
         // Arms
-        _px(canvas, p, 10, 14, frame);
-        _px(canvas, p, 21, 14, frame);
+        _hline(canvas, p, 19, 29, 3, frame);
+        _hline(canvas, p, 42, 29, 3, frame);
 
       case AvatarGlasses.aviator:
-        // Gold frame aviator glasses
         const frame = Color(0xFFD4A944);
         const lens = Color(0x404A90B8);
-        // Left lens (teardrop-ish)
-        _pxRect(canvas, p, 11, 13, 5, 4, lens);
-        _pxRect(canvas, p, 11, 13, 5, 1, frame);
-        _px(canvas, p, 11, 14, frame);
-        _px(canvas, p, 15, 14, frame);
-        _px(canvas, p, 11, 15, frame);
-        _px(canvas, p, 15, 15, frame);
-        _pxRect(canvas, p, 11, 16, 5, 1, frame);
+        // Left lens fill
+        _rect(canvas, p, 22, 27, 9, 7, lens);
+        // Frame
+        _hline(canvas, p, 23, 27, 7, frame);
+        _px(canvas, p, 22, 28, frame);
+        _px(canvas, p, 30, 28, frame);
+        _px(canvas, p, 22, 29, frame);
+        _px(canvas, p, 30, 29, frame);
+        _px(canvas, p, 22, 30, frame);
+        _px(canvas, p, 30, 30, frame);
+        _px(canvas, p, 22, 31, frame);
+        _px(canvas, p, 30, 31, frame);
+        _px(canvas, p, 22, 32, frame);
+        _px(canvas, p, 30, 32, frame);
+        _hline(canvas, p, 23, 33, 7, frame);
         // Right lens
-        _pxRect(canvas, p, 17, 13, 5, 4, lens);
-        _pxRect(canvas, p, 17, 13, 5, 1, frame);
-        _px(canvas, p, 17, 14, frame);
-        _px(canvas, p, 21, 14, frame);
-        _px(canvas, p, 17, 15, frame);
-        _px(canvas, p, 21, 15, frame);
-        _pxRect(canvas, p, 17, 16, 5, 1, frame);
+        _rect(canvas, p, 33, 27, 9, 7, lens);
+        _hline(canvas, p, 34, 27, 7, frame);
+        _px(canvas, p, 33, 28, frame);
+        _px(canvas, p, 41, 28, frame);
+        _px(canvas, p, 33, 29, frame);
+        _px(canvas, p, 41, 29, frame);
+        _px(canvas, p, 33, 30, frame);
+        _px(canvas, p, 41, 30, frame);
+        _px(canvas, p, 33, 31, frame);
+        _px(canvas, p, 41, 31, frame);
+        _px(canvas, p, 33, 32, frame);
+        _px(canvas, p, 41, 32, frame);
+        _hline(canvas, p, 34, 33, 7, frame);
         // Bridge
-        _pxRect(canvas, p, 15, 14, 2, 1, frame);
+        _hline(canvas, p, 30, 29, 3, frame);
         // Arms
-        _px(canvas, p, 10, 14, frame);
-        _px(canvas, p, 22, 14, frame);
+        _hline(canvas, p, 19, 29, 3, frame);
+        _hline(canvas, p, 42, 29, 3, frame);
 
       case AvatarGlasses.monocle:
         const frame = Color(0xFFD4A944);
-        // Single lens on right eye
-        _pxRect(canvas, p, 17, 13, 4, 1, frame);
-        _px(canvas, p, 17, 14, frame);
-        _px(canvas, p, 20, 14, frame);
-        _px(canvas, p, 17, 15, frame);
-        _px(canvas, p, 20, 15, frame);
-        _pxRect(canvas, p, 17, 16, 4, 1, frame);
-        // Chain
-        _px(canvas, p, 19, 17, frame);
-        _px(canvas, p, 18, 18, frame);
-        _px(canvas, p, 17, 19, frame);
-        _px(canvas, p, 16, 20, frame);
+        // Single round lens on right eye
+        _hline(canvas, p, 34, 27, 7, frame);
+        _px(canvas, p, 33, 28, frame);
+        _px(canvas, p, 41, 28, frame);
+        _px(canvas, p, 33, 29, frame);
+        _px(canvas, p, 41, 29, frame);
+        _px(canvas, p, 33, 30, frame);
+        _px(canvas, p, 41, 30, frame);
+        _px(canvas, p, 33, 31, frame);
+        _px(canvas, p, 41, 31, frame);
+        _hline(canvas, p, 34, 32, 7, frame);
+        // Chain diagonal
+        _px(canvas, p, 39, 33, frame);
+        _px(canvas, p, 38, 34, frame);
+        _px(canvas, p, 37, 35, frame);
+        _px(canvas, p, 36, 36, frame);
+        _px(canvas, p, 35, 37, frame);
+        _px(canvas, p, 34, 38, frame);
+        _px(canvas, p, 33, 39, frame);
+        _px(canvas, p, 32, 40, frame);
 
       case AvatarGlasses.futuristic:
         const frame = Color(0xFF4A90B8);
         const lens = Color(0x604A90B8);
         // Single visor band
-        _pxRect(canvas, p, 10, 13, 12, 3, lens);
-        _pxRect(canvas, p, 10, 13, 12, 1, frame);
-        _pxRect(canvas, p, 10, 15, 12, 1, frame);
-        _px(canvas, p, 10, 14, frame);
-        _px(canvas, p, 21, 14, frame);
+        _rect(canvas, p, 20, 27, 24, 5, lens);
+        _hline(canvas, p, 20, 27, 24, frame);
+        _hline(canvas, p, 20, 31, 24, frame);
+        _rect(canvas, p, 20, 28, 1, 3, frame);
+        _rect(canvas, p, 43, 28, 1, 3, frame);
         // Arms
-        _px(canvas, p, 9, 14, frame);
-        _px(canvas, p, 22, 14, frame);
+        _hline(canvas, p, 17, 29, 3, frame);
+        _hline(canvas, p, 44, 29, 3, frame);
+        // Lens glint
+        _hline(canvas, p, 22, 28, 4, const Color(0x808CC8E8));
     }
   }
 
@@ -736,62 +1000,87 @@ class _AvatarPainter extends CustomPainter {
 
       case AvatarAccessory.scarf:
         // Wrapped scarf
-        _pxRect(canvas, p, 10, 22, 12, 2, FlitColors.accent);
-        _pxRect(canvas, p, 11, 23, 10, 1, FlitColors.accentLight);
+        _rect(canvas, p, 20, 44, 24, 4, FlitColors.accent);
+        _rect(canvas, p, 22, 45, 20, 2, FlitColors.accentLight);
         // Hanging end
-        _pxRect(canvas, p, 18, 24, 2, 4, FlitColors.accent);
-        _pxRect(canvas, p, 19, 24, 1, 4, FlitColors.accentLight);
-        // Stripe
-        _pxRect(canvas, p, 18, 26, 2, 1, FlitColors.accentDark);
+        _rect(canvas, p, 38, 48, 4, 8, FlitColors.accent);
+        _rect(canvas, p, 40, 48, 2, 8, FlitColors.accentLight);
+        // Stripes
+        _hline(canvas, p, 38, 52, 4, FlitColors.accentDark);
+        _hline(canvas, p, 38, 54, 4, FlitColors.accentDark);
+        // Wrap texture
+        _hline(canvas, p, 22, 46, 16, FlitColors.accentDark);
 
       case AvatarAccessory.medal:
         // Ribbon
-        _px(canvas, p, 15, 26, FlitColors.accent);
-        _px(canvas, p, 16, 26, FlitColors.accent);
-        _pxRect(canvas, p, 15, 27, 2, 2, FlitColors.accent);
-        // Medal
-        _pxRect(canvas, p, 14, 29, 4, 2, FlitColors.gold);
-        _pxRect(canvas, p, 15, 29, 2, 2, FlitColors.goldLight);
+        _rect(canvas, p, 30, 52, 4, 2, FlitColors.accent);
+        _rect(canvas, p, 31, 54, 2, 4, FlitColors.accent);
+        // Medal circle
+        _rect(canvas, p, 29, 58, 6, 4, FlitColors.gold);
+        _rect(canvas, p, 30, 57, 4, 1, FlitColors.gold);
+        _rect(canvas, p, 30, 62, 4, 1, FlitColors.gold);
+        // Star center
+        _rect(canvas, p, 31, 59, 2, 2, FlitColors.goldLight);
+        // Ribbon V
+        _px(canvas, p, 30, 52, FlitColors.accentDark);
+        _px(canvas, p, 33, 52, FlitColors.accentDark);
 
       case AvatarAccessory.earring:
-        // Small gold earring on left ear
-        _px(canvas, p, 8, 16, FlitColors.gold);
-        _px(canvas, p, 8, 17, FlitColors.goldLight);
+        // Gold hoop earring on left ear
+        _rect(canvas, p, 15, 32, 2, 2, FlitColors.gold);
+        _rect(canvas, p, 15, 34, 2, 2, FlitColors.goldLight);
+        _px(canvas, p, 14, 33, FlitColors.gold);
+        _px(canvas, p, 17, 33, FlitColors.gold);
 
       case AvatarAccessory.goldChain:
         // Chain arc across chest
-        _px(canvas, p, 11, 26, FlitColors.gold);
-        _px(canvas, p, 12, 27, FlitColors.gold);
-        _px(canvas, p, 13, 28, FlitColors.gold);
-        _px(canvas, p, 14, 28, FlitColors.goldLight);
-        _px(canvas, p, 15, 29, FlitColors.goldLight);
-        _px(canvas, p, 16, 29, FlitColors.gold);
-        _px(canvas, p, 17, 28, FlitColors.goldLight);
-        _px(canvas, p, 18, 28, FlitColors.gold);
-        _px(canvas, p, 19, 27, FlitColors.gold);
-        _px(canvas, p, 20, 26, FlitColors.gold);
+        _px(canvas, p, 22, 52, FlitColors.gold);
+        _px(canvas, p, 23, 53, FlitColors.gold);
+        _px(canvas, p, 24, 54, FlitColors.gold);
+        _px(canvas, p, 25, 55, FlitColors.gold);
+        _px(canvas, p, 26, 55, FlitColors.goldLight);
+        _px(canvas, p, 27, 56, FlitColors.goldLight);
+        _px(canvas, p, 28, 56, FlitColors.gold);
+        _px(canvas, p, 29, 57, FlitColors.gold);
+        _px(canvas, p, 30, 57, FlitColors.goldLight);
+        _px(canvas, p, 31, 58, FlitColors.goldLight);
+        _px(canvas, p, 32, 58, FlitColors.goldLight);
+        _px(canvas, p, 33, 57, FlitColors.gold);
+        _px(canvas, p, 34, 57, FlitColors.goldLight);
+        _px(canvas, p, 35, 56, FlitColors.gold);
+        _px(canvas, p, 36, 56, FlitColors.goldLight);
+        _px(canvas, p, 37, 55, FlitColors.gold);
+        _px(canvas, p, 38, 55, FlitColors.gold);
+        _px(canvas, p, 39, 54, FlitColors.gold);
+        _px(canvas, p, 40, 53, FlitColors.gold);
+        _px(canvas, p, 41, 52, FlitColors.gold);
         // Pendant
-        _pxRect(canvas, p, 15, 30, 2, 1, FlitColors.gold);
+        _rect(canvas, p, 30, 59, 4, 3, FlitColors.gold);
+        _rect(canvas, p, 31, 59, 2, 2, FlitColors.goldLight);
 
       case AvatarAccessory.parrot:
-        // Small pixel parrot on right shoulder
+        // Pixel parrot on right shoulder
         const green = Color(0xFF2ECC40);
-        const greenDark = Color(0xFF1FA030);
+        const greenDk = Color(0xFF1FA030);
         const beak = Color(0xFFD4A944);
         // Body
-        _pxRect(canvas, p, 24, 22, 3, 3, green);
-        _pxRect(canvas, p, 25, 21, 2, 1, green);
+        _rect(canvas, p, 48, 43, 5, 6, green);
+        _rect(canvas, p, 49, 42, 4, 1, green);
         // Head
-        _pxRect(canvas, p, 26, 20, 2, 2, green);
+        _rect(canvas, p, 51, 39, 4, 4, green);
+        _rect(canvas, p, 52, 38, 2, 1, green);
         // Eye
-        _px(canvas, p, 27, 20, const Color(0xFF1A1A1A));
+        _rect(canvas, p, 53, 40, 2, 2, const Color(0xFF1A1A1A));
+        _px(canvas, p, 53, 40, const Color(0xFFF5F5F5));
         // Beak
-        _px(canvas, p, 28, 21, beak);
+        _rect(canvas, p, 55, 41, 3, 2, beak);
+        _px(canvas, p, 57, 42, const Color(0xFFCC8800));
         // Wing
-        _px(canvas, p, 24, 23, greenDark);
+        _rect(canvas, p, 47, 44, 3, 4, greenDk);
         // Tail
-        _px(canvas, p, 23, 25, FlitColors.accent);
-        _px(canvas, p, 24, 25, green);
+        _px(canvas, p, 47, 49, FlitColors.accent);
+        _px(canvas, p, 48, 49, green);
+        _px(canvas, p, 49, 49, const Color(0xFF4A90B8));
     }
   }
 
@@ -800,128 +1089,158 @@ class _AvatarPainter extends CustomPainter {
   void _drawCompanion(Canvas canvas, double s, double p) {
     if (config.companion == AvatarCompanion.none) return;
 
-    // Companions drawn in bottom-right corner of the portrait
     switch (config.companion) {
       case AvatarCompanion.none:
         break;
 
       case AvatarCompanion.sparrow:
-        // Small brown sparrow
         const body = Color(0xFF8B6914);
         const belly = Color(0xFFD4A944);
+        const wing = Color(0xFF6B4E10);
         const beak = Color(0xFFCC8800);
         // Body
-        _pxRect(canvas, p, 24, 27, 3, 2, body);
-        _pxRect(canvas, p, 25, 26, 2, 1, body);
+        _rect(canvas, p, 48, 54, 6, 4, body);
+        _rect(canvas, p, 49, 53, 4, 1, body);
         // Belly
-        _px(canvas, p, 25, 28, belly);
+        _rect(canvas, p, 49, 56, 4, 2, belly);
         // Head
-        _pxRect(canvas, p, 26, 25, 2, 2, body);
+        _rect(canvas, p, 52, 50, 4, 4, body);
+        _rect(canvas, p, 53, 49, 2, 1, body);
         // Eye
-        _px(canvas, p, 27, 25, const Color(0xFF1A1A1A));
+        _rect(canvas, p, 54, 51, 2, 2, const Color(0xFF1A1A1A));
+        _px(canvas, p, 54, 51, const Color(0xFFF5F5F5));
         // Beak
-        _px(canvas, p, 28, 26, beak);
+        _rect(canvas, p, 56, 52, 2, 1, beak);
+        _px(canvas, p, 57, 53, beak);
         // Wing
-        _px(canvas, p, 24, 27, const Color(0xFF6B4E10));
+        _rect(canvas, p, 47, 55, 3, 3, wing);
         // Tail
-        _px(canvas, p, 23, 27, body);
+        _rect(canvas, p, 46, 54, 2, 1, body);
+        _px(canvas, p, 45, 55, body);
 
       case AvatarCompanion.eagle:
-        // Majestic eagle
         const body = Color(0xFF4A3520);
         const head = Color(0xFFF0E8DC);
+        const wing = Color(0xFF332010);
         const beak = Color(0xFFD4A944);
         // Body
-        _pxRect(canvas, p, 23, 27, 4, 3, body);
-        _pxRect(canvas, p, 22, 28, 1, 2, body);
+        _rect(canvas, p, 46, 54, 8, 5, body);
+        _rect(canvas, p, 47, 53, 6, 1, body);
         // Wings spread
-        _px(canvas, p, 21, 27, body);
-        _px(canvas, p, 28, 27, body);
-        // Head (white)
-        _pxRect(canvas, p, 25, 25, 2, 2, head);
+        _rect(canvas, p, 43, 53, 3, 4, wing);
+        _rect(canvas, p, 54, 53, 3, 4, wing);
+        _px(canvas, p, 42, 54, wing);
+        _px(canvas, p, 57, 54, wing);
+        // White head
+        _rect(canvas, p, 51, 50, 4, 4, head);
+        _rect(canvas, p, 52, 49, 2, 1, head);
         // Eye
-        _px(canvas, p, 26, 25, const Color(0xFF1A1A1A));
-        // Beak
-        _px(canvas, p, 27, 26, beak);
-        _px(canvas, p, 28, 26, beak);
+        _rect(canvas, p, 53, 51, 2, 1, const Color(0xFF1A1A1A));
+        // Beak (hooked)
+        _rect(canvas, p, 55, 51, 2, 1, beak);
+        _rect(canvas, p, 56, 52, 2, 1, beak);
+        _px(canvas, p, 56, 53, beak);
+        // Tail
+        _rect(canvas, p, 44, 58, 3, 2, body);
 
       case AvatarCompanion.parrot:
-        // Colorful parrot
         const green = Color(0xFF2ECC40);
         const red = Color(0xFFCC4444);
         const blue = Color(0xFF4A90B8);
         const beak = Color(0xFFD4A944);
         // Body
-        _pxRect(canvas, p, 23, 27, 3, 3, green);
+        _rect(canvas, p, 47, 54, 6, 5, green);
+        _rect(canvas, p, 48, 53, 4, 1, green);
         // Head
-        _pxRect(canvas, p, 25, 25, 2, 2, green);
+        _rect(canvas, p, 51, 50, 4, 4, green);
+        _rect(canvas, p, 52, 49, 2, 1, green);
+        // Crest
+        _rect(canvas, p, 51, 48, 2, 2, red);
+        _px(canvas, p, 53, 48, red);
         // Eye
-        _px(canvas, p, 26, 25, const Color(0xFF1A1A1A));
+        _rect(canvas, p, 53, 51, 2, 2, const Color(0xFF1A1A1A));
+        _px(canvas, p, 53, 51, const Color(0xFFF5F5F5));
         // Beak
-        _px(canvas, p, 27, 26, beak);
+        _rect(canvas, p, 55, 52, 2, 1, beak);
+        _px(canvas, p, 56, 53, beak);
         // Wing
-        _pxRect(canvas, p, 22, 28, 2, 2, blue);
-        // Tail
-        _px(canvas, p, 22, 30, red);
-        _px(canvas, p, 23, 30, green);
-        _px(canvas, p, 24, 30, blue);
-        // Head crest
-        _px(canvas, p, 25, 24, red);
-        _px(canvas, p, 26, 24, red);
+        _rect(canvas, p, 45, 55, 4, 3, blue);
+        // Tail feathers
+        _px(canvas, p, 45, 59, red);
+        _px(canvas, p, 46, 59, green);
+        _px(canvas, p, 47, 59, blue);
+        _px(canvas, p, 48, 59, red);
 
       case AvatarCompanion.phoenix:
-        // Fiery phoenix
         const flame = Color(0xFFE88020);
         const flameLight = Color(0xFFFFCC44);
         const body = Color(0xFFCC4422);
         // Body
-        _pxRect(canvas, p, 23, 26, 4, 3, body);
-        // Wings (fire-like)
-        _pxRect(canvas, p, 21, 25, 2, 3, flame);
-        _pxRect(canvas, p, 27, 25, 2, 3, flame);
-        _px(canvas, p, 20, 26, flameLight);
-        _px(canvas, p, 29, 26, flameLight);
+        _rect(canvas, p, 46, 52, 8, 5, body);
+        _rect(canvas, p, 47, 51, 6, 1, body);
+        // Wings (fiery)
+        _rect(canvas, p, 42, 50, 4, 5, flame);
+        _rect(canvas, p, 54, 50, 4, 5, flame);
+        _rect(canvas, p, 41, 51, 1, 3, flameLight);
+        _rect(canvas, p, 58, 51, 1, 3, flameLight);
+        _px(canvas, p, 40, 52, flameLight);
+        _px(canvas, p, 59, 52, flameLight);
         // Head
-        _pxRect(canvas, p, 25, 24, 2, 2, body);
-        // Eye
-        _px(canvas, p, 26, 24, flameLight);
+        _rect(canvas, p, 51, 48, 4, 4, body);
+        _rect(canvas, p, 52, 47, 2, 1, body);
+        // Eye (glowing)
+        _rect(canvas, p, 53, 49, 2, 2, flameLight);
         // Beak
-        _px(canvas, p, 27, 25, FlitColors.gold);
-        // Tail fire
-        _px(canvas, p, 22, 29, flame);
-        _px(canvas, p, 23, 30, flameLight);
-        _px(canvas, p, 24, 29, flame);
+        _rect(canvas, p, 55, 50, 2, 1, FlitColors.gold);
+        _px(canvas, p, 56, 51, FlitColors.gold);
         // Head plume
-        _px(canvas, p, 25, 23, flame);
-        _px(canvas, p, 26, 23, flameLight);
+        _px(canvas, p, 51, 46, flame);
+        _px(canvas, p, 52, 45, flameLight);
+        _px(canvas, p, 53, 46, flame);
+        // Tail fire
+        _rect(canvas, p, 44, 57, 3, 2, flame);
+        _px(canvas, p, 43, 58, flameLight);
+        _px(canvas, p, 47, 58, flame);
+        _px(canvas, p, 45, 59, flameLight);
 
       case AvatarCompanion.dragon:
-        // Mini dragon
-        const bodyColor = Color(0xFF2A5674);
+        const bodyC = Color(0xFF2A5674);
         const belly = Color(0xFF3D7A9E);
         const wing = Color(0xFF1E3340);
         // Body
-        _pxRect(canvas, p, 22, 26, 5, 3, bodyColor);
-        _pxRect(canvas, p, 23, 28, 3, 1, belly);
+        _rect(canvas, p, 44, 52, 8, 6, bodyC);
+        _rect(canvas, p, 45, 56, 6, 2, belly);
         // Head
-        _pxRect(canvas, p, 26, 24, 3, 3, bodyColor);
-        _px(canvas, p, 27, 25, belly);
-        // Eye
-        _px(canvas, p, 28, 24, FlitColors.accent);
+        _rect(canvas, p, 51, 48, 6, 5, bodyC);
+        _rect(canvas, p, 52, 50, 4, 2, belly);
+        // Eye (glowing red)
+        _rect(canvas, p, 55, 49, 2, 2, FlitColors.accent);
+        _px(canvas, p, 55, 49, const Color(0xFFFF6644));
         // Horns
-        _px(canvas, p, 26, 23, bodyColor);
-        _px(canvas, p, 28, 23, bodyColor);
+        _rect(canvas, p, 52, 46, 2, 2, bodyC);
+        _rect(canvas, p, 55, 46, 2, 2, bodyC);
+        _px(canvas, p, 52, 45, bodyC);
+        _px(canvas, p, 56, 45, bodyC);
+        // Snout
+        _rect(canvas, p, 57, 50, 2, 2, bodyC);
+        _px(canvas, p, 58, 50, belly);
         // Wings
-        _pxRect(canvas, p, 23, 24, 3, 2, wing);
-        _px(canvas, p, 22, 25, wing);
-        _px(canvas, p, 21, 24, wing);
+        _rect(canvas, p, 45, 48, 6, 4, wing);
+        _rect(canvas, p, 43, 49, 2, 3, wing);
+        _px(canvas, p, 42, 50, wing);
+        _px(canvas, p, 41, 49, wing);
         // Tail
-        _px(canvas, p, 21, 27, bodyColor);
-        _px(canvas, p, 20, 28, bodyColor);
-        _px(canvas, p, 19, 28, bodyColor);
+        _rect(canvas, p, 42, 54, 2, 1, bodyC);
+        _rect(canvas, p, 40, 55, 2, 1, bodyC);
+        _rect(canvas, p, 38, 56, 2, 1, bodyC);
+        _px(canvas, p, 37, 56, bodyC);
+        // Tail spike
+        _px(canvas, p, 36, 55, bodyC);
+        _px(canvas, p, 36, 57, bodyC);
         // Fire breath
-        _px(canvas, p, 29, 25, FlitColors.accent);
-        _px(canvas, p, 30, 25, const Color(0xFFE88020));
+        _rect(canvas, p, 59, 50, 2, 1, FlitColors.accent);
+        _px(canvas, p, 61, 50, const Color(0xFFE88020));
+        _px(canvas, p, 60, 49, const Color(0xFFFFCC44));
     }
   }
 
