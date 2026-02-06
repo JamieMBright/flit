@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:math';
 
 import 'package:flame/events.dart';
@@ -89,7 +90,15 @@ class FlitGame extends FlameGame
     _worldPosition = Vector2(0, 0); // Center of map
     _heading = -pi / 2; // Facing north
 
-    onGameReady?.call();
+    // Notify the host widget that the engine is ready.  Wrapped in try/catch
+    // so a failure in the callback doesn't break the Flame loading future
+    // (which would leave the GameWidget in an unrecoverable error state and
+    // produce the white‑flash-then-crash behaviour).
+    try {
+      onGameReady?.call();
+    } catch (e, st) {
+      developer.log('onGameReady callback failed', error: e, stackTrace: st);
+    }
   }
 
   @override
@@ -146,7 +155,7 @@ class FlitGame extends FlameGame
 
   @override
   KeyEventResult onKeyEvent(
-    RawKeyEvent event,
+    KeyEvent event,
     Set<LogicalKeyboardKey> keysPressed,
   ) {
     final superResult = super.onKeyEvent(event, keysPressed);
@@ -164,7 +173,7 @@ class FlitGame extends FlameGame
 
     _plane.setTurnDirection(direction);
 
-    if (event is RawKeyDownEvent) {
+    if (event is KeyDownEvent) {
       if (event.logicalKey == LogicalKeyboardKey.space ||
           event.logicalKey == LogicalKeyboardKey.arrowUp ||
           event.logicalKey == LogicalKeyboardKey.arrowDown) {

@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/flit_game.dart';
@@ -34,6 +36,7 @@ class _PlayScreenState extends State<PlayScreen> {
   Duration _elapsed = Duration.zero;
   bool _isHighAltitude = true;
   bool _gameReady = false;
+  String? _error;
 
   @override
   void initState() {
@@ -51,13 +54,15 @@ class _PlayScreenState extends State<PlayScreen> {
   }
 
   void _onGameReady() {
-    if (mounted) {
-      setState(() {
-        _gameReady = true;
-      });
-      // Auto-start a game session
-      _startNewGame();
-    }
+    if (!mounted) return;
+    setState(() {
+      _gameReady = true;
+    });
+    // Start the game session on the next frame so it is decoupled from the
+    // Flame onLoad() future – any exception here won't break the engine.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _startNewGame();
+    });
   }
 
   void _onAltitudeChanged(bool isHigh) {
@@ -69,35 +74,46 @@ class _PlayScreenState extends State<PlayScreen> {
   }
 
   void _startNewGame() {
-    _session = GameSession.random(region: widget.region);
-    _elapsed = Duration.zero;
+    try {
+      _session = GameSession.random(region: widget.region);
+      _elapsed = Duration.zero;
 
-    // Start the game with the session data
-    _game.startGame(
-      startPosition: _session!.startPosition,
-      targetPosition: _session!.targetPosition,
-      clue: _session!.clue.displayText,
-    );
+      // Start the game with the session data
+      _game.startGame(
+        startPosition: _session!.startPosition,
+        targetPosition: _session!.targetPosition,
+        clue: _session!.clue.displayText,
+      );
 
-    // Start timer
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(milliseconds: 16), (_) {
-      if (mounted && _session != null && !_session!.isCompleted) {
-        setState(() {
-          _elapsed = _session!.elapsed;
-        });
+      // Start timer
+      _timer?.cancel();
+      _timer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+        if (mounted && _session != null && !_session!.isCompleted) {
+          setState(() {
+            _elapsed = _session!.elapsed;
+          });
 
-        // Record flight path periodically
-        if (_elapsed.inMilliseconds % 100 < 20) {
-          _session!.recordPosition(_game.worldPosition);
+          // Record flight path periodically
+          if (_elapsed.inMilliseconds % 100 < 20) {
+            _session!.recordPosition(_game.worldPosition);
+          }
+
+          // Check for landing
+          _checkLanding();
         }
+      });
 
-        // Check for landing
-        _checkLanding();
+      setState(() {
+        _error = null;
+      });
+    } catch (e, st) {
+      developer.log('Failed to start game', error: e, stackTrace: st);
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to start game: $e';
+        });
       }
-    });
-
-    setState(() {});
+    }
   }
 
   void _checkLanding() {
@@ -129,8 +145,8 @@ class _PlayScreenState extends State<PlayScreen> {
               }
             : null,
         onExit: () {
-          Navigator.of(dialogContext).pop();
-          Navigator.of(dialogContext).pop();
+          Navigator.of(dialogContext).pop(); // dismiss result dialog
+          Navigator.of(context).pop(); // dismiss PlayScreen
         },
         onSendChallenge: friendName != null
             ? () {
@@ -180,8 +196,8 @@ class _PlayScreenState extends State<PlayScreen> {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.of(dialogContext).pop(); // Pop this dialog
-                  Navigator.of(dialogContext).pop(); // Pop PlayScreen
+                  Navigator.of(dialogContext).pop(); // dismiss this dialog
+                  Navigator.of(context).pop(); // dismiss PlayScreen
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: FlitColors.accent,
@@ -205,11 +221,49 @@ class _PlayScreenState extends State<PlayScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+        backgroundColor: FlitColors.backgroundDark,
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // Game canvas
-            GameWidget(game: _game),
+            // Game canvas – use builders to avoid white flash during init
+            GameWidget(
+              game: _game,
+              loadingBuilder: (_) => Container(
+                color: FlitColors.backgroundDark,
+              ),
+              errorBuilder: (ctx, err) {
+                developer.log('GameWidget error', error: err);
+                return Container(
+                  color: FlitColors.backgroundDark,
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.warning_amber_rounded,
+                          color: FlitColors.warning, size: 48),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Game failed to load',
+                        style: TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: FlitColors.accent,
+                          foregroundColor: FlitColors.textPrimary,
+                        ),
+                        child: const Text('Go Back'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
 
             // HUD overlay
             if (_gameReady && _session != null)
@@ -220,8 +274,40 @@ class _PlayScreenState extends State<PlayScreen> {
                 onAltitudeToggle: () => _game.plane.toggleAltitude(),
               ),
 
+            // Error overlay
+            if (_error != null)
+              Container(
+                color: FlitColors.backgroundDark,
+                alignment: Alignment.center,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.warning_amber_rounded,
+                        color: FlitColors.warning, size: 48),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Something went wrong',
+                      style: TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: FlitColors.accent,
+                        foregroundColor: FlitColors.textPrimary,
+                      ),
+                      child: const Text('Go Back'),
+                    ),
+                  ],
+                ),
+              ),
+
             // Loading overlay
-            if (!_gameReady)
+            if (!_gameReady && _error == null)
               Container(
                 color: FlitColors.backgroundDark,
                 child: const Center(
