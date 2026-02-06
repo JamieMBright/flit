@@ -208,7 +208,7 @@ class Clue {
 
   static List<String> _getNeighboringCountries(String code) {
     // Simplified neighbor data
-    const neighbors = {
+    const Map<String, List<String>> neighbors = {
       'US': ['Canada', 'Mexico'],
       'CA': ['United States'],
       'MX': ['United States', 'Guatemala', 'Belize'],
@@ -223,9 +223,9 @@ class Clue {
       'ZA': ['Namibia', 'Botswana', 'Zimbabwe', 'Mozambique', 'Eswatini', 'Lesotho'],
       'CN': ['Russia', 'Mongolia', 'North Korea', 'Vietnam', 'Laos', 'Myanmar', 'India', 'Nepal', 'Pakistan'],
       'IN': ['Pakistan', 'China', 'Nepal', 'Bangladesh', 'Myanmar'],
-      'JP': [],
+      'JP': <String>[],
       'RU': ['Norway', 'Finland', 'Estonia', 'Latvia', 'Belarus', 'Ukraine', 'Georgia', 'Azerbaijan', 'Kazakhstan', 'China', 'Mongolia', 'North Korea'],
-      'AU': [],
+      'AU': <String>[],
     };
     return neighbors[code] ?? ['Unknown'];
   }

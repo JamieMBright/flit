@@ -1,5 +1,4 @@
 import 'package:flame/components.dart';
-import 'package:flame/events.dart';
 import 'package:flutter/services.dart';
 
 import 'plane_component.dart';
@@ -24,7 +23,7 @@ class InputHandler extends Component
   final Set<LogicalKeyboardKey> _pressedKeys = {};
 
   @override
-  bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
+  bool onKeyEvent(RawKeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
     _pressedKeys.clear();
     _pressedKeys.addAll(keysPressed);
 
@@ -43,7 +42,7 @@ class InputHandler extends Component
     plane.setTurnDirection(direction);
 
     // Toggle altitude with space or up/down arrows
-    if (event is KeyDownEvent) {
+    if (event is RawKeyDownEvent) {
       if (event.logicalKey == LogicalKeyboardKey.space ||
           event.logicalKey == LogicalKeyboardKey.arrowUp ||
           event.logicalKey == LogicalKeyboardKey.arrowDown) {

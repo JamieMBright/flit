@@ -97,7 +97,7 @@ class FlitGame extends FlameGame
 
   @override
   KeyEventResult onKeyEvent(
-    KeyEvent event,
+    RawKeyEvent event,
     Set<LogicalKeyboardKey> keysPressed,
   ) {
     double direction = 0;
@@ -113,7 +113,7 @@ class FlitGame extends FlameGame
 
     _plane.setTurnDirection(direction);
 
-    if (event is KeyDownEvent) {
+    if (event is RawKeyDownEvent) {
       if (event.logicalKey == LogicalKeyboardKey.space ||
           event.logicalKey == LogicalKeyboardKey.arrowUp ||
           event.logicalKey == LogicalKeyboardKey.arrowDown) {
