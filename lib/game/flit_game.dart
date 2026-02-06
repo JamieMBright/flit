@@ -8,8 +8,12 @@ import 'package:flutter/services.dart';
 
 import '../core/theme/flit_colors.dart';
 import 'components/plane_component.dart';
+import 'map/world_map.dart';
 
 /// Main game class for Flit.
+///
+/// Uses a 3rd-person perspective where the plane stays fixed in the
+/// lower portion of the screen and the world scrolls underneath.
 class FlitGame extends FlameGame
     with HasKeyboardHandlerComponents, HorizontalDragDetector, TapDetector {
   FlitGame({this.onGameReady, this.onAltitudeChanged});
@@ -18,6 +22,13 @@ class FlitGame extends FlameGame
   final void Function(bool isHigh)? onAltitudeChanged;
 
   late PlaneComponent _plane;
+  late WorldMap _worldMap;
+
+  /// Plane's position in world coordinates (longitude, latitude mapped to map space)
+  Vector2 _worldPosition = Vector2.zero();
+
+  /// Plane's heading in radians (0 = north, clockwise)
+  double _heading = 0;
 
   /// Current game state
   bool _isPlaying = false;
@@ -32,15 +43,26 @@ class FlitGame extends FlameGame
   bool get isHighAltitude => _plane.isHighAltitude;
   PlaneComponent get plane => _plane;
   String? get currentClue => _currentClue;
+  Vector2 get worldPosition => _worldPosition;
+  double get heading => _heading;
+
+  /// Where on screen the plane is rendered (proportional)
+  /// 0.7 = 70% down the screen
+  static const double planeScreenY = 0.72;
+  static const double planeScreenX = 0.5;
 
   @override
-  Color backgroundColor() => FlitColors.ocean;
+  Color backgroundColor() => FlitColors.oceanDeep;
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Create plane
+    // Create world map (renders behind plane)
+    _worldMap = WorldMap();
+    await add(_worldMap);
+
+    // Create plane (renders on top, fixed screen position)
     _plane = PlaneComponent(
       onAltitudeChanged: (isHigh) {
         onAltitudeChanged?.call(isHigh);
@@ -48,37 +70,48 @@ class FlitGame extends FlameGame
     );
     await add(_plane);
 
-    // Add placeholder world text
-    add(
-      TextComponent(
-        text: 'Flit',
-        textRenderer: TextPaint(
-          style: const TextStyle(
-            color: FlitColors.textPrimary,
-            fontSize: 48,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        anchor: Anchor.center,
-        position: size / 2 + Vector2(0, -100),
-      ),
-    );
-
-    add(
-      TextComponent(
-        text: 'Use arrow keys or swipe to steer\nTap or space to change altitude',
-        textRenderer: TextPaint(
-          style: const TextStyle(
-            color: FlitColors.textSecondary,
-            fontSize: 14,
-          ),
-        ),
-        anchor: Anchor.center,
-        position: size / 2 + Vector2(0, 150),
-      ),
-    );
+    // Start at a random position
+    _worldPosition = Vector2(0, 0); // Center of map
+    _heading = -pi / 2; // Facing north
 
     onGameReady?.call();
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+
+    // Move in world space based on heading and speed
+    final speed = _plane.currentSpeed;
+    final dx = cos(_heading) * speed * dt;
+    final dy = sin(_heading) * speed * dt;
+    _worldPosition += Vector2(dx, dy);
+
+    // Wrap world position horizontally
+    if (_worldPosition.x < 0) {
+      _worldPosition.x += WorldMap.mapWidth;
+    } else if (_worldPosition.x > WorldMap.mapWidth) {
+      _worldPosition.x -= WorldMap.mapWidth;
+    }
+
+    // Clamp vertical position (don't fly off the poles)
+    _worldPosition.y = _worldPosition.y.clamp(0, WorldMap.mapHeight);
+
+    // Update heading based on turn direction
+    _heading += _plane.turnDirection * PlaneComponent.turnRate * dt;
+
+    // Tell the world map where the camera should be centered
+    _worldMap.setCameraCenter(_worldPosition);
+    _worldMap.setAltitude(high: _plane.isHighAltitude);
+
+    // Update plane's visual heading
+    _plane.visualHeading = _heading;
+
+    // Tell plane its fixed screen position
+    _plane.position = Vector2(
+      size.x * planeScreenX,
+      size.y * planeScreenY,
+    );
   }
 
   @override
@@ -101,7 +134,6 @@ class FlitGame extends FlameGame
     RawKeyEvent event,
     Set<LogicalKeyboardKey> keysPressed,
   ) {
-    // Propagate to child keyboard handlers first
     final superResult = super.onKeyEvent(event, keysPressed);
 
     double direction = 0;
@@ -125,7 +157,6 @@ class FlitGame extends FlameGame
       }
     }
 
-    // If any child handled it, return that; otherwise mark as handled
     return superResult == KeyEventResult.handled
         ? superResult
         : KeyEventResult.handled;
@@ -137,8 +168,9 @@ class FlitGame extends FlameGame
     required Vector2 targetPosition,
     required String clue,
   }) {
-    _plane.position = startPosition;
-    _plane.angle = Random().nextDouble() * 2 * pi;
+    // Convert lat/lng start position to map coordinates
+    _worldPosition = _latLngToWorld(startPosition);
+    _heading = Random().nextDouble() * 2 * pi;
     _targetLocation = targetPosition;
     _currentClue = clue;
     _isPlaying = true;
@@ -147,6 +179,21 @@ class FlitGame extends FlameGame
   /// Check if plane is near target (for landing detection)
   bool isNearTarget({double threshold = 50}) {
     if (_targetLocation == null) return false;
-    return _plane.position.distanceTo(_targetLocation!) < threshold;
+    final targetWorld = _latLngToWorld(_targetLocation!);
+    return _worldPosition.distanceTo(targetWorld) < threshold;
+  }
+
+  /// Convert lat/lng to world map coordinates
+  Vector2 _latLngToWorld(Vector2 latLng) {
+    final x = (latLng.x + 180) / 360 * WorldMap.mapWidth;
+    final y = (90 - latLng.y) / 180 * WorldMap.mapHeight;
+    return Vector2(x, y);
+  }
+
+  /// Convert world map coordinates to lat/lng
+  Vector2 worldToLatLng(Vector2 world) {
+    final lng = world.x / WorldMap.mapWidth * 360 - 180;
+    final lat = 90 - world.y / WorldMap.mapHeight * 180;
+    return Vector2(lng, lat);
   }
 }

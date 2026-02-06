@@ -39,8 +39,24 @@ class _HomeScreenState extends State<HomeScreen> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // Game canvas (full screen)
+            // Game canvas (full screen, auto-flying plane as background)
             GameWidget(game: _game),
+
+            // Gradient overlay for readability
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    FlitColors.backgroundDark.withOpacity(0.3),
+                    FlitColors.backgroundDark.withOpacity(0.0),
+                    FlitColors.backgroundDark.withOpacity(0.7),
+                  ],
+                  stops: const [0.0, 0.3, 1.0],
+                ),
+              ),
+            ),
 
             // Menu overlay
             if (_isGameReady)
@@ -49,6 +65,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
+                      const Spacer(flex: 1),
+                      // Title
+                      const Text(
+                        'FLIT',
+                        style: TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 52,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'A GEOGRAPHICAL ADVENTURE',
+                        style: TextStyle(
+                          color: FlitColors.gold,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 3,
+                        ),
+                      ),
                       const Spacer(flex: 2),
                       _buildMenuButtons(),
                       const SizedBox(height: 48),
@@ -74,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _MenuButton(
             label: 'Challenge',
             icon: Icons.people_rounded,
@@ -84,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _MenuButton(
             label: 'Leaderboard',
             icon: Icons.leaderboard_rounded,
@@ -94,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _MenuButton(
             label: 'Profile',
             icon: Icons.person_rounded,
@@ -104,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _MenuButton(
             label: 'Shop',
             icon: Icons.storefront_rounded,
@@ -114,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _MenuButton(
             label: 'Debug',
             icon: Icons.bug_report_rounded,
@@ -126,19 +163,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       );
-
-  void _showComingSoon(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature coming in future sprints!'),
-        backgroundColor: FlitColors.backgroundMid,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
-  }
 }
 
 class _MenuButton extends StatelessWidget {
@@ -156,18 +180,22 @@ class _MenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: isPrimary ? FlitColors.accent : FlitColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
+        color: isPrimary
+            ? FlitColors.accent
+            : FlitColors.cardBackground.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(8),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               border: isPrimary
                   ? null
-                  : Border.all(color: FlitColors.cardBorder),
+                  : Border.all(
+                      color: FlitColors.cardBorder.withOpacity(0.5),
+                    ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -175,15 +203,16 @@ class _MenuButton extends StatelessWidget {
                 Icon(
                   icon,
                   color: FlitColors.textPrimary,
-                  size: 24,
+                  size: 22,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Text(
-                  label,
-                  style: const TextStyle(
+                  label.toUpperCase(),
+                  style: TextStyle(
                     color: FlitColors.textPrimary,
-                    fontSize: 18,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
+                    letterSpacing: 1.5,
                   ),
                 ),
               ],

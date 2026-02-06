@@ -5,17 +5,19 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 
-/// The player's bi-plane component.
-/// Handles rendering, tilt animation, and contrails.
+/// The player's plane component.
+///
+/// Renders at a fixed screen position (set by FlitGame).
+/// The world scrolls underneath - the plane doesn't move on screen.
+/// Renders a more realistic, lo-fi top-down aircraft with shadow and detail.
 class PlaneComponent extends PositionComponent with HasGameRef {
   PlaneComponent({
     required this.onAltitudeChanged,
   }) : super(
-          size: Vector2(40, 40),
+          size: Vector2(60, 60),
           anchor: Anchor.center,
         );
 
-  /// Callback when altitude changes
   final void Function(bool isHigh) onAltitudeChanged;
 
   /// Current turning direction: -1 (left), 0 (straight), 1 (right)
@@ -24,54 +26,59 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Current altitude: true = high (fast), false = low (slow, detailed)
   bool _isHighAltitude = true;
 
-  /// Base speed at high altitude (pixels per second)
-  static const double _highAltitudeSpeed = 300;
+  /// Visual heading set by the game (radians)
+  double visualHeading = 0;
+
+  /// Base speed at high altitude (world units per second)
+  static const double highAltitudeSpeed = 200;
 
   /// Speed multiplier at low altitude
-  static const double _lowAltitudeSpeedMultiplier = 0.5;
+  static const double lowAltitudeSpeedMultiplier = 0.5;
 
   /// Turn rate in radians per second
-  static const double _turnRate = 2.5;
+  static const double turnRate = 2.0;
 
-  /// Maximum tilt angle for visual effect
-  static const double _maxTiltAngle = 0.4;
+  /// Maximum bank angle for visual effect
+  static const double _maxBankAngle = 0.35;
 
-  /// Contrail particles
-  final List<ContrailParticle> _contrails = [];
+  /// Current visual bank angle (smoothed)
+  double _currentBank = 0;
+
+  /// Contrail particles (rendered in world space by WorldMap)
+  final List<ContrailParticle> contrails = [];
 
   /// Time accumulator for contrail spawning
   double _contrailTimer = 0;
 
   /// Contrail spawn interval
-  static const double _contrailInterval = 0.03;
+  static const double _contrailInterval = 0.04;
+
+  /// Altitude transition progress (0 = low, 1 = high)
+  double _altitudeTransition = 1.0;
+
+  /// Propeller spin angle
+  double _propAngle = 0;
 
   bool get isHighAltitude => _isHighAltitude;
+  double get turnDirection => _turnDirection;
 
   double get currentSpeed =>
-      _highAltitudeSpeed * (_isHighAltitude ? 1.0 : _lowAltitudeSpeedMultiplier);
-
-  @override
-  Future<void> onLoad() async {
-    await super.onLoad();
-    // Position at center of screen initially
-    position = gameRef.size / 2;
-  }
+      highAltitudeSpeed * (_isHighAltitude ? 1.0 : lowAltitudeSpeedMultiplier);
 
   @override
   void update(double dt) {
     super.update(dt);
 
-    // Update rotation based on turn direction
-    if (_turnDirection != 0) {
-      angle += _turnDirection * _turnRate * dt;
-    }
+    // Smooth bank angle
+    final targetBank = _turnDirection * _maxBankAngle;
+    _currentBank += (targetBank - _currentBank) * min(1.0, dt * 8);
 
-    // Move forward in the direction we're facing
-    final direction = Vector2(cos(angle - pi / 2), sin(angle - pi / 2));
-    position += direction * currentSpeed * dt;
+    // Smooth altitude transition
+    final targetAlt = _isHighAltitude ? 1.0 : 0.0;
+    _altitudeTransition += (targetAlt - _altitudeTransition) * min(1.0, dt * 3);
 
-    // Wrap around screen edges
-    _wrapPosition();
+    // Spin propeller
+    _propAngle += dt * 20;
 
     // Update contrails
     _updateContrails(dt);
@@ -81,167 +88,210 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   void render(Canvas canvas) {
     super.render(canvas);
 
-    // Draw contrails first (behind plane)
-    _renderContrails(canvas);
-
-    // Draw the bi-plane
-    _renderPlane(canvas);
-  }
-
-  void _renderPlane(Canvas canvas) {
-    final paint = Paint()..color = FlitColors.planeBody;
-    final accentPaint = Paint()..color = FlitColors.planeAccent;
-
-    // Save canvas state for tilt effect
     canvas.save();
-
-    // Apply visual tilt based on turn direction
-    final tiltAngle = _turnDirection * _maxTiltAngle;
     canvas.translate(size.x / 2, size.y / 2);
-    canvas.rotate(tiltAngle * 0.3); // Subtle roll effect
-    canvas.translate(-size.x / 2, -size.y / 2);
 
-    // Fuselage (body)
-    final fuselageRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(
-        center: Offset(size.x / 2, size.y / 2),
-        width: 8,
-        height: 28,
-      ),
-      const Radius.circular(4),
-    );
-    canvas.drawRRect(fuselageRect, paint);
+    // Rotate to face heading (adjusted so "up" on screen = forward)
+    canvas.rotate(visualHeading + pi / 2);
 
-    // Wings
-    final wingRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(
-        center: Offset(size.x / 2, size.y / 2 - 2),
-        width: 36,
-        height: 6,
-      ),
-      const Radius.circular(2),
-    );
-    canvas.drawRRect(wingRect, paint);
+    // Apply bank tilt
+    canvas.scale(1.0 - _currentBank.abs() * 0.1, 1.0);
 
-    // Tail
-    final tailRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(
-        center: Offset(size.x / 2, size.y / 2 + 12),
-        width: 16,
-        height: 4,
-      ),
-      const Radius.circular(2),
-    );
-    canvas.drawRRect(tailRect, paint);
+    // Draw shadow (offset based on altitude)
+    final shadowOffset = 3.0 + _altitudeTransition * 5.0;
+    _renderPlaneShadow(canvas, shadowOffset);
 
-    // Accent stripe on fuselage
-    final stripeRect = Rect.fromCenter(
-      center: Offset(size.x / 2, size.y / 2 - 4),
-      width: 6,
-      height: 3,
-    );
-    canvas.drawRect(stripeRect, accentPaint);
-
-    // Propeller (simple circle)
-    canvas.drawCircle(
-      Offset(size.x / 2, size.y / 2 - 14),
-      3,
-      accentPaint,
-    );
+    // Draw the aircraft
+    _renderPlane(canvas);
 
     canvas.restore();
   }
 
-  void _renderContrails(Canvas canvas) {
-    for (final particle in _contrails) {
-      final opacity = (particle.life / particle.maxLife).clamp(0.0, 1.0);
-      final paint = Paint()
-        ..color = FlitColors.contrail.withOpacity(opacity * 0.6);
+  void _renderPlaneShadow(Canvas canvas, double offset) {
+    final shadowPaint = Paint()
+      ..color = FlitColors.planeShadow
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
 
-      canvas.drawCircle(
-        Offset(
-          particle.position.x - position.x + size.x / 2,
-          particle.position.y - position.y + size.y / 2,
-        ),
-        particle.size * (0.5 + opacity * 0.5),
-        paint,
+    canvas.save();
+    canvas.translate(offset, offset);
+
+    // Simplified shadow shape
+    final fuselage = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: Offset.zero, width: 8, height: 34),
+      const Radius.circular(4),
+    );
+    canvas.drawRRect(fuselage, shadowPaint);
+
+    final wings = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: const Offset(0, 2), width: 44, height: 7),
+      const Radius.circular(2),
+    );
+    canvas.drawRRect(wings, shadowPaint);
+
+    canvas.restore();
+  }
+
+  void _renderPlane(Canvas canvas) {
+    final bodyPaint = Paint()..color = FlitColors.planeBody;
+    final wingPaint = Paint()..color = FlitColors.planeWing;
+    final accentPaint = Paint()..color = FlitColors.planeAccent;
+    final outlinePaint = Paint()
+      ..color = FlitColors.border
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+
+    // --- Tail assembly ---
+    // Horizontal stabiliser
+    final tailWing = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: const Offset(0, 15), width: 20, height: 4),
+      const Radius.circular(2),
+    );
+    canvas.drawRRect(tailWing, wingPaint);
+    canvas.drawRRect(tailWing, outlinePaint);
+
+    // Vertical stabiliser (fin)
+    final finPath = Path()
+      ..moveTo(0, 12)
+      ..lineTo(-3, 17)
+      ..lineTo(3, 17)
+      ..close();
+    canvas.drawPath(finPath, accentPaint);
+
+    // --- Fuselage ---
+    final fuselage = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: Offset.zero, width: 8, height: 34),
+      const Radius.circular(4),
+    );
+    canvas.drawRRect(fuselage, bodyPaint);
+    canvas.drawRRect(fuselage, outlinePaint);
+
+    // Fuselage accent stripe
+    final stripe = Rect.fromCenter(
+      center: const Offset(0, -2),
+      width: 6,
+      height: 12,
+    );
+    canvas.drawRect(stripe, accentPaint);
+
+    // Cockpit windshield
+    final cockpitPath = Path()
+      ..moveTo(-2.5, -8)
+      ..lineTo(0, -12)
+      ..lineTo(2.5, -8)
+      ..close();
+    canvas.drawPath(
+      cockpitPath,
+      Paint()..color = FlitColors.oceanShallow,
+    );
+
+    // --- Main wings ---
+    // Wing shape - slightly swept
+    final leftWing = Path()
+      ..moveTo(-3, 0)
+      ..lineTo(-24, 3)
+      ..lineTo(-22, 6)
+      ..lineTo(-3, 4)
+      ..close();
+    canvas.drawPath(leftWing, wingPaint);
+    canvas.drawPath(leftWing, outlinePaint);
+
+    final rightWing = Path()
+      ..moveTo(3, 0)
+      ..lineTo(24, 3)
+      ..lineTo(22, 6)
+      ..lineTo(3, 4)
+      ..close();
+    canvas.drawPath(rightWing, wingPaint);
+    canvas.drawPath(rightWing, outlinePaint);
+
+    // Wing tip accents
+    canvas.drawCircle(const Offset(-23, 4.5), 1.5, accentPaint);
+    canvas.drawCircle(const Offset(23, 4.5), 1.5, accentPaint);
+
+    // --- Engine nacelle / Nose ---
+    canvas.drawCircle(
+      const Offset(0, -15),
+      3.5,
+      Paint()..color = FlitColors.textMuted,
+    );
+
+    // Propeller disc (spinning blur)
+    final propPaint = Paint()
+      ..color = FlitColors.planeBody.withOpacity(0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    canvas.drawCircle(const Offset(0, -16), 5, propPaint);
+
+    // Propeller blades
+    final bladePaint = Paint()
+      ..color = FlitColors.textMuted.withOpacity(0.7)
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
+    final bladeLen = 5.0;
+    for (var i = 0; i < 2; i++) {
+      final a = _propAngle + i * pi;
+      canvas.drawLine(
+        Offset(0 + cos(a) * bladeLen, -16 + sin(a) * bladeLen),
+        Offset(0 - cos(a) * bladeLen, -16 - sin(a) * bladeLen),
+        bladePaint,
       );
     }
   }
 
   void _updateContrails(double dt) {
-    // Spawn new contrail particles
     _contrailTimer += dt;
     if (_contrailTimer >= _contrailInterval) {
       _contrailTimer = 0;
       _spawnContrailParticle();
     }
 
-    // Update existing particles
-    for (var i = _contrails.length - 1; i >= 0; i--) {
-      _contrails[i].life -= dt;
-      if (_contrails[i].life <= 0) {
-        _contrails.removeAt(i);
+    for (var i = contrails.length - 1; i >= 0; i--) {
+      contrails[i].life -= dt;
+      if (contrails[i].life <= 0) {
+        contrails.removeAt(i);
       }
     }
   }
 
   void _spawnContrailParticle() {
-    // Spawn from wing tips
-    final leftWingOffset = Vector2(-16, 0);
-    final rightWingOffset = Vector2(16, 0);
+    // Contrails spawn from wing tips in world space
+    // The game will convert these to world coordinates
+    final leftOffset = Vector2(-20, 4);
+    final rightOffset = Vector2(20, 4);
 
-    // Rotate offsets by current angle
-    final cosA = cos(angle);
-    final sinA = sin(angle);
+    // Rotate by visual heading
+    final cosA = cos(visualHeading + pi / 2);
+    final sinA = sin(visualHeading + pi / 2);
 
     final leftRotated = Vector2(
-      leftWingOffset.x * cosA - leftWingOffset.y * sinA,
-      leftWingOffset.x * sinA + leftWingOffset.y * cosA,
+      leftOffset.x * cosA - leftOffset.y * sinA,
+      leftOffset.x * sinA + leftOffset.y * cosA,
     );
     final rightRotated = Vector2(
-      rightWingOffset.x * cosA - rightWingOffset.y * sinA,
-      rightWingOffset.x * sinA + rightWingOffset.y * cosA,
+      rightOffset.x * cosA - rightOffset.y * sinA,
+      rightOffset.x * sinA + rightOffset.y * cosA,
     );
 
-    _contrails.add(ContrailParticle(
-      position: position + leftRotated,
-      size: 3 + Random().nextDouble() * 2,
+    // Store as screen-relative offset from plane center
+    contrails.add(ContrailParticle(
+      screenOffset: leftRotated,
+      size: 2 + Random().nextDouble() * 1.5,
     ));
-    _contrails.add(ContrailParticle(
-      position: position + rightRotated,
-      size: 3 + Random().nextDouble() * 2,
+    contrails.add(ContrailParticle(
+      screenOffset: rightRotated,
+      size: 2 + Random().nextDouble() * 1.5,
     ));
   }
 
-  void _wrapPosition() {
-    final screenSize = gameRef.size;
-
-    if (position.x < -size.x) {
-      position.x = screenSize.x + size.x;
-    } else if (position.x > screenSize.x + size.x) {
-      position.x = -size.x;
-    }
-
-    if (position.y < -size.y) {
-      position.y = screenSize.y + size.y;
-    } else if (position.y > screenSize.y + size.y) {
-      position.y = -size.y;
-    }
-  }
-
-  /// Set the turn direction: -1 (left), 0 (straight), 1 (right)
   void setTurnDirection(double direction) {
     _turnDirection = direction.clamp(-1, 1);
   }
 
-  /// Toggle between high and low altitude
   void toggleAltitude() {
     _isHighAltitude = !_isHighAltitude;
     onAltitudeChanged(_isHighAltitude);
   }
 
-  /// Set specific altitude
   void setAltitude({required bool high}) {
     if (_isHighAltitude != high) {
       _isHighAltitude = high;
@@ -253,12 +303,13 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 /// A single contrail particle
 class ContrailParticle {
   ContrailParticle({
-    required this.position,
+    required this.screenOffset,
     required this.size,
-    this.maxLife = 0.8,
+    this.maxLife = 1.0,
   }) : life = maxLife;
 
-  final Vector2 position;
+  /// Offset from the plane's screen position when spawned
+  final Vector2 screenOffset;
   final double size;
   final double maxLife;
   double life;
