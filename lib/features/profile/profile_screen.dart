@@ -131,7 +131,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _editProfile() {
-    final currentPlayer = ref.read(accountProvider).player ?? Player.guest();
+    final currentPlayer = ref.read(accountProvider).currentPlayer;
     final displayNameController =
         TextEditingController(text: currentPlayer.displayName ?? '');
     final usernameController = TextEditingController(text: currentPlayer.username);
@@ -263,17 +263,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 if (hasError) return;
 
                 // Update player via AccountProvider
-                final currentPlayer = ref.read(accountProvider).player;
-                if (currentPlayer != null) {
-                  ref.read(accountProvider.notifier).switchAccount(
-                    currentPlayer.copyWith(
-                      displayName:
-                          displayName.isEmpty ? null : displayName,
-                      username:
-                          username.isEmpty ? currentPlayer.username : username,
-                    ),
-                  );
-                }
+                ref.read(accountProvider.notifier).switchAccount(
+                  currentPlayer.copyWith(
+                    displayName:
+                        displayName.isEmpty ? null : displayName,
+                    username:
+                        username.isEmpty ? currentPlayer.username : username,
+                  ),
+                );
                 Navigator.of(dialogContext).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -348,7 +345,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final account = ref.watch(accountProvider);
-    final player = account.player ?? Player.guest();
+    final player = account.currentPlayer;
     final avatarConfig = ref.watch(avatarProvider);
 
     return Scaffold(
