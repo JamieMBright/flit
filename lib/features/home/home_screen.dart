@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/flit_game.dart';
+import '../friends/friends_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
 import '../play/play_screen.dart';
 import '../profile/profile_screen.dart';
@@ -75,7 +76,11 @@ class _HomeScreenState extends State<HomeScreen> {
           _MenuButton(
             label: 'Challenge',
             icon: Icons.people_rounded,
-            onTap: () => _showComingSoon('Challenge mode'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const FriendsScreen(),
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           _MenuButton(
