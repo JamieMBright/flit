@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/flit_theme.dart';
-import 'features/home/home_screen.dart';
+import 'features/auth/login_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +22,7 @@ class FlitApp extends StatelessWidget {
       title: 'Flit',
       debugShowCheckedModeBanner: false,
       theme: FlitTheme.dark,
-      home: const HomeScreen(),
+      home: const LoginScreen(),
     );
   }
 }

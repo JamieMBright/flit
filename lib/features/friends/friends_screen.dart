@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/friend.dart';
+import '../play/play_screen.dart';
 
 /// Friends list screen with add friend and H2H records.
 class FriendsScreen extends StatefulWidget {
@@ -61,12 +62,15 @@ class _FriendsScreenState extends State<FriendsScreen> {
     ),
   };
 
+  // Track pending challenges
+  final Set<String> _pendingChallenges = {};
+
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: FlitColors.backgroundDark,
         appBar: AppBar(
           backgroundColor: FlitColors.backgroundMid,
-          title: const Text('Friends'),
+          title: const Text('Friends & Challenges'),
           centerTitle: true,
           actions: [
             IconButton(
@@ -83,9 +87,11 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 itemBuilder: (context, index) {
                   final friend = _friends[index];
                   final h2h = _h2hRecords[friend.playerId];
+                  final hasPending = _pendingChallenges.contains(friend.playerId);
                   return _FriendTile(
                     friend: friend,
                     h2h: h2h,
+                    hasPendingChallenge: hasPending,
                     onChallenge: () => _challengeFriend(friend),
                     onViewProfile: () => _viewFriendProfile(friend),
                   );
@@ -98,7 +104,6 @@ class _FriendsScreenState extends State<FriendsScreen> {
       context: context,
       builder: (context) => _AddFriendDialog(
         onAdd: (username) {
-          // TODO: Send friend request
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -112,30 +117,312 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   void _challengeFriend(Friend friend) {
-    // TODO: Start challenge
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Challenge sent to ${friend.name}!'),
-        backgroundColor: FlitColors.accent,
+    // Navigate directly to play screen for round 1
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => PlayScreen(
+          challengeFriendName: friend.name,
+        ),
+      ),
+    ).then((_) {
+      // After returning from gameplay, mark challenge as sent
+      if (mounted) {
+        setState(() {
+          _pendingChallenges.add(friend.playerId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Challenge sent! Waiting for ${friend.name} to play...'),
+            backgroundColor: FlitColors.accent,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    });
+  }
+
+  void _showSendCoinsDialog(Friend friend) {
+    final controller = TextEditingController();
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.monetization_on,
+                color: FlitColors.gold,
+                size: 40,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Send Coins to ${friend.name}',
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 20,
+                ),
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  hintText: '0',
+                  hintStyle: const TextStyle(color: FlitColors.textMuted),
+                  filled: true,
+                  fillColor: FlitColors.backgroundMid,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Minimum 10 coins',
+                style: TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: FlitColors.textMuted),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      final amount = int.tryParse(controller.text) ?? 0;
+                      if (amount >= 10) {
+                        Navigator.of(dialogContext).pop();
+                        // TODO: Deduct from player balance via provider
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Sent $amount coins to ${friend.name}!'),
+                            backgroundColor: FlitColors.success,
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.send, size: 16),
+                    label: const Text('Send'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.gold,
+                      foregroundColor: FlitColors.backgroundDark,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   void _viewFriendProfile(Friend friend) {
-    // TODO: Navigate to friend profile
+    // Show friend profile bottom sheet
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: FlitColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        final h2h = _h2hRecords[friend.playerId];
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: FlitColors.textMuted,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Avatar
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: FlitColors.accent,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    friend.name[0].toUpperCase(),
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                friend.name,
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '@${friend.username}',
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // H2H record
+              if (h2h != null)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: FlitColors.backgroundMid,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _MiniStat('Wins', '${h2h.wins}', FlitColors.success),
+                      _MiniStat('Losses', '${h2h.losses}', FlitColors.error),
+                      _MiniStat('Total', '${h2h.totalChallenges}', FlitColors.textSecondary),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 20),
+              // Challenge button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _challengeFriend(friend);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FlitColors.accent,
+                    foregroundColor: FlitColors.textPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'CHALLENGE',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Send Coins button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _showSendCoinsDialog(friend);
+                  },
+                  icon: const Icon(
+                    Icons.monetization_on,
+                    size: 18,
+                    color: FlitColors.gold,
+                  ),
+                  label: const Text(
+                    'SEND COINS',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: FlitColors.gold,
+                    side: const BorderSide(color: FlitColors.gold),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
   }
+}
+
+class _MiniStat extends StatelessWidget {
+  const _MiniStat(this.label, this.value, this.color);
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              color: FlitColors.textMuted,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      );
 }
 
 class _FriendTile extends StatelessWidget {
   const _FriendTile({
     required this.friend,
     this.h2h,
+    this.hasPendingChallenge = false,
     required this.onChallenge,
     required this.onViewProfile,
   });
 
   final Friend friend;
   final HeadToHead? h2h;
+  final bool hasPendingChallenge;
   final VoidCallback onChallenge;
   final VoidCallback onViewProfile;
 
@@ -175,7 +462,6 @@ class _FriendTile extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // Online indicator
                     if (friend.isOnline)
                       Positioned(
                         right: 0,
@@ -230,22 +516,40 @@ class _FriendTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Challenge button
-                ElevatedButton(
-                  onPressed: onChallenge,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FlitColors.accent,
-                    foregroundColor: FlitColors.textPrimary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
+                // Challenge button or pending status
+                if (hasPendingChallenge)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: FlitColors.gold.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: FlitColors.gold.withOpacity(0.3)),
                     ),
+                    child: const Text(
+                      'Waiting...',
+                      style: TextStyle(
+                        color: FlitColors.gold,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                else
+                  ElevatedButton(
+                    onPressed: onChallenge,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.accent,
+                      foregroundColor: FlitColors.textPrimary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Challenge'),
                   ),
-                  child: const Text('Challenge'),
-                ),
               ],
             ),
           ),

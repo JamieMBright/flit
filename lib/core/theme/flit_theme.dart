@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'flit_colors.dart';
 
 /// Theme configuration for Flit.
-/// Low-fi aesthetic with calming, immersive feel.
+/// Pop art lo-fi realism with vintage atlas warmth.
 abstract final class FlitTheme {
   static ThemeData get dark => ThemeData(
         useMaterial3: true,
@@ -11,7 +11,7 @@ abstract final class FlitTheme {
         scaffoldBackgroundColor: FlitColors.backgroundDark,
         colorScheme: const ColorScheme.dark(
           primary: FlitColors.accent,
-          secondary: FlitColors.accentLight,
+          secondary: FlitColors.gold,
           surface: FlitColors.backgroundMid,
           error: FlitColors.error,
         ),
@@ -73,13 +73,14 @@ abstract final class FlitTheme {
           style: ElevatedButton.styleFrom(
             backgroundColor: FlitColors.accent,
             foregroundColor: FlitColors.textPrimary,
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             textStyle: const TextStyle(
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
+              letterSpacing: 1,
             ),
           ),
         ),
@@ -87,9 +88,9 @@ abstract final class FlitTheme {
           style: OutlinedButton.styleFrom(
             foregroundColor: FlitColors.textPrimary,
             side: const BorderSide(color: FlitColors.cardBorder),
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
         ),
@@ -97,7 +98,7 @@ abstract final class FlitTheme {
           color: FlitColors.cardBackground,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             side: const BorderSide(color: FlitColors.cardBorder),
           ),
         ),

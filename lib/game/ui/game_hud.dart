@@ -4,6 +4,7 @@ import '../../core/theme/flit_colors.dart';
 import '../clues/clue_types.dart';
 
 /// Game HUD overlay showing clues, timer, altitude indicator.
+/// Styled with a vintage atlas / lo-fi pop art aesthetic.
 class GameHud extends StatelessWidget {
   const GameHud({
     super.key,
@@ -65,9 +66,9 @@ class _ClueCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: FlitColors.cardBackground.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.cardBorder),
+          color: FlitColors.cardBackground.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,11 +77,11 @@ class _ClueCard extends StatelessWidget {
             // Clue type label
             Text(
               _clueTypeLabel(clue.type),
-              style: const TextStyle(
-                color: FlitColors.textMuted,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1,
+              style: TextStyle(
+                color: FlitColors.gold,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.5,
               ),
             ),
             const SizedBox(height: 4),
@@ -95,7 +96,7 @@ class _ClueCard extends StatelessWidget {
                 clue.displayText,
                 style: const TextStyle(
                   color: FlitColors.textPrimary,
-                  fontSize: 14,
+                  fontSize: 13,
                   height: 1.4,
                 ),
               ),
@@ -133,16 +134,16 @@ class _TimerDisplay extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: FlitColors.cardBackground.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: FlitColors.cardBorder),
+        color: FlitColors.cardBackground.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
       ),
       child: Text(
         '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}.${millis.toString().padLeft(2, '0')}',
         style: const TextStyle(
           color: FlitColors.textPrimary,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
+          fontSize: 18,
+          fontWeight: FontWeight.w500,
           fontFamily: 'monospace',
         ),
       ),
@@ -163,13 +164,13 @@ class _AltitudeIndicator extends StatelessWidget {
   Widget build(BuildContext context) => GestureDetector(
         onTap: onToggle,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(
-            color: FlitColors.cardBackground.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(24),
+            color: FlitColors.cardBackground.withOpacity(0.85),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isHigh ? FlitColors.accent : FlitColors.success,
-              width: 2,
+              width: 1.5,
             ),
           ),
           child: Row(
@@ -178,16 +179,16 @@ class _AltitudeIndicator extends StatelessWidget {
               Icon(
                 isHigh ? Icons.flight_takeoff : Icons.flight_land,
                 color: isHigh ? FlitColors.accent : FlitColors.success,
-                size: 20,
+                size: 18,
               ),
               const SizedBox(width: 8),
               Text(
-                isHigh ? 'HIGH ALTITUDE' : 'LOW ALTITUDE',
+                isHigh ? 'CRUISING' : 'DESCENDING',
                 style: TextStyle(
                   color: isHigh ? FlitColors.accent : FlitColors.success,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 1,
+                  letterSpacing: 1.2,
                 ),
               ),
             ],
