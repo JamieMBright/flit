@@ -36,9 +36,90 @@
       overflow: hidden;
       background-color: #1A2A32;
     }
+    #loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      flex-direction: column;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #F0E8DC;
+    }
+    #loading .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #264050;
+      border-top-color: #D4654A;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    #loading .label {
+      margin-top: 14px;
+      font-size: 13px;
+      opacity: 0.6;
+      letter-spacing: 2px;
+    }
+    #error-box {
+      display: none;
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      max-height: 40vh;
+      overflow-y: auto;
+      background: #7a1616ee;
+      color: #fff;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 14px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      z-index: 99999;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
+  <!-- Loading indicator (hidden once Flutter renders) -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <div class="label">LOADING FLIT...</div>
+  </div>
+
+  <!-- Error display for JS-level errors (before Flutter loads) -->
+  <div id="error-box"></div>
+
+  <script>
+    // Capture JS-level errors and display them visually.
+    var errorBox = document.getElementById('error-box');
+    var errors = [];
+    function showError(msg) {
+      errors.push(msg);
+      errorBox.style.display = 'block';
+      errorBox.textContent = errors.join('\n\n');
+    }
+
+    window.addEventListener('error', function(e) {
+      showError('[JS Error] ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      showError('[Promise Rejection] ' + (e.reason || e));
+    });
+
+    // After 10 seconds, if loading is still visible, show a hint.
+    setTimeout(function() {
+      var loading = document.getElementById('loading');
+      if (loading && loading.style.display !== 'none') {
+        var label = loading.querySelector('.label');
+        if (label) {
+          label.textContent = 'Still loading... check console for errors.';
+          label.style.color = '#D4A944';
+        }
+      }
+    }, 10000);
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
