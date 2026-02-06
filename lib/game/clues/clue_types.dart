@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import '../map/country_data.dart';
+import '../map/region.dart';
 
 /// Types of clues that can be shown to the player.
 enum ClueType {
@@ -94,6 +95,75 @@ class Clue {
         return Clue.capital(countryCode);
       case ClueType.stats:
         return Clue.stats(countryCode);
+    }
+  }
+
+  /// Create a clue for a regional area (state, county, island)
+  factory Clue.regionalArea(RegionalArea area) {
+    // For regional areas, randomly choose between available clue types
+    final random = Random();
+    final availableTypes = <ClueType>[ClueType.outline];
+
+    // Add capital clue if area has a capital
+    if (area.capital != null) {
+      availableTypes.add(ClueType.capital);
+    }
+
+    // Add stats clue if area has population
+    if (area.population != null) {
+      availableTypes.add(ClueType.stats);
+    }
+
+    final selectedType = availableTypes[random.nextInt(availableTypes.length)];
+
+    switch (selectedType) {
+      case ClueType.outline:
+        return Clue(
+          type: ClueType.outline,
+          targetCountryCode: area.code,
+          displayData: {
+            'points': area.points,
+            'areaName': area.name,
+          },
+        );
+      case ClueType.capital:
+        return Clue(
+          type: ClueType.capital,
+          targetCountryCode: area.code,
+          displayData: {
+            'capitalName': area.capital ?? 'Unknown',
+            'areaName': area.name,
+          },
+        );
+      case ClueType.stats:
+        final population = area.population ?? 0;
+        String popString;
+        if (population >= 1000000) {
+          popString = '${(population / 1000000).toStringAsFixed(1)}M';
+        } else if (population >= 1000) {
+          popString = '${(population / 1000).toStringAsFixed(0)}K';
+        } else {
+          popString = population.toString();
+        }
+        return Clue(
+          type: ClueType.stats,
+          targetCountryCode: area.code,
+          displayData: {
+            'population': popString,
+            'areaName': area.name,
+            if (area.funFact != null) 'funFact': area.funFact,
+          },
+        );
+      default:
+        // Fallback to outline
+        return Clue(
+          type: ClueType.outline,
+          targetCountryCode: area.code,
+          displayData: {
+            'points': area.points,
+            'areaName': area.name,
+          },
+        );
     }
   }
 

@@ -5,8 +5,9 @@ import '../../core/theme/flit_colors.dart';
 import '../../game/flit_game.dart';
 import '../friends/friends_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
-import '../play/play_screen.dart';
+import '../play/region_select_screen.dart';
 import '../profile/profile_screen.dart';
+import '../shop/shop_screen.dart';
 
 /// Home screen with game canvas and menu overlay.
 class HomeScreen extends StatefulWidget {
@@ -68,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
             isPrimary: true,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (context) => const PlayScreen(),
+                builder: (context) => const RegionSelectScreen(),
               ),
             ),
           ),
@@ -99,6 +100,16 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (context) => const ProfileScreen(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _MenuButton(
+            label: 'Shop',
+            icon: Icons.storefront_rounded,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const ShopScreen(),
               ),
             ),
           ),

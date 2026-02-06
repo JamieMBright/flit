@@ -5,12 +5,19 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/flit_game.dart';
+import '../../game/map/region.dart';
 import '../../game/session/game_session.dart';
 import '../../game/ui/game_hud.dart';
 
 /// Main play screen with game canvas and HUD overlay.
 class PlayScreen extends StatefulWidget {
-  const PlayScreen({super.key});
+  const PlayScreen({
+    super.key,
+    this.region = GameRegion.world,
+  });
+
+  /// The region to play in.
+  final GameRegion region;
 
   @override
   State<PlayScreen> createState() => _PlayScreenState();
@@ -58,7 +65,7 @@ class _PlayScreenState extends State<PlayScreen> {
   }
 
   void _startNewGame() {
-    _session = GameSession.random();
+    _session = GameSession.random(region: widget.region);
     _elapsed = Duration.zero;
 
     // Start timer
@@ -196,7 +203,7 @@ class _ResultDialog extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              session.targetCountry.name,
+              session.targetName,
               style: const TextStyle(
                 color: FlitColors.accent,
                 fontSize: 18,
