@@ -153,7 +153,7 @@ class _LeaderboardRow extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _rankColor.withValues(alpha: 0.1),
+        color: _rankColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: entry.rank <= 3 ? _rankColor : FlitColors.cardBorder,
@@ -250,7 +250,7 @@ class _EmptyState extends StatelessWidget {
             Icon(
               Icons.leaderboard_outlined,
               size: 64,
-              color: FlitColors.textMuted.withValues(alpha: 0.5),
+              color: FlitColors.textMuted.withOpacity(0.5),
             ),
             const SizedBox(height: 16),
             const Text(

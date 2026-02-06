@@ -84,7 +84,7 @@ class _RegionCard extends StatelessWidget {
                     height: 60,
                     decoration: BoxDecoration(
                       color: isUnlocked
-                          ? FlitColors.accent.withValues(alpha: 0.2)
+                          ? FlitColors.accent.withOpacity(0.2)
                           : FlitColors.backgroundMid,
                       borderRadius: BorderRadius.circular(12),
                     ),

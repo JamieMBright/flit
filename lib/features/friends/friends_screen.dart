@@ -348,7 +348,7 @@ class _EmptyState extends StatelessWidget {
             Icon(
               Icons.people_outline,
               size: 64,
-              color: FlitColors.textMuted.withValues(alpha: 0.5),
+              color: FlitColors.textMuted.withOpacity(0.5),
             ),
             const SizedBox(height: 16),
             const Text(

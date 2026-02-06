@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
@@ -20,7 +18,7 @@ class WorldMap extends Component with HasGameRef {
   Vector2 _cameraOffset = Vector2.zero();
 
   /// Scale factor for the map
-  double _scale = 1.0;
+  final double _scale = 1.0;
 
   /// Map dimensions (Mercator projection)
   static const double mapWidth = 3600;

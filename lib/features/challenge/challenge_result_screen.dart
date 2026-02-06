@@ -321,9 +321,9 @@ class _RewardsDisplay extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: FlitColors.warning.withValues(alpha: 0.1),
+          color: FlitColors.warning.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.warning.withValues(alpha: 0.3)),
+          border: Border.all(color: FlitColors.warning.withOpacity(0.3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

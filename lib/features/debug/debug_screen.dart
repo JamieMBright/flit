@@ -152,7 +152,7 @@ class _AccountCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Material(
         color: isSelected
-            ? FlitColors.accent.withValues(alpha: 0.2)
+            ? FlitColors.accent.withOpacity(0.2)
             : FlitColors.cardBackground,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(

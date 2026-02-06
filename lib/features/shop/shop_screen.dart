@@ -59,7 +59,7 @@ class _ShopScreenState extends State<ShopScreen>
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               margin: const EdgeInsets.only(right: 16),
               decoration: BoxDecoration(
-                color: FlitColors.warning.withValues(alpha: 0.2),
+                color: FlitColors.warning.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -366,7 +366,7 @@ class _CosmeticCard extends StatelessWidget {
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: FlitColors.backgroundDark.withValues(alpha: 0.7),
+                    color: FlitColors.backgroundDark.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Center(

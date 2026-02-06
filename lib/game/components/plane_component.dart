@@ -158,7 +158,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     for (final particle in _contrails) {
       final opacity = (particle.life / particle.maxLife).clamp(0.0, 1.0);
       final paint = Paint()
-        ..color = FlitColors.contrail.withValues(alpha: opacity * 0.6);
+        ..color = FlitColors.contrail.withOpacity(opacity * 0.6);
 
       canvas.drawCircle(
         Offset(

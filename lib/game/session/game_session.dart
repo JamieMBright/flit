@@ -151,7 +151,7 @@ class GameSession {
     final country = CountryData.countries[countryIndex];
 
     // Pick clue type based on seed
-    final clueTypes = ClueType.values;
+    const clueTypes = ClueType.values;
     final clueTypeIndex = random.nextInt(clueTypes.length);
     final clueType = clueTypes[clueTypeIndex];
 

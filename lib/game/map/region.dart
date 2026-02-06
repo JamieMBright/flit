@@ -132,7 +132,7 @@ abstract class RegionalData {
   }
 
   // All 50 US States
-  static const List<RegionalArea> _usStates = [
+  static final List<RegionalArea> _usStates = [
     // By population (largest first)
     RegionalArea(code: 'CA', name: 'California', capital: 'Sacramento', population: 39538223, points: [Vector2(-124.4, 42), Vector2(-120, 42), Vector2(-120, 39), Vector2(-117, 33), Vector2(-117.1, 32.5), Vector2(-120, 34), Vector2(-122, 37), Vector2(-124, 40), Vector2(-124.4, 42)]),
     RegionalArea(code: 'TX', name: 'Texas', capital: 'Austin', population: 29145505, points: [Vector2(-106.6, 32), Vector2(-103, 32), Vector2(-103, 36.5), Vector2(-100, 36.5), Vector2(-94, 34), Vector2(-94, 30), Vector2(-97, 26), Vector2(-100, 28), Vector2(-104, 29), Vector2(-106.5, 31.8), Vector2(-106.6, 32)]),
@@ -187,7 +187,7 @@ abstract class RegionalData {
   ];
 
   // UK Counties - England (48), Scotland (33), Wales (13), N. Ireland (6) = 100
-  static const List<RegionalArea> _ukCounties = [
+  static final List<RegionalArea> _ukCounties = [
     // England - Metropolitan Counties & Greater London
     RegionalArea(code: 'GLA', name: 'Greater London', capital: 'London', population: 8982000, points: [Vector2(-0.5, 51.7), Vector2(0.3, 51.7), Vector2(0.3, 51.3), Vector2(-0.5, 51.3), Vector2(-0.5, 51.7)]),
     RegionalArea(code: 'WMD', name: 'West Midlands', capital: 'Birmingham', population: 2919600, points: [Vector2(-2.2, 52.7), Vector2(-1.5, 52.7), Vector2(-1.5, 52.3), Vector2(-2.2, 52.3), Vector2(-2.2, 52.7)]),
@@ -293,7 +293,7 @@ abstract class RegionalData {
   ];
 
   // Caribbean Islands
-  static const List<RegionalArea> _caribbeanIslands = [
+  static final List<RegionalArea> _caribbeanIslands = [
     RegionalArea(code: 'CU', name: 'Cuba', capital: 'Havana', population: 11326616, points: [Vector2(-85, 22), Vector2(-84, 23.2), Vector2(-80, 23), Vector2(-75, 20.5), Vector2(-74.1, 20), Vector2(-77, 19.8), Vector2(-84.5, 21.5), Vector2(-85, 22)]),
     RegionalArea(code: 'JM', name: 'Jamaica', capital: 'Kingston', population: 2961167, points: [Vector2(-78.4, 18.5), Vector2(-76, 18.5), Vector2(-76, 17.7), Vector2(-78.4, 17.7), Vector2(-78.4, 18.5)]),
     RegionalArea(code: 'HT', name: 'Haiti', capital: 'Port-au-Prince', population: 11402528, points: [Vector2(-74.5, 20), Vector2(-72, 20), Vector2(-71.6, 18), Vector2(-74.5, 18), Vector2(-74.5, 20)]),
@@ -313,7 +313,7 @@ abstract class RegionalData {
   ];
 
   // All 32 Ireland Counties (26 Republic + 6 Northern Ireland)
-  static const List<RegionalArea> _irelandCounties = [
+  static final List<RegionalArea> _irelandCounties = [
     // Leinster (12 counties)
     RegionalArea(code: 'D', name: 'Dublin', capital: 'Dublin', population: 1426220, points: [Vector2(-6.5, 53.5), Vector2(-6.05, 53.5), Vector2(-6.05, 53.2), Vector2(-6.5, 53.2), Vector2(-6.5, 53.5)]),
     RegionalArea(code: 'WW', name: 'Wicklow', capital: 'Wicklow', population: 142425, points: [Vector2(-6.7, 53.2), Vector2(-6, 53.2), Vector2(-6, 52.8), Vector2(-6.7, 52.8), Vector2(-6.7, 53.2)]),

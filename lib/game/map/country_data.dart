@@ -35,7 +35,7 @@ class CityData {
 /// Simplified shapes derived from Natural Earth (Public Domain).
 abstract class CountryData {
   // Simplified country outlines (major countries only for Sprint 2)
-  static const List<CountryShape> countries = [
+  static final List<CountryShape> countries = [
     // North America
     CountryShape(
       code: 'US',
@@ -264,7 +264,7 @@ abstract class CountryData {
   ];
 
   // Major cities for low-altitude view
-  static const List<CityData> majorCities = [
+  static final List<CityData> majorCities = [
     // North America
     CityData(name: 'New York', countryCode: 'US', location: Vector2(-74, 40.7)),
     CityData(name: 'Los Angeles', countryCode: 'US', location: Vector2(-118.2, 34)),

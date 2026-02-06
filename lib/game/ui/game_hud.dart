@@ -65,7 +65,7 @@ class _ClueCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: FlitColors.cardBackground.withValues(alpha: 0.9),
+          color: FlitColors.cardBackground.withOpacity(0.9),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: FlitColors.cardBorder),
         ),
@@ -133,7 +133,7 @@ class _TimerDisplay extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: FlitColors.cardBackground.withValues(alpha: 0.9),
+        color: FlitColors.cardBackground.withOpacity(0.9),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: FlitColors.cardBorder),
       ),
@@ -165,7 +165,7 @@ class _AltitudeIndicator extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            color: FlitColors.cardBackground.withValues(alpha: 0.9),
+            color: FlitColors.cardBackground.withOpacity(0.9),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: isHigh ? FlitColors.accent : FlitColors.success,
