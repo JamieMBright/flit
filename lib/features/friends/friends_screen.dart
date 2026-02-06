@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/models/cosmetic.dart';
 import '../../data/models/friend.dart';
 import '../../data/providers/account_provider.dart';
 import '../play/play_screen.dart';
@@ -119,11 +120,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   }
 
   void _challengeFriend(Friend friend) {
+    final planeId = ref.read(equippedPlaneIdProvider);
+    final planeColors = CosmeticCatalog.getById(planeId)?.colorScheme;
     // Navigate directly to play screen for round 1
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (context) => PlayScreen(
           challengeFriendName: friend.name,
+          planeColorScheme: planeColors,
         ),
       ),
     ).then((_) {

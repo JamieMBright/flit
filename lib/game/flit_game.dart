@@ -31,6 +31,7 @@ class FlitGame extends FlameGame
     this.onAltitudeChanged,
     this.fuelBoostMultiplier = 1.0,
     this.isChallenge = false,
+    this.planeColorScheme,
   });
 
   final VoidCallback? onGameReady;
@@ -41,6 +42,9 @@ class FlitGame extends FlameGame
 
   /// Whether this is a H2H challenge (disables license bonuses for fair play).
   final bool isChallenge;
+
+  /// Color scheme for the equipped plane cosmetic.
+  final Map<String, int>? planeColorScheme;
 
   late PlaneComponent _plane;
   late WorldMap _worldMap;
@@ -101,6 +105,7 @@ class FlitGame extends FlameGame
                 error: e, stackTrace: st);
           }
         },
+        colorScheme: planeColorScheme,
       );
       await add(_plane);
 
@@ -157,10 +162,10 @@ class FlitGame extends FlameGame
 
     _worldPosition = Vector2(
       _normalizeLng(newLng * _rad2deg),
-      newLat * _rad2deg,
+      (newLat * _rad2deg).clamp(-85.0, 85.0),
     );
 
-    // Update heading based on turn input
+    // Update heading based on turn input (left/right only)
     _heading += _plane.turnDirection * PlaneComponent.turnRate * dt;
 
     // Tell WorldMap where we are
@@ -187,12 +192,20 @@ class FlitGame extends FlameGame
   }
 
   /// Drag sensitivity multiplier.
-  static const double _dragSensitivity = 0.2;
+  static const double _dragSensitivity = 0.5;
+
+  /// Minimum drag delta to register as a turn.
+  static const double _dragDeadZone = 0.5;
 
   @override
   void onHorizontalDragUpdate(DragUpdateInfo info) {
-    _plane.setTurnDirection(
-        (info.delta.global.x * _dragSensitivity).clamp(-1, 1));
+    final dx = info.delta.global.x;
+    if (dx.abs() < _dragDeadZone) {
+      // In dead zone - don't change direction, let it coast
+      return;
+    }
+    // Map the drag to -1..+1 with higher sensitivity
+    _plane.setTurnDirection((dx * _dragSensitivity).clamp(-1, 1));
   }
 
   @override

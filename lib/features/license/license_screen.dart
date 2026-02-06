@@ -418,14 +418,14 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
         ),
         const Spacer(flex: 1),
 
-        // --- Stat bars: coins, fuel, clue type, clue chance ---
+        // --- Stat bars: coins, fuel, clue chance, clue type ---
         _CompactStatBar(
           label: _license.coinBoostLabel,
           icon: Icons.monetization_on,
           value: _license.coinBoost,
           shimmer: _shimmerController,
           onTap: () => _showEffectPopup(
-            'Coin Boost',
+            'Extra Coins',
             'Earn ${_license.coinBoost}% more coins from every game you play. Stacks with daily bonuses.',
             Icons.monetization_on,
           ),
@@ -437,22 +437,9 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
           value: _license.fuelBoost,
           shimmer: _shimmerController,
           onTap: () => _showEffectPopup(
-            'Fuel Boost',
+            'Fuel Efficiency',
             'Extends your fuel/speed-boost duration in solo play by ${_license.fuelBoost}%. More fuel means more time to guess.',
             Icons.local_gas_station,
-          ),
-        ),
-        const SizedBox(height: 4),
-        _CompactStatBar(
-          label: '${_license.preferredClueType[0].toUpperCase()}${_license.preferredClueType.substring(1)}',
-          icon: Icons.lightbulb_outline,
-          value: _license.clueBoost,
-          shimmer: _shimmerController,
-          showPercentage: false,
-          onTap: () => _showEffectPopup(
-            'Clue Type',
-            'Your preferred clue type is "${_license.preferredClueType}". You\'ll receive this type of clue more often when playing.',
-            Icons.lightbulb_outline,
           ),
         ),
         const SizedBox(height: 4),
@@ -465,6 +452,19 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
             'Clue Chance',
             'Increases the chance of receiving additional clues by ${_license.clueChance}%. More clues means more information to help you guess.',
             Icons.casino,
+          ),
+        ),
+        const SizedBox(height: 4),
+        _CompactStatBar(
+          label: _license.clueBoostLabel,
+          icon: Icons.lightbulb_outline,
+          value: _license.clueBoost,
+          shimmer: _shimmerController,
+          showPercentage: false,
+          onTap: () => _showEffectPopup(
+            'Clue Type',
+            'Your preferred clue type is "${_license.preferredClueType}". You\'ll receive this type of clue ${_license.clueBoost}% more often when playing.',
+            Icons.lightbulb_outline,
           ),
         ),
 
@@ -846,7 +846,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
               TextSpan(
                 children: [
                   const TextSpan(
-                    text: 'Not enough coins. Play to earn more or ',
+                    text: 'Not enough coins. Play or ',
                     style: TextStyle(color: FlitColors.error, fontSize: 12),
                   ),
                   WidgetSpan(
@@ -869,6 +869,10 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
                         ),
                       ),
                     ),
+                  ),
+                  const TextSpan(
+                    text: ' more coins.',
+                    style: TextStyle(color: FlitColors.error, fontSize: 12),
                   ),
                 ],
               ),
@@ -1000,22 +1004,24 @@ class _CompactStatBar extends StatelessWidget {
         height: 16,
         child: Row(
           children: [
-            Icon(icon, color: color, size: 13),
-            const SizedBox(width: 4),
-            SizedBox(
-              width: 80,
+            Icon(icon, color: color, size: 12),
+            const SizedBox(width: 3),
+            Flexible(
+              flex: 0,
               child: Text(
                 label,
                 style: const TextStyle(
                   color: FlitColors.textSecondary,
-                  fontSize: 10,
+                  fontSize: 9,
                   fontWeight: FontWeight.w500,
                 ),
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                overflow: TextOverflow.clip,
               ),
             ),
-            Expanded(
+            const SizedBox(width: 4),
+            SizedBox(
+              width: 50,
               child: isMax
                   ? _AnimBuilder(
                       animation: shimmer,
@@ -1023,18 +1029,15 @@ class _CompactStatBar extends StatelessWidget {
                     )
                   : _buildSegments(color, isMax),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 3),
             if (showPercentage)
-              SizedBox(
-                width: 22,
-                child: Text(
-                  '$value',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
+              Text(
+                '$value',
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
           ],
