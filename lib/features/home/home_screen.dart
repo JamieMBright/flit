@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/flit_game.dart';
+import '../leaderboard/leaderboard_screen.dart';
 import '../play/play_screen.dart';
+import '../profile/profile_screen.dart';
 
 /// Home screen with game canvas and menu overlay.
 class HomeScreen extends StatefulWidget {
@@ -79,7 +81,21 @@ class _HomeScreenState extends State<HomeScreen> {
           _MenuButton(
             label: 'Leaderboard',
             icon: Icons.leaderboard_rounded,
-            onTap: () => _showComingSoon('Leaderboards'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const LeaderboardScreen(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _MenuButton(
+            label: 'Profile',
+            icon: Icons.person_rounded,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const ProfileScreen(),
+              ),
+            ),
           ),
         ],
       );
