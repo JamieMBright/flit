@@ -106,20 +106,30 @@
     window.addEventListener('unhandledrejection', function(e) {
       showError('[Promise Rejection] ' + (e.reason || e));
     });
-
-    // After 10 seconds, if loading is still visible, show a hint.
-    setTimeout(function() {
-      var loading = document.getElementById('loading');
-      if (loading && loading.style.display !== 'none') {
-        var label = loading.querySelector('.label');
-        if (label) {
-          label.textContent = 'Still loading... check console for errors.';
-          label.style.color = '#D4A944';
-        }
-      }
-    }, 10000);
   </script>
 
-  <script src="flutter_bootstrap.js" async></script>
+  <!--
+    Flutter bootstrap: try flutter_bootstrap.js first (Flutter 3.22+).
+    If it 404s, fall back to flutter.js + _flutter.loader (Flutter 3.16-3.21).
+  -->
+  <script>
+    var bs = document.createElement('script');
+    bs.src = 'flutter_bootstrap.js';
+    bs.async = true;
+    bs.onerror = function() {
+      // flutter_bootstrap.js not found — use flutter.js loader instead.
+      var fl = document.createElement('script');
+      fl.src = 'flutter.js';
+      fl.defer = true;
+      fl.onload = function() {
+        _flutter.loader.load();
+      };
+      fl.onerror = function() {
+        showError('Could not load Flutter engine (neither flutter_bootstrap.js nor flutter.js found).');
+      };
+      document.body.appendChild(fl);
+    };
+    document.body.appendChild(bs);
+  </script>
 </body>
 </html>
