@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/providers/account_provider.dart';
 import '../../data/services/auth_service.dart';
 import '../home/home_screen.dart';
 
@@ -14,14 +16,14 @@ import '../home/home_screen.dart';
 /// Anti-multi-account: One account per device install.
 /// Revenue protection: Free tier locked to device, can't create
 /// unlimited accounts without new device/reinstall.
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _authService = AuthService();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -385,6 +387,9 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (result.isAuthenticated) {
+        if (result.player != null) {
+          ref.read(accountProvider.notifier).switchAccount(result.player!);
+        }
         _navigateToHome();
       } else if (result.error != null) {
         setState(() => _error = result.error);
@@ -422,6 +427,9 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (result.isAuthenticated) {
+        if (result.player != null) {
+          ref.read(accountProvider.notifier).switchAccount(result.player!);
+        }
         _navigateToHome();
       } else if (result.error != null) {
         setState(() => _error = result.error);
@@ -439,6 +447,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (mounted) {
       setState(() => _isLoading = false);
+      final guestState = _authService.state;
+      if (guestState.player != null) {
+        ref.read(accountProvider.notifier).switchAccount(guestState.player!);
+      }
       _navigateToHome();
     }
   }

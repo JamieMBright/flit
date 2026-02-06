@@ -1,25 +1,23 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/cosmetic.dart';
+import '../../data/providers/account_provider.dart';
 
 /// Shop screen for purchasing cosmetics and gold.
-class ShopScreen extends StatefulWidget {
+class ShopScreen extends ConsumerStatefulWidget {
   const ShopScreen({super.key});
 
   @override
-  State<ShopScreen> createState() => _ShopScreenState();
+  ConsumerState<ShopScreen> createState() => _ShopScreenState();
 }
 
-class _ShopScreenState extends State<ShopScreen>
+class _ShopScreenState extends ConsumerState<ShopScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
-  // Placeholder coin balance
-  int _coins = 1250;
-  final int _level = 5;
 
   // Track owned and equipped items
   final Set<String> _ownedIds = {'plane_default', 'contrail_default'};
@@ -39,7 +37,10 @@ class _ShopScreenState extends State<ShopScreen>
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final coins = ref.watch(currentCoinsProvider);
+    final level = ref.watch(currentLevelProvider);
+    return Scaffold(
         backgroundColor: FlitColors.backgroundDark,
         appBar: AppBar(
           backgroundColor: FlitColors.backgroundMid,
@@ -75,7 +76,7 @@ class _ShopScreenState extends State<ShopScreen>
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    _coins.toString(),
+                    coins.toString(),
                     style: const TextStyle(
                       color: FlitColors.warning,
                       fontWeight: FontWeight.bold,
@@ -93,8 +94,8 @@ class _ShopScreenState extends State<ShopScreen>
               items: CosmeticCatalog.planes,
               ownedIds: _ownedIds,
               equippedId: _equippedPlane,
-              coins: _coins,
-              level: _level,
+              coins: coins,
+              level: level,
               onPurchase: _purchaseItem,
               onEquip: _equipPlane,
             ),
@@ -102,8 +103,8 @@ class _ShopScreenState extends State<ShopScreen>
               items: CosmeticCatalog.contrails,
               ownedIds: _ownedIds,
               equippedId: _equippedContrail,
-              coins: _coins,
-              level: _level,
+              coins: coins,
+              level: level,
               onPurchase: _purchaseItem,
               onEquip: _equipContrail,
             ),
@@ -111,11 +112,12 @@ class _ShopScreenState extends State<ShopScreen>
           ],
         ),
       );
+  }
 
   void _purchaseItem(Cosmetic item) {
-    if (_coins >= item.price) {
+    if (ref.read(currentCoinsProvider) >= item.price) {
+      ref.read(accountProvider.notifier).spendCoins(item.price);
       setState(() {
-        _coins -= item.price;
         _ownedIds.add(item.id);
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -189,8 +191,8 @@ class _GoldPackage {
 const List<_GoldPackage> _goldPackages = [
   _GoldPackage(coins: 500, price: 0.99),
   _GoldPackage(coins: 2000, price: 3.99),
-  _GoldPackage(coins: 5000, price: 8.99, isBestValue: true),
-  _GoldPackage(coins: 15000, price: 19.99),
+  _GoldPackage(coins: 5000, price: 8.99),
+  _GoldPackage(coins: 15000, price: 19.99, isBestValue: true),
 ];
 
 class _GoldShopTab extends StatelessWidget {
@@ -305,6 +307,14 @@ class _GoldPackageCard extends StatelessWidget {
                           style: const TextStyle(
                             color: FlitColors.textSecondary,
                             fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${(package.coins / package.price).toStringAsFixed(0)} coins/\$',
+                          style: const TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 11,
                           ),
                         ),
                       ],
@@ -480,6 +490,74 @@ class _CosmeticGrid extends StatelessWidget {
               foregroundColor: FlitColors.textPrimary,
             ),
             child: const Text('Buy'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showGiftDialog(context, item);
+            },
+            icon: const Icon(Icons.card_giftcard, size: 16),
+            label: const Text('Gift'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FlitColors.gold,
+              foregroundColor: FlitColors.backgroundDark,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showGiftDialog(BuildContext context, Cosmetic item) {
+    final controller = TextEditingController();
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        title: Text('Gift ${item.name}', style: const TextStyle(color: FlitColors.textPrimary)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Send this item to a friend!', style: TextStyle(color: FlitColors.textSecondary)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              style: const TextStyle(color: FlitColors.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Friend\'s username',
+                hintStyle: const TextStyle(color: FlitColors.textMuted),
+                prefixText: '@',
+                prefixStyle: const TextStyle(color: FlitColors.textSecondary),
+                filled: true,
+                fillColor: FlitColors.backgroundMid,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel', style: TextStyle(color: FlitColors.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Gift sent to @${controller.text}!'),
+                  backgroundColor: FlitColors.success,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FlitColors.gold,
+              foregroundColor: FlitColors.backgroundDark,
+            ),
+            child: const Text('Send Gift'),
           ),
         ],
       ),

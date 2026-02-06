@@ -732,6 +732,17 @@ class _AvatarPainter extends CustomPainter {
           Offset(rightX - s * 0.07, eyeY),
           framePaint,
         );
+        // Temple arms
+        canvas.drawLine(
+          Offset(leftX - s * 0.07, eyeY),
+          Offset(cx - s * 0.24, eyeY - s * 0.02),
+          framePaint,
+        );
+        canvas.drawLine(
+          Offset(rightX + s * 0.07, eyeY),
+          Offset(cx + s * 0.24, eyeY - s * 0.02),
+          framePaint,
+        );
 
       case AvatarGlasses.aviator:
         framePaint.color = FlitColors.gold;
@@ -754,6 +765,17 @@ class _AvatarPainter extends CustomPainter {
         canvas.drawLine(
           Offset(leftX + s * 0.07, eyeY),
           Offset(rightX - s * 0.07, eyeY),
+          framePaint,
+        );
+        // Temple arms
+        canvas.drawLine(
+          Offset(leftX - s * 0.07, eyeY),
+          Offset(cx - s * 0.24, eyeY - s * 0.02),
+          framePaint,
+        );
+        canvas.drawLine(
+          Offset(rightX + s * 0.07, eyeY),
+          Offset(cx + s * 0.24, eyeY - s * 0.02),
           framePaint,
         );
 
@@ -787,6 +809,21 @@ class _AvatarPainter extends CustomPainter {
             ..color = FlitColors.oceanHighlight
             ..style = PaintingStyle.stroke
             ..strokeWidth = s * 0.012,
+        );
+        // Temple arms
+        final visorArmPaint = Paint()
+          ..color = FlitColors.oceanHighlight
+          ..strokeWidth = s * 0.012
+          ..strokeCap = StrokeCap.round;
+        canvas.drawLine(
+          Offset(cx - s * 0.20, eyeY),
+          Offset(cx - s * 0.24, eyeY - s * 0.02),
+          visorArmPaint,
+        );
+        canvas.drawLine(
+          Offset(cx + s * 0.20, eyeY),
+          Offset(cx + s * 0.24, eyeY - s * 0.02),
+          visorArmPaint,
         );
     }
   }
