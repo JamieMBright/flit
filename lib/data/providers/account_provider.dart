@@ -1,16 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../game/map/region.dart';
+import '../models/avatar_config.dart';
+import '../models/pilot_license.dart';
 import '../models/player.dart';
 import '../services/test_accounts.dart';
 
 /// Current account state.
 class AccountState {
-  const AccountState({
+  AccountState({
     required this.currentPlayer,
     this.isDebugMode = true,
     this.unlockedRegions = const {},
-  });
+    AvatarConfig? avatar,
+    PilotLicense? license,
+    this.ownedAvatarParts = const {},
+  })  : avatar = avatar ?? const AvatarConfig(),
+        license = license ?? PilotLicense.random();
 
   final Player currentPlayer;
   final bool isDebugMode;
@@ -18,15 +24,30 @@ class AccountState {
   /// Set of region IDs that have been unlocked via coin purchase.
   final Set<String> unlockedRegions;
 
+  /// Player's avatar configuration.
+  final AvatarConfig avatar;
+
+  /// Player's pilot license (gacha stats).
+  final PilotLicense license;
+
+  /// Set of owned avatar parts (e.g. "hair_mohawk", "hat_crown").
+  final Set<String> ownedAvatarParts;
+
   AccountState copyWith({
     Player? currentPlayer,
     bool? isDebugMode,
     Set<String>? unlockedRegions,
+    AvatarConfig? avatar,
+    PilotLicense? license,
+    Set<String>? ownedAvatarParts,
   }) =>
       AccountState(
         currentPlayer: currentPlayer ?? this.currentPlayer,
         isDebugMode: isDebugMode ?? this.isDebugMode,
         unlockedRegions: unlockedRegions ?? this.unlockedRegions,
+        avatar: avatar ?? this.avatar,
+        license: license ?? this.license,
+        ownedAvatarParts: ownedAvatarParts ?? this.ownedAvatarParts,
       );
 }
 
@@ -127,6 +148,55 @@ class AccountNotifier extends StateNotifier<AccountState> {
   void toggleDebugMode() {
     state = state.copyWith(isDebugMode: !state.isDebugMode);
   }
+
+  // --- Avatar ---
+
+  /// Update the avatar configuration.
+  void updateAvatar(AvatarConfig config) {
+    state = state.copyWith(avatar: config);
+  }
+
+  /// Purchase an avatar part. Returns true if successful.
+  bool purchaseAvatarPart(String partKey, int cost) {
+    if (!spendCoins(cost)) return false;
+    state = state.copyWith(
+      ownedAvatarParts: {...state.ownedAvatarParts, partKey},
+    );
+    return true;
+  }
+
+  /// Check if an avatar part is owned.
+  bool isAvatarPartOwned(String partKey) {
+    return state.ownedAvatarParts.contains(partKey);
+  }
+
+  // --- Pilot License ---
+
+  /// Reroll the pilot license. Returns true if affordable.
+  bool rerollLicense({Set<String> lockedStats = const {}, bool lockType = false}) {
+    // Calculate cost
+    var cost = PilotLicense.rerollAllCost;
+    if (lockedStats.length == 1) cost = PilotLicense.lockOneCost;
+    if (lockedStats.length == 2) cost = PilotLicense.lockTwoCost;
+    if (lockType) cost += PilotLicense.lockTypeCost;
+
+    if (!spendCoins(cost)) return false;
+
+    state = state.copyWith(
+      license: PilotLicense.reroll(
+        state.license,
+        lockedStats: lockedStats,
+        lockType: lockType,
+      ),
+    );
+    return true;
+  }
+
+  /// Get current coin boost multiplier (for applying to earnings).
+  double get coinBoostMultiplier => 1.0 + state.license.coinBoost / 100.0;
+
+  /// Get current fuel boost multiplier (for solo play speed).
+  double get fuelBoostMultiplier => 1.0 + state.license.fuelBoost / 100.0;
 }
 
 /// Account provider
@@ -153,4 +223,14 @@ final currentCoinsProvider = Provider<int>((ref) {
 /// Convenience provider for purchased region IDs
 final purchasedRegionIdsProvider = Provider<Set<String>>((ref) {
   return ref.watch(accountProvider).unlockedRegions;
+});
+
+/// Convenience provider for avatar config
+final avatarProvider = Provider<AvatarConfig>((ref) {
+  return ref.watch(accountProvider).avatar;
+});
+
+/// Convenience provider for pilot license
+final licenseProvider = Provider<PilotLicense>((ref) {
+  return ref.watch(accountProvider).license;
 });

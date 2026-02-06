@@ -59,11 +59,16 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Propeller spin angle
   double _propAngle = 0;
 
+  /// Fuel boost multiplier from pilot license (solo play only, 1.0 = no boost).
+  double fuelBoostMultiplier = 1.0;
+
   bool get isHighAltitude => _isHighAltitude;
   double get turnDirection => _turnDirection;
 
   double get currentSpeed =>
-      highAltitudeSpeed * (_isHighAltitude ? 1.0 : lowAltitudeSpeedMultiplier);
+      highAltitudeSpeed *
+      (_isHighAltitude ? 1.0 : lowAltitudeSpeedMultiplier) *
+      fuelBoostMultiplier;
 
   @override
   void update(double dt) {

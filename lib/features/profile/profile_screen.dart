@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/player.dart';
+import '../avatar/avatar_editor_screen.dart';
+import '../license/license_screen.dart';
 
 /// Profile screen showing player stats and settings.
 class ProfileScreen extends StatefulWidget {
@@ -295,6 +297,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
               // Stats grid
               _StatsGrid(player: _player),
               const SizedBox(height: 24),
+              // Quick links
+              Row(
+                children: [
+                  Expanded(
+                    child: _QuickLinkButton(
+                      icon: Icons.face,
+                      label: 'Avatar',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const AvatarEditorScreen(),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _QuickLinkButton(
+                      icon: Icons.badge,
+                      label: 'License',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const LicenseScreen(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
               // Actions
               _ProfileActions(
                 onEditProfile: _editProfile,
@@ -583,6 +614,49 @@ class _ActionButton extends StatelessWidget {
                 Icon(
                   Icons.chevron_right,
                   color: FlitColors.textMuted,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class _QuickLinkButton extends StatelessWidget {
+  const _QuickLinkButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: FlitColors.cardBorder),
+            ),
+            child: Column(
+              children: [
+                Icon(icon, color: FlitColors.accent, size: 28),
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),

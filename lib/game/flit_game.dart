@@ -16,10 +16,21 @@ import 'map/world_map.dart';
 /// lower portion of the screen and the world scrolls underneath.
 class FlitGame extends FlameGame
     with HasKeyboardHandlerComponents, HorizontalDragDetector, TapDetector {
-  FlitGame({this.onGameReady, this.onAltitudeChanged});
+  FlitGame({
+    this.onGameReady,
+    this.onAltitudeChanged,
+    this.fuelBoostMultiplier = 1.0,
+    this.isChallenge = false,
+  });
 
   final VoidCallback? onGameReady;
   final void Function(bool isHigh)? onAltitudeChanged;
+
+  /// Fuel boost from pilot license (1.0 = no boost). Only applies in solo play.
+  final double fuelBoostMultiplier;
+
+  /// Whether this is a H2H challenge (disables license bonuses for fair play).
+  final bool isChallenge;
 
   late PlaneComponent _plane;
   late WorldMap _worldMap;
@@ -69,6 +80,11 @@ class FlitGame extends FlameGame
       },
     );
     await add(_plane);
+
+    // Apply fuel boost only in solo play (not challenges - level playing field)
+    if (!isChallenge) {
+      _plane.fuelBoostMultiplier = fuelBoostMultiplier;
+    }
 
     // Start at a random position
     _worldPosition = Vector2(0, 0); // Center of map
