@@ -4,11 +4,15 @@ import '../../core/theme/flit_colors.dart';
 import '../../data/models/player.dart';
 
 /// Profile screen showing player stats and settings.
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
-  // Placeholder player - will be replaced with actual user data
-  static final _player = Player(
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  Player _player = Player(
     id: 'user-1',
     username: 'FlitPilot',
     displayName: 'Flit Pilot',
@@ -20,6 +24,250 @@ class ProfileScreen extends StatelessWidget {
     createdAt: DateTime.now().subtract(const Duration(days: 30)),
   );
 
+  bool _notificationsEnabled = true;
+  bool _soundEnabled = true;
+  bool _hapticEnabled = true;
+
+  void _openSettings() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: FlitColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Center(
+                child: Text(
+                  'Settings',
+                  style: TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              _SettingsToggle(
+                label: 'Notifications',
+                icon: Icons.notifications_outlined,
+                value: _notificationsEnabled,
+                onChanged: (value) {
+                  setSheetState(() => _notificationsEnabled = value);
+                  setState(() {});
+                },
+              ),
+              const Divider(color: FlitColors.cardBorder, height: 1),
+              _SettingsToggle(
+                label: 'Sound',
+                icon: Icons.volume_up_outlined,
+                value: _soundEnabled,
+                onChanged: (value) {
+                  setSheetState(() => _soundEnabled = value);
+                  setState(() {});
+                },
+              ),
+              const Divider(color: FlitColors.cardBorder, height: 1),
+              _SettingsToggle(
+                label: 'Haptic Feedback',
+                icon: Icons.vibration,
+                value: _hapticEnabled,
+                onChanged: (value) {
+                  setSheetState(() => _hapticEnabled = value);
+                  setState(() {});
+                },
+              ),
+              const Divider(color: FlitColors.cardBorder, height: 1),
+              _SettingsToggle(
+                label: 'Dark Mode',
+                icon: Icons.dark_mode_outlined,
+                value: true,
+                onChanged: null,
+              ),
+              const Divider(color: FlitColors.cardBorder, height: 1),
+              const SizedBox(height: 16),
+              const Center(
+                child: Column(
+                  children: [
+                    Text(
+                      'Flit',
+                      style: TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Version 0.1.0',
+                      style: TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _editProfile() {
+    final displayNameController =
+        TextEditingController(text: _player.displayName ?? '');
+    final usernameController = TextEditingController(text: _player.username);
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: FlitColors.cardBorder),
+        ),
+        title: const Text(
+          'Edit Profile',
+          style: TextStyle(color: FlitColors.textPrimary),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: displayNameController,
+              style: const TextStyle(color: FlitColors.textPrimary),
+              decoration: InputDecoration(
+                labelText: 'Display Name',
+                labelStyle: const TextStyle(color: FlitColors.textSecondary),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: FlitColors.cardBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: FlitColors.accent),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: usernameController,
+              style: const TextStyle(color: FlitColors.textPrimary),
+              decoration: InputDecoration(
+                labelText: 'Username',
+                labelStyle: const TextStyle(color: FlitColors.textSecondary),
+                prefixText: '@',
+                prefixStyle: const TextStyle(color: FlitColors.textMuted),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: FlitColors.cardBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: FlitColors.accent),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: FlitColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _player = _player.copyWith(
+                  displayName: displayNameController.text.trim().isEmpty
+                      ? null
+                      : displayNameController.text.trim(),
+                  username: usernameController.text.trim().isEmpty
+                      ? _player.username
+                      : usernameController.text.trim(),
+                );
+              });
+              Navigator.of(dialogContext).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Profile updated'),
+                  backgroundColor: FlitColors.success,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              );
+            },
+            child: const Text(
+              'Save',
+              style: TextStyle(color: FlitColors.accent),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showGameHistory() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const _GameHistoryScreen(),
+      ),
+    );
+  }
+
+  void _signOut() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: FlitColors.cardBorder),
+        ),
+        title: const Text(
+          'Sign Out',
+          style: TextStyle(color: FlitColors.textPrimary),
+        ),
+        content: const Text(
+          'Are you sure you want to sign out?',
+          style: TextStyle(color: FlitColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: FlitColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+            child: const Text(
+              'Sign Out',
+              style: TextStyle(color: FlitColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: FlitColors.backgroundDark,
@@ -30,9 +278,7 @@ class ProfileScreen extends StatelessWidget {
           actions: [
             IconButton(
               icon: const Icon(Icons.settings),
-              onPressed: () {
-                // TODO: Open settings
-              },
+              onPressed: _openSettings,
             ),
           ],
         ),
@@ -50,7 +296,11 @@ class ProfileScreen extends StatelessWidget {
               _StatsGrid(player: _player),
               const SizedBox(height: 24),
               // Actions
-              _ProfileActions(),
+              _ProfileActions(
+                onEditProfile: _editProfile,
+                onGameHistory: _showGameHistory,
+                onSignOut: _signOut,
+              ),
             ],
           ),
         ),
@@ -253,6 +503,16 @@ class _StatCard extends StatelessWidget {
 }
 
 class _ProfileActions extends StatelessWidget {
+  const _ProfileActions({
+    required this.onEditProfile,
+    required this.onGameHistory,
+    required this.onSignOut,
+  });
+
+  final VoidCallback onEditProfile;
+  final VoidCallback onGameHistory;
+  final VoidCallback onSignOut;
+
   @override
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -260,26 +520,20 @@ class _ProfileActions extends StatelessWidget {
           _ActionButton(
             icon: Icons.edit,
             label: 'Edit Profile',
-            onTap: () {
-              // TODO: Edit profile
-            },
+            onTap: onEditProfile,
           ),
           const SizedBox(height: 12),
           _ActionButton(
             icon: Icons.history,
             label: 'Game History',
-            onTap: () {
-              // TODO: Show history
-            },
+            onTap: onGameHistory,
           ),
           const SizedBox(height: 12),
           _ActionButton(
             icon: Icons.logout,
             label: 'Sign Out',
             isDestructive: true,
-            onTap: () {
-              // TODO: Sign out
-            },
+            onTap: onSignOut,
           ),
         ],
       );
@@ -333,6 +587,244 @@ class _ActionButton extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      );
+}
+
+// ---------------------------------------------------------------------------
+// Settings toggle row used inside the settings bottom sheet
+// ---------------------------------------------------------------------------
+
+class _SettingsToggle extends StatelessWidget {
+  const _SettingsToggle({
+    required this.label,
+    required this.icon,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Icon(icon, color: FlitColors.textSecondary, size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: onChanged != null
+                      ? FlitColors.textPrimary
+                      : FlitColors.textMuted,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            Switch.adaptive(
+              value: value,
+              onChanged: onChanged,
+              activeColor: FlitColors.accent,
+              inactiveTrackColor: FlitColors.backgroundMid,
+            ),
+          ],
+        ),
+      );
+}
+
+// ---------------------------------------------------------------------------
+// Game History screen showing past game sessions
+// ---------------------------------------------------------------------------
+
+class _GameHistoryEntry {
+  const _GameHistoryEntry({
+    required this.region,
+    required this.duration,
+    required this.score,
+    required this.date,
+  });
+
+  final String region;
+  final Duration duration;
+  final int score;
+  final DateTime date;
+}
+
+class _GameHistoryScreen extends StatelessWidget {
+  const _GameHistoryScreen();
+
+  static final List<_GameHistoryEntry> _entries = [
+    _GameHistoryEntry(
+      region: 'Western Europe',
+      duration: const Duration(minutes: 2, seconds: 14),
+      score: 920,
+      date: DateTime.now().subtract(const Duration(hours: 3)),
+    ),
+    _GameHistoryEntry(
+      region: 'East Africa',
+      duration: const Duration(minutes: 3, seconds: 45),
+      score: 750,
+      date: DateTime.now().subtract(const Duration(hours: 8)),
+    ),
+    _GameHistoryEntry(
+      region: 'South-East Asia',
+      duration: const Duration(minutes: 1, seconds: 58),
+      score: 1100,
+      date: DateTime.now().subtract(const Duration(days: 1)),
+    ),
+    _GameHistoryEntry(
+      region: 'South America',
+      duration: const Duration(minutes: 4, seconds: 12),
+      score: 640,
+      date: DateTime.now().subtract(const Duration(days: 1, hours: 5)),
+    ),
+    _GameHistoryEntry(
+      region: 'Scandinavia',
+      duration: const Duration(minutes: 2, seconds: 33),
+      score: 880,
+      date: DateTime.now().subtract(const Duration(days: 2)),
+    ),
+    _GameHistoryEntry(
+      region: 'Central Asia',
+      duration: const Duration(minutes: 5, seconds: 1),
+      score: 520,
+      date: DateTime.now().subtract(const Duration(days: 3)),
+    ),
+    _GameHistoryEntry(
+      region: 'Caribbean',
+      duration: const Duration(minutes: 2, seconds: 47),
+      score: 810,
+      date: DateTime.now().subtract(const Duration(days: 4)),
+    ),
+    _GameHistoryEntry(
+      region: 'Oceania',
+      duration: const Duration(minutes: 3, seconds: 19),
+      score: 700,
+      date: DateTime.now().subtract(const Duration(days: 5)),
+    ),
+    _GameHistoryEntry(
+      region: 'Middle East',
+      duration: const Duration(minutes: 2, seconds: 5),
+      score: 960,
+      date: DateTime.now().subtract(const Duration(days: 6)),
+    ),
+    _GameHistoryEntry(
+      region: 'North America',
+      duration: const Duration(minutes: 1, seconds: 42),
+      score: 1200,
+      date: DateTime.now().subtract(const Duration(days: 7)),
+    ),
+  ];
+
+  String _formatDuration(Duration d) {
+    final minutes = d.inMinutes;
+    final seconds = d.inSeconds % 60;
+    return '${minutes}m ${seconds.toString().padLeft(2, '0')}s';
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inHours < 24) {
+      return '${diff.inHours}h ago';
+    }
+    return '${diff.inDays}d ago';
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: FlitColors.backgroundDark,
+        appBar: AppBar(
+          backgroundColor: FlitColors.backgroundMid,
+          title: const Text('Game History'),
+          centerTitle: true,
+        ),
+        body: ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: _entries.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final entry = _entries[index];
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: FlitColors.cardBackground,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: FlitColors.cardBorder),
+              ),
+              child: Row(
+                children: [
+                  // Region icon
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: FlitColors.backgroundLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.public,
+                        color: FlitColors.accent,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  // Region and time
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          entry.region,
+                          style: const TextStyle(
+                            color: FlitColors.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_formatDuration(entry.duration)}  •  ${_formatDate(entry.date)}',
+                          style: const TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Score
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        entry.score.toString(),
+                        style: const TextStyle(
+                          color: FlitColors.gold,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        'pts',
+                        style: TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       );
 }

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../game/map/region.dart';
 import '../models/player.dart';
 import '../services/test_accounts.dart';
 
@@ -7,19 +8,25 @@ import '../services/test_accounts.dart';
 class AccountState {
   const AccountState({
     required this.currentPlayer,
-    this.isDebugMode = true, // Default to debug mode during development
+    this.isDebugMode = true,
+    this.unlockedRegions = const {},
   });
 
   final Player currentPlayer;
   final bool isDebugMode;
 
+  /// Set of region IDs that have been unlocked via coin purchase.
+  final Set<String> unlockedRegions;
+
   AccountState copyWith({
     Player? currentPlayer,
     bool? isDebugMode,
+    Set<String>? unlockedRegions,
   }) =>
       AccountState(
         currentPlayer: currentPlayer ?? this.currentPlayer,
         isDebugMode: isDebugMode ?? this.isDebugMode,
+        unlockedRegions: unlockedRegions ?? this.unlockedRegions,
       );
 }
 
@@ -35,16 +42,9 @@ class AccountNotifier extends StateNotifier<AccountState> {
     state = state.copyWith(currentPlayer: player);
   }
 
-  /// Switch to player 1 (for challenge testing)
   void switchToPlayer1() => switchAccount(TestAccounts.player1);
-
-  /// Switch to player 2 (for challenge testing)
   void switchToPlayer2() => switchAccount(TestAccounts.player2);
-
-  /// Switch to god account (all unlocked)
   void switchToGodAccount() => switchAccount(TestAccounts.godAccount);
-
-  /// Switch to new player (fresh start)
   void switchToNewPlayer() => switchAccount(TestAccounts.newPlayer);
 
   /// Add coins to current account
@@ -56,13 +56,41 @@ class AccountNotifier extends StateNotifier<AccountState> {
     );
   }
 
+  /// Spend coins from current account.
+  /// Returns true if successful, false if insufficient funds or invalid amount.
+  bool spendCoins(int amount) {
+    if (amount <= 0) return false;
+    if (state.currentPlayer.coins < amount) return false;
+    state = state.copyWith(
+      currentPlayer: state.currentPlayer.copyWith(
+        coins: state.currentPlayer.coins - amount,
+      ),
+    );
+    return true;
+  }
+
+  /// Unlock a region with coins. Deducts the cost and marks the region
+  /// as purchased. Returns true if successful, false if insufficient funds.
+  bool unlockRegion(GameRegion region, int cost) {
+    if (!spendCoins(cost)) return false;
+    state = state.copyWith(
+      unlockedRegions: {...state.unlockedRegions, region.name},
+    );
+    return true;
+  }
+
+  /// Check if a region is unlocked (by level or by purchase).
+  bool isRegionUnlocked(GameRegion region) {
+    if (state.currentPlayer.level >= region.requiredLevel) return true;
+    return state.unlockedRegions.contains(region.name);
+  }
+
   /// Add XP and handle level ups
   void addXp(int amount) {
     var player = state.currentPlayer;
     var newXp = player.xp + amount;
     var newLevel = player.level;
 
-    // Handle level ups
     while (newXp >= newLevel * 100) {
       newXp -= newLevel * 100;
       newLevel++;
@@ -120,4 +148,9 @@ final currentLevelProvider = Provider<int>((ref) {
 /// Convenience provider for current coins
 final currentCoinsProvider = Provider<int>((ref) {
   return ref.watch(currentPlayerProvider).coins;
+});
+
+/// Convenience provider for purchased region IDs
+final purchasedRegionIdsProvider = Provider<Set<String>>((ref) {
+  return ref.watch(accountProvider).unlockedRegions;
 });

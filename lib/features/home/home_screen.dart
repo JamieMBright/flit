@@ -1,8 +1,6 @@
-import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
-import '../../game/flit_game.dart';
 import '../debug/debug_screen.dart';
 import '../friends/friends_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
@@ -10,94 +8,57 @@ import '../play/region_select_screen.dart';
 import '../profile/profile_screen.dart';
 import '../shop/shop_screen.dart';
 
-/// Home screen with game canvas and menu overlay.
-class HomeScreen extends StatefulWidget {
+/// Home screen with static map background and menu overlay.
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  late final FlitGame _game;
-  bool _isGameReady = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _game = FlitGame(
-      onGameReady: () {
-        if (mounted) {
-          setState(() => _isGameReady = true);
-        }
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // Game canvas (full screen, auto-flying plane as background)
-            GameWidget(game: _game),
+            // Static map background (no auto-flying plane)
+            const _StaticMapBackground(),
 
-            // Gradient overlay for readability
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    FlitColors.backgroundDark.withOpacity(0.3),
-                    FlitColors.backgroundDark.withOpacity(0.0),
-                    FlitColors.backgroundDark.withOpacity(0.7),
+            // Menu overlay
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: Column(
+                  children: [
+                    const Spacer(flex: 2),
+                    // Title
+                    const Text(
+                      'FLIT',
+                      style: TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 52,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'A GEOGRAPHICAL ADVENTURE',
+                      style: TextStyle(
+                        color: FlitColors.gold,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 3,
+                      ),
+                    ),
+                    const Spacer(flex: 3),
+                    _buildMenuButtons(context),
+                    const SizedBox(height: 48),
                   ],
-                  stops: const [0.0, 0.3, 1.0],
                 ),
               ),
             ),
-
-            // Menu overlay
-            if (_isGameReady)
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      const Spacer(flex: 1),
-                      // Title
-                      const Text(
-                        'FLIT',
-                        style: TextStyle(
-                          color: FlitColors.textPrimary,
-                          fontSize: 52,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'A GEOGRAPHICAL ADVENTURE',
-                        style: TextStyle(
-                          color: FlitColors.gold,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 3,
-                        ),
-                      ),
-                      const Spacer(flex: 2),
-                      _buildMenuButtons(),
-                      const SizedBox(height: 48),
-                    ],
-                  ),
-                ),
-              ),
           ],
         ),
       );
 
-  Widget _buildMenuButtons() => Column(
+  Widget _buildMenuButtons(BuildContext context) => Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -165,6 +126,135 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 }
 
+/// Static decorative map background for the home screen.
+/// No gameplay, no scrolling - just a subtle visual.
+class _StaticMapBackground extends StatelessWidget {
+  const _StaticMapBackground();
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+        painter: _MapBackgroundPainter(),
+        size: Size.infinite,
+      );
+}
+
+class _MapBackgroundPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Ocean gradient
+    final oceanGradient = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          FlitColors.oceanDeep,
+          FlitColors.ocean,
+          FlitColors.oceanDeep,
+        ],
+        stops: const [0.0, 0.45, 1.0],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), oceanGradient);
+
+    // Subtle grid
+    final gridPaint = Paint()
+      ..color = FlitColors.gridLine
+      ..strokeWidth = 0.5;
+
+    const gridCount = 8;
+    for (var i = 1; i < gridCount; i++) {
+      final x = size.width * i / gridCount;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
+      final y = size.height * i / gridCount;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+
+    // Decorative land masses (simplified continent silhouettes)
+    final landPaint = Paint()..color = FlitColors.landMass.withOpacity(0.15);
+    final borderPaint = Paint()
+      ..color = FlitColors.border.withOpacity(0.1)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    // Europe/Africa blob
+    final europe = Path()
+      ..moveTo(size.width * 0.48, size.height * 0.15)
+      ..quadraticBezierTo(
+          size.width * 0.55, size.height * 0.18,
+          size.width * 0.52, size.height * 0.28)
+      ..quadraticBezierTo(
+          size.width * 0.54, size.height * 0.35,
+          size.width * 0.50, size.height * 0.55)
+      ..quadraticBezierTo(
+          size.width * 0.48, size.height * 0.60,
+          size.width * 0.46, size.height * 0.50)
+      ..quadraticBezierTo(
+          size.width * 0.44, size.height * 0.30,
+          size.width * 0.46, size.height * 0.20)
+      ..close();
+    canvas.drawPath(europe, landPaint);
+    canvas.drawPath(europe, borderPaint);
+
+    // Americas blob
+    final americas = Path()
+      ..moveTo(size.width * 0.22, size.height * 0.12)
+      ..quadraticBezierTo(
+          size.width * 0.28, size.height * 0.15,
+          size.width * 0.26, size.height * 0.30)
+      ..quadraticBezierTo(
+          size.width * 0.28, size.height * 0.38,
+          size.width * 0.24, size.height * 0.55)
+      ..quadraticBezierTo(
+          size.width * 0.22, size.height * 0.65,
+          size.width * 0.20, size.height * 0.70)
+      ..quadraticBezierTo(
+          size.width * 0.18, size.height * 0.60,
+          size.width * 0.17, size.height * 0.45)
+      ..quadraticBezierTo(
+          size.width * 0.16, size.height * 0.30,
+          size.width * 0.19, size.height * 0.18)
+      ..close();
+    canvas.drawPath(americas, landPaint);
+    canvas.drawPath(americas, borderPaint);
+
+    // Asia blob
+    final asia = Path()
+      ..moveTo(size.width * 0.60, size.height * 0.12)
+      ..quadraticBezierTo(
+          size.width * 0.72, size.height * 0.15,
+          size.width * 0.78, size.height * 0.22)
+      ..quadraticBezierTo(
+          size.width * 0.82, size.height * 0.30,
+          size.width * 0.75, size.height * 0.38)
+      ..quadraticBezierTo(
+          size.width * 0.68, size.height * 0.42,
+          size.width * 0.62, size.height * 0.35)
+      ..quadraticBezierTo(
+          size.width * 0.56, size.height * 0.25,
+          size.width * 0.58, size.height * 0.15)
+      ..close();
+    canvas.drawPath(asia, landPaint);
+    canvas.drawPath(asia, borderPaint);
+
+    // Overlay gradient for text readability
+    final overlayGradient = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          FlitColors.backgroundDark.withOpacity(0.4),
+          FlitColors.backgroundDark.withOpacity(0.1),
+          FlitColors.backgroundDark.withOpacity(0.6),
+        ],
+        stops: const [0.0, 0.35, 1.0],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawRect(
+        Rect.fromLTWH(0, 0, size.width, size.height), overlayGradient);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 class _MenuButton extends StatelessWidget {
   const _MenuButton({
     required this.label,
@@ -182,7 +272,7 @@ class _MenuButton extends StatelessWidget {
   Widget build(BuildContext context) => Material(
         color: isPrimary
             ? FlitColors.accent
-            : FlitColors.cardBackground.withOpacity(0.8),
+            : FlitColors.cardBackground.withOpacity(0.85),
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           onTap: onTap,
@@ -208,7 +298,7 @@ class _MenuButton extends StatelessWidget {
                 const SizedBox(width: 10),
                 Text(
                   label.toUpperCase(),
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: FlitColors.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
