@@ -1,8 +1,9 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
-import '../../core/game/flit_game.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../game/flit_game.dart';
+import '../play/play_screen.dart';
 
 /// Home screen with game canvas and menu overlay.
 class HomeScreen extends StatefulWidget {
@@ -62,7 +63,11 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Play',
             icon: Icons.play_arrow_rounded,
             isPrimary: true,
-            onTap: () => _showComingSoon('Solo mode'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const PlayScreen(),
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           _MenuButton(
