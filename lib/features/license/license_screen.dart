@@ -2,9 +2,14 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/models/avatar_config.dart';
 import '../../data/models/pilot_license.dart';
+import '../../data/providers/account_provider.dart';
+import '../avatar/avatar_widget.dart';
+import '../shop/shop_screen.dart';
 
 // =============================================================================
 // Rarity colors
@@ -76,19 +81,18 @@ IconData _clueTypeIcon(String type) {
 // =============================================================================
 
 /// Pilot license gacha screen where players view license stats and reroll them.
-class LicenseScreen extends StatefulWidget {
+class LicenseScreen extends ConsumerStatefulWidget {
   const LicenseScreen({super.key});
 
   @override
-  State<LicenseScreen> createState() => _LicenseScreenState();
+  ConsumerState<LicenseScreen> createState() => _LicenseScreenState();
 }
 
-class _LicenseScreenState extends State<LicenseScreen>
+class _LicenseScreenState extends ConsumerState<LicenseScreen>
     with SingleTickerProviderStateMixin {
   late PilotLicense _license;
   final Set<String> _lockedStats = {};
   bool _lockType = false;
-  int _coins = 1250;
   bool _isRolling = false;
 
   // Animation for the perfect-rarity shimmer and max-stat pulse.
@@ -115,27 +119,36 @@ class _LicenseScreenState extends State<LicenseScreen>
   // ---------------------------------------------------------------------------
 
   int get _totalCost {
-    if (_lockedStats.isEmpty && !_lockType) {
-      return PilotLicense.rerollAllCost;
-    }
     var cost = PilotLicense.rerollAllCost;
-    if (_lockedStats.length == 1) cost += PilotLicense.lockOneCost;
-    if (_lockedStats.length == 2) cost += PilotLicense.lockTwoCost;
-    if (_lockedStats.length >= 3) {
-      cost += PilotLicense.lockTwoCost + PilotLicense.lockOneCost;
+    for (final stat in _lockedStats) {
+      // Scale cost based on the value of the stat being locked
+      int statValue;
+      switch (stat) {
+        case 'coinBoost':
+          statValue = _license.coinBoost;
+        case 'clueBoost':
+          statValue = _license.clueBoost;
+        case 'clueChance':
+          statValue = _license.clueChance;
+        case 'fuelBoost':
+          statValue = _license.fuelBoost;
+        default:
+          statValue = 1;
+      }
+      cost += PilotLicense.lockCostForValue(statValue);
     }
     if (_lockType) cost += PilotLicense.lockTypeCost;
     return cost;
   }
 
-  bool get _canAfford => _coins >= _totalCost;
+  bool _canAfford(int coins) => coins >= _totalCost;
 
   // ---------------------------------------------------------------------------
   // Reroll
   // ---------------------------------------------------------------------------
 
   Future<void> _reroll() async {
-    if (!_canAfford || _isRolling) return;
+    if (!_canAfford(ref.read(currentCoinsProvider)) || _isRolling) return;
 
     setState(() => _isRolling = true);
 
@@ -150,9 +163,9 @@ class _LicenseScreenState extends State<LicenseScreen>
         lockedStats: _lockedStats,
         lockType: _lockType,
       );
-      _coins -= _totalCost;
       _isRolling = false;
     });
+    ref.read(accountProvider.notifier).spendCoins(_totalCost);
   }
 
   // ---------------------------------------------------------------------------
@@ -160,7 +173,9 @@ class _LicenseScreenState extends State<LicenseScreen>
   // ---------------------------------------------------------------------------
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final coins = ref.watch(currentCoinsProvider);
+    return Scaffold(
         backgroundColor: FlitColors.backgroundDark,
         appBar: AppBar(
           backgroundColor: FlitColors.backgroundMid,
@@ -168,30 +183,35 @@ class _LicenseScreenState extends State<LicenseScreen>
           centerTitle: true,
           actions: [
             // Coin balance chip
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              margin: const EdgeInsets.only(right: 16),
-              decoration: BoxDecoration(
-                color: FlitColors.warning.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(16),
+            GestureDetector(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const ShopScreen()),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.monetization_on,
-                    color: FlitColors.warning,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _coins.toString(),
-                    style: const TextStyle(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                margin: const EdgeInsets.only(right: 16),
+                decoration: BoxDecoration(
+                  color: FlitColors.warning.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.monetization_on,
                       color: FlitColors.warning,
-                      fontWeight: FontWeight.bold,
+                      size: 18,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Text(
+                      coins.toString(),
+                      style: const TextStyle(
+                        color: FlitColors.warning,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -205,16 +225,17 @@ class _LicenseScreenState extends State<LicenseScreen>
               const SizedBox(height: 24),
 
               // ---- Lock options ----
-              _buildLockSection(),
+              _buildLockSection(coins),
               const SizedBox(height: 24),
 
               // ---- Reroll button ----
-              _buildRerollButton(),
+              _buildRerollButton(coins),
               const SizedBox(height: 16),
             ],
           ),
         ),
       );
+  }
 
   // ---------------------------------------------------------------------------
   // License card
@@ -325,6 +346,15 @@ class _LicenseScreenState extends State<LicenseScreen>
           ),
           const SizedBox(height: 16),
 
+          // Avatar
+          Center(
+            child: AvatarWidget(
+              config: ref.watch(avatarProvider),
+              size: 64,
+            ),
+          ),
+          const SizedBox(height: 12),
+
           // Total boost
           Center(
             child: Column(
@@ -353,25 +383,44 @@ class _LicenseScreenState extends State<LicenseScreen>
           const SizedBox(height: 20),
 
           // Stat bars
-          _StatBar(
-            label: _license.coinBoostLabel,
-            icon: Icons.monetization_on,
-            value: _license.coinBoost,
-            shimmer: _shimmerController,
+          GestureDetector(
+            onTap: () => _showEffectPopup('Coin Boost', 'Earn ${_license.coinBoost}% more coins from every game you play. Stacks with daily bonuses.', Icons.monetization_on),
+            child: _StatBar(
+              label: _license.coinBoostLabel,
+              icon: Icons.monetization_on,
+              value: _license.coinBoost,
+              shimmer: _shimmerController,
+            ),
           ),
           const SizedBox(height: 10),
-          _StatBar(
-            label: _license.clueBoostLabel,
-            icon: Icons.lightbulb_outline,
-            value: _license.clueBoost,
-            shimmer: _shimmerController,
+          GestureDetector(
+            onTap: () => _showEffectPopup('Clue Boost', 'Increases the chance of receiving ${_license.preferredClueType} clues by ${_license.clueBoost}%. Your preferred clue type appears more often.', Icons.lightbulb_outline),
+            child: _StatBar(
+              label: _license.clueBoostLabel,
+              icon: Icons.lightbulb_outline,
+              value: _license.clueBoost,
+              shimmer: _shimmerController,
+            ),
           ),
           const SizedBox(height: 10),
-          _StatBar(
-            label: _license.fuelBoostLabel,
-            icon: Icons.local_gas_station,
-            value: _license.fuelBoost,
-            shimmer: _shimmerController,
+          GestureDetector(
+            onTap: () => _showEffectPopup('Clue Chance', 'Increases the chance of receiving additional clues by ${_license.clueChance}%. More clues means more information to help you guess.', Icons.casino),
+            child: _StatBar(
+              label: _license.clueChanceLabel,
+              icon: Icons.casino,
+              value: _license.clueChance,
+              shimmer: _shimmerController,
+            ),
+          ),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: () => _showEffectPopup('Fuel Boost', 'Extends your fuel/speed-boost duration in solo play by ${_license.fuelBoost}%. More fuel means more time to guess.', Icons.local_gas_station),
+            child: _StatBar(
+              label: _license.fuelBoostLabel,
+              icon: Icons.local_gas_station,
+              value: _license.fuelBoost,
+              shimmer: _shimmerController,
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -405,11 +454,41 @@ class _LicenseScreenState extends State<LicenseScreen>
         ],
       );
 
+  void _showEffectPopup(String title, String description, IconData icon) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: FlitColors.cardBorder),
+        ),
+        title: Row(
+          children: [
+            Icon(icon, color: FlitColors.accent, size: 24),
+            const SizedBox(width: 10),
+            Text(title, style: const TextStyle(color: FlitColors.textPrimary, fontSize: 18)),
+          ],
+        ),
+        content: Text(
+          description,
+          style: const TextStyle(color: FlitColors.textSecondary, fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Got it', style: TextStyle(color: FlitColors.accent)),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // Lock section
   // ---------------------------------------------------------------------------
 
-  Widget _buildLockSection() => Container(
+  Widget _buildLockSection(int coins) => Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: FlitColors.cardBackground,
@@ -455,6 +534,15 @@ class _LicenseScreenState extends State<LicenseScreen>
             ),
             const SizedBox(height: 8),
             _LockRow(
+              label: 'Clue Chance',
+              value: _license.clueChanceLabel,
+              icon: Icons.casino,
+              isLocked: _lockedStats.contains('clueChance'),
+              cost: _lockCostFor('clueChance'),
+              onChanged: (locked) => _toggleLock('clueChance', locked),
+            ),
+            const SizedBox(height: 8),
+            _LockRow(
               label: 'Fuel Boost',
               value: _license.fuelBoostLabel,
               icon: Icons.local_gas_station,
@@ -496,7 +584,7 @@ class _LicenseScreenState extends State<LicenseScreen>
                     Text(
                       _totalCost.toString(),
                       style: TextStyle(
-                        color: _canAfford ? FlitColors.warning : FlitColors.error,
+                        color: _canAfford(coins) ? FlitColors.warning : FlitColors.error,
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
@@ -510,12 +598,20 @@ class _LicenseScreenState extends State<LicenseScreen>
       );
 
   int _lockCostFor(String stat) {
-    // The displayed cost hint depends on how many stats are already locked.
-    // This is informational; the actual cost is computed in [_totalCost].
-    final wouldBeCount =
-        _lockedStats.contains(stat) ? _lockedStats.length : _lockedStats.length + 1;
-    if (wouldBeCount <= 1) return PilotLicense.lockOneCost;
-    return PilotLicense.lockTwoCost;
+    int statValue;
+    switch (stat) {
+      case 'coinBoost':
+        statValue = _license.coinBoost;
+      case 'clueBoost':
+        statValue = _license.clueBoost;
+      case 'clueChance':
+        statValue = _license.clueChance;
+      case 'fuelBoost':
+        statValue = _license.fuelBoost;
+      default:
+        statValue = 1;
+    }
+    return PilotLicense.lockCostForValue(statValue);
   }
 
   void _toggleLock(String stat, bool locked) {
@@ -532,23 +628,23 @@ class _LicenseScreenState extends State<LicenseScreen>
   // Reroll button
   // ---------------------------------------------------------------------------
 
-  Widget _buildRerollButton() => Column(
+  Widget _buildRerollButton(int coins) => Column(
         children: [
           SizedBox(
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: _canAfford && !_isRolling ? _reroll : null,
+              onPressed: _canAfford(coins) && !_isRolling ? _reroll : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor:
-                    _canAfford ? FlitColors.accent : FlitColors.error.withOpacity(0.4),
+                    _canAfford(coins) ? FlitColors.accent : FlitColors.error.withOpacity(0.4),
                 foregroundColor: FlitColors.textPrimary,
                 disabledBackgroundColor: FlitColors.error.withOpacity(0.25),
                 disabledForegroundColor: FlitColors.textMuted,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
-                elevation: _canAfford ? 4 : 0,
+                elevation: _canAfford(coins) ? 4 : 0,
               ),
               child: _isRolling
                   ? const SizedBox(
@@ -606,13 +702,29 @@ class _LicenseScreenState extends State<LicenseScreen>
                     ),
             ),
           ),
-          if (!_canAfford) ...[
+          if (!_canAfford(coins)) ...[
             const SizedBox(height: 8),
-            Text(
-              'Not enough coins (need ${_totalCost - _coins} more)',
-              style: const TextStyle(
-                color: FlitColors.error,
-                fontSize: 12,
+            GestureDetector(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const ShopScreen()),
+              ),
+              child: const Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Not enough coins. ',
+                      style: TextStyle(color: FlitColors.error, fontSize: 12),
+                    ),
+                    TextSpan(
+                      text: 'Play to earn more or buy from shop',
+                      style: TextStyle(
+                        color: FlitColors.accent,
+                        fontSize: 12,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

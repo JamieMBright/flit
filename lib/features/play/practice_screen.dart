@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/providers/account_provider.dart';
 import '../../game/clues/clue_types.dart';
+import '../../game/map/region.dart';
+import '../shop/shop_screen.dart';
+import 'play_screen.dart';
 
 // =============================================================================
 // Clue type metadata
@@ -132,21 +137,18 @@ const int _costPerDisabledClue = 25;
 ///
 /// Practice gives XP and counts toward clue-specific progress for social
 /// titles. It is NOT ranked on the global leaderboard.
-class PracticeScreen extends StatefulWidget {
+class PracticeScreen extends ConsumerStatefulWidget {
   const PracticeScreen({super.key});
 
   @override
-  State<PracticeScreen> createState() => _PracticeScreenState();
+  ConsumerState<PracticeScreen> createState() => _PracticeScreenState();
 }
 
-class _PracticeScreenState extends State<PracticeScreen> {
+class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   /// Which clue types are currently enabled.
   final Map<ClueType, bool> _enabledClues = {
     for (final type in ClueType.values) type: true,
   };
-
-  // Placeholder values until state management is wired up.
-  final int _coins = 1250;
 
   /// Placeholder clue progress data (correct answers per type).
   final Map<ClueType, int> _clueProgress = {
@@ -169,11 +171,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
   /// Coin cost for the current toggle configuration.
   int get _coinCost => _disabledCount * _costPerDisabledClue;
 
-  bool get _canAfford => _coins >= _coinCost;
+  bool _canAffordWith(int coins) => coins >= _coinCost;
 
   bool get _hasAnyEnabled => _enabledCount > 0;
-
-  bool get _canStart => _hasAnyEnabled && _canAfford;
 
   /// The active clue types for the session.
   List<ClueType> get _activeClueTypes => _enabledClues.entries
@@ -199,10 +199,17 @@ class _PracticeScreenState extends State<PracticeScreen> {
   }
 
   void _startPractice() {
-    if (!_canStart) return;
-
-    // TODO: Deduct coins and navigate to PlayScreen with practice config.
-    Navigator.of(context).pop(_activeClueTypes);
+    final coins = ref.read(currentCoinsProvider);
+    if (!(_hasAnyEnabled && _canAffordWith(coins))) return;
+    final cost = _coinCost;
+    if (cost > 0) {
+      ref.read(accountProvider.notifier).spendCoins(cost);
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const PlayScreen(region: GameRegion.world),
+      ),
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -210,7 +217,11 @@ class _PracticeScreenState extends State<PracticeScreen> {
   // ---------------------------------------------------------------------------
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final coins = ref.watch(currentCoinsProvider);
+    final canStart = _hasAnyEnabled && _canAffordWith(coins);
+
+    return Scaffold(
         backgroundColor: FlitColors.backgroundDark,
         appBar: AppBar(
           backgroundColor: FlitColors.backgroundMid,
@@ -221,32 +232,37 @@ class _PracticeScreenState extends State<PracticeScreen> {
           centerTitle: true,
           iconTheme: const IconThemeData(color: FlitColors.textPrimary),
           actions: [
-            // Coin balance chip
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              margin: const EdgeInsets.only(right: 16),
-              decoration: BoxDecoration(
-                color: FlitColors.gold.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(16),
+            // Coin balance chip - tappable to open shop
+            GestureDetector(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const ShopScreen()),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.monetization_on,
-                    color: FlitColors.gold,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _coins.toString(),
-                    style: const TextStyle(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                margin: const EdgeInsets.only(right: 16),
+                decoration: BoxDecoration(
+                  color: FlitColors.gold.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.monetization_on,
                       color: FlitColors.gold,
-                      fontWeight: FontWeight.bold,
+                      size: 18,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Text(
+                      coins.toString(),
+                      style: const TextStyle(
+                        color: FlitColors.gold,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -269,7 +285,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                       const SizedBox(height: 20),
 
                       // Coin cost display
-                      _buildCostDisplay(),
+                      _buildCostDisplay(coins),
                       const SizedBox(height: 20),
 
                       // Section label: Clue Types
@@ -293,11 +309,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
               ),
 
               // Bottom action bar (always visible)
-              _buildBottomBar(),
+              _buildBottomBar(coins, canStart),
             ],
           ),
         ),
       );
+  }
 
   // ---------------------------------------------------------------------------
   // Header
@@ -372,11 +389,11 @@ class _PracticeScreenState extends State<PracticeScreen> {
   // Coin cost display
   // ---------------------------------------------------------------------------
 
-  Widget _buildCostDisplay() {
+  Widget _buildCostDisplay(int coins) {
     final isFree = _coinCost == 0;
     final costColor = isFree
         ? FlitColors.success
-        : _canAfford
+        : _canAffordWith(coins)
             ? FlitColors.gold
             : FlitColors.error;
 
@@ -530,7 +547,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   // Bottom action bar
   // ---------------------------------------------------------------------------
 
-  Widget _buildBottomBar() => Container(
+  Widget _buildBottomBar(int coins, bool canStart) => Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         decoration: const BoxDecoration(
           color: FlitColors.backgroundMid,
@@ -541,27 +558,39 @@ class _PracticeScreenState extends State<PracticeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Not-enough-coins warning
-            if (!_canAfford && _hasAnyEnabled)
+            // Not-enough-coins warning with shop link
+            if (!_canAffordWith(coins) && _hasAnyEnabled)
               Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.warning_amber_rounded,
-                      color: FlitColors.error,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Not enough coins (need ${_coinCost - _coins} more)',
-                      style: const TextStyle(
-                        color: FlitColors.error,
-                        fontSize: 12,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => const ShopScreen()),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: FlitColors.error, size: 16),
+                      const SizedBox(width: 6),
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Need ${_coinCost - coins} more coins. ',
+                              style: const TextStyle(color: FlitColors.error, fontSize: 12),
+                            ),
+                            const TextSpan(
+                              text: 'Visit Shop',
+                              style: TextStyle(
+                                color: FlitColors.accent,
+                                fontSize: 12,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             // Start button
@@ -569,9 +598,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
               width: double.infinity,
               height: 54,
               child: ElevatedButton(
-                onPressed: _canStart ? _startPractice : null,
+                onPressed: canStart ? _startPractice : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _canStart
+                  backgroundColor: canStart
                       ? FlitColors.accent
                       : FlitColors.backgroundLight,
                   foregroundColor: FlitColors.textPrimary,
@@ -581,7 +610,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  elevation: _canStart ? 4 : 0,
+                  elevation: canStart ? 4 : 0,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,

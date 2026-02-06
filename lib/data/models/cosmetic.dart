@@ -356,11 +356,11 @@ abstract class CosmeticCatalog {
     // --- Free / Common ---
     Cosmetic(
       id: 'contrail_default',
-      name: 'White Smoke',
+      name: 'Water Vapour',
       type: CosmeticType.contrail,
       price: 0,
       rarity: CosmeticRarity.common,
-      description: 'Classic white contrails.',
+      description: 'Classic water vapour contrails.',
       colorScheme: {
         'primary': 0xFFF0E8DC,
         'secondary': 0xFFFFFFFF,
@@ -450,6 +450,20 @@ abstract class CosmeticCatalog {
       colorScheme: {
         'primary': 0xFF00FF7F,
         'secondary': 0xFF9B30FF,
+      },
+    ),
+    Cosmetic(
+      id: 'contrail_chemtrails',
+      name: 'Chemtrails',
+      type: CosmeticType.contrail,
+      price: 50000,
+      rarity: CosmeticRarity.legendary,
+      isPremium: true,
+      realMoneyPrice: 14.99,
+      description: 'Toxic green poison gas contrails. For the conspiracy-minded pilot.',
+      colorScheme: {
+        'primary': 0xFF00FF00,
+        'secondary': 0xFF7FFF00,
       },
     ),
   ];

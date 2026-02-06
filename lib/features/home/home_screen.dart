@@ -66,45 +66,12 @@ class HomeScreen extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Primary PLAY button opens mode selection
           _MenuButton(
             label: 'Play',
             icon: Icons.play_arrow_rounded,
             isPrimary: true,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const RegionSelectScreen(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _MenuButton(
-            label: 'Practice',
-            icon: Icons.school_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const PracticeScreen(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _MenuButton(
-            label: 'Daily Challenge',
-            icon: Icons.today_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const DailyChallengeScreen(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _MenuButton(
-            label: 'Challenge',
-            icon: Icons.people_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const FriendsScreen(),
-              ),
-            ),
+            onTap: () => _showGameModes(context),
           ),
           const SizedBox(height: 10),
           _MenuButton(
@@ -168,6 +135,91 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       );
+
+  void _showGameModes(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: FlitColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'CHOOSE YOUR FLIGHT',
+              style: TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _GameModeCard(
+              title: 'Free Flight',
+              subtitle: 'Explore the world at your own pace',
+              icon: Icons.flight_takeoff,
+              onTap: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const RegionSelectScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            _GameModeCard(
+              title: 'Training Sortie',
+              subtitle: 'Practice without rank pressure',
+              icon: Icons.school_rounded,
+              onTap: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const PracticeScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            _GameModeCard(
+              title: 'Daily Scramble',
+              subtitle: 'Today\'s challenge — compete for glory',
+              icon: Icons.today_rounded,
+              isHighlighted: true,
+              onTap: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const DailyChallengeScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            _GameModeCard(
+              title: 'Dogfight',
+              subtitle: 'Challenge your friends head-to-head',
+              icon: Icons.people_rounded,
+              onTap: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const FriendsScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// Static decorative map background for the home screen.
@@ -348,6 +400,94 @@ class _MenuButton extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1.5,
                   ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class _GameModeCard extends StatelessWidget {
+  const _GameModeCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+    this.isHighlighted = false,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool isHighlighted;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: isHighlighted
+            ? FlitColors.accent.withOpacity(0.15)
+            : FlitColors.backgroundMid,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isHighlighted
+                    ? FlitColors.accent.withOpacity(0.5)
+                    : FlitColors.cardBorder,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isHighlighted
+                        ? FlitColors.accent.withOpacity(0.2)
+                        : FlitColors.backgroundDark.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isHighlighted
+                        ? FlitColors.accent
+                        : FlitColors.textPrimary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: FlitColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  color: FlitColors.textMuted,
                 ),
               ],
             ),

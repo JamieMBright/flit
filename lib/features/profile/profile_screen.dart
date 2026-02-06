@@ -1,35 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/profanity_filter.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/models/player.dart';
+import '../../data/providers/account_provider.dart';
 import '../avatar/avatar_editor_screen.dart';
 import '../avatar/avatar_widget.dart';
 import '../license/license_screen.dart';
 
+/// Aviation rank title and icon for player level.
+({String title, IconData icon}) _aviationRank(int level) {
+  if (level >= 50) return (title: 'Air Marshal', icon: Icons.stars);
+  if (level >= 40) return (title: 'Wing Commander', icon: Icons.military_tech);
+  if (level >= 30) return (title: 'Squadron Leader', icon: Icons.shield);
+  if (level >= 20) return (title: 'Flight Lieutenant', icon: Icons.workspace_premium);
+  if (level >= 15) return (title: 'Captain', icon: Icons.anchor);
+  if (level >= 10) return (title: 'First Officer', icon: Icons.flight);
+  if (level >= 5) return (title: 'Pilot Officer', icon: Icons.flight_takeoff);
+  if (level >= 3) return (title: 'Cadet', icon: Icons.school);
+  return (title: 'Trainee', icon: Icons.person);
+}
+
 /// Profile screen showing player stats and settings.
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  Player _player = Player(
-    id: 'user-1',
-    username: 'FlitPilot',
-    displayName: 'Flit Pilot',
-    level: 5,
-    xp: 320,
-    coins: 1250,
-    gamesPlayed: 42,
-    bestTime: const Duration(seconds: 14, milliseconds: 230),
-    createdAt: DateTime.now().subtract(const Duration(days: 30)),
-  );
-
-  AvatarConfig _avatarConfig = const AvatarConfig();
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   bool _notificationsEnabled = true;
   bool _soundEnabled = true;
@@ -129,9 +131,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _editProfile() {
+    final currentPlayer = ref.read(accountProvider).player ?? Player.guest();
     final displayNameController =
-        TextEditingController(text: _player.displayName ?? '');
-    final usernameController = TextEditingController(text: _player.username);
+        TextEditingController(text: currentPlayer.displayName ?? '');
+    final usernameController = TextEditingController(text: currentPlayer.username);
     String? displayNameError;
     String? usernameError;
 
@@ -259,14 +262,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 if (hasError) return;
 
-                setState(() {
-                  _player = _player.copyWith(
-                    displayName:
-                        displayName.isEmpty ? null : displayName,
-                    username:
-                        username.isEmpty ? _player.username : username,
+                // Update player via AccountProvider
+                final currentPlayer = ref.read(accountProvider).player;
+                if (currentPlayer != null) {
+                  ref.read(accountProvider.notifier).switchAccount(
+                    currentPlayer.copyWith(
+                      displayName:
+                          displayName.isEmpty ? null : displayName,
+                      username:
+                          username.isEmpty ? currentPlayer.username : username,
+                    ),
                   );
-                });
+                }
                 Navigator.of(dialogContext).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -339,7 +346,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final account = ref.watch(accountProvider);
+    final player = account.player ?? Player.guest();
+    final avatarConfig = ref.watch(avatarProvider);
+
+    return Scaffold(
         backgroundColor: FlitColors.backgroundDark,
         appBar: AppBar(
           backgroundColor: FlitColors.backgroundMid,
@@ -358,15 +370,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               // Avatar and name
               _ProfileHeader(
-                player: _player,
-                avatarConfig: _avatarConfig,
+                player: player,
+                avatarConfig: avatarConfig,
               ),
               const SizedBox(height: 24),
               // Level progress
-              _LevelProgress(player: _player),
+              _LevelProgress(player: player),
               const SizedBox(height: 24),
               // Stats grid
-              _StatsGrid(player: _player),
+              _StatsGrid(player: player),
               const SizedBox(height: 24),
               // Quick links
               Row(
@@ -407,6 +419,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       );
+  }
 }
 
 class _ProfileHeader extends StatelessWidget {
@@ -464,13 +477,32 @@ class _LevelProgress extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Level ${player.level}',
-                  style: const TextStyle(
-                    color: FlitColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _aviationRank(player.level).icon,
+                      color: FlitColors.gold,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _aviationRank(player.level).title,
+                      style: const TextStyle(
+                        color: FlitColors.gold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Lv.${player.level}',
+                      style: const TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
                 Text(
                   '${player.xp} / ${player.xpForNextLevel} XP',

@@ -83,6 +83,17 @@ enum AvatarAccessory {
   parrot,
 }
 
+/// Avatar companion creatures.
+/// [none] is free. Remaining companions cost coins and require high level.
+enum AvatarCompanion {
+  none,
+  sparrow,
+  eagle,
+  parrot,
+  phoenix,
+  dragon,
+}
+
 /// Configuration that fully describes a player avatar.
 ///
 /// Each field corresponds to a visual part of the avatar. Free defaults are
@@ -97,6 +108,7 @@ class AvatarConfig {
     this.hat = AvatarHat.none,
     this.glasses = AvatarGlasses.none,
     this.accessory = AvatarAccessory.none,
+    this.companion = AvatarCompanion.none,
   });
 
   final AvatarFace face;
@@ -107,6 +119,7 @@ class AvatarConfig {
   final AvatarHat hat;
   final AvatarGlasses glasses;
   final AvatarAccessory accessory;
+  final AvatarCompanion companion;
 
   // ---------------------------------------------------------------------------
   // Copy
@@ -121,6 +134,7 @@ class AvatarConfig {
     AvatarHat? hat,
     AvatarGlasses? glasses,
     AvatarAccessory? accessory,
+    AvatarCompanion? companion,
   }) =>
       AvatarConfig(
         face: face ?? this.face,
@@ -131,6 +145,7 @@ class AvatarConfig {
         hat: hat ?? this.hat,
         glasses: glasses ?? this.glasses,
         accessory: accessory ?? this.accessory,
+        companion: companion ?? this.companion,
       );
 
   // ---------------------------------------------------------------------------
@@ -188,13 +203,24 @@ class AvatarConfig {
         AvatarAccessory.parrot => 5000,
       };
 
+  /// Coin cost for the given [companion].
+  static int companionPrice(AvatarCompanion companion) => switch (companion) {
+        AvatarCompanion.none => 0,
+        AvatarCompanion.sparrow => 2000,
+        AvatarCompanion.eagle => 5000,
+        AvatarCompanion.parrot => 8000,
+        AvatarCompanion.phoenix => 15000,
+        AvatarCompanion.dragon => 30000,
+      };
+
   /// Total coin cost of every non-free item in this configuration.
   int get totalCost =>
       hairPrice(hair) +
       outfitPrice(outfit) +
       hatPrice(hat) +
       glassesPrice(glasses) +
-      accessoryPrice(accessory);
+      accessoryPrice(accessory) +
+      companionPrice(companion);
 
   // ---------------------------------------------------------------------------
   // Serialisation
@@ -209,6 +235,7 @@ class AvatarConfig {
         'hat': hat.name,
         'glasses': glasses.name,
         'accessory': accessory.name,
+        'companion': companion.name,
       };
 
   factory AvatarConfig.fromJson(Map<String, dynamic> json) => AvatarConfig(
@@ -244,6 +271,10 @@ class AvatarConfig {
           (v) => v.name == json['accessory'],
           orElse: () => AvatarAccessory.none,
         ),
+        companion: AvatarCompanion.values.firstWhere(
+          (v) => v.name == json['companion'],
+          orElse: () => AvatarCompanion.none,
+        ),
       );
 
   @override
@@ -257,7 +288,8 @@ class AvatarConfig {
           outfit == other.outfit &&
           hat == other.hat &&
           glasses == other.glasses &&
-          accessory == other.accessory;
+          accessory == other.accessory &&
+          companion == other.companion;
 
   @override
   int get hashCode => Object.hash(
@@ -269,5 +301,6 @@ class AvatarConfig {
         hat,
         glasses,
         accessory,
+        companion,
       );
 }

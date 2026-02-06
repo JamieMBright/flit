@@ -28,6 +28,7 @@ class DailyChallenge {
     required this.coinReward,
     required this.bonusCoinReward,
     required this.seed,
+    required this.mapRegion,
   });
 
   final DateTime date;
@@ -37,6 +38,7 @@ class DailyChallenge {
   final int coinReward;
   final int bonusCoinReward;
   final int seed;
+  final String mapRegion;
 
   // ── Theme rotation ──────────────────────────────────────────────────
 
@@ -134,6 +136,9 @@ class DailyChallenge {
       resolvedClueTypes = theme.enabledClueTypes;
     }
 
+    const regions = ['World', 'Europe', 'Asia', 'Africa', 'Americas', 'Oceania'];
+    final mapRegion = regions[rng.nextInt(regions.length)];
+
     return DailyChallenge(
       date: normalisedDate,
       title: theme.title,
@@ -142,6 +147,7 @@ class DailyChallenge {
       coinReward: theme.coinReward,
       bonusCoinReward: theme.coinReward * 3,
       seed: seed,
+      mapRegion: mapRegion,
     );
   }
 
@@ -161,6 +167,7 @@ class DailyChallenge {
         'coin_reward': coinReward,
         'bonus_coin_reward': bonusCoinReward,
         'seed': seed,
+        'map_region': mapRegion,
       };
 
   factory DailyChallenge.fromJson(Map<String, dynamic> json) =>
@@ -175,6 +182,7 @@ class DailyChallenge {
         coinReward: json['coin_reward'] as int,
         bonusCoinReward: json['bonus_coin_reward'] as int,
         seed: json['seed'] as int,
+        mapRegion: json['map_region'] as String? ?? 'World',
       );
 
   // ── Placeholder leaderboard ─────────────────────────────────────────
@@ -272,4 +280,34 @@ class DailyLeaderboardEntry {
         time: Duration(milliseconds: json['time_ms'] as int),
         rank: json['rank'] as int,
       );
+}
+
+/// Medal tier for daily challenge winners.
+enum MedalMaterial { bronze, silver, gold, platinum }
+
+/// A daily winner medal with star progression (1-5 stars per material).
+/// 20 total steps: bronze 1-5, silver 1-5, gold 1-5, platinum 1-5.
+class DailyMedal {
+  const DailyMedal({required this.wins});
+
+  final int wins;
+
+  /// Current medal material based on total wins.
+  MedalMaterial get material {
+    if (wins >= 16) return MedalMaterial.platinum;
+    if (wins >= 11) return MedalMaterial.gold;
+    if (wins >= 6) return MedalMaterial.silver;
+    return MedalMaterial.bronze;
+  }
+
+  /// Stars within current tier (1-5).
+  int get stars {
+    if (wins >= 16) return (wins - 15).clamp(1, 5);
+    if (wins >= 11) return (wins - 10).clamp(1, 5);
+    if (wins >= 6) return (wins - 5).clamp(1, 5);
+    return wins.clamp(1, 5);
+  }
+
+  /// Total progression step (1-20).
+  int get step => wins.clamp(1, 20);
 }

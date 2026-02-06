@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/avatar_config.dart';
+import '../../data/providers/account_provider.dart';
+import '../shop/shop_screen.dart';
 import 'avatar_widget.dart';
 
 // =============================================================================
@@ -15,6 +18,8 @@ class _AvatarPart {
     required this.name,
     required this.icon,
     this.price = 0,
+    this.requiredLevel = 0,
+    this.goldPrice = 0,
   });
 
   final String id;
@@ -22,7 +27,18 @@ class _AvatarPart {
   final IconData icon;
   final int price;
 
-  bool get isFree => price == 0;
+  /// Minimum player level to unlock this part via XP progression.
+  /// 0 means no level requirement.
+  final int requiredLevel;
+
+  /// Gold cost to bypass the [requiredLevel] requirement.
+  /// 0 means no gold alternative (or no level gate).
+  final int goldPrice;
+
+  bool get isFree => price == 0 && requiredLevel == 0;
+
+  /// Whether this part has a level gate (XP-based unlock).
+  bool get hasLevelGate => requiredLevel > 0;
 }
 
 // =============================================================================
@@ -170,12 +186,16 @@ const List<_AvatarCategory> _categories = [
         name: 'Spacesuit',
         icon: Icons.rocket_launch,
         price: 1500,
+        requiredLevel: 15,
+        goldPrice: 3500,
       ),
       _AvatarPart(
         id: 'outfit_captain',
         name: 'Captain',
         icon: Icons.anchor,
         price: 2000,
+        requiredLevel: 20,
+        goldPrice: 5000,
       ),
     ],
   ),
@@ -205,12 +225,16 @@ const List<_AvatarCategory> _categories = [
         name: 'Crown',
         icon: Icons.workspace_premium,
         price: 2000,
+        requiredLevel: 15,
+        goldPrice: 5000,
       ),
       _AvatarPart(
         id: 'hat_helmet',
         name: 'Helmet',
         icon: Icons.shield,
         price: 3000,
+        requiredLevel: 25,
+        goldPrice: 7000,
       ),
     ],
   ),
@@ -283,6 +307,56 @@ const List<_AvatarCategory> _categories = [
       ),
     ],
   ),
+
+  // -- Companion --
+  _AvatarCategory(
+    label: 'Companion',
+    icon: Icons.pets,
+    configKey: 'companion',
+    parts: [
+      _AvatarPart(id: 'companion_none', name: 'None', icon: Icons.block),
+      _AvatarPart(
+        id: 'companion_sparrow',
+        name: 'Sparrow',
+        icon: Icons.flutter_dash,
+        price: 2000,
+        requiredLevel: 10,
+        goldPrice: 5000,
+      ),
+      _AvatarPart(
+        id: 'companion_eagle',
+        name: 'Eagle',
+        icon: Icons.flight,
+        price: 5000,
+        requiredLevel: 20,
+        goldPrice: 12000,
+      ),
+      _AvatarPart(
+        id: 'companion_parrot',
+        name: 'Parrot',
+        icon: Icons.pets,
+        price: 8000,
+        requiredLevel: 25,
+        goldPrice: 18000,
+      ),
+      _AvatarPart(
+        id: 'companion_phoenix',
+        name: 'Phoenix',
+        icon: Icons.local_fire_department,
+        price: 15000,
+        requiredLevel: 35,
+        goldPrice: 35000,
+      ),
+      _AvatarPart(
+        id: 'companion_dragon',
+        name: 'Dragon',
+        icon: Icons.whatshot,
+        price: 30000,
+        requiredLevel: 45,
+        goldPrice: 60000,
+      ),
+    ],
+  ),
 ];
 
 // =============================================================================
@@ -293,25 +367,19 @@ const List<_AvatarCategory> _categories = [
 ///
 /// Players can browse categories, preview different avatar parts, purchase
 /// locked items with coins, and save their chosen configuration.
-class AvatarEditorScreen extends StatefulWidget {
+class AvatarEditorScreen extends ConsumerStatefulWidget {
   const AvatarEditorScreen({super.key});
 
   @override
-  State<AvatarEditorScreen> createState() => _AvatarEditorScreenState();
+  ConsumerState<AvatarEditorScreen> createState() => _AvatarEditorScreenState();
 }
 
-class _AvatarEditorScreenState extends State<AvatarEditorScreen> {
+class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
   /// Current avatar configuration being edited.
   AvatarConfig _config = const AvatarConfig();
 
   /// Index of the active category tab.
   int _selectedCategory = 0;
-
-  /// Part ids the player has already purchased.
-  final Set<String> _ownedParts = {};
-
-  /// Placeholder coin balance.
-  int _coins = 1250;
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -336,6 +404,8 @@ class _AvatarEditorScreenState extends State<AvatarEditorScreen> {
         return 'glasses_${_config.glasses.name}';
       case 'accessory':
         return 'acc_${_config.accessory.name}';
+      case 'companion':
+        return 'companion_${_config.companion.name}';
       default:
         return '';
     }
@@ -391,20 +461,31 @@ class _AvatarEditorScreenState extends State<AvatarEditorScreen> {
           _config = _config.copyWith(
             accessory: AvatarAccessory.values.firstWhere((v) => v.name == name),
           );
+        case 'companion':
+          final name = _enumName('companion', partId);
+          _config = _config.copyWith(
+            companion: AvatarCompanion.values.firstWhere((v) => v.name == name),
+          );
       }
     });
   }
 
   /// Whether the player can use [part] (either free or already owned).
   bool _canUsePart(_AvatarPart part) =>
-      part.isFree || _ownedParts.contains(part.id);
+      part.isFree || ref.read(accountProvider).ownedAvatarParts.contains(part.id);
 
   // ---------------------------------------------------------------------------
   // Dialogs
   // ---------------------------------------------------------------------------
 
   void _showPurchaseDialog(_AvatarPart part, String categoryKey) {
-    final canAfford = _coins >= part.price;
+    final coins = ref.read(currentCoinsProvider);
+    final level = ref.read(currentLevelProvider);
+    final canAfford = coins >= part.price;
+    final meetsLevel = !part.hasLevelGate || level >= part.requiredLevel;
+    final canBuyWithGold = part.hasLevelGate && !meetsLevel && coins >= part.goldPrice;
+    // Player can buy if: meets level + has coins, OR can pay gold bypass price
+    final canBuy = (meetsLevel && canAfford) || canBuyWithGold;
 
     showDialog<void>(
       context: context,
@@ -432,33 +513,122 @@ class _AvatarEditorScreenState extends State<AvatarEditorScreen> {
               child: Icon(part.icon, color: FlitColors.accent, size: 32),
             ),
             const SizedBox(height: 16),
-            // Price row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.monetization_on,
-                  color: FlitColors.warning,
-                  size: 20,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '${part.price}',
-                  style: TextStyle(
-                    color: canAfford ? FlitColors.warning : FlitColors.error,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+            // Unlock conditions info box
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  // XP / Level unlock path
+                  if (part.hasLevelGate) ...[
+                    Row(
+                      children: [
+                        Icon(
+                          meetsLevel ? Icons.check_circle : Icons.lock,
+                          color: meetsLevel ? FlitColors.success : FlitColors.textMuted,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            meetsLevel
+                                ? 'Level ${part.requiredLevel} reached'
+                                : 'Reach Level ${part.requiredLevel} (you are Lv.$level)',
+                            style: TextStyle(
+                              color: meetsLevel
+                                  ? FlitColors.success
+                                  : FlitColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                  ],
+                  // Coin price row
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.monetization_on,
+                        color: canAfford ? FlitColors.warning : FlitColors.error,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        meetsLevel || !part.hasLevelGate
+                            ? '${part.price} coins'
+                            : '${part.price} coins (after reaching Lv.${part.requiredLevel})',
+                        style: TextStyle(
+                          color: canAfford
+                              ? FlitColors.textSecondary
+                              : FlitColors.error,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  // Gold bypass option
+                  if (part.hasLevelGate && !meetsLevel) ...[
+                    const Divider(color: FlitColors.cardBorder, height: 16),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.bolt,
+                          color: canBuyWithGold ? FlitColors.gold : FlitColors.textMuted,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Skip level: ${part.goldPrice} coins',
+                            style: TextStyle(
+                              color: canBuyWithGold
+                                  ? FlitColors.gold
+                                  : FlitColors.textMuted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  const Row(
+                    children: [
+                      Icon(Icons.info_outline, color: FlitColors.textMuted, size: 16),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Play games to earn coins or buy from shop',
+                          style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            if (!canAfford) ...[
+            if (!canBuy) ...[
               const SizedBox(height: 8),
-              const Text(
-                'Not enough coins',
-                style: TextStyle(
-                  color: FlitColors.error,
-                  fontSize: 13,
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(dialogContext).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => const ShopScreen()),
+                  );
+                },
+                child: const Text(
+                  'Not enough coins - tap to visit shop',
+                  style: TextStyle(
+                    color: FlitColors.error,
+                    fontSize: 13,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
             ],
@@ -472,38 +642,62 @@ class _AvatarEditorScreenState extends State<AvatarEditorScreen> {
               style: TextStyle(color: FlitColors.textMuted),
             ),
           ),
-          ElevatedButton(
-            onPressed: canAfford
-                ? () {
-                    Navigator.of(dialogContext).pop();
-                    setState(() {
-                      _coins -= part.price;
-                      _ownedParts.add(part.id);
-                    });
-                    _selectPart(categoryKey, part.id);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Unlocked ${part.name}!'),
-                        backgroundColor: FlitColors.success,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    );
-                  }
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: FlitColors.accent,
-              foregroundColor: FlitColors.textPrimary,
-              disabledBackgroundColor: FlitColors.textMuted.withOpacity(0.3),
-              disabledForegroundColor: FlitColors.textMuted,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          if (part.hasLevelGate && !meetsLevel && canBuyWithGold)
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                ref.read(accountProvider.notifier).purchaseAvatarPart(part.id, part.goldPrice);
+                _selectPart(categoryKey, part.id);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Unlocked ${part.name} with gold!'),
+                    backgroundColor: FlitColors.gold,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FlitColors.gold,
+                foregroundColor: FlitColors.backgroundDark,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
+              child: const Text('Buy with Gold'),
             ),
-            child: const Text('Buy'),
-          ),
+          if (meetsLevel || !part.hasLevelGate)
+            ElevatedButton(
+              onPressed: canAfford
+                  ? () {
+                      Navigator.of(dialogContext).pop();
+                      ref.read(accountProvider.notifier).purchaseAvatarPart(part.id, part.price);
+                      _selectPart(categoryKey, part.id);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Unlocked ${part.name}!'),
+                          backgroundColor: FlitColors.success,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      );
+                    }
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FlitColors.accent,
+                foregroundColor: FlitColors.textPrimary,
+                disabledBackgroundColor: FlitColors.textMuted.withOpacity(0.3),
+                disabledForegroundColor: FlitColors.textMuted,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Buy'),
+            ),
         ],
       ),
     );
@@ -529,7 +723,11 @@ class _AvatarEditorScreenState extends State<AvatarEditorScreen> {
   // ---------------------------------------------------------------------------
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final coins = ref.watch(currentCoinsProvider);
+    final ownedParts = ref.watch(accountProvider).ownedAvatarParts;
+
+    return Scaffold(
         backgroundColor: FlitColors.backgroundDark,
         appBar: AppBar(
           backgroundColor: FlitColors.backgroundMid,
@@ -537,30 +735,35 @@ class _AvatarEditorScreenState extends State<AvatarEditorScreen> {
           centerTitle: true,
           actions: [
             // Coin balance pill
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              margin: const EdgeInsets.only(right: 16),
-              decoration: BoxDecoration(
-                color: FlitColors.warning.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(16),
+            GestureDetector(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const ShopScreen()),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.monetization_on,
-                    color: FlitColors.warning,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _coins.toString(),
-                    style: const TextStyle(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                margin: const EdgeInsets.only(right: 16),
+                decoration: BoxDecoration(
+                  color: FlitColors.warning.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.monetization_on,
                       color: FlitColors.warning,
-                      fontWeight: FontWeight.bold,
+                      size: 18,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Text(
+                      coins.toString(),
+                      style: const TextStyle(
+                        color: FlitColors.warning,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -586,8 +789,8 @@ class _AvatarEditorScreenState extends State<AvatarEditorScreen> {
                 selectedPartId: _selectedPartForCategory(
                   _categories[_selectedCategory].configKey,
                 ),
-                ownedParts: _ownedParts,
-                coins: _coins,
+                ownedParts: ownedParts,
+                coins: coins,
                 onPartTapped: (part) {
                   final key = _categories[_selectedCategory].configKey;
                   if (_canUsePart(part)) {
@@ -600,10 +803,11 @@ class _AvatarEditorScreenState extends State<AvatarEditorScreen> {
             ),
 
             // -- Save button --
-            _SaveBar(coins: _coins, onSave: _saveConfig),
+            _SaveBar(coins: coins, onSave: _saveConfig),
           ],
         ),
       );
+  }
 }
 
 // =============================================================================
@@ -878,7 +1082,7 @@ class _PartCard extends StatelessWidget {
                           letterSpacing: 0.5,
                         ),
                       )
-                    else
+                    else ...[
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
@@ -903,6 +1107,16 @@ class _PartCard extends StatelessWidget {
                           ),
                         ],
                       ),
+                      if (part.hasLevelGate)
+                        Text(
+                          'Lv.${part.requiredLevel}',
+                          style: const TextStyle(
+                            color: FlitColors.gold,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                    ],
                   ],
                 ),
               ),
@@ -997,6 +1211,79 @@ class _SaveBar extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
+              // Mystery plane button
+              GestureDetector(
+                onTap: () {
+                  // Show mystery purchase dialog
+                  showDialog<void>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: FlitColors.cardBackground,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      title: const Text('Mystery Plane', style: TextStyle(color: FlitColors.textPrimary)),
+                      content: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.help_outline, color: FlitColors.gold, size: 48),
+                          SizedBox(height: 12),
+                          Text(
+                            'Get a random plane with one exclusive locked item!\nCost: 10,000 coins',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: const Text('Cancel', style: TextStyle(color: FlitColors.textMuted)),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(ctx).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Mystery plane coming soon!'),
+                                backgroundColor: FlitColors.gold,
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: FlitColors.gold,
+                            foregroundColor: FlitColors.backgroundDark,
+                          ),
+                          child: const Text('Buy'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: FlitColors.gold.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: FlitColors.gold.withOpacity(0.3)),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.help_outline, color: FlitColors.gold, size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        'MYSTERY PLANE - 10,000 coins',
+                        style: TextStyle(
+                          color: FlitColors.gold,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               // Save button
               SizedBox(
                 width: double.infinity,
