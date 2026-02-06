@@ -706,10 +706,10 @@ class _AvatarPainter extends CustomPainter {
       case AvatarOutfit.suit:
         // V lapels
         for (var i = 0; i < 6; i++) {
-          _px(canvas, p, 28 - i, 48 + i, light);
-          _px(canvas, p, 27 - i, 48 + i, light);
-          _px(canvas, p, 35 + i, 48 + i, light);
-          _px(canvas, p, 36 + i, 48 + i, light);
+          _px(canvas, p, (28 - i).toDouble(), (48 + i).toDouble(), light);
+          _px(canvas, p, (27 - i).toDouble(), (48 + i).toDouble(), light);
+          _px(canvas, p, (35 + i).toDouble(), (48 + i).toDouble(), light);
+          _px(canvas, p, (36 + i).toDouble(), (48 + i).toDouble(), light);
         }
         // Tie
         _rect(canvas, p, 31, 48, 2, 2, FlitColors.accent);
@@ -722,7 +722,8 @@ class _AvatarPainter extends CustomPainter {
       case AvatarOutfit.leather:
         // Diagonal zip
         for (var i = 0; i < 10; i++) {
-          _px(canvas, p, 30 + (i ~/ 2), 48 + i, const Color(0xFF888888));
+          _px(canvas, p, (30 + (i ~/ 2)).toDouble(), (48 + i).toDouble(),
+              const Color(0xFF888888));
         }
         // Collar flaps
         _rect(canvas, p, 24, 47, 6, 3, light);
