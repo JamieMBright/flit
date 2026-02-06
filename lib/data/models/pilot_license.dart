@@ -98,9 +98,18 @@ class PilotLicense {
   ];
 
   /// Roll a single stat value (1-10) using the rarity-weighted distribution.
-  static int rollStat([Random? rng]) {
+  ///
+  /// When [luckBonus] > 0, the roll is attempted multiple times and the
+  /// best result is kept. This simulates "advantage" — rarer avatars give
+  /// better licence odds.
+  static int rollStat({Random? rng, int luckBonus = 0}) {
     final random = rng ?? Random();
-    return _weightTable[random.nextInt(_weightTable.length)];
+    var best = _weightTable[random.nextInt(_weightTable.length)];
+    for (var i = 0; i < luckBonus; i++) {
+      final roll = _weightTable[random.nextInt(_weightTable.length)];
+      if (roll > best) best = roll;
+    }
+    return best;
   }
 
   /// Roll a random clue type string.
@@ -114,39 +123,45 @@ class PilotLicense {
   // ---------------------------------------------------------------------------
 
   /// Generate a completely random license.
-  factory PilotLicense.random([Random? rng]) {
+  ///
+  /// When [luckBonus] > 0, each stat is rolled multiple times and the best
+  /// result is kept (rarer avatars give better licence odds).
+  factory PilotLicense.random({Random? rng, int luckBonus = 0}) {
     return PilotLicense(
-      coinBoost: rollStat(rng),
-      clueBoost: rollStat(rng),
-      clueChance: rollStat(rng),
-      fuelBoost: rollStat(rng),
+      coinBoost: rollStat(rng: rng, luckBonus: luckBonus),
+      clueBoost: rollStat(rng: rng, luckBonus: luckBonus),
+      clueChance: rollStat(rng: rng, luckBonus: luckBonus),
+      fuelBoost: rollStat(rng: rng, luckBonus: luckBonus),
       preferredClueType: rollClueType(rng),
     );
   }
 
   /// Reroll a license, keeping any stats whose keys are in [lockedStats].
   ///
-  /// Valid keys for [lockedStats]: `'coinBoost'`, `'clueBoost'`, `'fuelBoost'`.
+  /// Valid keys for [lockedStats]: `'coinBoost'`, `'clueBoost'`,
+  /// `'clueChance'`, `'fuelBoost'`.
   /// If [lockType] is true the [preferredClueType] is preserved.
+  /// When [luckBonus] > 0, unlocked stats get advantage rolls.
   factory PilotLicense.reroll(
     PilotLicense current, {
     Set<String> lockedStats = const {},
     bool lockType = false,
     Random? rng,
+    int luckBonus = 0,
   }) {
     return PilotLicense(
       coinBoost: lockedStats.contains('coinBoost')
           ? current.coinBoost
-          : rollStat(rng),
+          : rollStat(rng: rng, luckBonus: luckBonus),
       clueBoost: lockedStats.contains('clueBoost')
           ? current.clueBoost
-          : rollStat(rng),
+          : rollStat(rng: rng, luckBonus: luckBonus),
       clueChance: lockedStats.contains('clueChance')
           ? current.clueChance
-          : rollStat(rng),
+          : rollStat(rng: rng, luckBonus: luckBonus),
       fuelBoost: lockedStats.contains('fuelBoost')
           ? current.fuelBoost
-          : rollStat(rng),
+          : rollStat(rng: rng, luckBonus: luckBonus),
       preferredClueType: lockType
           ? current.preferredClueType
           : rollClueType(rng),

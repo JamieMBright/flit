@@ -197,6 +197,9 @@ class AccountNotifier extends StateNotifier<AccountState> {
   // --- Pilot License ---
 
   /// Reroll the pilot license. Returns true if affordable.
+  ///
+  /// The avatar's [luckBonus] is automatically applied — rarer avatars
+  /// grant advantage rolls for better licence stats.
   bool rerollLicense({Set<String> lockedStats = const {}, bool lockType = false}) {
     // Calculate cost
     var cost = PilotLicense.rerollAllCost;
@@ -211,6 +214,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
         state.license,
         lockedStats: lockedStats,
         lockType: lockType,
+        luckBonus: state.avatar.luckBonus,
       ),
     );
     return true;

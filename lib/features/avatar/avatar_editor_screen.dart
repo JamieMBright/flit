@@ -61,6 +61,17 @@ class _AvatarCategory {
 }
 
 const List<_AvatarCategory> _categories = [
+  // -- Body Type --
+  _AvatarCategory(
+    label: 'Body',
+    icon: Icons.accessibility_new,
+    configKey: 'bodyType',
+    parts: [
+      _AvatarPart(id: 'body_masculine', name: 'Boy', icon: Icons.male),
+      _AvatarPart(id: 'body_feminine', name: 'Girl', icon: Icons.female),
+    ],
+  ),
+
   // -- Face --
   _AvatarCategory(
     label: 'Face',
@@ -388,6 +399,8 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
   /// Returns the currently selected part id for the given [categoryKey].
   String _selectedPartForCategory(String categoryKey) {
     switch (categoryKey) {
+      case 'bodyType':
+        return 'body_${_config.bodyType.name}';
       case 'face':
         return 'face_${_config.face.name}';
       case 'skin':
@@ -421,6 +434,11 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
   void _selectPart(String categoryKey, String partId) {
     setState(() {
       switch (categoryKey) {
+        case 'bodyType':
+          final name = _enumName('body', partId);
+          _config = _config.copyWith(
+            bodyType: AvatarBodyType.values.firstWhere((v) => v.name == name),
+          );
         case 'face':
           final name = _enumName('face', partId);
           _config = _config.copyWith(
@@ -598,14 +616,44 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                     ),
                   ],
                   const SizedBox(height: 4),
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.info_outline, color: FlitColors.textMuted, size: 16),
-                      SizedBox(width: 6),
+                      const Icon(Icons.info_outline, color: FlitColors.textMuted, size: 16),
+                      const SizedBox(width: 6),
                       Expanded(
-                        child: Text(
-                          'Play games to earn coins or buy from shop',
-                          style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              const TextSpan(
+                                text: 'Play games to earn coins or ',
+                                style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
+                              ),
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.baseline,
+                                baseline: TextBaseline.alphabetic,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(dialogContext).pop();
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => const ShopScreen(initialTabIndex: 2),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text(
+                                    'buy',
+                                    style: TextStyle(
+                                      color: FlitColors.accent,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: FlitColors.accent,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -737,7 +785,9 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
             // Coin balance pill
             GestureDetector(
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const ShopScreen()),
+                MaterialPageRoute<void>(
+                  builder: (_) => const ShopScreen(initialTabIndex: 2),
+                ),
               ),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
