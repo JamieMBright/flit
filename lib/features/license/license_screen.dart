@@ -781,8 +781,6 @@ class _StatBar extends StatelessWidget {
 
   Widget _buildSegments(Color color, bool isMax) => LayoutBuilder(
         builder: (context, constraints) {
-          final segmentWidth =
-              (constraints.maxWidth - 9 * 2) / 10; // 9 gaps of 2px
           return Row(
             children: List.generate(10, (i) {
               final filled = i < value;

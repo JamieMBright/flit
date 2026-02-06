@@ -652,7 +652,6 @@ class Leaderboard {
   /// `playerId: 'current_player'` so the UI can scroll to and highlight
   /// their position.
   static Leaderboard placeholder(LeaderboardType type) {
-    final bool licensed = type == LeaderboardType.globalLicensed;
     final LeaderboardTimeframe timeframe;
     final List<LeaderboardEntry> entries;
     final int totalEntries;

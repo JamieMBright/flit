@@ -1064,7 +1064,6 @@ class _PlanePainter extends CustomPainter {
   // --- Stealth Bomber: flying wing, flat, angular ---
   void _drawStealth(Canvas canvas, double cx, double cy) {
     final body = Paint()..color = _primary;
-    final edge = Paint()..color = _detail;
     final dark = Paint()..color = _secondary;
 
     // Main body (wide chevron)

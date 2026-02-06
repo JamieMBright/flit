@@ -4,7 +4,6 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
-import '../components/plane_component.dart';
 import '../flit_game.dart';
 import 'country_data.dart';
 

@@ -46,7 +46,7 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
                   _ChallengeHeader(challenge: _challenge),
                   const SizedBox(height: 12),
                   if (_seasonalTheme != null) ...[
-                    _SeasonalBanner(theme: _seasonalTheme!),
+                    _SeasonalBanner(theme: _seasonalTheme),
                     const SizedBox(height: 12),
                   ],
                   _RewardsSection(challenge: _challenge),
