@@ -25,7 +25,7 @@ const double _rad2deg = 180 / pi;
 /// The world is rendered as a globe using azimuthal equidistant projection
 /// centered on the plane.
 class FlitGame extends FlameGame
-    with HasKeyboardHandlerComponents, HorizontalDragDetector, TapDetector {
+    with HasKeyboardHandlerComponents, HorizontalDragDetector {
   FlitGame({
     this.onGameReady,
     this.onAltitudeChanged,
@@ -198,12 +198,6 @@ class FlitGame extends FlameGame
   @override
   void onHorizontalDragEnd(DragEndInfo info) {
     _plane.releaseTurn();
-  }
-
-  @override
-  void onTap() {
-    _log.debug('input', 'Screen tap → altitude toggle');
-    _plane.toggleAltitude();
   }
 
   @override
