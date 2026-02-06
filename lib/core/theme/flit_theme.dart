@@ -15,7 +15,6 @@ abstract final class FlitTheme {
           surface: FlitColors.backgroundMid,
           error: FlitColors.error,
         ),
-        fontFamily: 'Inter',
         textTheme: const TextTheme(
           displayLarge: TextStyle(
             fontSize: 48,
