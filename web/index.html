@@ -122,7 +122,18 @@
       fl.src = 'flutter.js';
       fl.defer = true;
       fl.onload = function() {
-        _flutter.loader.load();
+        // Flutter 3.22+ uses load(), 3.16-3.21 uses loadEntrypoint().
+        if (_flutter.loader.load) {
+          _flutter.loader.load();
+        } else {
+          _flutter.loader.loadEntrypoint({
+            onEntrypointLoaded: function(engineInitializer) {
+              engineInitializer.initializeEngine().then(function(appRunner) {
+                appRunner.runApp();
+              });
+            }
+          });
+        }
       };
       fl.onerror = function() {
         showError('Could not load Flutter engine (neither flutter_bootstrap.js nor flutter.js found).');
