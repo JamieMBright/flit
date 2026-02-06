@@ -372,6 +372,64 @@ class _FriendsScreenState extends State<FriendsScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 10),
+              // Gift Membership button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _showGiftMembershipDialog(friend);
+                  },
+                  icon: const Icon(
+                    Icons.card_giftcard,
+                    size: 18,
+                    color: FlitColors.accent,
+                  ),
+                  label: const Text(
+                    'GIFT MEMBERSHIP',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: FlitColors.accent,
+                    side: const BorderSide(color: FlitColors.accent),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Report Username button
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _showReportDialog(friend);
+                  },
+                  icon: const Icon(
+                    Icons.flag_outlined,
+                    size: 16,
+                    color: FlitColors.textMuted,
+                  ),
+                  label: const Text(
+                    'REPORT USERNAME',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: FlitColors.textMuted,
+                  ),
+                ),
+              ),
               const SizedBox(height: 12),
             ],
           ),
@@ -379,6 +437,252 @@ class _FriendsScreenState extends State<FriendsScreen> {
       },
     );
   }
+
+  void _showGiftMembershipDialog(Friend friend) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.card_giftcard,
+                color: FlitColors.accent,
+                size: 40,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Gift Flit+ to ${friend.name}',
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Remove ads, unlock Live Group mode, and more!',
+                style: TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 13,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              // Gift options
+              _GiftOption(
+                label: '1 Month',
+                price: '\$2.99',
+                onTap: () {
+                  Navigator.of(dialogContext).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Gifted 1 month of Flit+ to ${friend.name}!'),
+                      backgroundColor: FlitColors.success,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              _GiftOption(
+                label: '1 Year',
+                price: '\$24.99',
+                isBestValue: true,
+                onTap: () {
+                  Navigator.of(dialogContext).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Gifted 1 year of Flit+ to ${friend.name}!'),
+                      backgroundColor: FlitColors.success,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: FlitColors.textMuted),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showReportDialog(Friend friend) {
+    String? selectedReason;
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => Dialog(
+          backgroundColor: FlitColors.cardBackground,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.flag,
+                  color: FlitColors.warning,
+                  size: 36,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Report @${friend.username}',
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ...['Inappropriate username', 'Offensive behaviour', 'Spam / scam', 'Impersonation'].map(
+                  (reason) => RadioListTile<String>(
+                    title: Text(
+                      reason,
+                      style: const TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 14,
+                      ),
+                    ),
+                    value: reason,
+                    groupValue: selectedReason,
+                    activeColor: FlitColors.accent,
+                    onChanged: (val) => setDialogState(() => selectedReason = val),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(color: FlitColors.textMuted),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: selectedReason != null
+                          ? () {
+                              Navigator.of(dialogContext).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Report submitted. Thanks for keeping Flit safe.'),
+                                  backgroundColor: FlitColors.success,
+                                ),
+                              );
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: FlitColors.warning,
+                        foregroundColor: FlitColors.backgroundDark,
+                        disabledBackgroundColor: FlitColors.textMuted.withOpacity(0.3),
+                      ),
+                      child: const Text('Report'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GiftOption extends StatelessWidget {
+  const _GiftOption({
+    required this.label,
+    required this.price,
+    required this.onTap,
+    this.isBestValue = false,
+  });
+
+  final String label;
+  final String price;
+  final VoidCallback onTap;
+  final bool isBestValue;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isBestValue
+                ? FlitColors.accent.withOpacity(0.1)
+                : FlitColors.backgroundMid,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isBestValue ? FlitColors.accent : FlitColors.cardBorder,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          label,
+                          style: const TextStyle(
+                            color: FlitColors.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (isBestValue) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: FlitColors.accent,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'BEST VALUE',
+                              style: TextStyle(
+                                color: FlitColors.textPrimary,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                price,
+                style: const TextStyle(
+                  color: FlitColors.gold,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
 class _MiniStat extends StatelessWidget {

@@ -79,8 +79,8 @@ const List<_AvatarCategory> _categories = [
       _AvatarPart(id: 'skin_fair', name: 'Fair', icon: Icons.wb_sunny_outlined),
       _AvatarPart(id: 'skin_medium', name: 'Medium', icon: Icons.contrast),
       _AvatarPart(id: 'skin_tan', name: 'Tan', icon: Icons.wb_twilight),
-      _AvatarPart(id: 'skin_dark', name: 'Dark', icon: Icons.dark_mode_outlined),
-      _AvatarPart(id: 'skin_deep', name: 'Deep', icon: Icons.nights_stay_outlined),
+      _AvatarPart(id: 'skin_brown', name: 'Brown', icon: Icons.dark_mode_outlined),
+      _AvatarPart(id: 'skin_dark', name: 'Dark', icon: Icons.nights_stay_outlined),
     ],
   ),
 
@@ -90,26 +90,15 @@ const List<_AvatarCategory> _categories = [
     icon: Icons.visibility,
     configKey: 'eyes',
     parts: [
-      _AvatarPart(id: 'eyes_normal', name: 'Normal', icon: Icons.remove_red_eye_outlined),
-      _AvatarPart(id: 'eyes_happy', name: 'Happy', icon: Icons.sentiment_satisfied),
-      _AvatarPart(id: 'eyes_sleepy', name: 'Sleepy', icon: Icons.bedtime_outlined),
+      _AvatarPart(id: 'eyes_round', name: 'Round', icon: Icons.remove_red_eye_outlined),
+      _AvatarPart(id: 'eyes_almond', name: 'Almond', icon: Icons.visibility_outlined),
+      _AvatarPart(id: 'eyes_wide', name: 'Wide', icon: Icons.sentiment_satisfied),
+      _AvatarPart(id: 'eyes_narrow', name: 'Narrow', icon: Icons.bedtime_outlined),
       _AvatarPart(
         id: 'eyes_wink',
         name: 'Wink',
         icon: Icons.mood,
         price: 150,
-      ),
-      _AvatarPart(
-        id: 'eyes_stars',
-        name: 'Star Eyes',
-        icon: Icons.star_outline,
-        price: 500,
-      ),
-      _AvatarPart(
-        id: 'eyes_cyber',
-        name: 'Cyber',
-        icon: Icons.smart_toy_outlined,
-        price: 800,
       ),
     ],
   ),
@@ -131,14 +120,20 @@ const List<_AvatarCategory> _categories = [
         price: 400,
       ),
       _AvatarPart(
-        id: 'hair_afro',
-        name: 'Afro',
+        id: 'hair_curly',
+        name: 'Curly',
         icon: Icons.bubble_chart,
         price: 400,
       ),
       _AvatarPart(
-        id: 'hair_spiky',
-        name: 'Spiky',
+        id: 'hair_afro',
+        name: 'Afro',
+        icon: Icons.circle,
+        price: 500,
+      ),
+      _AvatarPart(
+        id: 'hair_ponytail',
+        name: 'Ponytail',
         icon: Icons.bolt,
         price: 600,
       ),
@@ -152,30 +147,35 @@ const List<_AvatarCategory> _categories = [
     configKey: 'outfit',
     parts: [
       _AvatarPart(id: 'outfit_tshirt', name: 'T-Shirt', icon: Icons.dry_cleaning),
-      _AvatarPart(id: 'outfit_hoodie', name: 'Hoodie', icon: Icons.checkroom),
       _AvatarPart(
-        id: 'outfit_jacket',
-        name: 'Jacket',
-        icon: Icons.layers,
+        id: 'outfit_pilot',
+        name: 'Pilot',
+        icon: Icons.flight,
         price: 300,
       ),
       _AvatarPart(
         id: 'outfit_suit',
         name: 'Suit',
         icon: Icons.business_center,
-        price: 750,
+        price: 600,
       ),
       _AvatarPart(
-        id: 'outfit_pilot',
-        name: 'Pilot',
-        icon: Icons.flight,
+        id: 'outfit_leather',
+        name: 'Leather',
+        icon: Icons.layers,
         price: 1000,
       ),
       _AvatarPart(
-        id: 'outfit_explorer',
-        name: 'Explorer',
-        icon: Icons.explore,
-        price: 1200,
+        id: 'outfit_spacesuit',
+        name: 'Spacesuit',
+        icon: Icons.rocket_launch,
+        price: 1500,
+      ),
+      _AvatarPart(
+        id: 'outfit_captain',
+        name: 'Captain',
+        icon: Icons.anchor,
+        price: 2000,
       ),
     ],
   ),
@@ -189,28 +189,28 @@ const List<_AvatarCategory> _categories = [
       _AvatarPart(id: 'hat_none', name: 'None', icon: Icons.block),
       _AvatarPart(id: 'hat_cap', name: 'Cap', icon: Icons.sports_baseball),
       _AvatarPart(
-        id: 'hat_beanie',
-        name: 'Beanie',
-        icon: Icons.ac_unit,
-        price: 250,
+        id: 'hat_aviator',
+        name: 'Aviator',
+        icon: Icons.flight_takeoff,
+        price: 400,
       ),
       _AvatarPart(
         id: 'hat_tophat',
         name: 'Top Hat',
         icon: Icons.vertical_align_top,
-        price: 500,
+        price: 800,
       ),
       _AvatarPart(
         id: 'hat_crown',
         name: 'Crown',
         icon: Icons.workspace_premium,
-        price: 1500,
+        price: 2000,
       ),
       _AvatarPart(
-        id: 'hat_aviator',
-        name: 'Aviator',
-        icon: Icons.flight_takeoff,
-        price: 900,
+        id: 'hat_helmet',
+        name: 'Helmet',
+        icon: Icons.shield,
+        price: 3000,
       ),
     ],
   ),
@@ -224,28 +224,22 @@ const List<_AvatarCategory> _categories = [
       _AvatarPart(id: 'glasses_none', name: 'None', icon: Icons.block),
       _AvatarPart(id: 'glasses_round', name: 'Round', icon: Icons.lens_outlined),
       _AvatarPart(
-        id: 'glasses_square',
-        name: 'Square',
-        icon: Icons.crop_square,
-        price: 200,
-      ),
-      _AvatarPart(
         id: 'glasses_aviator',
         name: 'Aviator',
         icon: Icons.airplanemode_active,
-        price: 450,
+        price: 300,
       ),
       _AvatarPart(
         id: 'glasses_monocle',
         name: 'Monocle',
         icon: Icons.search,
-        price: 700,
+        price: 800,
       ),
       _AvatarPart(
-        id: 'glasses_vr',
-        name: 'VR Visor',
+        id: 'glasses_futuristic',
+        name: 'Visor',
         icon: Icons.vrpano,
-        price: 1100,
+        price: 1500,
       ),
     ],
   ),
@@ -254,38 +248,38 @@ const List<_AvatarCategory> _categories = [
   _AvatarCategory(
     label: 'Accessories',
     icon: Icons.auto_awesome,
-    configKey: 'accessories',
+    configKey: 'accessory',
     parts: [
       _AvatarPart(id: 'acc_none', name: 'None', icon: Icons.block),
-      _AvatarPart(
-        id: 'acc_earring',
-        name: 'Earring',
-        icon: Icons.radio_button_unchecked,
-        price: 300,
-      ),
       _AvatarPart(
         id: 'acc_scarf',
         name: 'Scarf',
         icon: Icons.waves,
-        price: 350,
-      ),
-      _AvatarPart(
-        id: 'acc_necklace',
-        name: 'Necklace',
-        icon: Icons.all_inclusive,
         price: 500,
       ),
       _AvatarPart(
         id: 'acc_medal',
         name: 'Medal',
         icon: Icons.military_tech,
-        price: 800,
+        price: 1000,
       ),
       _AvatarPart(
-        id: 'acc_compass',
-        name: 'Compass',
-        icon: Icons.explore,
-        price: 1000,
+        id: 'acc_earring',
+        name: 'Earring',
+        icon: Icons.radio_button_unchecked,
+        price: 1500,
+      ),
+      _AvatarPart(
+        id: 'acc_goldChain',
+        name: 'Gold Chain',
+        icon: Icons.all_inclusive,
+        price: 3000,
+      ),
+      _AvatarPart(
+        id: 'acc_parrot',
+        name: 'Parrot',
+        icon: Icons.pets,
+        price: 5000,
       ),
     ],
   ),
@@ -327,24 +321,30 @@ class _AvatarEditorScreenState extends State<AvatarEditorScreen> {
   String _selectedPartForCategory(String categoryKey) {
     switch (categoryKey) {
       case 'face':
-        return _config.face;
+        return 'face_${_config.face.name}';
       case 'skin':
-        return _config.skin;
+        return 'skin_${_config.skin.name}';
       case 'eyes':
-        return _config.eyes;
+        return 'eyes_${_config.eyes.name}';
       case 'hair':
-        return _config.hair;
+        return 'hair_${_config.hair.name}';
       case 'outfit':
-        return _config.outfit;
+        return 'outfit_${_config.outfit.name}';
       case 'hat':
-        return _config.hat;
+        return 'hat_${_config.hat.name}';
       case 'glasses':
-        return _config.glasses;
-      case 'accessories':
-        return _config.accessories;
+        return 'glasses_${_config.glasses.name}';
+      case 'accessory':
+        return 'acc_${_config.accessory.name}';
       default:
         return '';
     }
+  }
+
+  /// Extracts the enum name suffix from a part ID.
+  /// e.g. 'face_round' → 'round', 'acc_goldChain' → 'goldChain'
+  static String _enumName(String prefix, String partId) {
+    return partId.substring(prefix.length + 1);
   }
 
   /// Updates `_config` so that [categoryKey] now points to [partId].
@@ -352,21 +352,45 @@ class _AvatarEditorScreenState extends State<AvatarEditorScreen> {
     setState(() {
       switch (categoryKey) {
         case 'face':
-          _config = _config.copyWith(face: partId);
+          final name = _enumName('face', partId);
+          _config = _config.copyWith(
+            face: AvatarFace.values.firstWhere((v) => v.name == name),
+          );
         case 'skin':
-          _config = _config.copyWith(skin: partId);
+          final name = _enumName('skin', partId);
+          _config = _config.copyWith(
+            skin: AvatarSkin.values.firstWhere((v) => v.name == name),
+          );
         case 'eyes':
-          _config = _config.copyWith(eyes: partId);
+          final name = _enumName('eyes', partId);
+          _config = _config.copyWith(
+            eyes: AvatarEyes.values.firstWhere((v) => v.name == name),
+          );
         case 'hair':
-          _config = _config.copyWith(hair: partId);
+          final name = _enumName('hair', partId);
+          _config = _config.copyWith(
+            hair: AvatarHair.values.firstWhere((v) => v.name == name),
+          );
         case 'outfit':
-          _config = _config.copyWith(outfit: partId);
+          final name = _enumName('outfit', partId);
+          _config = _config.copyWith(
+            outfit: AvatarOutfit.values.firstWhere((v) => v.name == name),
+          );
         case 'hat':
-          _config = _config.copyWith(hat: partId);
+          final name = _enumName('hat', partId);
+          _config = _config.copyWith(
+            hat: AvatarHat.values.firstWhere((v) => v.name == name),
+          );
         case 'glasses':
-          _config = _config.copyWith(glasses: partId);
-        case 'accessories':
-          _config = _config.copyWith(accessories: partId);
+          final name = _enumName('glasses', partId);
+          _config = _config.copyWith(
+            glasses: AvatarGlasses.values.firstWhere((v) => v.name == name),
+          );
+        case 'accessory':
+          final name = _enumName('acc', partId);
+          _config = _config.copyWith(
+            accessory: AvatarAccessory.values.firstWhere((v) => v.name == name),
+          );
       }
     });
   }

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../avatar/avatar_editor_screen.dart';
+import '../daily/daily_challenge_screen.dart';
 import '../debug/debug_screen.dart';
 import '../friends/friends_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
 import '../license/license_screen.dart';
+import '../play/practice_screen.dart';
 import '../play/region_select_screen.dart';
 import '../profile/profile_screen.dart';
 import '../shop/shop_screen.dart';
@@ -71,6 +73,26 @@ class HomeScreen extends StatelessWidget {
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (context) => const RegionSelectScreen(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          _MenuButton(
+            label: 'Practice',
+            icon: Icons.school_rounded,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const PracticeScreen(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          _MenuButton(
+            label: 'Daily Challenge',
+            icon: Icons.today_rounded,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const DailyChallengeScreen(),
               ),
             ),
           ),
