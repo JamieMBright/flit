@@ -9,7 +9,10 @@ import '../../data/providers/account_provider.dart';
 
 /// Shop screen for purchasing cosmetics and gold.
 class ShopScreen extends ConsumerStatefulWidget {
-  const ShopScreen({super.key});
+  const ShopScreen({super.key, this.initialTabIndex = 0});
+
+  /// Which tab to show initially: 0 = Planes, 1 = Contrails, 2 = Gold.
+  final int initialTabIndex;
 
   @override
   ConsumerState<ShopScreen> createState() => _ShopScreenState();
@@ -27,7 +30,11 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTabIndex.clamp(0, 2),
+    );
   }
 
   @override

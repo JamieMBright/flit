@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/models/avatar_config.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
@@ -84,6 +85,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
     with SingleTickerProviderStateMixin {
   late PilotLicense _license;
   final Set<String> _lockedStats = {};
+  bool _lockClueType = false;
   bool _isRolling = false;
 
   late AnimationController _shimmerController;
@@ -126,6 +128,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
       }
       cost += PilotLicense.lockCostForValue(statValue);
     }
+    if (_lockClueType) cost += PilotLicense.lockTypeCost;
     return cost;
   }
 
@@ -144,11 +147,13 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
 
     if (!mounted) return;
 
+    final avatarLuck = ref.read(avatarProvider).luckBonus;
     setState(() {
       _license = PilotLicense.reroll(
         _license,
         lockedStats: _lockedStats,
-        lockType: false,
+        lockType: _lockClueType,
+        luckBonus: avatarLuck,
       );
       _isRolling = false;
     });
@@ -171,7 +176,9 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
           actions: [
             GestureDetector(
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const ShopScreen()),
+                MaterialPageRoute<void>(
+                  builder: (_) => const ShopScreen(initialTabIndex: 2),
+                ),
               ),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -654,6 +661,17 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
               cost: _lockCostFor('clueChance'),
               onChanged: (locked) => _toggleLock('clueChance', locked),
             ),
+            const SizedBox(height: 8),
+            _LockRow(
+              label: 'Clue Type',
+              value: '${_license.preferredClueType[0].toUpperCase()}${_license.preferredClueType.substring(1)}',
+              icon: Icons.lightbulb_outline,
+              isLocked: _lockClueType,
+              cost: PilotLicense.lockTypeCost,
+              onChanged: (locked) {
+                setState(() => _lockClueType = locked);
+              },
+            ),
             const Divider(color: FlitColors.cardBorder, height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -796,29 +814,63 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
                     ),
             ),
           ),
-          if (!_canAfford(coins)) ...[
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const ShopScreen()),
-              ),
-              child: const Text.rich(
-                TextSpan(
+          // Avatar luck bonus indicator
+          Builder(
+            builder: (context) {
+              final luck = ref.watch(avatarProvider).luckBonus;
+              final rarity = ref.watch(avatarProvider).rarityTier;
+              if (luck <= 0) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    TextSpan(
-                      text: 'Not enough coins. ',
-                      style: TextStyle(color: FlitColors.error, fontSize: 12),
-                    ),
-                    TextSpan(
-                      text: 'Play to earn more or buy from shop',
-                      style: TextStyle(
-                        color: FlitColors.accent,
-                        fontSize: 12,
-                        decoration: TextDecoration.underline,
+                    const Icon(Icons.auto_awesome, size: 14, color: FlitColors.gold),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$rarity avatar: +$luck luck',
+                      style: const TextStyle(
+                        color: FlitColors.gold,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
+              );
+            },
+          ),
+          if (!_canAfford(coins)) ...[
+            const SizedBox(height: 8),
+            Text.rich(
+              TextSpan(
+                children: [
+                  const TextSpan(
+                    text: 'Not enough coins. Play to earn more or ',
+                    style: TextStyle(color: FlitColors.error, fontSize: 12),
+                  ),
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.baseline,
+                    baseline: TextBaseline.alphabetic,
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const ShopScreen(initialTabIndex: 2),
+                        ),
+                      ),
+                      child: const Text(
+                        'buy',
+                        style: TextStyle(
+                          color: FlitColors.accent,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                          decorationColor: FlitColors.accent,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

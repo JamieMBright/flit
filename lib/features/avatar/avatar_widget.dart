@@ -325,12 +325,21 @@ class _AvatarPainter extends CustomPainter {
 
   void _drawEyebrows(Canvas canvas, double s, double p) {
     final dark = _skinShadow[config.skin]!;
-    // Left brow
-    _hline(canvas, p, 23, 26, 7, dark);
-    _px(canvas, p, 22, 27, dark);
-    // Right brow
-    _hline(canvas, p, 34, 26, 7, dark);
-    _px(canvas, p, 41, 27, dark);
+    final isFeminine = config.bodyType == AvatarBodyType.feminine;
+
+    if (isFeminine) {
+      // Thinner, arched brows
+      _hline(canvas, p, 24, 26, 5, dark);
+      _px(canvas, p, 23, 27, dark);
+      _hline(canvas, p, 35, 26, 5, dark);
+      _px(canvas, p, 40, 27, dark);
+    } else {
+      // Standard brows
+      _hline(canvas, p, 23, 26, 7, dark);
+      _px(canvas, p, 22, 27, dark);
+      _hline(canvas, p, 34, 26, 7, dark);
+      _px(canvas, p, 41, 27, dark);
+    }
   }
 
   // ---------- Eyes ----------
@@ -476,6 +485,15 @@ class _AvatarPainter extends CustomPainter {
         _px(canvas, p, 39, 30, outline);
         _px(canvas, p, 40, 31, outline);
     }
+
+    // Feminine eyelashes
+    if (config.bodyType == AvatarBodyType.feminine) {
+      // Upper lash extensions
+      _px(canvas, p, 23, 27, outline);
+      _px(canvas, p, 29, 27, outline);
+      _px(canvas, p, 34, 27, outline);
+      _px(canvas, p, 40, 27, outline);
+    }
   }
 
   // ---------- Nose ----------
@@ -502,14 +520,27 @@ class _AvatarPainter extends CustomPainter {
     const lip = Color(0xFFBB5555);
     const lipHl = Color(0xFFCC7777);
     const lipDark = Color(0xFF994444);
-    // Upper lip line
-    _hline(canvas, p, 28, 38, 8, shd);
-    // Lips
-    _hline(canvas, p, 29, 39, 6, lip);
-    _hline(canvas, p, 30, 40, 4, lipDark);
-    // Lip highlight
-    _px(canvas, p, 31, 39, lipHl);
-    _px(canvas, p, 32, 39, lipHl);
+
+    if (config.bodyType == AvatarBodyType.feminine) {
+      // Fuller, more defined lips
+      _hline(canvas, p, 28, 37, 8, shd);
+      _hline(canvas, p, 28, 38, 8, lip);
+      _hline(canvas, p, 29, 39, 6, lip);
+      _hline(canvas, p, 29, 40, 6, lipDark);
+      _hline(canvas, p, 30, 41, 4, lipDark);
+      // Highlight (cupid's bow)
+      _px(canvas, p, 30, 38, lipHl);
+      _px(canvas, p, 33, 38, lipHl);
+      _px(canvas, p, 31, 39, lipHl);
+      _px(canvas, p, 32, 39, lipHl);
+    } else {
+      // Standard lips
+      _hline(canvas, p, 28, 38, 8, shd);
+      _hline(canvas, p, 29, 39, 6, lip);
+      _hline(canvas, p, 30, 40, 4, lipDark);
+      _px(canvas, p, 31, 39, lipHl);
+      _px(canvas, p, 32, 39, lipHl);
+    }
   }
 
   // ---------- Hair ----------
@@ -664,22 +695,39 @@ class _AvatarPainter extends CustomPainter {
     final base = _outfitBase[config.outfit]!;
     final light = _outfitLight[config.outfit]!;
     final dark = _outfitDark[config.outfit]!;
+    final isFeminine = config.bodyType == AvatarBodyType.feminine;
 
-    // Torso/shoulders
-    _rect(canvas, p, 12, 48, 40, 16, base);
-    // Shoulder curve
-    _rect(canvas, p, 8, 50, 4, 14, base);
-    _rect(canvas, p, 52, 50, 4, 14, base);
-    _rect(canvas, p, 6, 52, 2, 12, base);
-    _rect(canvas, p, 56, 52, 2, 12, base);
-    // Collar area highlight
-    _hline(canvas, p, 26, 48, 12, light);
-    _hline(canvas, p, 27, 47, 10, light);
-    // Shoulder highlights
-    _rect(canvas, p, 12, 48, 6, 2, light);
-    _rect(canvas, p, 46, 48, 6, 2, light);
-    // Lower shadow
-    _rect(canvas, p, 12, 58, 40, 6, dark);
+    if (isFeminine) {
+      // Narrower shoulders, tapered waist
+      _rect(canvas, p, 14, 48, 36, 16, base);
+      _rect(canvas, p, 10, 50, 4, 14, base);
+      _rect(canvas, p, 50, 50, 4, 14, base);
+      _rect(canvas, p, 8, 52, 2, 12, base);
+      _rect(canvas, p, 54, 52, 2, 12, base);
+      // Collar area highlight
+      _hline(canvas, p, 26, 48, 12, light);
+      _hline(canvas, p, 27, 47, 10, light);
+      // Shoulder highlights
+      _rect(canvas, p, 14, 48, 6, 2, light);
+      _rect(canvas, p, 44, 48, 6, 2, light);
+      // Lower shadow
+      _rect(canvas, p, 14, 58, 36, 6, dark);
+    } else {
+      // Standard broader shoulders
+      _rect(canvas, p, 12, 48, 40, 16, base);
+      _rect(canvas, p, 8, 50, 4, 14, base);
+      _rect(canvas, p, 52, 50, 4, 14, base);
+      _rect(canvas, p, 6, 52, 2, 12, base);
+      _rect(canvas, p, 56, 52, 2, 12, base);
+      // Collar area highlight
+      _hline(canvas, p, 26, 48, 12, light);
+      _hline(canvas, p, 27, 47, 10, light);
+      // Shoulder highlights
+      _rect(canvas, p, 12, 48, 6, 2, light);
+      _rect(canvas, p, 46, 48, 6, 2, light);
+      // Lower shadow
+      _rect(canvas, p, 12, 58, 40, 6, dark);
+    }
 
     switch (config.outfit) {
       case AvatarOutfit.tshirt:

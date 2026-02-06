@@ -136,6 +136,23 @@ class HomeScreen extends StatelessWidget {
         ],
       );
 
+  /// Close the bottom sheet and navigate to [destination] after the sheet
+  /// animation completes, preventing a white-flash / blank-frame artefact.
+  void _closeSheetAndNavigate(
+    BuildContext sheetContext,
+    BuildContext homeContext,
+    Widget destination,
+  ) {
+    Navigator.of(sheetContext).pop();
+    // Wait for the bottom-sheet dismiss animation to finish before pushing
+    // the new route. This eliminates a white flash on some devices.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Navigator.of(homeContext).push(
+        MaterialPageRoute<void>(builder: (_) => destination),
+      );
+    });
+  }
+
   void _showGameModes(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -162,28 +179,18 @@ class HomeScreen extends StatelessWidget {
               title: 'Free Flight',
               subtitle: 'Explore the world at your own pace',
               icon: Icons.flight_takeoff,
-              onTap: () {
-                Navigator.of(ctx).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const RegionSelectScreen(),
-                  ),
-                );
-              },
+              onTap: () => _closeSheetAndNavigate(
+                ctx, context, const RegionSelectScreen(),
+              ),
             ),
             const SizedBox(height: 10),
             _GameModeCard(
               title: 'Training Sortie',
               subtitle: 'Practice without rank pressure',
               icon: Icons.school_rounded,
-              onTap: () {
-                Navigator.of(ctx).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const PracticeScreen(),
-                  ),
-                );
-              },
+              onTap: () => _closeSheetAndNavigate(
+                ctx, context, const PracticeScreen(),
+              ),
             ),
             const SizedBox(height: 10),
             _GameModeCard(
@@ -191,28 +198,18 @@ class HomeScreen extends StatelessWidget {
               subtitle: 'Today\'s challenge — compete for glory',
               icon: Icons.today_rounded,
               isHighlighted: true,
-              onTap: () {
-                Navigator.of(ctx).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const DailyChallengeScreen(),
-                  ),
-                );
-              },
+              onTap: () => _closeSheetAndNavigate(
+                ctx, context, const DailyChallengeScreen(),
+              ),
             ),
             const SizedBox(height: 10),
             _GameModeCard(
               title: 'Dogfight',
               subtitle: 'Challenge your friends head-to-head',
               icon: Icons.people_rounded,
-              onTap: () {
-                Navigator.of(ctx).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const FriendsScreen(),
-                  ),
-                );
-              },
+              onTap: () => _closeSheetAndNavigate(
+                ctx, context, const FriendsScreen(),
+              ),
             ),
             const SizedBox(height: 16),
           ],

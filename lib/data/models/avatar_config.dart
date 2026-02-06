@@ -1,3 +1,10 @@
+/// Avatar body type. Affects build proportions and facial features.
+/// All options are free.
+enum AvatarBodyType {
+  masculine,
+  feminine,
+}
+
 /// Avatar face shapes. All free.
 enum AvatarFace {
   round,
@@ -100,6 +107,7 @@ enum AvatarCompanion {
 /// chosen so every new player has a complete look out of the box.
 class AvatarConfig {
   const AvatarConfig({
+    this.bodyType = AvatarBodyType.masculine,
     this.face = AvatarFace.round,
     this.skin = AvatarSkin.medium,
     this.eyes = AvatarEyes.round,
@@ -111,6 +119,7 @@ class AvatarConfig {
     this.companion = AvatarCompanion.none,
   });
 
+  final AvatarBodyType bodyType;
   final AvatarFace face;
   final AvatarSkin skin;
   final AvatarEyes eyes;
@@ -126,6 +135,7 @@ class AvatarConfig {
   // ---------------------------------------------------------------------------
 
   AvatarConfig copyWith({
+    AvatarBodyType? bodyType,
     AvatarFace? face,
     AvatarSkin? skin,
     AvatarEyes? eyes,
@@ -137,6 +147,7 @@ class AvatarConfig {
     AvatarCompanion? companion,
   }) =>
       AvatarConfig(
+        bodyType: bodyType ?? this.bodyType,
         face: face ?? this.face,
         skin: skin ?? this.skin,
         eyes: eyes ?? this.eyes,
@@ -222,11 +233,39 @@ class AvatarConfig {
       accessoryPrice(accessory) +
       companionPrice(companion);
 
+  /// Rarity tier based on [totalCost].
+  ///
+  ///   0         → Common   (luck bonus 0)
+  ///   1-999     → Uncommon (luck bonus 1)
+  ///   1000-4999 → Rare     (luck bonus 2)
+  ///   5000-14999→ Epic     (luck bonus 3)
+  ///   15000+    → Legendary(luck bonus 5)
+  String get rarityTier {
+    final cost = totalCost;
+    if (cost >= 15000) return 'Legendary';
+    if (cost >= 5000) return 'Epic';
+    if (cost >= 1000) return 'Rare';
+    if (cost >= 1) return 'Uncommon';
+    return 'Common';
+  }
+
+  /// Luck bonus for licence rerolls based on avatar rarity.
+  /// Higher values give better odds when rolling licence stats.
+  int get luckBonus {
+    final cost = totalCost;
+    if (cost >= 15000) return 5;
+    if (cost >= 5000) return 3;
+    if (cost >= 1000) return 2;
+    if (cost >= 1) return 1;
+    return 0;
+  }
+
   // ---------------------------------------------------------------------------
   // Serialisation
   // ---------------------------------------------------------------------------
 
   Map<String, dynamic> toJson() => {
+        'body_type': bodyType.name,
         'face': face.name,
         'skin': skin.name,
         'eyes': eyes.name,
@@ -239,6 +278,10 @@ class AvatarConfig {
       };
 
   factory AvatarConfig.fromJson(Map<String, dynamic> json) => AvatarConfig(
+        bodyType: AvatarBodyType.values.firstWhere(
+          (v) => v.name == json['body_type'],
+          orElse: () => AvatarBodyType.masculine,
+        ),
         face: AvatarFace.values.firstWhere(
           (v) => v.name == json['face'],
           orElse: () => AvatarFace.round,
@@ -281,6 +324,7 @@ class AvatarConfig {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is AvatarConfig &&
+          bodyType == other.bodyType &&
           face == other.face &&
           skin == other.skin &&
           eyes == other.eyes &&
@@ -293,6 +337,7 @@ class AvatarConfig {
 
   @override
   int get hashCode => Object.hash(
+        bodyType,
         face,
         skin,
         eyes,
