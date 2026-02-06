@@ -232,7 +232,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
       ..color = FlitColors.textMuted.withOpacity(0.7)
       ..strokeWidth = 1.5
       ..strokeCap = StrokeCap.round;
-    final bladeLen = 5.0;
+    const bladeLen = 5.0;
     for (var i = 0; i < 2; i++) {
       final a = _propAngle + i * pi;
       canvas.drawLine(

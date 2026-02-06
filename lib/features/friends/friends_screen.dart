@@ -15,7 +15,7 @@ class FriendsScreen extends StatefulWidget {
 class _FriendsScreenState extends State<FriendsScreen> {
   // Placeholder data - will be replaced with real data from backend
   final List<Friend> _friends = [
-    Friend(
+    const Friend(
       id: '1',
       playerId: 'p1',
       username: 'SpeedyPilot',
@@ -30,7 +30,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
       isOnline: false,
       lastSeen: DateTime.now().subtract(const Duration(hours: 2)),
     ),
-    Friend(
+    const Friend(
       id: '3',
       playerId: 'p3',
       username: 'WorldFlyer',
@@ -266,7 +266,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
               Container(
                 width: 64,
                 height: 64,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: FlitColors.accent,
                   shape: BoxShape.circle,
                 ),
@@ -447,7 +447,7 @@ class _FriendTile extends StatelessWidget {
                     Container(
                       width: 48,
                       height: 48,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: FlitColors.accent,
                         shape: BoxShape.circle,
                       ),

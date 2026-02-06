@@ -269,7 +269,7 @@ class _LicenseScreenState extends State<LicenseScreen>
     );
   }
 
-  Widget _buildRollingPlaceholder() => SizedBox(
+  Widget _buildRollingPlaceholder() => const SizedBox(
         height: 220,
         child: Center(
           child: Column(
@@ -284,8 +284,8 @@ class _LicenseScreenState extends State<LicenseScreen>
                       AlwaysStoppedAnimation<Color>(FlitColors.gold),
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
+              SizedBox(height: 16),
+              Text(
                 'Rerolling...',
                 style: TextStyle(
                   color: FlitColors.textSecondary,
@@ -781,8 +781,6 @@ class _StatBar extends StatelessWidget {
 
   Widget _buildSegments(Color color, bool isMax) => LayoutBuilder(
         builder: (context, constraints) {
-          final segmentWidth =
-              (constraints.maxWidth - 9 * 2) / 10; // 9 gaps of 2px
           return Row(
             children: List.generate(10, (i) {
               final filled = i < value;

@@ -77,7 +77,7 @@ class _ClueCard extends StatelessWidget {
             // Clue type label
             Text(
               _clueTypeLabel(clue.type),
-              style: TextStyle(
+              style: const TextStyle(
                 color: FlitColors.gold,
                 fontSize: 9,
                 fontWeight: FontWeight.w700,

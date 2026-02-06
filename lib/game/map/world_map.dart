@@ -4,7 +4,6 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
-import '../components/plane_component.dart';
 import '../flit_game.dart';
 import 'country_data.dart';
 
@@ -87,7 +86,7 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   void _renderOcean(Canvas canvas, Vector2 screenSize) {
     // Gradient ocean - deeper at top, shallower near center
     final oceanGradient = Paint()
-      ..shader = LinearGradient(
+      ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
@@ -95,7 +94,7 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
           FlitColors.ocean,
           FlitColors.oceanDeep,
         ],
-        stops: const [0.0, 0.5, 1.0],
+        stops: [0.0, 0.5, 1.0],
       ).createShader(Rect.fromLTWH(0, 0, screenSize.x, screenSize.y));
 
     canvas.drawRect(

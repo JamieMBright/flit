@@ -81,7 +81,7 @@ class Clue {
 
   /// Generate a random clue for a country
   factory Clue.random(String countryCode) {
-    final types = ClueType.values;
+    const types = ClueType.values;
     final randomType = types[Random().nextInt(types.length)];
 
     switch (randomType) {

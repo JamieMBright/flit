@@ -182,11 +182,11 @@ class _LoginScreenState extends State<LoginScreen> {
               color: FlitColors.cardBackground.withOpacity(0.6),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Row(
+            child: const Row(
               children: [
                 Icon(Icons.shield_outlined,
                     color: FlitColors.gold, size: 18),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     'Your account is tied to this device for security. '
@@ -350,7 +350,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 16),
 
           // Privacy note
-          Text(
+          const Text(
             'We only store your email for account recovery. '
             'No spam, no sharing.',
             textAlign: TextAlign.center,
@@ -463,7 +463,7 @@ class _AuthBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -472,7 +472,7 @@ class _AuthBackground extends StatelessWidget {
               FlitColors.backgroundDark,
               FlitColors.oceanDeep,
             ],
-            stops: const [0.0, 0.5, 1.0],
+            stops: [0.0, 0.5, 1.0],
           ),
         ),
       );
@@ -516,7 +516,7 @@ class _AuthTextField extends StatelessWidget {
             ),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: FlitColors.textMuted),
+              hintStyle: const TextStyle(color: FlitColors.textMuted),
               prefixText: prefix,
               prefixStyle: const TextStyle(
                 color: FlitColors.textSecondary,
@@ -530,11 +530,11 @@ class _AuthTextField extends StatelessWidget {
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: FlitColors.cardBorder),
+                borderSide: const BorderSide(color: FlitColors.cardBorder),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: FlitColors.cardBorder),
+                borderSide: const BorderSide(color: FlitColors.cardBorder),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
