@@ -1,8 +1,14 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
-import '../../core/game/flit_game.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../game/flit_game.dart';
+import '../debug/debug_screen.dart';
+import '../friends/friends_screen.dart';
+import '../leaderboard/leaderboard_screen.dart';
+import '../play/region_select_screen.dart';
+import '../profile/profile_screen.dart';
+import '../shop/shop_screen.dart';
 
 /// Home screen with game canvas and menu overlay.
 class HomeScreen extends StatefulWidget {
@@ -62,19 +68,61 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Play',
             icon: Icons.play_arrow_rounded,
             isPrimary: true,
-            onTap: () => _showComingSoon('Solo mode'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const RegionSelectScreen(),
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           _MenuButton(
             label: 'Challenge',
             icon: Icons.people_rounded,
-            onTap: () => _showComingSoon('Challenge mode'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const FriendsScreen(),
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           _MenuButton(
             label: 'Leaderboard',
             icon: Icons.leaderboard_rounded,
-            onTap: () => _showComingSoon('Leaderboards'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const LeaderboardScreen(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _MenuButton(
+            label: 'Profile',
+            icon: Icons.person_rounded,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const ProfileScreen(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _MenuButton(
+            label: 'Shop',
+            icon: Icons.storefront_rounded,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const ShopScreen(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _MenuButton(
+            label: 'Debug',
+            icon: Icons.bug_report_rounded,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const DebugScreen(),
+              ),
+            ),
           ),
         ],
       );
