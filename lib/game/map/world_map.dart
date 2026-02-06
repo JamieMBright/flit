@@ -7,32 +7,35 @@ import '../../core/theme/flit_colors.dart';
 import '../flit_game.dart';
 import 'country_data.dart';
 
-/// Renders the world map scrolling underneath the plane.
+/// Degrees-to-radians constant.
+const double _deg2rad = pi / 180;
+
+/// Renders the world as a globe using azimuthal equidistant projection.
 ///
-/// The camera is centered on the plane's world position.
-/// At high altitude: zoomed out, simplified outlines, lat/lng grid.
-/// At low altitude: zoomed in, detailed fills, city names, terrain tones.
+/// The projection is centered on the plane's current position, giving
+/// a "looking down at the globe" perspective. The visible earth is a
+/// circular disc surrounded by space. Grid lines curve naturally.
 class WorldMap extends Component with HasGameRef<FlitGame> {
   WorldMap({this.onCountryTapped});
 
   final void Function(String countryCode)? onCountryTapped;
 
-  /// Current altitude mode
-  bool _isHighAltitude = true;
-
-  /// Camera center in world coordinates
+  /// Camera center in (longitude, latitude) degrees.
   Vector2 _cameraCenter = Vector2.zero();
 
-  /// Map dimensions (Mercator projection world space)
+  /// Current altitude mode.
+  bool _isHighAltitude = true;
+
+  /// Kept for speed-conversion compatibility.
   static const double mapWidth = 3600;
   static const double mapHeight = 1800;
 
-  /// Zoom levels
-  static const double _highAltitudeZoom = 0.35;
-  static const double _lowAltitudeZoom = 0.8;
+  /// Angular radius of the visible globe in radians.
+  static const double _highAltitudeRadius = 1.1; // ~63°
+  static const double _lowAltitudeRadius = 0.4; // ~23°
 
-  /// Current interpolated zoom
-  double _currentZoom = _highAltitudeZoom;
+  /// Current interpolated angular radius.
+  double _angularRadius = _highAltitudeRadius;
 
   bool get isHighAltitude => _isHighAltitude;
   Vector2 get cameraCenter => _cameraCenter;
@@ -48,192 +51,211 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   @override
   void update(double dt) {
     super.update(dt);
-    // Smoothly interpolate zoom
-    final targetZoom = _isHighAltitude ? _highAltitudeZoom : _lowAltitudeZoom;
-    _currentZoom += (targetZoom - _currentZoom) * min(1.0, dt * 3);
+    final target = _isHighAltitude ? _highAltitudeRadius : _lowAltitudeRadius;
+    _angularRadius += (target - _angularRadius) * min(1.0, dt * 3);
   }
+
+  // ─── Rendering ──────────────────────────────────────────────────────
 
   @override
   void render(Canvas canvas) {
     super.render(canvas);
 
     final screenSize = gameRef.size;
+    final center = Offset(
+      screenSize.x * FlitGame.planeScreenX,
+      screenSize.y * FlitGame.planeScreenY,
+    );
+    final globeRadius = _globeScreenRadius(screenSize);
 
-    // Draw ocean background with subtle gradient
-    _renderOcean(canvas, screenSize);
+    // 1. Space background
+    _renderSpace(canvas, screenSize);
 
-    // Draw lat/lng grid (subtle, atlas-style)
-    _renderGrid(canvas, screenSize);
+    // 2. Globe disc (ocean)
+    _renderGlobeDisc(canvas, center, globeRadius);
 
-    // Draw countries
-    _renderCountries(canvas, screenSize);
+    // Clip to globe
+    canvas.save();
+    canvas.clipPath(
+        Path()..addOval(Rect.fromCircle(center: center, radius: globeRadius)));
 
-    // Draw coastline effects
-    _renderCoastlines(canvas, screenSize);
+    // 3. Grid lines
+    _renderGrid(canvas, screenSize, globeRadius);
 
-    // Draw cities at low altitude
+    // 4. Countries
+    _renderCountries(canvas, screenSize, globeRadius);
+
+    // 5. Coastline glow
+    _renderCoastlines(canvas, screenSize, globeRadius);
+
+    // 6. Cities (low altitude only)
     if (!_isHighAltitude) {
-      _renderCities(canvas, screenSize);
+      _renderCities(canvas, screenSize, globeRadius);
     }
 
-    // Draw contrails from plane component
-    _renderContrails(canvas, screenSize);
+    // 7. Contrails
+    _renderContrails(canvas, screenSize, center);
 
-    // Atmospheric haze at edges (vignette)
-    _renderAtmosphere(canvas, screenSize);
+    canvas.restore(); // un-clip
+
+    // 8. Atmosphere glow at globe edge
+    _renderAtmosphere(canvas, center, globeRadius);
   }
 
-  void _renderOcean(Canvas canvas, Vector2 screenSize) {
-    // Gradient ocean - deeper at top, shallower near center
-    final oceanGradient = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          FlitColors.oceanDeep,
-          FlitColors.ocean,
-          FlitColors.oceanDeep,
-        ],
-        stops: [0.0, 0.5, 1.0],
-      ).createShader(Rect.fromLTWH(0, 0, screenSize.x, screenSize.y));
+  double _globeScreenRadius(Vector2 screenSize) {
+    return min(screenSize.x, screenSize.y) * 0.48;
+  }
 
+  void _renderSpace(Canvas canvas, Vector2 screenSize) {
     canvas.drawRect(
       Rect.fromLTWH(0, 0, screenSize.x, screenSize.y),
-      oceanGradient,
+      Paint()..color = FlitColors.space,
     );
   }
 
-  void _renderGrid(Canvas canvas, Vector2 screenSize) {
+  void _renderGlobeDisc(Canvas canvas, Offset center, double radius) {
+    // Ocean with radial gradient
+    final oceanPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          FlitColors.oceanShallow,
+          FlitColors.ocean,
+          FlitColors.oceanDeep,
+        ],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
+
+    canvas.drawCircle(center, radius, oceanPaint);
+
+    // Subtle edge ring
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = FlitColors.gridLine.withOpacity(0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+  }
+
+  void _renderGrid(Canvas canvas, Vector2 screenSize, double globeRadius) {
     final gridPaint = Paint()
       ..color = FlitColors.gridLine
-      ..strokeWidth = 0.5;
+      ..strokeWidth = 0.5
+      ..style = PaintingStyle.stroke;
 
-    // Draw latitude/longitude grid lines every 30 degrees
-    const gridSpacing = 30.0;
-
-    // Longitude lines (vertical)
-    for (var lng = -180.0; lng <= 180.0; lng += gridSpacing) {
-      final worldX = (lng + 180) / 360 * mapWidth;
-      final screenX = _worldToScreenX(worldX, screenSize);
-      if (screenX >= -50 && screenX <= screenSize.x + 50) {
-        canvas.drawLine(
-          Offset(screenX, 0),
-          Offset(screenX, screenSize.y),
-          gridPaint,
-        );
-      }
-    }
-
-    // Latitude lines (horizontal)
-    for (var lat = -90.0; lat <= 90.0; lat += gridSpacing) {
-      final worldY = (90 - lat) / 180 * mapHeight;
-      final screenY = _worldToScreenY(worldY, screenSize);
-      if (screenY >= -50 && screenY <= screenSize.y + 50) {
-        canvas.drawLine(
-          Offset(0, screenY),
-          Offset(screenSize.x, screenY),
-          gridPaint,
-        );
-      }
-    }
-
-    // Equator and prime meridian slightly stronger
     final majorGridPaint = Paint()
       ..color = FlitColors.gridLine.withOpacity(0.15)
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
 
-    // Equator
-    final eqY = _worldToScreenY(mapHeight / 2, screenSize);
-    if (eqY >= 0 && eqY <= screenSize.y) {
-      canvas.drawLine(
-        Offset(0, eqY),
-        Offset(screenSize.x, eqY),
-        majorGridPaint,
-      );
+    const gridSpacing = 30.0;
+    const segments = 60;
+
+    // Latitude lines
+    for (var lat = -60.0; lat <= 60.0; lat += gridSpacing) {
+      final isMajor = lat.abs() < 0.1;
+      final paint = isMajor ? majorGridPaint : gridPaint;
+      _drawGridLine(canvas, screenSize, globeRadius, paint, segments,
+          (t) => Vector2(-180 + t * 360, lat));
     }
 
-    // Prime meridian
-    final pmX = _worldToScreenX(mapWidth / 2, screenSize);
-    if (pmX >= 0 && pmX <= screenSize.x) {
-      canvas.drawLine(
-        Offset(pmX, 0),
-        Offset(pmX, screenSize.y),
-        majorGridPaint,
-      );
+    // Longitude lines
+    for (var lng = -180.0; lng < 180.0; lng += gridSpacing) {
+      final isMajor = lng.abs() < 0.1;
+      final paint = isMajor ? majorGridPaint : gridPaint;
+      _drawGridLine(canvas, screenSize, globeRadius, paint, segments,
+          (t) => Vector2(lng, -80 + t * 160));
     }
   }
 
-  void _renderCountries(Canvas canvas, Vector2 screenSize) {
+  void _drawGridLine(
+    Canvas canvas,
+    Vector2 screenSize,
+    double globeRadius,
+    Paint paint,
+    int segments,
+    Vector2 Function(double t) paramToLatLng,
+  ) {
+    final path = Path();
+    var started = false;
+
+    for (var i = 0; i <= segments; i++) {
+      final t = i / segments;
+      final ll = paramToLatLng(t);
+      final projected = _project(ll.x, ll.y, screenSize, globeRadius);
+      if (projected == null) {
+        started = false;
+        continue;
+      }
+      if (!started) {
+        path.moveTo(projected.dx, projected.dy);
+        started = true;
+      } else {
+        path.lineTo(projected.dx, projected.dy);
+      }
+    }
+
+    canvas.drawPath(path, paint);
+  }
+
+  void _renderCountries(
+      Canvas canvas, Vector2 screenSize, double globeRadius) {
     for (final country in CountryData.countries) {
-      _renderCountry(canvas, screenSize, country);
+      _renderCountry(canvas, screenSize, globeRadius, country);
     }
   }
 
-  void _renderCountry(Canvas canvas, Vector2 screenSize, CountryShape country) {
-    final path = _createCountryPath(country, screenSize);
+  void _renderCountry(Canvas canvas, Vector2 screenSize, double globeRadius,
+      CountryShape country) {
+    final path = _createCountryPath(country, screenSize, globeRadius);
     if (path == null) return;
 
-    // Land fill - vary by latitude for visual interest
     final centerLat = _getCountryCenterLat(country);
     final landColor = _getLandColorByLatitude(centerLat);
 
-    final landPaint = Paint()
-      ..color = landColor
-      ..style = PaintingStyle.fill;
+    canvas.drawPath(path, Paint()..color = landColor);
 
-    canvas.drawPath(path, landPaint);
-
-    // Inner highlight (subtle lighter edge)
     if (!_isHighAltitude) {
-      final highlightPaint = Paint()
-        ..color = FlitColors.landMassHighlight.withOpacity(0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5;
-      canvas.drawPath(path, highlightPaint);
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = FlitColors.landMassHighlight.withOpacity(0.3)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
     }
 
-    // Border
-    final borderPaint = Paint()
-      ..color = _isHighAltitude
-          ? FlitColors.border.withOpacity(0.6)
-          : FlitColors.border
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _isHighAltitude ? 0.8 : 1.5;
-
-    canvas.drawPath(path, borderPaint);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = _isHighAltitude
+            ? FlitColors.border.withOpacity(0.6)
+            : FlitColors.border
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = _isHighAltitude ? 0.8 : 1.5,
+    );
   }
 
   Color _getLandColorByLatitude(double lat) {
-    // Vary land color by latitude for natural look
     final absLat = lat.abs();
-    if (absLat > 65) {
-      // Polar/tundra - snowy
-      return FlitColors.landSnow;
-    } else if (absLat > 50) {
-      // Temperate - green
-      return FlitColors.landMass;
-    } else if (absLat > 30) {
-      // Subtropical - lighter green
-      return FlitColors.landMassHighlight;
-    } else if (absLat > 15) {
-      // Arid/tropical transition
-      return FlitColors.landArid;
-    } else {
-      // Tropical - warm green
-      return FlitColors.landMass;
-    }
+    if (absLat > 65) return FlitColors.landSnow;
+    if (absLat > 50) return FlitColors.landMass;
+    if (absLat > 30) return FlitColors.landMassHighlight;
+    if (absLat > 15) return FlitColors.landArid;
+    return FlitColors.landMass;
   }
 
   double _getCountryCenterLat(CountryShape country) {
-    var sumLat = 0.0;
+    var sum = 0.0;
     for (final p in country.points) {
-      sumLat += p.y;
+      sum += p.y;
     }
-    return sumLat / country.points.length;
+    return sum / country.points.length;
   }
 
-  void _renderCoastlines(Canvas canvas, Vector2 screenSize) {
-    // Draw a subtle glow around coastlines for that atlas feel
+  void _renderCoastlines(
+      Canvas canvas, Vector2 screenSize, double globeRadius) {
     final coastPaint = Paint()
       ..color = FlitColors.oceanShallow.withOpacity(0.2)
       ..style = PaintingStyle.stroke
@@ -241,69 +263,40 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
 
     for (final country in CountryData.countries) {
-      final path = _createCountryPath(country, screenSize);
+      final path = _createCountryPath(country, screenSize, globeRadius);
       if (path != null) {
         canvas.drawPath(path, coastPaint);
       }
     }
   }
 
-  Path? _createCountryPath(CountryShape country, Vector2 screenSize) {
+  Path? _createCountryPath(
+      CountryShape country, Vector2 screenSize, double globeRadius) {
     final path = Path();
-    var anyOnScreen = false;
+    var anyVisible = false;
 
     for (var i = 0; i < country.points.length; i++) {
-      final screenPos = _latLngToScreen(country.points[i], screenSize);
+      final p = country.points[i];
+      final projected = _project(p.x, p.y, screenSize, globeRadius);
 
-      // Check if any point is roughly on screen (with margin)
-      if (screenPos.x >= -200 &&
-          screenPos.x <= screenSize.x + 200 &&
-          screenPos.y >= -200 &&
-          screenPos.y <= screenSize.y + 200) {
-        anyOnScreen = true;
-      }
+      if (projected != null) anyVisible = true;
+
+      final pt =
+          projected ?? _projectClamped(p.x, p.y, screenSize, globeRadius);
 
       if (i == 0) {
-        path.moveTo(screenPos.x, screenPos.y);
+        path.moveTo(pt.dx, pt.dy);
       } else {
-        path.lineTo(screenPos.x, screenPos.y);
+        path.lineTo(pt.dx, pt.dy);
       }
     }
 
     path.close();
-    return anyOnScreen ? path : null;
+    return anyVisible ? path : null;
   }
 
-  Vector2 _latLngToScreen(Vector2 latLng, Vector2 screenSize) {
-    // Convert lat/lng to world coordinates
-    final worldX = (latLng.x + 180) / 360 * mapWidth;
-    final worldY = (90 - latLng.y) / 180 * mapHeight;
-
-    return Vector2(
-      _worldToScreenX(worldX, screenSize),
-      _worldToScreenY(worldY, screenSize),
-    );
-  }
-
-  double _worldToScreenX(double worldX, Vector2 screenSize) {
-    // Plane is at planeScreenX on screen, camera is at _cameraCenter in world
-    final planeScreenPosX = screenSize.x * FlitGame.planeScreenX;
-    var dx = worldX - _cameraCenter.x;
-
-    // Handle wrapping
-    if (dx > mapWidth / 2) dx -= mapWidth;
-    if (dx < -mapWidth / 2) dx += mapWidth;
-
-    return planeScreenPosX + dx * _currentZoom;
-  }
-
-  double _worldToScreenY(double worldY, Vector2 screenSize) {
-    final planeScreenPosY = screenSize.y * FlitGame.planeScreenY;
-    final dy = worldY - _cameraCenter.y;
-    return planeScreenPosY + dy * _currentZoom;
-  }
-
-  void _renderCities(Canvas canvas, Vector2 screenSize) {
+  void _renderCities(
+      Canvas canvas, Vector2 screenSize, double globeRadius) {
     final cityDotPaint = Paint()..color = FlitColors.city;
     final capitalDotPaint = Paint()..color = FlitColors.cityCapital;
     final cityOutlinePaint = Paint()
@@ -312,32 +305,16 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
       ..strokeWidth = 0.5;
 
     for (final city in CountryData.majorCities) {
-      final screenPos = _latLngToScreen(city.location, screenSize);
-
-      // Only render if on screen
-      if (screenPos.x < -20 ||
-          screenPos.x > screenSize.x + 20 ||
-          screenPos.y < -20 ||
-          screenPos.y > screenSize.y + 20) {
-        continue;
-      }
+      final projected =
+          _project(city.location.x, city.location.y, screenSize, globeRadius);
+      if (projected == null) continue;
 
       final dotSize = city.isCapital ? 4.0 : 2.5;
       final paint = city.isCapital ? capitalDotPaint : cityDotPaint;
 
-      // City dot with outline
-      canvas.drawCircle(
-        Offset(screenPos.x, screenPos.y),
-        dotSize,
-        paint,
-      );
-      canvas.drawCircle(
-        Offset(screenPos.x, screenPos.y),
-        dotSize,
-        cityOutlinePaint,
-      );
+      canvas.drawCircle(projected, dotSize, paint);
+      canvas.drawCircle(projected, dotSize, cityOutlinePaint);
 
-      // City name
       final textPainter = TextPainter(
         text: TextSpan(
           text: city.name,
@@ -354,83 +331,152 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
 
       textPainter.paint(
         canvas,
-        Offset(screenPos.x + dotSize + 3, screenPos.y - textPainter.height / 2),
+        Offset(
+            projected.dx + dotSize + 3, projected.dy - textPainter.height / 2),
       );
     }
   }
 
-  void _renderContrails(Canvas canvas, Vector2 screenSize) {
+  void _renderContrails(Canvas canvas, Vector2 screenSize, Offset center) {
     final plane = gameRef.plane;
-    final planeScreenPos = Vector2(
-      screenSize.x * FlitGame.planeScreenX,
-      screenSize.y * FlitGame.planeScreenY,
-    );
 
     for (final particle in plane.contrails) {
       final opacity = (particle.life / particle.maxLife).clamp(0.0, 1.0);
       final paint = Paint()
         ..color = FlitColors.contrail.withOpacity(opacity * 0.5);
 
-      final pos = planeScreenPos + particle.screenOffset;
-      canvas.drawCircle(
-        Offset(pos.x, pos.y),
-        particle.size * (0.3 + opacity * 0.7),
-        paint,
-      );
+      final pos = center + particle.screenOffset.toOffset();
+      canvas.drawCircle(pos, particle.size * (0.3 + opacity * 0.7), paint);
     }
   }
 
-  void _renderAtmosphere(Canvas canvas, Vector2 screenSize) {
-    // Subtle vignette effect - darker at edges
-    final vignetteRect = Rect.fromLTWH(0, 0, screenSize.x, screenSize.y);
-
-    // Top fade
-    final topGradient = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.center,
+  void _renderAtmosphere(Canvas canvas, Offset center, double radius) {
+    // Glow ring around the globe edge — atmosphere halo
+    final glowPaint = Paint()
+      ..shader = RadialGradient(
         colors: [
-          FlitColors.oceanDeep.withOpacity(0.5),
-          FlitColors.oceanDeep.withOpacity(0.0),
+          Colors.transparent,
+          FlitColors.atmosphereGlow.withOpacity(0.12),
+          FlitColors.atmosphereGlow.withOpacity(0.04),
+          Colors.transparent,
         ],
-      ).createShader(vignetteRect);
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, screenSize.x, screenSize.y * 0.3),
-      topGradient,
-    );
+        stops: const [0.85, 0.95, 1.0, 1.1],
+      ).createShader(
+          Rect.fromCircle(center: center, radius: radius * 1.15));
 
-    // Bottom fade (below the plane)
-    final bottomGradient = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.center,
-        end: Alignment.bottomCenter,
-        colors: [
-          FlitColors.oceanDeep.withOpacity(0.0),
-          FlitColors.oceanDeep.withOpacity(0.4),
-        ],
-      ).createShader(vignetteRect);
-    canvas.drawRect(
-      Rect.fromLTWH(0, screenSize.y * 0.8, screenSize.x, screenSize.y * 0.2),
-      bottomGradient,
+    canvas.drawCircle(center, radius * 1.1, glowPaint);
+  }
+
+  // ─── Projection ─────────────────────────────────────────────────────
+
+  /// Project (lng, lat) degrees → screen Offset via azimuthal equidistant.
+  /// Returns null if beyond the visible horizon.
+  Offset? _project(
+      double lng, double lat, Vector2 screenSize, double globeRadius) {
+    final lat0 = _cameraCenter.y * _deg2rad;
+    final lng0 = _cameraCenter.x * _deg2rad;
+    final latR = lat * _deg2rad;
+    final lngR = lng * _deg2rad;
+    final dLng = lngR - lng0;
+
+    final cosC =
+        sin(lat0) * sin(latR) + cos(lat0) * cos(latR) * cos(dLng);
+    final c = acos(cosC.clamp(-1.0, 1.0));
+
+    if (c > _angularRadius * 1.05) return null;
+
+    if (c < 0.0001) {
+      return Offset(
+        screenSize.x * FlitGame.planeScreenX,
+        screenSize.y * FlitGame.planeScreenY,
+      );
+    }
+
+    final sinC = sin(c);
+    final px = cos(latR) * sin(dLng) / sinC;
+    final py =
+        (cos(lat0) * sin(latR) - sin(lat0) * cos(latR) * cos(dLng)) / sinC;
+
+    final scale = globeRadius / _angularRadius;
+
+    return Offset(
+      screenSize.x * FlitGame.planeScreenX + px * c * scale,
+      screenSize.y * FlitGame.planeScreenY - py * c * scale,
     );
   }
 
-  /// Convert screen position to lat/lng
+  /// Like [_project] but clamps to the horizon instead of returning null.
+  Offset _projectClamped(
+      double lng, double lat, Vector2 screenSize, double globeRadius) {
+    final lat0 = _cameraCenter.y * _deg2rad;
+    final lng0 = _cameraCenter.x * _deg2rad;
+    final latR = lat * _deg2rad;
+    final lngR = lng * _deg2rad;
+    final dLng = lngR - lng0;
+
+    final cosC =
+        sin(lat0) * sin(latR) + cos(lat0) * cos(latR) * cos(dLng);
+    var c = acos(cosC.clamp(-1.0, 1.0));
+
+    if (c < 0.0001) {
+      return Offset(
+        screenSize.x * FlitGame.planeScreenX,
+        screenSize.y * FlitGame.planeScreenY,
+      );
+    }
+
+    final sinC = sin(c);
+    final px = cos(latR) * sin(dLng) / sinC;
+    final py =
+        (cos(lat0) * sin(latR) - sin(lat0) * cos(latR) * cos(dLng)) / sinC;
+
+    if (c > _angularRadius) c = _angularRadius;
+
+    final scale = globeRadius / _angularRadius;
+
+    return Offset(
+      screenSize.x * FlitGame.planeScreenX + px * c * scale,
+      screenSize.y * FlitGame.planeScreenY - py * c * scale,
+    );
+  }
+
+  /// Inverse projection: screen → (lng, lat) degrees.
   Vector2 screenToLatLng(Vector2 screenPos, Vector2 screenSize) {
-    final planeScreenPosX = screenSize.x * FlitGame.planeScreenX;
-    final planeScreenPosY = screenSize.y * FlitGame.planeScreenY;
+    final cx = screenSize.x * FlitGame.planeScreenX;
+    final cy = screenSize.y * FlitGame.planeScreenY;
+    final globeRadius = _globeScreenRadius(screenSize);
+    final scale = globeRadius / _angularRadius;
 
-    final worldX = _cameraCenter.x + (screenPos.x - planeScreenPosX) / _currentZoom;
-    final worldY = _cameraCenter.y + (screenPos.y - planeScreenPosY) / _currentZoom;
+    final dx = screenPos.x - cx;
+    final dy = -(screenPos.y - cy);
 
-    final lng = worldX / mapWidth * 360 - 180;
-    final lat = 90 - worldY / mapHeight * 180;
+    final rho = sqrt(dx * dx + dy * dy) / scale;
+    if (rho < 0.0001) return _cameraCenter.clone();
 
-    return Vector2(lng, lat);
+    final c = rho;
+    final lat0 = _cameraCenter.y * _deg2rad;
+    final lng0 = _cameraCenter.x * _deg2rad;
+
+    final lat = asin(
+      (cos(c) * sin(lat0) + dy / scale * sin(c) * cos(lat0) / rho)
+          .clamp(-1.0, 1.0),
+    );
+    final lng = lng0 +
+        atan2(dx / scale * sin(c),
+            rho * cos(lat0) * cos(c) - dy / scale * sin(lat0) * sin(c));
+
+    return Vector2(lng * 180 / pi, lat * 180 / pi);
   }
 
-  /// Convert lat/lng to screen position
+  /// Forward projection: (lng, lat) → screen position.
   Vector2 latLngToScreen(Vector2 latLng, Vector2 screenSize) {
-    return _latLngToScreen(latLng, screenSize);
+    final globeRadius = _globeScreenRadius(screenSize);
+    final result = _project(latLng.x, latLng.y, screenSize, globeRadius);
+    if (result != null) {
+      return Vector2(result.dx, result.dy);
+    }
+    final clamped =
+        _projectClamped(latLng.x, latLng.y, screenSize, globeRadius);
+    return Vector2(clamped.dx, clamped.dy);
   }
 }

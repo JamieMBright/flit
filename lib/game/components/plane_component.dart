@@ -23,6 +23,9 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Current turning direction: -1 (left), 0 (straight), 1 (right)
   double _turnDirection = 0;
 
+  /// Whether the player is actively dragging (vs. coasting).
+  bool _isDragging = false;
+
   /// Current altitude: true = high (fast), false = low (slow, detailed)
   bool _isHighAltitude = true;
 
@@ -36,10 +39,14 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   static const double lowAltitudeSpeedMultiplier = 0.5;
 
   /// Turn rate in radians per second
-  static const double turnRate = 2.0;
+  static const double turnRate = 2.5;
 
   /// Maximum bank angle for visual effect
   static const double _maxBankAngle = 0.35;
+
+  /// How fast the turn decays when the player releases (per-second factor).
+  /// 0.92 means ~8% decay per update at 60fps → roughly 1 second to coast to stop.
+  static const double _turnDecayPerFrame = 0.92;
 
   /// Current visual bank angle (smoothed)
   double _currentBank = 0;
@@ -73,6 +80,13 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   @override
   void update(double dt) {
     super.update(dt);
+
+    // Decay turn direction when not actively dragging
+    if (!_isDragging) {
+      _turnDirection *= _turnDecayPerFrame;
+      // Snap to zero when close enough to avoid endless micro-turns
+      if (_turnDirection.abs() < 0.01) _turnDirection = 0;
+    }
 
     // Smooth bank angle
     final targetBank = _turnDirection * _maxBankAngle;
@@ -140,107 +154,142 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     final bodyPaint = Paint()..color = FlitColors.planeBody;
     final wingPaint = Paint()..color = FlitColors.planeWing;
     final accentPaint = Paint()..color = FlitColors.planeAccent;
-    final outlinePaint = Paint()
-      ..color = FlitColors.border
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8;
+    final highlightPaint = Paint()..color = FlitColors.planeHighlight;
 
     // --- Tail assembly ---
-    // Horizontal stabiliser
-    final tailWing = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: const Offset(0, 15), width: 20, height: 4),
-      const Radius.circular(2),
-    );
-    canvas.drawRRect(tailWing, wingPaint);
-    canvas.drawRRect(tailWing, outlinePaint);
+    // Horizontal stabiliser — smooth ellipse
+    final tailPath = Path()
+      ..moveTo(-10, 14)
+      ..quadraticBezierTo(-12, 16, -10, 18)
+      ..lineTo(10, 18)
+      ..quadraticBezierTo(12, 16, 10, 14)
+      ..close();
+    canvas.drawPath(tailPath, wingPaint);
 
-    // Vertical stabiliser (fin)
+    // Vertical fin
     final finPath = Path()
-      ..moveTo(0, 12)
-      ..lineTo(-3, 17)
-      ..lineTo(3, 17)
+      ..moveTo(0, 11)
+      ..quadraticBezierTo(-4, 15, -2, 18)
+      ..lineTo(2, 18)
+      ..quadraticBezierTo(4, 15, 0, 11)
       ..close();
     canvas.drawPath(finPath, accentPaint);
 
-    // --- Fuselage ---
-    final fuselage = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: Offset.zero, width: 8, height: 34),
-      const Radius.circular(4),
-    );
-    canvas.drawRRect(fuselage, bodyPaint);
-    canvas.drawRRect(fuselage, outlinePaint);
-
-    // Fuselage accent stripe
-    final stripe = Rect.fromCenter(
-      center: const Offset(0, -2),
-      width: 6,
-      height: 12,
-    );
-    canvas.drawRect(stripe, accentPaint);
-
-    // Cockpit windshield
-    final cockpitPath = Path()
-      ..moveTo(-2.5, -8)
-      ..lineTo(0, -12)
-      ..lineTo(2.5, -8)
-      ..close();
-    canvas.drawPath(
-      cockpitPath,
-      Paint()..color = FlitColors.oceanShallow,
-    );
-
-    // --- Main wings ---
-    // Wing shape - slightly swept
+    // --- Main wings --- (smooth, tapered)
     final leftWing = Path()
-      ..moveTo(-3, 0)
-      ..lineTo(-24, 3)
-      ..lineTo(-22, 6)
-      ..lineTo(-3, 4)
+      ..moveTo(-4, -1)
+      ..quadraticBezierTo(-14, 0, -26, 2)
+      ..quadraticBezierTo(-27, 4, -24, 5)
+      ..lineTo(-4, 3)
       ..close();
     canvas.drawPath(leftWing, wingPaint);
-    canvas.drawPath(leftWing, outlinePaint);
-
-    final rightWing = Path()
-      ..moveTo(3, 0)
-      ..lineTo(24, 3)
-      ..lineTo(22, 6)
-      ..lineTo(3, 4)
-      ..close();
-    canvas.drawPath(rightWing, wingPaint);
-    canvas.drawPath(rightWing, outlinePaint);
-
-    // Wing tip accents
-    canvas.drawCircle(const Offset(-23, 4.5), 1.5, accentPaint);
-    canvas.drawCircle(const Offset(23, 4.5), 1.5, accentPaint);
-
-    // --- Engine nacelle / Nose ---
-    canvas.drawCircle(
-      const Offset(0, -15),
-      3.5,
-      Paint()..color = FlitColors.textMuted,
+    // Wing highlight
+    canvas.drawPath(
+      Path()
+        ..moveTo(-4, -0.5)
+        ..quadraticBezierTo(-12, 0.5, -22, 2.5)
+        ..lineTo(-22, 3.5)
+        ..quadraticBezierTo(-12, 1.5, -4, 1)
+        ..close(),
+      highlightPaint,
     );
 
-    // Propeller disc (spinning blur)
-    final propPaint = Paint()
-      ..color = FlitColors.planeBody.withOpacity(0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    canvas.drawCircle(const Offset(0, -16), 5, propPaint);
+    final rightWing = Path()
+      ..moveTo(4, -1)
+      ..quadraticBezierTo(14, 0, 26, 2)
+      ..quadraticBezierTo(27, 4, 24, 5)
+      ..lineTo(4, 3)
+      ..close();
+    canvas.drawPath(rightWing, wingPaint);
+    canvas.drawPath(
+      Path()
+        ..moveTo(4, -0.5)
+        ..quadraticBezierTo(12, 0.5, 22, 2.5)
+        ..lineTo(22, 3.5)
+        ..quadraticBezierTo(12, 1.5, 4, 1)
+        ..close(),
+      highlightPaint,
+    );
+
+    // --- Fuselage --- (smooth, tapered)
+    final fuselagePath = Path()
+      ..moveTo(0, -16)
+      ..quadraticBezierTo(5, -12, 5, -2)
+      ..quadraticBezierTo(4, 10, 3, 16)
+      ..quadraticBezierTo(0, 18, -3, 16)
+      ..quadraticBezierTo(-4, 10, -5, -2)
+      ..quadraticBezierTo(-5, -12, 0, -16)
+      ..close();
+    canvas.drawPath(fuselagePath, bodyPaint);
+
+    // Fuselage highlight (center streak)
+    final highlightStreak = Path()
+      ..moveTo(0, -14)
+      ..quadraticBezierTo(2.5, -8, 2, 0)
+      ..lineTo(1, 10)
+      ..lineTo(-1, 10)
+      ..lineTo(-2, 0)
+      ..quadraticBezierTo(-2.5, -8, 0, -14)
+      ..close();
+    canvas.drawPath(highlightStreak, highlightPaint);
+
+    // Accent stripe
+    final stripe = Path()
+      ..moveTo(-3, -4)
+      ..lineTo(3, -4)
+      ..lineTo(3, 2)
+      ..lineTo(-3, 2)
+      ..close();
+    canvas.drawPath(stripe, accentPaint);
+
+    // Cockpit
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(0, -9), width: 5, height: 6),
+      Paint()..color = const Color(0xFF4A90B8),
+    );
+    // Cockpit glint
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(-0.5, -10), width: 2, height: 3),
+      Paint()..color = const Color(0xFF8CC8E8),
+    );
+
+    // --- Engine / Nose cone ---
+    canvas.drawCircle(
+      const Offset(0, -16),
+      3.0,
+      Paint()..color = const Color(0xFF888888),
+    );
+    canvas.drawCircle(
+      const Offset(0, -16),
+      1.5,
+      Paint()..color = const Color(0xFF555555),
+    );
+
+    // Propeller blur disc
+    final propDiscPaint = Paint()
+      ..color = FlitColors.planeBody.withOpacity(0.15)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(const Offset(0, -17), 8, propDiscPaint);
 
     // Propeller blades
     final bladePaint = Paint()
-      ..color = FlitColors.textMuted.withOpacity(0.7)
-      ..strokeWidth = 1.5
+      ..color = const Color(0xFF666666).withOpacity(0.8)
+      ..strokeWidth = 2.0
       ..strokeCap = StrokeCap.round;
-    const bladeLen = 5.0;
+    const bladeLen = 7.0;
     for (var i = 0; i < 2; i++) {
       final a = _propAngle + i * pi;
       canvas.drawLine(
-        Offset(0 + cos(a) * bladeLen, -16 + sin(a) * bladeLen),
-        Offset(0 - cos(a) * bladeLen, -16 - sin(a) * bladeLen),
+        Offset(cos(a) * bladeLen, -17 + sin(a) * bladeLen),
+        Offset(-cos(a) * bladeLen, -17 - sin(a) * bladeLen),
         bladePaint,
       );
     }
+
+    // Wing tip accents (navigation lights)
+    canvas.drawCircle(const Offset(-25, 3.5), 1.8, accentPaint);
+    canvas.drawCircle(
+        const Offset(25, 3.5), 1.8, Paint()..color = FlitColors.success);
   }
 
   void _updateContrails(double dt) {
@@ -288,8 +337,16 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     ));
   }
 
+  /// Set turn direction from active input (drag or keyboard).
   void setTurnDirection(double direction) {
     _turnDirection = direction.clamp(-1, 1);
+    _isDragging = true;
+  }
+
+  /// Called when the player lifts their finger — plane coasts to straight.
+  void releaseTurn() {
+    _isDragging = false;
+    // _turnDirection will decay in update()
   }
 
   void toggleAltitude() {

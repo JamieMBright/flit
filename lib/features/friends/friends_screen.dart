@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/friend.dart';
+import '../../data/providers/account_provider.dart';
 import '../play/play_screen.dart';
 
 /// Friends list screen with add friend and H2H records.
-class FriendsScreen extends StatefulWidget {
+class FriendsScreen extends ConsumerStatefulWidget {
   const FriendsScreen({super.key});
 
   @override
-  State<FriendsScreen> createState() => _FriendsScreenState();
+  ConsumerState<FriendsScreen> createState() => _FriendsScreenState();
 }
 
-class _FriendsScreenState extends State<FriendsScreen> {
+class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   // Placeholder data - will be replaced with real data from backend
   final List<Friend> _friends = [
     const Friend(
@@ -210,13 +212,21 @@ class _FriendsScreenState extends State<FriendsScreen> {
                   ElevatedButton.icon(
                     onPressed: () {
                       final amount = int.tryParse(controller.text) ?? 0;
-                      if (amount >= 10) {
+                      final balance = ref.read(currentCoinsProvider);
+                      if (amount >= 10 && amount <= balance) {
                         Navigator.of(dialogContext).pop();
-                        // TODO: Deduct from player balance via provider
+                        ref.read(accountProvider.notifier).spendCoins(amount);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('Sent $amount coins to ${friend.name}!'),
                             backgroundColor: FlitColors.success,
+                          ),
+                        );
+                      } else if (amount > balance) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Not enough coins!'),
+                            backgroundColor: FlitColors.error,
                           ),
                         );
                       }

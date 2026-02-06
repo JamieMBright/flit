@@ -1,10 +1,10 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/models/cosmetic.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
 import '../avatar/avatar_widget.dart';
@@ -40,7 +40,7 @@ Color _colorForRarity(String rarityTier) {
     case 'Diamond':
       return _diamondColor;
     case 'Perfect':
-      return _goldColor; // fallback; Perfect uses gradient
+      return _goldColor;
     default:
       return _bronzeColor;
   }
@@ -48,31 +48,24 @@ Color _colorForRarity(String rarityTier) {
 
 /// Returns the stat bar segment color based on the boost value (1-10).
 Color _statColor(int value) {
-  if (value >= 10) return const Color(0xFFFFD700); // gold
-  if (value >= 9) return const Color(0xFFFF8C00); // orange
-  if (value >= 7) return const Color(0xFF9B59B6); // purple
-  if (value >= 4) return const Color(0xFF4A90D9); // blue
-  return const Color(0xFF6AAB5C); // green
+  if (value >= 10) return const Color(0xFFFFD700);
+  if (value >= 9) return const Color(0xFFFF8C00);
+  if (value >= 7) return const Color(0xFF9B59B6);
+  if (value >= 4) return const Color(0xFF4A90D9);
+  return const Color(0xFF6AAB5C);
 }
 
-/// Icon for a preferred clue type label.
-IconData _clueTypeIcon(String type) {
-  switch (type.toLowerCase()) {
-    case 'text':
-      return Icons.text_fields;
-    case 'image':
-      return Icons.image;
-    case 'audio':
-      return Icons.headphones;
-    case 'map':
-      return Icons.map;
-    case 'flag':
-      return Icons.flag;
-    case 'compass':
-      return Icons.explore;
-    default:
-      return Icons.help_outline;
-  }
+/// Aviation rank title for player level (mirrors profile_screen).
+String _aviationRankTitle(int level) {
+  if (level >= 50) return 'Air Marshal';
+  if (level >= 40) return 'Wing Commander';
+  if (level >= 30) return 'Squadron Leader';
+  if (level >= 20) return 'Flight Lieutenant';
+  if (level >= 15) return 'Captain';
+  if (level >= 10) return 'First Officer';
+  if (level >= 5) return 'Pilot Officer';
+  if (level >= 3) return 'Cadet';
+  return 'Trainee';
 }
 
 // =============================================================================
@@ -91,10 +84,8 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
     with SingleTickerProviderStateMixin {
   late PilotLicense _license;
   final Set<String> _lockedStats = {};
-  bool _lockType = false;
   bool _isRolling = false;
 
-  // Animation for the perfect-rarity shimmer and max-stat pulse.
   late AnimationController _shimmerController;
 
   @override
@@ -120,7 +111,6 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
   int get _totalCost {
     var cost = PilotLicense.rerollAllCost;
     for (final stat in _lockedStats) {
-      // Scale cost based on the value of the stat being locked
       int statValue;
       switch (stat) {
         case 'coinBoost':
@@ -136,7 +126,6 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
       }
       cost += PilotLicense.lockCostForValue(statValue);
     }
-    if (_lockType) cost += PilotLicense.lockTypeCost;
     return cost;
   }
 
@@ -151,7 +140,6 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
 
     setState(() => _isRolling = true);
 
-    // Brief suspense delay
     await Future<void>.delayed(const Duration(milliseconds: 500));
 
     if (!mounted) return;
@@ -160,7 +148,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
       _license = PilotLicense.reroll(
         _license,
         lockedStats: _lockedStats,
-        lockType: _lockType,
+        lockType: false,
       );
       _isRolling = false;
     });
@@ -181,7 +169,6 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
           title: const Text('Pilot License'),
           centerTitle: true,
           actions: [
-            // Coin balance chip
             GestureDetector(
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(builder: (_) => const ShopScreen()),
@@ -219,15 +206,10 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Column(
             children: [
-              // ---- License card ----
               _buildLicenseCard(),
               const SizedBox(height: 24),
-
-              // ---- Lock options ----
               _buildLockSection(coins),
               const SizedBox(height: 24),
-
-              // ---- Reroll button ----
               _buildRerollButton(coins),
               const SizedBox(height: 16),
             ],
@@ -237,7 +219,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
   }
 
   // ---------------------------------------------------------------------------
-  // License card
+  // License card (credit-card aspect ratio)
   // ---------------------------------------------------------------------------
 
   Widget _buildLicenseCard() {
@@ -245,13 +227,12 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
     final rarityColor = _colorForRarity(rarity);
     final isPerfect = rarity == 'Perfect';
 
-    return AnimatedBuilder(
+    return _AnimBuilder(
       animation: _shimmerController,
       builder: (context, child) {
-        // For Perfect rarity, cycle through the rainbow for the border.
         final borderDecoration = isPerfect
             ? BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 gradient: SweepGradient(
                   center: Alignment.center,
                   startAngle: _shimmerController.value * 2 * math.pi,
@@ -259,195 +240,328 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
                 ),
               )
             : BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 color: rarityColor,
               );
 
         return Container(
-          // Outer border container
           decoration: borderDecoration,
-          padding: const EdgeInsets.all(3),
-          child: Container(
-            decoration: BoxDecoration(
-              color: FlitColors.cardBackground,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: rarityColor.withOpacity(0.3),
-                  blurRadius: 12,
-                  spreadRadius: 1,
-                ),
-              ],
+          padding: const EdgeInsets.all(2.5),
+          child: AspectRatio(
+            aspectRatio: 85.6 / 54.0, // credit card ratio
+            child: Container(
+              decoration: BoxDecoration(
+                color: FlitColors.cardBackground,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: rarityColor.withOpacity(0.3),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(14),
+              child: _isRolling
+                  ? _buildRollingPlaceholder()
+                  : _buildLicenseContent(rarityColor, isPerfect),
             ),
-            padding: const EdgeInsets.all(20),
-            child: _isRolling
-                ? _buildRollingPlaceholder()
-                : _buildLicenseContent(rarityColor, isPerfect),
           ),
         );
       },
     );
   }
 
-  Widget _buildRollingPlaceholder() => const SizedBox(
-        height: 220,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 48,
-                height: 48,
-                child: CircularProgressIndicator(
-                  strokeWidth: 3,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(FlitColors.gold),
-                ),
+  Widget _buildRollingPlaceholder() => const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 36,
+              height: 36,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(FlitColors.gold),
               ),
-              SizedBox(height: 16),
-              Text(
-                'Rerolling...',
-                style: TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                ),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Rerolling...',
+              style: TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.2,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
 
-  Widget _buildLicenseContent(Color rarityColor, bool isPerfect) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row: title + rarity badge
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
+  Widget _buildLicenseContent(Color rarityColor, bool isPerfect) {
+    final player = ref.watch(currentPlayerProvider);
+    final avatarConfig = ref.watch(avatarProvider);
+    final equippedPlaneId = ref.watch(equippedPlaneIdProvider);
+    final equippedPlane = CosmeticCatalog.getById(equippedPlaneId);
+    final rank = _aviationRankTitle(player.level);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // --- Top row: title + rarity badge ---
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Flexible(
+              child: Text(
                 'FLIT PILOT LICENSE',
                 style: TextStyle(
                   color: FlitColors.textMuted,
-                  fontSize: 11,
+                  fontSize: 9,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2,
                 ),
               ),
-              _RarityBadge(
-                tier: _license.rarityTier,
-                color: rarityColor,
-                isPerfect: isPerfect,
-                animation: _shimmerController,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Avatar
-          Center(
-            child: AvatarWidget(
-              config: ref.watch(avatarProvider),
-              size: 64,
             ),
-          ),
-          const SizedBox(height: 12),
-
-          // Total boost
-          Center(
-            child: Column(
-              children: [
-                Text(
-                  '+${_license.totalBoost}%',
-                  style: TextStyle(
+            GestureDetector(
+              onTap: _showRarityExplanation,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _RarityBadge(
+                    tier: _license.rarityTier,
                     color: rarityColor,
-                    fontSize: 36,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                    isPerfect: isPerfect,
+                    animation: _shimmerController,
                   ),
-                ),
-                const Text(
-                  'TOTAL BOOST',
-                  style: TextStyle(
-                    color: FlitColors.textMuted,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.info_outline,
+                    color: rarityColor.withOpacity(0.6),
+                    size: 14,
                   ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const Spacer(flex: 1),
+
+        // --- Middle row: plane | name/rank/level | avatar ---
+        Row(
+          children: [
+            // Equipped plane preview (left)
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: CustomPaint(
+                size: const Size(56, 56),
+                painter: PlanePainter(
+                  planeId: equippedPlaneId,
+                  colorScheme: equippedPlane?.colorScheme,
                 ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(width: 12),
+            // Name, rank, level (center)
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    player.name,
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    rank,
+                    style: TextStyle(
+                      color: FlitColors.gold,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    'Level ${player.level}',
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Avatar (top right)
+            AvatarWidget(
+              config: avatarConfig,
+              size: 56,
+            ),
+          ],
+        ),
+        const Spacer(flex: 1),
 
-          // Stat bars
-          GestureDetector(
-            onTap: () => _showEffectPopup('Coin Boost', 'Earn ${_license.coinBoost}% more coins from every game you play. Stacks with daily bonuses.', Icons.monetization_on),
-            child: _StatBar(
-              label: _license.coinBoostLabel,
-              icon: Icons.monetization_on,
-              value: _license.coinBoost,
-              shimmer: _shimmerController,
-            ),
+        // --- Stat bars: coins, fuel, clue type, clue chance ---
+        _CompactStatBar(
+          label: _license.coinBoostLabel,
+          icon: Icons.monetization_on,
+          value: _license.coinBoost,
+          shimmer: _shimmerController,
+          onTap: () => _showEffectPopup(
+            'Coin Boost',
+            'Earn ${_license.coinBoost}% more coins from every game you play. Stacks with daily bonuses.',
+            Icons.monetization_on,
           ),
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () => _showEffectPopup('Clue Boost', 'Increases the chance of receiving ${_license.preferredClueType} clues by ${_license.clueBoost}%. Your preferred clue type appears more often.', Icons.lightbulb_outline),
-            child: _StatBar(
-              label: _license.clueBoostLabel,
-              icon: Icons.lightbulb_outline,
-              value: _license.clueBoost,
-              shimmer: _shimmerController,
-            ),
+        ),
+        const SizedBox(height: 4),
+        _CompactStatBar(
+          label: _license.fuelBoostLabel,
+          icon: Icons.local_gas_station,
+          value: _license.fuelBoost,
+          shimmer: _shimmerController,
+          onTap: () => _showEffectPopup(
+            'Fuel Boost',
+            'Extends your fuel/speed-boost duration in solo play by ${_license.fuelBoost}%. More fuel means more time to guess.',
+            Icons.local_gas_station,
           ),
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () => _showEffectPopup('Clue Chance', 'Increases the chance of receiving additional clues by ${_license.clueChance}%. More clues means more information to help you guess.', Icons.casino),
-            child: _StatBar(
-              label: _license.clueChanceLabel,
-              icon: Icons.casino,
-              value: _license.clueChance,
-              shimmer: _shimmerController,
-            ),
+        ),
+        const SizedBox(height: 4),
+        _CompactStatBar(
+          label: '${_license.preferredClueType[0].toUpperCase()}${_license.preferredClueType.substring(1)}',
+          icon: Icons.lightbulb_outline,
+          value: _license.clueBoost,
+          shimmer: _shimmerController,
+          showPercentage: false,
+          onTap: () => _showEffectPopup(
+            'Clue Type',
+            'Your preferred clue type is "${_license.preferredClueType}". You\'ll receive this type of clue more often when playing.',
+            Icons.lightbulb_outline,
           ),
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () => _showEffectPopup('Fuel Boost', 'Extends your fuel/speed-boost duration in solo play by ${_license.fuelBoost}%. More fuel means more time to guess.', Icons.local_gas_station),
-            child: _StatBar(
-              label: _license.fuelBoostLabel,
-              icon: Icons.local_gas_station,
-              value: _license.fuelBoost,
-              shimmer: _shimmerController,
-            ),
+        ),
+        const SizedBox(height: 4),
+        _CompactStatBar(
+          label: _license.clueChanceLabel,
+          icon: Icons.casino,
+          value: _license.clueChance,
+          shimmer: _shimmerController,
+          onTap: () => _showEffectPopup(
+            'Clue Chance',
+            'Increases the chance of receiving additional clues by ${_license.clueChance}%. More clues means more information to help you guess.',
+            Icons.casino,
           ),
-          const SizedBox(height: 16),
+        ),
 
-          // Preferred clue type
+        const Spacer(flex: 1),
+
+        // --- Bottom: total boost ---
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              'Total: +${_license.totalBoost}%',
+              style: TextStyle(
+                color: rarityColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showRarityExplanation() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: FlitColors.cardBorder),
+        ),
+        title: const Text(
+          'License Rarity',
+          style: TextStyle(color: FlitColors.textPrimary, fontSize: 18),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Your license rarity is based on the total of all four stat boosts combined. Higher total = rarer license.',
+              style: TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _rarityTierRow('Bronze', '4-12 total', _bronzeColor),
+            const SizedBox(height: 6),
+            _rarityTierRow('Silver', '13-22 total', _silverColor),
+            const SizedBox(height: 6),
+            _rarityTierRow('Gold', '23-32 total', _goldColor),
+            const SizedBox(height: 6),
+            _rarityTierRow('Diamond', '33-38 total', _diamondColor),
+            const SizedBox(height: 6),
+            _rarityTierRow('Perfect', '39-40 total', const Color(0xFFFF0000)),
+            const SizedBox(height: 16),
+            const Text(
+              'Each stat rolls from 1-10 with weighted odds. High values (9-10) are extremely rare, making a Perfect license nearly impossible.',
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Got it', style: TextStyle(color: FlitColors.accent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _rarityTierRow(String name, String range, Color color) => Row(
+        children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            width: 12,
+            height: 12,
             decoration: BoxDecoration(
-              color: FlitColors.backgroundMid,
-              borderRadius: BorderRadius.circular(8),
+              color: color,
+              borderRadius: BorderRadius.circular(3),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _clueTypeIcon(_license.preferredClueType),
-                  color: FlitColors.accent,
-                  size: 18,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Preferred: ${_license.preferredClueType}',
-                  style: const TextStyle(
-                    color: FlitColors.textSecondary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+          ),
+          const SizedBox(width: 8),
+          Text(
+            name,
+            style: TextStyle(
+              color: color,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            range,
+            style: const TextStyle(
+              color: FlitColors.textMuted,
+              fontSize: 12,
             ),
           ),
         ],
@@ -484,7 +598,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
   }
 
   // ---------------------------------------------------------------------------
-  // Lock section
+  // Lock section (no clue type lock)
   // ---------------------------------------------------------------------------
 
   Widget _buildLockSection(int coins) => Container(
@@ -524,12 +638,12 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
             ),
             const SizedBox(height: 8),
             _LockRow(
-              label: 'Clue Boost',
-              value: _license.clueBoostLabel,
-              icon: Icons.lightbulb_outline,
-              isLocked: _lockedStats.contains('clueBoost'),
-              cost: _lockCostFor('clueBoost'),
-              onChanged: (locked) => _toggleLock('clueBoost', locked),
+              label: 'Fuel Boost',
+              value: _license.fuelBoostLabel,
+              icon: Icons.local_gas_station,
+              isLocked: _lockedStats.contains('fuelBoost'),
+              cost: _lockCostFor('fuelBoost'),
+              onChanged: (locked) => _toggleLock('fuelBoost', locked),
             ),
             const SizedBox(height: 8),
             _LockRow(
@@ -540,26 +654,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
               cost: _lockCostFor('clueChance'),
               onChanged: (locked) => _toggleLock('clueChance', locked),
             ),
-            const SizedBox(height: 8),
-            _LockRow(
-              label: 'Fuel Boost',
-              value: _license.fuelBoostLabel,
-              icon: Icons.local_gas_station,
-              isLocked: _lockedStats.contains('fuelBoost'),
-              cost: _lockCostFor('fuelBoost'),
-              onChanged: (locked) => _toggleLock('fuelBoost', locked),
-            ),
-            const SizedBox(height: 8),
-            _LockRow(
-              label: 'Clue Type',
-              value: _license.preferredClueType,
-              icon: _clueTypeIcon(_license.preferredClueType),
-              isLocked: _lockType,
-              cost: PilotLicense.lockTypeCost,
-              onChanged: (locked) => setState(() => _lockType = locked),
-            ),
             const Divider(color: FlitColors.cardBorder, height: 24),
-            // Total cost summary
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -732,12 +827,11 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
 }
 
 // =============================================================================
-// AnimatedBuilder helper (re-exports AnimatedBuilder for cleanliness)
+// _AnimBuilder helper
 // =============================================================================
 
-/// Wrapper identical to [AnimatedBuilder] for readability.
-class AnimatedBuilder extends AnimatedWidget {
-  const AnimatedBuilder({
+class _AnimBuilder extends AnimatedWidget {
+  const _AnimBuilder({
     super.key,
     required Animation<double> animation,
     required this.builder,
@@ -769,17 +863,16 @@ class _RarityBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isPerfect) {
-      return AnimatedBuilder(
+      return _AnimBuilder(
         animation: animation,
         builder: (context, _) {
           final t = animation.value;
-          // Cycle through rainbow hue
           final hue = (t * 360) % 360;
           final rainbowColor =
               HSVColor.fromAHSV(1, hue, 0.8, 1).toColor();
 
           return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -787,13 +880,13 @@ class _RarityBadge extends StatelessWidget {
                   HSVColor.fromAHSV(1, (hue + 60) % 360, 0.8, 1).toColor(),
                 ],
               ),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: const Text(
               'PERFECT',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 11,
+                fontSize: 9,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1,
               ),
@@ -804,17 +897,17 @@ class _RarityBadge extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withOpacity(0.5)),
       ),
       child: Text(
         tier.toUpperCase(),
         style: TextStyle(
           color: color,
-          fontSize: 11,
+          fontSize: 9,
           fontWeight: FontWeight.w900,
           letterSpacing: 1,
         ),
@@ -824,69 +917,77 @@ class _RarityBadge extends StatelessWidget {
 }
 
 // =============================================================================
-// Stat bar (10-segment visual bar)
+// Compact stat bar (fits credit card layout)
 // =============================================================================
 
-class _StatBar extends StatelessWidget {
-  const _StatBar({
+class _CompactStatBar extends StatelessWidget {
+  const _CompactStatBar({
     required this.label,
     required this.icon,
     required this.value,
     required this.shimmer,
+    this.showPercentage = true,
+    this.onTap,
   });
 
   final String label;
   final IconData icon;
   final int value;
   final Animation<double> shimmer;
+  final bool showPercentage;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final color = _statColor(value);
     final isMax = value >= 10;
 
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 18),
-        const SizedBox(width: 8),
-        Expanded(
-          flex: 3,
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: FlitColors.textSecondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        height: 16,
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 13),
+            const SizedBox(width: 4),
+            SizedBox(
+              width: 80,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-        ),
-        Expanded(
-          flex: 5,
-          child: isMax
-              ? AnimatedBuilder(
-                  animation: shimmer,
-                  builder: (context, _) => _buildSegments(color, isMax),
-                )
-              : _buildSegments(color, isMax),
-        ),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 28,
-          child: Text(
-            value.toString(),
-            textAlign: TextAlign.right,
-            style: TextStyle(
-              color: color,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+            Expanded(
+              child: isMax
+                  ? _AnimBuilder(
+                      animation: shimmer,
+                      builder: (context, _) => _buildSegments(color, isMax),
+                    )
+                  : _buildSegments(color, isMax),
             ),
-          ),
+            const SizedBox(width: 4),
+            if (showPercentage)
+              SizedBox(
+                width: 22,
+                child: Text(
+                  '$value',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
         ),
-        if (isMax) ...[
-          const SizedBox(width: 4),
-          _PulsingDot(color: color, animation: shimmer),
-        ],
-      ],
+      ),
     );
   }
 
@@ -897,73 +998,23 @@ class _StatBar extends StatelessWidget {
               final filled = i < value;
               final isLastFilled = i == value - 1 && isMax;
               final baseOpacity = filled ? 1.0 : 0.15;
-              // For max stats, add a subtle pulse to the last segment
               final opacity = isLastFilled
                   ? 0.7 + 0.3 * math.sin(shimmer.value * 2 * math.pi)
                   : baseOpacity;
 
               return Expanded(
                 child: Container(
-                  margin: EdgeInsets.only(right: i < 9 ? 2 : 0),
-                  height: 10,
+                  margin: EdgeInsets.only(right: i < 9 ? 1.5 : 0),
+                  height: 7,
                   decoration: BoxDecoration(
                     color: filled
                         ? color.withOpacity(opacity)
                         : FlitColors.backgroundLight.withOpacity(0.4),
-                    borderRadius: BorderRadius.circular(2),
-                    boxShadow: isLastFilled
-                        ? [
-                            BoxShadow(
-                              color: color.withOpacity(0.6),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                          ]
-                        : null,
+                    borderRadius: BorderRadius.circular(1.5),
                   ),
                 ),
               );
             }),
-          );
-        },
-      );
-}
-
-// =============================================================================
-// Pulsing dot indicator for max stats
-// =============================================================================
-
-class _PulsingDot extends StatelessWidget {
-  const _PulsingDot({
-    required this.color,
-    required this.animation,
-  });
-
-  final Color color;
-  final Animation<double> animation;
-
-  @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-        animation: animation,
-        builder: (context, _) {
-          final scale = 0.8 + 0.4 * math.sin(animation.value * 2 * math.pi);
-          return Transform.scale(
-            scale: scale,
-            child: Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color,
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withOpacity(0.8),
-                    blurRadius: 6,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-            ),
           );
         },
       );
@@ -1008,7 +1059,6 @@ class _LockRow extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // Checkbox visual
               Container(
                 width: 22,
                 height: 22,
@@ -1057,7 +1107,6 @@ class _LockRow extends StatelessWidget {
                   ],
                 ),
               ),
-              // Cost indicator
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

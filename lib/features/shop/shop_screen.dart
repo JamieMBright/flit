@@ -90,14 +90,30 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
         body: TabBarView(
           controller: _tabController,
           children: [
-            _CosmeticGrid(
-              items: CosmeticCatalog.planes,
-              ownedIds: _ownedIds,
-              equippedId: _equippedPlane,
-              coins: coins,
-              level: level,
-              onPurchase: _purchaseItem,
-              onEquip: _equipPlane,
+            Column(
+              children: [
+                _MysteryPlaneButton(
+                  coins: coins,
+                  ownedIds: _ownedIds,
+                  onReveal: (Cosmetic plane) {
+                    ref.read(accountProvider.notifier).spendCoins(10000);
+                    setState(() {
+                      _ownedIds.add(plane.id);
+                    });
+                  },
+                ),
+                Expanded(
+                  child: _CosmeticGrid(
+                    items: CosmeticCatalog.planes,
+                    ownedIds: _ownedIds,
+                    equippedId: _equippedPlane,
+                    coins: coins,
+                    level: level,
+                    onPurchase: _purchaseItem,
+                    onEquip: _equipPlane,
+                  ),
+                ),
+              ],
             ),
             _CosmeticGrid(
               items: CosmeticCatalog.contrails,
@@ -133,12 +149,14 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
     setState(() {
       _equippedPlane = id;
     });
+    ref.read(accountProvider.notifier).equipPlane(id);
   }
 
   void _equipContrail(String id) {
     setState(() {
       _equippedContrail = id;
     });
+    ref.read(accountProvider.notifier).equipContrail(id);
   }
 }
 
@@ -189,7 +207,7 @@ class _GoldPackage {
 }
 
 const List<_GoldPackage> _goldPackages = [
-  _GoldPackage(coins: 500, price: 0.99),
+  _GoldPackage(coins: 450, price: 0.99),
   _GoldPackage(coins: 2000, price: 3.99),
   _GoldPackage(coins: 5000, price: 8.99),
   _GoldPackage(coins: 15000, price: 19.99, isBestValue: true),
@@ -370,6 +388,261 @@ class _GoldPackageCard extends StatelessWidget {
 }
 
 // =============================================================================
+// Mystery Plane Button
+// =============================================================================
+
+class _MysteryPlaneButton extends StatelessWidget {
+  const _MysteryPlaneButton({
+    required this.coins,
+    required this.ownedIds,
+    required this.onReveal,
+  });
+
+  final int coins;
+  final Set<String> ownedIds;
+  final void Function(Cosmetic) onReveal;
+
+  static const int _mysteryCost = 10000;
+
+  /// Pick a random plane weighted by rarity:
+  /// common 50%, rare 30%, epic 15%, legendary 5%
+  Cosmetic? _rollPlane() {
+    final unowned = CosmeticCatalog.planes
+        .where((p) => !ownedIds.contains(p.id) && p.price > 0)
+        .toList();
+    if (unowned.isEmpty) return null;
+
+    // Build a weighted pool
+    final weights = <Cosmetic, int>{};
+    for (final p in unowned) {
+      switch (p.rarity) {
+        case CosmeticRarity.common:
+          weights[p] = 50;
+        case CosmeticRarity.rare:
+          weights[p] = 30;
+        case CosmeticRarity.epic:
+          weights[p] = 15;
+        case CosmeticRarity.legendary:
+          weights[p] = 5;
+      }
+    }
+
+    final totalWeight = weights.values.fold<int>(0, (a, b) => a + b);
+    var roll = math.Random().nextInt(totalWeight);
+    for (final entry in weights.entries) {
+      roll -= entry.value;
+      if (roll < 0) return entry.key;
+    }
+    return unowned.last;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final canAfford = coins >= _mysteryCost;
+
+    return GestureDetector(
+      onTap: () {
+        if (!canAfford) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Not enough coins! Need 10,000.'),
+              backgroundColor: FlitColors.error,
+            ),
+          );
+          return;
+        }
+
+        final plane = _rollPlane();
+        if (plane == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('You already own all planes!'),
+              backgroundColor: FlitColors.gold,
+            ),
+          );
+          return;
+        }
+
+        showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: FlitColors.cardBackground,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text(
+              'Mystery Plane',
+              style: TextStyle(color: FlitColors.textPrimary),
+              textAlign: TextAlign.center,
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.help_outline, color: FlitColors.gold, size: 48),
+                const SizedBox(height: 12),
+                const Text(
+                  'Spend 10,000 coins for a random plane weighted by rarity.\nRarer planes are harder to get!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Cancel', style: TextStyle(color: FlitColors.textMuted)),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  onReveal(plane);
+
+                  final rarityCol = _rarityColor(plane.rarity);
+
+                  showDialog<void>(
+                    context: context,
+                    builder: (revealCtx) => AlertDialog(
+                      backgroundColor: FlitColors.cardBackground,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      title: Text(
+                        'You got: ${plane.name}!',
+                        style: const TextStyle(color: FlitColors.textPrimary),
+                        textAlign: TextAlign.center,
+                      ),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: FlitColors.backgroundMid,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: rarityCol, width: 2),
+                            ),
+                            child: CustomPaint(
+                              size: const Size(100, 100),
+                              painter: PlanePainter(
+                                planeId: plane.id,
+                                colorScheme: plane.colorScheme,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: rarityCol.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              _rarityLabel(plane.rarity),
+                              style: TextStyle(
+                                color: rarityCol,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          if (plane.description != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              plane.description!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: FlitColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      actions: [
+                        ElevatedButton(
+                          onPressed: () => Navigator.of(revealCtx).pop(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: FlitColors.accent,
+                            foregroundColor: FlitColors.textPrimary,
+                          ),
+                          child: const Text('Nice!'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FlitColors.gold,
+                  foregroundColor: FlitColors.backgroundDark,
+                ),
+                child: const Text('Roll!'),
+              ),
+            ],
+          ),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              FlitColors.gold.withOpacity(0.25),
+              FlitColors.gold.withOpacity(0.1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.gold.withOpacity(0.4)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.help_outline, color: FlitColors.gold, size: 22),
+            const SizedBox(width: 10),
+            const Text(
+              'MYSTERY PLANE',
+              style: TextStyle(
+                color: FlitColors.gold,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: canAfford
+                    ? FlitColors.gold.withOpacity(0.3)
+                    : FlitColors.error.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.monetization_on,
+                    size: 14,
+                    color: canAfford ? FlitColors.gold : FlitColors.error,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '10,000',
+                    style: TextStyle(
+                      color: canAfford ? FlitColors.gold : FlitColors.error,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
 // Cosmetic Grid (Planes / Contrails)
 // =============================================================================
 
@@ -453,23 +726,6 @@ class _CosmeticGrid extends StatelessWidget {
                 ),
               ],
             ),
-            // Real money alternative for premium items
-            if (item.isPremium && item.realMoneyPrice != null) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.attach_money, color: FlitColors.success),
-                  const SizedBox(width: 8),
-                  Text(
-                    'or \$${item.realMoneyPrice!.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      color: FlitColors.textSecondary,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ],
         ),
         actions: [
@@ -625,7 +881,7 @@ class _CosmeticCard extends StatelessWidget {
                         child: item.type == CosmeticType.plane
                             ? CustomPaint(
                                 size: const Size(80, 80),
-                                painter: _PlanePainter(planeId: item.id,
+                                painter: PlanePainter(planeId: item.id,
                                     colorScheme: item.colorScheme),
                               )
                             : _ContrailPreview(
@@ -802,16 +1058,6 @@ class _PriceRow extends StatelessWidget {
               ),
             ],
           ),
-          if (item.isPremium && item.realMoneyPrice != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              'or \$${item.realMoneyPrice!.toStringAsFixed(2)}',
-              style: const TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 10,
-              ),
-            ),
-          ],
         ],
       );
 }
@@ -891,8 +1137,8 @@ class _ContrailPainter extends CustomPainter {
 // Plane Preview Painter  (CustomPaint for distinct plane silhouettes)
 // =============================================================================
 
-class _PlanePainter extends CustomPainter {
-  _PlanePainter({required this.planeId, this.colorScheme});
+class PlanePainter extends CustomPainter {
+  PlanePainter({required this.planeId, this.colorScheme});
 
   final String planeId;
   final Map<String, int>? colorScheme;
@@ -1357,6 +1603,6 @@ class _PlanePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _PlanePainter old) =>
+  bool shouldRepaint(covariant PlanePainter old) =>
       planeId != old.planeId || colorScheme != old.colorScheme;
 }

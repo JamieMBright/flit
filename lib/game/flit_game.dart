@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'dart:math';
 
 import 'package:flame/events.dart';
@@ -7,15 +6,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/theme/flit_colors.dart';
+import '../core/utils/game_log.dart';
 import 'components/plane_component.dart';
 import 'map/world_map.dart';
 
+final _log = GameLog.instance;
+
+/// Degrees-to-radians constant.
+const double _deg2rad = pi / 180;
+
+/// Radians-to-degrees constant.
+const double _rad2deg = 180 / pi;
+
 /// Main game class for Flit.
 ///
-/// Uses a 3rd-person perspective where the plane stays fixed in the
-/// lower portion of the screen and the world scrolls underneath.
+/// The plane flies on the surface of a sphere. Position is stored as
+/// (longitude, latitude) in degrees. Movement uses great-circle math.
+/// The world is rendered as a globe using azimuthal equidistant projection
+/// centered on the plane.
 class FlitGame extends FlameGame
-    with HasKeyboardHandlerComponents, HorizontalDragDetector, TapDetector {
+    with HasKeyboardHandlerComponents, HorizontalDragDetector {
   FlitGame({
     this.onGameReady,
     this.onAltitudeChanged,
@@ -35,16 +45,17 @@ class FlitGame extends FlameGame
   late PlaneComponent _plane;
   late WorldMap _worldMap;
 
-  /// Plane's position in world coordinates (longitude, latitude mapped to map space)
+  /// Plane's position on the globe: x = longitude, y = latitude (degrees).
   Vector2 _worldPosition = Vector2.zero();
 
-  /// Plane's heading in radians (0 = north, clockwise)
+  /// Plane's heading in radians.
+  /// Math convention: 0 = east, -π/2 = north, π/2 = south, π = west.
   double _heading = 0;
 
   /// Current game state
   bool _isPlaying = false;
 
-  /// Target location for current challenge
+  /// Target location in lat/lng degrees.
   Vector2? _targetLocation;
 
   /// Current clue data
@@ -54,50 +65,64 @@ class FlitGame extends FlameGame
   bool get isHighAltitude => _plane.isHighAltitude;
   PlaneComponent get plane => _plane;
   String? get currentClue => _currentClue;
+
+  /// World position as (longitude, latitude) degrees.
   Vector2 get worldPosition => _worldPosition;
   double get heading => _heading;
 
-  /// Where on screen the plane is rendered (proportional)
-  /// 0.7 = 70% down the screen
-  static const double planeScreenY = 0.72;
-  static const double planeScreenX = 0.5;
+  /// Where on screen the plane is rendered (proportional).
+  static const double planeScreenY = 0.50;
+  static const double planeScreenX = 0.50;
+
+  /// Angular speed conversion: old speed value → radians/sec on the sphere.
+  /// Old system: speed 200 on a 3600-unit map spanning 360°.
+  /// So 1 unit = 0.1° → speed * π / 1800 rad/sec.
+  static const double _speedToAngular = pi / 1800;
 
   @override
-  Color backgroundColor() => FlitColors.oceanDeep;
+  Color backgroundColor() => FlitColors.space;
 
   @override
   Future<void> onLoad() async {
-    await super.onLoad();
-
-    // Create world map (renders behind plane)
-    _worldMap = WorldMap();
-    await add(_worldMap);
-
-    // Create plane (renders on top, fixed screen position)
-    _plane = PlaneComponent(
-      onAltitudeChanged: (isHigh) {
-        onAltitudeChanged?.call(isHigh);
-      },
-    );
-    await add(_plane);
-
-    // Apply fuel boost only in solo play (not challenges - level playing field)
-    if (!isChallenge) {
-      _plane.fuelBoostMultiplier = fuelBoostMultiplier;
-    }
-
-    // Start at a random position
-    _worldPosition = Vector2(0, 0); // Center of map
-    _heading = -pi / 2; // Facing north
-
-    // Notify the host widget that the engine is ready.  Wrapped in try/catch
-    // so a failure in the callback doesn't break the Flame loading future
-    // (which would leave the GameWidget in an unrecoverable error state and
-    // produce the white‑flash-then-crash behaviour).
+    _log.info('game', 'FlitGame.onLoad started');
     try {
-      onGameReady?.call();
+      await super.onLoad();
+
+      _worldMap = WorldMap();
+      await add(_worldMap);
+
+      _plane = PlaneComponent(
+        onAltitudeChanged: (isHigh) {
+          _log.info('game', 'Altitude changed', data: {'isHigh': isHigh});
+          try {
+            onAltitudeChanged?.call(isHigh);
+          } catch (e, st) {
+            _log.error('game', 'onAltitudeChanged callback failed',
+                error: e, stackTrace: st);
+          }
+        },
+      );
+      await add(_plane);
+
+      if (!isChallenge) {
+        _plane.fuelBoostMultiplier = fuelBoostMultiplier;
+      }
+
+      // Start at 0°, 0° facing north
+      _worldPosition = Vector2(0, 0);
+      _heading = -pi / 2; // north
+
+      _log.info('game', 'FlitGame.onLoad complete');
+
+      try {
+        onGameReady?.call();
+      } catch (e, st) {
+        _log.error('game', 'onGameReady callback failed',
+            error: e, stackTrace: st);
+      }
     } catch (e, st) {
-      developer.log('onGameReady callback failed', error: e, stackTrace: st);
+      _log.error('game', 'FlitGame.onLoad FAILED', error: e, stackTrace: st);
+      rethrow;
     }
   }
 
@@ -105,52 +130,74 @@ class FlitGame extends FlameGame
   void update(double dt) {
     super.update(dt);
 
-    // Move in world space based on heading and speed
+    // --- Great-circle movement ---
     final speed = _plane.currentSpeed;
-    final dx = cos(_heading) * speed * dt;
-    final dy = sin(_heading) * speed * dt;
-    _worldPosition += Vector2(dx, dy);
+    final angularDist = speed * _speedToAngular * dt; // radians
 
-    // Wrap world position horizontally
-    if (_worldPosition.x < 0) {
-      _worldPosition.x += WorldMap.mapWidth;
-    } else if (_worldPosition.x > WorldMap.mapWidth) {
-      _worldPosition.x -= WorldMap.mapWidth;
-    }
+    // Convert heading to navigation bearing (0 = north, clockwise)
+    final bearing = _heading + pi / 2;
 
-    // Clamp vertical position (don't fly off the poles)
-    _worldPosition.y = _worldPosition.y.clamp(0, WorldMap.mapHeight);
+    final lat0 = _worldPosition.y * _deg2rad;
+    final lng0 = _worldPosition.x * _deg2rad;
 
-    // Update heading based on turn direction
+    final sinLat0 = sin(lat0);
+    final cosLat0 = cos(lat0);
+    final sinD = sin(angularDist);
+    final cosD = cos(angularDist);
+
+    final newLat = asin(
+      (sinLat0 * cosD + cosLat0 * sinD * cos(bearing)).clamp(-1.0, 1.0),
+    );
+
+    final newLng = lng0 +
+        atan2(
+          sin(bearing) * sinD * cosLat0,
+          cosD - sinLat0 * sin(newLat),
+        );
+
+    _worldPosition = Vector2(
+      _normalizeLng(newLng * _rad2deg),
+      newLat * _rad2deg,
+    );
+
+    // Update heading based on turn input
     _heading += _plane.turnDirection * PlaneComponent.turnRate * dt;
 
-    // Tell the world map where the camera should be centered
+    // Tell WorldMap where we are
     _worldMap.setCameraCenter(_worldPosition);
     _worldMap.setAltitude(high: _plane.isHighAltitude);
 
-    // Update plane's visual heading
+    // Update plane visual
     _plane.visualHeading = _heading;
-
-    // Tell plane its fixed screen position
     _plane.position = Vector2(
       size.x * planeScreenX,
       size.y * planeScreenY,
     );
   }
 
+  /// Normalize longitude to [-180, 180].
+  double _normalizeLng(double lng) {
+    while (lng > 180) {
+      lng -= 360;
+    }
+    while (lng < -180) {
+      lng += 360;
+    }
+    return lng;
+  }
+
+  /// Drag sensitivity multiplier.
+  static const double _dragSensitivity = 0.2;
+
   @override
   void onHorizontalDragUpdate(DragUpdateInfo info) {
-    _plane.setTurnDirection((info.delta.global.x * 0.05).clamp(-1, 1));
+    _plane.setTurnDirection(
+        (info.delta.global.x * _dragSensitivity).clamp(-1, 1));
   }
 
   @override
   void onHorizontalDragEnd(DragEndInfo info) {
-    _plane.setTurnDirection(0);
-  }
-
-  @override
-  void onTap() {
-    _plane.toggleAltitude();
+    _plane.releaseTurn();
   }
 
   @override
@@ -186,38 +233,46 @@ class FlitGame extends FlameGame
         : KeyEventResult.handled;
   }
 
-  /// Start a new game/challenge
+  /// Start a new game/challenge.
   void startGame({
     required Vector2 startPosition,
     required Vector2 targetPosition,
     required String clue,
   }) {
-    // Convert lat/lng start position to map coordinates
-    _worldPosition = _latLngToWorld(startPosition);
+    _log.info('game', 'startGame', data: {
+      'start':
+          '${startPosition.x.toStringAsFixed(1)},${startPosition.y.toStringAsFixed(1)}',
+      'target':
+          '${targetPosition.x.toStringAsFixed(1)},${targetPosition.y.toStringAsFixed(1)}',
+    });
+
+    // startPosition is already (lng, lat) degrees — use directly
+    _worldPosition = startPosition.clone();
     _heading = Random().nextDouble() * 2 * pi;
     _targetLocation = targetPosition;
     _currentClue = clue;
     _isPlaying = true;
   }
 
-  /// Check if plane is near target (for landing detection)
-  bool isNearTarget({double threshold = 50}) {
+  /// Check if plane is near target using great-circle distance.
+  bool isNearTarget({double threshold = 80}) {
     if (_targetLocation == null) return false;
-    final targetWorld = _latLngToWorld(_targetLocation!);
-    return _worldPosition.distanceTo(targetWorld) < threshold;
+    final dist = _greatCircleDistDeg(_worldPosition, _targetLocation!);
+    // threshold is in the old "world units" (1 unit ≈ 0.1°).
+    // Convert: 80 units = 8 degrees.
+    return dist < threshold * 0.1;
   }
 
-  /// Convert lat/lng to world map coordinates
-  Vector2 _latLngToWorld(Vector2 latLng) {
-    final x = (latLng.x + 180) / 360 * WorldMap.mapWidth;
-    final y = (90 - latLng.y) / 180 * WorldMap.mapHeight;
-    return Vector2(x, y);
-  }
+  /// Great-circle angular distance between two (lng, lat) points, in degrees.
+  double _greatCircleDistDeg(Vector2 a, Vector2 b) {
+    final lat1 = a.y * _deg2rad;
+    final lat2 = b.y * _deg2rad;
+    final dLat = (b.y - a.y) * _deg2rad;
+    final dLng = (b.x - a.x) * _deg2rad;
 
-  /// Convert world map coordinates to lat/lng
-  Vector2 worldToLatLng(Vector2 world) {
-    final lng = world.x / WorldMap.mapWidth * 360 - 180;
-    final lat = 90 - world.y / WorldMap.mapHeight * 180;
-    return Vector2(lng, lat);
+    final h = sin(dLat / 2) * sin(dLat / 2) +
+        cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
+    final c = 2 * atan2(sqrt(h), sqrt(1 - h));
+    return c * _rad2deg;
   }
 }

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/game_log.dart';
+import '../../data/models/cosmetic.dart';
 import '../../data/models/player.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/test_accounts.dart';
@@ -194,13 +197,10 @@ class DebugScreen extends ConsumerWidget {
 
   void _showGiftCosmeticDialog(BuildContext context) {
     final usernameController = TextEditingController();
-    String selectedItemId = 'plane_golden_jet';
+    final allCosmetics = CosmeticCatalog.all;
+    String selectedItemId = allCosmetics.first.id;
     final items = <String, String>{
-      'plane_golden_jet': 'Golden Private Jet',
-      'plane_diamond_concorde': 'Diamond Concorde',
-      'plane_platinum_eagle': 'Platinum Eagle',
-      'contrail_gold_dust': 'Gold Dust Trail',
-      'contrail_aurora': 'Aurora Trail',
+      for (final c in allCosmetics) c.id: c.name,
     };
     showDialog<void>(
       context: context,
@@ -399,6 +399,21 @@ class DebugScreen extends ConsumerWidget {
             iconColor: const Color(0xFF9B59B6),
             label: 'Gift Cosmetic Item',
             onTap: () => _showGiftCosmeticDialog(context),
+          ),
+          const SizedBox(height: 24),
+
+          // Game Log
+          const _SectionHeader(title: 'Game Log'),
+          const SizedBox(height: 8),
+          _AdminGiftCard(
+            icon: Icons.bug_report,
+            iconColor: FlitColors.warning,
+            label: 'View Game Log (${GameLog.instance.entries.length} entries)',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const _GameLogScreen(),
+              ),
+            ),
           ),
           const SizedBox(height: 24),
 
@@ -618,4 +633,259 @@ class _AdminGiftCard extends StatelessWidget {
           ),
         ),
       );
+}
+
+/// Full-screen log viewer with filtering and copy-to-clipboard.
+class _GameLogScreen extends StatefulWidget {
+  const _GameLogScreen();
+
+  @override
+  State<_GameLogScreen> createState() => _GameLogScreenState();
+}
+
+class _GameLogScreenState extends State<_GameLogScreen> {
+  LogLevel _minLevel = LogLevel.debug;
+
+  @override
+  Widget build(BuildContext context) {
+    final log = GameLog.instance;
+    final entries = log.entriesAtLevel(_minLevel);
+
+    return Scaffold(
+      backgroundColor: FlitColors.backgroundDark,
+      appBar: AppBar(
+        backgroundColor: FlitColors.backgroundMid,
+        title: Text('Game Log (${entries.length})'),
+        centerTitle: true,
+        actions: [
+          // Copy all
+          IconButton(
+            icon: const Icon(Icons.copy, size: 20),
+            tooltip: 'Copy log',
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: log.export()));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Log copied to clipboard'),
+                  backgroundColor: FlitColors.success,
+                ),
+              );
+            },
+          ),
+          // Clear
+          IconButton(
+            icon: const Icon(Icons.delete_outline, size: 20),
+            tooltip: 'Clear log',
+            onPressed: () {
+              log.clear();
+              setState(() {});
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Filter bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                const Text(
+                  'FILTER:',
+                  style: TextStyle(
+                    color: FlitColors.textMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                for (final level in LogLevel.values) ...[
+                  _FilterChip(
+                    label: level.name.toUpperCase(),
+                    selected: _minLevel == level,
+                    onTap: () => setState(() => _minLevel = level),
+                    color: _levelColor(level),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+              ],
+            ),
+          ),
+          // Log entries
+          Expanded(
+            child: entries.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No log entries',
+                      style: TextStyle(color: FlitColors.textMuted),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: entries.length,
+                    reverse: true, // newest first
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    itemBuilder: (_, i) {
+                      final entry = entries[entries.length - 1 - i];
+                      return _LogEntryTile(entry: entry);
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _levelColor(LogLevel level) => switch (level) {
+        LogLevel.debug => FlitColors.textMuted,
+        LogLevel.info => FlitColors.accent,
+        LogLevel.warning => FlitColors.warning,
+        LogLevel.error => FlitColors.error,
+      };
+}
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    required this.color,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: selected ? color.withOpacity(0.25) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected ? color : FlitColors.cardBorder,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? color : FlitColors.textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      );
+}
+
+class _LogEntryTile extends StatelessWidget {
+  const _LogEntryTile({required this.entry});
+
+  final LogEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (entry.level) {
+      LogLevel.debug => FlitColors.textMuted,
+      LogLevel.info => FlitColors.textSecondary,
+      LogLevel.warning => FlitColors.warning,
+      LogLevel.error => FlitColors.error,
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(6),
+          border: entry.level == LogLevel.error
+              ? Border.all(color: FlitColors.error.withOpacity(0.4))
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  entry.timeString,
+                  style: const TextStyle(
+                    color: FlitColors.textMuted,
+                    fontSize: 10,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Text(
+                    entry.levelTag,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  entry.category,
+                  style: const TextStyle(
+                    color: FlitColors.gold,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              entry.message,
+              style: TextStyle(
+                color: entry.level.index >= LogLevel.warning.index
+                    ? color
+                    : FlitColors.textPrimary,
+                fontSize: 12,
+              ),
+            ),
+            if (entry.data != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  '${entry.data}',
+                  style: const TextStyle(
+                    color: FlitColors.textMuted,
+                    fontSize: 10,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+            if (entry.error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  '${entry.error}',
+                  style: const TextStyle(
+                    color: FlitColors.error,
+                    fontSize: 10,
+                    fontFamily: 'monospace',
+                  ),
+                  maxLines: 5,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -15,6 +15,8 @@ class AccountState {
     AvatarConfig? avatar,
     PilotLicense? license,
     this.ownedAvatarParts = const {},
+    this.equippedPlaneId = 'plane_default',
+    this.equippedContrailId = 'contrail_default',
   })  : avatar = avatar ?? const AvatarConfig(),
         license = license ?? PilotLicense.random();
 
@@ -33,6 +35,12 @@ class AccountState {
   /// Set of owned avatar parts (e.g. "hair_mohawk", "hat_crown").
   final Set<String> ownedAvatarParts;
 
+  /// Currently equipped plane cosmetic ID.
+  final String equippedPlaneId;
+
+  /// Currently equipped contrail cosmetic ID.
+  final String equippedContrailId;
+
   AccountState copyWith({
     Player? currentPlayer,
     bool? isDebugMode,
@@ -40,6 +48,8 @@ class AccountState {
     AvatarConfig? avatar,
     PilotLicense? license,
     Set<String>? ownedAvatarParts,
+    String? equippedPlaneId,
+    String? equippedContrailId,
   }) =>
       AccountState(
         currentPlayer: currentPlayer ?? this.currentPlayer,
@@ -48,6 +58,8 @@ class AccountState {
         avatar: avatar ?? this.avatar,
         license: license ?? this.license,
         ownedAvatarParts: ownedAvatarParts ?? this.ownedAvatarParts,
+        equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
+        equippedContrailId: equippedContrailId ?? this.equippedContrailId,
       );
 }
 
@@ -170,6 +182,18 @@ class AccountNotifier extends StateNotifier<AccountState> {
     return state.ownedAvatarParts.contains(partKey);
   }
 
+  // --- Equipped cosmetics ---
+
+  /// Equip a plane by ID.
+  void equipPlane(String id) {
+    state = state.copyWith(equippedPlaneId: id);
+  }
+
+  /// Equip a contrail by ID.
+  void equipContrail(String id) {
+    state = state.copyWith(equippedContrailId: id);
+  }
+
   // --- Pilot License ---
 
   /// Reroll the pilot license. Returns true if affordable.
@@ -233,4 +257,9 @@ final avatarProvider = Provider<AvatarConfig>((ref) {
 /// Convenience provider for pilot license
 final licenseProvider = Provider<PilotLicense>((ref) {
   return ref.watch(accountProvider).license;
+});
+
+/// Convenience provider for equipped plane ID
+final equippedPlaneIdProvider = Provider<String>((ref) {
+  return ref.watch(accountProvider).equippedPlaneId;
 });

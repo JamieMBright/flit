@@ -59,12 +59,12 @@ class InputHandler extends Component
     plane.setTurnDirection(_dragDelta.clamp(-1, 1));
   }
 
-  /// Reset turn when drag ends
+  /// Release turn when drag ends — plane coasts to straight.
   void onHorizontalDragEnd() {
     _dragDelta = 0;
-    // Only reset if no keyboard keys are pressed
+    // Only release if no keyboard keys are pressed
     if (_pressedKeys.isEmpty) {
-      plane.setTurnDirection(0);
+      plane.releaseTurn();
     }
   }
 

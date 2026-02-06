@@ -52,17 +52,22 @@ abstract final class FlitColors {
   static const Color warning = Color(0xFFD4A944);
   static const Color error = Color(0xFFCC4444);
 
-  // Plane colors - vintage aircraft feel
-  static const Color planeBody = Color(0xFFF0E8DC);
-  static const Color planeWing = Color(0xFFD4C4A8);
-  static const Color planeAccent = Color(0xFFD4654A);
-  static const Color planeShadow = Color(0x40000000);
+  // Plane colors — warm yellow prop plane (like the reference)
+  static const Color planeBody = Color(0xFFE8A820);
+  static const Color planeWing = Color(0xFFD49418);
+  static const Color planeAccent = Color(0xFFCC4422);
+  static const Color planeShadow = Color(0x50000000);
+  static const Color planeHighlight = Color(0xFFF0C848);
 
   // Contrail - subtle white wisps
   static const Color contrail = Color(0xB0F0E8DC);
 
   // Atmosphere and effects
   static const Color atmosphereHaze = Color(0x18F0E8DC);
+  static const Color atmosphereGlow = Color(0xFF6AB4E8);
   static const Color gridLine = Color(0x15F0E8DC);
   static const Color shadow = Color(0x30000000);
+
+  // Globe / space
+  static const Color space = Color(0xFF0A1620);
 }
