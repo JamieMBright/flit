@@ -228,15 +228,18 @@ class _StaticMapBackground extends StatelessWidget {
   const _StaticMapBackground();
 
   @override
-  Widget build(BuildContext context) => CustomPaint(
-        painter: _MapBackgroundPainter(),
-        size: Size.infinite,
+  Widget build(BuildContext context) => SizedBox.expand(
+        child: CustomPaint(
+          painter: _MapBackgroundPainter(),
+        ),
       );
 }
 
 class _MapBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
+    if (size.isEmpty || !size.isFinite) return;
+
     // Ocean gradient
     final oceanGradient = Paint()
       ..shader = const LinearGradient(
