@@ -115,7 +115,7 @@ abstract class CosmeticCatalog {
   // Planes
   // ---------------------------------------------------------------
   static const List<Cosmetic> planes = [
-    // --- Free / Common ---
+    // --- Common (sorted by price) ---
     Cosmetic(
       id: 'plane_default',
       name: 'Classic Bi-Plane',
@@ -124,12 +124,25 @@ abstract class CosmeticCatalog {
       rarity: CosmeticRarity.common,
       description: 'The original flit plane.',
       colorScheme: {
-        'primary': 0xFFF5F0E0,   // cream body
-        'secondary': 0xFFC0392B, // red accents
-        'detail': 0xFF8B4513,    // brown struts
+        'primary': 0xFFF5F0E0,
+        'secondary': 0xFFC0392B,
+        'detail': 0xFF8B4513,
       },
       isOwned: true,
       isEquipped: true,
+    ),
+    Cosmetic(
+      id: 'plane_paper',
+      name: 'Paper Plane',
+      type: CosmeticType.plane,
+      price: 500,
+      rarity: CosmeticRarity.common,
+      description: 'Simple and elegant.',
+      colorScheme: {
+        'primary': 0xFFF5F5F5,
+        'secondary': 0xFFE0E0E0,
+        'detail': 0xFFCCCCCC,
+      },
     ),
     Cosmetic(
       id: 'plane_prop',
@@ -139,38 +152,64 @@ abstract class CosmeticCatalog {
       rarity: CosmeticRarity.common,
       description: 'Classic propeller aircraft.',
       colorScheme: {
-        'primary': 0xFF556B2F,   // olive green body
-        'secondary': 0xFF3B4A1F, // dark olive
-        'detail': 0xFF8B8B6E,   // khaki accents
+        'primary': 0xFF556B2F,
+        'secondary': 0xFF3B4A1F,
+        'detail': 0xFF8B8B6E,
       },
     ),
     Cosmetic(
-      id: 'plane_paper',
-      name: 'Paper Plane',
+      id: 'plane_bryanair',
+      name: 'Bryanair',
       type: CosmeticType.plane,
-      price: 600,
+      price: 1500,
       rarity: CosmeticRarity.common,
-      description: 'Simple and elegant.',
+      description: 'No frills, no legroom, but it gets you there. Eventually.',
       colorScheme: {
-        'primary': 0xFFF5F5F5,   // white
-        'secondary': 0xFFE0E0E0, // light gray folds
-        'detail': 0xFFCCCCCC,    // shadow lines
+        'primary': 0xFFF5F5F5,
+        'secondary': 0xFF003580,
+        'detail': 0xFFFFCC00,
+      },
+    ),
+    Cosmetic(
+      id: 'plane_seaplane',
+      name: 'Island Hopper',
+      type: CosmeticType.plane,
+      price: 2000,
+      rarity: CosmeticRarity.common,
+      description: 'Float pontoons for water landings. Perfect for the Caribbean.',
+      colorScheme: {
+        'primary': 0xFFF0E68C,
+        'secondary': 0xFF2E8B57,
+        'detail': 0xFFF5F5F5,
       },
     ),
 
-    // --- Rare ---
+    // --- Rare (sorted by price) ---
     Cosmetic(
       id: 'plane_jet',
       name: 'Sleek Jet',
       type: CosmeticType.plane,
       price: 2500,
       rarity: CosmeticRarity.rare,
-      description: 'A modern jet fighter look.',
       requiredLevel: 3,
+      description: 'A modern jet fighter look.',
       colorScheme: {
-        'primary': 0xFFC0C0C0,   // silver body
-        'secondary': 0xFF4A90B8, // blue accents
-        'detail': 0xFF808080,    // gunmetal
+        'primary': 0xFFC0C0C0,
+        'secondary': 0xFF4A90B8,
+        'detail': 0xFF808080,
+      },
+    ),
+    Cosmetic(
+      id: 'plane_red_baron',
+      name: 'Red Baron Triplane',
+      type: CosmeticType.plane,
+      price: 3500,
+      rarity: CosmeticRarity.rare,
+      description: 'The most feared ace of WWI. Triple the wings, triple the style.',
+      colorScheme: {
+        'primary': 0xFFCC3333,
+        'secondary': 0xFF8B0000,
+        'detail': 0xFF1A1A1A,
       },
     ),
     Cosmetic(
@@ -179,79 +218,14 @@ abstract class CosmeticCatalog {
       type: CosmeticType.plane,
       price: 3500,
       rarity: CosmeticRarity.rare,
-      description: 'Blast off to new heights!',
       requiredLevel: 5,
+      description: 'Blast off to new heights!',
       colorScheme: {
-        'primary': 0xFFCC3333,   // red body
-        'secondary': 0xFFF5F5F5, // white trim
-        'detail': 0xFFFF6600,    // orange flame
+        'primary': 0xFFCC3333,
+        'secondary': 0xFFF5F5F5,
+        'detail': 0xFFFF6600,
       },
     ),
-
-    // --- Epic ---
-    Cosmetic(
-      id: 'plane_stealth',
-      name: 'Stealth Bomber',
-      type: CosmeticType.plane,
-      price: 8000,
-      rarity: CosmeticRarity.epic,
-      description: 'Dark and mysterious.',
-      requiredLevel: 10,
-      colorScheme: {
-        'primary': 0xFF2A2A2A,   // dark gray body
-        'secondary': 0xFF1A1A1A, // near-black
-        'detail': 0xFF444444,    // subtle edges
-      },
-    ),
-
-    // --- Legendary / Premium ---
-    Cosmetic(
-      id: 'plane_golden_jet',
-      name: 'Golden Private Jet',
-      type: CosmeticType.plane,
-      price: 25000,
-      rarity: CosmeticRarity.legendary,
-      isPremium: true,
-      realMoneyPrice: 9.99,
-      description: 'The ultimate status symbol. Pure gold luxury.',
-      colorScheme: {
-        'primary': 0xFFD4A944,   // gold body
-        'secondary': 0xFF1A1A1A, // black trim
-        'detail': 0xFFF0D060,    // bright gold highlights
-      },
-    ),
-    Cosmetic(
-      id: 'plane_diamond_concorde',
-      name: 'Diamond Concorde',
-      type: CosmeticType.plane,
-      price: 50000,
-      rarity: CosmeticRarity.legendary,
-      isPremium: true,
-      realMoneyPrice: 19.99,
-      description: 'Supersonic elegance. Diamond-encrusted speed.',
-      colorScheme: {
-        'primary': 0xFFB0D4F1,   // diamond blue body
-        'secondary': 0xFFC0C0C0, // silver trim
-        'detail': 0xFFE0F0FF,    // ice-white sparkle
-      },
-    ),
-    Cosmetic(
-      id: 'plane_platinum_eagle',
-      name: 'Platinum Eagle',
-      type: CosmeticType.plane,
-      price: 100000,
-      rarity: CosmeticRarity.legendary,
-      isPremium: true,
-      realMoneyPrice: 49.99,
-      description: 'Ultra-rare. The sky bows to the eagle.',
-      colorScheme: {
-        'primary': 0xFFE5E4E2,   // platinum body
-        'secondary': 0xFF6A0DAD, // royal purple
-        'detail': 0xFFC0C0D0,    // platinum shimmer
-      },
-    ),
-
-    // --- Aviation Enthusiast ---
     Cosmetic(
       id: 'plane_spitfire',
       name: 'Spitfire',
@@ -261,9 +235,9 @@ abstract class CosmeticCatalog {
       requiredLevel: 5,
       description: 'The legendary Battle of Britain fighter.',
       colorScheme: {
-        'primary': 0xFF556B2F,   // RAF green
-        'secondary': 0xFF8B7355, // brown camo
-        'detail': 0xFFC0C0C0,    // silver roundels
+        'primary': 0xFF556B2F,
+        'secondary': 0xFF8B7355,
+        'detail': 0xFFC0C0C0,
       },
     ),
     Cosmetic(
@@ -275,36 +249,9 @@ abstract class CosmeticCatalog {
       requiredLevel: 7,
       description: 'The mighty heavy bomber. Low and slow, full of character.',
       colorScheme: {
-        'primary': 0xFF2F2F2F,   // night black
-        'secondary': 0xFF3B3B3B, // dark gray
-        'detail': 0xFFCC3333,    // red roundel
-      },
-    ),
-    Cosmetic(
-      id: 'plane_air_force_one',
-      name: 'Air Force One',
-      type: CosmeticType.plane,
-      price: 15000,
-      rarity: CosmeticRarity.epic,
-      requiredLevel: 10,
-      description: 'Presidential luxury at 35,000 feet.',
-      colorScheme: {
-        'primary': 0xFFF5F5F5,   // white fuselage
-        'secondary': 0xFF1A3A5C, // navy blue
-        'detail': 0xFFD4A944,    // gold trim
-      },
-    ),
-    Cosmetic(
-      id: 'plane_bryanair',
-      name: 'Bryanair',
-      type: CosmeticType.plane,
-      price: 1500,
-      rarity: CosmeticRarity.common,
-      description: 'No frills, no legroom, but it gets you there. Eventually.',
-      colorScheme: {
-        'primary': 0xFFF5F5F5,   // white body
-        'secondary': 0xFF003580, // budget blue
-        'detail': 0xFFFFCC00,    // yellow trim
+        'primary': 0xFF2F2F2F,
+        'secondary': 0xFF3B3B3B,
+        'detail': 0xFFCC3333,
       },
     ),
     Cosmetic(
@@ -316,35 +263,83 @@ abstract class CosmeticCatalog {
       requiredLevel: 8,
       description: 'Supersonic nostalgia. Mach 2 in style.',
       colorScheme: {
-        'primary': 0xFFF5F5F5,   // white body
-        'secondary': 0xFF1A3A5C, // BA blue tail
-        'detail': 0xFFCC3333,    // red accent stripe
+        'primary': 0xFFF5F5F5,
+        'secondary': 0xFF1A3A5C,
+        'detail': 0xFFCC3333,
+      },
+    ),
+
+    // --- Epic (sorted by price) ---
+    Cosmetic(
+      id: 'plane_stealth',
+      name: 'Stealth Bomber',
+      type: CosmeticType.plane,
+      price: 8000,
+      rarity: CosmeticRarity.epic,
+      requiredLevel: 10,
+      description: 'Dark and mysterious.',
+      colorScheme: {
+        'primary': 0xFF2A2A2A,
+        'secondary': 0xFF1A1A1A,
+        'detail': 0xFF444444,
       },
     ),
     Cosmetic(
-      id: 'plane_red_baron',
-      name: 'Red Baron Triplane',
+      id: 'plane_air_force_one',
+      name: 'Air Force One',
       type: CosmeticType.plane,
-      price: 3500,
-      rarity: CosmeticRarity.rare,
-      description: 'The most feared ace of WWI. Triple the wings, triple the style.',
+      price: 15000,
+      rarity: CosmeticRarity.epic,
+      requiredLevel: 10,
+      description: 'Presidential luxury at 35,000 feet.',
       colorScheme: {
-        'primary': 0xFFCC3333,   // iconic red
-        'secondary': 0xFF8B0000, // dark red
-        'detail': 0xFF1A1A1A,    // black iron crosses
+        'primary': 0xFFF5F5F5,
+        'secondary': 0xFF1A3A5C,
+        'detail': 0xFFD4A944,
+      },
+    ),
+
+    // --- Legendary (sorted by price) ---
+    Cosmetic(
+      id: 'plane_golden_jet',
+      name: 'Golden Private Jet',
+      type: CosmeticType.plane,
+      price: 25000,
+      rarity: CosmeticRarity.legendary,
+      isPremium: true,
+      description: 'The ultimate status symbol. Pure gold luxury.',
+      colorScheme: {
+        'primary': 0xFFD4A944,
+        'secondary': 0xFF1A1A1A,
+        'detail': 0xFFF0D060,
       },
     ),
     Cosmetic(
-      id: 'plane_seaplane',
-      name: 'Island Hopper',
+      id: 'plane_diamond_concorde',
+      name: 'Diamond Concorde',
       type: CosmeticType.plane,
-      price: 2000,
-      rarity: CosmeticRarity.common,
-      description: 'Float pontoons for water landings. Perfect for the Caribbean.',
+      price: 50000,
+      rarity: CosmeticRarity.legendary,
+      isPremium: true,
+      description: 'Supersonic elegance. Diamond-encrusted speed.',
       colorScheme: {
-        'primary': 0xFFF0E68C,   // sandy yellow
-        'secondary': 0xFF2E8B57, // sea green
-        'detail': 0xFFF5F5F5,    // white pontoons
+        'primary': 0xFFB0D4F1,
+        'secondary': 0xFFC0C0C0,
+        'detail': 0xFFE0F0FF,
+      },
+    ),
+    Cosmetic(
+      id: 'plane_platinum_eagle',
+      name: 'Platinum Eagle',
+      type: CosmeticType.plane,
+      price: 100000,
+      rarity: CosmeticRarity.legendary,
+      isPremium: true,
+      description: 'Ultra-rare. The sky bows to the eagle.',
+      colorScheme: {
+        'primary': 0xFFE5E4E2,
+        'secondary': 0xFF6A0DAD,
+        'detail': 0xFFC0C0D0,
       },
     ),
   ];
@@ -429,7 +424,6 @@ abstract class CosmeticCatalog {
       price: 12000,
       rarity: CosmeticRarity.epic,
       isPremium: true,
-      realMoneyPrice: 4.99,
       description: 'A trail of golden particles in your wake.',
       colorScheme: {
         'primary': 0xFFD4A944,
@@ -445,7 +439,6 @@ abstract class CosmeticCatalog {
       price: 20000,
       rarity: CosmeticRarity.legendary,
       isPremium: true,
-      realMoneyPrice: 7.99,
       description: 'The northern lights follow you across the sky.',
       colorScheme: {
         'primary': 0xFF00FF7F,
@@ -459,7 +452,6 @@ abstract class CosmeticCatalog {
       price: 50000,
       rarity: CosmeticRarity.legendary,
       isPremium: true,
-      realMoneyPrice: 14.99,
       description: 'Toxic green poison gas contrails. For the conspiracy-minded pilot.',
       colorScheme: {
         'primary': 0xFF00FF00,

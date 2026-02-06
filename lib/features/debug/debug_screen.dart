@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
+import '../../data/models/cosmetic.dart';
 import '../../data/models/player.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/test_accounts.dart';
@@ -196,13 +197,10 @@ class DebugScreen extends ConsumerWidget {
 
   void _showGiftCosmeticDialog(BuildContext context) {
     final usernameController = TextEditingController();
-    String selectedItemId = 'plane_golden_jet';
+    final allCosmetics = CosmeticCatalog.all;
+    String selectedItemId = allCosmetics.first.id;
     final items = <String, String>{
-      'plane_golden_jet': 'Golden Private Jet',
-      'plane_diamond_concorde': 'Diamond Concorde',
-      'plane_platinum_eagle': 'Platinum Eagle',
-      'contrail_gold_dust': 'Gold Dust Trail',
-      'contrail_aurora': 'Aurora Trail',
+      for (final c in allCosmetics) c.id: c.name,
     };
     showDialog<void>(
       context: context,
