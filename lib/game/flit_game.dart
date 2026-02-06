@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'dart:math';
 
 import 'package:flame/events.dart';
@@ -7,8 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/theme/flit_colors.dart';
+import '../core/utils/game_log.dart';
 import 'components/plane_component.dart';
 import 'map/world_map.dart';
+
+final _log = GameLog.instance;
 
 /// Main game class for Flit.
 ///
@@ -67,37 +69,52 @@ class FlitGame extends FlameGame
 
   @override
   Future<void> onLoad() async {
-    await super.onLoad();
-
-    // Create world map (renders behind plane)
-    _worldMap = WorldMap();
-    await add(_worldMap);
-
-    // Create plane (renders on top, fixed screen position)
-    _plane = PlaneComponent(
-      onAltitudeChanged: (isHigh) {
-        onAltitudeChanged?.call(isHigh);
-      },
-    );
-    await add(_plane);
-
-    // Apply fuel boost only in solo play (not challenges - level playing field)
-    if (!isChallenge) {
-      _plane.fuelBoostMultiplier = fuelBoostMultiplier;
-    }
-
-    // Start at a random position
-    _worldPosition = Vector2(0, 0); // Center of map
-    _heading = -pi / 2; // Facing north
-
-    // Notify the host widget that the engine is ready.  Wrapped in try/catch
-    // so a failure in the callback doesn't break the Flame loading future
-    // (which would leave the GameWidget in an unrecoverable error state and
-    // produce the white‑flash-then-crash behaviour).
+    _log.info('game', 'FlitGame.onLoad started');
     try {
-      onGameReady?.call();
+      await super.onLoad();
+
+      // Create world map (renders behind plane)
+      _worldMap = WorldMap();
+      await add(_worldMap);
+
+      // Create plane (renders on top, fixed screen position)
+      _plane = PlaneComponent(
+        onAltitudeChanged: (isHigh) {
+          _log.info('game', 'Altitude changed', data: {'isHigh': isHigh});
+          try {
+            onAltitudeChanged?.call(isHigh);
+          } catch (e, st) {
+            _log.error('game', 'onAltitudeChanged callback failed',
+                error: e, stackTrace: st);
+          }
+        },
+      );
+      await add(_plane);
+
+      // Apply fuel boost only in solo play (not challenges - level playing field)
+      if (!isChallenge) {
+        _plane.fuelBoostMultiplier = fuelBoostMultiplier;
+      }
+
+      // Start at a random position
+      _worldPosition = Vector2(0, 0); // Center of map
+      _heading = -pi / 2; // Facing north
+
+      _log.info('game', 'FlitGame.onLoad complete');
+
+      // Notify the host widget that the engine is ready.  Wrapped in try/catch
+      // so a failure in the callback doesn't break the Flame loading future
+      // (which would leave the GameWidget in an unrecoverable error state and
+      // produce the white-flash-then-crash behaviour).
+      try {
+        onGameReady?.call();
+      } catch (e, st) {
+        _log.error('game', 'onGameReady callback failed',
+            error: e, stackTrace: st);
+      }
     } catch (e, st) {
-      developer.log('onGameReady callback failed', error: e, stackTrace: st);
+      _log.error('game', 'FlitGame.onLoad FAILED', error: e, stackTrace: st);
+      rethrow;
     }
   }
 
@@ -138,18 +155,26 @@ class FlitGame extends FlameGame
     );
   }
 
+  /// Drag sensitivity multiplier.
+  /// Higher = plane reacts more to smaller finger movements.
+  static const double _dragSensitivity = 0.2;
+
   @override
   void onHorizontalDragUpdate(DragUpdateInfo info) {
-    _plane.setTurnDirection((info.delta.global.x * 0.05).clamp(-1, 1));
+    _plane.setTurnDirection(
+        (info.delta.global.x * _dragSensitivity).clamp(-1, 1));
   }
 
   @override
   void onHorizontalDragEnd(DragEndInfo info) {
-    _plane.setTurnDirection(0);
+    // Don't snap to zero — let PlaneComponent decay the turn smoothly.
+    // Only nudge toward zero so the plane straightens out over time.
+    _plane.releaseTurn();
   }
 
   @override
   void onTap() {
+    _log.debug('input', 'Screen tap → altitude toggle');
     _plane.toggleAltitude();
   }
 
@@ -192,6 +217,11 @@ class FlitGame extends FlameGame
     required Vector2 targetPosition,
     required String clue,
   }) {
+    _log.info('game', 'startGame', data: {
+      'start': '${startPosition.x.toStringAsFixed(1)},${startPosition.y.toStringAsFixed(1)}',
+      'target': '${targetPosition.x.toStringAsFixed(1)},${targetPosition.y.toStringAsFixed(1)}',
+    });
+
     // Convert lat/lng start position to map coordinates
     _worldPosition = _latLngToWorld(startPosition);
     _heading = Random().nextDouble() * 2 * pi;

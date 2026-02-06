@@ -23,6 +23,9 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Current turning direction: -1 (left), 0 (straight), 1 (right)
   double _turnDirection = 0;
 
+  /// Whether the player is actively dragging (vs. coasting).
+  bool _isDragging = false;
+
   /// Current altitude: true = high (fast), false = low (slow, detailed)
   bool _isHighAltitude = true;
 
@@ -36,10 +39,14 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   static const double lowAltitudeSpeedMultiplier = 0.5;
 
   /// Turn rate in radians per second
-  static const double turnRate = 2.0;
+  static const double turnRate = 2.5;
 
   /// Maximum bank angle for visual effect
   static const double _maxBankAngle = 0.35;
+
+  /// How fast the turn decays when the player releases (per-second factor).
+  /// 0.92 means ~8% decay per update at 60fps → roughly 1 second to coast to stop.
+  static const double _turnDecayPerFrame = 0.92;
 
   /// Current visual bank angle (smoothed)
   double _currentBank = 0;
@@ -73,6 +80,13 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   @override
   void update(double dt) {
     super.update(dt);
+
+    // Decay turn direction when not actively dragging
+    if (!_isDragging) {
+      _turnDirection *= _turnDecayPerFrame;
+      // Snap to zero when close enough to avoid endless micro-turns
+      if (_turnDirection.abs() < 0.01) _turnDirection = 0;
+    }
 
     // Smooth bank angle
     final targetBank = _turnDirection * _maxBankAngle;
@@ -288,8 +302,16 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     ));
   }
 
+  /// Set turn direction from active input (drag or keyboard).
   void setTurnDirection(double direction) {
     _turnDirection = direction.clamp(-1, 1);
+    _isDragging = true;
+  }
+
+  /// Called when the player lifts their finger — plane coasts to straight.
+  void releaseTurn() {
+    _isDragging = false;
+    // _turnDirection will decay in update()
   }
 
   void toggleAltitude() {

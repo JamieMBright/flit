@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/flit_colors.dart';
 import '../clues/clue_types.dart';
 
-/// Game HUD overlay showing clues, timer, altitude indicator.
+/// Game HUD overlay showing clues, timer, altitude indicator, and exit button.
 /// Styled with a vintage atlas / lo-fi pop art aesthetic.
 class GameHud extends StatelessWidget {
   const GameHud({
@@ -12,12 +12,14 @@ class GameHud extends StatelessWidget {
     required this.elapsedTime,
     this.currentClue,
     this.onAltitudeToggle,
+    this.onExit,
   });
 
   final bool isHighAltitude;
   final Duration elapsedTime;
   final Clue? currentClue;
   final VoidCallback? onAltitudeToggle;
+  final VoidCallback? onExit;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -26,10 +28,13 @@ class GameHud extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Top row: Clue and Timer
+              // Top row: Exit, Clue, Timer
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Exit button
+                  _ExitButton(onTap: onExit),
+                  const SizedBox(width: 8),
                   // Clue display
                   if (currentClue != null)
                     Expanded(
@@ -52,6 +57,30 @@ class GameHud extends StatelessWidget {
                 ],
               ),
             ],
+          ),
+        ),
+      );
+}
+
+class _ExitButton extends StatelessWidget {
+  const _ExitButton({this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: FlitColors.cardBackground.withOpacity(0.85),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
+          ),
+          child: const Icon(
+            Icons.close,
+            color: FlitColors.textSecondary,
+            size: 20,
           ),
         ),
       );

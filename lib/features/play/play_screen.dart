@@ -1,15 +1,17 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/game_log.dart';
 import '../../game/flit_game.dart';
 import '../../game/map/region.dart';
 import '../../game/session/game_session.dart';
 import '../../game/ui/game_hud.dart';
+
+final _log = GameLog.instance;
 
 /// Main play screen with game canvas and HUD overlay.
 class PlayScreen extends StatefulWidget {
@@ -41,6 +43,10 @@ class _PlayScreenState extends State<PlayScreen> {
   @override
   void initState() {
     super.initState();
+    _log.info('screen', 'PlayScreen.initState', data: {
+      'region': widget.region.name,
+      'challenge': widget.challengeFriendName,
+    });
     _game = FlitGame(
       onGameReady: _onGameReady,
       onAltitudeChanged: _onAltitudeChanged,
@@ -49,11 +55,13 @@ class _PlayScreenState extends State<PlayScreen> {
 
   @override
   void dispose() {
+    _log.info('screen', 'PlayScreen.dispose');
     _timer?.cancel();
     super.dispose();
   }
 
   void _onGameReady() {
+    _log.info('screen', 'Game engine ready');
     if (!mounted) return;
     setState(() {
       _gameReady = true;
@@ -66,6 +74,7 @@ class _PlayScreenState extends State<PlayScreen> {
   }
 
   void _onAltitudeChanged(bool isHigh) {
+    _log.debug('screen', 'Altitude callback', data: {'isHigh': isHigh});
     if (mounted) {
       setState(() {
         _isHighAltitude = isHigh;
@@ -74,9 +83,15 @@ class _PlayScreenState extends State<PlayScreen> {
   }
 
   void _startNewGame() {
+    _log.info('session', 'Starting new game');
     try {
       _session = GameSession.random(region: widget.region);
       _elapsed = Duration.zero;
+
+      _log.info('session', 'Session created', data: {
+        'target': _session!.targetName,
+        'clue': _session!.clue.type.name,
+      });
 
       // Start the game with the session data
       _game.startGame(
@@ -107,7 +122,7 @@ class _PlayScreenState extends State<PlayScreen> {
         _error = null;
       });
     } catch (e, st) {
-      developer.log('Failed to start game', error: e, stackTrace: st);
+      _log.error('session', 'Failed to start game', error: e, stackTrace: st);
       if (mounted) {
         setState(() {
           _error = 'Failed to start game: $e';
@@ -128,6 +143,12 @@ class _PlayScreenState extends State<PlayScreen> {
   void _completeLanding() {
     _timer?.cancel();
     _session?.complete();
+
+    _log.info('session', 'Landing complete', data: {
+      'target': _session?.targetName,
+      'elapsed': _session?.elapsed.inMilliseconds,
+      'score': _session?.score,
+    });
 
     final friendName = widget.challengeFriendName;
 
@@ -154,6 +175,81 @@ class _PlayScreenState extends State<PlayScreen> {
                 _showChallengeSentDialog(friendName);
               }
             : null,
+      ),
+    );
+  }
+
+  void _requestExit() {
+    _log.info('screen', 'Exit requested by user');
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.flight,
+                color: FlitColors.textSecondary,
+                size: 36,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Abort Flight?',
+                style: TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Your current progress will be lost.',
+                style: TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text(
+                      'KEEP FLYING',
+                      style: TextStyle(color: FlitColors.accent),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      _log.info('screen', 'User confirmed exit');
+                      _timer?.cancel();
+                      Navigator.of(dialogContext).pop();
+                      Navigator.of(context).pop();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.textMuted,
+                      foregroundColor: FlitColors.textPrimary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('ABORT'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -232,7 +328,7 @@ class _PlayScreenState extends State<PlayScreen> {
                 color: FlitColors.backgroundDark,
               ),
               errorBuilder: (ctx, err) {
-                developer.log('GameWidget error', error: err);
+                _log.error('screen', 'GameWidget error', error: err);
                 return Container(
                   color: FlitColors.backgroundDark,
                   alignment: Alignment.center,
@@ -272,6 +368,7 @@ class _PlayScreenState extends State<PlayScreen> {
                 elapsedTime: _elapsed,
                 currentClue: _session?.clue,
                 onAltitudeToggle: () => _game.plane.toggleAltitude(),
+                onExit: _requestExit,
               ),
 
             // Error overlay
