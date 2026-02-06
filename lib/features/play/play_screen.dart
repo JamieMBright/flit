@@ -154,7 +154,7 @@ class _PlayScreenState extends State<PlayScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              const Icon(
                 Icons.send,
                 color: FlitColors.success,
                 size: 44,
@@ -266,7 +266,7 @@ class _ResultDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.flight_land,
               color: FlitColors.success,
               size: 44,

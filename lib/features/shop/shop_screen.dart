@@ -19,7 +19,7 @@ class _ShopScreenState extends State<ShopScreen>
 
   // Placeholder coin balance
   int _coins = 1250;
-  int _level = 5;
+  final int _level = 5;
 
   // Track owned and equipped items
   final Set<String> _ownedIds = {'plane_default', 'contrail_default'};
@@ -202,17 +202,17 @@ class _GoldShopTab extends StatelessWidget {
         itemCount: _goldPackages.length + 1, // +1 for header
         itemBuilder: (context, index) {
           if (index == 0) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
+            return const Padding(
+              padding: EdgeInsets.only(bottom: 16),
               child: Column(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.monetization_on,
                     color: FlitColors.warning,
                     size: 48,
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     'Buy Gold',
                     style: TextStyle(
                       color: FlitColors.textPrimary,
@@ -220,7 +220,7 @@ class _GoldShopTab extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     'Get coins to unlock planes and contrails',
                     style: TextStyle(
@@ -228,7 +228,7 @@ class _GoldShopTab extends StatelessWidget {
                       fontSize: 14,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                 ],
               ),
             );
@@ -1064,7 +1064,6 @@ class _PlanePainter extends CustomPainter {
   // --- Stealth Bomber: flying wing, flat, angular ---
   void _drawStealth(Canvas canvas, double cx, double cy) {
     final body = Paint()..color = _primary;
-    final edge = Paint()..color = _detail;
     final dark = Paint()..color = _secondary;
 
     // Main body (wide chevron)

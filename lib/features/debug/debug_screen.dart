@@ -324,7 +324,7 @@ class DebugScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           // Current account info
-          _SectionHeader(title: 'Current Account'),
+          const _SectionHeader(title: 'Current Account'),
           _AccountCard(
             player: state.currentPlayer,
             isSelected: true,
@@ -332,7 +332,7 @@ class DebugScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Switch accounts
-          _SectionHeader(title: 'Switch Account'),
+          const _SectionHeader(title: 'Switch Account'),
           const SizedBox(height: 8),
           ...TestAccounts.all.map(
             (player) => Padding(
@@ -347,7 +347,7 @@ class DebugScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Quick actions
-          _SectionHeader(title: 'Quick Actions'),
+          const _SectionHeader(title: 'Quick Actions'),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -378,7 +378,7 @@ class DebugScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Admin Gifting
-          _SectionHeader(title: 'Admin Gifting'),
+          const _SectionHeader(title: 'Admin Gifting'),
           const SizedBox(height: 8),
           _AdminGiftCard(
             icon: Icons.monetization_on,

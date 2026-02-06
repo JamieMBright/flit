@@ -85,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
               const Divider(color: FlitColors.cardBorder, height: 1),
-              _SettingsToggle(
+              const _SettingsToggle(
                 label: 'Dark Mode',
                 icon: Icons.dark_mode_outlined,
                 value: true,
@@ -611,7 +611,7 @@ class _ActionButton extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                Icon(
+                const Icon(
                   Icons.chevron_right,
                   color: FlitColors.textMuted,
                 ),

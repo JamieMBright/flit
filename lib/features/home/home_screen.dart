@@ -165,7 +165,7 @@ class _MapBackgroundPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // Ocean gradient
     final oceanGradient = Paint()
-      ..shader = LinearGradient(
+      ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
@@ -173,7 +173,7 @@ class _MapBackgroundPainter extends CustomPainter {
           FlitColors.ocean,
           FlitColors.oceanDeep,
         ],
-        stops: const [0.0, 0.45, 1.0],
+        stops: [0.0, 0.45, 1.0],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), oceanGradient);
 

@@ -308,7 +308,7 @@ class AvatarEditorScreen extends StatefulWidget {
 
 class _AvatarEditorScreenState extends State<AvatarEditorScreen> {
   /// Current avatar configuration being edited.
-  AvatarConfig _config = AvatarConfig();
+  AvatarConfig _config = const AvatarConfig();
 
   /// Index of the active category tab.
   int _selectedCategory = 0;
