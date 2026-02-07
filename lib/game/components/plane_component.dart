@@ -452,8 +452,8 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
     // Slightly behind the plane (small offset aft along heading).
     final aftBearing = navBearing + pi;
-    const wingDist = 0.12 * _deg2rad; // ~0.12° lateral
-    const aftDist = 0.05 * _deg2rad; // ~0.05° behind
+    const wingDist = 0.03 * _deg2rad; // ~0.03° lateral (tighter to plane)
+    const aftDist = 0.015 * _deg2rad; // ~0.015° behind
 
     for (final bearing in [leftBearing, rightBearing]) {
       // Combine lateral offset with slight aft offset.
@@ -486,7 +486,8 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
       contrails.add(ContrailParticle(
         worldPosition: Vector2(lngF * _rad2deg, latF * _rad2deg),
-        size: 2 + Random().nextDouble() * 1.5,
+        size: 0.6 + Random().nextDouble() * 0.4,
+        maxLife: 2.0,
       ));
     }
   }
@@ -497,10 +498,10 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     _isDragging = true;
   }
 
-  /// Called when the player lifts their finger — plane coasts to straight.
+  /// Called when the player lifts their finger — plane goes straight.
   void releaseTurn() {
     _isDragging = false;
-    // _turnDirection will decay in update()
+    _turnDirection = 0;
   }
 
   void toggleAltitude() {

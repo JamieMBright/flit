@@ -13,6 +13,9 @@ class GameHud extends StatelessWidget {
     this.currentClue,
     this.onAltitudeToggle,
     this.onExit,
+    this.onTurnLeft,
+    this.onTurnRight,
+    this.onTurnRelease,
   });
 
   final bool isHighAltitude;
@@ -20,6 +23,15 @@ class GameHud extends StatelessWidget {
   final Clue? currentClue;
   final VoidCallback? onAltitudeToggle;
   final VoidCallback? onExit;
+
+  /// Called while the player holds the left turn button.
+  final VoidCallback? onTurnLeft;
+
+  /// Called while the player holds the right turn button.
+  final VoidCallback? onTurnRight;
+
+  /// Called when the player releases either turn button.
+  final VoidCallback? onTurnRelease;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -46,13 +58,27 @@ class GameHud extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              // Bottom row: Altitude indicator
+              // Bottom row: Turn controls + Altitude indicator
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  // Left turn button
+                  _TurnButton(
+                    icon: Icons.turn_left,
+                    onPressed: onTurnLeft,
+                    onReleased: onTurnRelease,
+                  ),
+                  // Altitude toggle in center
                   _AltitudeIndicator(
                     isHigh: isHighAltitude,
                     onToggle: onAltitudeToggle,
+                  ),
+                  // Right turn button
+                  _TurnButton(
+                    icon: Icons.turn_right,
+                    onPressed: onTurnRight,
+                    onReleased: onTurnRelease,
                   ),
                 ],
               ),
@@ -221,6 +247,72 @@ class _AltitudeIndicator extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      );
+}
+
+/// Hold-to-turn button for the HUD.
+///
+/// Uses [GestureDetector.onTapDown] / [onTapUp] / [onTapCancel] so turning
+/// is active for the entire duration of the press, not just a single tap.
+class _TurnButton extends StatefulWidget {
+  const _TurnButton({
+    required this.icon,
+    this.onPressed,
+    this.onReleased,
+  });
+
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final VoidCallback? onReleased;
+
+  @override
+  State<_TurnButton> createState() => _TurnButtonState();
+}
+
+class _TurnButtonState extends State<_TurnButton> {
+  bool _isPressed = false;
+
+  void _handleDown(TapDownDetails _) {
+    setState(() => _isPressed = true);
+    widget.onPressed?.call();
+  }
+
+  void _handleUp(TapUpDetails _) {
+    setState(() => _isPressed = false);
+    widget.onReleased?.call();
+  }
+
+  void _handleCancel() {
+    setState(() => _isPressed = false);
+    widget.onReleased?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTapDown: _handleDown,
+        onTapUp: _handleUp,
+        onTapCancel: _handleCancel,
+        child: Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            color: _isPressed
+                ? FlitColors.accent.withOpacity(0.35)
+                : FlitColors.cardBackground.withOpacity(0.7),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: _isPressed
+                  ? FlitColors.accent
+                  : FlitColors.cardBorder.withOpacity(0.6),
+              width: 1.5,
+            ),
+          ),
+          child: Icon(
+            widget.icon,
+            color: _isPressed ? FlitColors.accent : FlitColors.textSecondary,
+            size: 28,
           ),
         ),
       );

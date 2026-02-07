@@ -11,6 +11,7 @@ import 'core/services/error_sender_http.dart';
 import 'core/services/error_service.dart';
 import 'core/theme/flit_theme.dart';
 import 'core/utils/game_log.dart';
+import 'core/utils/web_error_bridge.dart';
 import 'features/auth/login_screen.dart';
 
 final _log = GameLog.instance;
@@ -118,6 +119,10 @@ void main() {
       details.stack,
       context: {'source': 'FlutterError.onError'},
     );
+    // Push to JS overlay for iOS PWA (Dart error widgets never render there)
+    WebErrorBridge.show(
+      '[FlutterError] ${details.exceptionAsString()}\n\n${details.stack}',
+    );
   };
 
   // Capture async / platform errors that escape the framework.
@@ -128,6 +133,7 @@ void main() {
       stack,
       context: {'source': 'PlatformDispatcher.onError'},
     );
+    WebErrorBridge.show('[PlatformError] $error\n\n$stack');
     return true; // prevent crash, keep app alive
   };
 
@@ -147,6 +153,7 @@ void main() {
         stack,
         context: {'source': 'runZonedGuarded'},
       );
+      WebErrorBridge.show('[ZoneError] $error\n\n$stack');
     },
   );
 }
