@@ -36,6 +36,9 @@ uniform sampler2D uHeightmap;   // ETOPO heightmap (0 = deep ocean, 1 = peak)
 uniform sampler2D uShoreDist;   // Shore distance field (0 = shore, 1 = far)
 uniform sampler2D uCityLights;  // NASA Earth at Night
 
+// Fragment output
+out vec4 fragColor;
+
 // ===========================================================================
 // CONSTANTS — named magic numbers for clarity
 // ===========================================================================
@@ -341,7 +344,8 @@ vec3 waveNormal(vec3 normal, vec3 hitPoint, float time) {
 // MAIN FRAGMENT ENTRY POINT
 // ===========================================================================
 
-void fragment(vec2 fragCoord, inout vec4 fragColor) {
+void main() {
+    vec2 fragCoord = FlutterFragCoord().xy;
 
     // ----- Camera ray setup ------------------------------------------------
     vec3 rayDir = cameraRayDir(fragCoord, uResolution, uCameraPos, uCameraTarget, uFOV);
