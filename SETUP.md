@@ -44,7 +44,7 @@ In the Vercel dashboard (Settings > Environment Variables), add:
 |----------|-------|----------|
 | `VERCEL_ERRORS_API_KEY` | Any strong secret string (e.g. `openssl rand -hex 32`) | Yes |
 | `GITHUB_TOKEN` | GitHub Personal Access Token with `repo` scope | Yes (for direct GitHub logging) |
-| `GITHUB_REPO` | `JamieMBright/flit` | Yes |
+| `GITHUB_REPO` | `<your-username>/flit` (e.g. `JamieMBright/flit`) | Yes |
 | `GITHUB_LOG_PATH` | `logs/runtime-errors.jsonl` | No (this is the default) |
 | `GITHUB_BRANCH` | `main` | No (this is the default) |
 

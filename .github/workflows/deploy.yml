@@ -166,7 +166,7 @@ jobs:
 
       - name: Curl deployed site
         run: |
-          SITE_URL="https://jamiembright.github.io/flit/"
+          SITE_URL="https://${{ github.repository_owner }}.github.io/${GITHUB_REPOSITORY##*/}/"
           echo "Smoke testing: ${SITE_URL}"
 
           HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" --max-time 30 "${SITE_URL}")
@@ -181,7 +181,7 @@ jobs:
 
       - name: Verify page content
         run: |
-          SITE_URL="https://jamiembright.github.io/flit/"
+          SITE_URL="https://${{ github.repository_owner }}.github.io/${GITHUB_REPOSITORY##*/}/"
           CONTENT=$(curl -s --max-time 30 "${SITE_URL}")
 
           # Check that the page contains Flutter bootstrap
