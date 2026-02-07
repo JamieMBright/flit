@@ -262,9 +262,9 @@ class PlaneComponent extends PositionComponent with HasGameRef {
       ..close();
     canvas.drawPath(finPath, accentPaint);
 
-    // --- Main wings (3D: asymmetric span and dip) ---
-    // Left wing — length and dip depend on bank
-    final leftSpan = wingSpan + bankSin * 8; // grows when banking right
+    // --- Main wings (3D: both shorten when banking, subtle asymmetry) ---
+    // Left wing — both wings foreshorten from bankCos, mild offset for depth.
+    final leftSpan = wingSpan + bankSin * 3;
     final leftDip = wingDip;
     final leftWing = Path()
       ..moveTo(-4, -1 + leftDip * 0.2)
@@ -294,7 +294,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     }
 
     // Right wing
-    final rightSpan = wingSpan - bankSin * 8; // grows when banking left
+    final rightSpan = wingSpan - bankSin * 3;
     final rightDip = -wingDip;
     final rightWing = Path()
       ..moveTo(4, -1 + rightDip * 0.2)
