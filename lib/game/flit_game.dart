@@ -5,6 +5,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../core/services/audio_manager.dart';
 import '../core/theme/flit_colors.dart';
 import '../core/utils/game_log.dart';
 import 'components/plane_component.dart';
@@ -35,6 +36,7 @@ class FlitGame extends FlameGame
     this.isChallenge = false,
     this.planeColorScheme,
     this.useShaderRenderer = true,
+    this.equippedPlaneId = 'plane_default',
   });
 
   final VoidCallback? onGameReady;
@@ -51,6 +53,9 @@ class FlitGame extends FlameGame
 
   /// Whether to use the new GPU shader renderer (V1+) or legacy Canvas.
   final bool useShaderRenderer;
+
+  /// Equipped plane ID for engine sound selection.
+  final String equippedPlaneId;
 
   late PlaneComponent _plane;
 
@@ -157,6 +162,9 @@ class FlitGame extends FlameGame
       _worldPosition = Vector2(0, 0);
       _heading = -pi / 2; // north
 
+      // Start engine sound for equipped plane.
+      AudioManager.instance.startEngine(equippedPlaneId);
+
       _log.info('game', 'FlitGame.onLoad complete');
 
       try {
@@ -222,6 +230,9 @@ class FlitGame extends FlameGame
       size.x * planeScreenX,
       size.y * planeScreenY,
     );
+
+    // Modulate engine volume with turn intensity.
+    AudioManager.instance.updateEngineVolume(_plane.turnDirection.abs());
   }
 
   /// Normalize longitude to [-180, 180].
@@ -282,6 +293,7 @@ class FlitGame extends FlameGame
           event.logicalKey == LogicalKeyboardKey.arrowUp ||
           event.logicalKey == LogicalKeyboardKey.arrowDown) {
         _plane.toggleAltitude();
+        AudioManager.instance.playSfx(SfxType.altitudeChange);
       }
     }
 

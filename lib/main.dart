@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/services/audio_manager.dart';
 import 'core/services/dev_overlay.dart';
 import 'core/services/error_sender_http.dart';
 import 'core/services/error_service.dart';
@@ -35,6 +36,9 @@ void main() {
 
   // Periodically flush queued errors to the Vercel endpoint.
   Timer.periodic(_flushInterval, (_) => errorService.flush());
+
+  // Initialize audio system.
+  AudioManager.instance.initialize();
 
   _log.info('app', 'Flit starting up');
 

@@ -90,6 +90,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           region: GameRegion.world,
           coinReward: reward,
           planeColorScheme: planeColors,
+          equippedPlaneId: planeId,
           onComplete: (totalScore) {
             ref.read(accountProvider.notifier).addCoins(reward);
           },

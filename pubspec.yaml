@@ -19,6 +19,9 @@ dependencies:
   # HTTP client (cross-platform, for error telemetry)
   http: ^1.1.0
 
+  # Audio (cross-platform: iOS, Android, Web)
+  audioplayers: ^6.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -37,5 +40,7 @@ flutter:
   assets:
     - assets/textures/
     - assets/images/
-    - assets/audio/
+    - assets/audio/music/
+    - assets/audio/sfx/
+    - assets/audio/engines/
     - assets/geo/

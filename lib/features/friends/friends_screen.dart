@@ -128,6 +128,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         builder: (context) => PlayScreen(
           challengeFriendName: friend.name,
           planeColorScheme: planeColors,
+          equippedPlaneId: planeId,
         ),
       ),
     ).then((_) {
