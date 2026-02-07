@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -272,6 +271,7 @@ class FlitGame extends FlameGame
 
   @override
   void update(double dt) {
+    super.update(dt);
     if (_dead) return;
     try {
       _updateInner(dt);
@@ -289,7 +289,6 @@ class FlitGame extends FlameGame
   }
 
   void _updateInner(double dt) {
-    super.update(dt);
 
     // --- Great-circle movement ---
     final speed = _plane.currentSpeed;
