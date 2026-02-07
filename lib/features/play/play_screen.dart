@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../../core/services/audio_manager.dart';
+import '../../core/services/error_service.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
 import '../../game/flit_game.dart';
@@ -167,9 +168,21 @@ class _PlayScreenState extends State<PlayScreen> {
       });
     } catch (e, st) {
       _log.error('session', 'Failed to start game', error: e, stackTrace: st);
+      ErrorService.instance.reportCritical(
+        e,
+        st,
+        context: {
+          'screen': 'PlayScreen',
+          'action': '_startNewGame',
+          'region': widget.region.name,
+          'round': '$_currentRound',
+        },
+      );
       if (mounted) {
         setState(() {
-          _error = 'Failed to start game: $e';
+          _error = 'Failed to start game session.\n\n'
+              'Error: $e\n\n'
+              'Stack trace:\n${st.toString().split('\n').take(8).join('\n')}';
         });
       }
     }
@@ -402,138 +415,164 @@ class _PlayScreenState extends State<PlayScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    // If an error occurred, show ONLY the error screen — no game engine,
+    // no loading spinner. This prevents cascade errors from the game
+    // widget and ensures the error is always visible.
+    if (_error != null) {
+      return Scaffold(
         backgroundColor: FlitColors.backgroundDark,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Game canvas – use builders to avoid white flash during init
-            GameWidget(
-              game: _game,
-              loadingBuilder: (_) => Container(
-                color: FlitColors.backgroundDark,
-              ),
-              errorBuilder: (ctx, err) {
-                _log.error('screen', 'GameWidget error', error: err);
-                return Container(
-                  color: FlitColors.backgroundDark,
-                  alignment: Alignment.center,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.warning_amber_rounded,
-                          color: FlitColors.warning, size: 48),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Game failed to load',
-                        style: TextStyle(
-                          color: FlitColors.textPrimary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: FlitColors.accent,
-                          foregroundColor: FlitColors.textPrimary,
-                        ),
-                        child: const Text('Go Back'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-
-            // HUD overlay
-            if (_gameReady && _session != null)
-              GameHud(
-                isHighAltitude: _isHighAltitude,
-                elapsedTime: _elapsed,
-                currentClue: _session?.clue,
-                onAltitudeToggle: () => _game.plane.toggleAltitude(),
-                onExit: _requestExit,
-              ),
-
-            // Round indicator for multi-round play
-            if (_gameReady && _isMultiRound)
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 8,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: FlitColors.cardBackground.withOpacity(0.85),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: FlitColors.accent.withOpacity(0.5),
-                      ),
-                    ),
-                    child: Text(
-                      'Round $_currentRound / ${widget.totalRounds}',
-                      style: const TextStyle(
-                        color: FlitColors.accent,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-            // Error overlay
-            if (_error != null)
-              Container(
-                color: FlitColors.backgroundDark,
-                alignment: Alignment.center,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+        body: Container(
+          color: FlitColors.backgroundDark,
+          padding: const EdgeInsets.all(24),
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded,
-                        color: FlitColors.warning, size: 48),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Something went wrong',
+                    Icon(Icons.error_outline,
+                        color: FlitColors.error, size: 28),
+                    SizedBox(width: 10),
+                    Text(
+                      'Game Error',
                       style: TextStyle(
-                        color: FlitColors.textPrimary,
-                        fontSize: 18,
+                        color: FlitColors.error,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: FlitColors.accent,
-                        foregroundColor: FlitColors.textPrimary,
-                      ),
-                      child: const Text('Go Back'),
-                    ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      _error!,
+                      style: const TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 13,
+                        fontFamily: 'monospace',
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.accent,
+                      foregroundColor: FlitColors.textPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Go Back'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
-            // Loading overlay
-            if (!_gameReady && _error == null)
-              Container(
-                color: FlitColors.backgroundDark,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: FlitColors.accent,
+    return Scaffold(
+      backgroundColor: FlitColors.backgroundDark,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Game canvas – use builders to avoid white flash during init
+          GameWidget(
+            game: _game,
+            loadingBuilder: (_) => Container(
+              color: FlitColors.backgroundDark,
+            ),
+            errorBuilder: (ctx, err) {
+              _log.error('screen', 'GameWidget error', error: err);
+              ErrorService.instance.reportCritical(
+                err,
+                null,
+                context: {
+                  'screen': 'PlayScreen',
+                  'action': 'GameWidget.errorBuilder',
+                  'region': widget.region.name,
+                },
+              );
+              // Schedule state update so the error-only build path takes
+              // over on the next frame, completely removing the GameWidget.
+              SchedulerBinding.instance.addPostFrameCallback((_) {
+                if (mounted && _error == null) {
+                  setState(() {
+                    _error = 'Game engine failed to load.\n\nError: $err';
+                  });
+                }
+              });
+              // Return a dark container while waiting for rebuild.
+              return Container(color: FlitColors.backgroundDark);
+            },
+          ),
+
+          // HUD overlay
+          if (_gameReady && _session != null)
+            GameHud(
+              isHighAltitude: _isHighAltitude,
+              elapsedTime: _elapsed,
+              currentClue: _session?.clue,
+              onAltitudeToggle: () => _game.plane.toggleAltitude(),
+              onExit: _requestExit,
+            ),
+
+          // Round indicator for multi-round play
+          if (_gameReady && _isMultiRound)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 8,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: FlitColors.cardBackground.withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: FlitColors.accent.withOpacity(0.5),
+                    ),
+                  ),
+                  child: Text(
+                    'Round $_currentRound / ${widget.totalRounds}',
+                    style: const TextStyle(
+                      color: FlitColors.accent,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
               ),
-          ],
-        ),
-      );
+            ),
+
+          // Loading overlay
+          if (!_gameReady)
+            Container(
+              color: FlitColors.backgroundDark,
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: FlitColors.accent,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ResultDialog extends StatelessWidget {

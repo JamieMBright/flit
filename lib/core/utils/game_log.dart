@@ -1,7 +1,5 @@
 import 'dart:developer' as developer;
 
-import 'package:flutter/foundation.dart';
-
 import '../services/error_service.dart';
 
 /// Log severity levels.
@@ -103,9 +101,8 @@ class GameLog {
       stackTrace: entry.stackTrace,
     );
 
-    // Bridge errors/warnings to ErrorService so they appear in DevOverlay.
-    // Only in debug/profile builds — no overhead in release.
-    if (!kReleaseMode && !_bridging) {
+    // Bridge errors/warnings to ErrorService for telemetry and DevOverlay.
+    if (!_bridging) {
       _bridging = true;
       try {
         if (entry.level == LogLevel.error) {
