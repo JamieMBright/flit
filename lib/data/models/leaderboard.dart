@@ -1,12 +1,12 @@
-/// Enhanced leaderboard models supporting separate licensed/unlicensed play,
-/// daily/seasonal/all-time boards, regional and friends boards, annual cosmetic
-/// rewards, and rich placeholder data for UI development.
-///
-/// **Design rationale** -- Licensed players have gacha advantages (coin boost,
-/// clue boost, fuel boost from their [PilotLicense]), so their scores are
-/// tracked on a separate board. The unlicensed board is a level playing field
-/// for pure skill ranking. Both boards are intended to drive competitive play
-/// and streaming appeal.
+// Enhanced leaderboard models supporting separate licensed/unlicensed play,
+// daily/seasonal/all-time boards, regional and friends boards, annual cosmetic
+// rewards, and rich placeholder data for UI development.
+//
+// **Design rationale** -- Licensed players have gacha advantages (coin boost,
+// clue boost, fuel boost from their PilotLicense), so their scores are
+// tracked on a separate board. The unlicensed board is a level playing field
+// for pure skill ranking. Both boards are intended to drive competitive play
+// and streaming appeal.
 
 // ---------------------------------------------------------------------------
 // Enums

@@ -1,12 +1,12 @@
-/// Live group game mode models for real-time multiplayer sessions.
-///
-/// Live Group is a premium feature where a subscriber hosts a lobby of
-/// friends (up to 8 players). All players receive the same seeded questions
-/// and race through rounds while a streaming leaderboard shows progress.
-///
-/// Two round modes are supported:
-/// - **standard** -- everyone plays every round; best cumulative score wins.
-/// - **firstToAnswer** -- the first correct answer claims the round.
+// Live group game mode models for real-time multiplayer sessions.
+//
+// Live Group is a premium feature where a subscriber hosts a lobby of
+// friends (up to 8 players). All players receive the same seeded questions
+// and race through rounds while a streaming leaderboard shows progress.
+//
+// Two round modes are supported:
+// - **standard** -- everyone plays every round; best cumulative score wins.
+// - **firstToAnswer** -- the first correct answer claims the round.
 
 // ---------------------------------------------------------------------------
 // Enums

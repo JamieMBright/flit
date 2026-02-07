@@ -480,12 +480,12 @@ class _MysteryPlaneButton extends StatelessWidget {
               style: TextStyle(color: FlitColors.textPrimary),
               textAlign: TextAlign.center,
             ),
-            content: Column(
+            content: const Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.help_outline, color: FlitColors.gold, size: 48),
-                const SizedBox(height: 12),
-                const Text(
+                Icon(Icons.help_outline, color: FlitColors.gold, size: 48),
+                SizedBox(height: 12),
+                Text(
                   'Spend 10,000 coins for a random plane weighted by rarity.\nRarer planes are harder to get!',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
@@ -1136,8 +1136,8 @@ class _ContrailPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ContrailPainter old) =>
-      primary != old.primary || secondary != old.secondary;
+  bool shouldRepaint(covariant _ContrailPainter oldDelegate) =>
+      primary != oldDelegate.primary || secondary != oldDelegate.secondary;
 }
 
 // =============================================================================
@@ -1610,6 +1610,6 @@ class PlanePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant PlanePainter old) =>
-      planeId != old.planeId || colorScheme != old.colorScheme;
+  bool shouldRepaint(covariant PlanePainter oldDelegate) =>
+      planeId != oldDelegate.planeId || colorScheme != oldDelegate.colorScheme;
 }

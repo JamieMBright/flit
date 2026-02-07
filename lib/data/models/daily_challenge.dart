@@ -189,64 +189,64 @@ class DailyChallenge {
 
   /// Ten sample leaderboard entries for UI development and testing.
   static final List<DailyLeaderboardEntry> placeholderLeaderboard = [
-    DailyLeaderboardEntry(
+    const DailyLeaderboardEntry(
       username: 'GlobeTrotter42',
       score: 9800,
-      time: const Duration(minutes: 1, seconds: 12),
+      time: Duration(minutes: 1, seconds: 12),
       rank: 1,
     ),
-    DailyLeaderboardEntry(
+    const DailyLeaderboardEntry(
       username: 'MapMaster',
       score: 9650,
-      time: const Duration(minutes: 1, seconds: 28),
+      time: Duration(minutes: 1, seconds: 28),
       rank: 2,
     ),
-    DailyLeaderboardEntry(
+    const DailyLeaderboardEntry(
       username: 'AtlasAce',
       score: 9400,
-      time: const Duration(minutes: 1, seconds: 45),
+      time: Duration(minutes: 1, seconds: 45),
       rank: 3,
     ),
-    DailyLeaderboardEntry(
+    const DailyLeaderboardEntry(
       username: 'WanderWiz',
       score: 9100,
-      time: const Duration(minutes: 2, seconds: 3),
+      time: Duration(minutes: 2, seconds: 3),
       rank: 4,
     ),
-    DailyLeaderboardEntry(
+    const DailyLeaderboardEntry(
       username: 'GeoPilot',
       score: 8800,
-      time: const Duration(minutes: 2, seconds: 19),
+      time: Duration(minutes: 2, seconds: 19),
       rank: 5,
     ),
-    DailyLeaderboardEntry(
+    const DailyLeaderboardEntry(
       username: 'CompassKid',
       score: 8500,
-      time: const Duration(minutes: 2, seconds: 37),
+      time: Duration(minutes: 2, seconds: 37),
       rank: 6,
     ),
-    DailyLeaderboardEntry(
+    const DailyLeaderboardEntry(
       username: 'BorderRunner',
       score: 8200,
-      time: const Duration(minutes: 2, seconds: 52),
+      time: Duration(minutes: 2, seconds: 52),
       rank: 7,
     ),
-    DailyLeaderboardEntry(
+    const DailyLeaderboardEntry(
       username: 'CapitalCrush',
       score: 7900,
-      time: const Duration(minutes: 3, seconds: 11),
+      time: Duration(minutes: 3, seconds: 11),
       rank: 8,
     ),
-    DailyLeaderboardEntry(
+    const DailyLeaderboardEntry(
       username: 'FlagFinder99',
       score: 7600,
-      time: const Duration(minutes: 3, seconds: 30),
+      time: Duration(minutes: 3, seconds: 30),
       rank: 9,
     ),
-    DailyLeaderboardEntry(
+    const DailyLeaderboardEntry(
       username: 'TerraNova',
       score: 7300,
-      time: const Duration(minutes: 3, seconds: 48),
+      time: Duration(minutes: 3, seconds: 48),
       rank: 10,
     ),
   ];

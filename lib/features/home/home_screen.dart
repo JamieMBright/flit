@@ -468,7 +468,7 @@ class _GameModeCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: FlitColors.textPrimary,
                           fontSize: 15,
                           fontWeight: FontWeight.w700,

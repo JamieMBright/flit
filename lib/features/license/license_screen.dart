@@ -392,7 +392,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
                   const SizedBox(height: 2),
                   Text(
                     rank,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: FlitColors.gold,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -887,7 +887,6 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
 
 class _AnimBuilder extends AnimatedWidget {
   const _AnimBuilder({
-    super.key,
     required Animation<double> animation,
     required this.builder,
   }) : super(listenable: animation);

@@ -176,12 +176,6 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
 
   bool get _hasAnyEnabled => _enabledCount > 0;
 
-  /// The active clue types for the session.
-  List<ClueType> get _activeClueTypes => _enabledClues.entries
-      .where((e) => e.value)
-      .map((e) => e.key)
-      .toList();
-
   /// Whether the given type is the only one still enabled.
   bool _isLastEnabled(ClueType type) =>
       _enabledCount == 1 && (_enabledClues[type] ?? false);
