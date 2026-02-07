@@ -570,6 +570,9 @@ class _PlayScreenState extends State<PlayScreen> {
               currentClue: _session?.clue,
               onAltitudeToggle: () => _game.plane.toggleAltitude(),
               onExit: _requestExit,
+              onTurnLeft: () => _game.setHudTurn(-1),
+              onTurnRight: () => _game.setHudTurn(1),
+              onTurnRelease: () => _game.releaseHudTurn(),
             ),
 
           // Round indicator for multi-round play

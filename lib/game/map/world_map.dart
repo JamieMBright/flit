@@ -10,11 +10,13 @@ import 'country_data.dart';
 /// Degrees-to-radians constant.
 const double _deg2rad = pi / 180;
 
-/// Renders the world as a globe using azimuthal equidistant projection.
+/// Renders the world as a full-screen map using azimuthal equidistant projection.
 ///
 /// The projection is centered on the plane's current position, giving
-/// a "looking down at the globe" perspective. The visible earth is a
-/// circular disc surrounded by space. Grid lines curve naturally.
+/// a "behind the plane" 3rd-person perspective. The map fills the entire
+/// screen edge-to-edge — no circle boundary, no visible space. At the
+/// zoomed-in angular radius, curvature is subtle: grid lines curve gently
+/// and the horizon is implied by where land ends, not by a hard circle.
 class WorldMap extends Component with HasGameRef<FlitGame> {
   WorldMap({this.onCountryTapped});
 
@@ -70,73 +72,64 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     );
     final globeRadius = _globeScreenRadius(screenSize);
 
-    // 1. Space background
-    _renderSpace(canvas, screenSize);
+    // 1. Full-screen ocean background (no space visible)
+    _renderOceanBackground(canvas, screenSize, center, globeRadius);
 
-    // 2. Globe disc (ocean)
-    _renderGlobeDisc(canvas, center, globeRadius);
-
-    // Clip to globe
-    canvas.save();
-    canvas.clipPath(
-        Path()..addOval(Rect.fromCircle(center: center, radius: globeRadius)));
-
-    // 3. Grid lines
+    // 2. Grid lines
     _renderGrid(canvas, screenSize, globeRadius);
 
-    // 4. Countries
+    // 3. Countries
     _renderCountries(canvas, screenSize, globeRadius);
 
-    // 5. Coastline glow
+    // 4. Coastline glow
     _renderCoastlines(canvas, screenSize, globeRadius);
 
-    // 6. Cities (low altitude only)
+    // 5. Cities (low altitude only)
     if (!_isHighAltitude) {
       _renderCities(canvas, screenSize, globeRadius);
     }
 
     // Contrails are rendered by ContrailRenderer (separate component).
-
-    canvas.restore(); // un-clip
-
-    // 8. Atmosphere glow at globe edge
-    _renderAtmosphere(canvas, center, globeRadius);
+    // No clip or atmosphere needed — globe extends beyond all screen edges.
   }
 
   double _globeScreenRadius(Vector2 screenSize) {
-    return min(screenSize.x, screenSize.y) * 0.48;
+    // The globe must extend beyond all screen edges so no circle boundary
+    // is visible. Compute the distance from the projection center to the
+    // farthest screen corner, then add a margin so the ocean gradient
+    // covers the entire screen without visible cutoff.
+    final cx = screenSize.x * FlitGame.projectionCenterX;
+    final cy = screenSize.y * FlitGame.projectionCenterY;
+
+    // Distance to each corner — pick the farthest one.
+    final d1 = sqrt(cx * cx + cy * cy); // top-left
+    final d2 = sqrt((screenSize.x - cx) * (screenSize.x - cx) + cy * cy); // top-right
+    final d3 = sqrt(cx * cx + (screenSize.y - cy) * (screenSize.y - cy)); // bottom-left
+    final d4 = sqrt((screenSize.x - cx) * (screenSize.x - cx) +
+        (screenSize.y - cy) * (screenSize.y - cy)); // bottom-right
+
+    // Add 10% margin so nothing clips at the edges during transitions.
+    return max(max(d1, d2), max(d3, d4)) * 1.1;
   }
 
-  void _renderSpace(Canvas canvas, Vector2 screenSize) {
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, screenSize.x, screenSize.y),
-      Paint()..color = FlitColors.space,
-    );
-  }
+  /// Fill the entire screen with ocean. Uses a subtle radial gradient
+  /// centered on the projection point to hint at curvature without a
+  /// hard circle edge.
+  void _renderOceanBackground(
+      Canvas canvas, Vector2 screenSize, Offset center, double radius) {
+    final screenRect = Rect.fromLTWH(0, 0, screenSize.x, screenSize.y);
 
-  void _renderGlobeDisc(Canvas canvas, Offset center, double radius) {
-    // Ocean with radial gradient
     final oceanPaint = Paint()
-      ..shader = const RadialGradient(
-        colors: [
+      ..shader = RadialGradient(
+        colors: const [
           FlitColors.oceanShallow,
           FlitColors.ocean,
           FlitColors.oceanDeep,
         ],
-        stops: [0.0, 0.5, 1.0],
+        stops: const [0.0, 0.5, 1.0],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
 
-    canvas.drawCircle(center, radius, oceanPaint);
-
-    // Subtle edge ring
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()
-        ..color = FlitColors.gridLine.withOpacity(0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
+    canvas.drawRect(screenRect, oceanPaint);
   }
 
   void _renderGrid(Canvas canvas, Vector2 screenSize, double globeRadius) {
@@ -336,23 +329,6 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
             projected.dx + dotSize + 3, projected.dy - textPainter.height / 2),
       );
     }
-  }
-
-  void _renderAtmosphere(Canvas canvas, Offset center, double radius) {
-    // Glow ring around the globe edge — atmosphere halo
-    final glowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          Colors.transparent,
-          FlitColors.atmosphereGlow.withOpacity(0.12),
-          FlitColors.atmosphereGlow.withOpacity(0.04),
-          Colors.transparent,
-        ],
-        stops: const [0.85, 0.95, 1.0, 1.1],
-      ).createShader(
-          Rect.fromCircle(center: center, radius: radius * 1.15));
-
-    canvas.drawCircle(center, radius * 1.1, glowPaint);
   }
 
   // ─── Projection ─────────────────────────────────────────────────────
