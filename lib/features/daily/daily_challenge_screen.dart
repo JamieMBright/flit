@@ -405,7 +405,7 @@ class _SeasonalBanner extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   theme.vehicleDescription,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: FlitColors.textSecondary,
                     fontSize: 12,
                     height: 1.3,
