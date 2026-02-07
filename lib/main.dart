@@ -18,6 +18,10 @@ final _log = GameLog.instance;
 /// Periodic flush interval for error telemetry.
 const _flushInterval = Duration(seconds: 60);
 
+/// Global error message holder. When non-null, [ErrorWidget.builder] and
+/// [FlitApp] both render a frozen error screen instead of the normal UI.
+String? _fatalError;
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -41,6 +45,64 @@ void main() {
   AudioManager.instance.initialize();
 
   _log.info('app', 'Flit starting up');
+
+  // ── NUCLEAR ERROR BOUNDARY ──
+  // Override ErrorWidget.builder so that ANY widget build failure shows a
+  // frozen dark screen with the full error text instead of the default
+  // grey/red error widget. This is the absolute last line of defence —
+  // it fires at the Flutter framework level, BEFORE the Navigator can
+  // reset and dump the user back to the login screen.
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    _fatalError ??=
+        '${details.exceptionAsString()}\n\n${details.stack ?? "no stack"}';
+    return Material(
+      color: const Color(0xFF0A0E1A),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.error_outline,
+                      color: Color(0xFFFF4444), size: 28),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'FLIT CRASH — ErrorWidget',
+                      style: TextStyle(
+                        color: Color(0xFFFF4444),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: SelectableText(
+                    _fatalError!,
+                    style: const TextStyle(
+                      color: Color(0xFFAAAAAA),
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                      height: 1.5,
+                      fontWeight: FontWeight.normal,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  };
 
   // Capture Flutter framework errors (widget build failures, etc.)
   FlutterError.onError = (details) {

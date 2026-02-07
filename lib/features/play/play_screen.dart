@@ -76,18 +76,30 @@ class _PlayScreenState extends State<PlayScreen> {
   @override
   void initState() {
     super.initState();
-    _log.info('screen', 'PlayScreen.initState', data: {
-      'region': widget.region.name,
-      'challenge': widget.challengeFriendName,
-      'totalRounds': widget.totalRounds,
-    });
-    _game = FlitGame(
-      onGameReady: _onGameReady,
-      onAltitudeChanged: _onAltitudeChanged,
-      isChallenge: widget.challengeFriendName != null,
-      planeColorScheme: widget.planeColorScheme,
-      equippedPlaneId: widget.equippedPlaneId,
-    );
+    try {
+      _log.info('screen', 'PlayScreen.initState', data: {
+        'region': widget.region.name,
+        'challenge': widget.challengeFriendName,
+        'totalRounds': widget.totalRounds,
+      });
+      _game = FlitGame(
+        onGameReady: _onGameReady,
+        onAltitudeChanged: _onAltitudeChanged,
+        isChallenge: widget.challengeFriendName != null,
+        planeColorScheme: widget.planeColorScheme,
+        equippedPlaneId: widget.equippedPlaneId,
+      );
+    } catch (e, st) {
+      _log.error('screen', 'PlayScreen.initState FAILED',
+          error: e, stackTrace: st);
+      ErrorService.instance.reportCritical(e, st, context: {
+        'screen': 'PlayScreen',
+        'action': 'initState',
+        'region': widget.region.name,
+      });
+      // Set error synchronously — first build() will see it and skip _game.
+      _error = 'initState crashed.\n\nError: $e\n\nStack:\n$st';
+    }
   }
 
   @override
@@ -416,69 +428,88 @@ class _PlayScreenState extends State<PlayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    try {
+      return _buildInner(context);
+    } catch (e, st) {
+      _log.error('screen', 'PlayScreen.build() CRASHED',
+          error: e, stackTrace: st);
+      ErrorService.instance.reportCritical(e, st, context: {
+        'screen': 'PlayScreen',
+        'action': 'build',
+      });
+      return _buildErrorScreen('build() crashed.\n\nError: $e\n\nStack:\n$st');
+    }
+  }
+
+  /// Extracted error screen builder used by both _error state and catch blocks.
+  Widget _buildErrorScreen(String message) {
+    return Scaffold(
+      backgroundColor: FlitColors.backgroundDark,
+      body: Container(
+        color: FlitColors.backgroundDark,
+        padding: const EdgeInsets.all(24),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.error_outline,
+                      color: FlitColors.error, size: 28),
+                  SizedBox(width: 10),
+                  Text(
+                    'Game Error',
+                    style: TextStyle(
+                      color: FlitColors.error,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: SelectableText(
+                    message,
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 13,
+                      fontFamily: 'monospace',
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FlitColors.accent,
+                    foregroundColor: FlitColors.textPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Go Back'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInner(BuildContext context) {
     // If an error occurred, show ONLY the error screen — no game engine,
     // no loading spinner. This prevents cascade errors from the game
     // widget and ensures the error is always visible.
     if (_error != null) {
-      return Scaffold(
-        backgroundColor: FlitColors.backgroundDark,
-        body: Container(
-          color: FlitColors.backgroundDark,
-          padding: const EdgeInsets.all(24),
-          child: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.error_outline,
-                        color: FlitColors.error, size: 28),
-                    SizedBox(width: 10),
-                    Text(
-                      'Game Error',
-                      style: TextStyle(
-                        color: FlitColors.error,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: SelectableText(
-                      _error!,
-                      style: const TextStyle(
-                        color: FlitColors.textSecondary,
-                        fontSize: 13,
-                        fontFamily: 'monospace',
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: FlitColors.accent,
-                      foregroundColor: FlitColors.textPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Go Back'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+      return _buildErrorScreen(_error!);
     }
 
     return Scaffold(
