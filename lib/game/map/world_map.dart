@@ -64,8 +64,8 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
 
     final screenSize = gameRef.size;
     final center = Offset(
-      screenSize.x * FlitGame.planeScreenX,
-      screenSize.y * FlitGame.planeScreenY,
+      screenSize.x * FlitGame.projectionCenterX,
+      screenSize.y * FlitGame.projectionCenterY,
     );
     final globeRadius = _globeScreenRadius(screenSize);
 
@@ -374,8 +374,8 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
 
     if (c < 0.0001) {
       return Offset(
-        screenSize.x * FlitGame.planeScreenX,
-        screenSize.y * FlitGame.planeScreenY,
+        screenSize.x * FlitGame.projectionCenterX,
+        screenSize.y * FlitGame.projectionCenterY,
       );
     }
 
@@ -387,8 +387,8 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     final scale = globeRadius / _angularRadius;
 
     return Offset(
-      screenSize.x * FlitGame.planeScreenX + px * c * scale,
-      screenSize.y * FlitGame.planeScreenY - py * c * scale,
+      screenSize.x * FlitGame.projectionCenterX + px * c * scale,
+      screenSize.y * FlitGame.projectionCenterY - py * c * scale,
     );
   }
 
@@ -407,8 +407,8 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
 
     if (c < 0.0001) {
       return Offset(
-        screenSize.x * FlitGame.planeScreenX,
-        screenSize.y * FlitGame.planeScreenY,
+        screenSize.x * FlitGame.projectionCenterX,
+        screenSize.y * FlitGame.projectionCenterY,
       );
     }
 
@@ -422,15 +422,15 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     final scale = globeRadius / _angularRadius;
 
     return Offset(
-      screenSize.x * FlitGame.planeScreenX + px * c * scale,
-      screenSize.y * FlitGame.planeScreenY - py * c * scale,
+      screenSize.x * FlitGame.projectionCenterX + px * c * scale,
+      screenSize.y * FlitGame.projectionCenterY - py * c * scale,
     );
   }
 
   /// Inverse projection: screen → (lng, lat) degrees.
   Vector2 screenToLatLng(Vector2 screenPos, Vector2 screenSize) {
-    final cx = screenSize.x * FlitGame.planeScreenX;
-    final cy = screenSize.y * FlitGame.planeScreenY;
+    final cx = screenSize.x * FlitGame.projectionCenterX;
+    final cy = screenSize.y * FlitGame.projectionCenterY;
     final globeRadius = _globeScreenRadius(screenSize);
     final scale = globeRadius / _angularRadius;
 

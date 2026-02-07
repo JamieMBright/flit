@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/services/audio_manager.dart';
+import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/profanity_filter.dart';
 import '../../data/models/avatar_config.dart';
@@ -107,6 +108,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 onChanged: (value) {
                   setSheetState(() => _hapticEnabled = value);
                   setState(() {});
+                },
+              ),
+              const Divider(color: FlitColors.cardBorder, height: 1),
+              _SettingsToggle(
+                label: 'Invert Controls',
+                icon: Icons.swap_horiz,
+                value: GameSettings.instance.invertControls,
+                onChanged: (value) {
+                  GameSettings.instance.invertControls = value;
+                  setSheetState(() {});
+                  setState(() {});
+                },
+              ),
+              const Divider(color: FlitColors.cardBorder, height: 1),
+              _SettingsSlider(
+                label: 'Turn Sensitivity',
+                icon: Icons.speed,
+                value: GameSettings.instance.turnSensitivity,
+                min: 0.2,
+                max: 1.5,
+                valueLabel: GameSettings.instance.sensitivityLabel,
+                onChanged: (value) {
+                  GameSettings.instance.turnSensitivity = value;
+                  setSheetState(() {});
                 },
               ),
               const Divider(color: FlitColors.cardBorder, height: 1),
@@ -806,6 +831,77 @@ class _SettingsToggle extends StatelessWidget {
               onChanged: onChanged,
               activeColor: FlitColors.accent,
               inactiveTrackColor: FlitColors.backgroundMid,
+            ),
+          ],
+        ),
+      );
+}
+
+// ---------------------------------------------------------------------------
+// Settings slider row used inside the settings bottom sheet
+// ---------------------------------------------------------------------------
+
+class _SettingsSlider extends StatelessWidget {
+  const _SettingsSlider({
+    required this.label,
+    required this.icon,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.valueLabel,
+    required this.onChanged,
+  });
+
+  final String label;
+  final IconData icon;
+  final double value;
+  final double min;
+  final double max;
+  final String valueLabel;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: FlitColors.textSecondary, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Text(
+                  valueLabel,
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+            SliderTheme(
+              data: SliderThemeData(
+                activeTrackColor: FlitColors.accent,
+                inactiveTrackColor: FlitColors.backgroundMid,
+                thumbColor: FlitColors.accent,
+                overlayColor: FlitColors.accent.withOpacity(0.15),
+                trackHeight: 4,
+              ),
+              child: Slider(
+                value: value,
+                min: min,
+                max: max,
+                onChanged: onChanged,
+              ),
             ),
           ],
         ),
