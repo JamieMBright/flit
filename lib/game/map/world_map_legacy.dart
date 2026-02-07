@@ -343,16 +343,8 @@ class WorldMapLegacy extends Component with HasGameRef<FlitGame> {
   }
 
   void _renderContrails(Canvas canvas, Vector2 screenSize, Offset center) {
-    final plane = gameRef.plane;
-
-    for (final particle in plane.contrails) {
-      final opacity = (particle.life / particle.maxLife).clamp(0.0, 1.0);
-      final paint = Paint()
-        ..color = FlitColors.contrail.withOpacity(opacity * 0.5);
-
-      final pos = center + particle.screenOffset.toOffset();
-      canvas.drawCircle(pos, particle.size * (0.3 + opacity * 0.7), paint);
-    }
+    // Contrails are now rendered by ContrailRenderer (separate component).
+    // This method is kept as a no-op for legacy compatibility.
   }
 
   void _renderAtmosphere(Canvas canvas, Offset center, double radius) {
