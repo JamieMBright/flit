@@ -423,7 +423,7 @@ class _SeasonalBanner extends StatelessWidget {
       case SeasonalEvent.christmas:
         return Icons.ac_unit_rounded;
       case SeasonalEvent.halloween:
-        return Icons.nightlight_rounded;
+        return Icons.dark_mode_rounded;
       case SeasonalEvent.easter:
         return Icons.egg_rounded;
       case SeasonalEvent.summer:
