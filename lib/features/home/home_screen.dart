@@ -147,6 +147,7 @@ class HomeScreen extends StatelessWidget {
     // Wait for the bottom-sheet dismiss animation to finish before pushing
     // the new route. This eliminates a white flash on some devices.
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!homeContext.mounted) return;
       Navigator.of(homeContext).push(
         MaterialPageRoute<void>(builder: (_) => destination),
       );

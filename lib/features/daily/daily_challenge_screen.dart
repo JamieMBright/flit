@@ -56,7 +56,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                   ],
                   _RewardsSection(challenge: _challenge),
                   const SizedBox(height: 12),
-                  _MedalProgressSection(),
+                  const _MedalProgressSection(),
                   const SizedBox(height: 16),
                   _LeaderboardSection(
                     selectedTab: _leaderboardTab,
@@ -68,7 +68,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                     entries: DailyChallenge.placeholderLeaderboard,
                   ),
                   const SizedBox(height: 16),
-                  _HallOfFameSection(),
+                  const _HallOfFameSection(),
                   const SizedBox(height: 16),
                   _InfoFooter(bonusCoinReward: _challenge.bonusCoinReward),
                   const SizedBox(height: 16),
@@ -915,6 +915,8 @@ class _InfoFooter extends StatelessWidget {
 // =============================================================================
 
 class _MedalProgressSection extends StatelessWidget {
+  const _MedalProgressSection();
+
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(14),
@@ -1004,6 +1006,8 @@ class _MedalProgressSection extends StatelessWidget {
 // =============================================================================
 
 class _HallOfFameSection extends StatelessWidget {
+  const _HallOfFameSection();
+
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(14),
@@ -1017,7 +1021,7 @@ class _HallOfFameSection extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.emoji_events, color: FlitColors.gold, size: 18),
+                const Icon(Icons.emoji_events, color: FlitColors.gold, size: 18),
                 const SizedBox(width: 6),
                 const Text(
                   'HALL OF FAME',
