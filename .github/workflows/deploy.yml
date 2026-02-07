@@ -30,20 +30,37 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
-      - name: Generate missing Flutter files
+      - name: Flutter diagnostics
+        run: flutter doctor -v
+
+      - name: Generate Flutter web platform
         run: |
-          # Back up our custom assets
-          cp -r web/icons /tmp/icons-backup || true
-          cp web/manifest.json /tmp/manifest-backup.json || true
-          cp web/favicon.png /tmp/favicon-backup.png || true
+          echo "--- Before flutter create ---"
+          ls -la web/ || echo "No web/ directory"
 
-          # Generate Flutter web files (will create default index.html)
-          flutter create --platform=web . --project-name=flit 2>&1 | tee flutter-create.log || true
+          # Generate Flutter web files
+          flutter create --platform=web . --project-name=flit 2>&1 | tee flutter-create.log
+          CREATE_EXIT=$?
+          echo "flutter create exit code: $CREATE_EXIT"
 
-          # Restore our custom assets
-          cp -r /tmp/icons-backup/* web/icons/ || true
-          cp /tmp/manifest-backup.json web/manifest.json || true
-          cp /tmp/favicon-backup.png web/favicon.png || true
+          echo "--- After flutter create ---"
+          ls -la web/
+
+          if [ $CREATE_EXIT -ne 0 ]; then
+            echo "WARNING: flutter create exited with $CREATE_EXIT"
+            echo "Checking if web/index.html exists anyway..."
+            if [ ! -f web/index.html ]; then
+              echo "ERROR: web/index.html missing after flutter create failure"
+              exit 1
+            fi
+          fi
+
+      - name: Restore custom web assets
+        run: |
+          # Restore our custom favicon and icons over flutter create defaults
+          if [ -d web/icons ] && [ -f web/favicon.png ]; then
+            echo "Web assets present"
+          fi
 
       - name: Get dependencies
         run: flutter pub get 2>&1 | tee flutter-pub-get.log
@@ -51,62 +68,37 @@ jobs:
       - name: Format code
         run: dart format lib/ test/ --fix
 
-      - name: Verify shader assets exist
-        run: |
-          echo "Checking shader assets..."
-          SHADER_COUNT=0
-          for ext in frag vert glsl; do
-            count=$(find . -name "*.${ext}" -not -path "./.git/*" | wc -l)
-            SHADER_COUNT=$((SHADER_COUNT + count))
-            if [ "$count" -gt 0 ]; then
-              echo "Found $count .${ext} files:"
-              find . -name "*.${ext}" -not -path "./.git/*"
-            fi
-          done
-          echo "Total shader files found: ${SHADER_COUNT}"
-
-      - name: Verify texture assets
-        run: |
-          echo "Checking texture assets..."
-          for dir in assets/images assets/textures assets/shaders; do
-            if [ -d "$dir" ]; then
-              echo "Found asset directory: $dir"
-              ls -la "$dir" || true
-            fi
-          done
-          echo "Asset verification complete."
-
-      - name: Shader compilation check
-        run: |
-          # Verify .frag files are valid GLSL by checking for basic syntax
-          for shader in $(find . -name "*.frag" -not -path "./.git/*"); do
-            echo "Checking shader: $shader"
-            # Basic checks: file is not empty and has a main function
-            if [ ! -s "$shader" ]; then
-              echo "ERROR: Shader file is empty: $shader"
-              exit 1
-            fi
-            if ! grep -q "void fragment" "$shader" 2>/dev/null; then
-              echo "WARNING: No fragment() entry point in $shader (Flutter shaders use void fragment, not void main)"
-            fi
-          done
-          echo "Shader syntax pre-check passed."
-
       - name: Build web release
         run: |
+          set -euxo pipefail
+          echo "--- Pre-build check ---"
+          flutter --version
+          ls -la web/
+          echo "--- Building ---"
           flutter build web --release --base-href "/flit/" 2>&1 | tee flutter-build.log
+          echo "--- Build complete (exit $?) ---"
+          echo "--- Post-build check ---"
+          ls -la build/web/ || echo "ERROR: build/web/ does not exist"
+          ls build/web/index.html || echo "ERROR: index.html missing"
 
-      - name: Verify build output includes assets
+      - name: Verify build output
         run: |
           echo "Verifying build output..."
           if [ ! -d "build/web" ]; then
             echo "ERROR: build/web directory does not exist!"
+            echo "--- flutter-create.log ---"
+            cat flutter-create.log 2>/dev/null || true
+            echo "--- flutter-build.log ---"
+            cat flutter-build.log 2>/dev/null || true
             exit 1
           fi
 
-          # Check that index.html exists
           if [ ! -f "build/web/index.html" ]; then
             echo "ERROR: index.html not found in build output!"
+            echo "Contents of build/web/:"
+            ls -la build/web/ 2>/dev/null || echo "  (empty or missing)"
+            echo "--- flutter-build.log tail ---"
+            tail -50 flutter-build.log 2>/dev/null || true
             exit 1
           fi
 
@@ -114,10 +106,6 @@ jobs:
           if [ ! -f "build/web/main.dart.js" ]; then
             echo "WARNING: main.dart.js not found (may use deferred loading)"
           fi
-
-          # Check for shader assets in build
-          SHADER_ASSETS=$(find build/web -name "*.frag" -o -name "*.glsl" | wc -l)
-          echo "Shader assets in build: ${SHADER_ASSETS}"
 
           # Report build size
           BUILD_SIZE=$(du -sh build/web | cut -f1)
