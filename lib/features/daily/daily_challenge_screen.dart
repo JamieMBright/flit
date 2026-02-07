@@ -1016,14 +1016,14 @@ class _HallOfFameSection extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: FlitColors.gold.withOpacity(0.3)),
         ),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.emoji_events, color: FlitColors.gold, size: 18),
-                const SizedBox(width: 6),
-                const Text(
+                Icon(Icons.emoji_events, color: FlitColors.gold, size: 18),
+                SizedBox(width: 6),
+                Text(
                   'HALL OF FAME',
                   style: TextStyle(
                     color: FlitColors.gold,
@@ -1034,16 +1034,16 @@ class _HallOfFameSection extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            const _HallOfFameRow(date: '5 Feb 2026', winner: 'GlobeTrotter42', medal: 'Platinum'),
-            const SizedBox(height: 6),
-            const _HallOfFameRow(date: '4 Feb 2026', winner: 'MapMaster', medal: 'Gold'),
-            const SizedBox(height: 6),
-            const _HallOfFameRow(date: '3 Feb 2026', winner: 'AtlasAce', medal: 'Gold'),
-            const SizedBox(height: 6),
-            const _HallOfFameRow(date: '2 Feb 2026', winner: 'WanderWiz', medal: 'Silver'),
-            const SizedBox(height: 6),
-            const _HallOfFameRow(date: '1 Feb 2026', winner: 'GeoPilot', medal: 'Bronze'),
+            SizedBox(height: 12),
+            _HallOfFameRow(date: '5 Feb 2026', winner: 'GlobeTrotter42', medal: 'Platinum'),
+            SizedBox(height: 6),
+            _HallOfFameRow(date: '4 Feb 2026', winner: 'MapMaster', medal: 'Gold'),
+            SizedBox(height: 6),
+            _HallOfFameRow(date: '3 Feb 2026', winner: 'AtlasAce', medal: 'Gold'),
+            SizedBox(height: 6),
+            _HallOfFameRow(date: '2 Feb 2026', winner: 'WanderWiz', medal: 'Silver'),
+            SizedBox(height: 6),
+            _HallOfFameRow(date: '1 Feb 2026', winner: 'GeoPilot', medal: 'Bronze'),
           ],
         ),
       );
