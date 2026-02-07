@@ -120,8 +120,8 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     final screenRect = Rect.fromLTWH(0, 0, screenSize.x, screenSize.y);
 
     final oceanPaint = Paint()
-      ..shader = RadialGradient(
-        colors: const [
+      ..shader = const RadialGradient(
+        colors: [
           FlitColors.oceanShallow,
           FlitColors.ocean,
           FlitColors.oceanDeep,
