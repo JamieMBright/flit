@@ -94,8 +94,7 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
       _renderCities(canvas, screenSize, globeRadius);
     }
 
-    // 7. Contrails
-    _renderContrails(canvas, screenSize, center);
+    // Contrails are rendered by ContrailRenderer (separate component).
 
     canvas.restore(); // un-clip
 
@@ -335,19 +334,6 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
         Offset(
             projected.dx + dotSize + 3, projected.dy - textPainter.height / 2),
       );
-    }
-  }
-
-  void _renderContrails(Canvas canvas, Vector2 screenSize, Offset center) {
-    final plane = gameRef.plane;
-
-    for (final particle in plane.contrails) {
-      final opacity = (particle.life / particle.maxLife).clamp(0.0, 1.0);
-      final paint = Paint()
-        ..color = FlitColors.contrail.withOpacity(opacity * 0.5);
-
-      final pos = center + particle.screenOffset.toOffset();
-      canvas.drawCircle(pos, particle.size * (0.3 + opacity * 0.7), paint);
     }
   }
 

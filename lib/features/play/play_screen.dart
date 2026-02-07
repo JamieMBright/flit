@@ -83,6 +83,7 @@ class _PlayScreenState extends State<PlayScreen> {
     _game = FlitGame(
       onGameReady: _onGameReady,
       onAltitudeChanged: _onAltitudeChanged,
+      isChallenge: widget.challengeFriendName != null,
       planeColorScheme: widget.planeColorScheme,
       equippedPlaneId: widget.equippedPlaneId,
     );
