@@ -57,7 +57,7 @@ void main() {
   group('ShaderLODManager downgrade', () {
     test('recording sustained low FPS triggers downgrade to medium', () {
       // Fill window with 30fps frames
-      final dt30fps = 1.0 / 30.0;
+      const dt30fps = 1.0 / 30.0;
       // Fill the window first (60 frames)
       for (int i = 0; i < 60; i++) {
         manager.recordFrameTime(dt30fps);
@@ -71,7 +71,7 @@ void main() {
     });
 
     test('recording sustained low FPS triggers downgrade to low', () {
-      final dt30fps = 1.0 / 30.0;
+      const dt30fps = 1.0 / 30.0;
       // Fill window + hysteresis to go high -> medium
       for (int i = 0; i < 60 + 90; i++) {
         manager.recordFrameTime(dt30fps);
@@ -87,7 +87,7 @@ void main() {
 
     test('already at low does not crash on further downgrades', () {
       manager.forceLevel(ShaderLOD.low);
-      final dt30fps = 1.0 / 30.0;
+      const dt30fps = 1.0 / 30.0;
       // Fill window + hysteresis
       for (int i = 0; i < 60 + 90; i++) {
         manager.recordFrameTime(dt30fps);
@@ -101,7 +101,7 @@ void main() {
     test('recording sustained high FPS triggers upgrade from low to medium', () {
       manager.forceLevel(ShaderLOD.low);
 
-      final dt60fps = 1.0 / 60.0;
+      const dt60fps = 1.0 / 60.0;
       // Fill window (60 frames)
       for (int i = 0; i < 60; i++) {
         manager.recordFrameTime(dt60fps);
@@ -117,7 +117,7 @@ void main() {
     test('recording sustained high FPS triggers upgrade from medium to high', () {
       manager.forceLevel(ShaderLOD.medium);
 
-      final dt60fps = 1.0 / 60.0;
+      const dt60fps = 1.0 / 60.0;
       // Fill window + hysteresis
       for (int i = 0; i < 60 + 90; i++) {
         manager.recordFrameTime(dt60fps);
@@ -127,7 +127,7 @@ void main() {
     });
 
     test('already at high does not crash on further upgrades', () {
-      final dt60fps = 1.0 / 60.0;
+      const dt60fps = 1.0 / 60.0;
       for (int i = 0; i < 60 + 90; i++) {
         manager.recordFrameTime(dt60fps);
       }
@@ -139,13 +139,13 @@ void main() {
   group('ShaderLODManager hysteresis', () {
     test('brief FPS dip does not trigger downgrade', () {
       // Start with good FPS to fill window
-      final dt60fps = 1.0 / 60.0;
+      const dt60fps = 1.0 / 60.0;
       for (int i = 0; i < 60; i++) {
         manager.recordFrameTime(dt60fps);
       }
 
       // Brief dip: 30 frames at low FPS (less than hysteresis threshold of 90)
-      final dt30fps = 1.0 / 30.0;
+      const dt30fps = 1.0 / 30.0;
       for (int i = 0; i < 30; i++) {
         manager.recordFrameTime(dt30fps);
       }
@@ -160,8 +160,8 @@ void main() {
     });
 
     test('alternating good/bad FPS does not trigger changes', () {
-      final dt60fps = 1.0 / 60.0;
-      final dt30fps = 1.0 / 30.0;
+      const dt60fps = 1.0 / 60.0;
+      const dt30fps = 1.0 / 30.0;
 
       // Fill window first
       for (int i = 0; i < 60; i++) {
@@ -184,19 +184,19 @@ void main() {
 
     test('FPS in the OK zone resets counters', () {
       // Fill with good frames
-      final dt60fps = 1.0 / 60.0;
+      const dt60fps = 1.0 / 60.0;
       for (int i = 0; i < 60; i++) {
         manager.recordFrameTime(dt60fps);
       }
 
       // Accumulate some downgrade pressure (but not enough)
-      final dt30fps = 1.0 / 30.0;
+      const dt30fps = 1.0 / 30.0;
       for (int i = 0; i < 50; i++) {
         manager.recordFrameTime(dt30fps);
       }
 
       // Inject frames in the "OK" zone (between 45-55 fps) to reset counters
-      final dt50fps = 1.0 / 50.0;
+      const dt50fps = 1.0 / 50.0;
       for (int i = 0; i < 60; i++) {
         manager.recordFrameTime(dt50fps);
       }

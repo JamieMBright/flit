@@ -199,7 +199,7 @@ class AudioManager {
         await p.setReleaseMode(ReleaseMode.release);
       }
       _log.info('audio', 'AudioManager initialized');
-    } catch (e, st) {
+    } catch (e) {
       _log.warning('audio', 'AudioManager init failed', error: e);
     }
   }

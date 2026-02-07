@@ -8,7 +8,6 @@ import 'package:flutter/services.dart';
 import '../core/services/audio_manager.dart';
 import '../core/theme/flit_colors.dart';
 import '../core/utils/game_log.dart';
-import 'components/plane_component.dart';
 import 'map/world_map.dart';
 import 'rendering/globe_renderer.dart';
 import 'rendering/shader_manager.dart';
@@ -122,7 +121,7 @@ class FlitGame extends FlameGame
           await add(_globeRenderer!);
           _shaderReady = true;
           _log.info('game', 'Shader renderer initialised');
-        } catch (e, st) {
+        } catch (e) {
           _log.warning(
             'game',
             'Shader renderer failed, falling back to Canvas',

@@ -479,8 +479,8 @@ class _RewardsSection extends StatelessWidget {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.people, color: FlitColors.textMuted, size: 14),
-                  SizedBox(width: 6),
+                  const Icon(Icons.people, color: FlitColors.textMuted, size: 14),
+                  const SizedBox(width: 6),
                   Text(
                     '2,847 players today \u2022 Top 1,000 win prizes',
                     style: TextStyle(color: FlitColors.textMuted, fontSize: 11),

@@ -47,7 +47,7 @@ class GlobeHitTest {
     final fovScale = tan(camera.fov / 2.0);
     final rayDirLocalX = ndcX * fovScale;
     final rayDirLocalY = ndcY * fovScale;
-    final rayDirLocalZ = -1.0; // looking into the screen
+    const rayDirLocalZ = -1.0; // looking into the screen
 
     // Build camera basis vectors (right, up, forward) from camera position
     // and target. The camera always looks at the origin.
@@ -130,7 +130,7 @@ class GlobeHitTest {
     // Ray: P(t) = cam + t * d
     // |P(t)|^2 = r^2
     // t^2 * (d.d) + 2t * (cam.d) + (cam.cam - r^2) = 0
-    final r = CameraState.globeRadius;
+    const r = CameraState.globeRadius;
     final a = dX * dX + dY * dY + dZ * dZ; // always ~1 if normalized
     final b = 2.0 * (camX * dX + camY * dY + camZ * dZ);
     final c = camX * camX + camY * camY + camZ * camZ - r * r;

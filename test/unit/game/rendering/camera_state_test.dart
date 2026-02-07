@@ -61,8 +61,6 @@ void main() {
           RegionCameraPresets.getPreset(GameRegion.world).altitudeDistance;
       final us =
           RegionCameraPresets.getPreset(GameRegion.usStates).altitudeDistance;
-      final caribbean =
-          RegionCameraPresets.getPreset(GameRegion.caribbean).altitudeDistance;
       final uk =
           RegionCameraPresets.getPreset(GameRegion.ukCounties).altitudeDistance;
       final ireland =
@@ -133,8 +131,8 @@ void main() {
 
     test('equator/prime meridian maps to (1, 0, 0) on unit sphere', () {
       // lat=0, lng=0 should map to the positive X axis.
-      final lat = 0.0;
-      final lng = 0.0;
+      const lat = 0.0;
+      const lng = 0.0;
       final latRad = lat * pi / 180.0;
       final lngRad = lng * pi / 180.0;
 
@@ -148,8 +146,8 @@ void main() {
     });
 
     test('north pole maps to (0, 1, 0) on unit sphere', () {
-      final lat = 90.0;
-      final lng = 0.0;
+      const lat = 90.0;
+      const lng = 0.0;
       final latRad = lat * pi / 180.0;
       final lngRad = lng * pi / 180.0;
 
@@ -163,8 +161,8 @@ void main() {
     });
 
     test('lng=90 on equator maps to (0, 0, 1) on unit sphere', () {
-      final lat = 0.0;
-      final lng = 90.0;
+      const lat = 0.0;
+      const lng = 90.0;
       final latRad = lat * pi / 180.0;
       final lngRad = lng * pi / 180.0;
 
