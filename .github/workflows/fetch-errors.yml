@@ -1,0 +1,83 @@
+name: Fetch Runtime Errors
+
+on:
+  schedule:
+    # Run daily at 00:00 UTC.
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # Allow manual triggering from the Actions tab.
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-errors:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history so we can push cleanly.
+          fetch-depth: 0
+
+      - name: Fetch errors from Vercel endpoint
+        env:
+          VERCEL_ERRORS_API_KEY: ${{ secrets.VERCEL_ERRORS_API_KEY }}
+          ERRORS_ENDPOINT: https://flit-errors.vercel.app/api/errors
+        run: |
+          set -euo pipefail
+
+          # Ensure logs directory exists.
+          mkdir -p logs
+
+          # Determine the 'since' timestamp from the last fetched error.
+          SINCE=""
+          if [ -s logs/runtime-errors.jsonl ]; then
+            LAST_TS=$(tail -1 logs/runtime-errors.jsonl | jq -r '.timestamp // empty' 2>/dev/null || true)
+            if [ -n "$LAST_TS" ]; then
+              SINCE="&since=${LAST_TS}"
+            fi
+          fi
+
+          # Fetch errors from the API.
+          RESPONSE=$(curl -sf \
+            -H "X-API-Key: ${VERCEL_ERRORS_API_KEY}" \
+            "${ERRORS_ENDPOINT}?limit=500${SINCE}" \
+          ) || {
+            echo "::warning::Failed to fetch errors from endpoint"
+            exit 0
+          }
+
+          # Extract the errors array and count.
+          COUNT=$(echo "$RESPONSE" | jq -r '.count // 0')
+          echo "Fetched ${COUNT} new error(s)"
+
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No new errors to append."
+            exit 0
+          fi
+
+          # Append each error as a single JSONL line (newest last).
+          # The API returns newest-first, so we reverse for chronological order.
+          echo "$RESPONSE" | jq -c '.errors | reverse | .[]' >> logs/runtime-errors.jsonl
+
+          echo "Appended ${COUNT} error(s) to logs/runtime-errors.jsonl"
+
+      - name: Commit and push if new errors
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add logs/runtime-errors.jsonl
+
+          # Only commit if there are staged changes.
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
+          git commit -m "chore: fetch runtime errors (${TIMESTAMP})"
+          git push

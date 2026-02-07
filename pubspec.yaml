@@ -16,6 +16,9 @@ dependencies:
   # State Management
   flutter_riverpod: ^2.4.9
 
+  # HTTP client (cross-platform, for error telemetry)
+  http: ^1.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -26,8 +29,13 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # Assets will be added in later sprints
-  # assets:
-  #   - assets/images/
-  #   - assets/audio/
-  #   - assets/geo/
+  # Shader assets (V1-V6: GPU-rendered globe)
+  shaders:
+    - shaders/globe.frag
+
+  # Texture and image assets
+  assets:
+    - assets/textures/
+    - assets/images/
+    - assets/audio/
+    - assets/geo/
