@@ -56,7 +56,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                   ],
                   _RewardsSection(challenge: _challenge),
                   const SizedBox(height: 12),
-                  _MedalProgressSection(),
+                  const _MedalProgressSection(),
                   const SizedBox(height: 16),
                   _LeaderboardSection(
                     selectedTab: _leaderboardTab,
@@ -68,7 +68,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                     entries: DailyChallenge.placeholderLeaderboard,
                   ),
                   const SizedBox(height: 16),
-                  _HallOfFameSection(),
+                  const _HallOfFameSection(),
                   const SizedBox(height: 16),
                   _InfoFooter(bonusCoinReward: _challenge.bonusCoinReward),
                   const SizedBox(height: 16),
@@ -423,7 +423,7 @@ class _SeasonalBanner extends StatelessWidget {
       case SeasonalEvent.christmas:
         return Icons.ac_unit_rounded;
       case SeasonalEvent.halloween:
-        return Icons.nightlight_round;
+        return Icons.nightlight_rounded;
       case SeasonalEvent.easter:
         return Icons.egg_rounded;
       case SeasonalEvent.summer:
@@ -915,6 +915,8 @@ class _InfoFooter extends StatelessWidget {
 // =============================================================================
 
 class _MedalProgressSection extends StatelessWidget {
+  const _MedalProgressSection();
+
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(14),
@@ -1004,6 +1006,8 @@ class _MedalProgressSection extends StatelessWidget {
 // =============================================================================
 
 class _HallOfFameSection extends StatelessWidget {
+  const _HallOfFameSection();
+
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(14),
@@ -1012,14 +1016,14 @@ class _HallOfFameSection extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: FlitColors.gold.withOpacity(0.3)),
         ),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Icon(Icons.emoji_events, color: FlitColors.gold, size: 18),
-                const SizedBox(width: 6),
-                const Text(
+                SizedBox(width: 6),
+                Text(
                   'HALL OF FAME',
                   style: TextStyle(
                     color: FlitColors.gold,
@@ -1030,16 +1034,16 @@ class _HallOfFameSection extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            const _HallOfFameRow(date: '5 Feb 2026', winner: 'GlobeTrotter42', medal: 'Platinum'),
-            const SizedBox(height: 6),
-            const _HallOfFameRow(date: '4 Feb 2026', winner: 'MapMaster', medal: 'Gold'),
-            const SizedBox(height: 6),
-            const _HallOfFameRow(date: '3 Feb 2026', winner: 'AtlasAce', medal: 'Gold'),
-            const SizedBox(height: 6),
-            const _HallOfFameRow(date: '2 Feb 2026', winner: 'WanderWiz', medal: 'Silver'),
-            const SizedBox(height: 6),
-            const _HallOfFameRow(date: '1 Feb 2026', winner: 'GeoPilot', medal: 'Bronze'),
+            SizedBox(height: 12),
+            _HallOfFameRow(date: '5 Feb 2026', winner: 'GlobeTrotter42', medal: 'Platinum'),
+            SizedBox(height: 6),
+            _HallOfFameRow(date: '4 Feb 2026', winner: 'MapMaster', medal: 'Gold'),
+            SizedBox(height: 6),
+            _HallOfFameRow(date: '3 Feb 2026', winner: 'AtlasAce', medal: 'Gold'),
+            SizedBox(height: 6),
+            _HallOfFameRow(date: '2 Feb 2026', winner: 'WanderWiz', medal: 'Silver'),
+            SizedBox(height: 6),
+            _HallOfFameRow(date: '1 Feb 2026', winner: 'GeoPilot', medal: 'Bronze'),
           ],
         ),
       );
