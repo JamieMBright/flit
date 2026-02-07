@@ -20,7 +20,7 @@
 
 uniform vec2  uResolution;   // Index 0–1:  viewport size (px)
 uniform vec3  uCameraPos;    // Index 2–4:  camera position (world)
-uniform vec3  uCameraTarget; // Index 5–7:  look-at point (origin)
+uniform vec3  uCameraUp;     // Index 5–7:  heading-aligned up vector
 uniform vec3  uSunDir;       // Index 8–10: normalised sun direction
 uniform float uTime;         // Index 11:   elapsed time (seconds)
 uniform float uGlobeRadius;  // Index 12:   globe radius (typically 1.0)
@@ -205,14 +205,17 @@ vec2 equirectangularUV(vec3 p) {
 
 // -- Camera -----------------------------------------------------------------
 
-// Build a view matrix (look-at) and generate a ray direction
-vec3 cameraRayDir(vec2 fragCoord, vec2 resolution, vec3 camPos, vec3 target, float fov) {
+// Build a view matrix (look-at) and generate a ray direction.
+// Uses a heading-aligned up vector instead of fixed world up (0,1,0)
+// to prevent rolling at non-equatorial latitudes.
+vec3 cameraRayDir(vec2 fragCoord, vec2 resolution, vec3 camPos, vec3 camUp, float fov) {
     vec2 uv = (fragCoord - 0.5 * resolution) / resolution.y;
     float halfFov = tan(fov * 0.5);
     uv *= halfFov;
 
-    vec3 forward = normalize(target - camPos);
-    vec3 right   = normalize(cross(forward, vec3(0.0, 1.0, 0.0)));
+    // Camera always looks at the globe center (origin).
+    vec3 forward = normalize(-camPos);
+    vec3 right   = normalize(cross(forward, camUp));
     vec3 up      = cross(right, forward);
 
     return normalize(uv.x * right + uv.y * up + forward);
@@ -348,7 +351,7 @@ void main() {
     vec2 fragCoord = FlutterFragCoord().xy;
 
     // ----- Camera ray setup ------------------------------------------------
-    vec3 rayDir = cameraRayDir(fragCoord, uResolution, uCameraPos, uCameraTarget, uFOV);
+    vec3 rayDir = cameraRayDir(fragCoord, uResolution, uCameraPos, uCameraUp, uFOV);
     vec3 ro = uCameraPos;
 
     // =======================================================================

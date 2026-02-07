@@ -12,11 +12,13 @@ class CameraState {
   /// Globe radius in world units (normalized to 1.0).
   static const double globeRadius = 1.0;
 
-  /// Camera distance from globe center at high altitude (~3.5 radii).
-  static const double highAltitudeDistance = 3.5;
+  /// Camera distance from globe center at high altitude (~4.5 radii).
+  /// Far enough to show significant sky/horizon above the globe.
+  static const double highAltitudeDistance = 4.5;
 
-  /// Camera distance from globe center at low altitude (~1.8 radii).
-  static const double lowAltitudeDistance = 1.8;
+  /// Camera distance from globe center at low altitude (~1.3 radii).
+  /// Close enough to see terrain detail and city-level geography.
+  static const double lowAltitudeDistance = 1.3;
 
   /// Narrow FOV at rest (radians). Approximately 45 degrees.
   static const double fovNarrow = 0.785;
@@ -53,6 +55,15 @@ class CameraState {
   double _camY = 0.0;
   double _camZ = highAltitudeDistance;
 
+  // -- Heading-aligned up vector (prevents rolling at non-equatorial latitudes) --
+
+  double _upX = 0.0;
+  double _upY = 1.0;
+  double _upZ = 0.0;
+
+  /// Smoothed heading for interpolation (radians, navigation bearing).
+  double _currentHeadingRad = 0.0;
+
   /// Camera X position in world space (for shader uniform).
   double get cameraX => _camX;
 
@@ -62,14 +73,14 @@ class CameraState {
   /// Camera Z position in world space (for shader uniform).
   double get cameraZ => _camZ;
 
-  /// Camera look-at target X (always globe center).
-  double get targetX => 0.0;
+  /// Camera up vector X (heading-aligned tangent on globe surface).
+  double get upX => _upX;
 
-  /// Camera look-at target Y (always globe center).
-  double get targetY => 0.0;
+  /// Camera up vector Y.
+  double get upY => _upY;
 
-  /// Camera look-at target Z (always globe center).
-  double get targetZ => 0.0;
+  /// Camera up vector Z.
+  double get upZ => _upZ;
 
   /// Current field of view in radians.
   double get fov => _currentFov;
@@ -85,12 +96,15 @@ class CameraState {
   /// [isHighAltitude] - true for high altitude (zoomed out), false for low.
   /// [speedFraction] - normalized speed 0.0 (stopped) to 1.0 (max speed),
   ///   used to shift the FOV for a sense of acceleration.
+  /// [headingRad] - navigation bearing in radians (0 = north, clockwise).
+  ///   Used to compute the heading-aligned up vector that prevents rolling.
   void update(
     double dt, {
     required double planeLatDeg,
     required double planeLngDeg,
     required bool isHighAltitude,
     double speedFraction = 0.0,
+    double headingRad = 0.0,
   }) {
     final targetLatRad = planeLatDeg * pi / 180.0;
     final targetLngRad = planeLngDeg * pi / 180.0;
@@ -104,6 +118,7 @@ class CameraState {
       _currentLngRad = targetLngRad;
       _currentDistance = targetDistance;
       _currentFov = targetFov;
+      _currentHeadingRad = headingRad;
       _firstUpdate = false;
     } else {
       // Smooth ease-out interpolation using dt-based lerp factor.
@@ -119,6 +134,9 @@ class CameraState {
       // Handle longitude wrapping: find shortest angular path.
       _currentLatRad = _lerpDouble(_currentLatRad, targetLatRad, altFactor);
       _currentLngRad = _lerpAngle(_currentLngRad, targetLngRad, altFactor);
+
+      // Smooth heading interpolation (shortest path).
+      _currentHeadingRad = _lerpAngle(_currentHeadingRad, headingRad, altFactor);
     }
 
     // Convert spherical coordinates to cartesian.
@@ -130,6 +148,65 @@ class CameraState {
     _camX = cos(_currentLatRad) * cos(_currentLngRad) * _currentDistance;
     _camY = sin(_currentLatRad) * _currentDistance;
     _camZ = cos(_currentLatRad) * sin(_currentLngRad) * _currentDistance;
+
+    // Compute heading-aligned up vector at the camera position.
+    // This prevents the view from rolling at non-equatorial latitudes.
+    // The up vector is the heading tangent on the globe surface:
+    //   heading = cos(bearing) * North + sin(bearing) * East
+    // where North and East are the tangent basis vectors at (lat, lng).
+    _computeUpVector();
+  }
+
+  /// Compute the heading-aligned up vector from current lat/lng/heading.
+  ///
+  /// At any point on the sphere, the local tangent basis is:
+  ///   East  = (-sin(lng), 0, cos(lng))
+  ///   North = (-sin(lat)*cos(lng), cos(lat), -sin(lat)*sin(lng))
+  /// The heading tangent (navigation bearing) is:
+  ///   H = cos(bearing) * North + sin(bearing) * East
+  void _computeUpVector() {
+    final lat = _currentLatRad;
+    final lng = _currentLngRad;
+    final bearing = _currentHeadingRad;
+
+    final sinLat = sin(lat);
+    final cosLat = cos(lat);
+    final sinLng = sin(lng);
+    final cosLng = cos(lng);
+    final cosB = cos(bearing);
+    final sinB = sin(bearing);
+
+    // East tangent at (lat, lng)
+    final eastX = -sinLng;
+    const eastY = 0.0;
+    final eastZ = cosLng;
+
+    // North tangent at (lat, lng)
+    final northX = -sinLat * cosLng;
+    final northY = cosLat;
+    final northZ = -sinLat * sinLng;
+
+    // Heading tangent = cos(bearing) * North + sin(bearing) * East
+    var ux = cosB * northX + sinB * eastX;
+    var uy = cosB * northY + sinB * eastY;
+    var uz = cosB * northZ + sinB * eastZ;
+
+    // Normalize
+    final len = sqrt(ux * ux + uy * uy + uz * uz);
+    if (len > 1e-6) {
+      ux /= len;
+      uy /= len;
+      uz /= len;
+    } else {
+      // Fallback (shouldn't happen except exactly at poles)
+      ux = 0.0;
+      uy = 1.0;
+      uz = 0.0;
+    }
+
+    _upX = ux;
+    _upY = uy;
+    _upZ = uz;
   }
 
   /// Reset the camera to default state, forcing a snap on next update.
@@ -139,9 +216,13 @@ class CameraState {
     _currentLatRad = 0.0;
     _currentLngRad = 0.0;
     _currentFov = fovNarrow;
+    _currentHeadingRad = 0.0;
     _camX = 0.0;
     _camY = 0.0;
     _camZ = highAltitudeDistance;
+    _upX = 0.0;
+    _upY = 1.0;
+    _upZ = 0.0;
   }
 
   /// Linear interpolation between two doubles.

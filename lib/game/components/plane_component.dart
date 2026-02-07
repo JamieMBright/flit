@@ -38,7 +38,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   double visualHeading = 0;
 
   /// Base speed at high altitude (world units per second).
-  /// Calibrated so crossing Europe (~36°) takes ~10 seconds.
+  /// 36 units ≈ 3.6°/sec → crossing Europe (~36°) takes ~10 seconds.
   static const double highAltitudeSpeed = 36;
 
   /// Speed multiplier at low altitude
@@ -126,8 +126,8 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     canvas.save();
     canvas.translate(size.x / 2, size.y / 2);
 
-    // Rotate to face heading. visualHeading = 0 means the plane faces
-    // forward (up on screen) which matches the nose drawn at -16 y.
+    // Rotate to face heading. Camera up vector is the heading direction,
+    // so visualHeading=0 means the plane faces "up" on screen (forward).
     canvas.rotate(visualHeading);
 
     // --- 3D banking perspective ---

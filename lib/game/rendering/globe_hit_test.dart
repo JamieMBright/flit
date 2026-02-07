@@ -50,7 +50,7 @@ class GlobeHitTest {
     const rayDirLocalZ = -1.0; // looking into the screen
 
     // Build camera basis vectors (right, up, forward) from camera position
-    // and target. The camera always looks at the origin.
+    // and heading-aligned up vector. The camera always looks at the origin.
     final camX = camera.cameraX;
     final camY = camera.cameraY;
     final camZ = camera.cameraZ;
@@ -65,36 +65,22 @@ class GlobeHitTest {
     final fY = fwdY / fwdLen;
     final fZ = fwdZ / fwdLen;
 
-    // World up = (0, 1, 0)
-    // Right = normalize(forward x up)
-    var rX = fY * 0.0 - fZ * 1.0; // fy*0 - fz*1
-    var rY = fZ * 0.0 - fX * 0.0; // fz*0 - fx*0
-    var rZ = fX * 1.0 - fY * 0.0; // fx*1 - fy*0
-    // Simplified: right = (fY*0 - fZ, 0, fX)
-    rX = -fZ;
-    rY = 0.0;
-    rZ = fX;
-    // But we need the proper cross product:
-    // right = cross(forward, up) where up = (0,1,0)
-    // = (fY*0 - fZ*1, fZ*0 - fX*0, fX*1 - fY*0)
-    // = (-fZ, 0, fX) -- wait, that's not right either.
-    // cross(f, up) = (f.y*up.z - f.z*up.y, f.z*up.x - f.x*up.z, f.x*up.y - f.y*up.x)
-    //             = (f.y*0 - f.z*1, f.z*0 - f.x*0, f.x*1 - f.y*0)
-    //             = (-f.z, 0, f.x) -- only if up = (0,1,0)
-    // Actually: cross(a,b) = (a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x)
-    // cross(f, (0,1,0)) = (f.y*0 - f.z*1, f.z*0 - f.x*0, f.x*1 - f.y*0)
-    //                    = (-f.z, 0, f.x)
-    rX = -fZ;
-    rY = 0.0;
-    rZ = fX;
+    // Use the heading-aligned up vector from CameraState (matches shader).
+    final cupX = camera.upX;
+    final cupY = camera.upY;
+    final cupZ = camera.upZ;
+
+    // Right = normalize(cross(forward, camUp))
+    var rX = fY * cupZ - fZ * cupY;
+    var rY = fZ * cupX - fX * cupZ;
+    var rZ = fX * cupY - fY * cupX;
 
     final rLen = sqrt(rX * rX + rY * rY + rZ * rZ);
     if (rLen < 1e-8) {
-      // Camera is looking straight up or down; use alternate up vector.
-      // Fall back to (0, 0, 1) as the world up.
-      rX = fY * 1.0 - fZ * 0.0;
-      rY = fZ * 0.0 - fX * 1.0;
-      rZ = fX * 0.0 - fY * 0.0;
+      // Degenerate: forward and up are parallel. Fall back to world up.
+      rX = fY * 0.0 - fZ * 1.0;
+      rY = fZ * 0.0 - fX * 0.0;
+      rZ = fX * 1.0 - fY * 0.0;
       final rLen2 = sqrt(rX * rX + rY * rY + rZ * rZ);
       if (rLen2 < 1e-8) return null;
       rX /= rLen2;

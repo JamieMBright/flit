@@ -142,81 +142,91 @@ class FlitGame extends FlameGame
   Vector2 get cameraPosition => _cameraOffsetPosition;
   Vector2 _cameraOffsetPosition = Vector2.zero();
 
+  /// Navigation bearing for the camera position offset (radians).
+  /// Includes chase camera lag and drag look-around offset.
+  double get cameraBearing => _cameraHeading + _cameraDragOffset + pi / 2;
+
+  /// Navigation bearing for the camera up vector (radians).
+  /// Excludes drag offset so the view actually rotates when dragging
+  /// (instead of the plane appearing to turn while the globe stays fixed).
+  double get cameraHeadingBearing => _cameraHeading + pi / 2;
+
   /// Project a world position (lng, lat) to screen coordinates.
   /// Works with both Canvas (WorldMap) and shader (GlobeRenderer) renderers.
-  Vector2 worldToScreen(Vector2 latLng) {
+  Vector2 worldToScreen(Vector2 lngLat) {
     if (_worldMap != null) {
-      return _worldMap!.latLngToScreen(latLng, size);
+      return _worldMap!.latLngToScreen(lngLat, size);
     }
-    // Shader mode: use 3D perspective projection matching globe.frag.
-    if (_shaderReady && _globeRenderer != null) {
-      final result = _projectWorldToScreen(latLng.x, latLng.y);
-      if (result != null) return result;
+    if (_globeRenderer != null) {
+      return _shaderWorldToScreen(lngLat);
     }
     return Vector2(size.x * projectionCenterX, size.y * projectionCenterY);
   }
 
-  /// 3D perspective projection matching the shader's cameraRayDir().
-  /// Converts (lng, lat) degrees on the globe surface to screen coordinates.
-  Vector2? _projectWorldToScreen(double lngDeg, double latDeg) {
-    final camera = _globeRenderer!.camera;
+  /// Project a world (lng, lat) point to screen using the shader camera.
+  /// Mirrors the perspective projection in globe.frag's cameraRayDir.
+  Vector2 _shaderWorldToScreen(Vector2 lngLat) {
+    final cam = _globeRenderer!.camera;
+    final latRad = lngLat.y * _deg2rad;
+    final lngRad = lngLat.x * _deg2rad;
 
-    // 3D position on unit-radius globe surface.
-    final latRad = latDeg * _deg2rad;
-    final lngRad = lngDeg * _deg2rad;
+    // World point on unit sphere
     final px = cos(latRad) * cos(lngRad);
     final py = sin(latRad);
     final pz = cos(latRad) * sin(lngRad);
 
-    // Camera position from CameraState.
-    final cx = camera.cameraX;
-    final cy = camera.cameraY;
-    final cz = camera.cameraZ;
+    // Vector from camera to point
+    final vx = px - cam.cameraX;
+    final vy = py - cam.cameraY;
+    final vz = pz - cam.cameraZ;
 
-    // Look-at construction (matches shader's cameraRayDir).
-    // Forward = normalize(target - cam) = normalize(-cam)
-    final fLen = sqrt(cx * cx + cy * cy + cz * cz);
-    if (fLen < 0.0001) return null;
-    final fx = -cx / fLen;
-    final fy = -cy / fLen;
-    final fz = -cz / fLen;
+    // Camera forward = normalize(-camPos)
+    final fwdLen = sqrt(
+      cam.cameraX * cam.cameraX +
+      cam.cameraY * cam.cameraY +
+      cam.cameraZ * cam.cameraZ,
+    );
+    if (fwdLen < 1e-8) {
+      return Vector2(size.x * 0.5, size.y * 0.5);
+    }
+    final fx = -cam.cameraX / fwdLen;
+    final fy = -cam.cameraY / fwdLen;
+    final fz = -cam.cameraZ / fwdLen;
 
-    // Right = normalize(cross(forward, worldUp=(0,1,0)))
-    var rx = -fz; // fy*0 - fz*1 → -fz
-    const ry = 0.0; // fz*0 - fx*0 → 0
-    var rz = fx; // fx*1 - fy*0 → fx
-    final rLen = sqrt(rx * rx + rz * rz);
-    if (rLen < 0.0001) return null;
+    // Right = normalize(cross(forward, camUp))
+    var rx = fy * cam.upZ - fz * cam.upY;
+    var ry = fz * cam.upX - fx * cam.upZ;
+    var rz = fx * cam.upY - fy * cam.upX;
+    final rLen = sqrt(rx * rx + ry * ry + rz * rz);
+    if (rLen < 1e-8) {
+      return Vector2(size.x * 0.5, size.y * 0.5);
+    }
     rx /= rLen;
+    ry /= rLen;
     rz /= rLen;
 
     // Up = cross(right, forward)
-    final ux = ry * fz - rz * fy; // 0*fz - rz*fy
-    final uy = rz * fx - rx * fz; // rz*fx - rx*fz
-    final uz = rx * fy - ry * fx; // rx*fy - 0*fx
+    final ux = ry * fz - rz * fy;
+    final uy = rz * fx - rx * fz;
+    final uz = rx * fy - ry * fx;
 
-    // Vector from camera to globe surface point.
-    final vx = px - cx;
-    final vy = py - cy;
-    final vz = pz - cz;
+    // Project onto camera basis
+    final localZ = vx * fx + vy * fy + vz * fz;
+    if (localZ <= 0) {
+      // Behind camera — off screen
+      return Vector2(-1000, -1000);
+    }
+    final localX = vx * rx + vy * ry + vz * rz;
+    final localY = vx * ux + vy * uy + vz * uz;
 
-    // Project onto camera axes.
-    final vForward = vx * fx + vy * fy + vz * fz;
-    if (vForward <= 0) return null; // Behind camera.
+    // Perspective divide (matches shader: uv = localXY / localZ / halfFov)
+    final halfFov = tan(cam.fov / 2);
+    final uvX = localX / (localZ * halfFov);
+    final uvY = localY / (localZ * halfFov);
 
-    final vRight = vx * rx + vy * ry + vz * rz;
-    final vUp = vx * ux + vy * uy + vz * uz;
-
-    // Perspective divide (matches shader: uv = (fragCoord - 0.5*res) / res.y * halfFov)
-    final halfFov = tan(camera.fov / 2);
-    final ndcX = (vRight / vForward) / halfFov;
-    final ndcY = (vUp / vForward) / halfFov;
-
-    // Convert to screen coordinates.
-    // Shader maps: uv.x = (fragCoord.x - 0.5*resX) / resY
-    //              uv.y = (fragCoord.y - 0.5*resY) / resY
-    final screenX = ndcX * size.y + 0.5 * size.x;
-    final screenY = -ndcY * size.y + 0.5 * size.y;
+    // Convert to screen coords (matches shader's fragCoord mapping)
+    final screenX = uvX * size.y + size.x * 0.5;
+    final screenY = uvY * size.y + size.y * 0.5;
 
     return Vector2(screenX, screenY);
   }
@@ -314,8 +324,12 @@ class FlitGame extends FlameGame
       _worldPosition = Vector2(0, 0);
       _heading = -pi / 2; // north
 
-      // Start engine sound for equipped plane.
-      AudioManager.instance.startEngine(equippedPlaneId);
+      // Start engine sound for equipped plane (fire-and-forget, safe if missing).
+      try {
+        AudioManager.instance.startEngine(equippedPlaneId);
+      } catch (e) {
+        _log.warning('game', 'Engine sound start failed', error: e);
+      }
 
       _log.info('game', 'FlitGame.onLoad complete');
 
@@ -409,10 +423,10 @@ class FlitGame extends FlameGame
       _worldMap!.setAltitude(high: _plane.isHighAltitude);
     }
 
-    // Update plane visual — heading is relative to camera heading
-    // (including any drag offset) for the visual rotation on screen.
-    // When the player drags to look sideways, the plane turns on screen.
-    _plane.visualHeading = _heading - (_cameraHeading + _cameraDragOffset);
+    // Update plane visual — heading is relative to camera heading only.
+    // Drag offset is excluded: when the player drags to look around,
+    // the globe rotates but the plane keeps facing forward on screen.
+    _plane.visualHeading = _heading - _cameraHeading;
     _plane.position = Vector2(
       size.x * planeScreenX,
       size.y * planeScreenY,

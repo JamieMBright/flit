@@ -87,6 +87,7 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
       planeLngDeg: camPos.x,
       isHighAltitude: plane.isHighAltitude,
       speedFraction: speedFraction.clamp(0.0, 1.0),
+      headingRad: gameRef.cameraHeadingBearing,
     );
 
     // -- Rotate the sun direction for day/night cycle --
