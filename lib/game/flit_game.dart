@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/services/audio_manager.dart';
+import '../core/services/game_settings.dart';
 import '../core/theme/flit_colors.dart';
 import '../core/utils/game_log.dart';
 import 'components/contrail_renderer.dart';
@@ -91,13 +92,13 @@ class FlitGame extends FlameGame
   double _cameraHeading = 0;
 
   /// Rate at which camera heading catches up to plane heading.
-  /// Lower = more lag. 2.0 gives a satisfying delayed swing.
-  static const double _cameraHeadingEaseRate = 2.0;
+  /// Lower = more lag. 1.5 gives a satisfying delayed swing on turns.
+  static const double _cameraHeadingEaseRate = 1.5;
 
-  /// How far ahead (in degrees) the camera looks along the heading.
-  /// Higher altitude = less offset (more overhead view).
-  static const double _cameraOffsetHigh = 4.0;
-  static const double _cameraOffsetLow = 8.0;
+  /// How far ahead (in degrees) the projection center looks along heading.
+  /// These are large enough to create a genuine "behind the plane" view.
+  static const double _cameraOffsetHigh = 18.0;
+  static const double _cameraOffsetLow = 12.0;
 
   /// Whether this is the first update (skip lerp, snap camera heading).
   bool _cameraFirstUpdate = true;
@@ -116,10 +117,25 @@ class FlitGame extends FlameGame
   Vector2 get cameraPosition => _cameraOffsetPosition;
   Vector2 _cameraOffsetPosition = Vector2.zero();
 
-  /// Where on screen the plane is rendered (proportional).
-  /// Shifted toward the bottom so more world is visible ahead.
-  static const double planeScreenY = 0.60;
+  /// Project a world position (lng, lat) to screen coordinates.
+  /// Returns the plane screen position if no WorldMap is available.
+  Vector2 worldToScreen(Vector2 latLng) {
+    if (_worldMap != null) {
+      return _worldMap!.latLngToScreen(latLng, size);
+    }
+    // Fallback: return projection center
+    return Vector2(size.x * projectionCenterX, size.y * projectionCenterY);
+  }
+
+  /// Where on screen the plane sprite is rendered (proportional).
+  /// Pushed well toward the bottom to create a "behind the plane" view.
+  static const double planeScreenY = 0.72;
   static const double planeScreenX = 0.50;
+
+  /// Where the map projection is centered on screen.
+  /// This is higher up than the plane, so the map shows more world ahead.
+  static const double projectionCenterY = 0.45;
+  static const double projectionCenterX = 0.50;
 
   /// Angular speed conversion: old speed value → radians/sec on the sphere.
   /// Old system: speed 200 on a 3600-unit map spanning 360°.
@@ -141,10 +157,20 @@ class FlitGame extends FlameGame
           final shaderManager = ShaderManager.instance;
           await shaderManager.initialize();
 
-          _globeRenderer = GlobeRenderer();
-          await add(_globeRenderer!);
-          _shaderReady = true;
-          _log.info('game', 'Shader renderer initialised');
+          // ShaderManager.initialize() swallows errors internally.
+          // Verify it actually succeeded before creating the renderer.
+          if (shaderManager.isReady) {
+            _globeRenderer = GlobeRenderer();
+            await add(_globeRenderer!);
+            _shaderReady = true;
+            _log.info('game', 'Shader renderer initialised');
+          } else {
+            _log.warning(
+              'game',
+              'ShaderManager not ready after initialize, falling back to Canvas',
+            );
+            _shaderReady = false;
+          }
         } catch (e) {
           _log.warning(
             'game',
@@ -263,6 +289,10 @@ class FlitGame extends FlameGame
       size.y * planeScreenY,
     );
 
+    // Feed world state to plane for world-space contrail spawning.
+    _plane.worldPos = _worldPosition.clone();
+    _plane.worldHeading = _heading;
+
     // Modulate engine volume with turn intensity.
     AudioManager.instance.updateEngineVolume(_plane.turnDirection.abs());
   }
@@ -336,9 +366,6 @@ class FlitGame extends FlameGame
     return lng;
   }
 
-  /// Drag sensitivity multiplier.
-  static const double _dragSensitivity = 0.5;
-
   /// Minimum drag delta to register as a turn.
   static const double _dragDeadZone = 0.5;
 
@@ -349,8 +376,12 @@ class FlitGame extends FlameGame
       // In dead zone - don't change direction, let it coast
       return;
     }
-    // Map the drag to -1..+1 — inverted so dragging right banks left
-    _plane.setTurnDirection((-dx * _dragSensitivity).clamp(-1, 1));
+    final settings = GameSettings.instance;
+    // Apply user-configurable sensitivity and optional inversion.
+    final sign = settings.invertControls ? -1.0 : 1.0;
+    _plane.setTurnDirection(
+      (sign * dx * settings.turnSensitivity).clamp(-1, 1),
+    );
   }
 
   @override

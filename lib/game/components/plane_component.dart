@@ -56,7 +56,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Current visual bank angle (smoothed)
   double _currentBank = 0;
 
-  /// Contrail particles (rendered in world space by WorldMap)
+  /// Contrail particles (anchored to world positions).
   final List<ContrailParticle> contrails = [];
 
   /// Time accumulator for contrail spawning
@@ -64,6 +64,12 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
   /// Contrail spawn interval
   static const double _contrailInterval = 0.04;
+
+  /// World position set by FlitGame each frame (lng, lat degrees).
+  Vector2 worldPos = Vector2.zero();
+
+  /// World heading set by FlitGame each frame (radians, math convention).
+  double worldHeading = 0;
 
   /// Altitude transition progress (0 = low, 1 = high)
   double _altitudeTransition = 1.0;
@@ -425,34 +431,64 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     }
   }
 
+  /// Degrees-to-radians.
+  static const double _deg2rad = pi / 180;
+
+  /// Radians-to-degrees.
+  static const double _rad2deg = 180 / pi;
+
   void _spawnContrailParticle() {
-    // Contrails spawn from wing tips in world space
-    // The game will convert these to world coordinates
-    final leftOffset = Vector2(-20, 4);
-    final rightOffset = Vector2(20, 4);
+    // Compute wing-tip world positions using great-circle offset from
+    // the plane's current world position. The wing tips are ~0.15° away
+    // perpendicular to heading (left and right).
+    final lat0 = worldPos.y * _deg2rad;
+    final lng0 = worldPos.x * _deg2rad;
+    // Navigation bearing: heading + π/2 converts math convention to nav.
+    final navBearing = worldHeading + pi / 2;
 
-    // Rotate by visual heading
-    final cosA = cos(visualHeading + pi / 2);
-    final sinA = sin(visualHeading + pi / 2);
+    // Perpendicular bearings for left/right wing tips.
+    final leftBearing = navBearing - pi / 2; // 90° left of heading
+    final rightBearing = navBearing + pi / 2; // 90° right of heading
 
-    final leftRotated = Vector2(
-      leftOffset.x * cosA - leftOffset.y * sinA,
-      leftOffset.x * sinA + leftOffset.y * cosA,
-    );
-    final rightRotated = Vector2(
-      rightOffset.x * cosA - rightOffset.y * sinA,
-      rightOffset.x * sinA + rightOffset.y * cosA,
-    );
+    // Slightly behind the plane (small offset aft along heading).
+    final aftBearing = navBearing + pi;
+    const wingDist = 0.12 * _deg2rad; // ~0.12° lateral
+    const aftDist = 0.05 * _deg2rad; // ~0.05° behind
 
-    // Store as screen-relative offset from plane center
-    contrails.add(ContrailParticle(
-      screenOffset: leftRotated,
-      size: 2 + Random().nextDouble() * 1.5,
-    ));
-    contrails.add(ContrailParticle(
-      screenOffset: rightRotated,
-      size: 2 + Random().nextDouble() * 1.5,
-    ));
+    for (final bearing in [leftBearing, rightBearing]) {
+      // Combine lateral offset with slight aft offset.
+      final sinLat0 = sin(lat0);
+      final cosLat0 = cos(lat0);
+
+      // Wing-tip lateral position.
+      final latW = asin(
+        (sinLat0 * cos(wingDist) + cosLat0 * sin(wingDist) * cos(bearing))
+            .clamp(-1.0, 1.0),
+      );
+      final lngW = lng0 +
+          atan2(
+            sin(bearing) * sin(wingDist) * cosLat0,
+            cos(wingDist) - sinLat0 * sin(latW),
+          );
+
+      // Nudge aft from wing-tip position.
+      final sinLatW = sin(latW);
+      final cosLatW = cos(latW);
+      final latF = asin(
+        (sinLatW * cos(aftDist) + cosLatW * sin(aftDist) * cos(aftBearing))
+            .clamp(-1.0, 1.0),
+      );
+      final lngF = lngW +
+          atan2(
+            sin(aftBearing) * sin(aftDist) * cosLatW,
+            cos(aftDist) - sinLatW * sin(latF),
+          );
+
+      contrails.add(ContrailParticle(
+        worldPosition: Vector2(lngF * _rad2deg, latF * _rad2deg),
+        size: 2 + Random().nextDouble() * 1.5,
+      ));
+    }
   }
 
   /// Set turn direction from active input (drag or keyboard).
@@ -480,16 +516,17 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   }
 }
 
-/// A single contrail particle
+/// A single contrail particle anchored to a world position.
 class ContrailParticle {
   ContrailParticle({
-    required this.screenOffset,
+    required this.worldPosition,
     required this.size,
     this.maxLife = 4.0,
   }) : life = maxLife;
 
-  /// Offset from the plane's screen position when spawned
-  final Vector2 screenOffset;
+  /// World-space position (x = longitude, y = latitude) in degrees.
+  /// The particle stays fixed on the map as the plane moves away.
+  final Vector2 worldPosition;
   final double size;
   final double maxLife;
   double life;
