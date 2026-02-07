@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/models/cosmetic.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/map/region.dart';
 import 'play_screen.dart';
@@ -88,11 +89,18 @@ class RegionSelectScreen extends ConsumerWidget {
             unlockCost: cost,
             canBuy: !isUnlocked && canAfford,
             onTap: isUnlocked
-                ? () => Navigator.of(context).pushReplacement(
+                ? () {
+                    final planeId = ref.read(equippedPlaneIdProvider);
+                    final planeColors = CosmeticCatalog.getById(planeId)?.colorScheme;
+                    Navigator.of(context).pushReplacement(
                       MaterialPageRoute<void>(
-                        builder: (context) => PlayScreen(region: region),
+                        builder: (context) => PlayScreen(
+                          region: region,
+                          planeColorScheme: planeColors,
+                        ),
                       ),
-                    )
+                    );
+                  }
                 : null,
             onBuy: (!isUnlocked && canAfford)
                 ? () => _showUnlockDialog(context, ref, region, cost)

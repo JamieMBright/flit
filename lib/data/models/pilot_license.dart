@@ -172,21 +172,21 @@ class PilotLicense {
   // Display helpers
   // ---------------------------------------------------------------------------
 
-  /// Human-readable coin boost, e.g. "+5% Coins".
-  String get coinBoostLabel => '+$coinBoost% Coins';
+  /// Human-readable coin boost, e.g. "+5% Extra Coins".
+  String get coinBoostLabel => '+$coinBoost% Extra Coins';
 
-  /// Human-readable clue boost including the type.
+  /// Human-readable clue type, e.g. "Clue Type: Flag".
   String get clueBoostLabel {
     final typeLabel =
         '${preferredClueType[0].toUpperCase()}${preferredClueType.substring(1)}';
-    return '$typeLabel Clue Type';
+    return 'Clue Type: $typeLabel';
   }
 
   /// Human-readable clue chance, e.g. "+5% Clue Chance".
   String get clueChanceLabel => '+$clueChance% Clue Chance';
 
-  /// Human-readable fuel boost, e.g. "+7% Fuel".
-  String get fuelBoostLabel => '+$fuelBoost% Fuel';
+  /// Human-readable fuel boost, e.g. "+7% Fuel Efficiency".
+  String get fuelBoostLabel => '+$fuelBoost% Fuel Efficiency';
 
   /// Sum of all four boosts (useful for ranking / comparison).
   int get totalBoost => coinBoost + clueBoost + clueChance + fuelBoost;

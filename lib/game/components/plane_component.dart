@@ -13,12 +13,17 @@ import '../../core/theme/flit_colors.dart';
 class PlaneComponent extends PositionComponent with HasGameRef {
   PlaneComponent({
     required this.onAltitudeChanged,
+    this.colorScheme,
   }) : super(
           size: Vector2(60, 60),
           anchor: Anchor.center,
         );
 
   final void Function(bool isHigh) onAltitudeChanged;
+
+  /// Optional color scheme from equipped plane cosmetic.
+  /// Keys: 'primary', 'secondary', 'detail' (ARGB ints).
+  final Map<String, int>? colorScheme;
 
   /// Current turning direction: -1 (left), 0 (straight), 1 (right)
   double _turnDirection = 0;
@@ -44,9 +49,9 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Maximum bank angle for visual effect
   static const double _maxBankAngle = 0.35;
 
-  /// How fast the turn decays when the player releases (per-second factor).
-  /// 0.92 means ~8% decay per update at 60fps → roughly 1 second to coast to stop.
-  static const double _turnDecayPerFrame = 0.92;
+  /// How fast the turn decays when the player releases (per-second rate).
+  /// Higher = faster decay. 5.0 means ~0.2 seconds to coast to stop.
+  static const double _turnDecayRate = 5.0;
 
   /// Current visual bank angle (smoothed)
   double _currentBank = 0;
@@ -81,12 +86,15 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   void update(double dt) {
     super.update(dt);
 
-    // Decay turn direction when not actively dragging
+    // Decay turn direction when not actively dragging (dt-based)
     if (!_isDragging) {
-      _turnDirection *= _turnDecayPerFrame;
+      // Exponential decay: multiply by e^(-rate * dt) each frame
+      _turnDirection *= exp(-_turnDecayRate * dt);
       // Snap to zero when close enough to avoid endless micro-turns
       if (_turnDirection.abs() < 0.01) _turnDirection = 0;
     }
+    // Clamp to prevent infinite spinning from accumulated input
+    _turnDirection = _turnDirection.clamp(-1.0, 1.0);
 
     // Smooth bank angle
     final targetBank = _turnDirection * _maxBankAngle;
@@ -151,9 +159,19 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   }
 
   void _renderPlane(Canvas canvas) {
-    final bodyPaint = Paint()..color = FlitColors.planeBody;
-    final wingPaint = Paint()..color = FlitColors.planeWing;
-    final accentPaint = Paint()..color = FlitColors.planeAccent;
+    final primary = colorScheme != null
+        ? Color(colorScheme!['primary'] ?? 0xFFF5F0E0)
+        : FlitColors.planeBody;
+    final secondary = colorScheme != null
+        ? Color(colorScheme!['secondary'] ?? 0xFFC0392B)
+        : FlitColors.planeAccent;
+    final detail = colorScheme != null
+        ? Color(colorScheme!['detail'] ?? 0xFF8B4513)
+        : FlitColors.planeWing;
+
+    final bodyPaint = Paint()..color = primary;
+    final wingPaint = Paint()..color = detail;
+    final accentPaint = Paint()..color = secondary;
     final highlightPaint = Paint()..color = FlitColors.planeHighlight;
 
     // --- Tail assembly ---
@@ -367,7 +385,7 @@ class ContrailParticle {
   ContrailParticle({
     required this.screenOffset,
     required this.size,
-    this.maxLife = 1.0,
+    this.maxLife = 4.0,
   }) : life = maxLife;
 
   /// Offset from the plane's screen position when spawned

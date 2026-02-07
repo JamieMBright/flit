@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/models/cosmetic.dart';
 import '../../data/models/daily_challenge.dart';
 import '../../data/models/seasonal_theme.dart';
+import '../../data/providers/account_provider.dart';
 import '../../game/map/region.dart';
 import '../play/play_screen.dart';
 
 /// Daily challenge screen showing today's challenge details, seasonal events,
 /// rewards, and leaderboards with licensed/unlicensed toggle.
-class DailyChallengeScreen extends StatefulWidget {
+class DailyChallengeScreen extends ConsumerStatefulWidget {
   const DailyChallengeScreen({super.key});
 
   @override
-  State<DailyChallengeScreen> createState() => _DailyChallengeScreenState();
+  ConsumerState<DailyChallengeScreen> createState() => _DailyChallengeScreenState();
 }
 
-class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
+class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
   late final DailyChallenge _challenge;
   final SeasonalTheme? _seasonalTheme = SeasonalTheme.current();
 
@@ -78,9 +81,19 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
       );
 
   void _onPlay() {
+    final reward = _challenge.coinReward;
+    final planeId = ref.read(equippedPlaneIdProvider);
+    final planeColors = CosmeticCatalog.getById(planeId)?.colorScheme;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => const PlayScreen(region: GameRegion.world),
+        builder: (_) => PlayScreen(
+          region: GameRegion.world,
+          coinReward: reward,
+          planeColorScheme: planeColors,
+          onComplete: (totalScore) {
+            ref.read(accountProvider.notifier).addCoins(reward);
+          },
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/models/cosmetic.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/map/region.dart';
@@ -205,9 +206,15 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     if (cost > 0) {
       ref.read(accountProvider.notifier).spendCoins(cost);
     }
+    final planeId = ref.read(equippedPlaneIdProvider);
+    final planeColors = CosmeticCatalog.getById(planeId)?.colorScheme;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => const PlayScreen(region: GameRegion.world),
+        builder: (_) => PlayScreen(
+          region: GameRegion.world,
+          totalRounds: 10,
+          planeColorScheme: planeColors,
+        ),
       ),
     );
   }
