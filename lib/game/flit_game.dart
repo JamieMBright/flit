@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../core/services/audio_manager.dart';
 import '../core/theme/flit_colors.dart';
 import '../core/utils/game_log.dart';
+import 'components/contrail_renderer.dart';
 import 'map/world_map.dart';
 import 'rendering/globe_renderer.dart';
 import 'rendering/shader_manager.dart';
@@ -25,7 +26,8 @@ const double _rad2deg = 180 / pi;
 /// The plane flies on the surface of a sphere. Position is stored as
 /// (longitude, latitude) in degrees. Movement uses great-circle math.
 /// The world is rendered via a GPU fragment shader (globe.frag) with
-/// fallback to the legacy Canvas 2D renderer if the shader fails to load.
+/// fallback to the Canvas 2D renderer (default world: blue ocean, green
+/// land, country outlines) if the shader fails to load.
 class FlitGame extends FlameGame
     with HasKeyboardHandlerComponents, HorizontalDragDetector {
   FlitGame({
@@ -58,7 +60,7 @@ class FlitGame extends FlameGame
 
   late PlaneComponent _plane;
 
-  /// Legacy Canvas renderer (fallback).
+  /// Canvas renderer — default world (blue ocean, green land, outlines).
   WorldMap? _worldMap;
 
   /// GPU shader renderer (V1+).
@@ -83,6 +85,23 @@ class FlitGame extends FlameGame
   /// Current clue data
   String? _currentClue;
 
+  // -- Chase camera state --
+
+  /// Smoothed camera heading — lags behind the plane heading for chase feel.
+  double _cameraHeading = 0;
+
+  /// Rate at which camera heading catches up to plane heading.
+  /// Lower = more lag. 2.0 gives a satisfying delayed swing.
+  static const double _cameraHeadingEaseRate = 2.0;
+
+  /// How far ahead (in degrees) the camera looks along the heading.
+  /// Higher altitude = less offset (more overhead view).
+  static const double _cameraOffsetHigh = 4.0;
+  static const double _cameraOffsetLow = 8.0;
+
+  /// Whether this is the first update (skip lerp, snap camera heading).
+  bool _cameraFirstUpdate = true;
+
   bool get isPlaying => _isPlaying;
   bool get isHighAltitude => _plane.isHighAltitude;
   PlaneComponent get plane => _plane;
@@ -93,8 +112,13 @@ class FlitGame extends FlameGame
   Vector2 get worldPosition => _worldPosition;
   double get heading => _heading;
 
+  /// Camera-offset position for the renderer (ahead of plane).
+  Vector2 get cameraPosition => _cameraOffsetPosition;
+  Vector2 _cameraOffsetPosition = Vector2.zero();
+
   /// Where on screen the plane is rendered (proportional).
-  static const double planeScreenY = 0.50;
+  /// Shifted toward the bottom so more world is visible ahead.
+  static const double planeScreenY = 0.60;
   static const double planeScreenX = 0.50;
 
   /// Angular speed conversion: old speed value → radians/sec on the sphere.
@@ -132,12 +156,16 @@ class FlitGame extends FlameGame
         }
       }
 
-      // If shader failed or not requested, use the legacy Canvas renderer.
+      // If shader failed or not requested, use the Canvas world renderer.
+      // This is the default world: simple blue ocean, green land, outlines.
       if (!_shaderReady) {
         _worldMap = WorldMap();
         await add(_worldMap!);
-        _log.info('game', 'Using legacy Canvas renderer');
+        _log.info('game', 'Using Canvas world renderer');
       }
+
+      // Contrail overlay — renders on top of globe, before the plane.
+      await add(ContrailRenderer());
 
       _plane = PlaneComponent(
         onAltitudeChanged: (isHigh) {
@@ -215,16 +243,21 @@ class FlitGame extends FlameGame
     // Update heading based on turn input (left/right only)
     _heading += _plane.turnDirection * PlaneComponent.turnRate * dt;
 
-    // Feed position to the active renderer.
+    // --- Chase camera: smooth heading with lag ---
+    _updateChaseCamera(dt);
+
+    // Feed camera position to the active renderer.
     // GlobeRenderer reads position from gameRef in its own update(),
-    // so we only drive the legacy Canvas renderer explicitly.
+    // so we only drive the Canvas renderer explicitly.
     if (!_shaderReady && _worldMap != null) {
-      _worldMap!.setCameraCenter(_worldPosition);
+      _worldMap!.setCameraCenter(_cameraOffsetPosition);
       _worldMap!.setAltitude(high: _plane.isHighAltitude);
     }
 
-    // Update plane visual
-    _plane.visualHeading = _heading;
+    // Update plane visual — heading is relative to camera heading for
+    // the visual rotation on screen. The difference between plane heading
+    // and camera heading creates the visual turn effect.
+    _plane.visualHeading = _heading - _cameraHeading;
     _plane.position = Vector2(
       size.x * planeScreenX,
       size.y * planeScreenY,
@@ -232,6 +265,64 @@ class FlitGame extends FlameGame
 
     // Modulate engine volume with turn intensity.
     AudioManager.instance.updateEngineVolume(_plane.turnDirection.abs());
+  }
+
+  /// Update the chase camera heading and compute the offset camera position.
+  ///
+  /// The camera heading smoothly interpolates toward the plane heading,
+  /// creating a satisfying lag when the plane turns. The camera center
+  /// is offset ahead of the plane along the camera heading direction.
+  void _updateChaseCamera(double dt) {
+    if (_cameraFirstUpdate) {
+      _cameraHeading = _heading;
+      _cameraFirstUpdate = false;
+    } else {
+      // Smooth ease-out: camera heading chases plane heading.
+      final factor = 1.0 - exp(-_cameraHeadingEaseRate * dt);
+      _cameraHeading = _lerpAngle(_cameraHeading, _heading, factor);
+    }
+
+    // Compute a point ahead of the plane along the camera heading direction.
+    final offsetDeg = _plane.isHighAltitude ? _cameraOffsetHigh : _cameraOffsetLow;
+
+    // Convert camera heading to navigation bearing (0 = north).
+    final camBearing = _cameraHeading + pi / 2;
+
+    // Great-circle destination: move offsetDeg ahead of the plane.
+    final d = offsetDeg * _deg2rad;
+    final planeLat = _worldPosition.y * _deg2rad;
+    final planeLng = _worldPosition.x * _deg2rad;
+
+    final sinPLat = sin(planeLat);
+    final cosPLat = cos(planeLat);
+    final sinDist = sin(d);
+    final cosDist = cos(d);
+
+    final aheadLat = asin(
+      (sinPLat * cosDist + cosPLat * sinDist * cos(camBearing)).clamp(-1.0, 1.0),
+    );
+    final aheadLng = planeLng +
+        atan2(
+          sin(camBearing) * sinDist * cosPLat,
+          cosDist - sinPLat * sin(aheadLat),
+        );
+
+    _cameraOffsetPosition = Vector2(
+      _normalizeLng(aheadLng * _rad2deg),
+      (aheadLat * _rad2deg).clamp(-85.0, 85.0),
+    );
+  }
+
+  /// Interpolate between two angles along the shortest path.
+  static double _lerpAngle(double a, double b, double t) {
+    var diff = b - a;
+    while (diff > pi) {
+      diff -= 2 * pi;
+    }
+    while (diff < -pi) {
+      diff += 2 * pi;
+    }
+    return a + diff * t;
   }
 
   /// Normalize longitude to [-180, 180].
@@ -317,6 +408,8 @@ class FlitGame extends FlameGame
     // startPosition is already (lng, lat) degrees — use directly
     _worldPosition = startPosition.clone();
     _heading = Random().nextDouble() * 2 * pi;
+    _cameraHeading = _heading; // snap camera to heading on game start
+    _cameraFirstUpdate = true;
     _targetLocation = targetPosition;
     _currentClue = clue;
     _isPlaying = true;

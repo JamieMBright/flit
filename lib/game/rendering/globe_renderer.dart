@@ -73,8 +73,8 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
 
     _time += dt;
 
-    // -- Update camera from the game's plane position --
-    final worldPos = gameRef.worldPosition;
+    // -- Update camera from the chase camera offset position --
+    final camPos = gameRef.cameraPosition;
     final plane = gameRef.plane;
 
     // speedFraction: ratio of current speed to max speed.
@@ -83,8 +83,8 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
 
     _camera.update(
       dt,
-      planeLatDeg: worldPos.y,
-      planeLngDeg: worldPos.x,
+      planeLatDeg: camPos.y,
+      planeLngDeg: camPos.x,
       isHighAltitude: plane.isHighAltitude,
       speedFraction: speedFraction.clamp(0.0, 1.0),
     );
