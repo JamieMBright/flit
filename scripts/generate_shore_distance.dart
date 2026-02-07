@@ -24,7 +24,6 @@
 //     128
 
 import 'dart:io';
-import 'dart:math';
 import 'dart:typed_data';
 
 void main(List<String> args) {
@@ -477,7 +476,7 @@ void _writeUint32(BytesBuilder out, int value) {
 }
 
 /// CRC-32 lookup table (initialized lazily).
-late final List<int> _crc32Table = _buildCrc32Table();
+final List<int> _crc32Table = _buildCrc32Table();
 
 List<int> _buildCrc32Table() {
   final table = List<int>.filled(256, 0);

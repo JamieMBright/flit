@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +9,10 @@ import '../components/plane_component.dart';
 import '../flit_game.dart';
 import 'camera_state.dart';
 import 'shader_manager.dart';
+
+/// Re-export PlaneComponent so imports from plane_component.dart resolve
+/// when callers import globe_renderer.dart.
+export '../components/plane_component.dart' show PlaneComponent;
 
 final _log = GameLog.instance;
 
@@ -156,7 +159,3 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
     _lastSize = Size(size.x, size.y);
   }
 }
-
-/// Re-export PlaneComponent so imports from plane_component.dart resolve
-/// when callers import globe_renderer.dart.
-export '../components/plane_component.dart' show PlaneComponent;
