@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../flit_game.dart';
-import 'plane_component.dart';
 
 /// Renders contrail particles as a Flame overlay component.
 ///
