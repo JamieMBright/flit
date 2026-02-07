@@ -2,6 +2,10 @@ import 'dart:math';
 
 import 'package:audioplayers/audioplayers.dart';
 
+import '../utils/game_log.dart';
+
+final _log = GameLog.instance;
+
 /// Engine sound category — each plane maps to one of these.
 enum EngineType {
   /// Chuttering propeller (Classic Bi-Plane, Red Baron Triplane)
@@ -187,11 +191,16 @@ class AudioManager {
     if (_initialized) return;
     _initialized = true;
 
-    // Set default release mode for all players.
-    await _musicPlayer.setReleaseMode(ReleaseMode.loop);
-    await _enginePlayer.setReleaseMode(ReleaseMode.loop);
-    for (final p in _sfxPool) {
-      await p.setReleaseMode(ReleaseMode.release);
+    try {
+      // Set default release mode for all players.
+      await _musicPlayer.setReleaseMode(ReleaseMode.loop);
+      await _enginePlayer.setReleaseMode(ReleaseMode.loop);
+      for (final p in _sfxPool) {
+        await p.setReleaseMode(ReleaseMode.release);
+      }
+      _log.info('audio', 'AudioManager initialized');
+    } catch (e, st) {
+      _log.warning('audio', 'AudioManager init failed', error: e);
     }
   }
 
@@ -235,8 +244,8 @@ class AudioManager {
       await _musicPlayer.play(
         AssetSource(_musicTracks[_currentTrackIndex]),
       );
-    } catch (_) {
-      // Audio file may not exist yet — fail silently.
+    } catch (e) {
+      _log.warning('audio', 'Music track failed: ${_musicTracks[_currentTrackIndex]}', error: e);
     }
   }
 
@@ -276,8 +285,8 @@ class AudioManager {
       await _enginePlayer.play(
         AssetSource(_engineAsset(type)),
       );
-    } catch (_) {
-      // Audio file may not exist yet — fail silently.
+    } catch (e) {
+      _log.warning('audio', 'Engine sound failed: ${_engineAsset(type)}', error: e);
     }
   }
 
@@ -300,8 +309,8 @@ class AudioManager {
 
     try {
       await _enginePlayer.setVolume(volume);
-    } catch (_) {
-      // Player may not be active.
+    } catch (e) {
+      _log.warning('audio', 'Engine volume update failed', error: e);
     }
   }
 
@@ -319,8 +328,8 @@ class AudioManager {
     try {
       await player.setVolume(_sfxVolume);
       await player.play(AssetSource(_sfxAsset(type)));
-    } catch (_) {
-      // Audio file may not exist yet — fail silently.
+    } catch (e) {
+      _log.warning('audio', 'SFX failed: ${_sfxAsset(type)}', error: e);
     }
   }
 
