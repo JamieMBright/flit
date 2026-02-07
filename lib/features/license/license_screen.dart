@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
-import '../../data/models/avatar_config.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
