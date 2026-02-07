@@ -3,8 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flit/core/services/error_service.dart';
 
 void main() {
-  // Reset the ErrorService singleton before each test to ensure isolation.
-  // ErrorService.instance is a singleton; calling reset() clears its state.
   setUp(() {
     ErrorService.instance.reset();
   });
@@ -18,94 +16,76 @@ void main() {
   });
 
   group('ErrorService - Error Queuing', () {
-    test('enqueue adds error to pending list', () {
+    test('reportError adds error to pending list', () {
       final service = ErrorService.instance;
       expect(service.pendingErrors, isEmpty);
 
-      service.enqueue(
-        message: 'Test error',
-        severity: ErrorSeverity.error,
-      );
+      service.reportError('Test error', StackTrace.current);
 
       expect(service.pendingErrors, hasLength(1));
-      expect(service.pendingErrors.first.message, equals('Test error'));
+      expect(service.pendingErrors.first.error, equals('Test error'));
     });
 
-    test('enqueue adds multiple errors in order', () {
+    test('reportError adds multiple errors in order', () {
       final service = ErrorService.instance;
 
-      service.enqueue(message: 'First', severity: ErrorSeverity.warning);
-      service.enqueue(message: 'Second', severity: ErrorSeverity.error);
-      service.enqueue(message: 'Third', severity: ErrorSeverity.critical);
+      service.reportWarning('First', StackTrace.current);
+      service.reportError('Second', StackTrace.current);
+      service.reportCritical('Third', StackTrace.current);
 
       expect(service.pendingErrors, hasLength(3));
-      expect(service.pendingErrors[0].message, equals('First'));
-      expect(service.pendingErrors[1].message, equals('Second'));
-      expect(service.pendingErrors[2].message, equals('Third'));
+      expect(service.pendingErrors[0].error, equals('First'));
+      expect(service.pendingErrors[1].error, equals('Second'));
+      expect(service.pendingErrors[2].error, equals('Third'));
     });
 
     test('queue respects max size of 100', () {
       final service = ErrorService.instance;
 
-      // Enqueue 110 errors - only the most recent 100 should remain.
       for (var i = 0; i < 110; i++) {
-        service.enqueue(
-          message: 'Error $i',
-          severity: ErrorSeverity.error,
-        );
+        service.reportError('Error $i', StackTrace.current);
       }
 
       expect(service.pendingErrors.length, equals(100));
-      // The oldest errors (0-9) should have been dropped.
-      expect(service.pendingErrors.first.message, equals('Error 10'));
-      expect(service.pendingErrors.last.message, equals('Error 109'));
+      expect(service.pendingErrors.first.error, equals('Error 10'));
+      expect(service.pendingErrors.last.error, equals('Error 109'));
     });
   });
 
   group('ErrorService - JSON Serialization', () {
     test('toJson produces valid schema', () {
       final service = ErrorService.instance;
-      service.enqueue(
-        message: 'Serialization test',
-        severity: ErrorSeverity.error,
-        error: Exception('test exception'),
-        stackTrace: StackTrace.current,
+      service.reportError(
+        'Serialization test',
+        StackTrace.current,
+        context: {'screen': 'game'},
       );
 
       final json = service.pendingErrors.first.toJson();
 
       expect(json, isA<Map<String, dynamic>>());
-      expect(json.containsKey('message'), isTrue);
+      expect(json.containsKey('error'), isTrue);
       expect(json.containsKey('severity'), isTrue);
       expect(json.containsKey('timestamp'), isTrue);
       expect(json.containsKey('sessionId'), isTrue);
-      expect(json['message'], equals('Serialization test'));
+      expect(json['error'], equals('Serialization test'));
       expect(json['severity'], equals('error'));
     });
 
-    test('toJson includes error details when present', () {
+    test('toJson includes stack trace when present', () {
       final service = ErrorService.instance;
-      service.enqueue(
-        message: 'With error',
-        severity: ErrorSeverity.error,
-        error: FormatException('bad format'),
-      );
+      service.reportError('With stack', StackTrace.current);
 
       final json = service.pendingErrors.first.toJson();
-      expect(json.containsKey('error'), isTrue);
-      expect(json['error'], contains('bad format'));
+      expect(json.containsKey('stackTrace'), isTrue);
     });
 
-    test('toJson handles null error and stack trace', () {
+    test('toJson handles null stack trace', () {
       final service = ErrorService.instance;
-      service.enqueue(
-        message: 'No error object',
-        severity: ErrorSeverity.warning,
-      );
+      service.reportError('No stack', null);
 
       final json = service.pendingErrors.first.toJson();
-      expect(json['message'], equals('No error object'));
-      // error and stackTrace may be null or absent
+      expect(json['error'], equals('No stack'));
     });
   });
 
@@ -113,21 +93,19 @@ void main() {
     test('all severity levels are accepted', () {
       final service = ErrorService.instance;
 
-      service.enqueue(message: 'info', severity: ErrorSeverity.info);
-      service.enqueue(message: 'warning', severity: ErrorSeverity.warning);
-      service.enqueue(message: 'error', severity: ErrorSeverity.error);
-      service.enqueue(message: 'critical', severity: ErrorSeverity.critical);
+      service.reportWarning('warning', StackTrace.current);
+      service.reportError('error', StackTrace.current);
+      service.reportCritical('critical', StackTrace.current);
 
-      expect(service.pendingErrors, hasLength(4));
-      expect(service.pendingErrors[0].severity, equals(ErrorSeverity.info));
-      expect(service.pendingErrors[1].severity, equals(ErrorSeverity.warning));
-      expect(service.pendingErrors[2].severity, equals(ErrorSeverity.error));
-      expect(service.pendingErrors[3].severity, equals(ErrorSeverity.critical));
+      expect(service.pendingErrors, hasLength(3));
+      expect(
+          service.pendingErrors[0].severity, equals(ErrorSeverity.warning));
+      expect(service.pendingErrors[1].severity, equals(ErrorSeverity.error));
+      expect(
+          service.pendingErrors[2].severity, equals(ErrorSeverity.critical));
     });
 
     test('severity levels have correct ordering', () {
-      // info < warning < error < critical
-      expect(ErrorSeverity.info.index, lessThan(ErrorSeverity.warning.index));
       expect(
           ErrorSeverity.warning.index, lessThan(ErrorSeverity.error.index));
       expect(
@@ -135,116 +113,90 @@ void main() {
     });
   });
 
-  group('ErrorService - Session ID', () {
-    test('session ID is generated and non-empty', () {
-      final service = ErrorService.instance;
-      expect(service.sessionId, isNotEmpty);
-    });
-
-    test('session ID is consistent across calls', () {
-      final service = ErrorService.instance;
-      final id1 = service.sessionId;
-      final id2 = service.sessionId;
-      expect(id1, equals(id2));
-    });
-
-    test('session ID is included in queued errors', () {
-      final service = ErrorService.instance;
-      service.enqueue(
-        message: 'Session test',
-        severity: ErrorSeverity.error,
-      );
-
-      final json = service.pendingErrors.first.toJson();
-      expect(json['sessionId'], equals(service.sessionId));
-    });
-  });
-
   group('ErrorService - Listeners', () {
-    test('listener is notified when error is enqueued', () {
+    test('errorCountNotifier increments when error is reported', () {
       final service = ErrorService.instance;
-      var notified = false;
+      expect(service.errorCountNotifier.value, equals(0));
 
-      service.addListener(() {
-        notified = true;
+      service.reportError('Listener test', StackTrace.current);
+
+      expect(service.errorCountNotifier.value, equals(1));
+    });
+
+    test('multiple reports increment counter', () {
+      final service = ErrorService.instance;
+
+      service.reportError('One', StackTrace.current);
+      service.reportError('Two', StackTrace.current);
+
+      expect(service.errorCountNotifier.value, equals(2));
+    });
+
+    test('addListener is notified with CapturedError', () {
+      final service = ErrorService.instance;
+      CapturedError? received;
+
+      service.addListener((error) {
+        received = error;
       });
 
-      service.enqueue(
-        message: 'Listener test',
-        severity: ErrorSeverity.error,
-      );
+      service.reportError('Listener test', StackTrace.current);
 
-      expect(notified, isTrue);
-    });
-
-    test('multiple listeners are all notified', () {
-      final service = ErrorService.instance;
-      var count = 0;
-
-      service.addListener(() => count++);
-      service.addListener(() => count++);
-
-      service.enqueue(
-        message: 'Multi listener test',
-        severity: ErrorSeverity.error,
-      );
-
-      expect(count, equals(2));
+      expect(received, isNotNull);
+      expect(received!.error, equals('Listener test'));
     });
 
     test('removed listener is not notified', () {
       final service = ErrorService.instance;
       var notified = false;
 
-      void listener() {
+      void listener(CapturedError error) {
         notified = true;
       }
 
       service.addListener(listener);
       service.removeListener(listener);
 
-      service.enqueue(
-        message: 'Removed listener test',
-        severity: ErrorSeverity.error,
-      );
+      service.reportError('Removed listener test', StackTrace.current);
 
       expect(notified, isFalse);
     });
   });
 
-  group('ErrorService - Clear/Reset', () {
-    test('clear removes all pending errors', () {
+  group('ErrorService - Display Errors', () {
+    test('displayErrors stores errors newest first', () {
       final service = ErrorService.instance;
 
-      service.enqueue(message: 'Error 1', severity: ErrorSeverity.error);
-      service.enqueue(message: 'Error 2', severity: ErrorSeverity.error);
-      expect(service.pendingErrors, hasLength(2));
+      service.reportError('First', StackTrace.current);
+      service.reportError('Second', StackTrace.current);
 
-      service.clear();
-      expect(service.pendingErrors, isEmpty);
+      expect(service.displayErrors, hasLength(2));
+      expect(service.displayErrors[0].error, equals('Second'));
+      expect(service.displayErrors[1].error, equals('First'));
     });
+  });
 
-    test('reset clears errors and preserves session ID', () {
+  group('ErrorService - Reset', () {
+    test('reset clears errors and counter', () {
       final service = ErrorService.instance;
-      final sessionId = service.sessionId;
 
-      service.enqueue(message: 'Error', severity: ErrorSeverity.error);
+      service.reportError('Error', StackTrace.current);
       service.reset();
 
       expect(service.pendingErrors, isEmpty);
-      // Session ID should remain the same within the same app lifecycle.
-      expect(service.sessionId, equals(sessionId));
+      expect(service.displayErrors, isEmpty);
+      expect(service.errorCountNotifier.value, equals(0));
     });
 
-    test('new errors can be added after clear', () {
+    test('new errors can be added after reset', () {
       final service = ErrorService.instance;
 
-      service.enqueue(message: 'Before', severity: ErrorSeverity.error);
-      service.clear();
-      service.enqueue(message: 'After', severity: ErrorSeverity.error);
+      service.reportError('Before', StackTrace.current);
+      service.reset();
+      service.reportError('After', StackTrace.current);
 
       expect(service.pendingErrors, hasLength(1));
-      expect(service.pendingErrors.first.message, equals('After'));
+      expect(service.pendingErrors.first.error, equals('After'));
     });
   });
 }

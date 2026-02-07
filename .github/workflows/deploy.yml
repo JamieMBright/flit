@@ -86,8 +86,8 @@ jobs:
               echo "ERROR: Shader file is empty: $shader"
               exit 1
             fi
-            if ! grep -q "void main" "$shader" 2>/dev/null; then
-              echo "WARNING: No main() found in $shader (may be an include)"
+            if ! grep -q "void fragment" "$shader" 2>/dev/null; then
+              echo "WARNING: No fragment() entry point in $shader (Flutter shaders use void fragment, not void main)"
             fi
           done
           echo "Shader syntax pre-check passed."
