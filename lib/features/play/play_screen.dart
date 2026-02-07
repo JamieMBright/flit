@@ -8,6 +8,7 @@ import '../../core/services/audio_manager.dart';
 import '../../core/services/error_service.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
+import '../../core/utils/web_error_bridge.dart';
 import '../../game/flit_game.dart';
 import '../../game/map/region.dart';
 import '../../game/session/game_session.dart';
@@ -85,6 +86,7 @@ class _PlayScreenState extends State<PlayScreen> {
       _game = FlitGame(
         onGameReady: _onGameReady,
         onAltitudeChanged: _onAltitudeChanged,
+        onError: _onGameError,
         isChallenge: widget.challengeFriendName != null,
         planeColorScheme: widget.planeColorScheme,
         equippedPlaneId: widget.equippedPlaneId,
@@ -121,6 +123,17 @@ class _PlayScreenState extends State<PlayScreen> {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (mounted) _startNewGame();
     });
+  }
+
+  /// Called by FlitGame when the game loop crashes.
+  void _onGameError(Object error, StackTrace? stack) {
+    final msg = 'Game loop crashed.\n\nError: $error\n\nStack:\n$stack';
+    WebErrorBridge.show(msg);
+    if (mounted && _error == null) {
+      setState(() {
+        _error = msg;
+      });
+    }
   }
 
   void _onAltitudeChanged(bool isHigh) {

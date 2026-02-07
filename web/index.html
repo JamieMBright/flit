@@ -59,23 +59,29 @@
       opacity: 0.6;
       letter-spacing: 2px;
     }
+    /* Full-screen error overlay — covers Flutter canvas entirely.
+       On iOS PWA, errors can reload the page. This fires first. */
     #error-box {
       display: none;
       position: fixed;
-      bottom: 16px;
-      left: 16px;
-      right: 16px;
-      max-height: 40vh;
+      top: 0; left: 0; right: 0; bottom: 0;
       overflow-y: auto;
-      background: #7a1616ee;
-      color: #fff;
+      -webkit-overflow-scrolling: touch;
+      background: #0A0E1A;
+      color: #aaa;
       font-family: monospace;
       font-size: 12px;
-      padding: 14px;
-      border-radius: 8px;
+      padding: 48px 20px 20px;
       white-space: pre-wrap;
       word-break: break-word;
-      z-index: 99999;
+      z-index: 999999;
+    }
+    #error-box .error-title {
+      color: #FF4444;
+      font-size: 18px;
+      font-weight: bold;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      margin-bottom: 16px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
@@ -91,21 +97,72 @@
   <div id="error-box"></div>
 
   <script>
-    // Capture JS-level errors and display them visually.
+    // ── NUCLEAR JS ERROR HANDLER ──
+    // Catches ALL errors below Flutter (JS, WASM, WebGL, async) and
+    // freezes the screen with the full error text. On iOS PWA this is
+    // the only way to see errors — Dart ErrorWidget never renders
+    // because the WebView reloads the page on unhandled exceptions.
+
     var errorBox = document.getElementById('error-box');
     var errors = [];
-    function showError(msg) {
+    var frozen = false;
+
+    function freezeWithError(msg) {
       errors.push(msg);
+
+      // Build full-screen error display
+      errorBox.innerHTML = '';
+      var title = document.createElement('div');
+      title.className = 'error-title';
+      title.textContent = 'FLIT CRASH';
+      errorBox.appendChild(title);
+
+      var body = document.createElement('div');
+      body.textContent = errors.join('\n\n---\n\n');
+      errorBox.appendChild(body);
+
       errorBox.style.display = 'block';
-      errorBox.textContent = errors.join('\n\n');
+
+      // Hide the Flutter canvas and loading spinner so error is visible
+      var loading = document.getElementById('loading');
+      if (loading) loading.style.display = 'none';
+      // Hide all Flutter-rendered canvases
+      var canvases = document.querySelectorAll('canvas, flt-glass-pane, flutter-view');
+      for (var i = 0; i < canvases.length; i++) {
+        canvases[i].style.display = 'none';
+      }
+
+      frozen = true;
     }
 
+    // Catch synchronous JS errors
     window.addEventListener('error', function(e) {
-      showError('[JS Error] ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
+      freezeWithError('[JS Error] ' + e.message + '\n' + (e.filename || '') + ':' + (e.lineno || ''));
+      e.preventDefault(); // Prevent default handling / page reload
+      return true;
     });
+
+    // Catch unhandled promise rejections (async errors)
     window.addEventListener('unhandledrejection', function(e) {
-      showError('[Promise Rejection] ' + (e.reason || e));
+      var reason = e.reason;
+      var msg = '[Async Error] ';
+      if (reason && reason.stack) {
+        msg += reason.message + '\n' + reason.stack;
+      } else {
+        msg += String(reason || e);
+      }
+      freezeWithError(msg);
+      e.preventDefault();
     });
+
+    // Catch WebGL context loss (shader / GPU crashes)
+    document.addEventListener('webglcontextlost', function(e) {
+      freezeWithError('[WebGL CRASH] GPU context lost — likely a shader or rendering failure.');
+      e.preventDefault(); // Prevent automatic context restore attempt
+    }, true); // Use capture phase to catch it on any canvas
+
+    // Expose to Dart so flutter code can push errors to the JS overlay
+    window._flitShowError = freezeWithError;
   </script>
 
   <!--

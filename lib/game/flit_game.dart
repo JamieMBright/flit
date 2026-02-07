@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -10,6 +11,7 @@ import '../core/services/error_service.dart';
 import '../core/services/game_settings.dart';
 import '../core/theme/flit_colors.dart';
 import '../core/utils/game_log.dart';
+import '../core/utils/web_error_bridge.dart';
 import 'components/contrail_renderer.dart';
 import 'map/world_map.dart';
 import 'rendering/globe_renderer.dart';
@@ -35,6 +37,7 @@ class FlitGame extends FlameGame
   FlitGame({
     this.onGameReady,
     this.onAltitudeChanged,
+    this.onError,
     this.fuelBoostMultiplier = 1.0,
     this.isChallenge = false,
     this.planeColorScheme,
@@ -44,6 +47,9 @@ class FlitGame extends FlameGame
 
   final VoidCallback? onGameReady;
   final void Function(bool isHigh)? onAltitudeChanged;
+
+  /// Called when the game loop hits an unrecoverable error.
+  final void Function(Object error, StackTrace? stack)? onError;
 
   /// Fuel boost from pilot license (1.0 = no boost). Only applies in solo play.
   final double fuelBoostMultiplier;
@@ -243,8 +249,28 @@ class FlitGame extends FlameGame
     }
   }
 
+  /// Whether the game loop has been killed due to an error.
+  bool _dead = false;
+
   @override
   void update(double dt) {
+    if (_dead) return;
+    try {
+      _updateInner(dt);
+    } catch (e, st) {
+      _dead = true;
+      _log.error('game', 'GAME LOOP CRASHED', error: e, stackTrace: st);
+      ErrorService.instance.reportCritical(e, st, context: {
+        'source': 'FlitGame',
+        'action': 'update',
+      });
+      // Push to JS overlay for iOS PWA
+      WebErrorBridge.show('Game loop crash:\n$e\n\n$st');
+      onError?.call(e, st);
+    }
+  }
+
+  void _updateInner(double dt) {
     super.update(dt);
 
     // --- Great-circle movement ---
