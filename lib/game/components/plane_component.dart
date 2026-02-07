@@ -46,8 +46,8 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Turn rate in radians per second
   static const double turnRate = 2.5;
 
-  /// Maximum bank angle for visual effect
-  static const double _maxBankAngle = 0.35;
+  /// Maximum bank angle for visual effect (radians, ~40 degrees).
+  static const double _maxBankAngle = 0.7;
 
   /// How fast the turn decays when the player releases (per-second rate).
   /// Higher = faster decay. 5.0 means ~0.2 seconds to coast to stop.
@@ -121,20 +121,23 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     // Rotate to face heading (adjusted so "up" on screen = forward)
     canvas.rotate(visualHeading + pi / 2);
 
-    // Apply bank tilt
-    canvas.scale(1.0 - _currentBank.abs() * 0.1, 1.0);
+    // --- 3D banking perspective ---
+    // cos(bank) foreshortens the horizontal axis; sin(bank) gives the
+    // vertical shift that simulates seeing the plane from behind/above.
+    final bankCos = cos(_currentBank); // 1.0 = level, ~0.76 at max bank
+    final bankSin = sin(_currentBank); // signed, shows roll direction
 
-    // Draw shadow (offset based on altitude)
+    // Draw shadow (offset based on altitude, shifted by bank)
     final shadowOffset = 3.0 + _altitudeTransition * 5.0;
-    _renderPlaneShadow(canvas, shadowOffset);
+    _renderPlaneShadow(canvas, shadowOffset, bankCos);
 
-    // Draw the aircraft
-    _renderPlane(canvas);
+    // Draw the aircraft with 3D perspective
+    _renderPlane(canvas, bankCos, bankSin);
 
     canvas.restore();
   }
 
-  void _renderPlaneShadow(Canvas canvas, double offset) {
+  void _renderPlaneShadow(Canvas canvas, double offset, double bankCos) {
     final shadowPaint = Paint()
       ..color = FlitColors.planeShadow
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
@@ -142,7 +145,8 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     canvas.save();
     canvas.translate(offset, offset);
 
-    // Simplified shadow shape
+    // Shadow foreshortens with bank too
+    final shadowSpan = 44.0 * bankCos.abs();
     final fuselage = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset.zero, width: 8, height: 34),
       const Radius.circular(4),
@@ -150,7 +154,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     canvas.drawRRect(fuselage, shadowPaint);
 
     final wings = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: const Offset(0, 2), width: 44, height: 7),
+      Rect.fromCenter(center: const Offset(0, 2), width: shadowSpan, height: 7),
       const Radius.circular(2),
     );
     canvas.drawRRect(wings, shadowPaint);
@@ -158,7 +162,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     canvas.restore();
   }
 
-  void _renderPlane(Canvas canvas) {
+  void _renderPlane(Canvas canvas, double bankCos, double bankSin) {
     final primary = colorScheme != null
         ? Color(colorScheme!['primary'] ?? 0xFFF5F0E0)
         : FlitColors.planeBody;
@@ -169,116 +173,205 @@ class PlaneComponent extends PositionComponent with HasGameRef {
         ? Color(colorScheme!['detail'] ?? 0xFF8B4513)
         : FlitColors.planeWing;
 
+    // Darken/lighten colors based on bank for 3D shading.
+    // Bank left (negative) = left wing lit, right wing shadowed.
+    // Bank right (positive) = right wing lit, left wing shadowed.
+    final shade = bankSin; // -1..+1
+
+    Color darken(Color c, double amount) {
+      final f = (1.0 - amount).clamp(0.0, 1.0);
+      return Color.fromARGB(
+        c.alpha,
+        (c.red * f).round(),
+        (c.green * f).round(),
+        (c.blue * f).round(),
+      );
+    }
+
+    Color lighten(Color c, double amount) {
+      final f = amount.clamp(0.0, 1.0);
+      return Color.fromARGB(
+        c.alpha,
+        (c.red + (255 - c.red) * f * 0.3).round(),
+        (c.green + (255 - c.green) * f * 0.3).round(),
+        (c.blue + (255 - c.blue) * f * 0.3).round(),
+      );
+    }
+
+    // Banking left (shade < 0): left wing is "up" (lit), right wing "down" (dark)
+    // Banking right (shade > 0): right wing is "up" (lit), left wing "down" (dark)
+    final leftWingColor = shade < 0 ? lighten(detail, -shade) : darken(detail, shade * 0.4);
+    final rightWingColor = shade > 0 ? lighten(detail, shade) : darken(detail, -shade * 0.4);
     final bodyPaint = Paint()..color = primary;
-    final wingPaint = Paint()..color = detail;
     final accentPaint = Paint()..color = secondary;
     final highlightPaint = Paint()..color = FlitColors.planeHighlight;
 
-    // --- Tail assembly ---
-    // Horizontal stabiliser — smooth ellipse
-    final tailPath = Path()
-      ..moveTo(-10, 14)
-      ..quadraticBezierTo(-12, 16, -10, 18)
-      ..lineTo(10, 18)
-      ..quadraticBezierTo(12, 16, 10, 14)
-      ..close();
-    canvas.drawPath(tailPath, wingPaint);
+    // Underside color — visible when banked
+    final undersidePaint = Paint()..color = darken(primary, 0.35);
 
-    // Vertical fin
+    // 3D foreshortening: wing span scales with cos(bank)
+    final wingSpan = 26.0 * bankCos.abs();
+    // Wing vertical shift: the dipping wing moves down on screen
+    final wingDip = bankSin * 4.0;
+
+    // --- Underside strip (visible when significantly banked) ---
+    final bankAbs = bankSin.abs();
+    if (bankAbs > 0.15) {
+      final undersideWidth = 6.0 * bankAbs;
+      final undersideX = bankSin > 0 ? -undersideWidth / 2 : undersideWidth / 2;
+      final undersidePath = Path()
+        ..moveTo(undersideX - undersideWidth / 2, -12)
+        ..quadraticBezierTo(
+          undersideX - undersideWidth / 2 - 1, 0,
+          undersideX - undersideWidth / 2, 14,
+        )
+        ..lineTo(undersideX + undersideWidth / 2, 14)
+        ..quadraticBezierTo(
+          undersideX + undersideWidth / 2 + 1, 0,
+          undersideX + undersideWidth / 2, -12,
+        )
+        ..close();
+      canvas.drawPath(undersidePath, undersidePaint);
+    }
+
+    // --- Tail assembly ---
+    final tailSpan = 10.0 * bankCos.abs();
+    final tailPath = Path()
+      ..moveTo(-tailSpan, 14 + wingDip * 0.3)
+      ..quadraticBezierTo(-tailSpan - 2, 16, -tailSpan, 18)
+      ..lineTo(tailSpan, 18 - wingDip * 0.3)
+      ..quadraticBezierTo(tailSpan + 2, 16, tailSpan, 14 - wingDip * 0.3)
+      ..close();
+    canvas.drawPath(tailPath, Paint()..color = darken(detail, 0.1));
+
+    // Vertical fin — slightly rotated with bank
     final finPath = Path()
-      ..moveTo(0, 11)
-      ..quadraticBezierTo(-4, 15, -2, 18)
-      ..lineTo(2, 18)
-      ..quadraticBezierTo(4, 15, 0, 11)
+      ..moveTo(bankSin * 2, 11)
+      ..quadraticBezierTo(-4 + bankSin * 3, 15, -2 + bankSin * 2, 18)
+      ..lineTo(2 + bankSin * 2, 18)
+      ..quadraticBezierTo(4 + bankSin * 3, 15, bankSin * 2, 11)
       ..close();
     canvas.drawPath(finPath, accentPaint);
 
-    // --- Main wings --- (smooth, tapered)
+    // --- Main wings (3D: asymmetric span and dip) ---
+    // Left wing — length and dip depend on bank
+    final leftSpan = wingSpan + bankSin * 8; // grows when banking right
+    final leftDip = wingDip;
     final leftWing = Path()
-      ..moveTo(-4, -1)
-      ..quadraticBezierTo(-14, 0, -26, 2)
-      ..quadraticBezierTo(-27, 4, -24, 5)
-      ..lineTo(-4, 3)
+      ..moveTo(-4, -1 + leftDip * 0.2)
+      ..quadraticBezierTo(-leftSpan * 0.5, 0 + leftDip * 0.5, -leftSpan, 2 + leftDip)
+      ..quadraticBezierTo(-leftSpan - 1, 4 + leftDip, -leftSpan + 2, 5 + leftDip)
+      ..lineTo(-4, 3 + leftDip * 0.2)
       ..close();
-    canvas.drawPath(leftWing, wingPaint);
-    // Wing highlight
-    canvas.drawPath(
-      Path()
-        ..moveTo(-4, -0.5)
-        ..quadraticBezierTo(-12, 0.5, -22, 2.5)
-        ..lineTo(-22, 3.5)
-        ..quadraticBezierTo(-12, 1.5, -4, 1)
-        ..close(),
-      highlightPaint,
-    );
+    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
+    // Left wing highlight
+    if (shade <= 0) {
+      canvas.drawPath(
+        Path()
+          ..moveTo(-4, -0.5 + leftDip * 0.2)
+          ..quadraticBezierTo(
+            -leftSpan * 0.4, 0.5 + leftDip * 0.3,
+            -leftSpan * 0.8, 2.5 + leftDip * 0.8,
+          )
+          ..lineTo(-leftSpan * 0.8, 3.5 + leftDip * 0.8)
+          ..quadraticBezierTo(
+            -leftSpan * 0.4, 1.5 + leftDip * 0.3,
+            -4, 1 + leftDip * 0.2,
+          )
+          ..close(),
+        highlightPaint,
+      );
+    }
+
+    // Right wing
+    final rightSpan = wingSpan - bankSin * 8; // grows when banking left
+    final rightDip = -wingDip;
     final rightWing = Path()
-      ..moveTo(4, -1)
-      ..quadraticBezierTo(14, 0, 26, 2)
-      ..quadraticBezierTo(27, 4, 24, 5)
-      ..lineTo(4, 3)
+      ..moveTo(4, -1 + rightDip * 0.2)
+      ..quadraticBezierTo(rightSpan * 0.5, 0 + rightDip * 0.5, rightSpan, 2 + rightDip)
+      ..quadraticBezierTo(rightSpan + 1, 4 + rightDip, rightSpan - 2, 5 + rightDip)
+      ..lineTo(4, 3 + rightDip * 0.2)
       ..close();
-    canvas.drawPath(rightWing, wingPaint);
-    canvas.drawPath(
-      Path()
-        ..moveTo(4, -0.5)
-        ..quadraticBezierTo(12, 0.5, 22, 2.5)
-        ..lineTo(22, 3.5)
-        ..quadraticBezierTo(12, 1.5, 4, 1)
-        ..close(),
-      highlightPaint,
-    );
+    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
-    // --- Fuselage --- (smooth, tapered)
+    // Right wing highlight
+    if (shade >= 0) {
+      canvas.drawPath(
+        Path()
+          ..moveTo(4, -0.5 + rightDip * 0.2)
+          ..quadraticBezierTo(
+            rightSpan * 0.4, 0.5 + rightDip * 0.3,
+            rightSpan * 0.8, 2.5 + rightDip * 0.8,
+          )
+          ..lineTo(rightSpan * 0.8, 3.5 + rightDip * 0.8)
+          ..quadraticBezierTo(
+            rightSpan * 0.4, 1.5 + rightDip * 0.3,
+            4, 1 + rightDip * 0.2,
+          )
+          ..close(),
+        highlightPaint,
+      );
+    }
+
+    // --- Fuselage (3D: slight shift with bank) ---
+    final bodyShift = bankSin * 1.5;
     final fuselagePath = Path()
-      ..moveTo(0, -16)
-      ..quadraticBezierTo(5, -12, 5, -2)
-      ..quadraticBezierTo(4, 10, 3, 16)
-      ..quadraticBezierTo(0, 18, -3, 16)
-      ..quadraticBezierTo(-4, 10, -5, -2)
-      ..quadraticBezierTo(-5, -12, 0, -16)
+      ..moveTo(bodyShift, -16)
+      ..quadraticBezierTo(5 + bodyShift, -12, 5 + bodyShift, -2)
+      ..quadraticBezierTo(4 + bodyShift, 10, 3 + bodyShift, 16)
+      ..quadraticBezierTo(bodyShift, 18, -3 + bodyShift, 16)
+      ..quadraticBezierTo(-4 + bodyShift, 10, -5 + bodyShift, -2)
+      ..quadraticBezierTo(-5 + bodyShift, -12, bodyShift, -16)
       ..close();
     canvas.drawPath(fuselagePath, bodyPaint);
 
-    // Fuselage highlight (center streak)
+    // Fuselage highlight (center streak, offset with bank)
     final highlightStreak = Path()
-      ..moveTo(0, -14)
-      ..quadraticBezierTo(2.5, -8, 2, 0)
-      ..lineTo(1, 10)
-      ..lineTo(-1, 10)
-      ..lineTo(-2, 0)
-      ..quadraticBezierTo(-2.5, -8, 0, -14)
+      ..moveTo(bodyShift - 0.5, -14)
+      ..quadraticBezierTo(2.5 + bodyShift, -8, 2 + bodyShift, 0)
+      ..lineTo(1 + bodyShift, 10)
+      ..lineTo(-1 + bodyShift, 10)
+      ..lineTo(-2 + bodyShift, 0)
+      ..quadraticBezierTo(-2.5 + bodyShift, -8, bodyShift - 0.5, -14)
       ..close();
     canvas.drawPath(highlightStreak, highlightPaint);
 
     // Accent stripe
     final stripe = Path()
-      ..moveTo(-3, -4)
-      ..lineTo(3, -4)
-      ..lineTo(3, 2)
-      ..lineTo(-3, 2)
+      ..moveTo(-3 + bodyShift, -4)
+      ..lineTo(3 + bodyShift, -4)
+      ..lineTo(3 + bodyShift, 2)
+      ..lineTo(-3 + bodyShift, 2)
       ..close();
     canvas.drawPath(stripe, accentPaint);
 
     // Cockpit
     canvas.drawOval(
-      Rect.fromCenter(center: const Offset(0, -9), width: 5, height: 6),
+      Rect.fromCenter(
+        center: Offset(bodyShift, -9),
+        width: 5,
+        height: 6,
+      ),
       Paint()..color = const Color(0xFF4A90B8),
     );
-    // Cockpit glint
     canvas.drawOval(
-      Rect.fromCenter(center: const Offset(-0.5, -10), width: 2, height: 3),
+      Rect.fromCenter(
+        center: Offset(-0.5 + bodyShift, -10),
+        width: 2,
+        height: 3,
+      ),
       Paint()..color = const Color(0xFF8CC8E8),
     );
 
     // --- Engine / Nose cone ---
     canvas.drawCircle(
-      const Offset(0, -16),
+      Offset(bodyShift, -16),
       3.0,
       Paint()..color = const Color(0xFF888888),
     );
     canvas.drawCircle(
-      const Offset(0, -16),
+      Offset(bodyShift, -16),
       1.5,
       Paint()..color = const Color(0xFF555555),
     );
@@ -287,7 +380,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     final propDiscPaint = Paint()
       ..color = FlitColors.planeBody.withOpacity(0.15)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(const Offset(0, -17), 8, propDiscPaint);
+    canvas.drawCircle(Offset(bodyShift, -17), 8, propDiscPaint);
 
     // Propeller blades
     final bladePaint = Paint()
@@ -298,16 +391,23 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     for (var i = 0; i < 2; i++) {
       final a = _propAngle + i * pi;
       canvas.drawLine(
-        Offset(cos(a) * bladeLen, -17 + sin(a) * bladeLen),
-        Offset(-cos(a) * bladeLen, -17 - sin(a) * bladeLen),
+        Offset(bodyShift + cos(a) * bladeLen, -17 + sin(a) * bladeLen),
+        Offset(bodyShift - cos(a) * bladeLen, -17 - sin(a) * bladeLen),
         bladePaint,
       );
     }
 
-    // Wing tip accents (navigation lights)
-    canvas.drawCircle(const Offset(-25, 3.5), 1.8, accentPaint);
+    // Wing tip navigation lights (positioned at actual wing tips)
     canvas.drawCircle(
-        const Offset(25, 3.5), 1.8, Paint()..color = FlitColors.success);
+      Offset(-leftSpan + 1, 3.5 + leftDip),
+      1.8,
+      accentPaint,
+    );
+    canvas.drawCircle(
+      Offset(rightSpan - 1, 3.5 + rightDip),
+      1.8,
+      Paint()..color = FlitColors.success,
+    );
   }
 
   void _updateContrails(double dt) {

@@ -349,8 +349,8 @@ class FlitGame extends FlameGame
       // In dead zone - don't change direction, let it coast
       return;
     }
-    // Map the drag to -1..+1 with higher sensitivity
-    _plane.setTurnDirection((dx * _dragSensitivity).clamp(-1, 1));
+    // Map the drag to -1..+1 — inverted so dragging right banks left
+    _plane.setTurnDirection((-dx * _dragSensitivity).clamp(-1, 1));
   }
 
   @override
