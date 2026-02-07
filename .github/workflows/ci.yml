@@ -24,7 +24,9 @@ jobs:
           cache: true
 
       - name: Generate Flutter files
-        run: flutter create --platform=web,android . --project-name=flit || true
+        run: |
+          flutter create --platform=web,android . --project-name=flit 2>&1 | tee flutter-create.log
+          echo "flutter create exit code: $?"
 
       - name: Get dependencies
         run: flutter pub get
@@ -50,7 +52,9 @@ jobs:
           cache: true
 
       - name: Generate Flutter files
-        run: flutter create --platform=web,android . --project-name=flit || true
+        run: |
+          flutter create --platform=web,android . --project-name=flit 2>&1 | tee flutter-create.log
+          echo "flutter create exit code: $?"
 
       - name: Get dependencies
         run: flutter pub get
@@ -79,7 +83,9 @@ jobs:
           cache: true
 
       - name: Generate Flutter files
-        run: flutter create --platform=web . --project-name=flit || true
+        run: |
+          flutter create --platform=web . --project-name=flit 2>&1 | tee flutter-create.log
+          echo "flutter create exit code: $?"
 
       - name: Get dependencies
         run: flutter pub get
@@ -95,12 +101,24 @@ jobs:
           test -d assets/textures && echo "assets/textures/ OK" || (echo "MISSING: assets/textures/" && exit 1)
 
       - name: Build web (validates shader compilation for WebGL)
-        run: flutter build web --release --base-href "/flit/"
-
-      - name: Verify shader in build output
         run: |
-          echo "Checking shader was included in web build..."
-          ls -la build/web/assets/shaders/ 2>/dev/null || echo "Shader directory check (may be bundled differently)"
+          set -euxo pipefail
+          flutter build web --release --base-href "/flit/" 2>&1 | tee flutter-build.log
+
+      - name: Verify build output
+        run: |
+          ls -la build/web/ || echo "build/web/ missing"
+          test -f build/web/index.html && echo "index.html OK" || echo "WARNING: index.html missing"
+
+      - name: Upload build logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shader-build-logs
+          path: |
+            flutter-create.log
+            flutter-build.log
+          retention-days: 7
 
   # Build web
   build-web:
@@ -117,19 +135,39 @@ jobs:
           cache: true
 
       - name: Generate Flutter files
-        run: flutter create --platform=web . --project-name=flit || true
+        run: |
+          flutter create --platform=web . --project-name=flit 2>&1 | tee flutter-create.log
+          echo "flutter create exit code: $?"
 
       - name: Get dependencies
         run: flutter pub get
 
       - name: Build web
-        run: flutter build web --release --base-href "/flit/"
+        run: |
+          set -euxo pipefail
+          flutter build web --release --base-href "/flit/" 2>&1 | tee flutter-build.log
+
+      - name: Verify build output
+        run: |
+          test -f build/web/index.html || (echo "ERROR: index.html not found" && exit 1)
+          BUILD_SIZE=$(du -sh build/web | cut -f1)
+          echo "Build size: ${BUILD_SIZE}"
 
       - name: Upload web artifact
         uses: actions/upload-artifact@v4
         with:
           name: web-build
           path: build/web
+          retention-days: 7
+
+      - name: Upload build logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build-logs
+          path: |
+            flutter-create.log
+            flutter-build.log
           retention-days: 7
 
   # Build Android (validates shader compilation for GLES/Vulkan via SPIR-V)
@@ -153,7 +191,9 @@ jobs:
           cache: true
 
       - name: Generate Flutter files
-        run: flutter create --platform=android . --project-name=flit || true
+        run: |
+          flutter create --platform=android . --project-name=flit 2>&1 | tee flutter-create.log
+          echo "flutter create exit code: $?"
 
       - name: Get dependencies
         run: flutter pub get
