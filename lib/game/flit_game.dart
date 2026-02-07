@@ -141,6 +141,11 @@ class FlitGame extends FlameGame
   Vector2 get cameraPosition => _cameraOffsetPosition;
   Vector2 _cameraOffsetPosition = Vector2.zero();
 
+  /// Navigation bearing used for the camera view direction (radians).
+  /// 0 = north, π/2 = east, π = south, 3π/2 = west.
+  /// Includes the chase camera lag and any drag offset.
+  double get cameraBearing => _cameraHeading + _cameraDragOffset + pi / 2;
+
   /// Project a world position (lng, lat) to screen coordinates.
   /// Returns the plane screen position if no WorldMap is available.
   Vector2 worldToScreen(Vector2 latLng) {

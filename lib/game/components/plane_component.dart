@@ -37,14 +37,15 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Visual heading set by the game (radians)
   double visualHeading = 0;
 
-  /// Base speed at high altitude (world units per second)
-  static const double highAltitudeSpeed = 200;
+  /// Base speed at high altitude (world units per second).
+  /// 25 units ≈ 2.5°/sec → full globe in ~144 s. Leisurely cruise, not racing.
+  static const double highAltitudeSpeed = 25;
 
   /// Speed multiplier at low altitude
   static const double lowAltitudeSpeedMultiplier = 0.5;
 
-  /// Turn rate in radians per second
-  static const double turnRate = 2.5;
+  /// Turn rate in radians per second. Smooth, wide turns at cruise speed.
+  static const double turnRate = 0.8;
 
   /// Maximum bank angle for visual effect (radians, ~40 degrees).
   static const double _maxBankAngle = 0.7;
