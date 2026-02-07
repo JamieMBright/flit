@@ -11,6 +11,10 @@ import '../flit_game.dart';
 import 'camera_state.dart';
 import 'shader_manager.dart';
 
+/// Re-export PlaneComponent so imports from plane_component.dart resolve
+/// when callers import globe_renderer.dart.
+export '../components/plane_component.dart' show PlaneComponent;
+
 final _log = GameLog.instance;
 
 /// Flame component that renders the globe using the GPU fragment shader.
@@ -156,7 +160,3 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
     _lastSize = Size(size.x, size.y);
   }
 }
-
-/// Re-export PlaneComponent so imports from plane_component.dart resolve
-/// when callers import globe_renderer.dart.
-export '../components/plane_component.dart' show PlaneComponent;
