@@ -133,8 +133,8 @@ void main() {
       // lat=0, lng=0 should map to the positive X axis.
       const lat = 0.0;
       const lng = 0.0;
-      final latRad = lat * pi / 180.0;
-      final lngRad = lng * pi / 180.0;
+      const latRad = lat * pi / 180.0;
+      const lngRad = lng * pi / 180.0;
 
       final x = cos(latRad) * cos(lngRad);
       final y = sin(latRad);
@@ -148,8 +148,8 @@ void main() {
     test('north pole maps to (0, 1, 0) on unit sphere', () {
       const lat = 90.0;
       const lng = 0.0;
-      final latRad = lat * pi / 180.0;
-      final lngRad = lng * pi / 180.0;
+      const latRad = lat * pi / 180.0;
+      const lngRad = lng * pi / 180.0;
 
       final x = cos(latRad) * cos(lngRad);
       final y = sin(latRad);
@@ -163,8 +163,8 @@ void main() {
     test('lng=90 on equator maps to (0, 0, 1) on unit sphere', () {
       const lat = 0.0;
       const lng = 90.0;
-      final latRad = lat * pi / 180.0;
-      final lngRad = lng * pi / 180.0;
+      const latRad = lat * pi / 180.0;
+      const lngRad = lng * pi / 180.0;
 
       final x = cos(latRad) * cos(lngRad);
       final y = sin(latRad);
