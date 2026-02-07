@@ -1,630 +1,825 @@
-# SPRINTS.md - Flit Development Roadmap
+# SPRINTS.md - Flit Visual Redesign & Runtime Telemetry
 
-## Testing Strategy (iOS + Open Source)
+## Vision
+
+Transform Flit from 2D Canvas vector art into a GPU-rendered globe with satellite textures,
+physical ocean, atmospheric scattering, volumetric clouds, and coastline foam — matching the
+visual quality of Sebastian Lague's Geographical Adventures while staying 100% in Flutter.
+
+**Reference:** [Geographical Adventures](https://sebastian.itch.io/geographical-adventures)
+
+### Architecture Shift
+
+| Aspect | Before | After |
+|--------|--------|-------|
+| Rendering | Flame Canvas 2D paths | Fragment shader raymarched globe |
+| Terrain | Flat colored polygons | Satellite texture (NASA Blue Marble) |
+| Ocean | Radial gradient fill | Shader: waves, specular, fresnel, depth tint |
+| Coastlines | MaskFilter blur glow | Shore distance field + animated foam rings |
+| Atmosphere | Radial gradient halo | Analytical Rayleigh approximation + rim glow |
+| Clouds | None | Procedural noise layer / SDF sphere clusters |
+| Sky | Solid color fill | Gradient with analytical scattering |
+| Plane | Canvas Bezier paths | Canvas overlay (kept — stylistic contrast) |
+| Country data | Canvas polygon fill | Shader-side texture; polygons retained for hit-testing |
+| Error handling | Console logs | Runtime telemetry to Vercel + on-screen dev mode |
+
+### Key Constraints
+
+- **Cross-platform**: iOS, Android, Web — one shader, all platforms
+- **Fragment shaders only**: Flutter's `FragmentProgram` (no vertex/compute shaders)
+- **Max 4 samplers per pass**: may need multi-pass for all textures
+- **Open-license assets only**: NASA Blue Marble, ETOPO, Natural Earth
+- **Performance budget**: 60fps sustained, < 50MB total asset bundle
+
+---
+
+## Testing Strategy
 
 ### Primary: Flutter Web → PWA on iOS
 - Deploy web build to **GitHub Pages** (free)
-- Install as PWA on iOS home screen (Add to Home Screen)
-- Near-native experience, instant updates, no App Store
+- Install as PWA on iOS home screen
+- Near-native experience, instant updates
 
 ### Secondary: Native iOS via TestFlight
-- Requires Apple Developer account ($99/year) - only when ready for beta
-- Use **Codemagic** free tier (500 build mins/month) for iOS builds
+- Apple Developer account ($99/year) when ready for beta
+- Codemagic free tier for iOS builds
+
+### CI/CD Pipeline
+```
+Push → Lint → Test → Build (Web/Android) → Deploy Web to GitHub Pages
+                                          → Deploy Android to Firebase App Distribution
+```
 
 ### Local Development
 ```bash
-# Web (test in any browser, including iOS Safari)
-flutter run -d chrome
-
-# iOS Simulator (Mac only)
-flutter run -d ios
-
-# Android Emulator
-flutter run -d android
-```
-
-### CI/CD Pipeline (GitHub Actions - Free)
-```
-Push → Build (Web/Android) → Test → Deploy Web to GitHub Pages
-                                  → Deploy Android to Firebase App Distribution (free)
+flutter run -d chrome        # Web
+flutter run -d ios            # iOS Simulator (Mac only)
+flutter run -d android        # Android Emulator
 ```
 
 ---
 
 ## Sprint Overview
 
-| Sprint | Focus | Duration | Parallel Agents |
-|--------|-------|----------|-----------------|
-| 0 | Infrastructure | 1 day | 4 |
-| 1 | Core Flight | 2 days | 3 |
-| 2 | Map & Geography | 2 days | 4 |
-| 3 | Clues & Landing | 2 days | 3 |
-| 4 | Solo Mode | 1 day | 3 |
-| 5 | Backend & Auth | 2 days | 4 |
-| 6 | Leaderboards | 1 day | 2 |
-| 7 | Friends & H2H | 2 days | 3 |
-| 8 | Challenges | 2 days | 3 |
-| 9 | Progression & Shop | 2 days | 3 |
-| 10 | Regional Maps | 2 days | 4 |
-| 11 | Audio & Polish | 2 days | 4 |
-| 12 | Launch Prep | 2 days | 3 |
+| Sprint | Focus | Est. Duration | Key Deliverable |
+|--------|-------|---------------|-----------------|
+| V0 | Runtime Telemetry & Error Pipeline | 1 day | Error logging to Vercel + dev overlay + GH Action |
+| V1 | Shader Foundation & Globe | 2 days | Raymarched sphere with satellite texture |
+| V2 | Ocean Shader | 2 days | Waves, specular, depth tinting, fresnel |
+| V3 | Coastline Foam | 1 day | Animated foam rings from shore distance field |
+| V4 | Atmosphere & Sky | 2 days | Analytical scattering, rim glow, sky gradient |
+| V5 | Clouds | 2 days | Procedural cloud layer with lighting |
+| V6 | Day/Night Cycle | 1 day | Sun rotation, city lights, stars |
+| V7 | Camera & Altitude | 1 day | Smooth zoom, altitude-based detail levels |
+| V8 | Plane Overlay Integration | 1 day | Canvas plane composited over shader globe |
+| V9 | Gameplay Reconnection | 2 days | Hit-testing, clues, HUD over new renderer |
+| V10 | Regional Maps in Shader | 2 days | US, UK, Caribbean, Ireland shader regions |
+| V11 | Performance & Polish | 2 days | Profiling, LOD, asset optimization |
+| V12 | Ship It | 1 day | Final QA, all platforms, launch |
 
 ---
 
-## Sprint 0: Infrastructure & Scaffold
+## Sprint V0: Runtime Telemetry & Error Pipeline
 
-**Goal:** Project builds and deploys on all platforms. CI/CD operational.
+**Goal:** Every runtime error, crash, and unhandled exception is captured, sent to a Vercel
+serverless endpoint, stored, and fetchable via GitHub Action into an error log in the repo.
+A dev-mode overlay displays critical errors on-screen for easy copy-paste debugging.
 
-### Parallel Tasks
+### Background-Appropriate Tasks
+> Tasks marked with `[BG]` can run as background agents.
 
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 0.1 | Flutter project scaffold with Flame | build-validator | None |
-| 0.2 | Folder structure per architecture | explore + implement | None |
-| 0.3 | GitHub Actions CI (lint, test, build) | build-validator | None |
-| 0.4 | GitHub Pages deployment workflow | build-validator | 0.1 |
+### Architecture
 
-### Sequential Tasks
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 0.5 | Verify web build on iOS Safari | platform-validator | 0.1, 0.4 |
-| 0.6 | Verify Android build | platform-validator | 0.1 |
+```
+Flutter App
+  │
+  ├─ ErrorService (singleton)
+  │   ├─ Captures: Zone errors, FlutterError, Platform errors
+  │   ├─ Formats: stack trace, device info, timestamp, session ID, app version
+  │   ├─ Queues locally (in-memory + optional Isar persistence)
+  │   └─ Sends POST to Vercel endpoint (batched, with retry + exponential backoff)
+  │
+  ├─ DevOverlay (debug/profile mode only)
+  │   ├─ Floating draggable error panel
+  │   ├─ Shows last N critical errors with stack traces
+  │   ├─ Tap-to-copy full error text
+  │   └─ Hidden in release builds (kReleaseMode gate)
+  │
+  └─ Vercel Serverless Function
+      ├─ POST /api/errors → validates, stores in Vercel KV or JSON blob
+      ├─ GET /api/errors?since=<ISO>&limit=<N> → returns recent errors
+      └─ Auth: simple API key in header (not user-facing)
 
-### Definition of Done
-- [ ] `flutter build web` succeeds
-- [ ] `flutter build apk` succeeds
-- [ ] GitHub Actions green on push
-- [ ] Web deployed to GitHub Pages
-- [ ] PWA installable on iOS
-
-### Ship Checklist
-```bash
-npm run lint && npm run test:unit && npm run build
-git push origin main
-# Verify: https://<username>.github.io/flit loads on iOS Safari
+GitHub Action (scheduled or manual)
+  ├─ Fetches GET /api/errors?since=<last_fetch>
+  ├─ Appends to logs/runtime-errors.jsonl in repo
+  └─ Commits + pushes if new errors exist
 ```
 
----
+### Tasks
 
-## Sprint 1: Core Flight Mechanics
+| Task ID | Task | Agent | Parallel? | BG? |
+|---------|------|-------|-----------|-----|
+| V0.1 | Create Vercel project + serverless function `/api/errors` (POST + GET) | implement | Yes | [BG] |
+| V0.2 | Create `ErrorService` singleton in `lib/core/services/error_service.dart` | implement | Yes | |
+| V0.3 | Create `DevOverlay` widget in `lib/core/services/dev_overlay.dart` | implement | Yes | |
+| V0.4 | Wire `ErrorService` into app entrypoint (`runZonedGuarded`, `FlutterError.onError`) | implement | No (after V0.2) | |
+| V0.5 | Wire `DevOverlay` into app widget tree (debug/profile only) | implement | No (after V0.3) | |
+| V0.6 | Create GitHub Action `.github/workflows/fetch-errors.yml` | implement | Yes | [BG] |
+| V0.7 | Create `logs/` directory with `.gitkeep` and initial `runtime-errors.jsonl` | implement | Yes | [BG] |
+| V0.8 | Add `VERCEL_ERRORS_API_KEY` to GitHub Secrets documentation | implement | Yes | [BG] |
+| V0.9 | Integration test: trigger test error → verify round-trip to Vercel → fetch via GH Action | test-runner | No (after all) | |
 
-**Goal:** Plane flies, steers, wraps around screen edges. Two altitudes work.
-
-### Parallel Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 1.1 | Plane sprite component (bi-plane, tilt animation) | implement | 0.1 |
-| 1.2 | Input handling (swipe L/R, arrow keys) | implement | 0.1 |
-| 1.3 | Contrail particle system | implement | 0.1 |
-
-### Sequential Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 1.4 | Flight physics (constant speed, steering) | implement | 1.1, 1.2 |
-| 1.5 | Altitude toggle (high/low) with speed change | implement | 1.4 |
-| 1.6 | Screen wrap-around (Mercator style) | implement | 1.4 |
-| 1.7 | Camera follow | implement | 1.4 |
-
-### Definition of Done
-- [ ] Plane renders and animates tilt on turn
-- [ ] Contrails emit from wingtips
-- [ ] Swipe/arrow input steers plane
-- [ ] Altitude toggle changes speed
-- [ ] Plane wraps at screen edges
-- [ ] 60fps on web, iOS Safari, Android
-
-### Ship Checklist
-```bash
-npm run test:unit -- --coverage
-npm run test:integration:web
-npm run test:integration:ios
-npm run lint
-git push origin main
-# Manual: Test flight controls on iOS PWA
+### Error Payload Schema
+```json
+{
+  "timestamp": "2026-02-07T12:00:00.000Z",
+  "sessionId": "uuid-v4",
+  "appVersion": "1.0.0+42",
+  "platform": "web|ios|android",
+  "deviceInfo": "iPhone 15 / iOS 18.2 / Safari",
+  "severity": "critical|error|warning",
+  "error": "RangeError: index out of bounds",
+  "stackTrace": "...",
+  "context": {
+    "screen": "PlayScreen",
+    "gameState": "in_flight",
+    "lastAction": "altitude_toggle"
+  }
+}
 ```
 
----
-
-## Sprint 2: Map & Geography
-
-**Goal:** Stylized world map renders. Countries visible at high altitude. Cities at low.
-
-### Parallel Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 2.1 | Download & process Natural Earth countries | geo-data-validator | None |
-| 2.2 | Download & process major cities (GeoNames) | geo-data-validator | None |
-| 2.3 | Color palette system (2-3 color low-fi) | implement | None |
-| 2.4 | Map renderer component (vector polygons) | implement | 1.6 |
-
-### Sequential Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 2.5 | High altitude layer (country outlines only) | implement | 2.1, 2.4 |
-| 2.6 | Low altitude layer (cities, landmarks) | implement | 2.2, 2.4 |
-| 2.7 | Altitude-based layer switching | implement | 2.5, 2.6, 1.5 |
-| 2.8 | Map culling for performance | performance-profiler | 2.7 |
+### DevOverlay Behavior
+- **Debug/Profile mode only** — `kReleaseMode` gate, zero overhead in release
+- Floating semi-transparent panel, draggable to any screen edge
+- Shows last 5 errors with severity badge (red=critical, orange=error, yellow=warning)
+- Tap error → expands to full stack trace
+- Long-press → copies full error JSON to clipboard
+- Shake device or triple-tap to toggle visibility
+- Persists across screen navigation (overlay above Navigator)
 
 ### Definition of Done
-- [ ] World map renders with low-fi aesthetic
-- [ ] Country boundaries visible at high altitude
-- [ ] Cities/labels visible at low altitude
-- [ ] Smooth transition between altitude layers
-- [ ] No frame drops when panning
-- [ ] Bundle size < 5MB (compressed geo data)
+- [ ] Vercel function accepts POST, returns GET with filtering
+- [ ] `ErrorService` captures all unhandled Flutter/Zone/platform errors
+- [ ] Errors POST to Vercel with retry (3 attempts, exponential backoff)
+- [ ] `DevOverlay` shows errors in debug mode with copy functionality
+- [ ] GitHub Action fetches and commits error logs
+- [ ] Release builds have zero telemetry overhead (tree-shaken)
+- [ ] Works on iOS, Android, AND Web
 
-### Ship Checklist
-```bash
-npm run test:unit
-npm run test:integration:web
-npm run test:integration:ios
-npm run test:performance
-npm run lint
-git push origin main
-# Manual: Fly around world on iOS, verify both altitudes
+---
+
+## Sprint V1: Shader Foundation & Globe
+
+**Goal:** Replace the Canvas-based `WorldMap` with a fragment shader that raymarches a textured
+sphere. The globe should display satellite imagery and respond to camera position/rotation.
+
+### Architecture
+
+```
+FlitGame (Flame)
+  │
+  ├─ GlobeRenderer (new component, replaces WorldMap)
+  │   ├─ CustomPainter + FragmentProgram
+  │   ├─ Uniforms: cameraPos, cameraTarget, sunDir, time, altitude
+  │   ├─ Samplers: satelliteTexture (Blue Marble), heightmap
+  │   └─ Output: raymarched sphere with equirectangular texture mapping
+  │
+  ├─ ShaderManager (new singleton)
+  │   ├─ Loads + caches FragmentProgram instances
+  │   ├─ Manages uniform buffers
+  │   └─ Handles shader hot-reload in debug mode
+  │
+  └─ PlaneComponent (unchanged — Canvas overlay on top)
 ```
 
----
-
-## Sprint 3: Clues & Landing Detection
-
-**Goal:** Clues display. Player can land at target. Detection works.
-
-### Parallel Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 3.1 | Clue UI component (top corner overlay) | implement | None |
-| 3.2 | Flag assets (SVG, all countries) | geo-data-validator | None |
-| 3.3 | Country outline silhouette generator | implement | 2.1 |
-
-### Sequential Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 3.4 | Clue types: flag, outline, borders, capital | implement | 3.1, 3.2, 3.3 |
-| 3.5 | Clue type: stats (population, religion, etc.) | implement | 3.1 |
-| 3.6 | Target zone definition | implement | 2.1 |
-| 3.7 | Landing detection (low altitude + proximity) | implement | 3.6, 1.5 |
-| 3.8 | Success/failure feedback | implement | 3.7 |
-
-### Definition of Done
-- [ ] All 5 clue types render correctly
-- [ ] Clue appears after reaching altitude
-- [ ] Target zone defined per challenge
-- [ ] Landing detection triggers at low altitude over target
-- [ ] Visual/audio feedback on land
-- [ ] Works identically on all platforms
-
-### Ship Checklist
-```bash
-npm run test:unit
-npm run test:integration:web
-npm run test:integration:ios
-npm run test:integration:android
-npm run lint
-git push origin main
-# Manual: Complete a full clue→fly→land loop on iOS
+### Shader Pipeline (globe.frag)
+```
+Per pixel:
+1. Compute ray from camera through pixel (perspective projection)
+2. Ray-sphere intersection test (analytical, not iterative)
+3. At hit point: compute equirectangular UV from spherical coords
+4. Sample satellite texture at UV
+5. Compute diffuse lighting: dot(normal, sunDirection)
+6. Apply simple height-based shading from heightmap
+7. Miss: output sky color (placeholder, replaced in V4)
 ```
 
----
+### Tasks
 
-## Sprint 4: Solo Mode
+| Task ID | Task | Agent | Parallel? | BG? |
+|---------|------|-------|-----------|-----|
+| V1.1 | Download + process NASA Blue Marble imagery (2048x1024 web-safe) | geo-data-validator | Yes | [BG] |
+| V1.2 | Download + process ETOPO heightmap (2048x1024) | geo-data-validator | Yes | [BG] |
+| V1.3 | Write `shaders/globe.frag` — ray-sphere intersection + equirectangular UV + texture sampling | implement | Yes | |
+| V1.4 | Write `lib/game/rendering/shader_manager.dart` — load/cache FragmentProgram | implement | Yes | |
+| V1.5 | Write `lib/game/rendering/globe_renderer.dart` — CustomPainter with shader | implement | No (after V1.3, V1.4) | |
+| V1.6 | Integrate `GlobeRenderer` into `FlitGame` replacing `WorldMap` render calls | implement | No (after V1.5) | |
+| V1.7 | Add diffuse lighting uniform (sun direction) | implement | No (after V1.6) | |
+| V1.8 | Add heightmap sampling for terrain relief shading | implement | No (after V1.7) | |
+| V1.9 | Camera-to-uniform pipeline: map game camera state → shader uniforms | implement | No (after V1.6) | |
+| V1.10 | Cross-platform shader compilation verification (SPIR-V for mobile, GLSL ES for web) | platform-validator | No (after V1.6) | |
+| V1.11 | Performance baseline: measure FPS with shader globe on all platforms | performance-profiler | No (after V1.10) | |
 
-**Goal:** Playable solo mode with local scoring. Random challenges.
+### Asset Pipeline
+```
+Source: NASA Blue Marble (public domain)
+  → Download highest available equirectangular projection
+  → Resize to 2048x1024 (or 4096x2048 if budget allows)
+  → Convert to PNG (lossless for shader sampling)
+  → Place in assets/textures/blue_marble.png
 
-### Parallel Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 4.1 | Random spawn location generator | implement | 2.1 |
-| 4.2 | Random target selection | implement | 2.1 |
-| 4.3 | Timer UI component | implement | None |
-
-### Sequential Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 4.4 | Solo game flow (spawn → clue → fly → land) | implement | 4.1, 4.2, 3.7 |
-| 4.5 | Scoring (time-based) | implement | 4.4, 4.3 |
-| 4.6 | Local high score storage (Isar) | implement | 4.5 |
-| 4.7 | Results screen | implement | 4.5 |
-
-### Definition of Done
-- [ ] Can play complete solo round
-- [ ] Random start/target each game
-- [ ] Timer tracks flight time
-- [ ] Score saved locally
-- [ ] Results screen shows time
-- [ ] Can play offline
-
-### Ship Checklist
-```bash
-npm run test:unit
-npm run test:integration:web
-npm run test:integration:ios
-npm run lint
-git push origin main
-# Manual: Play 5 solo rounds on iOS PWA (airplane mode)
+Source: ETOPO1 (public domain)
+  → Download global heightmap
+  → Normalize to 0-255 grayscale (0=deepest ocean, 255=highest peak)
+  → Resize to 2048x1024
+  → Convert to PNG
+  → Place in assets/textures/heightmap.png
 ```
 
----
-
-## Sprint 5: Backend & Auth
-
-**Goal:** Supabase integrated. Users can sign up, log in, sync data.
-
-### Parallel Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 5.1 | Supabase project setup | implement | None |
-| 5.2 | Auth UI (sign up, log in, guest mode) | implement | None |
-| 5.3 | Player profile schema (Supabase) | implement | 5.1 |
-| 5.4 | Offline sync queue (Isar) | implement | 4.6 |
-
-### Sequential Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 5.5 | Auth flow integration | implement | 5.1, 5.2 |
-| 5.6 | Profile CRUD operations | implement | 5.3, 5.5 |
-| 5.7 | Sync service (offline → online) | implement | 5.4, 5.6 |
-| 5.8 | Security audit | security-auditor | 5.5, 5.6, 5.7 |
-
-### Definition of Done
-- [ ] User can sign up / log in / play as guest
-- [ ] Profile stored in Supabase
-- [ ] Solo scores sync when online
-- [ ] Offline play queues for sync
-- [ ] No security vulnerabilities
-- [ ] Auth works on all platforms
-
-### Ship Checklist
-```bash
-npm run test:unit
-npm run test:security
-npm run test:integration:web
-npm run test:integration:ios
-npm run lint
-git push origin main
-# Manual: Sign up on web, log in on iOS, verify profile syncs
+### Shader Uniform Contract
+```glsl
+// globe.frag uniforms
+uniform vec2 uResolution;     // viewport size in pixels
+uniform vec3 uCameraPos;      // camera position in world space
+uniform vec3 uCameraTarget;   // what camera looks at (globe center)
+uniform vec3 uSunDir;         // normalized sun direction
+uniform float uTime;          // elapsed time in seconds
+uniform float uGlobeRadius;   // globe radius in world units
+uniform sampler2D uSatellite; // Blue Marble texture
+uniform sampler2D uHeightmap; // ETOPO heightmap
 ```
 
+### Definition of Done
+- [ ] Fragment shader compiles on iOS (Metal/SPIR-V), Android (Vulkan/GLES), Web (WebGL)
+- [ ] Globe renders with satellite texture, visually recognizable continents
+- [ ] Camera position maps correctly from game state to shader uniforms
+- [ ] Diffuse lighting produces visible day/shadow
+- [ ] Heightmap modulates shading (mountains slightly brighter on sun side)
+- [ ] 60fps on mid-range devices (iPhone 12, Pixel 6, Chrome desktop)
+- [ ] Old `WorldMap` Canvas code preserved in `lib/game/map/world_map_legacy.dart` (fallback)
+- [ ] Assets total < 15MB compressed
+
 ---
 
-## Sprint 6: Leaderboards
+## Sprint V2: Ocean Shader
 
-**Goal:** Global leaderboards. Daily/weekly/monthly/yearly/all-time.
+**Goal:** Ocean areas render with depth-based color, animated wave normals, specular sun
+reflection, and fresnel rim brightening. Visually distinct from land.
 
-### Parallel Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 6.1 | Leaderboard schema (Supabase) | implement | 5.1 |
-| 6.2 | Leaderboard UI component | implement | None |
-
-### Sequential Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 6.3 | Score submission to leaderboard | implement | 6.1, 4.5 |
-| 6.4 | Time-windowed queries (day/week/month/year/all) | implement | 6.1 |
-| 6.5 | Leaderboard screen with filters | implement | 6.2, 6.4 |
-| 6.6 | Daily challenge (fixed seed per day) | implement | 4.4 |
-
-### Definition of Done
-- [ ] Scores appear on global leaderboard
-- [ ] Can filter by time window
-- [ ] Daily challenge uses same seed for everyone
-- [ ] Player rank visible
-- [ ] Leaderboard loads fast (<500ms)
-
-### Ship Checklist
-```bash
-npm run test:unit
-npm run test:integration:web
-npm run test:integration:ios
-npm run test:performance
-npm run lint
-git push origin main
-# Manual: Complete daily challenge, verify on leaderboard
+### Shader Enhancement (globe.frag additions)
+```
+After texture sampling:
+1. Check heightmap: if height < sea_level threshold → ocean pixel
+2. Ocean color: lerp(deepBlue, shallowTurquoise, depth)
+3. Wave normals: perturb surface normal using sin() waves + time
+4. Specular: compute sun reflection highlight (Blinn-Phong or Gaussian)
+5. Fresnel: brighten at glancing angles (pow(1-dot(view, normal), 5))
+6. Ripple: subtle brightening based on perturbed normal · view
 ```
 
----
+### Tasks
 
-## Sprint 7: Friends & Head-to-Head
+| Task ID | Task | Agent | Parallel? | BG? |
+|---------|------|-------|-----------|-----|
+| V2.1 | Process bathymetry texture from ETOPO (ocean depth map, separate channel or texture) | geo-data-validator | Yes | [BG] |
+| V2.2 | Implement land/ocean masking in `globe.frag` using heightmap threshold | implement | Yes | |
+| V2.3 | Implement depth-based ocean coloring (deep navy → shallow turquoise) | implement | No (after V2.2) | |
+| V2.4 | Implement animated wave normal perturbation (multi-octave sin waves) | implement | No (after V2.3) | |
+| V2.5 | Implement specular sun reflection (Gaussian model: `exp(-angle²/smoothness²)`) | implement | No (after V2.4) | |
+| V2.6 | Implement fresnel rim effect on ocean | implement | No (after V2.5) | |
+| V2.7 | Tune ocean parameters: wave speed, scale, specular intensity, color ramp | implement | No (after V2.6) | |
+| V2.8 | Performance test: measure shader complexity impact on FPS | performance-profiler | No (after V2.7) | |
 
-**Goal:** Friends list. Lifetime H2H records tracked.
-
-### Parallel Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 7.1 | Friends schema (Supabase) | implement | 5.1 |
-| 7.2 | H2H records schema (Supabase) | implement | 5.1 |
-| 7.3 | Friends list UI | implement | None |
-
-### Sequential Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 7.4 | Add friend (by username/code) | implement | 7.1, 7.3 |
-| 7.5 | Friend request flow (send/accept/decline) | implement | 7.4 |
-| 7.6 | Friend profile view with H2H stats | implement | 7.2, 7.3 |
-| 7.7 | Realtime friend status (Supabase realtime) | implement | 7.1 |
-
-### Definition of Done
-- [ ] Can add friends by username
-- [ ] Friend requests work
-- [ ] H2H lifetime record displays
-- [ ] Friend list shows online status
-- [ ] Works across platforms
-
-### Ship Checklist
-```bash
-npm run test:unit
-npm run test:integration:web
-npm run test:integration:ios
-npm run lint
-git push origin main
-# Manual: Add friend on iOS, verify on web
+### Ocean Color Ramp
+```glsl
+// Depth-based ocean coloring
+vec3 deepOcean   = vec3(0.02, 0.05, 0.15);   // near-black blue
+vec3 midOcean    = vec3(0.05, 0.15, 0.35);   // dark blue
+vec3 shallowSea  = vec3(0.10, 0.35, 0.50);   // teal
+vec3 coastalWater = vec3(0.15, 0.50, 0.55);  // turquoise
 ```
 
+### Definition of Done
+- [ ] Ocean visually distinct from land (color, reflections, movement)
+- [ ] Waves animate smoothly, no strobing or aliasing
+- [ ] Sun specular highlight visible and moves with sun direction
+- [ ] Fresnel brightening at globe edges (ocean appears lighter at rim)
+- [ ] No hard seam between land and ocean
+- [ ] 60fps maintained on all platforms
+
 ---
 
-## Sprint 8: Challenge Mode
+## Sprint V3: Coastline Foam
 
-**Goal:** Async 1v1 challenges. Best of 5. Route replay.
+**Goal:** White animated foam rings emanate from every coastline, with organic noise breakup
+and solid white shore edges — the signature Geographical Adventures look.
 
-### Parallel Tasks
+### Pre-computation
+A **shore distance texture** must be generated offline (or at build time) from the heightmap.
+For each ocean pixel, encode its distance to the nearest land pixel. This is the input for
+the foam shader.
 
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 8.1 | Challenge schema (Supabase) | implement | 5.1 |
-| 8.2 | Round schema with seed | implement | 5.1 |
-| 8.3 | Route recording (path data) | implement | 1.4 |
+### Tasks
 
-### Sequential Tasks
+| Task ID | Task | Agent | Parallel? | BG? |
+|---------|------|-------|-----------|-----|
+| V3.1 | Generate shore distance texture from heightmap (Jump Flood or brute-force offline script) | implement | Yes | [BG] |
+| V3.2 | Add `uShoreDist` sampler to `globe.frag` | implement | No (after V3.1) | |
+| V3.3 | Implement solid white shore edge (smoothstep on distance < threshold) | implement | No (after V3.2) | |
+| V3.4 | Implement animated concentric foam rings (sin wave on distance + time) | implement | No (after V3.3) | |
+| V3.5 | Implement noise mask to break up foam regularity (procedural noise) | implement | No (after V3.4) | |
+| V3.6 | Implement distance-based fade (foam disappears far from shore) | implement | No (after V3.5) | |
+| V3.7 | Tune foam parameters: width, speed, frequency, noise scale | implement | No (after V3.6) | |
 
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 8.4 | Create challenge flow | implement | 8.1, 7.1 |
-| 8.5 | Seeded random (identical start/target) | implement | 8.2, 4.1, 4.2 |
-| 8.6 | Play challenge round | implement | 8.5, 4.4 |
-| 8.7 | Round completion + notification | implement | 8.6 |
-| 8.8 | Route replay on 2D map | implement | 8.3 |
-| 8.9 | Results screen with both routes | implement | 8.8 |
-| 8.10 | Coin rewards (winner/loser) | implement | 8.6 |
-| 8.11 | H2H record update | implement | 8.6, 7.2 |
+### Foam Algorithm (in shader)
+```glsl
+float foam(vec2 uv, float shoreDist, float time) {
+    float d = shoreDist / maxFoamDist;
 
-### Definition of Done
-- [ ] Can create and send challenge to friend
-- [ ] Both players get identical start/target
-- [ ] Best of 5 flow works
-- [ ] Routes recorded and replayed
-- [ ] Winner gets more coins than loser
-- [ ] H2H record updates
-- [ ] Push notifications work
+    // Solid white edge at immediate shore
+    float shoreEdge = smoothstep(0.02, 0.0, d);
 
-### Ship Checklist
-```bash
-npm run test:unit
-npm run test:integration:web
-npm run test:integration:ios
-npm run test:security
-npm run lint
-git push origin main
-# Manual: Complete full challenge with friend across devices
+    // Animated concentric rings
+    float rings = sin(d * frequency - time * speed + noise(uv) * d);
+    rings = smoothstep(foamWidth + blend, foamWidth, rings + 1.0);
+
+    // Noise mask for organic breakup
+    float mask = smoothstep(0.4, 0.5, noise(uv * maskScale + time * 0.02));
+    rings *= mask;
+
+    // Fade with distance
+    rings *= 1.0 - smoothstep(0.7, 1.0, d);
+
+    return clamp(rings + shoreEdge, 0.0, 1.0);
+}
 ```
 
+### Definition of Done
+- [ ] Shore distance texture generated and bundled (< 2MB)
+- [ ] White foam visible along all coastlines
+- [ ] Foam animates outward from shore with organic noise breakup
+- [ ] Solid white edge at immediate shoreline
+- [ ] Foam fades to zero in open ocean
+- [ ] No performance regression (still 60fps)
+- [ ] Visually matches Geographical Adventures coastline style
+
 ---
 
-## Sprint 9: Progression & Shop
+## Sprint V4: Atmosphere & Sky
 
-**Goal:** XP, levels, currency, cosmetics shop.
+**Goal:** Replace the solid background with a physically-inspired sky gradient and add
+atmospheric rim glow around the globe edge. Distant terrain subtly fades into blue haze.
 
-### Parallel Tasks
+### Approach
+Full Rayleigh/Mie scattering is too expensive for a single-pass fragment shader without
+compute shader LUTs. Instead, use an **analytical approximation** that captures the key
+visual characteristics:
+- Blue sky that shifts to orange/red near horizon
+- Bright rim glow around the globe silhouette
+- Haze that desaturates distant terrain
 
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 9.1 | XP/Level system design | implement | None |
-| 9.2 | Currency schema (Supabase) | implement | 5.1 |
-| 9.3 | Cosmetics catalog (planes, contrails) | implement | None |
+### Tasks
 
-### Sequential Tasks
+| Task ID | Task | Agent | Parallel? | BG? |
+|---------|------|-------|-----------|-----|
+| V4.1 | Implement sky gradient background in `globe.frag` (ray-miss path) | implement | Yes | |
+| V4.2 | Implement atmospheric rim glow at globe edge (fresnel on sphere silhouette) | implement | Yes | |
+| V4.3 | Implement analytical Rayleigh approximation for sky color | implement | No (after V4.1) | |
+| V4.4 | Implement aerial perspective haze on terrain (desaturate + lighten with view distance) | implement | No (after V4.3) | |
+| V4.5 | Implement sun disc in sky (bright spot + gaussian bloom) | implement | No (after V4.3) | |
+| V4.6 | Tune atmosphere parameters: density, color, falloff, haze intensity | implement | No (after V4.5) | |
+| V4.7 | Performance test atmosphere shader complexity | performance-profiler | No (after V4.6) | |
 
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 9.4 | XP gain on game completion | implement | 9.1, 4.5 |
-| 9.5 | Level up flow + rewards | implement | 9.4 |
-| 9.6 | Currency earn (solo, challenge, daily) | implement | 9.2, 4.5, 8.10 |
-| 9.7 | Shop UI | implement | 9.3 |
-| 9.8 | Purchase flow (currency → cosmetic) | implement | 9.7, 9.6 |
-| 9.9 | Cosmetic equip + display in game | implement | 9.8, 1.1 |
-| 9.10 | IAP integration (optional currency purchase) | implement | 9.6 |
+### Analytical Atmosphere Model
+```glsl
+// Simplified scattering approximation
+vec3 atmosphere(vec3 rayDir, vec3 sunDir) {
+    float sunDot = max(dot(rayDir, sunDir), 0.0);
 
-### Definition of Done
-- [ ] XP earned on every game
-- [ ] Levels increase with XP
-- [ ] Currency earned and displayed
-- [ ] Shop shows available cosmetics
-- [ ] Can purchase and equip plane skins
-- [ ] Equipped cosmetics show in game
-- [ ] IAP works (iOS + Android)
+    // Rayleigh: blue scattered light, stronger perpendicular to sun
+    vec3 rayleigh = vec3(0.3, 0.5, 1.0) * (1.0 - 0.5 * sunDot * sunDot);
 
-### Ship Checklist
-```bash
-npm run test:unit
-npm run test:integration:web
-npm run test:integration:ios
-npm run test:integration:android
-npm run test:security
-npm run lint
-git push origin main
-# Manual: Earn coins, buy cosmetic, verify equipped
+    // Mie: forward scattering halo around sun
+    float mie = pow(sunDot, 32.0) * 0.5;
+
+    // Horizon brightening
+    float horizon = pow(1.0 - abs(rayDir.y), 4.0);
+    vec3 horizonColor = mix(vec3(0.4, 0.6, 1.0), vec3(1.0, 0.6, 0.3), sunDot);
+
+    return rayleigh + mie + horizon * horizonColor;
+}
 ```
 
+### Definition of Done
+- [ ] Sky gradient replaces solid background
+- [ ] Globe has visible atmospheric rim glow
+- [ ] Distant terrain fades slightly into blue haze
+- [ ] Sun disc visible in sky with bloom effect
+- [ ] Sky color shifts towards warm tones near sun
+- [ ] 60fps maintained
+
 ---
 
-## Sprint 10: Regional Maps
+## Sprint V5: Clouds
 
-**Goal:** Alternative maps: US states, UK counties, Caribbean, Ireland.
+**Goal:** Add a procedural cloud layer above the globe surface. Clouds should look puffy and
+volumetric, casting subtle shadows on terrain below.
 
-### Parallel Tasks
+### Approach
+Two options (decide during implementation based on performance):
 
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 10.1 | US states geo data | geo-data-validator | None |
-| 10.2 | UK counties geo data | geo-data-validator | None |
-| 10.3 | Caribbean islands geo data | geo-data-validator | None |
-| 10.4 | Ireland counties geo data | geo-data-validator | None |
+**Option A: Noise-based cloud shell**
+- Second sphere slightly larger than globe
+- Sample 3D noise at surface point for cloud density
+- Simple lighting: dot(normal, sunDir)
+- Fast, simple, good for mobile
 
-### Sequential Tasks
+**Option B: SDF sphere clusters**
+- Define cloud positions on globe as lat/lng clusters
+- Each cloud = union of overlapping SDF spheres
+- Raymarch through cloud volume
+- Looks puffier but more expensive
 
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 10.5 | Map selection UI | implement | None |
-| 10.6 | Map-specific clue data (capitals, stats) | implement | 10.1-10.4 |
-| 10.7 | Map loader (swap active map) | implement | 2.4, 10.1-10.4 |
-| 10.8 | Regional leaderboards | implement | 6.1, 10.5 |
-| 10.9 | Regional challenges | implement | 8.1, 10.5 |
+### Tasks
 
-### Definition of Done
-- [ ] Can select map from menu
-- [ ] All 4 regional maps playable
-- [ ] Clues appropriate per region
-- [ ] Separate leaderboards per map
-- [ ] Challenges can specify map
-- [ ] Performance maintained
+| Task ID | Task | Agent | Parallel? | BG? |
+|---------|------|-------|-----------|-----|
+| V5.1 | Implement cloud sphere intersection (second larger sphere) | implement | Yes | |
+| V5.2 | Implement procedural 3D noise for cloud density | implement | Yes | |
+| V5.3 | Implement cloud lighting (diffuse from sun direction) | implement | No (after V5.1, V5.2) | |
+| V5.4 | Implement cloud shadows on terrain (shadow ray test) | implement | No (after V5.3) | |
+| V5.5 | Implement cloud animation (slow UV drift with time) | implement | No (after V5.3) | |
+| V5.6 | [STRETCH] Implement SDF sphere-cluster clouds if performance allows | implement | No (after V5.5) | |
+| V5.7 | Tune cloud coverage, density, height, speed, shadow intensity | implement | No (after V5.5) | |
+| V5.8 | Performance test cloud layer impact | performance-profiler | No (after V5.7) | |
 
-### Ship Checklist
-```bash
-npm run test:unit
-npm run test:integration:web
-npm run test:integration:ios
-npm run test:performance
-npm run lint
-git push origin main
-# Manual: Play each regional map on iOS
+### Cloud Rendering (in shader)
+```glsl
+// After globe hit, before final color output:
+// Cast ray further to check cloud shell intersection
+float cloudHit = intersectSphere(ray, cloudRadius);
+if (cloudHit > 0.0) {
+    vec3 cloudPoint = rayOrigin + ray * cloudHit;
+    vec3 cloudNormal = normalize(cloudPoint);
+
+    // Sample noise for density
+    float density = fbm(cloudNormal * noiseScale + time * windSpeed);
+    density = smoothstep(coverageThreshold, coverageThreshold + 0.2, density);
+
+    // Light cloud
+    float cloudLight = max(dot(cloudNormal, sunDir), 0.0) * 0.7 + 0.3;
+    vec3 cloudColor = vec3(cloudLight);
+
+    // Blend over terrain
+    finalColor = mix(finalColor, cloudColor, density * cloudOpacity);
+}
 ```
 
+### Definition of Done
+- [ ] Clouds visible above globe surface
+- [ ] Clouds animate slowly (wind drift)
+- [ ] Clouds lit by sun direction (bright tops, darker undersides)
+- [ ] Clouds cast approximate shadows on terrain
+- [ ] Cloud coverage tunable (sparse to overcast)
+- [ ] 60fps on target devices (may need LOD for mobile)
+- [ ] Clouds render on all three platforms
+
 ---
 
-## Sprint 11: Audio & Polish
+## Sprint V6: Day/Night Cycle
 
-**Goal:** Lo-fi music, sound effects, animations polished.
+**Goal:** Sun rotates, creating a moving terminator line. Night side shows city lights and stars.
+Sunset/sunrise produces warm tones at the terminator.
 
-### Parallel Tasks
+### Tasks
 
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 11.1 | Lo-fi background music (royalty-free) | implement | None |
-| 11.2 | Sound effects (turn, altitude, land) | implement | None |
-| 11.3 | Menu transitions/animations | implement | None |
-| 11.4 | Loading states & skeletons | implement | None |
+| Task ID | Task | Agent | Parallel? | BG? |
+|---------|------|-------|-----------|-----|
+| V6.1 | Download + process NASA Earth at Night (city lights texture) | geo-data-validator | Yes | [BG] |
+| V6.2 | Implement sun direction rotation over time | implement | Yes | |
+| V6.3 | Implement day/night terrain blending at terminator | implement | No (after V6.2) | |
+| V6.4 | Implement city lights on night side (emissive texture) | implement | No (after V6.1, V6.3) | |
+| V6.5 | Implement star field behind globe (procedural or texture) | implement | Yes | |
+| V6.6 | Implement warm terminator glow (sunset colors at day/night boundary) | implement | No (after V6.3) | |
+| V6.7 | Implement night fresnel glow (atmospheric rim on dark side) | implement | No (after V6.6) | |
+| V6.8 | Tune cycle speed, terminator width, light intensity | implement | No (after V6.7) | |
 
-### Sequential Tasks
+### Day/Night Shader Logic
+```glsl
+// Terminator calculation
+float dayFactor = smoothstep(-0.1, 0.2, dot(surfaceNormal, sunDir));
 
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 11.5 | Audio manager (play, pause, volume) | implement | 11.1, 11.2 |
-| 11.6 | Audio settings UI | implement | 11.5 |
-| 11.7 | Haptic feedback (iOS/Android) | implement | None |
-| 11.8 | Animation polish pass | implement | 11.3 |
-| 11.9 | Performance profiling | performance-profiler | All |
-| 11.10 | Bug bash | test-runner | All |
+// Day terrain
+vec3 dayColor = satelliteColor * diffuseLight;
+
+// Night terrain
+float cityLight = texture(uCityLights, uv).r;
+vec3 nightColor = satelliteColor * 0.02 + cityLight * vec3(1.0, 0.8, 0.4);
+
+// Blend
+vec3 terrainColor = mix(nightColor, dayColor, dayFactor);
+
+// Warm terminator glow
+float terminatorGlow = exp(-abs(dot(surfaceNormal, sunDir)) * 10.0);
+terrainColor += terminatorGlow * vec3(1.0, 0.4, 0.1) * 0.15;
+```
+
+### Sampler Budget Check
+After this sprint, samplers in `globe.frag`:
+1. `uSatellite` — Blue Marble
+2. `uHeightmap` — ETOPO heightmap
+3. `uShoreDist` — shore distance field
+4. `uCityLights` — NASA Earth at Night
+
+**That's exactly 4 samplers** — the Flutter FragmentProgram limit. If we need more, we must:
+- Pack multiple maps into RGBA channels of fewer textures
+- Split into a multi-pass pipeline
+- Use procedural generation instead of textures
 
 ### Definition of Done
-- [ ] Music plays, can mute
-- [ ] Sound effects on all actions
-- [ ] Smooth menu transitions
-- [ ] Haptics on mobile
-- [ ] 60fps sustained
+- [ ] Sun visibly rotates (or player can be in different time zones)
+- [ ] Smooth terminator transition (no hard line)
+- [ ] City lights glow on night side
+- [ ] Stars visible behind globe on dark side
+- [ ] Warm glow at sunset terminator
+- [ ] 4-sampler budget respected
+- [ ] 60fps maintained
+
+---
+
+## Sprint V7: Camera & Altitude System
+
+**Goal:** Smooth camera transitions between altitudes. High altitude = zoomed-out overview,
+low altitude = close-up with more terrain detail. FOV shifts with speed.
+
+### Tasks
+
+| Task ID | Task | Agent | Parallel? | BG? |
+|---------|------|-------|-----------|-----|
+| V7.1 | Implement camera distance interpolation (high ↔ low altitude) | implement | Yes | |
+| V7.2 | Implement FOV shift with speed (narrow at slow, wide at fast) | implement | Yes | |
+| V7.3 | Implement smooth camera transitions (ease-out interpolation) | implement | No (after V7.1) | |
+| V7.4 | Map camera parameters to shader uniforms (cameraPos, target, FOV) | implement | No (after V7.3) | |
+| V7.5 | Implement altitude-based detail: show city labels at low altitude only | implement | No (after V7.4) | |
+| V7.6 | Implement mip-level hinting for textures at different altitudes | implement | No (after V7.4) | |
+
+### Camera-to-Shader Mapping
+```dart
+// In GlobeRenderer, each frame:
+final cameraDistance = lerpDouble(
+  highAltitudeDistance,  // e.g., 4.0 globe radii
+  lowAltitudeDistance,   // e.g., 1.5 globe radii
+  altitudeT,
+);
+final fov = lerpDouble(fovSlow, fovFast, speedT);
+
+shader.setFloat(0, cameraPos.x);  // computed from plane lat/lng + distance
+shader.setFloat(1, cameraPos.y);
+shader.setFloat(2, cameraPos.z);
+// ... etc
+```
+
+### Definition of Done
+- [ ] Altitude toggle smoothly zooms in/out
+- [ ] FOV widens with speed (subtle but noticeable)
+- [ ] Camera stays centered on plane's globe position
+- [ ] City labels/details appear only at low altitude
+- [ ] No judder or snap during transitions
+- [ ] 60fps during transitions
+
+---
+
+## Sprint V8: Plane Overlay Integration
+
+**Goal:** The existing Canvas-drawn `PlaneComponent` composites cleanly on top of the
+shader-rendered globe. Contrails render correctly over the globe surface.
+
+### Approach
+The plane stays as a **Canvas overlay** — its lo-fi hand-drawn style provides intentional
+stylistic contrast against the realistic globe (similar to how Wind Waker mixes toon
+characters with detailed environments).
+
+### Tasks
+
+| Task ID | Task | Agent | Parallel? | BG? |
+|---------|------|-------|-----------|-----|
+| V8.1 | Ensure `PlaneComponent` renders on a separate Canvas layer above shader | implement | Yes | |
+| V8.2 | Adjust plane shadow to project onto globe surface (parallax offset by altitude) | implement | No (after V8.1) | |
+| V8.3 | Update contrail particles to render over globe correctly | implement | No (after V8.1) | |
+| V8.4 | Implement contrail fade that respects globe curvature (older trail hidden by horizon) | implement | No (after V8.3) | |
+| V8.5 | Tune plane scale relative to new globe rendering | implement | No (after V8.1) | |
+| V8.6 | Test all 9 plane cosmetics render correctly over shader | platform-validator | No (after V8.5) | |
+
+### Definition of Done
+- [ ] Plane renders on top of globe with no z-fighting
+- [ ] Plane shadow offset correlates with altitude
+- [ ] Contrails visible and fade naturally behind horizon
+- [ ] All 9 plane skins work over new renderer
+- [ ] No visual glitches at plane/globe boundary
+
+---
+
+## Sprint V9: Gameplay Reconnection
+
+**Goal:** All gameplay systems (clues, hit-testing, HUD, scoring, sessions) work with the new
+shader-based renderer. The game is fully playable again.
+
+### Challenge
+Country hit-testing previously relied on Canvas polygon paths. The shader doesn't know about
+individual countries — it samples a satellite texture. We need to maintain the projection math
+for hit-testing while rendering via shader.
+
+### Tasks
+
+| Task ID | Task | Agent | Parallel? | BG? |
+|---------|------|-------|-----------|-----|
+| V9.1 | Retain `country_data.dart` polygon data for hit-testing (not rendering) | implement | Yes | |
+| V9.2 | Implement screen-point → globe-point unprojection (reverse of shader ray) | implement | Yes | |
+| V9.3 | Implement point-in-country-polygon test using retained polygon data | implement | No (after V9.1, V9.2) | |
+| V9.4 | Wire clue system to new renderer (display clue overlay) | implement | No (after V9.3) | |
+| V9.5 | Wire landing detection to new hit-test system | implement | No (after V9.3) | |
+| V9.6 | Wire HUD overlay (timer, altitude indicator, clue display) | implement | Yes | |
+| V9.7 | Wire game session management (start, play, score, end) | implement | No (after V9.5) | |
+| V9.8 | Full gameplay loop test: spawn → clue → fly → land → score | test-runner | No (after V9.7) | |
+| V9.9 | Test all game modes: solo, challenge, daily | test-runner | No (after V9.8) | |
+
+### Unprojection Math
+```dart
+// Screen point → ray → globe intersection → lat/lng
+Offset screenToGlobe(Offset screenPoint, CameraState camera) {
+  // 1. Screen → NDC
+  // 2. NDC → ray direction (inverse projection)
+  // 3. Ray-sphere intersection
+  // 4. Hit point → lat/lng
+  // Same math as shader but in Dart
+}
+```
+
+### Definition of Done
+- [ ] Tapping a country correctly identifies it
+- [ ] All clue types display correctly
+- [ ] Landing detection works at low altitude over target
+- [ ] Timer, score, altitude indicator all functional
+- [ ] Full solo game loop playable
+- [ ] Challenge mode playable
+- [ ] Daily challenge playable
+- [ ] No gameplay regression from old renderer
+
+---
+
+## Sprint V10: Regional Maps in Shader
+
+**Goal:** Regional maps (US States, UK Counties, Caribbean, Ireland) work with the shader
+renderer. Camera zooms to region, shader parameters adjust for regional view.
+
+### Tasks
+
+| Task ID | Task | Agent | Parallel? | BG? |
+|---------|------|-------|-----------|-----|
+| V10.1 | Implement camera preset positions for each region (lat/lng/zoom) | implement | Yes | |
+| V10.2 | Implement camera constraints to keep view within region bounds | implement | No (after V10.1) | |
+| V10.3 | Implement region-specific overlay borders (shader or Canvas) | implement | No (after V10.1) | |
+| V10.4 | Update hit-testing for regional subdivision polygons | implement | Yes | |
+| V10.5 | Test regional gameplay: fly within region, land on target subdivision | test-runner | No (after V10.4) | |
+| V10.6 | Test all 4 regions on all platforms | platform-validator | No (after V10.5) | |
+
+### Definition of Done
+- [ ] Camera smoothly transitions to regional view
+- [ ] Player can't fly outside region bounds (or wraps)
+- [ ] Regional borders visible
+- [ ] Hit-testing identifies correct subdivision (state/county/island)
+- [ ] All 4 regions playable on iOS, Android, Web
+
+---
+
+## Sprint V11: Performance & Polish
+
+**Goal:** Optimize shader complexity, asset sizes, and rendering pipeline for production
+performance. Visual polish pass on all effects.
+
+### Tasks
+
+| Task ID | Task | Agent | Parallel? | BG? |
+|---------|------|-------|-----------|-----|
+| V11.1 | Profile shader: identify hotspots per platform (GPU timing) | performance-profiler | Yes | |
+| V11.2 | Implement shader LOD: reduce iterations/samples when far from globe | implement | No (after V11.1) | |
+| V11.3 | Optimize texture sizes: test 1024 vs 2048 quality/performance tradeoff | performance-profiler | Yes | [BG] |
+| V11.4 | Implement texture channel packing (heightmap + shore dist in one RGBA) | implement | No (after V11.3) | |
+| V11.5 | Memory audit: ensure no texture leaks, proper disposal | performance-profiler | Yes | [BG] |
+| V11.6 | Visual polish: tune all shader parameters for cohesive look | implement | No (after V11.4) | |
+| V11.7 | Anti-aliasing: implement FXAA or smoothstep-based edge softening | implement | No (after V11.6) | |
+| V11.8 | Color banding: add dithering to prevent gradient stepping | implement | No (after V11.7) | |
+| V11.9 | Bundle size audit: verify total assets < 50MB | build-validator | No (after V11.8) | |
+| V11.10 | Final FPS verification on target devices | performance-profiler | No (after V11.9) | |
+
+### Definition of Done
+- [ ] 60fps sustained on: iPhone 12+, Pixel 6+, Chrome desktop, Safari
+- [ ] Total app bundle < 50MB
+- [ ] No memory leaks during extended play
+- [ ] All visual effects cohesive and polished
+- [ ] No color banding in gradients
+- [ ] No aliasing artifacts on sphere edges
+
+---
+
+## Sprint V12: Ship It
+
+**Goal:** Final QA, all platforms verified, production deployed.
+
+### Tasks
+
+| Task ID | Task | Agent | Parallel? | BG? |
+|---------|------|-------|-----------|-----|
+| V12.1 | Full gameplay regression test (all modes, all regions) | test-runner | Yes | |
+| V12.2 | Cross-platform visual comparison (screenshot diff) | platform-validator | Yes | |
+| V12.3 | Security audit of error telemetry endpoint | security-auditor | Yes | [BG] |
+| V12.4 | Production Vercel deployment for error endpoint | implement | Yes | [BG] |
+| V12.5 | Production web deployment (GitHub Pages) | build-validator | No (after V12.1) | |
+| V12.6 | App Store / Play Store submission prep | implement | No (after V12.1) | |
+| V12.7 | Smoke test all platforms in production | platform-validator | No (after V12.5) | |
+| V12.8 | Monitor error telemetry for 24h post-launch | implement | No (after V12.7) | |
+
+### Definition of Done
+- [ ] All game modes playable on all platforms
+- [ ] Visual quality matches target (Geographical Adventures aesthetic)
+- [ ] Error telemetry flowing to Vercel + GitHub logs
 - [ ] No P0/P1 bugs
-
-### Ship Checklist
-```bash
-npm run test:unit
-npm run test:integration:web
-npm run test:integration:ios
-npm run test:integration:android
-npm run test:performance
-npm run test:security
-npm run lint
-git push origin main
-# Manual: Full playthrough with audio on iOS
-```
-
----
-
-## Sprint 12: Launch Prep
-
-**Goal:** Production ready. App Store + Play Store + Web live.
-
-### Parallel Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 12.1 | App Store assets (screenshots, description) | implement | None |
-| 12.2 | Play Store assets | implement | None |
-| 12.3 | Privacy policy + ToS | implement | None |
-| 12.4 | Analytics integration (privacy-respecting) | implement | None |
-
-### Sequential Tasks
-
-| Task ID | Task | Agent Type | Dependencies |
-|---------|------|------------|--------------|
-| 12.5 | Production Supabase environment | implement | 5.1 |
-| 12.6 | App Store submission | build-validator | 12.1, 12.3 |
-| 12.7 | Play Store submission | build-validator | 12.2, 12.3 |
-| 12.8 | Production web deployment | build-validator | None |
-| 12.9 | Smoke test all platforms | platform-validator | 12.6, 12.7, 12.8 |
-| 12.10 | Launch! | - | 12.9 |
-
-### Definition of Done
-- [ ] App Store approved
-- [ ] Play Store approved
-- [ ] Web production live
-- [ ] Analytics working
-- [ ] No critical bugs
-- [ ] Monitoring in place
-
-### Ship Checklist
-```bash
-npm run test
-npm run test:security
-npm run test:deploy
-npm run lint
-# Submit to stores
-# Deploy web to production
-# Monitor for 24h
-```
+- [ ] Performance budgets met
+- [ ] Production deployed and accessible
 
 ---
 
 ## Parallel Execution Map
 
 ```
-Sprint 0: [0.1]──┬──[0.4]──[0.5]
-          [0.2]──┤         [0.6]
-          [0.3]──┘
+V0:  [V0.1]──┐   [V0.6]──┐
+     [V0.2]──┼─[V0.4]──┐ │
+     [V0.3]──┼─[V0.5]──┼─┼──[V0.9]
+     [V0.7]──┘         │ │
+     [V0.8]─────────────┘ │
+                           │
+V1:  [V1.1]──┐            │
+     [V1.2]──┤            │
+     [V1.3]──┼─[V1.5]──[V1.6]──[V1.7]──[V1.8]──[V1.9]──[V1.10]──[V1.11]
+     [V1.4]──┘
 
-Sprint 1: [1.1]──┬──[1.4]──[1.5]──[1.6]──[1.7]
-          [1.2]──┤
-          [1.3]──┘
+V2:  [V2.1]──┐
+     [V2.2]──┴─[V2.3]──[V2.4]──[V2.5]──[V2.6]──[V2.7]──[V2.8]
 
-Sprint 2: [2.1]──┬──[2.5]──┬──[2.7]──[2.8]
-          [2.2]──┼──[2.6]──┘
-          [2.3]──┤
-          [2.4]──┘
+V3:  [V3.1]──[V3.2]──[V3.3]──[V3.4]──[V3.5]──[V3.6]──[V3.7]
 
-(Continue pattern for all sprints...)
+V4:  [V4.1]──┐
+     [V4.2]──┴─[V4.3]──[V4.4]──[V4.5]──[V4.6]──[V4.7]
+
+V5:  [V5.1]──┐
+     [V5.2]──┴─[V5.3]──[V5.4]──[V5.5]──[V5.6]──[V5.7]──[V5.8]
+
+V6:  [V6.1]──┐
+     [V6.2]──┼─[V6.3]──[V6.4]──[V6.6]──[V6.7]──[V6.8]
+     [V6.5]──┘
+
+V7:  [V7.1]──┐
+     [V7.2]──┴─[V7.3]──[V7.4]──[V7.5]──[V7.6]
+
+V8:  [V8.1]──[V8.2]──[V8.3]──[V8.4]──[V8.5]──[V8.6]
+
+V9:  [V9.1]──┐
+     [V9.2]──┼─[V9.3]──[V9.4]──[V9.5]──[V9.7]──[V9.8]──[V9.9]
+     [V9.6]──┘
+
+V10: [V10.1]──[V10.2]──[V10.3]──[V10.5]──[V10.6]
+     [V10.4]──────────────────────┘
+
+V11: [V11.1]──[V11.2]──┐
+     [V11.3]────────────┼─[V11.4]──[V11.6]──[V11.7]──[V11.8]──[V11.9]──[V11.10]
+     [V11.5]────────────┘
+
+V12: [V12.1]──┐
+     [V12.2]──┼──[V12.5]──[V12.7]──[V12.8]
+     [V12.3]──┤
+     [V12.4]──┘──[V12.6]
 ```
+
+---
+
+## Asset Budget
+
+| Asset | Resolution | Format | Est. Size |
+|-------|-----------|--------|-----------|
+| NASA Blue Marble | 4096x2048 | PNG | ~12MB |
+| ETOPO Heightmap | 2048x1024 | PNG | ~4MB |
+| Shore Distance | 2048x1024 | PNG (single channel) | ~1MB |
+| NASA Earth at Night | 2048x1024 | PNG | ~5MB |
+| **Total** | | | **~22MB** |
+
+Channel-packed version (after V11.4):
+
+| Texture | R | G | B | A | Size |
+|---------|---|---|---|---|------|
+| `globe_pack_1.png` | Satellite R | Satellite G | Satellite B | Heightmap | ~14MB |
+| `globe_pack_2.png` | City Lights | Shore Dist | (unused) | (unused) | ~3MB |
+| **Total packed** | | | | | **~17MB** |
 
 ---
 
@@ -632,18 +827,23 @@ Sprint 2: [2.1]──┬──[2.5]──┬──[2.7]──[2.8]
 
 ```bash
 # Start sprint
-git checkout -b sprint-X-description
+git checkout -b sprint-VX-description
+
+# Shader development (hot reload)
+flutter run -d chrome --enable-experiment=native-assets
 
 # Run all pre-commit checks
-npm run lint && npm run test:unit && npm run test:security
+./scripts/test.sh && ./scripts/lint.sh
 
 # Build all platforms
-flutter build web && flutter build apk
+./scripts/build.sh
 
-# Deploy web to GitHub Pages
+# Deploy web
 git push origin main  # triggers GitHub Action
 
-# Test on iOS
-# Open https://<user>.github.io/flit in Safari
-# Tap Share → Add to Home Screen
+# Check error telemetry
+curl -H "X-API-Key: $VERCEL_KEY" https://flit-errors.vercel.app/api/errors?limit=10
+
+# Fetch errors into repo
+gh workflow run fetch-errors.yml
 ```

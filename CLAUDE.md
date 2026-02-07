@@ -18,13 +18,49 @@
 ## Project Identity
 
 ### Domain
-- **Game Development** - We are building an immersive game experience
-- **Geography-Based** - Leveraging open-source, open-license geographic data (OSM, Natural Earth, etc.)
+- **Game Development** - We are building an immersive geography flight game
+- **Geography-Based** - Leveraging open-source, open-license geographic data (OSM, Natural Earth, NASA, etc.)
+- **Reference Aesthetic** - [Geographical Adventures](https://sebastian.itch.io/geographical-adventures) by Sebastian Lague
 
 ### Aesthetic
-- **Low-Fi Visual Style** - Intentionally lo-fi, not low-effort
-- **Beauty Through Simplicity** - Every pixel serves the immersion
+- **Satellite-Textured Globe** - Real NASA imagery rendered via fragment shader
+- **Physical Ocean** - Animated waves, specular highlights, fresnel, coastline foam
+- **Atmospheric Scattering** - Sky gradients, rim glow, aerial haze
+- **Volumetric Clouds** - Procedural noise or SDF sphere clusters
+- **Lo-Fi Plane Overlay** - Hand-drawn Canvas plane contrasts against realistic globe
 - **Immersive Experience** - The app should feel like a world, not a tool
+
+---
+
+## Architecture Overview
+
+### Rendering Pipeline
+```
+Fragment Shader (globe.frag)          Canvas Overlay
+  │                                     │
+  ├─ Ray-sphere intersection            ├─ PlaneComponent (Bezier paths)
+  ├─ Satellite texture sampling         ├─ Contrail particles
+  ├─ Ocean: waves, specular, foam       ├─ City labels (low altitude)
+  ├─ Atmosphere: rim glow, haze         └─ HUD (timer, clues, score)
+  ├─ Clouds: procedural noise
+  ├─ Day/night: terminator, city lights
+  └─ Sky: analytical scattering
+```
+
+### Key Rendering Components
+- **`shaders/globe.frag`** - Main GLSL fragment shader (raymarched globe)
+- **`lib/game/rendering/globe_renderer.dart`** - CustomPainter + FragmentProgram host
+- **`lib/game/rendering/shader_manager.dart`** - Shader loading, caching, uniform management
+- **`lib/game/components/plane_component.dart`** - Canvas-drawn plane overlay (unchanged)
+- **`lib/game/map/country_data.dart`** - Polygon data retained for hit-testing only
+
+### Texture Samplers (4 max per shader pass)
+1. `uSatellite` — NASA Blue Marble (equirectangular satellite imagery)
+2. `uHeightmap` — ETOPO heightmap (terrain elevation + ocean depth)
+3. `uShoreDist` — Shore distance field (for coastline foam)
+4. `uCityLights` — NASA Earth at Night (city light emissions)
+
+If more textures needed → pack into RGBA channels or use multi-pass.
 
 ---
 
@@ -36,11 +72,37 @@
 - All UI must use **relative positioning only** - no absolute values
 - Test on all platforms before any merge
 
+### Shader Compatibility
+- **Fragment shaders** must compile on all three targets:
+  - iOS: Metal via SPIR-V transpilation
+  - Android: Vulkan/GLES via SPIR-V
+  - Web: WebGL (GLSL ES 1.0 compatible)
+- Use `FragmentProgram.fromAsset()` (stable since Flutter 3.7)
+- No vertex shaders, compute shaders, or storage buffers
+- Test shader compilation on all platforms before merge
+
 ### Performance
-- **Hyper-performant builds are mandatory**
-- Profile before and after changes
+- **60fps sustained** on mid-range devices (iPhone 12, Pixel 6, Chrome desktop)
+- Profile before and after shader changes
 - No frame drops, no jank, no memory leaks
-- Bundle size budgets must be respected
+- Total asset bundle < 50MB compressed
+- Shader complexity monitored per-platform (GPU timing)
+
+---
+
+## Runtime Error Telemetry
+
+### Architecture
+- **ErrorService** singleton captures all unhandled exceptions
+- Errors POST to Vercel serverless endpoint with retry + backoff
+- **DevOverlay** shows errors on-screen in debug/profile mode only
+- GitHub Action fetches error logs into `logs/runtime-errors.jsonl`
+- Zero overhead in release builds (tree-shaken)
+
+### DevOverlay Rules
+- Only in debug/profile builds (`kReleaseMode` gate)
+- Tap-to-copy for easy bug reporting
+- Never ship overlay to production
 
 ---
 
@@ -51,36 +113,42 @@ All tests must pass before commit. Run in this order:
 ### 1. Unit Tests
 ```bash
 # Run unit tests with coverage
-npm run test:unit -- --coverage
+flutter test --coverage
 ```
 
-### 2. Security Tests
+### 2. Shader Compilation Tests
+```bash
+# Verify shaders compile on all targets
+./scripts/test.sh shaders
+```
+
+### 3. Security Tests
 ```bash
 # Security audit and SAST
-npm run test:security
+./scripts/test.sh security
 ```
 
-### 3. Integration Tests
+### 4. Integration Tests
 ```bash
 # Must cover ALL platforms
-npm run test:integration:ios
-npm run test:integration:android
-npm run test:integration:web
+./scripts/test.sh integration
 ```
 
-### 4. Deployment Tests
+### 5. Deployment Tests
 ```bash
-# Simulate deployment to catch issues pre-push
-npm run test:deploy
+# Simulate deployment
+./scripts/test.sh deploy
 ```
 
 ### Pre-Commit Checklist
 - [ ] All unit tests pass
+- [ ] Shader compiles on iOS, Android, AND Web
 - [ ] Security scan clean
-- [ ] Integration tests pass on iOS, Android, AND Web
+- [ ] Integration tests pass on 2+ platforms
 - [ ] Deployment simulation successful
 - [ ] Linting passes with zero warnings
 - [ ] No platform-specific code without cross-platform equivalent
+- [ ] Error telemetry doesn't leak into release builds
 
 ---
 
@@ -89,18 +157,26 @@ npm run test:deploy
 ### Linting
 - Lint ALWAYS before commit
 - Zero warnings policy - warnings are errors
-- Use project ESLint/Prettier config
+- Use project flutter_lints config
 
 ```bash
-npm run lint
-npm run lint:fix
+./scripts/lint.sh            # Check linting
+dart format lib/ test/ --fix # Auto-fix formatting
+flutter analyze              # Static analysis
 ```
 
 ### Style
 - Prefer composition over inheritance
 - Small, focused functions
 - Descriptive naming over comments
-- Types everywhere (TypeScript strict mode)
+- Types everywhere (Dart strict mode)
+- Shader code: comment complex math, name magic numbers
+
+### Shader Code Style
+- All uniforms prefixed with `u` (e.g., `uSunDir`, `uTime`)
+- Helper functions at top of file, main rendering logic at bottom
+- Comment the visual purpose of each section, not the math itself
+- Group by rendering layer: terrain → ocean → foam → atmosphere → clouds → sky
 
 ---
 
@@ -111,6 +187,8 @@ npm run lint:fix
 - Deep exploration of codebase
 - Complex multi-step implementations
 - Cross-platform testing coordination
+- Shader debugging across platforms
+- Asset pipeline processing
 
 ### Agent Delegation Rules
 1. Check AGENTS.md for appropriate agent type
@@ -122,16 +200,20 @@ npm run lint:fix
 
 ## Geographic Data Sources (Open License)
 
-Approved data sources:
-- **OpenStreetMap (ODbL)** - Base map data
-- **Natural Earth (Public Domain)** - Country/region boundaries
-- **SRTM/ASTER (Public)** - Elevation data
-- **GeoNames (CC-BY)** - Place names
+### Approved Sources
+- **NASA Blue Marble (Public Domain)** - Satellite imagery texture
+- **NASA Earth at Night (Public Domain)** - City lights texture
+- **ETOPO1 / ETOPO2022 (Public Domain)** - Global heightmap + bathymetry
+- **Natural Earth (Public Domain)** - Country/region boundaries (hit-testing polygons)
+- **OpenStreetMap (ODbL)** - Supplementary map data
+- **SRTM/ASTER (Public)** - High-res elevation data
+- **GeoNames (CC-BY)** - Place names and city coordinates
 
-Never use:
+### Never Use
 - Google Maps data
-- Proprietary datasets
+- Proprietary satellite imagery
 - Scraped data without license verification
+- Mapbox, Apple Maps, or HERE data
 
 ---
 
@@ -146,6 +228,7 @@ flutter run -d android       # Run on Android emulator
 # Testing (run ALL before commit)
 ./scripts/test.sh            # All tests
 ./scripts/test.sh unit       # Unit only
+./scripts/test.sh shaders    # Shader compilation
 ./scripts/test.sh security   # Security audit
 ./scripts/test.sh integration # All platform builds
 
@@ -159,6 +242,10 @@ flutter run -d android       # Run on Android emulator
 ./scripts/lint.sh            # Check linting
 dart format lib/ test/ --fix # Auto-fix formatting
 flutter analyze              # Static analysis
+
+# Error Telemetry
+curl -H "X-API-Key: $KEY" https://flit-errors.vercel.app/api/errors?limit=10
+gh workflow run fetch-errors.yml
 ```
 
 ---
@@ -167,9 +254,10 @@ flutter analyze              # Static analysis
 
 1. Run full test suite: `./scripts/test.sh`
 2. Run linting: `./scripts/lint.sh`
-3. Verify cross-platform: integration tests for 2+ platforms
-4. Commit with descriptive message
-5. Push only after all checks pass
+3. Verify shader compiles on 2+ platforms
+4. Verify cross-platform: integration tests for 2+ platforms
+5. Commit with descriptive message
+6. Push only after all checks pass
 
 ---
 
@@ -195,9 +283,12 @@ Since Flutter isn't available in this environment, do these checks before commit
 1. **Syntax** - Verify all brackets, parentheses, semicolons balanced
 2. **Imports** - Check all import paths exist and are spelled correctly
 3. **File references** - Verify referenced files exist
-4. **Known patterns** - Avoid APIs that don't work on web (SystemChrome, etc.)
-5. **Lint rules** - Only use lint rules known to exist in flutter_lints
-6. **Dependencies** - Only add packages known to work on web
+4. **Shader syntax** - Verify GLSL syntax (matching braces, valid types, no undefined vars)
+5. **Known patterns** - Avoid APIs that don't work on web (SystemChrome, etc.)
+6. **Lint rules** - Only use lint rules known to exist in flutter_lints
+7. **Dependencies** - Only add packages known to work on web
+8. **Sampler count** - Never exceed 4 samplers per shader pass
+9. **Asset paths** - Verify all texture/shader asset paths in pubspec.yaml
 
 CI is the final gate, but minimize round-trips by being careful.
 
@@ -209,6 +300,9 @@ CI is the final gate, but minimize round-trips by being careful.
 - Never use absolute positioning in UI
 - Never add platform-specific code without cross-platform support
 - Never commit with linting warnings
-- Never use non-open-license geographic data
+- Never use non-open-license geographic data or satellite imagery
 - Never sacrifice performance for convenience
 - Never leave an agent task incomplete
+- Never exceed 4 texture samplers per shader pass without multi-pass strategy
+- Never ship DevOverlay or telemetry debug code in release builds
+- Never hardcode API keys in source (use environment variables)
