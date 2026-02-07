@@ -37,21 +37,23 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Visual heading set by the game (radians)
   double visualHeading = 0;
 
-  /// Base speed at high altitude (world units per second)
-  static const double highAltitudeSpeed = 200;
+  /// Base speed at high altitude (world units per second).
+  /// Calibrated so crossing Europe (~36°) takes ~10 seconds.
+  static const double highAltitudeSpeed = 36;
 
   /// Speed multiplier at low altitude
   static const double lowAltitudeSpeedMultiplier = 0.5;
 
-  /// Turn rate in radians per second
-  static const double turnRate = 2.5;
+  /// Turn rate in radians per second.
+  /// 4.0 allows a full circle in ~1.6s — tight enough for U-turns.
+  static const double turnRate = 4.0;
 
   /// Maximum bank angle for visual effect (radians, ~40 degrees).
   static const double _maxBankAngle = 0.7;
 
   /// How fast the turn decays when the player releases (per-second rate).
-  /// Higher = faster decay. 5.0 means ~0.2 seconds to coast to stop.
-  static const double _turnDecayRate = 5.0;
+  /// Higher = faster decay. 3.0 means ~0.3 seconds to coast to stop.
+  static const double _turnDecayRate = 3.0;
 
   /// Current visual bank angle (smoothed)
   double _currentBank = 0;
@@ -124,8 +126,9 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     canvas.save();
     canvas.translate(size.x / 2, size.y / 2);
 
-    // Rotate to face heading (adjusted so "up" on screen = forward)
-    canvas.rotate(visualHeading + pi / 2);
+    // Rotate to face heading. visualHeading = 0 means the plane faces
+    // forward (up on screen) which matches the nose drawn at -16 y.
+    canvas.rotate(visualHeading);
 
     // --- 3D banking perspective ---
     // cos(bank) foreshortens the horizontal axis; sin(bank) gives the
@@ -487,7 +490,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
       contrails.add(ContrailParticle(
         worldPosition: Vector2(lngF * _rad2deg, latF * _rad2deg),
         size: 0.6 + Random().nextDouble() * 0.4,
-        maxLife: 2.0,
+        maxLife: 6.0,
       ));
     }
   }
@@ -498,10 +501,10 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     _isDragging = true;
   }
 
-  /// Called when the player lifts their finger — plane goes straight.
+  /// Called when the player lifts their finger — plane coasts to straight.
+  /// Turn direction decays smoothly rather than snapping to zero.
   void releaseTurn() {
     _isDragging = false;
-    _turnDirection = 0;
   }
 
   void toggleAltitude() {

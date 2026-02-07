@@ -11,6 +11,7 @@ import '../core/services/game_settings.dart';
 import '../core/theme/flit_colors.dart';
 import '../core/utils/game_log.dart';
 import '../core/utils/web_error_bridge.dart';
+import 'components/city_label_overlay.dart';
 import 'components/contrail_renderer.dart';
 import 'map/world_map.dart';
 import 'rendering/globe_renderer.dart';
@@ -142,13 +143,82 @@ class FlitGame extends FlameGame
   Vector2 _cameraOffsetPosition = Vector2.zero();
 
   /// Project a world position (lng, lat) to screen coordinates.
-  /// Returns the plane screen position if no WorldMap is available.
+  /// Works with both Canvas (WorldMap) and shader (GlobeRenderer) renderers.
   Vector2 worldToScreen(Vector2 latLng) {
     if (_worldMap != null) {
       return _worldMap!.latLngToScreen(latLng, size);
     }
-    // Fallback: return projection center
+    // Shader mode: use 3D perspective projection matching globe.frag.
+    if (_shaderReady && _globeRenderer != null) {
+      final result = _projectWorldToScreen(latLng.x, latLng.y);
+      if (result != null) return result;
+    }
     return Vector2(size.x * projectionCenterX, size.y * projectionCenterY);
+  }
+
+  /// 3D perspective projection matching the shader's cameraRayDir().
+  /// Converts (lng, lat) degrees on the globe surface to screen coordinates.
+  Vector2? _projectWorldToScreen(double lngDeg, double latDeg) {
+    final camera = _globeRenderer!.camera;
+
+    // 3D position on unit-radius globe surface.
+    final latRad = latDeg * _deg2rad;
+    final lngRad = lngDeg * _deg2rad;
+    final px = cos(latRad) * cos(lngRad);
+    final py = sin(latRad);
+    final pz = cos(latRad) * sin(lngRad);
+
+    // Camera position from CameraState.
+    final cx = camera.cameraX;
+    final cy = camera.cameraY;
+    final cz = camera.cameraZ;
+
+    // Look-at construction (matches shader's cameraRayDir).
+    // Forward = normalize(target - cam) = normalize(-cam)
+    final fLen = sqrt(cx * cx + cy * cy + cz * cz);
+    if (fLen < 0.0001) return null;
+    final fx = -cx / fLen;
+    final fy = -cy / fLen;
+    final fz = -cz / fLen;
+
+    // Right = normalize(cross(forward, worldUp=(0,1,0)))
+    var rx = -fz; // fy*0 - fz*1 → -fz
+    const ry = 0.0; // fz*0 - fx*0 → 0
+    var rz = fx; // fx*1 - fy*0 → fx
+    final rLen = sqrt(rx * rx + rz * rz);
+    if (rLen < 0.0001) return null;
+    rx /= rLen;
+    rz /= rLen;
+
+    // Up = cross(right, forward)
+    final ux = ry * fz - rz * fy; // 0*fz - rz*fy
+    final uy = rz * fx - rx * fz; // rz*fx - rx*fz
+    final uz = rx * fy - ry * fx; // rx*fy - 0*fx
+
+    // Vector from camera to globe surface point.
+    final vx = px - cx;
+    final vy = py - cy;
+    final vz = pz - cz;
+
+    // Project onto camera axes.
+    final vForward = vx * fx + vy * fy + vz * fz;
+    if (vForward <= 0) return null; // Behind camera.
+
+    final vRight = vx * rx + vy * ry + vz * rz;
+    final vUp = vx * ux + vy * uy + vz * uz;
+
+    // Perspective divide (matches shader: uv = (fragCoord - 0.5*res) / res.y * halfFov)
+    final halfFov = tan(camera.fov / 2);
+    final ndcX = (vRight / vForward) / halfFov;
+    final ndcY = (vUp / vForward) / halfFov;
+
+    // Convert to screen coordinates.
+    // Shader maps: uv.x = (fragCoord.x - 0.5*resX) / resY
+    //              uv.y = (fragCoord.y - 0.5*resY) / resY
+    final screenX = ndcX * size.y + 0.5 * size.x;
+    final screenY = -ndcY * size.y + 0.5 * size.y;
+
+    return Vector2(screenX, screenY);
   }
 
   /// Where on screen the plane sprite is rendered (proportional).
@@ -216,6 +286,11 @@ class FlitGame extends FlameGame
 
       // Contrail overlay — renders on top of globe, before the plane.
       await add(ContrailRenderer());
+
+      // City label overlay — renders city names at low altitude.
+      // Works with both shader and canvas renderers (WorldMap renders its own
+      // cities at low altitude, so the overlay skips when WorldMap is active).
+      await add(CityLabelOverlay());
 
       _plane = PlaneComponent(
         onAltitudeChanged: (isHigh) {
@@ -484,7 +559,11 @@ class FlitGame extends FlameGame
       direction += 1;
     }
 
-    _plane.setTurnDirection(direction);
+    if (direction != 0) {
+      _plane.setTurnDirection(direction);
+    } else {
+      _plane.releaseTurn();
+    }
 
     if (event is RawKeyDownEvent) {
       if (event.logicalKey == LogicalKeyboardKey.space ||
