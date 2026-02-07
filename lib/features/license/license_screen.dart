@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
-import '../../data/models/avatar_config.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
@@ -393,7 +392,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
                   const SizedBox(height: 2),
                   Text(
                     rank,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: FlitColors.gold,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -888,7 +887,6 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
 
 class _AnimBuilder extends AnimatedWidget {
   const _AnimBuilder({
-    super.key,
     required Animation<double> animation,
     required this.builder,
   }) : super(listenable: animation);

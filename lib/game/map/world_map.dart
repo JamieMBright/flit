@@ -117,13 +117,13 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   void _renderGlobeDisc(Canvas canvas, Offset center, double radius) {
     // Ocean with radial gradient
     final oceanPaint = Paint()
-      ..shader = RadialGradient(
+      ..shader = const RadialGradient(
         colors: [
           FlitColors.oceanShallow,
           FlitColors.ocean,
           FlitColors.oceanDeep,
         ],
-        stops: const [0.0, 0.5, 1.0],
+        stops: [0.0, 0.5, 1.0],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
 
     canvas.drawCircle(center, radius, oceanPaint);

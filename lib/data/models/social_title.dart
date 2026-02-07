@@ -652,6 +652,6 @@ abstract class SocialTitleCatalog {
   /// the threshold). A [bestTimeSeconds] of 0 means no time has been
   /// recorded and no speed titles are earned.
   static List<SocialTitle> checkEarned(PlayerClueProgress progress) {
-    return PlayerTitles().earnedTitles(progress);
+    return const PlayerTitles().earnedTitles(progress);
   }
 }
