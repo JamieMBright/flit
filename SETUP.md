@@ -10,10 +10,10 @@ The shader expects 4 texture files. Download and place them in `assets/textures/
 
 | File | Source | License |
 |------|--------|---------|
-| `satellite.jpg` | [NASA Blue Marble](https://visibleearth.nasa.gov/collection/1484/blue-marble) | Public Domain |
-| `heightmap.jpg` | [ETOPO1](https://www.ncei.noaa.gov/products/etopo-global-relief-model) | Public Domain |
-| `shore_dist.png` | Generate from Natural Earth coastlines (or use a Euclidean distance transform) | Public Domain |
-| `city_lights.jpg` | [NASA Earth at Night](https://earthobservatory.nasa.gov/features/NightLights) | Public Domain |
+| `blue_marble.png` | [NASA Blue Marble](https://visibleearth.nasa.gov/collection/1484/blue-marble) | Public Domain |
+| `heightmap.png` | [ETOPO1](https://www.ncei.noaa.gov/products/etopo-global-relief-model) | Public Domain |
+| `shore_distance.png` | Generate from heightmap (Euclidean distance transform from coastline) | Public Domain |
+| `city_lights.png` | [NASA Earth at Night](https://earthobservatory.nasa.gov/features/NightLights) | Public Domain |
 
 All textures should be equirectangular projection. Recommended resolution: 2048x1024 or 4096x2048.
 
@@ -153,12 +153,30 @@ Flutter App                    Vercel                      GitHub
 
 ## 6. Checklist
 
-- [ ] Texture files placed in `assets/textures/`
-- [ ] Vercel project deployed
+**To run the app:**
+- [ ] Flutter SDK 3.16+ installed
+- [ ] `flutter create --platform=web,android,ios . --project-name=flit`
+- [ ] `flutter pub get`
+- [ ] `flutter run -d chrome` (basic Canvas 2D mode)
+
+**For full shader globe:**
+- [ ] `blue_marble.png` in `assets/textures/` (NASA, equirectangular, 2048x1024+)
+- [ ] `heightmap.png` in `assets/textures/` (ETOPO1, grayscale)
+- [ ] `shore_distance.png` in `assets/textures/` (generated from heightmap)
+- [ ] `city_lights.png` in `assets/textures/` (NASA Earth at Night)
+
+**For audio (see AUDIO.md):**
+- [ ] 6 engine sounds in `assets/audio/engines/` (OGG)
+- [ ] 6 SFX in `assets/audio/sfx/` (OGG)
+- [ ] 3 lo-fi tracks in `assets/audio/music/` (OGG)
+
+**For error telemetry (optional for now):**
+- [ ] Vercel project deployed (`vercel` from project root)
 - [ ] `VERCEL_ERRORS_API_KEY` set in Vercel env vars
 - [ ] `GITHUB_TOKEN` set in Vercel env vars (with `repo` scope)
 - [ ] `GITHUB_REPO` set in Vercel env vars
 - [ ] `VERCEL_ERRORS_API_KEY` set in GitHub Actions secrets
-- [ ] Health check returns 200: `curl https://your-project.vercel.app/api/health`
-- [ ] Test POST returns accepted: verify with curl
-- [ ] Flutter builds with `--dart-define` flags
+- [ ] Health check: `curl https://your-project.vercel.app/api/health`
+
+**For GitHub Pages deployment:**
+- [ ] GitHub repo > Settings > Pages > Source: "GitHub Actions"
