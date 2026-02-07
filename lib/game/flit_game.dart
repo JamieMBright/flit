@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/services/audio_manager.dart';
+import '../core/services/error_service.dart';
 import '../core/services/game_settings.dart';
 import '../core/theme/flit_colors.dart';
 import '../core/utils/game_log.dart';
@@ -225,9 +226,19 @@ class FlitGame extends FlameGame
       } catch (e, st) {
         _log.error('game', 'onGameReady callback failed',
             error: e, stackTrace: st);
+        ErrorService.instance.reportCritical(
+          e,
+          st,
+          context: {'source': 'FlitGame', 'action': 'onGameReady'},
+        );
       }
     } catch (e, st) {
       _log.error('game', 'FlitGame.onLoad FAILED', error: e, stackTrace: st);
+      ErrorService.instance.reportCritical(
+        e,
+        st,
+        context: {'source': 'FlitGame', 'action': 'onLoad'},
+      );
       rethrow;
     }
   }
