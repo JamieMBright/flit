@@ -18,7 +18,7 @@ final _log = GameLog.instance;
 /// ```
 /// Index 0-1 : uResolution (vec2) - viewport size
 /// Index 2-4 : uCameraPos  (vec3) - camera position
-/// Index 5-7 : uCameraTarget (vec3) - look-at point
+/// Index 5-7 : uCameraUp   (vec3) - heading-aligned up vector
 /// Index 8-10: uSunDir     (vec3) - sun direction
 /// Index 11  : uTime
 /// Index 12  : uGlobeRadius (1.0)
@@ -142,10 +142,10 @@ class ShaderManager {
     s.setFloat(3, camera.cameraY);
     s.setFloat(4, camera.cameraZ);
 
-    // uCameraTarget (vec3)
-    s.setFloat(5, camera.targetX);
-    s.setFloat(6, camera.targetY);
-    s.setFloat(7, camera.targetZ);
+    // uCameraUp (vec3) - heading-aligned up vector
+    s.setFloat(5, camera.upX);
+    s.setFloat(6, camera.upY);
+    s.setFloat(7, camera.upZ);
 
     // uSunDir (vec3)
     s.setFloat(8, sunDirX);
