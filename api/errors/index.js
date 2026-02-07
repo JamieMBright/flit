@@ -1,121 +1,172 @@
 // Vercel Serverless Function: Error Telemetry Endpoint
-// POST /api/errors — Accept and store error payloads
-// GET  /api/errors — Retrieve errors with optional filtering
+// POST /api/errors — Accept errors, store in memory + append to GitHub log
+// GET  /api/errors — Retrieve errors from in-memory buffer
 //
-// Auth: X-API-Key header checked against VERCEL_ERRORS_API_KEY env var.
-// Storage: In-memory array (resets on cold start). For persistence,
-// replace with Vercel KV or an external database.
+// Required env vars:
+//   VERCEL_ERRORS_API_KEY  — Shared secret for X-API-Key auth
+//   GITHUB_TOKEN           — GitHub PAT with repo:contents write scope
+//   GITHUB_REPO            — e.g. "JamieMBright/flit"
+//   GITHUB_LOG_PATH        — e.g. "logs/runtime-errors.jsonl"
+//   GITHUB_BRANCH          — e.g. "main" (default)
+//
+// Architecture:
+//   1. Flutter app POSTs errors here.
+//   2. This function validates, enriches, and stores in memory for GET.
+//   3. On POST, it also appends each error as a JSONL line to the GitHub
+//      repo file via the GitHub Contents API. This gives durable persistence
+//      without needing a database — errors land directly in the repo.
+//   4. The fetch-errors.yml GitHub Action is kept as a fallback/reconciler
+//      but is no longer the primary persistence path.
 
 const MAX_STORED_ERRORS = 1000;
 const MAX_PAYLOAD_ERRORS = 50;
 
-// In-memory store (cleared on cold start / redeploy).
-// For production persistence, swap with Vercel KV:
-//   import { kv } from '@vercel/kv';
+// In-memory buffer for GET queries (survives within a single warm instance).
 const errors = [];
 
-// Valid severity values.
 const VALID_SEVERITIES = new Set(['critical', 'error', 'warning']);
-
-// Valid platform values.
 const VALID_PLATFORMS = new Set(['web', 'ios', 'android']);
 
-// CORS headers applied to every response.
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
 };
 
-/**
- * Validate that a value is a non-empty string.
- */
+// ---------------------------------------------------------------------------
+// Validation helpers
+// ---------------------------------------------------------------------------
+
 function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-/**
- * Validate an ISO 8601 timestamp string.
- */
 function isValidTimestamp(value) {
   if (!isNonEmptyString(value)) return false;
   const date = new Date(value);
   return !isNaN(date.getTime());
 }
 
-/**
- * Validate a single error payload against the expected schema.
- * Returns null if valid, or a string describing the first validation error.
- */
 function validateErrorPayload(payload) {
   if (typeof payload !== 'object' || payload === null) {
     return 'Payload must be a non-null object';
   }
-
   if (!isValidTimestamp(payload.timestamp)) {
     return 'Invalid or missing "timestamp" (expected ISO 8601 string)';
   }
-
   if (!isNonEmptyString(payload.sessionId)) {
     return 'Invalid or missing "sessionId" (expected non-empty string)';
   }
-
   if (!isNonEmptyString(payload.appVersion)) {
     return 'Invalid or missing "appVersion" (expected non-empty string)';
   }
-
   if (!VALID_PLATFORMS.has(payload.platform)) {
     return `Invalid "platform" (expected one of: ${[...VALID_PLATFORMS].join(', ')})`;
   }
-
   if (!isNonEmptyString(payload.deviceInfo)) {
     return 'Invalid or missing "deviceInfo" (expected non-empty string)';
   }
-
   if (!VALID_SEVERITIES.has(payload.severity)) {
     return `Invalid "severity" (expected one of: ${[...VALID_SEVERITIES].join(', ')})`;
   }
-
   if (!isNonEmptyString(payload.error)) {
     return 'Invalid or missing "error" (expected non-empty string)';
   }
-
-  // stackTrace is optional but must be a string if present.
   if (payload.stackTrace !== undefined && typeof payload.stackTrace !== 'string') {
     return '"stackTrace" must be a string if provided';
   }
-
-  // context is optional but must be an object if present.
   if (payload.context !== undefined) {
     if (typeof payload.context !== 'object' || payload.context === null || Array.isArray(payload.context)) {
       return '"context" must be a plain object if provided';
     }
   }
-
-  return null; // Valid
+  return null;
 }
 
-/**
- * Authenticate the request using the X-API-Key header.
- */
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+
 function authenticate(req) {
   const expectedKey = process.env.VERCEL_ERRORS_API_KEY;
-  if (!expectedKey) {
-    // If no key is configured, reject all requests to avoid open endpoints.
-    return false;
-  }
+  if (!expectedKey) return false;
   const providedKey = req.headers['x-api-key'];
   return providedKey === expectedKey;
 }
 
-/**
- * Handle POST /api/errors — accept error payloads.
- * Accepts a single error object or an array of error objects.
- */
-function handlePost(req, res) {
-  const body = req.body;
+// ---------------------------------------------------------------------------
+// GitHub Contents API — append JSONL lines to the log file
+// ---------------------------------------------------------------------------
 
-  // Accept single object or array of objects.
+async function appendToGitHub(newLines) {
+  const token = process.env.GITHUB_TOKEN;
+  const repo = process.env.GITHUB_REPO;
+  const filePath = process.env.GITHUB_LOG_PATH || 'logs/runtime-errors.jsonl';
+  const branch = process.env.GITHUB_BRANCH || 'main';
+
+  // If GitHub integration isn't configured, skip silently.
+  if (!token || !repo) return { ok: false, reason: 'github_not_configured' };
+
+  const apiBase = `https://api.github.com/repos/${repo}/contents/${filePath}`;
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json',
+    'User-Agent': 'flit-error-telemetry/1.0',
+  };
+
+  try {
+    // 1. GET the current file to obtain its SHA (needed for updates).
+    let existingContent = '';
+    let sha = null;
+
+    const getRes = await fetch(`${apiBase}?ref=${branch}`, { headers });
+
+    if (getRes.ok) {
+      const data = await getRes.json();
+      sha = data.sha;
+      existingContent = Buffer.from(data.content, 'base64').toString('utf-8');
+    } else if (getRes.status === 404) {
+      // File doesn't exist yet — will be created.
+      existingContent = '';
+      sha = null;
+    } else {
+      return { ok: false, reason: `github_get_failed_${getRes.status}` };
+    }
+
+    // 2. Append new JSONL lines.
+    const separator = existingContent.length > 0 && !existingContent.endsWith('\n') ? '\n' : '';
+    const updatedContent = existingContent + separator + newLines.join('\n') + '\n';
+
+    // 3. PUT the updated file.
+    const body = {
+      message: `chore: append ${newLines.length} error(s) from telemetry`,
+      content: Buffer.from(updatedContent).toString('base64'),
+      branch,
+    };
+    if (sha) body.sha = sha;
+
+    const putRes = await fetch(apiBase, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    if (putRes.ok) {
+      return { ok: true, linesAppended: newLines.length };
+    }
+    return { ok: false, reason: `github_put_failed_${putRes.status}` };
+  } catch (err) {
+    return { ok: false, reason: `github_error_${err.message}` };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POST handler
+// ---------------------------------------------------------------------------
+
+async function handlePost(req, res) {
+  const body = req.body;
   const payloads = Array.isArray(body) ? body : [body];
 
   if (payloads.length === 0) {
@@ -138,11 +189,9 @@ function handlePost(req, res) {
   for (let i = 0; i < payloads.length; i++) {
     const payload = payloads[i];
     const validationError = validateErrorPayload(payload);
-
     if (validationError) {
       rejected.push({ index: i, reason: validationError });
     } else {
-      // Add server-side metadata.
       const enriched = {
         ...payload,
         _receivedAt: new Date().toISOString(),
@@ -152,12 +201,23 @@ function handlePost(req, res) {
     }
   }
 
-  // Store accepted errors, evicting oldest if over capacity.
+  // Store in memory for GET queries.
   for (const error of accepted) {
     errors.push(error);
   }
   while (errors.length > MAX_STORED_ERRORS) {
     errors.shift();
+  }
+
+  // Append to GitHub log file (non-blocking — don't fail the response).
+  let githubResult = null;
+  if (accepted.length > 0) {
+    const jsonlLines = accepted.map((e) => JSON.stringify(e));
+    try {
+      githubResult = await appendToGitHub(jsonlLines);
+    } catch {
+      githubResult = { ok: false, reason: 'github_exception' };
+    }
   }
 
   const status = rejected.length > 0 && accepted.length === 0 ? 400 : 200;
@@ -167,22 +227,19 @@ function handlePost(req, res) {
     rejected: rejected.length,
     errors: rejected.length > 0 ? rejected : undefined,
     total: errors.length,
+    github: githubResult,
   });
 }
 
-/**
- * Handle GET /api/errors — retrieve stored errors with optional filtering.
- * Query params:
- *   - since: ISO 8601 timestamp (only return errors after this time)
- *   - limit: Maximum number of errors to return (default 100, max 500)
- *   - severity: Filter by severity level
- */
+// ---------------------------------------------------------------------------
+// GET handler
+// ---------------------------------------------------------------------------
+
 function handleGet(req, res) {
   const { since, limit: limitStr, severity } = req.query || {};
 
   let filtered = [...errors];
 
-  // Filter by timestamp if 'since' is provided.
   if (since) {
     const sinceDate = new Date(since);
     if (isNaN(sinceDate.getTime())) {
@@ -194,7 +251,6 @@ function handleGet(req, res) {
     filtered = filtered.filter((e) => new Date(e.timestamp) > sinceDate);
   }
 
-  // Filter by severity if provided.
   if (severity) {
     if (!VALID_SEVERITIES.has(severity)) {
       return res.status(400).json({
@@ -205,14 +261,10 @@ function handleGet(req, res) {
     filtered = filtered.filter((e) => e.severity === severity);
   }
 
-  // Apply limit (default 100, max 500).
   let limit = parseInt(limitStr, 10);
-  if (isNaN(limit) || limit < 1) {
-    limit = 100;
-  }
+  if (isNaN(limit) || limit < 1) limit = 100;
   limit = Math.min(limit, 500);
 
-  // Return newest first, limited.
   const result = filtered.slice(-limit).reverse();
 
   return res.status(200).json({
@@ -222,21 +274,19 @@ function handleGet(req, res) {
   });
 }
 
-/**
- * Main handler — routes by HTTP method.
- */
-module.exports = (req, res) => {
-  // Set CORS headers on every response.
+// ---------------------------------------------------------------------------
+// Main router
+// ---------------------------------------------------------------------------
+
+module.exports = async (req, res) => {
   for (const [key, value] of Object.entries(corsHeaders)) {
     res.setHeader(key, value);
   }
 
-  // Handle CORS preflight.
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
 
-  // Authenticate.
   if (!authenticate(req)) {
     return res.status(401).json({
       error: 'Unauthorized',
@@ -244,7 +294,6 @@ module.exports = (req, res) => {
     });
   }
 
-  // Route by method.
   switch (req.method) {
     case 'POST':
       return handlePost(req, res);

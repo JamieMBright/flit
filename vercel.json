@@ -7,9 +7,13 @@
     }
   ],
   "functions": {
-    "api/**/*.js": {
+    "api/errors/index.js": {
+      "memory": 256,
+      "maxDuration": 30
+    },
+    "api/health/index.js": {
       "memory": 128,
-      "maxDuration": 10
+      "maxDuration": 5
     }
   }
 }
