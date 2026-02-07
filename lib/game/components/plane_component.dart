@@ -44,8 +44,8 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Speed multiplier at low altitude
   static const double lowAltitudeSpeedMultiplier = 0.5;
 
-  /// Turn rate in radians per second. Smooth, wide turns at cruise speed.
-  static const double turnRate = 0.8;
+  /// Turn rate in radians per second. Tight turns, easy U-turns.
+  static const double turnRate = 2.5;
 
   /// Maximum bank angle for visual effect (radians, ~40 degrees).
   static const double _maxBankAngle = 0.7;
@@ -125,8 +125,9 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     canvas.save();
     canvas.translate(size.x / 2, size.y / 2);
 
-    // Rotate to face heading (adjusted so "up" on screen = forward)
-    canvas.rotate(visualHeading + pi / 2);
+    // Rotate to face heading. Camera up vector is the heading direction,
+    // so visualHeading=0 means the plane faces "up" on screen (forward).
+    canvas.rotate(visualHeading);
 
     // --- 3D banking perspective ---
     // cos(bank) foreshortens the horizontal axis; sin(bank) gives the
