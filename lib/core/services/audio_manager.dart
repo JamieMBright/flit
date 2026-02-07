@@ -1,0 +1,348 @@
+import 'dart:math';
+
+import 'package:audioplayers/audioplayers.dart';
+
+import '../utils/game_log.dart';
+
+final _log = GameLog.instance;
+
+/// Engine sound category — each plane maps to one of these.
+enum EngineType {
+  /// Chuttering propeller (Classic Bi-Plane, Red Baron Triplane)
+  biplane,
+
+  /// Smooth propeller drone (Prop Plane, Spitfire, Island Hopper)
+  prop,
+
+  /// Low heavy drone (Lancaster Bomber, Stealth Bomber)
+  bomber,
+
+  /// Smooth jet engine (Sleek Jet, Concorde, Bryanair, Air Force One, etc.)
+  jet,
+
+  /// Rocket roar (Rocket Ship)
+  rocket,
+
+  /// Just wind (Paper Plane)
+  wind,
+}
+
+/// One-shot sound effect identifiers.
+enum SfxType {
+  /// Simple modern click when a clue pops up.
+  cluePop,
+
+  /// Satisfying confetti pop on successful landing.
+  landingSuccess,
+
+  /// Coin collect jingle.
+  coinCollect,
+
+  /// General UI tap/click.
+  uiClick,
+
+  /// Whoosh for altitude toggle.
+  altitudeChange,
+
+  /// Speed boost activation.
+  boostStart,
+}
+
+/// Manages all game audio: background music, engine loops, and SFX.
+///
+/// Singleton — use [AudioManager.instance]. Call [initialize] once at startup.
+/// The manager respects the user's sound toggle via [enabled].
+///
+/// Engine sounds loop continuously during gameplay. Volume responds to the
+/// plane's turn intensity: louder when banking, quieter when flying straight.
+class AudioManager {
+  AudioManager._();
+
+  static final AudioManager instance = AudioManager._();
+
+  /// Whether audio is enabled (user preference).
+  bool _enabled = true;
+
+  bool get enabled => _enabled;
+
+  set enabled(bool value) {
+    _enabled = value;
+    if (!value) {
+      _stopAll();
+    }
+  }
+
+  /// Background music player.
+  final AudioPlayer _musicPlayer = AudioPlayer();
+
+  /// Engine loop player.
+  final AudioPlayer _enginePlayer = AudioPlayer();
+
+  /// Pool of SFX players (avoid creating per-play).
+  final List<AudioPlayer> _sfxPool =
+      List.generate(4, (_) => AudioPlayer());
+
+  int _sfxPoolIndex = 0;
+
+  /// Currently active engine type (null = none playing).
+  EngineType? _currentEngine;
+
+  /// Base volume for the engine (before turn modulation).
+  static const double _engineBaseVolume = 0.12;
+
+  /// Maximum additional volume added during full turn.
+  static const double _engineTurnBoost = 0.08;
+
+  /// Background music volume.
+  static const double _musicVolume = 0.25;
+
+  /// SFX volume.
+  static const double _sfxVolume = 0.5;
+
+  /// Whether [initialize] has been called.
+  bool _initialized = false;
+
+  // -----------------------------------------------------------------
+  // Plane ID → Engine type mapping
+  // -----------------------------------------------------------------
+
+  /// Maps a cosmetic plane ID to its engine sound category.
+  static EngineType engineTypeForPlane(String planeId) {
+    switch (planeId) {
+      // Chuttering propeller
+      case 'plane_default': // Classic Bi-Plane
+      case 'plane_red_baron': // Red Baron Triplane
+        return EngineType.biplane;
+
+      // Smooth propeller
+      case 'plane_prop': // Prop Plane
+      case 'plane_spitfire': // Spitfire
+      case 'plane_seaplane': // Island Hopper
+        return EngineType.prop;
+
+      // Low drone
+      case 'plane_lancaster': // Lancaster Bomber
+      case 'plane_stealth': // Stealth Bomber
+        return EngineType.bomber;
+
+      // Rocket roar
+      case 'plane_rocket': // Rocket Ship
+        return EngineType.rocket;
+
+      // Just wind
+      case 'plane_paper': // Paper Plane
+        return EngineType.wind;
+
+      // Smooth jet (default for all jets, concordes, etc.)
+      case 'plane_jet': // Sleek Jet
+      case 'plane_bryanair': // Bryanair
+      case 'plane_concorde_classic': // Concorde Classic
+      case 'plane_air_force_one': // Air Force One
+      case 'plane_golden_jet': // Golden Private Jet
+      case 'plane_diamond_concorde': // Diamond Concorde
+      case 'plane_platinum_eagle': // Platinum Eagle
+      default:
+        return EngineType.jet;
+    }
+  }
+
+  /// Asset path for an engine sound.
+  static String _engineAsset(EngineType type) {
+    switch (type) {
+      case EngineType.biplane:
+        return 'audio/engines/biplane_engine.ogg';
+      case EngineType.prop:
+        return 'audio/engines/prop_engine.ogg';
+      case EngineType.bomber:
+        return 'audio/engines/bomber_engine.ogg';
+      case EngineType.jet:
+        return 'audio/engines/jet_engine.ogg';
+      case EngineType.rocket:
+        return 'audio/engines/rocket_engine.ogg';
+      case EngineType.wind:
+        return 'audio/engines/wind.ogg';
+    }
+  }
+
+  /// Asset path for a sound effect.
+  static String _sfxAsset(SfxType type) {
+    switch (type) {
+      case SfxType.cluePop:
+        return 'audio/sfx/clue_pop.ogg';
+      case SfxType.landingSuccess:
+        return 'audio/sfx/landing_success.ogg';
+      case SfxType.coinCollect:
+        return 'audio/sfx/coin_collect.ogg';
+      case SfxType.uiClick:
+        return 'audio/sfx/ui_click.ogg';
+      case SfxType.altitudeChange:
+        return 'audio/sfx/altitude_change.ogg';
+      case SfxType.boostStart:
+        return 'audio/sfx/boost_start.ogg';
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // Lifecycle
+  // -----------------------------------------------------------------
+
+  /// Initialise the audio system. Safe to call multiple times.
+  Future<void> initialize() async {
+    if (_initialized) return;
+    _initialized = true;
+
+    try {
+      // Set default release mode for all players.
+      await _musicPlayer.setReleaseMode(ReleaseMode.loop);
+      await _enginePlayer.setReleaseMode(ReleaseMode.loop);
+      for (final p in _sfxPool) {
+        await p.setReleaseMode(ReleaseMode.release);
+      }
+      _log.info('audio', 'AudioManager initialized');
+    } catch (e, st) {
+      _log.warning('audio', 'AudioManager init failed', error: e);
+    }
+  }
+
+  /// Release all players. Call on app dispose.
+  Future<void> dispose() async {
+    await _musicPlayer.dispose();
+    await _enginePlayer.dispose();
+    for (final p in _sfxPool) {
+      await p.dispose();
+    }
+    _initialized = false;
+  }
+
+  // -----------------------------------------------------------------
+  // Background Music
+  // -----------------------------------------------------------------
+
+  /// Available music tracks (shuffled per session).
+  static const List<String> _musicTracks = [
+    'audio/music/lofi_track_01.ogg',
+    'audio/music/lofi_track_02.ogg',
+    'audio/music/lofi_track_03.ogg',
+  ];
+
+  int _currentTrackIndex = 0;
+
+  /// Start playing background music. Shuffles track order.
+  Future<void> startMusic() async {
+    if (!_enabled) return;
+
+    // Pick a random starting track.
+    _currentTrackIndex = Random().nextInt(_musicTracks.length);
+    await _playMusicTrack();
+  }
+
+  Future<void> _playMusicTrack() async {
+    if (!_enabled) return;
+
+    try {
+      await _musicPlayer.setVolume(_musicVolume);
+      await _musicPlayer.play(
+        AssetSource(_musicTracks[_currentTrackIndex]),
+      );
+    } catch (e) {
+      _log.warning('audio', 'Music track failed: ${_musicTracks[_currentTrackIndex]}', error: e);
+    }
+  }
+
+  /// Stop background music.
+  Future<void> stopMusic() async {
+    await _musicPlayer.stop();
+  }
+
+  /// Advance to next track (call from onPlayerComplete listener).
+  Future<void> nextTrack() async {
+    _currentTrackIndex =
+        (_currentTrackIndex + 1) % _musicTracks.length;
+    await _playMusicTrack();
+  }
+
+  // -----------------------------------------------------------------
+  // Engine Sound
+  // -----------------------------------------------------------------
+
+  /// Start the engine loop for a given plane.
+  ///
+  /// Automatically selects the correct engine sound based on [planeId].
+  /// If an engine is already playing for a different type, crossfades.
+  Future<void> startEngine(String planeId) async {
+    if (!_enabled) return;
+
+    final type = engineTypeForPlane(planeId);
+
+    // Already playing this engine type — no-op.
+    if (_currentEngine == type) return;
+
+    _currentEngine = type;
+
+    try {
+      await _enginePlayer.stop();
+      await _enginePlayer.setVolume(_engineBaseVolume);
+      await _enginePlayer.play(
+        AssetSource(_engineAsset(type)),
+      );
+    } catch (e) {
+      _log.warning('audio', 'Engine sound failed: ${_engineAsset(type)}', error: e);
+    }
+  }
+
+  /// Stop the engine loop.
+  Future<void> stopEngine() async {
+    _currentEngine = null;
+    await _enginePlayer.stop();
+  }
+
+  /// Update engine volume based on turn intensity.
+  ///
+  /// Call this every frame from the game update loop.
+  /// [turnAmount] should be the absolute value of the turn direction (0..1).
+  Future<void> updateEngineVolume(double turnAmount) async {
+    if (!_enabled || _currentEngine == null) return;
+
+    final volume = (_engineBaseVolume +
+            _engineTurnBoost * turnAmount.abs().clamp(0.0, 1.0))
+        .clamp(0.0, 1.0);
+
+    try {
+      await _enginePlayer.setVolume(volume);
+    } catch (e) {
+      _log.warning('audio', 'Engine volume update failed', error: e);
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // Sound Effects
+  // -----------------------------------------------------------------
+
+  /// Play a one-shot sound effect.
+  Future<void> playSfx(SfxType type) async {
+    if (!_enabled) return;
+
+    final player = _sfxPool[_sfxPoolIndex];
+    _sfxPoolIndex = (_sfxPoolIndex + 1) % _sfxPool.length;
+
+    try {
+      await player.setVolume(_sfxVolume);
+      await player.play(AssetSource(_sfxAsset(type)));
+    } catch (e) {
+      _log.warning('audio', 'SFX failed: ${_sfxAsset(type)}', error: e);
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // Internal
+  // -----------------------------------------------------------------
+
+  Future<void> _stopAll() async {
+    await _musicPlayer.stop();
+    await _enginePlayer.stop();
+    for (final p in _sfxPool) {
+      await p.stop();
+    }
+    _currentEngine = null;
+  }
+}

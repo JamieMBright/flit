@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    }
+  ],
+  "functions": {
+    "api/errors/index.js": {
+      "memory": 256,
+      "maxDuration": 30
+    },
+    "api/health/index.js": {
+      "memory": 128,
+      "maxDuration": 5
+    }
+  }
+}

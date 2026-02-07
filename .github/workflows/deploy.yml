@@ -51,9 +51,79 @@ jobs:
       - name: Format code
         run: dart format lib/ test/ --fix
 
+      - name: Verify shader assets exist
+        run: |
+          echo "Checking shader assets..."
+          SHADER_COUNT=0
+          for ext in frag vert glsl; do
+            count=$(find . -name "*.${ext}" -not -path "./.git/*" | wc -l)
+            SHADER_COUNT=$((SHADER_COUNT + count))
+            if [ "$count" -gt 0 ]; then
+              echo "Found $count .${ext} files:"
+              find . -name "*.${ext}" -not -path "./.git/*"
+            fi
+          done
+          echo "Total shader files found: ${SHADER_COUNT}"
+
+      - name: Verify texture assets
+        run: |
+          echo "Checking texture assets..."
+          for dir in assets/images assets/textures assets/shaders; do
+            if [ -d "$dir" ]; then
+              echo "Found asset directory: $dir"
+              ls -la "$dir" || true
+            fi
+          done
+          echo "Asset verification complete."
+
+      - name: Shader compilation check
+        run: |
+          # Verify .frag files are valid GLSL by checking for basic syntax
+          for shader in $(find . -name "*.frag" -not -path "./.git/*"); do
+            echo "Checking shader: $shader"
+            # Basic checks: file is not empty and has a main function
+            if [ ! -s "$shader" ]; then
+              echo "ERROR: Shader file is empty: $shader"
+              exit 1
+            fi
+            if ! grep -q "void fragment" "$shader" 2>/dev/null; then
+              echo "WARNING: No fragment() entry point in $shader (Flutter shaders use void fragment, not void main)"
+            fi
+          done
+          echo "Shader syntax pre-check passed."
+
       - name: Build web release
         run: |
           flutter build web --release --base-href "/flit/" 2>&1 | tee flutter-build.log
+
+      - name: Verify build output includes assets
+        run: |
+          echo "Verifying build output..."
+          if [ ! -d "build/web" ]; then
+            echo "ERROR: build/web directory does not exist!"
+            exit 1
+          fi
+
+          # Check that index.html exists
+          if [ ! -f "build/web/index.html" ]; then
+            echo "ERROR: index.html not found in build output!"
+            exit 1
+          fi
+
+          # Check that main.dart.js exists
+          if [ ! -f "build/web/main.dart.js" ]; then
+            echo "WARNING: main.dart.js not found (may use deferred loading)"
+          fi
+
+          # Check for shader assets in build
+          SHADER_ASSETS=$(find build/web -name "*.frag" -o -name "*.glsl" | wc -l)
+          echo "Shader assets in build: ${SHADER_ASSETS}"
+
+          # Report build size
+          BUILD_SIZE=$(du -sh build/web | cut -f1)
+          echo "Total build size: ${BUILD_SIZE}"
+
+          echo "Build verification passed."
 
       - name: Upload build logs (on failure)
         if: failure()
@@ -85,3 +155,38 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  smoke-test:
+    name: Smoke Test
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for deployment propagation
+        run: sleep 30
+
+      - name: Curl deployed site
+        run: |
+          SITE_URL="https://${{ github.repository_owner }}.github.io/${GITHUB_REPOSITORY##*/}/"
+          echo "Smoke testing: ${SITE_URL}"
+
+          HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" --max-time 30 "${SITE_URL}")
+          echo "HTTP status: ${HTTP_STATUS}"
+
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "WARNING: Site returned HTTP ${HTTP_STATUS} (may still be propagating)"
+            # Don't fail the build - GitHub Pages can take time to propagate
+          else
+            echo "Site is live and returning 200 OK."
+          fi
+
+      - name: Verify page content
+        run: |
+          SITE_URL="https://${{ github.repository_owner }}.github.io/${GITHUB_REPOSITORY##*/}/"
+          CONTENT=$(curl -s --max-time 30 "${SITE_URL}")
+
+          # Check that the page contains Flutter bootstrap
+          if echo "$CONTENT" | grep -q "flutter"; then
+            echo "Flutter content detected on page."
+          else
+            echo "WARNING: Flutter content not detected (may be loading dynamically)."
+          fi

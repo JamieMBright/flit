@@ -1,17 +1,44 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/services/audio_manager.dart';
+import 'core/services/dev_overlay.dart';
+import 'core/services/error_sender_http.dart';
+import 'core/services/error_service.dart';
 import 'core/theme/flit_theme.dart';
 import 'core/utils/game_log.dart';
 import 'features/auth/login_screen.dart';
 
 final _log = GameLog.instance;
 
+/// Periodic flush interval for error telemetry.
+const _flushInterval = Duration(seconds: 60);
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize the error telemetry service (V0).
+  final errorService = ErrorService.instance;
+  errorService.initialize(
+    apiEndpoint: const String.fromEnvironment(
+      'ERROR_ENDPOINT',
+      defaultValue: 'https://flit-errors.vercel.app/api/errors',
+    ),
+    apiKey: const String.fromEnvironment('VERCEL_ERRORS_API_KEY'),
+  );
+
+  // Register the cross-platform HTTP sender so flush() can POST errors.
+  errorService.setSender(errorSenderHttp);
+
+  // Periodically flush queued errors to the Vercel endpoint.
+  Timer.periodic(_flushInterval, (_) => errorService.flush());
+
+  // Initialize audio system.
+  AudioManager.instance.initialize();
 
   _log.info('app', 'Flit starting up');
 
@@ -24,23 +51,72 @@ void main() {
       error: details.exception,
       stackTrace: details.stack,
     );
+    errorService.reportError(
+      details.exception,
+      details.stack,
+      context: {'source': 'FlutterError.onError'},
+    );
   };
 
   // Capture async / platform errors that escape the framework.
   PlatformDispatcher.instance.onError = (error, stack) {
     _log.error('platform', '$error', error: error, stackTrace: stack);
+    errorService.reportError(
+      error,
+      stack,
+      context: {'source': 'PlatformDispatcher.onError'},
+    );
     return true; // prevent crash, keep app alive
   };
 
-  runApp(
-    const ProviderScope(
-      child: FlitApp(),
-    ),
+  // Wrap in runZonedGuarded to catch any remaining async errors.
+  runZonedGuarded(
+    () {
+      runApp(
+        const ProviderScope(
+          child: FlitApp(),
+        ),
+      );
+    },
+    (error, stack) {
+      _log.error('zone', '$error', error: error, stackTrace: stack);
+      errorService.reportError(
+        error,
+        stack,
+        context: {'source': 'runZonedGuarded'},
+      );
+    },
   );
 }
 
-class FlitApp extends StatelessWidget {
+class FlitApp extends StatefulWidget {
   const FlitApp({super.key});
+
+  @override
+  State<FlitApp> createState() => _FlitAppState();
+}
+
+class _FlitAppState extends State<FlitApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Flush queued errors when the app goes to background or is about to close.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      ErrorService.instance.flush();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,97 +125,14 @@ class FlitApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: FlitTheme.dark,
       builder: (context, child) {
-        // Wrap the entire app in an error boundary with debug overlay.
         return Stack(
           children: [
             child ?? const SizedBox.shrink(),
-            if (kDebugMode) const _DebugErrorOverlay(),
+            if (!kReleaseMode) const DevOverlay(),
           ],
         );
       },
       home: const LoginScreen(),
-    );
-  }
-}
-
-/// Floating debug overlay that shows runtime errors on screen.
-/// Only visible in debug mode and when errors have been captured.
-class _DebugErrorOverlay extends StatefulWidget {
-  const _DebugErrorOverlay();
-
-  @override
-  State<_DebugErrorOverlay> createState() => _DebugErrorOverlayState();
-}
-
-class _DebugErrorOverlayState extends State<_DebugErrorOverlay> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final errorCount = _log.errorCount;
-    final warningCount = _log.warningCount;
-    if (errorCount == 0 && warningCount == 0) return const SizedBox.shrink();
-
-    return Positioned(
-      bottom: 16,
-      left: 16,
-      right: 16,
-      child: SafeArea(
-        child: Material(
-          color: errorCount > 0
-              ? Colors.red.shade900.withAlpha(230)
-              : Colors.orange.shade900.withAlpha(200),
-          borderRadius: BorderRadius.circular(8),
-          child: InkWell(
-            onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.error, color: Colors.white, size: 18),
-                      const SizedBox(width: 8),
-                      Text(
-                        '$errorCount error(s), $warningCount warning(s) — tap to ${_expanded ? 'collapse' : 'expand'}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_expanded) ...[
-                    const SizedBox(height: 8),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 200),
-                      child: SingleChildScrollView(
-                        child: Text(
-                          _log
-                              .entriesAtLevel(LogLevel.warning)
-                              .map((e) => e.toString())
-                              .join('\n\n'),
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 11,
-                            fontFamily: 'monospace',
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

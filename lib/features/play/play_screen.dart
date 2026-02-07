@@ -4,6 +4,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../../core/services/audio_manager.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
 import '../../game/flit_game.dart';
@@ -27,6 +28,7 @@ class PlayScreen extends StatefulWidget {
     this.coinReward = 0,
     this.onComplete,
     this.planeColorScheme,
+    this.equippedPlaneId = 'plane_default',
   });
 
   /// The region to play in.
@@ -47,6 +49,9 @@ class PlayScreen extends StatefulWidget {
 
   /// Color scheme for the equipped plane cosmetic.
   final Map<String, int>? planeColorScheme;
+
+  /// Equipped plane ID for engine sound selection.
+  final String equippedPlaneId;
 
   @override
   State<PlayScreen> createState() => _PlayScreenState();
@@ -79,6 +84,7 @@ class _PlayScreenState extends State<PlayScreen> {
       onGameReady: _onGameReady,
       onAltitudeChanged: _onAltitudeChanged,
       planeColorScheme: widget.planeColorScheme,
+      equippedPlaneId: widget.equippedPlaneId,
     );
   }
 
@@ -86,6 +92,7 @@ class _PlayScreenState extends State<PlayScreen> {
   void dispose() {
     _log.info('screen', 'PlayScreen.dispose');
     _timer?.cancel();
+    AudioManager.instance.stopEngine();
     super.dispose();
   }
 
@@ -132,6 +139,9 @@ class _PlayScreenState extends State<PlayScreen> {
         targetPosition: _session!.targetPosition,
         clue: _session!.clue.displayText,
       );
+
+      // Play clue popup sound.
+      AudioManager.instance.playSfx(SfxType.cluePop);
 
       // Start timer
       _timer?.cancel();
@@ -205,6 +215,7 @@ class _PlayScreenState extends State<PlayScreen> {
     _timer?.cancel();
     _session?.complete();
     _totalScore += _session?.score ?? 0;
+    AudioManager.instance.playSfx(SfxType.landingSuccess);
 
     _log.info('session', 'Landing complete', data: {
       'target': _session?.targetName,

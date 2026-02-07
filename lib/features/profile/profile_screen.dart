@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/services/audio_manager.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/profanity_filter.dart';
 import '../../data/models/avatar_config.dart';
@@ -50,7 +51,7 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   bool _notificationsEnabled = true;
-  bool _soundEnabled = true;
+  bool _soundEnabled = AudioManager.instance.enabled;
   bool _hapticEnabled = true;
 
   void _openSettings() {
@@ -93,6 +94,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 icon: Icons.volume_up_outlined,
                 value: _soundEnabled,
                 onChanged: (value) {
+                  AudioManager.instance.enabled = value;
                   setSheetState(() => _soundEnabled = value);
                   setState(() {});
                 },

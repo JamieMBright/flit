@@ -97,6 +97,7 @@ class RegionSelectScreen extends ConsumerWidget {
                         builder: (context) => PlayScreen(
                           region: region,
                           planeColorScheme: planeColors,
+                          equippedPlaneId: planeId,
                         ),
                       ),
                     );

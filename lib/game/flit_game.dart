@@ -5,10 +5,13 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../core/services/audio_manager.dart';
 import '../core/theme/flit_colors.dart';
 import '../core/utils/game_log.dart';
 import 'components/plane_component.dart';
 import 'map/world_map.dart';
+import 'rendering/globe_renderer.dart';
+import 'rendering/shader_manager.dart';
 
 final _log = GameLog.instance;
 
@@ -22,8 +25,8 @@ const double _rad2deg = 180 / pi;
 ///
 /// The plane flies on the surface of a sphere. Position is stored as
 /// (longitude, latitude) in degrees. Movement uses great-circle math.
-/// The world is rendered as a globe using azimuthal equidistant projection
-/// centered on the plane.
+/// The world is rendered via a GPU fragment shader (globe.frag) with
+/// fallback to the legacy Canvas 2D renderer if the shader fails to load.
 class FlitGame extends FlameGame
     with HasKeyboardHandlerComponents, HorizontalDragDetector {
   FlitGame({
@@ -32,6 +35,8 @@ class FlitGame extends FlameGame
     this.fuelBoostMultiplier = 1.0,
     this.isChallenge = false,
     this.planeColorScheme,
+    this.useShaderRenderer = true,
+    this.equippedPlaneId = 'plane_default',
   });
 
   final VoidCallback? onGameReady;
@@ -46,8 +51,22 @@ class FlitGame extends FlameGame
   /// Color scheme for the equipped plane cosmetic.
   final Map<String, int>? planeColorScheme;
 
+  /// Whether to use the new GPU shader renderer (V1+) or legacy Canvas.
+  final bool useShaderRenderer;
+
+  /// Equipped plane ID for engine sound selection.
+  final String equippedPlaneId;
+
   late PlaneComponent _plane;
-  late WorldMap _worldMap;
+
+  /// Legacy Canvas renderer (fallback).
+  WorldMap? _worldMap;
+
+  /// GPU shader renderer (V1+).
+  GlobeRenderer? _globeRenderer;
+
+  /// Whether the shader renderer is active and ready.
+  bool _shaderReady = false;
 
   /// Plane's position on the globe: x = longitude, y = latitude (degrees).
   Vector2 _worldPosition = Vector2.zero();
@@ -69,6 +88,7 @@ class FlitGame extends FlameGame
   bool get isHighAltitude => _plane.isHighAltitude;
   PlaneComponent get plane => _plane;
   String? get currentClue => _currentClue;
+  bool get isShaderActive => _shaderReady;
 
   /// World position as (longitude, latitude) degrees.
   Vector2 get worldPosition => _worldPosition;
@@ -92,8 +112,33 @@ class FlitGame extends FlameGame
     try {
       await super.onLoad();
 
-      _worldMap = WorldMap();
-      await add(_worldMap);
+      // Try to initialise the GPU shader renderer (V1+).
+      if (useShaderRenderer) {
+        try {
+          final shaderManager = ShaderManager.instance;
+          await shaderManager.initialize();
+
+          _globeRenderer = GlobeRenderer();
+          await add(_globeRenderer!);
+          _shaderReady = true;
+          _log.info('game', 'Shader renderer initialised');
+        } catch (e, st) {
+          _log.warning(
+            'game',
+            'Shader renderer failed, falling back to Canvas',
+            error: e,
+          );
+          _shaderReady = false;
+          _globeRenderer = null;
+        }
+      }
+
+      // If shader failed or not requested, use the legacy Canvas renderer.
+      if (!_shaderReady) {
+        _worldMap = WorldMap();
+        await add(_worldMap!);
+        _log.info('game', 'Using legacy Canvas renderer');
+      }
 
       _plane = PlaneComponent(
         onAltitudeChanged: (isHigh) {
@@ -116,6 +161,9 @@ class FlitGame extends FlameGame
       // Start at 0°, 0° facing north
       _worldPosition = Vector2(0, 0);
       _heading = -pi / 2; // north
+
+      // Start engine sound for equipped plane.
+      AudioManager.instance.startEngine(equippedPlaneId);
 
       _log.info('game', 'FlitGame.onLoad complete');
 
@@ -168,9 +216,13 @@ class FlitGame extends FlameGame
     // Update heading based on turn input (left/right only)
     _heading += _plane.turnDirection * PlaneComponent.turnRate * dt;
 
-    // Tell WorldMap where we are
-    _worldMap.setCameraCenter(_worldPosition);
-    _worldMap.setAltitude(high: _plane.isHighAltitude);
+    // Feed position to the active renderer.
+    // GlobeRenderer reads position from gameRef in its own update(),
+    // so we only drive the legacy Canvas renderer explicitly.
+    if (!_shaderReady && _worldMap != null) {
+      _worldMap!.setCameraCenter(_worldPosition);
+      _worldMap!.setAltitude(high: _plane.isHighAltitude);
+    }
 
     // Update plane visual
     _plane.visualHeading = _heading;
@@ -178,6 +230,9 @@ class FlitGame extends FlameGame
       size.x * planeScreenX,
       size.y * planeScreenY,
     );
+
+    // Modulate engine volume with turn intensity.
+    AudioManager.instance.updateEngineVolume(_plane.turnDirection.abs());
   }
 
   /// Normalize longitude to [-180, 180].
@@ -238,6 +293,7 @@ class FlitGame extends FlameGame
           event.logicalKey == LogicalKeyboardKey.arrowUp ||
           event.logicalKey == LogicalKeyboardKey.arrowDown) {
         _plane.toggleAltitude();
+        AudioManager.instance.playSfx(SfxType.altitudeChange);
       }
     }
 

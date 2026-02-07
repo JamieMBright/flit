@@ -208,6 +208,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           region: GameRegion.world,
           totalRounds: 10,
           planeColorScheme: planeColors,
+          equippedPlaneId: planeId,
         ),
       ),
     );

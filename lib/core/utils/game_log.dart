@@ -1,5 +1,9 @@
 import 'dart:developer' as developer;
 
+import 'package:flutter/foundation.dart';
+
+import '../services/error_service.dart';
+
 /// Log severity levels.
 enum LogLevel { debug, info, warning, error }
 
@@ -82,6 +86,9 @@ class GameLog {
   int get warningCount =>
       _entries.where((e) => e.level == LogLevel.warning).length;
 
+  /// Guards against re-entrant calls (e.g. if ErrorService ever logs back).
+  bool _bridging = false;
+
   void _add(LogEntry entry) {
     _entries.add(entry);
     if (_entries.length > maxEntries) {
@@ -95,6 +102,37 @@ class GameLog {
       error: entry.error,
       stackTrace: entry.stackTrace,
     );
+
+    // Bridge errors/warnings to ErrorService so they appear in DevOverlay.
+    // Only in debug/profile builds — no overhead in release.
+    if (!kReleaseMode && !_bridging) {
+      _bridging = true;
+      try {
+        if (entry.level == LogLevel.error) {
+          ErrorService.instance.reportError(
+            '[${entry.category}] ${entry.message}',
+            entry.stackTrace,
+            context: {
+              'source': 'GameLog',
+              'category': entry.category,
+              if (entry.error != null) 'original_error': '${entry.error}',
+            },
+          );
+        } else if (entry.level == LogLevel.warning) {
+          ErrorService.instance.reportWarning(
+            '[${entry.category}] ${entry.message}',
+            entry.stackTrace,
+            context: {
+              'source': 'GameLog',
+              'category': entry.category,
+              if (entry.error != null) 'original_error': '${entry.error}',
+            },
+          );
+        }
+      } finally {
+        _bridging = false;
+      }
+    }
   }
 
   /// Log a debug-level event.
