@@ -217,7 +217,8 @@ class _PlayScreenState extends State<PlayScreen> {
     if (_session == null || _session!.isCompleted) return;
 
     // Proximity detection: near target
-    if (_game.isNearTarget(threshold: 80)) {
+    // 25 units = 2.5° ≈ 280km — feels right at the zoomed-in view.
+    if (_game.isNearTarget(threshold: 25)) {
       if (_isMultiRound && !_isFinalRound) {
         // Not the final round: auto-advance when near target (any altitude)
         _advanceRound();

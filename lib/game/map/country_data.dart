@@ -245,10 +245,27 @@ abstract class CountryData {
       name: 'United Kingdom',
       capital: 'London',
       points: [
-        Vector2(-6, 58), Vector2(-3, 59), Vector2(-2, 57),
-        Vector2(0, 56), Vector2(1, 53), Vector2(1, 51),
-        Vector2(-1, 50), Vector2(-5, 50), Vector2(-6, 52),
-        Vector2(-5, 54), Vector2(-6, 56), Vector2(-6, 58),
+        // Scotland north coast
+        Vector2(-5.0, 58.5), Vector2(-3.4, 58.6), Vector2(-1.8, 57.7),
+        // East coast Scotland
+        Vector2(-2.1, 57.1), Vector2(-1.8, 56.3), Vector2(-2.9, 56.0),
+        // East coast England
+        Vector2(-1.6, 55.0), Vector2(-1.2, 54.0), Vector2(-0.2, 53.7),
+        Vector2(0.4, 53.0), Vector2(1.8, 52.8), Vector2(1.5, 52.0),
+        // Thames and south-east
+        Vector2(1.4, 51.4), Vector2(0.3, 51.3), Vector2(1.4, 51.1),
+        // South coast
+        Vector2(0.0, 50.8), Vector2(-1.3, 50.8), Vector2(-2.0, 50.7),
+        Vector2(-3.5, 50.3), Vector2(-5.1, 50.1), Vector2(-5.7, 50.1),
+        // West coast: Cornwall to Wales
+        Vector2(-5.3, 51.0), Vector2(-5.0, 51.6), Vector2(-4.3, 51.7),
+        Vector2(-3.2, 51.4), Vector2(-3.0, 52.0),
+        // Wales and NW England
+        Vector2(-4.5, 52.8), Vector2(-4.1, 53.2), Vector2(-3.0, 53.4),
+        Vector2(-3.1, 54.0), Vector2(-3.4, 54.8),
+        // Scotland west coast
+        Vector2(-5.1, 55.3), Vector2(-5.6, 56.2), Vector2(-6.2, 57.5),
+        Vector2(-5.0, 58.5),
       ],
     ),
     CountryShape(
@@ -256,10 +273,23 @@ abstract class CountryData {
       name: 'France',
       capital: 'Paris',
       points: [
-        Vector2(-2, 48), Vector2(2, 51), Vector2(4, 50),
-        Vector2(8, 49), Vector2(8, 47), Vector2(7, 44),
-        Vector2(4, 43), Vector2(3, 42), Vector2(-2, 43),
-        Vector2(-2, 46), Vector2(-5, 48), Vector2(-2, 48),
+        // North coast (Channel)
+        Vector2(2.5, 51.1), Vector2(1.6, 50.9), Vector2(0.2, 49.5),
+        // Brittany peninsula
+        Vector2(-1.2, 48.6), Vector2(-3.0, 48.8), Vector2(-4.8, 48.4),
+        Vector2(-3.5, 47.7), Vector2(-2.8, 47.3),
+        // Atlantic coast
+        Vector2(-1.5, 46.9), Vector2(-1.2, 46.2), Vector2(-1.1, 45.5),
+        Vector2(-1.8, 43.4),
+        // Pyrenees to Mediterranean
+        Vector2(0.7, 42.7), Vector2(3.0, 42.4), Vector2(3.1, 43.2),
+        // Côte d'Azur
+        Vector2(4.4, 43.4), Vector2(5.4, 43.3), Vector2(6.2, 43.1),
+        Vector2(7.0, 43.5), Vector2(7.5, 43.8),
+        // Eastern and northern borders
+        Vector2(8.2, 49.0), Vector2(7.5, 48.1), Vector2(6.2, 49.3),
+        Vector2(5.9, 49.5), Vector2(4.3, 50.1), Vector2(3.2, 50.3),
+        Vector2(2.5, 51.1),
       ],
     ),
     CountryShape(
@@ -267,10 +297,26 @@ abstract class CountryData {
       name: 'Germany',
       capital: 'Berlin',
       points: [
-        Vector2(6, 51), Vector2(7, 54), Vector2(10, 54),
-        Vector2(14, 54), Vector2(15, 51), Vector2(14, 49),
-        Vector2(13, 47), Vector2(10, 47), Vector2(8, 48),
-        Vector2(6, 49), Vector2(6, 51),
+        // North Sea coast
+        Vector2(6.1, 53.5), Vector2(7.0, 53.8), Vector2(8.6, 54.0),
+        // Baltic coast
+        Vector2(9.9, 54.8), Vector2(11.0, 54.4), Vector2(13.4, 54.3),
+        Vector2(14.2, 53.9),
+        // Eastern border (Poland)
+        Vector2(14.7, 52.9), Vector2(14.6, 51.8), Vector2(15.0, 51.1),
+        // Czech border
+        Vector2(14.3, 50.9), Vector2(12.9, 50.3), Vector2(12.1, 50.3),
+        // Austrian border
+        Vector2(13.0, 47.5), Vector2(12.7, 47.6), Vector2(10.5, 47.3),
+        // Swiss border
+        Vector2(8.6, 47.5), Vector2(7.6, 47.6),
+        // French border (Rhine)
+        Vector2(7.5, 48.1), Vector2(8.2, 49.0),
+        // Luxembourg/Belgium border
+        Vector2(6.1, 50.1), Vector2(6.0, 50.8),
+        // Netherlands border
+        Vector2(6.7, 51.9), Vector2(7.0, 52.2), Vector2(7.2, 53.2),
+        Vector2(6.1, 53.5),
       ],
     ),
     CountryShape(
@@ -278,11 +324,26 @@ abstract class CountryData {
       name: 'Italy',
       capital: 'Rome',
       points: [
-        Vector2(7, 44), Vector2(7, 46), Vector2(10, 47),
-        Vector2(13, 47), Vector2(14, 45), Vector2(13, 44),
-        Vector2(15, 41), Vector2(18, 40), Vector2(16, 38),
-        Vector2(12, 37), Vector2(9, 39), Vector2(8, 42),
-        Vector2(7, 44),
+        // Ligurian coast
+        Vector2(6.6, 44.1), Vector2(8.2, 44.0), Vector2(9.5, 44.3),
+        // Tuscan coast
+        Vector2(10.5, 42.9), Vector2(11.1, 42.4), Vector2(12.3, 41.8),
+        // West coast south
+        Vector2(13.8, 41.2), Vector2(14.4, 40.6), Vector2(15.6, 40.1),
+        // Calabria (toe)
+        Vector2(16.5, 39.1), Vector2(15.6, 38.0), Vector2(16.5, 38.2),
+        // East coast up the boot
+        Vector2(17.1, 39.0), Vector2(17.9, 40.0),
+        // Heel (Apulia)
+        Vector2(18.5, 40.3), Vector2(18.3, 40.8), Vector2(17.0, 41.0),
+        // Adriatic coast
+        Vector2(16.0, 41.4), Vector2(15.5, 42.0), Vector2(14.2, 42.5),
+        Vector2(13.6, 43.6), Vector2(12.6, 44.0),
+        // North-east
+        Vector2(12.3, 45.0), Vector2(13.8, 45.6), Vector2(13.4, 46.5),
+        // Northern border
+        Vector2(11.4, 47.0), Vector2(10.5, 46.9), Vector2(9.0, 46.0),
+        Vector2(7.7, 45.9), Vector2(6.6, 44.1),
       ],
     ),
     CountryShape(
@@ -290,10 +351,23 @@ abstract class CountryData {
       name: 'Spain',
       capital: 'Madrid',
       points: [
-        Vector2(-9, 43), Vector2(-2, 43), Vector2(0, 42),
-        Vector2(3, 42), Vector2(3, 40), Vector2(0, 38),
-        Vector2(-5, 36), Vector2(-7, 37), Vector2(-9, 38),
-        Vector2(-9, 40), Vector2(-9, 43),
+        // North coast (Cantabrian)
+        Vector2(-9.3, 43.2), Vector2(-8.0, 43.7), Vector2(-5.8, 43.4),
+        Vector2(-3.8, 43.4), Vector2(-1.8, 43.4),
+        // Pyrenees
+        Vector2(0.7, 42.7), Vector2(3.2, 42.4),
+        // Mediterranean coast
+        Vector2(3.3, 41.7), Vector2(2.2, 41.4), Vector2(0.3, 40.7),
+        Vector2(-0.1, 39.5), Vector2(-0.4, 38.4),
+        // South-east
+        Vector2(-0.7, 37.6), Vector2(-1.6, 37.0), Vector2(-2.4, 36.7),
+        // Gibraltar area
+        Vector2(-5.3, 36.1), Vector2(-6.3, 36.5),
+        // Atlantic south
+        Vector2(-7.4, 37.2), Vector2(-8.9, 37.0),
+        // Portuguese border / west coast
+        Vector2(-9.5, 38.8), Vector2(-8.9, 41.2), Vector2(-8.7, 42.1),
+        Vector2(-9.3, 43.2),
       ],
     ),
     CountryShape(
@@ -790,11 +864,26 @@ abstract class CountryData {
       name: 'India',
       capital: 'New Delhi',
       points: [
-        Vector2(68, 24), Vector2(72, 22), Vector2(73, 18),
-        Vector2(77, 12), Vector2(78, 8), Vector2(80, 10),
-        Vector2(84, 12), Vector2(88, 22), Vector2(92, 26),
-        Vector2(88, 28), Vector2(82, 30), Vector2(76, 32),
-        Vector2(72, 34), Vector2(68, 30), Vector2(68, 24),
+        // Pakistan border / NW
+        Vector2(68.5, 23.5), Vector2(70.0, 22.0), Vector2(72.0, 21.5),
+        // Gujarat coast
+        Vector2(72.5, 20.0), Vector2(72.0, 18.5), Vector2(73.0, 16.0),
+        // Goa / Karnataka coast
+        Vector2(74.0, 15.5), Vector2(74.8, 14.5), Vector2(75.0, 12.5),
+        // Kerala / tip
+        Vector2(76.3, 10.0), Vector2(77.5, 8.1), Vector2(78.0, 8.5),
+        // Tamil Nadu / east coast
+        Vector2(79.5, 10.0), Vector2(80.0, 11.5), Vector2(80.3, 13.0),
+        // Andhra Pradesh / Odisha
+        Vector2(81.5, 16.0), Vector2(83.0, 17.5), Vector2(84.5, 18.5),
+        Vector2(86.0, 20.0), Vector2(87.0, 21.5),
+        // Bengal / Bangladesh border
+        Vector2(88.0, 22.0), Vector2(89.0, 22.5), Vector2(92.0, 26.0),
+        // NE India / northern border
+        Vector2(88.0, 28.0), Vector2(84.0, 28.5), Vector2(80.5, 30.5),
+        Vector2(76.0, 32.5), Vector2(73.8, 34.5),
+        // Kashmir / Pakistan border
+        Vector2(72.0, 34.0), Vector2(68.5, 30.0), Vector2(68.5, 23.5),
       ],
     ),
     CountryShape(
@@ -802,11 +891,25 @@ abstract class CountryData {
       name: 'Japan',
       capital: 'Tokyo',
       points: [
-        Vector2(130, 32), Vector2(132, 34), Vector2(135, 35),
-        Vector2(138, 35), Vector2(140, 36), Vector2(142, 40),
-        Vector2(141, 42), Vector2(140, 44), Vector2(142, 45),
-        Vector2(145, 44), Vector2(144, 42), Vector2(143, 38),
-        Vector2(140, 35), Vector2(136, 33), Vector2(130, 32),
+        // Kyushu
+        Vector2(130.0, 31.5), Vector2(131.0, 33.0),
+        // Shikoku gap / Seto Inland Sea area
+        Vector2(132.5, 34.0), Vector2(134.5, 34.5),
+        // Honshu south coast
+        Vector2(135.5, 34.8), Vector2(137.0, 34.5), Vector2(138.5, 35.0),
+        // Tokyo Bay area
+        Vector2(140.0, 35.7), Vector2(140.5, 37.0),
+        // Honshu north coast
+        Vector2(140.0, 39.5), Vector2(140.2, 40.5),
+        // Hokkaido
+        Vector2(141.5, 41.5), Vector2(141.0, 43.0),
+        Vector2(142.5, 44.5), Vector2(145.0, 43.5),
+        Vector2(144.5, 42.0), Vector2(143.5, 41.5),
+        // Back down east coast
+        Vector2(142.0, 39.0), Vector2(141.0, 37.5),
+        Vector2(140.5, 36.5), Vector2(139.0, 35.5),
+        // South back to Kyushu
+        Vector2(136.0, 33.5), Vector2(133.0, 32.0), Vector2(130.0, 31.5),
       ],
     ),
     CountryShape(
@@ -1006,11 +1109,28 @@ abstract class CountryData {
       name: 'Australia',
       capital: 'Canberra',
       points: [
-        Vector2(114, -22), Vector2(120, -18), Vector2(130, -14),
-        Vector2(140, -12), Vector2(145, -14), Vector2(150, -22),
-        Vector2(153, -28), Vector2(150, -35), Vector2(145, -38),
-        Vector2(138, -36), Vector2(130, -32), Vector2(124, -34),
-        Vector2(116, -32), Vector2(114, -28), Vector2(114, -22),
+        // WA north coast
+        Vector2(114.0, -22.0), Vector2(117.0, -20.0), Vector2(121.0, -18.0),
+        // NT / Top End
+        Vector2(126.0, -14.5), Vector2(129.5, -15.0), Vector2(130.0, -12.5),
+        Vector2(132.0, -11.5), Vector2(136.0, -12.0),
+        // Gulf of Carpentaria
+        Vector2(137.5, -16.0), Vector2(139.5, -17.5), Vector2(141.0, -12.5),
+        // Cape York
+        Vector2(142.5, -10.5), Vector2(145.5, -14.5),
+        // Queensland coast
+        Vector2(146.0, -19.0), Vector2(148.5, -20.5), Vector2(150.0, -23.0),
+        Vector2(153.0, -27.5),
+        // NSW / VIC
+        Vector2(153.5, -28.5), Vector2(151.5, -33.5), Vector2(150.0, -37.0),
+        // Bass Strait / Victoria
+        Vector2(147.0, -38.5), Vector2(144.5, -38.0),
+        // SA coast / Great Australian Bight
+        Vector2(141.0, -38.0), Vector2(137.0, -36.0), Vector2(134.0, -33.5),
+        Vector2(131.0, -32.0), Vector2(127.0, -34.0),
+        // WA south coast
+        Vector2(124.0, -34.5), Vector2(120.0, -34.0), Vector2(116.0, -32.0),
+        Vector2(114.5, -28.0), Vector2(114.0, -22.0),
       ],
     ),
     CountryShape(

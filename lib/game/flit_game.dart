@@ -103,9 +103,12 @@ class FlitGame extends FlameGame
   static const double _cameraHeadingEaseRate = 1.5;
 
   /// How far ahead (in degrees) the projection center looks along heading.
-  /// These are large enough to create a genuine "behind the plane" view.
-  static const double _cameraOffsetHigh = 18.0;
-  static const double _cameraOffsetLow = 12.0;
+  /// Must be ~56% of angular radius (in degrees) so the plane's world
+  /// position projects to its fixed screen position (y=72%, center=45%).
+  /// High: 0.18 rad = 10.3° → 10.3 × 0.56 = 5.8°
+  /// Low:  0.06 rad = 3.44° → 3.44 × 0.56 = 1.9°
+  static const double _cameraOffsetHigh = 5.8;
+  static const double _cameraOffsetLow = 1.9;
 
   /// Whether this is the first update (skip lerp, snap camera heading).
   bool _cameraFirstUpdate = true;

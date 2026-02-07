@@ -25,11 +25,12 @@ class ContrailRenderer extends Component with HasGameRef<FlitGame> {
       final screenPos = gameRef.worldToScreen(particle.worldPosition);
 
       final paint = Paint()
-        ..color = FlitColors.contrail.withOpacity(opacity * 0.5);
+        ..color = FlitColors.contrail.withOpacity(opacity * 0.7);
 
+      // Small tight dots for a thin line-like contrail effect
       canvas.drawCircle(
         Offset(screenPos.x, screenPos.y),
-        particle.size * (0.3 + opacity * 0.7),
+        particle.size * (0.5 + opacity * 0.5),
         paint,
       );
     }
