@@ -6,12 +6,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/services/dev_overlay.dart';
+import 'core/services/error_sender_http.dart';
 import 'core/services/error_service.dart';
 import 'core/theme/flit_theme.dart';
 import 'core/utils/game_log.dart';
 import 'features/auth/login_screen.dart';
 
 final _log = GameLog.instance;
+
+/// Periodic flush interval for error telemetry.
+const _flushInterval = Duration(seconds: 60);
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +29,12 @@ void main() {
     ),
     apiKey: const String.fromEnvironment('VERCEL_ERRORS_API_KEY'),
   );
+
+  // Register the cross-platform HTTP sender so flush() can POST errors.
+  errorService.setSender(errorSenderHttp);
+
+  // Periodically flush queued errors to the Vercel endpoint.
+  Timer.periodic(_flushInterval, (_) => errorService.flush());
 
   _log.info('app', 'Flit starting up');
 
@@ -75,8 +85,34 @@ void main() {
   );
 }
 
-class FlitApp extends StatelessWidget {
+class FlitApp extends StatefulWidget {
   const FlitApp({super.key});
+
+  @override
+  State<FlitApp> createState() => _FlitAppState();
+}
+
+class _FlitAppState extends State<FlitApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Flush queued errors when the app goes to background or is about to close.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      ErrorService.instance.flush();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,11 +121,9 @@ class FlitApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: FlitTheme.dark,
       builder: (context, child) {
-        // Wrap the entire app in an error boundary with debug overlay.
         return Stack(
           children: [
             child ?? const SizedBox.shrink(),
-            // Enhanced DevOverlay from V0 — only in debug/profile builds.
             if (!kReleaseMode) const DevOverlay(),
           ],
         );
