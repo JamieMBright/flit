@@ -3,8 +3,10 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/services/error_service.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
+import '../../core/utils/web_error_bridge.dart';
 import '../components/plane_component.dart';
 import '../flit_game.dart';
 import 'camera_state.dart';
@@ -47,6 +49,9 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
 
   /// Cached screen size from the last render pass.
   Size _lastSize = Size.zero;
+
+  /// Whether a render error has been reported (to avoid spam).
+  bool _renderErrorReported = false;
 
   /// Access to the camera state for external queries (e.g., hit testing).
   CameraState get camera => _camera;
@@ -113,37 +118,62 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
   void render(Canvas canvas) {
     super.render(canvas);
 
-    final screenSize = gameRef.size;
-    _lastSize = Size(screenSize.x, screenSize.y);
+    try {
+      final screenSize = gameRef.size;
+      _lastSize = Size(screenSize.x, screenSize.y);
 
-    final shaderManager = ShaderManager.instance;
+      final shaderManager = ShaderManager.instance;
 
-    if (!shaderManager.isReady) {
-      // Fallback: draw a solid dark space background while shader loads.
+      if (!shaderManager.isReady) {
+        // Fallback: draw a solid dark space background while shader loads.
+        _renderFallback(canvas, _lastSize);
+        return;
+      }
+
+      final shader = shaderManager.configureShader(
+        size: _lastSize,
+        camera: _camera,
+        sunDirX: _sunDirX,
+        sunDirY: _sunDirY,
+        sunDirZ: _sunDirZ,
+        time: _time,
+      );
+
+      if (shader == null) {
+        _renderFallback(canvas, _lastSize);
+        return;
+      }
+
+      // Draw full-screen rect with the shader paint.
+      final paint = Paint()..shader = shader;
+      canvas.drawRect(
+        Rect.fromLTWH(0, 0, _lastSize.width, _lastSize.height),
+        paint,
+      );
+    } catch (e, st) {
+      // Catch any shader rendering errors — critical for iOS Safari where
+      // shader compilation or uniform setting can fail and crash the app.
+      _log.error('globe_renderer', 'Render error', error: e, stackTrace: st);
+      
+      // Report only once to avoid spam (errors can occur every frame).
+      if (!_renderErrorReported) {
+        _renderErrorReported = true;
+        ErrorService.instance.reportCritical(
+          e,
+          st,
+          context: {
+            'source': 'GlobeRenderer',
+            'action': 'render',
+            'shaderReady': '${ShaderManager.instance.isReady}',
+          },
+        );
+        // Show error to user via JS overlay (brief message, full details in telemetry).
+        WebErrorBridge.show('Shader rendering failed: $e\n\nThe app will use fallback rendering.');
+      }
+      
+      // Fallback to solid background to prevent blank screen.
       _renderFallback(canvas, _lastSize);
-      return;
     }
-
-    final shader = shaderManager.configureShader(
-      size: _lastSize,
-      camera: _camera,
-      sunDirX: _sunDirX,
-      sunDirY: _sunDirY,
-      sunDirZ: _sunDirZ,
-      time: _time,
-    );
-
-    if (shader == null) {
-      _renderFallback(canvas, _lastSize);
-      return;
-    }
-
-    // Draw full-screen rect with the shader paint.
-    final paint = Paint()..shader = shader;
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, _lastSize.width, _lastSize.height),
-      paint,
-    );
   }
 
   /// Fallback rendering when the shader is unavailable.
