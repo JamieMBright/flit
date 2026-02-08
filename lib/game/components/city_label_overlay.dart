@@ -81,13 +81,23 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
           );
         } catch (e) {
           // Skip individual city if rendering fails - don't crash the whole overlay.
+          // Log for debugging but don't break the rendering loop.
+          gameRef.onError?.call(
+            'City label render failed for ${city.name}',
+            StackTrace.current,
+          );
           continue;
         }
       }
     } catch (e, st) {
-      // If city overlay crashes entirely, log but don't crash the game.
-      // The error service will capture this for telemetry.
-      gameRef.onError?.call(e, st);
+      // If city overlay crashes entirely, send to error telemetry.
+      // The error service will capture this and send to Vercel if configured.
+      // Also log locally for debugging.
+      try {
+        gameRef.onError?.call(e, st);
+      } catch (_) {
+        // If even error reporting fails, there's nothing more we can do.
+      }
     }
   }
 }

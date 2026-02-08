@@ -29,11 +29,17 @@ class AltitudeSlider extends StatefulWidget {
 class _AltitudeSliderState extends State<AltitudeSlider> {
   double? _dragValue;
 
+  // Layout constants for consistent positioning
+  static const double _trackPaddingVertical = 20.0;
+  static const double _thumbHeight = 32.0;
+  static const double _thumbHalfHeight = _thumbHeight / 2;
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final sliderHeight = screenHeight * 0.5; // 50% of screen height
     final currentAltitude = _dragValue ?? widget.altitude;
+    final trackHeight = sliderHeight - (_trackPaddingVertical * 2);
 
     return Positioned(
       right: widget.isRightSide ? 16 : null,
@@ -62,8 +68,7 @@ class _AltitudeSliderState extends State<AltitudeSlider> {
         onTapDown: (details) {
           // Allow tapping anywhere on the track to jump to that altitude
           final localY = details.localPosition.dy;
-          final trackHeight = sliderHeight - 40; // Subtract padding
-          final newValue = 1.0 - (localY - 20) / trackHeight; // Inverted
+          final newValue = 1.0 - (localY - _trackPaddingVertical) / trackHeight; // Inverted
           widget.onAltitudeChanged(newValue.clamp(0.0, 1.0));
         },
         child: Container(
@@ -83,8 +88,8 @@ class _AltitudeSliderState extends State<AltitudeSlider> {
               Positioned(
                 left: 10,
                 right: 10,
-                top: 20,
-                bottom: 20,
+                top: _trackPaddingVertical,
+                bottom: _trackPaddingVertical,
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
@@ -127,9 +132,11 @@ class _AltitudeSliderState extends State<AltitudeSlider> {
                 curve: Curves.easeOut,
                 left: 4,
                 right: 4,
-                bottom: 20 + (sliderHeight - 40) * (1.0 - currentAltitude) - 16,
+                bottom: _trackPaddingVertical + 
+                    trackHeight * (1.0 - currentAltitude) - 
+                    _thumbHalfHeight,
                 child: Container(
-                  height: 32,
+                  height: _thumbHeight,
                   decoration: BoxDecoration(
                     color: _getAltitudeColor(currentAltitude),
                     borderRadius: BorderRadius.circular(16),
