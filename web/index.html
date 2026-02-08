@@ -114,10 +114,17 @@
     var ERROR_ENDPOINT = 'https://flit-errors.vercel.app/api/errors';
 
     // Restore errors from a previous page load (iOS PWA reload recovery).
+    // Check both localStorage and sessionStorage.
     try {
       var stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         errors = JSON.parse(stored);
+      } else {
+        // Fallback to sessionStorage if localStorage was unavailable
+        stored = sessionStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          errors = JSON.parse(stored);
+        }
       }
     } catch (_) {}
 
@@ -176,6 +183,7 @@
       btn.onclick = function() {
         errors = [];
         try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+        try { sessionStorage.removeItem(STORAGE_KEY); } catch (_) {}
         errorBox.style.display = 'none';
         frozen = false;
         location.reload();
@@ -204,12 +212,22 @@
     function freezeWithError(msg) {
       errors.push(msg);
 
-      // Persist to localStorage so errors survive iOS PWA page reloads.
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(errors)); } catch (_) {}
+      // CRITICAL: Persist to localStorage IMMEDIATELY and SYNCHRONOUSLY
+      // before doing anything else. On iOS Safari PWA, the page can reload
+      // milliseconds after an error, so we must save ASAP.
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(errors));
+      } catch (_) {
+        // If localStorage fails, try sessionStorage as backup
+        try {
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(errors));
+        } catch (_) {}
+      }
 
-      // Send to Vercel telemetry (fire-and-forget).
+      // Send to Vercel telemetry (fire-and-forget, with keepalive for iOS).
       sendToVercel(msg);
 
+      // Render the error overlay (may not complete if page reloads).
       renderErrorOverlay();
     }
 
