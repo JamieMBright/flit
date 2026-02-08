@@ -18,6 +18,18 @@ abstract final class FlitColors {
   static const Color landDesert = Color(0xFFD4C49A);
   static const Color landSnow = Color(0xFFE8E2D6);
 
+  // Köppen-Geiger climate zone colors (earth-tone palette)
+  static const Color climateTropicalRain = Color(0xFF2D6A4F); // Af: deep lush green
+  static const Color climateTropicalSavanna = Color(0xFF7C8B3C); // Aw: olive yellow-green
+  static const Color climateHotDesert = Color(0xFFD4A574); // BWh: warm sand
+  static const Color climateSemiArid = Color(0xFFC8A96E); // BSh/BSk: tan steppe
+  static const Color climateMediterranean = Color(0xFF8B9E6B); // Cs: sage green
+  static const Color climateTemperate = Color(0xFF5C8A5C); // Cf: fresh green
+  static const Color climateHumidSubtropical = Color(0xFF6B9E5C); // Cfa: warm green
+  static const Color climateBoreal = Color(0xFF556B4E); // Dfc: dark sage
+  static const Color climateTundra = Color(0xFF8A9A8E); // ET: grey-green
+  static const Color climateIceCap = Color(0xFFD0D8D4); // EF: near-white
+
   // Border and coastline
   static const Color border = Color(0xFF3D5A3A);
   static const Color coastline = Color(0xFF1E4D6B);

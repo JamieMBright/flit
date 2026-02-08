@@ -33,7 +33,7 @@ const double _rad2deg = 180 / pi;
 /// fallback to the Canvas 2D renderer (default world: blue ocean, green
 /// land, country outlines) if the shader fails to load.
 class FlitGame extends FlameGame
-    with HasKeyboardHandlerComponents, HorizontalDragDetector {
+    with HasKeyboardHandlerComponents, PanDetector {
   FlitGame({
     this.onGameReady,
     this.onAltitudeChanged,
@@ -102,25 +102,20 @@ class FlitGame extends FlameGame
   /// Lower = more lag. 1.5 gives a satisfying delayed swing on turns.
   static const double _cameraHeadingEaseRate = 1.5;
 
-  // -- Camera drag (look-around) state --
+  // -- Swipe-to-steer state --
 
-  /// Accumulated camera rotation offset from user drag (radians).
-  /// Positive = looking right of heading, negative = looking left.
-  double _cameraDragOffset = 0;
+  /// X coordinate where the current pan gesture started (screen pixels).
+  /// null when no touch is active.
+  double? _panStartX;
 
-  /// Whether the user is currently dragging to look around.
-  bool _isDraggingCamera = false;
-
-  /// Rate at which camera drag offset eases back to 0 on release.
-  static const double _cameraDragReturnRate = 3.0;
-
-  /// Sensitivity: how many radians of camera rotation per pixel of drag.
-  static const double _cameraDragSensitivity = 0.004;
+  /// Pixels of horizontal drag for full turn rate (±1).
+  /// Small moves = gentle bank, large moves = steep bank.
+  static const double _swipeSensitivityPx = 120.0;
 
   /// How far ahead (in degrees) the camera looks along heading.
   /// The shader Y-flip + these offsets naturally project the plane
   /// to approximately its fixed screen position (y ≈ 72%).
-  static const double _cameraOffsetHigh = 17.6;
+  static const double _cameraOffsetHigh = 11.0;
   static const double _cameraOffsetLow = 3.2;
 
   /// Whether this is the first update (skip lerp, snap camera heading).
@@ -141,12 +136,10 @@ class FlitGame extends FlameGame
   Vector2 _cameraOffsetPosition = Vector2.zero();
 
   /// Navigation bearing for the camera position offset (radians).
-  /// Includes chase camera lag and drag look-around offset.
-  double get cameraBearing => _cameraHeading + _cameraDragOffset + pi / 2;
+  /// Includes chase camera lag.
+  double get cameraBearing => _cameraHeading + pi / 2;
 
-  /// Navigation bearing for the camera up vector (radians).
-  /// Excludes drag offset so the view actually rotates when dragging
-  /// (instead of the plane appearing to turn while the globe stays fixed).
+  /// Navigation bearing for the camera heading (radians).
   double get cameraHeadingBearing => _cameraHeading + pi / 2;
 
   /// Project a world position (lng, lat) to screen coordinates.
@@ -409,7 +402,7 @@ class FlitGame extends FlameGame
 
     _worldPosition = Vector2(
       _normalizeLng(newLng * _rad2deg),
-      (newLat * _rad2deg).clamp(-85.0, 85.0),
+      newLat * _rad2deg,
     );
 
     // Update heading based on turn input (left/right only)
@@ -423,6 +416,7 @@ class FlitGame extends FlameGame
     // so we only drive the Canvas renderer explicitly.
     if (!_shaderReady && _worldMap != null) {
       _worldMap!.setCameraCenter(_cameraOffsetPosition);
+      _worldMap!.setCameraHeading(cameraHeadingBearing);
       _worldMap!.setAltitude(high: _plane.isHighAltitude);
     }
 
@@ -457,7 +451,6 @@ class FlitGame extends FlameGame
   void _updateChaseCamera(double dt) {
     if (_cameraFirstUpdate) {
       _cameraHeading = _heading;
-      _cameraDragOffset = 0;
       _cameraFirstUpdate = false;
     } else {
       // Smooth ease-out: camera heading chases plane heading.
@@ -465,19 +458,11 @@ class FlitGame extends FlameGame
       _cameraHeading = _lerpAngle(_cameraHeading, _heading, factor);
     }
 
-    // Ease camera drag offset back to 0 when not actively dragging.
-    if (!_isDraggingCamera && _cameraDragOffset.abs() > 0.001) {
-      final returnFactor = 1.0 - exp(-_cameraDragReturnRate * dt);
-      _cameraDragOffset *= (1.0 - returnFactor);
-    }
-
-    // Compute a point ahead of the plane along the camera heading direction,
-    // including any look-around drag offset.
+    // Compute a point ahead of the plane along the camera heading direction.
     final offsetDeg = _plane.isHighAltitude ? _cameraOffsetHigh : _cameraOffsetLow;
 
-    // Convert camera heading to navigation bearing (0 = north),
-    // adding the user's look-around drag offset.
-    final camBearing = _cameraHeading + _cameraDragOffset + pi / 2;
+    // Convert camera heading to navigation bearing (0 = north).
+    final camBearing = _cameraHeading + pi / 2;
 
     // Great-circle destination: move offsetDeg ahead of the plane.
     final d = offsetDeg * _deg2rad;
@@ -500,7 +485,7 @@ class FlitGame extends FlameGame
 
     _cameraOffsetPosition = Vector2(
       _normalizeLng(aheadLng * _rad2deg),
-      (aheadLat * _rad2deg).clamp(-85.0, 85.0),
+      aheadLat * _rad2deg,
     );
   }
 
@@ -527,40 +512,35 @@ class FlitGame extends FlameGame
     return lng;
   }
 
-  /// Minimum drag delta to register as camera rotation.
-  static const double _dragDeadZone = 0.5;
+  // -- Swipe-to-steer touch handlers --
 
   @override
-  void onHorizontalDragUpdate(DragUpdateInfo info) {
-    final dx = info.delta.global.x;
-    if (dx.abs() < _dragDeadZone) return;
+  void onPanStart(DragStartInfo info) {
+    _panStartX = info.raw.globalPosition.dx;
+    // Touch down with no movement = hold current heading (turn 0).
+    _plane.setTurnDirection(0);
+  }
 
-    _isDraggingCamera = true;
+  @override
+  void onPanUpdate(DragUpdateInfo info) {
+    if (_panStartX == null) return;
+    final currentX = info.raw.globalPosition.dx;
+    final dx = currentX - _panStartX!;
+
     final settings = GameSettings.instance;
     final sign = settings.invertControls ? -1.0 : 1.0;
-    // Drag rotates the camera view, not the plane.
-    _cameraDragOffset += sign * dx * _cameraDragSensitivity *
-        settings.turnSensitivity;
-    // Clamp to ±90° so you can't look fully behind.
-    _cameraDragOffset = _cameraDragOffset.clamp(-pi / 2, pi / 2);
+
+    // Proportional turn: distance from start point → turn rate.
+    // Clamped to [-1, 1] at ±_swipeSensitivityPx pixels.
+    final turn = (sign * dx / (_swipeSensitivityPx * settings.turnSensitivity))
+        .clamp(-1.0, 1.0);
+    _plane.setTurnDirection(turn);
   }
 
   @override
-  void onHorizontalDragEnd(DragEndInfo info) {
-    _isDraggingCamera = false;
-    // Camera drag offset will ease back to 0 in _updateChaseCamera().
-  }
-
-  // -- HUD turn controls --
-
-  /// Set plane turn direction from HUD buttons.
-  /// -1 = left, 0 = straight, 1 = right.
-  void setHudTurn(double direction) {
-    _plane.setTurnDirection(direction.clamp(-1, 1));
-  }
-
-  /// Release HUD turn (finger lifted from button).
-  void releaseHudTurn() {
+  void onPanEnd(DragEndInfo info) {
+    _panStartX = null;
+    // Release = hold current bearing (turn decays smoothly to 0).
     _plane.releaseTurn();
   }
 

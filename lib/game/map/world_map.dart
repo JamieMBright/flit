@@ -25,6 +25,10 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   /// Camera center in (longitude, latitude) degrees.
   Vector2 _cameraCenter = Vector2.zero();
 
+  /// Camera heading in radians (navigation bearing: 0 = north, clockwise).
+  /// Used to rotate the map so the heading direction points up on screen.
+  double _cameraHeading = 0.0;
+
   /// Current altitude mode.
   bool _isHighAltitude = true;
 
@@ -35,7 +39,7 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   /// Angular radius of the visible globe in radians.
   /// Higher = more of the globe visible. Lower = more zoomed in.
   /// High altitude shows continents; low altitude shows city-level detail.
-  static const double _highAltitudeRadius = 0.55; // ~31° — continents visible, horizon clear
+  static const double _highAltitudeRadius = 0.30; // ~17° — closer view with curvature
   static const double _lowAltitudeRadius = 0.10; // ~5.7° — city-level detail
 
   /// Current interpolated angular radius.
@@ -50,6 +54,11 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
 
   void setCameraCenter(Vector2 center) {
     _cameraCenter = center;
+  }
+
+  /// Set the camera heading (navigation bearing in radians: 0 = north).
+  void setCameraHeading(double heading) {
+    _cameraHeading = heading;
   }
 
   @override
@@ -240,8 +249,8 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     final path = _createCountryPath(country, screenSize, globeRadius);
     if (path == null) return;
 
-    final centerLat = _getCountryCenterLat(country);
-    final landColor = _getLandColorByLatitude(centerLat);
+    final center = _getCountryCenter(country);
+    final landColor = _getClimateColor(center.x, center.y);
 
     canvas.drawPath(path, Paint()..color = landColor);
 
@@ -266,21 +275,109 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     );
   }
 
-  Color _getLandColorByLatitude(double lat) {
+  /// Determine land color based on Köppen-Geiger climate zone heuristics.
+  /// Uses center (lng, lat) of each country to approximate the dominant climate.
+  Color _getClimateColor(double lng, double lat) {
     final absLat = lat.abs();
-    if (absLat > 65) return FlitColors.landSnow;
-    if (absLat > 50) return FlitColors.landMass;
-    if (absLat > 30) return FlitColors.landMassHighlight;
-    if (absLat > 15) return FlitColors.landArid;
-    return FlitColors.landMass;
+
+    // Polar / ice cap
+    if (absLat > 75) return FlitColors.climateIceCap;
+    // Tundra
+    if (absLat > 63) return FlitColors.climateTundra;
+    // Boreal / subarctic (taiga)
+    if (absLat > 52) return FlitColors.climateBoreal;
+
+    // Desert detection: major arid belts (15-35° lat band + specific regions)
+    if (_isDesertRegion(lat, lng)) return FlitColors.climateHotDesert;
+    if (_isSemiAridRegion(lat, lng)) return FlitColors.climateSemiArid;
+
+    // Mediterranean (western coasts, 30-45° lat)
+    if (absLat > 30 && absLat < 45 && _isMediterraneanRegion(lat, lng)) {
+      return FlitColors.climateMediterranean;
+    }
+
+    // Temperate (35-52° lat, not desert)
+    if (absLat > 35) return FlitColors.climateTemperate;
+
+    // Humid subtropical (20-35° lat, not desert)
+    if (absLat > 20) return FlitColors.climateHumidSubtropical;
+
+    // Tropical savanna (10-20° lat)
+    if (absLat > 10) return FlitColors.climateTropicalSavanna;
+
+    // Tropical rainforest (0-10° lat)
+    return FlitColors.climateTropicalRain;
   }
 
-  double _getCountryCenterLat(CountryShape country) {
-    var sum = 0.0;
+  /// Heuristic for hot desert zones (BWh) based on geographic position.
+  bool _isDesertRegion(double lat, double lng) {
+    final absLat = lat.abs();
+    if (absLat < 12 || absLat > 38) return false;
+
+    // Sahara (N Africa: 15-35°N, 15°W-35°E)
+    if (lat > 15 && lat < 35 && lng > -15 && lng < 35) return true;
+    // Arabian (15-32°N, 35-60°E)
+    if (lat > 15 && lat < 32 && lng > 35 && lng < 60) return true;
+    // Iranian/Central Asian (25-40°N, 50-70°E)
+    if (lat > 25 && lat < 40 && lng > 50 && lng < 70) return true;
+    // Thar / Rajasthan (20-30°N, 68-76°E)
+    if (lat > 20 && lat < 30 && lng > 68 && lng < 76) return true;
+    // Australian interior (20-32°S, 120-145°E)
+    if (lat < -20 && lat > -32 && lng > 120 && lng < 145) return true;
+    // Sonoran/Chihuahuan (25-35°N, 105-115°W)
+    if (lat > 25 && lat < 35 && lng > -115 && lng < -105) return true;
+    // Atacama (18-30°S, 68-72°W)
+    if (lat < -18 && lat > -30 && lng > -72 && lng < -68) return true;
+    // Namib/Kalahari (15-30°S, 15-25°E)
+    if (lat < -15 && lat > -30 && lng > 15 && lng < 25) return true;
+
+    return false;
+  }
+
+  /// Heuristic for semi-arid steppe zones (BS).
+  bool _isSemiAridRegion(double lat, double lng) {
+    final absLat = lat.abs();
+    if (absLat < 10 || absLat > 45) return false;
+
+    // Sahel (10-15°N, 15°W-40°E)
+    if (lat > 10 && lat < 15 && lng > -15 && lng < 40) return true;
+    // Central Asian steppe (35-50°N, 50-90°E)
+    if (lat > 35 && lat < 50 && lng > 50 && lng < 90) return true;
+    // Patagonia/Gran Chaco (25-45°S, 60-70°W)
+    if (lat < -25 && lat > -45 && lng > -70 && lng < -60) return true;
+    // Horn of Africa (5-15°N, 40-52°E)
+    if (lat > 5 && lat < 15 && lng > 40 && lng < 52) return true;
+    // Southern Africa interior (15-25°S, 22-35°E)
+    if (lat < -15 && lat > -25 && lng > 22 && lng < 35) return true;
+
+    return false;
+  }
+
+  /// Heuristic for Mediterranean climate zones (Cs).
+  bool _isMediterraneanRegion(double lat, double lng) {
+    // Southern Europe / North Africa coast (30-45°N, 10°W-40°E)
+    if (lat > 30 && lat < 45 && lng > -10 && lng < 40) return true;
+    // California (32-40°N, 115-125°W)
+    if (lat > 32 && lat < 40 && lng > -125 && lng < -115) return true;
+    // Chile central (30-38°S, 70-73°W)
+    if (lat < -30 && lat > -38 && lng > -73 && lng < -70) return true;
+    // SW Australia (30-37°S, 114-120°E)
+    if (lat < -30 && lat > -37 && lng > 114 && lng < 120) return true;
+    // South Africa cape (33-35°S, 18-20°E)
+    if (lat < -33 && lat > -35 && lng > 18 && lng < 20) return true;
+
+    return false;
+  }
+
+  /// Get center (lng, lat) of a country shape.
+  Vector2 _getCountryCenter(CountryShape country) {
+    var sumLng = 0.0;
+    var sumLat = 0.0;
     for (final p in country.points) {
-      sum += p.y;
+      sumLng += p.x;
+      sumLat += p.y;
     }
-    return sum / country.points.length;
+    return Vector2(sumLng / country.points.length, sumLat / country.points.length);
   }
 
   void _renderCoastlines(
@@ -392,9 +489,15 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     }
 
     final sinC = sin(c);
-    final px = cos(latR) * sin(dLng) / sinC;
-    final py =
+    final rawPx = cos(latR) * sin(dLng) / sinC;
+    final rawPy =
         (cos(lat0) * sin(latR) - sin(lat0) * cos(latR) * cos(dLng)) / sinC;
+
+    // Rotate by camera heading so heading direction points up on screen.
+    final cosH = cos(_cameraHeading);
+    final sinH = sin(_cameraHeading);
+    final px = rawPx * cosH - rawPy * sinH;
+    final py = rawPx * sinH + rawPy * cosH;
 
     final scale = globeRadius / _angularRadius;
 
@@ -425,9 +528,15 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     }
 
     final sinC = sin(c);
-    final px = cos(latR) * sin(dLng) / sinC;
-    final py =
+    final rawPx = cos(latR) * sin(dLng) / sinC;
+    final rawPy =
         (cos(lat0) * sin(latR) - sin(lat0) * cos(latR) * cos(dLng)) / sinC;
+
+    // Rotate by camera heading so heading direction points up on screen.
+    final cosH = cos(_cameraHeading);
+    final sinH = sin(_cameraHeading);
+    final px = rawPx * cosH - rawPy * sinH;
+    final py = rawPx * sinH + rawPy * cosH;
 
     if (c > _angularRadius) c = _angularRadius;
 

@@ -88,6 +88,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
       MaterialPageRoute<void>(
         builder: (_) => PlayScreen(
           region: GameRegion.world,
+          totalRounds: 5,
           coinReward: reward,
           planeColorScheme: planeColors,
           equippedPlaneId: planeId,
