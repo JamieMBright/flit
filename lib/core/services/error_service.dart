@@ -191,6 +191,13 @@ class ErrorService {
   }) {
     _apiEndpoint = apiEndpoint.isNotEmpty ? apiEndpoint : null;
     _apiKey = apiKey.isNotEmpty ? apiKey : null;
+    
+    if (kDebugMode) {
+      print('[ErrorService] Initialized:');
+      print('[ErrorService]   Endpoint: ${_apiEndpoint ?? "NOT SET"}');
+      print('[ErrorService]   API Key: ${_apiKey?.isNotEmpty == true ? "SET (${_apiKey!.length} chars)" : "NOT SET"}');
+      print('[ErrorService]   Session ID: $_sessionId');
+    }
   }
 
   /// Register the HTTP sender callback.
@@ -252,13 +259,22 @@ class ErrorService {
     StackTrace? stackTrace, {
     Map<String, String>? context,
   }) {
+    if (kDebugMode) {
+      print('[ErrorService] reportCritical() called: $error');
+      print('[ErrorService] Context: $context');
+    }
+    
     reportError(
       error,
       stackTrace,
       severity: ErrorSeverity.critical,
       context: context,
     );
+    
     // Fire-and-forget immediate flush — don't await.
+    if (kDebugMode) {
+      print('[ErrorService] Triggering immediate flush for critical error');
+    }
     flush();
   }
 
@@ -300,15 +316,34 @@ class ErrorService {
   /// Uses exponential backoff: 1 s, 2 s, 4 s between attempts.
   Future<bool> flush() async {
     // Guard: nothing to do.
-    if (_queue.isEmpty) return true;
+    if (_queue.isEmpty) {
+      if (kDebugMode) {
+        print('[ErrorService] flush() called but queue is empty');
+      }
+      return true;
+    }
 
     // Guard: no endpoint or sender configured.
     if (_apiEndpoint == null || _sender == null) {
+      if (kDebugMode) {
+        print('[ErrorService] flush() failed: no endpoint or sender configured');
+        print('[ErrorService]   endpoint: $_apiEndpoint');
+        print('[ErrorService]   sender: $_sender');
+      }
       return false;
     }
 
     // Guard: another flush is already in progress.
-    if (_flushing) return false;
+    if (_flushing) {
+      if (kDebugMode) {
+        print('[ErrorService] flush() skipped: already flushing');
+      }
+      return false;
+    }
+
+    if (kDebugMode) {
+      print('[ErrorService] flush() starting: ${_queue.length} errors queued');
+    }
 
     _flushing = true;
 
@@ -318,8 +353,17 @@ class ErrorService {
       final batch = List<CapturedError>.from(_queue);
       final body = jsonEncode(batch.map((e) => e.toJson()).toList());
 
+      if (kDebugMode) {
+        print('[ErrorService] Sending ${batch.length} errors (${body.length} bytes)');
+        print('[ErrorService] Endpoint: $_apiEndpoint');
+      }
+
       for (int attempt = 0; attempt < maxRetries; attempt++) {
         try {
+          if (kDebugMode && attempt > 0) {
+            print('[ErrorService] Retry attempt $attempt');
+          }
+
           final success = await _sender!(
             url: _apiEndpoint!,
             apiKey: _apiKey ?? '',
@@ -329,19 +373,35 @@ class ErrorService {
           if (success) {
             // Remove only the errors we successfully sent.
             _queue.removeWhere((e) => batch.contains(e));
+            if (kDebugMode) {
+              print('[ErrorService] flush() SUCCESS: ${batch.length} errors sent');
+            }
             return true;
+          } else {
+            if (kDebugMode) {
+              print('[ErrorService] flush() returned false on attempt $attempt');
+            }
           }
-        } catch (_) {
+        } catch (e) {
           // Network or serialization error — retry after backoff.
+          if (kDebugMode) {
+            print('[ErrorService] flush() exception on attempt $attempt: $e');
+          }
         }
 
         // Exponential backoff: 1s, 2s, 4s.
         if (attempt < maxRetries - 1) {
           final delay = Duration(seconds: pow(2, attempt).toInt());
+          if (kDebugMode) {
+            print('[ErrorService] Backing off for ${delay.inSeconds}s');
+          }
           await Future<void>.delayed(delay);
         }
       }
 
+      if (kDebugMode) {
+        print('[ErrorService] flush() FAILED: all retries exhausted');
+      }
       return false; // All retries exhausted.
     } finally {
       _flushing = false;
