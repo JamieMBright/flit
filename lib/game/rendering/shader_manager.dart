@@ -182,7 +182,7 @@ class ShaderManager {
               error: error, stackTrace: stack);
         } else {
           _log.warning('shader', 'Failed to load optional texture: $name (will degrade gracefully)',
-              error: error, stackTrace: stack);
+              error: error);
         }
         
         // Report to telemetry (non-critical errors are warnings, critical are errors).
