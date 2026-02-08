@@ -78,8 +78,7 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
       for (final city in CountryData.majorCities) {
         try {
           // Validate city location before projection
-          if (city.location == null ||
-              !city.location.x.isFinite ||
+          if (!city.location.x.isFinite ||
               !city.location.y.isFinite) {
             continue;
           }
@@ -216,8 +215,7 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
 
         try {
           // Validate city location
-          if (city.location == null ||
-              !city.location.x.isFinite ||
+          if (!city.location.x.isFinite ||
               !city.location.y.isFinite) {
             continue;
           }
