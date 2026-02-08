@@ -123,7 +123,7 @@ class FlitGame extends FlameGame
   /// Waypoint the player has tapped — the plane auto-steers toward it.
   /// Set by tapping anywhere on the globe (works with both renderers).
   /// null when no waypoint is set (plane flies straight).
-  /// Automatically cleared when the plane reaches the waypoint (~1° distance)
+  /// Automatically cleared when the plane reaches the waypoint (within 1.0°)
   /// or when keyboard controls are used.
   Vector2? _waymarker;
 
@@ -747,19 +747,18 @@ class FlitGame extends FlameGame
   void onTapUp(TapUpInfo info) {
     if (!_isPlaying) return;
 
-    final screenPoint = Vector2(
-      info.eventPosition.widget.x,
-      info.eventPosition.widget.y,
-    );
-
     // Convert screen tap to globe lat/lng.
     Vector2? latLng;
     
     if (_globeRenderer != null) {
       // Shader renderer: use camera-based ray-casting hit test.
       final cam = _globeRenderer!.camera;
+      final screenPoint = Offset(
+        info.eventPosition.widget.x,
+        info.eventPosition.widget.y,
+      );
       final result = _hitTest.screenToLatLng(
-        Offset(screenPoint.x, screenPoint.y),
+        screenPoint,
         Size(size.x, size.y),
         cam,
       );
@@ -768,6 +767,10 @@ class FlitGame extends FlameGame
       }
     } else if (_worldMap != null) {
       // Canvas renderer: use azimuthal projection inverse.
+      final screenPoint = Vector2(
+        info.eventPosition.widget.x,
+        info.eventPosition.widget.y,
+      );
       latLng = _worldMap!.screenToLatLng(screenPoint, size);
     }
 
