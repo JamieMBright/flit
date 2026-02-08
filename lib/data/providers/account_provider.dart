@@ -80,11 +80,19 @@ class AccountNotifier extends StateNotifier<AccountState> {
   void switchToGodAccount() => switchAccount(TestAccounts.godAccount);
   void switchToNewPlayer() => switchAccount(TestAccounts.newPlayer);
 
-  /// Add coins to current account
-  void addCoins(int amount) {
+  /// Add coins to current account.
+  ///
+  /// When [applyBoost] is true (default), the pilot license coin boost
+  /// multiplier is applied to the amount. Pass `false` for store purchases
+  /// or debug grants where the boost should not apply.
+  void addCoins(int amount, {bool applyBoost = true}) {
+    var earned = amount;
+    if (applyBoost) {
+      earned = (amount * coinBoostMultiplier).round();
+    }
     state = state.copyWith(
       currentPlayer: state.currentPlayer.copyWith(
-        coins: state.currentPlayer.coins + amount,
+        coins: state.currentPlayer.coins + earned,
       ),
     );
   }
@@ -208,6 +216,11 @@ class AccountNotifier extends StateNotifier<AccountState> {
   }
 
   // --- Pilot License ---
+
+  /// Directly set the pilot license (used when LicenseScreen rerolls locally).
+  void updateLicense(PilotLicense license) {
+    state = state.copyWith(license: license);
+  }
 
   /// Reroll the pilot license. Returns true if affordable.
   ///

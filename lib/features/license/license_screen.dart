@@ -92,7 +92,8 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
   @override
   void initState() {
     super.initState();
-    _license = PilotLicense.random();
+    // Read the license from the account provider so rerolls persist.
+    _license = ref.read(licenseProvider);
     _shimmerController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -157,6 +158,8 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
       _isRolling = false;
     });
     ref.read(accountProvider.notifier).spendCoins(_totalCost);
+    // Persist the rerolled license to the account provider.
+    ref.read(accountProvider.notifier).updateLicense(_license);
   }
 
   // ---------------------------------------------------------------------------
@@ -453,19 +456,6 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
             Icons.casino,
           ),
         ),
-        const SizedBox(height: 4),
-        _CompactStatBar(
-          label: _license.clueBoostLabel,
-          icon: Icons.lightbulb_outline,
-          value: _license.clueBoost,
-          shimmer: _shimmerController,
-          showPercentage: false,
-          onTap: () => _showEffectPopup(
-            'Clue Type',
-            'Your preferred clue type is "${_license.preferredClueType}". You\'ll receive this type of clue ${_license.clueBoost}% more often when playing.',
-            Icons.lightbulb_outline,
-          ),
-        ),
 
         const Spacer(flex: 1),
 
@@ -659,17 +649,6 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
               isLocked: _lockedStats.contains('clueChance'),
               cost: _lockCostFor('clueChance'),
               onChanged: (locked) => _toggleLock('clueChance', locked),
-            ),
-            const SizedBox(height: 8),
-            _LockRow(
-              label: 'Clue Type',
-              value: '${_license.preferredClueType[0].toUpperCase()}${_license.preferredClueType.substring(1)}',
-              icon: Icons.lightbulb_outline,
-              isLocked: _lockClueType,
-              cost: PilotLicense.lockTypeCost,
-              onChanged: (locked) {
-                setState(() => _lockClueType = locked);
-              },
             ),
             const Divider(color: FlitColors.cardBorder, height: 24),
             Row(

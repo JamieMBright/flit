@@ -794,6 +794,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                 ),
                 ownedParts: ownedParts,
                 coins: coins,
+                baseConfig: _config,
                 onPartTapped: (part) {
                   final key = _categories[_selectedCategory].configKey;
                   if (_canUsePart(part)) {
@@ -945,6 +946,7 @@ class _PartsGrid extends StatelessWidget {
     required this.selectedPartId,
     required this.ownedParts,
     required this.coins,
+    required this.baseConfig,
     required this.onPartTapped,
   });
 
@@ -952,7 +954,65 @@ class _PartsGrid extends StatelessWidget {
   final String selectedPartId;
   final Set<String> ownedParts;
   final int coins;
+  final AvatarConfig baseConfig;
   final void Function(_AvatarPart) onPartTapped;
+
+  /// Build a preview config with a specific part applied.
+  static AvatarConfig _previewConfig(
+    AvatarConfig base,
+    String configKey,
+    String partId,
+  ) {
+    switch (configKey) {
+      case 'bodyType':
+        final name = partId.substring('body_'.length);
+        return base.copyWith(
+          bodyType: AvatarBodyType.values.firstWhere((v) => v.name == name),
+        );
+      case 'face':
+        final name = partId.substring('face_'.length);
+        return base.copyWith(
+          face: AvatarFace.values.firstWhere((v) => v.name == name),
+        );
+      case 'skin':
+        final name = partId.substring('skin_'.length);
+        return base.copyWith(
+          skin: AvatarSkin.values.firstWhere((v) => v.name == name),
+        );
+      case 'eyes':
+        final name = partId.substring('eyes_'.length);
+        return base.copyWith(
+          eyes: AvatarEyes.values.firstWhere((v) => v.name == name),
+        );
+      case 'hair':
+        final name = partId.substring('hair_'.length);
+        return base.copyWith(
+          hair: AvatarHair.values.firstWhere((v) => v.name == name),
+        );
+      case 'outfit':
+        final name = partId.substring('outfit_'.length);
+        return base.copyWith(
+          outfit: AvatarOutfit.values.firstWhere((v) => v.name == name),
+        );
+      case 'hat':
+        final name = partId.substring('hat_'.length);
+        return base.copyWith(
+          hat: AvatarHat.values.firstWhere((v) => v.name == name),
+        );
+      case 'glasses':
+        final name = partId.substring('glasses_'.length);
+        return base.copyWith(
+          glasses: AvatarGlasses.values.firstWhere((v) => v.name == name),
+        );
+      case 'accessory':
+        final name = partId.substring('acc_'.length);
+        return base.copyWith(
+          accessory: AvatarAccessory.values.firstWhere((v) => v.name == name),
+        );
+      default:
+        return base;
+    }
+  }
 
   @override
   Widget build(BuildContext context) => GridView.builder(
@@ -970,6 +1030,8 @@ class _PartsGrid extends StatelessWidget {
           final isOwned = part.isFree || ownedParts.contains(part.id);
           final canAfford = coins >= part.price;
           final isLocked = !isOwned && !part.isFree;
+          final previewConfig =
+              _previewConfig(baseConfig, category.configKey, part.id);
 
           return _PartCard(
             part: part,
@@ -977,6 +1039,7 @@ class _PartsGrid extends StatelessWidget {
             isOwned: isOwned,
             isLocked: isLocked,
             canAfford: canAfford,
+            previewConfig: previewConfig,
             onTap: () => onPartTapped(part),
           );
         },
@@ -994,6 +1057,7 @@ class _PartCard extends StatelessWidget {
     required this.isOwned,
     required this.isLocked,
     required this.canAfford,
+    required this.previewConfig,
     required this.onTap,
   });
 
@@ -1002,6 +1066,7 @@ class _PartCard extends StatelessWidget {
   final bool isOwned;
   final bool isLocked;
   final bool canAfford;
+  final AvatarConfig previewConfig;
   final VoidCallback onTap;
 
   @override
@@ -1027,7 +1092,7 @@ class _PartCard extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Icon preview
+                    // Avatar art preview
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
@@ -1035,14 +1100,9 @@ class _PartCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Center(
-                          child: Icon(
-                            part.icon,
-                            size: 32,
-                            color: isLocked && !canAfford
-                                ? FlitColors.textMuted
-                                : isSelected
-                                    ? FlitColors.accent
-                                    : FlitColors.textPrimary,
+                          child: AvatarWidget(
+                            config: previewConfig,
+                            size: 64,
                           ),
                         ),
                       ),

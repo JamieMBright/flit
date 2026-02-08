@@ -122,7 +122,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   void _challengeFriend(Friend friend) {
     final planeId = ref.read(equippedPlaneIdProvider);
     final plane = CosmeticCatalog.getById(planeId);
-    final companion = ref.read(accountProvider).avatar.companion;
+    final account = ref.read(accountProvider);
+    final companion = account.avatar.companion;
+    final fuelBoost = ref.read(accountProvider.notifier).fuelBoostMultiplier;
+    final license = account.license;
     // Navigate directly to play screen for round 1
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -132,6 +135,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           planeWingSpan: plane?.wingSpan,
           equippedPlaneId: planeId,
           companionType: companion,
+          fuelBoostMultiplier: fuelBoost,
+          clueBoost: license.clueBoost,
+          clueChance: license.clueChance,
+          preferredClueType: license.preferredClueType,
         ),
       ),
     ).then((_) {

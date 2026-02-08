@@ -35,6 +35,10 @@ class PlayScreen extends StatefulWidget {
     this.planeWingSpan,
     this.equippedPlaneId = 'plane_default',
     this.companionType = AvatarCompanion.none,
+    this.fuelBoostMultiplier = 1.0,
+    this.clueBoost = 0,
+    this.clueChance = 0,
+    this.preferredClueType,
   });
 
   /// The region to play in.
@@ -64,6 +68,18 @@ class PlayScreen extends StatefulWidget {
 
   /// Companion creature type from avatar config.
   final AvatarCompanion companionType;
+
+  /// Fuel boost multiplier from pilot license (1.0 = no boost).
+  final double fuelBoostMultiplier;
+
+  /// Bonus % chance of receiving the preferred clue type (from pilot license).
+  final int clueBoost;
+
+  /// Bonus % chance of receiving extra clues (from pilot license).
+  final int clueChance;
+
+  /// Preferred clue type name (from pilot license, e.g. 'flag', 'capital').
+  final String? preferredClueType;
 
   @override
   State<PlayScreen> createState() => _PlayScreenState();
@@ -111,6 +127,7 @@ class _PlayScreenState extends State<PlayScreen> {
         onAltitudeChanged: _onAltitudeChanged,
         onError: _onGameError,
         isChallenge: widget.challengeFriendName != null,
+        fuelBoostMultiplier: widget.fuelBoostMultiplier,
         planeColorScheme: widget.planeColorScheme,
         planeWingSpan: widget.planeWingSpan,
         equippedPlaneId: widget.equippedPlaneId,
@@ -182,16 +199,20 @@ class _PlayScreenState extends State<PlayScreen> {
     }
   }
 
-  /// Use a hint — tiered system with 3 levels.
+  /// Use a hint — tiered system with 4 levels.
   void _useHint() {
-    if (_session == null || _hintTier >= 3) return;
+    if (_session == null || _hintTier >= 4) return;
 
     setState(() {
       _hintTier++;
 
       if (_hintTier == 1) {
         // Tier 1: Cycle to a different clue
-        _currentClue = Clue.random(_session!.targetCountry.code);
+        _currentClue = Clue.random(
+          _session!.targetCountry.code,
+          preferredClueType: widget.preferredClueType,
+          clueBoost: widget.clueBoost,
+        );
         _log.info('hint', 'Tier 1: Clue cycled', data: {
           'target': _session!.targetName,
           'newClueType': _currentClue!.type.name,
@@ -206,6 +227,12 @@ class _PlayScreenState extends State<PlayScreen> {
         // Tier 3: Show wayline to destination
         _game.showHintWayline(_session!.targetPosition);
         _log.info('hint', 'Tier 3: Wayline shown', data: {
+          'target': _session!.targetName,
+        });
+      } else if (_hintTier == 4) {
+        // Tier 4: Set navigation waypoint to target country (nuclear option)
+        _game.setWaymarker(_session!.targetPosition);
+        _log.info('hint', 'Tier 4: Nav waypoint set to target', data: {
           'target': _session!.targetName,
         });
       }
@@ -229,7 +256,11 @@ class _PlayScreenState extends State<PlayScreen> {
   void _startNewGame() {
     _log.info('session', 'Starting round $_currentRound/${widget.totalRounds}');
     try {
-      _session = GameSession.random(region: widget.region);
+      _session = GameSession.random(
+        region: widget.region,
+        preferredClueType: widget.preferredClueType,
+        clueBoost: widget.clueBoost,
+      );
       _elapsed = Duration.zero;
 
       // Reset hint state for new round
@@ -675,7 +706,7 @@ class _PlayScreenState extends State<PlayScreen> {
                   _game.setFlightSpeed(speed);
                 });
               },
-              onHint: _hintTier < 3 ? _useHint : null,
+              onHint: _hintTier < 4 ? _useHint : null,
               hintTier: _hintTier,
               revealedCountry: _revealedCountry,
               countryName: _game.currentCountryName,

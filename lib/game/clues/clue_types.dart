@@ -82,19 +82,47 @@ class Clue {
     );
   }
 
-  /// Generate a random clue for a country, with validation to avoid "Unknown" data
-  factory Clue.random(String countryCode) {
+  /// Generate a random clue for a country, with validation to avoid "Unknown" data.
+  ///
+  /// When [preferredClueType] and [clueBoost] are provided, the preferred
+  /// type has [clueBoost]% more chance of being selected (e.g. clueBoost=5
+  /// gives the preferred type a 5 percentage-point bonus).
+  factory Clue.random(
+    String countryCode, {
+    String? preferredClueType,
+    int clueBoost = 0,
+  }) {
     const types = ClueType.values;
     final random = Random();
     final triedTypes = <ClueType>{};
     const maxRetries = 10;
+
+    // Resolve preferred ClueType enum from the string name.
+    ClueType? preferredType;
+    if (preferredClueType != null && clueBoost > 0) {
+      for (final t in types) {
+        if (t.name == preferredClueType) {
+          preferredType = t;
+          break;
+        }
+      }
+    }
 
     for (var attempt = 0; attempt < maxRetries; attempt++) {
       // Get available types that haven't been tried yet
       final availableTypes = types.where((t) => !triedTypes.contains(t)).toList();
       if (availableTypes.isEmpty) break;
 
-      final randomType = availableTypes[random.nextInt(availableTypes.length)];
+      ClueType randomType;
+      // If we have a preferred type and it hasn't been tried, give it a
+      // [clueBoost]% chance of being picked directly.
+      if (preferredType != null &&
+          availableTypes.contains(preferredType) &&
+          random.nextInt(100) < clueBoost) {
+        randomType = preferredType;
+      } else {
+        randomType = availableTypes[random.nextInt(availableTypes.length)];
+      }
       triedTypes.add(randomType);
 
       Clue clue;

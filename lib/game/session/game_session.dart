@@ -93,14 +93,25 @@ class GameSession {
   /// Get the target name for display
   String get targetName => targetArea?.name ?? targetCountry.name;
 
-  /// Create a new random game session
-  factory GameSession.random({GameRegion region = GameRegion.world}) {
+  /// Create a new random game session.
+  ///
+  /// When [preferredClueType] and [clueBoost] are provided, the generated
+  /// clue will favour the preferred type.
+  factory GameSession.random({
+    GameRegion region = GameRegion.world,
+    String? preferredClueType,
+    int clueBoost = 0,
+  }) {
     final random = Random();
 
     if (region == GameRegion.world) {
       // World mode: pick a random country
       final country = CountryData.getRandomCountry();
-      final clue = Clue.random(country.code);
+      final clue = Clue.random(
+        country.code,
+        preferredClueType: preferredClueType,
+        clueBoost: clueBoost,
+      );
 
       // Generate random start position (not too close to target)
       final startLng = (random.nextDouble() * 360) - 180;

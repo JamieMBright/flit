@@ -12,6 +12,7 @@ import '../core/utils/game_log.dart';
 import '../core/utils/web_error_bridge.dart';
 import '../data/models/avatar_config.dart';
 import 'components/city_label_overlay.dart';
+import 'components/country_border_overlay.dart';
 import 'components/companion_renderer.dart';
 import 'components/contrail_renderer.dart';
 import 'components/wayline_renderer.dart';
@@ -392,6 +393,9 @@ class FlitGame extends FlameGame
         await add(CompanionRenderer(companionType: companionType));
       }
 
+      // Country border overlay — renders border outlines when shader is active.
+      await add(CountryBorderOverlay());
+
       // City label overlay — renders city names at low altitude.
       // Works with both shader and canvas renderers (WorldMap renders its own
       // cities at low altitude, so the overlay skips when WorldMap is active).
@@ -562,8 +566,9 @@ class FlitGame extends FlameGame
       (newLat * _rad2deg).clamp(-85.0, 85.0),
     );
 
-    // Update heading based on turn input (left/right only)
-    _heading += _plane.turnDirection * PlaneComponent.turnRate * dt;
+    // Update heading based on turn input (left/right only).
+    // Negated so right input turns clockwise on the globe.
+    _heading -= _plane.turnDirection * PlaneComponent.turnRate * dt;
 
     // Normalize heading to [-π, π] to prevent accumulation
     while (_heading > pi) { _heading -= 2 * pi; }
@@ -722,13 +727,13 @@ class FlitGame extends FlameGame
     while (diff > pi) { diff -= 2 * pi; }
     while (diff < -pi) { diff += 2 * pi; }
 
-    // Set turn direction proportional to the angular difference.
-    // Clamp to [-1, 1] with a dead zone for small corrections.
+    // Steer proportionally to the angular difference.
+    // Uses smooth interpolation so the plane banks gradually into turns.
     final turnStrength = (diff / (pi * 0.3)).clamp(-1.0, 1.0);
     if (turnStrength.abs() < 0.02) {
-      _plane.setTurnDirection(0);
+      _plane.steerToward(0, dt);
     } else {
-      _plane.setTurnDirection(turnStrength);
+      _plane.steerToward(turnStrength, dt);
     }
   }
 
@@ -837,6 +842,12 @@ class FlitGame extends FlameGame
         _hintTarget = null;
       }
     });
+  }
+
+  /// Set a navigation waypoint programmatically (e.g. from hint tier 4).
+  /// The plane will auto-steer toward this position.
+  void setWaymarker(Vector2 position) {
+    _waymarker = position.clone();
   }
 
   /// Start a new game/challenge.

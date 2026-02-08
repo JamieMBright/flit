@@ -79,8 +79,9 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Time accumulator for contrail spawning
   double _contrailTimer = 0;
 
-  /// Contrail spawn interval
-  static const double _contrailInterval = 0.04;
+  /// Base contrail spawn interval at high altitude.
+  /// At low altitude, interval is scaled down so particles stay dense.
+  static const double _contrailIntervalBase = 0.04;
 
   /// World position set by FlitGame each frame (lng, lat degrees).
   Vector2 worldPos = Vector2.zero();
@@ -1106,8 +1107,14 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   }
 
   void _updateContrails(double dt) {
+    // Scale spawn rate with zoom: at low altitude (zoomed in), spawn
+    // particles more frequently so the trail stays dense on screen.
+    final zoomRatio =
+        (gameRef.cameraDistance / 2.3).clamp(0.4, 1.0); // 2.3 = high alt dist
+    final interval = _contrailIntervalBase * zoomRatio;
+
     _contrailTimer += dt;
-    if (_contrailTimer >= _contrailInterval) {
+    if (_contrailTimer >= interval) {
       _contrailTimer = 0;
       _spawnContrailParticle();
     }
@@ -1134,13 +1141,12 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // Compute wing-tip world positions using great-circle offset from
     // the plane's current world position.
     // The wing span (in pixels) needs to be converted to degrees.
-    // The pixels-to-degrees ratio depends on the current camera distance (zoom).
-    // At high altitude (distance 2.5), roughly 1 degree ≈ 12.0 pixels.
-    // At low altitude (distance 1.3), roughly 1 degree ≈ 18.74 pixels.
-    const referenceDistance = 2.5;
+    // At closer camera (low altitude), each degree covers MORE pixels.
+    const referenceDistance = 2.3;
     const pixelsPerDegreeAtReference = 12.0;
     final currentDistance = gameRef.cameraDistance;
-    final pixelsPerDegree = pixelsPerDegreeAtReference * (currentDistance / referenceDistance);
+    final pixelsPerDegree =
+        pixelsPerDegreeAtReference * (referenceDistance / currentDistance);
     final pixelsToDegrees = 1.0 / pixelsPerDegree;
     final wingSpanDegrees = dynamicWingSpan * pixelsToDegrees;
 
@@ -1155,8 +1161,9 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
 
     // Slightly behind the plane (small offset aft along heading).
     final aftBearing = navBearing + pi;
-    final wingDist = wingSpanDegrees * 0.5 * _deg2rad; // Dynamic wing-tip distance (scaled to match visual wing tips)
-    const aftDist = 1.5 * _deg2rad; // ~1.5° behind
+    final wingDist = wingSpanDegrees * 0.5 * _deg2rad;
+    // Aft offset also scales with zoom so contrails stay near the plane.
+    final aftDist = 1.5 * pixelsToDegrees * _deg2rad;
 
     for (final bearing in [leftBearing, rightBearing]) {
       // Combine lateral offset with slight aft offset.
@@ -1199,6 +1206,17 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   void setTurnDirection(double direction) {
     _turnDirection = direction.clamp(-1, 1);
     _isDragging = true;
+  }
+
+  /// Smoothly steer toward a target turn direction (for waypoint auto-steering).
+  /// Unlike [setTurnDirection], this interpolates gradually and does not set
+  /// the dragging flag, so the plane banks smoothly into the turn.
+  void steerToward(double target, double dt) {
+    final clamped = target.clamp(-1.0, 1.0);
+    // Smooth interpolation toward target turn direction
+    _turnDirection += (clamped - _turnDirection) * (dt * 4.0).clamp(0.0, 1.0);
+    _turnDirection = _turnDirection.clamp(-1.0, 1.0);
+    _isDragging = false;
   }
 
   /// Called when the player lifts their finger — plane coasts to straight.
