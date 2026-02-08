@@ -5,7 +5,7 @@ import 'package:flit/data/models/cosmetic.dart';
 void main() {
   group('Cosmetic', () {
     test('all plane cosmetics have wing spans defined', () {
-      final planes = CosmeticCatalog.planes;
+      const planes = CosmeticCatalog.planes;
       
       for (final plane in planes) {
         expect(
@@ -22,7 +22,7 @@ void main() {
     });
 
     test('wing spans vary across different plane types', () {
-      final planes = CosmeticCatalog.planes;
+      const planes = CosmeticCatalog.planes;
       final wingSpans = planes.map((p) => p.wingSpan).toSet();
       
       // Should have variety - at least 5 different wing spans
@@ -41,7 +41,7 @@ void main() {
     });
 
     test('contrail cosmetics do not require wing spans', () {
-      final contrails = CosmeticCatalog.contrails;
+      const contrails = CosmeticCatalog.contrails;
       
       // Contrails may or may not have wing spans - just verify they exist
       expect(contrails.isNotEmpty, isTrue);
