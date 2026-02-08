@@ -21,10 +21,14 @@ for hook in pre-commit pre-push; do
 done
 
 echo ""
-echo "✅ Git hooks installed!"
+echo "Git hooks installed!"
 echo ""
 echo "Hooks will run automatically:"
-echo "  • pre-commit: format, analyze, unit tests"
-echo "  • pre-push: full build + all tests"
+echo "  pre-commit: string literal safety, format, analyze, unit tests"
+echo "  pre-push: full build + all tests"
+echo ""
+echo "Standalone string safety scanner:"
+echo "  ./scripts/check-strings.sh            # scan all lib/ Dart files"
+echo "  ./scripts/check-strings.sh --staged   # scan staged files only"
 echo ""
 echo "To skip hooks (not recommended): git commit --no-verify"

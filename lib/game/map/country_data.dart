@@ -107,7 +107,7 @@ abstract class CountryData {
     CountryShape(
       code: 'AG',
       name: 'Antigua and Barbuda',
-      capital: 'St. John\\'s',
+      capital: "St. John's",
       polygons: [
         [
           Vector2(-61.666300, 17.024400), Vector2(-61.710400, 17.010400), Vector2(-61.760600, 17.013700),
@@ -2214,7 +2214,7 @@ abstract class CountryData {
     CountryShape(
       code: 'GD',
       name: 'Grenada',
-      capital: 'St. George\\'s',
+      capital: "St. George's",
       polygons: [
         [
           Vector2(-61.608300, 12.002600), Vector2(-61.635500, 12.012000), Vector2(-61.668800, 12.032900),
@@ -5050,7 +5050,7 @@ abstract class CountryData {
     CountryShape(
       code: 'TD',
       name: 'Chad',
-      capital: 'N\\'Djamena',
+      capital: "N'Djamena",
       polygons: [
         [
           Vector2(23.837660, 19.580470), Vector2(23.886890, 15.610840), Vector2(23.024590, 15.680720),
