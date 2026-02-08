@@ -567,7 +567,10 @@ class FlitGame extends FlameGame
     );
 
     // Update heading based on turn input (left/right only).
-    _heading += _plane.turnDirection * PlaneComponent.turnRate * dt;
+    // Negative sign because: positive turnDirection = turn right (clockwise in nav)
+    // but positive rotation in math convention is counter-clockwise.
+    // Navigation bearing = heading + π/2, so to turn right, heading must decrease.
+    _heading -= _plane.turnDirection * PlaneComponent.turnRate * dt;
 
     // Normalize heading to [-π, π] to prevent accumulation
     while (_heading > pi) { _heading -= 2 * pi; }
