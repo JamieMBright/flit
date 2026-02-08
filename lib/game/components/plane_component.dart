@@ -152,7 +152,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
 
     // Rotate to face heading. Camera up vector is the heading direction,
     // so visualHeading=0 means the plane faces "up" on screen (forward).
-    canvas.rotate(visualHeading);
+    // Add a small adjustment based on turn direction to make the plane
+    // "lean into" turns more naturally (nose points toward turn direction).
+    final turnAdjustment = _turnDirection * 0.15; // Subtle nose-in effect
+    canvas.rotate(visualHeading + turnAdjustment);
 
     // --- 3D banking perspective ---
     // cos(bank) foreshortens the horizontal axis; sin(bank) gives the

@@ -77,6 +77,12 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
 
       for (final city in CountryData.majorCities) {
         try {
+          // Validate city location before projection
+          if (!city.location.x.isFinite ||
+              !city.location.y.isFinite) {
+            continue;
+          }
+
           final screenPos = gameRef.worldToScreen(city.location);
 
           // Skip if off-screen (with margin) or invalid coordinates.
@@ -92,7 +98,14 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
           // Calculate distance from screen center for prioritization
           final dx = screenPos.x - centerX;
           final dy = screenPos.y - centerY;
-          final distance = math.sqrt(dx * dx + dy * dy);
+          final distanceSquared = dx * dx + dy * dy;
+          
+          // Check for valid distance before sqrt
+          if (!distanceSquared.isFinite || distanceSquared < 0) {
+            continue;
+          }
+          
+          final distance = math.sqrt(distanceSquared);
 
           visibleCities.add((
             distance: distance,
@@ -201,6 +214,12 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
         if (!city.isCapital || !_majorCapitals.contains(city.name)) continue;
 
         try {
+          // Validate city location
+          if (!city.location.x.isFinite ||
+              !city.location.y.isFinite) {
+            continue;
+          }
+
           final screenPos = gameRef.worldToScreen(city.location);
           if (!screenPos.x.isFinite ||
               !screenPos.y.isFinite ||
@@ -213,8 +232,14 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
 
           final dx = screenPos.x - centerX;
           final dy = screenPos.y - centerY;
+          final distanceSquared = dx * dx + dy * dy;
+          
+          if (!distanceSquared.isFinite || distanceSquared < 0) {
+            continue;
+          }
+          
           visible.add((
-            distance: math.sqrt(dx * dx + dy * dy),
+            distance: math.sqrt(distanceSquared),
             screenPos: Offset(screenPos.x, screenPos.y),
             city: city,
           ));

@@ -726,10 +726,12 @@ class FlitGame extends FlameGame
     while (diff > pi) { diff -= 2 * pi; }
     while (diff < -pi) { diff += 2 * pi; }
 
-    // Steer proportionally to the angular difference.
-    // Wider dead-zone (pi*0.5) gives gradual sweeping arcs rather than
-    // snappy circular turns. The plane banks smoothly into each turn.
-    final turnStrength = (diff / (pi * 0.5)).clamp(-1.0, 1.0);
+    // Adaptive turn strength: use wider proportional zone for sweeping arcs,
+    // modulated by distance for smoother approach and less overshoot.
+    final distToWaymarker = _greatCircleDistDeg(_worldPosition, _waymarker!);
+    final distanceFactor = (distToWaymarker / 30.0).clamp(0.5, 1.0);
+    final baseTurnStrength = (diff / (pi * 0.5)).clamp(-1.0, 1.0);
+    final turnStrength = baseTurnStrength * distanceFactor;
     if (turnStrength.abs() < 0.02) {
       _plane.steerToward(0, dt);
     } else {
