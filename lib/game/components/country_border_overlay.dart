@@ -78,12 +78,12 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       final fillOpacity = !drawFills
           ? 0.0
           : continuousAlt >= 0.6
-              ? (0.30 * (1.0 - (continuousAlt - 0.6) / 0.4)).clamp(0.0, 0.30)
+              ? (0.30 * (1.0 - (continuousAlt - 0.6) / 0.4)).clamp(0.05, 0.30)
               : (0.30 + 0.20 * (1.0 - continuousAlt / 0.6)).clamp(0.0, 0.50);
 
-      // Border stroke opacity.
+      // Border stroke opacity - maintain minimum visibility at high altitude.
       final borderOpacity = continuousAlt >= 0.6
-          ? (0.4 * (1.0 - (continuousAlt - 0.6) / 0.4)).clamp(0.0, 0.4)
+          ? (0.5 * (1.0 - (continuousAlt - 0.6) / 0.4)).clamp(0.15, 0.5)
           : (0.5 + 0.5 * (1.0 - continuousAlt / 0.6)).clamp(0.0, 1.0);
 
       if (fillOpacity < 0.01 && borderOpacity < 0.01) return;
