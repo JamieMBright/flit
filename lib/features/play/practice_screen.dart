@@ -201,13 +201,14 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       ref.read(accountProvider.notifier).spendCoins(cost);
     }
     final planeId = ref.read(equippedPlaneIdProvider);
-    final planeColors = CosmeticCatalog.getById(planeId)?.colorScheme;
+    final plane = CosmeticCatalog.getById(planeId);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => PlayScreen(
           region: GameRegion.world,
           totalRounds: 10,
-          planeColorScheme: planeColors,
+          planeColorScheme: plane?.colorScheme,
+          planeWingSpan: plane?.wingSpan,
           equippedPlaneId: planeId,
         ),
       ),
