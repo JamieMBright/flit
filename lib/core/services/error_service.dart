@@ -242,7 +242,11 @@ class ErrorService {
     );
   }
 
-  /// Convenience: report with [ErrorSeverity.critical].
+  /// Report with [ErrorSeverity.critical] and flush immediately.
+  ///
+  /// Critical errors also trigger an immediate flush (fire-and-forget)
+  /// because the app may be about to crash/reload — we can't wait for
+  /// the periodic flush timer.
   void reportCritical(
     Object error,
     StackTrace? stackTrace, {
@@ -254,6 +258,8 @@ class ErrorService {
       severity: ErrorSeverity.critical,
       context: context,
     );
+    // Fire-and-forget immediate flush — don't await.
+    flush();
   }
 
   // ---------------------------------------------------------------------------
@@ -297,7 +303,7 @@ class ErrorService {
     if (_queue.isEmpty) return true;
 
     // Guard: no endpoint or sender configured.
-    if (_apiEndpoint == null || _apiKey == null || _sender == null) {
+    if (_apiEndpoint == null || _sender == null) {
       return false;
     }
 

@@ -99,6 +99,7 @@ class _PlayScreenState extends State<PlayScreen> {
         'action': 'initState',
         'region': widget.region.name,
       });
+      WebErrorBridge.show('PlayScreen.initState crash:\n$e\n\n$st');
       // Set error synchronously — first build() will see it and skip _game.
       _error = 'initState crashed.\n\nError: $e\n\nStack:\n$st';
     }
@@ -203,6 +204,7 @@ class _PlayScreenState extends State<PlayScreen> {
           'round': '$_currentRound',
         },
       );
+      WebErrorBridge.show('_startNewGame crash:\n$e\n\n$st');
       if (mounted) {
         setState(() {
           _error = 'Failed to start game session.\n\n'
