@@ -126,9 +126,8 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     final targetBank = _turnDirection * _maxBankAngle;
     _currentBank += (targetBank - _currentBank) * min(1.0, dt * 8);
 
-    // Smooth altitude transition
-    final targetAlt = _isHighAltitude ? 1.0 : 0.0;
-    _altitudeTransition += (targetAlt - _altitudeTransition) * min(1.0, dt * 3);
+    // Smooth altitude transition using continuous altitude
+    _altitudeTransition += (_continuousAltitude - _altitudeTransition) * min(1.0, dt * 3);
 
     // Spin propeller
     _propAngle += dt * 20;

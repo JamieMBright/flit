@@ -19,13 +19,20 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
       // Skip when using Canvas renderer — WorldMap renders cities directly.
       if (!gameRef.isShaderActive) return;
 
-      // Only show cities at low altitude.
-      if (gameRef.isHighAltitude) return;
+      // Get continuous altitude from plane (0.0 = low, 1.0 = high)
+      final continuousAlt = gameRef.plane.continuousAltitude;
+      
+      // Only show cities at lower altitudes (< 0.6)
+      // Fade in as altitude decreases below 0.6
+      if (continuousAlt >= 0.6) return;
+      
+      // Calculate opacity based on altitude (0.6 = transparent, 0.0 = opaque)
+      final opacity = (1.0 - continuousAlt / 0.6).clamp(0.0, 1.0);
 
-      final cityDotPaint = Paint()..color = FlitColors.city;
-      final capitalDotPaint = Paint()..color = FlitColors.cityCapital;
+      final cityDotPaint = Paint()..color = FlitColors.city.withOpacity(opacity);
+      final capitalDotPaint = Paint()..color = FlitColors.cityCapital.withOpacity(opacity);
       final cityOutlinePaint = Paint()
-        ..color = FlitColors.shadow
+        ..color = FlitColors.shadow.withOpacity(opacity)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 0.5;
 
@@ -54,9 +61,10 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
             text: TextSpan(
               text: city.name,
               style: TextStyle(
-                color: city.isCapital
-                    ? FlitColors.textPrimary
-                    : FlitColors.textSecondary,
+                color: (city.isCapital
+                        ? FlitColors.textPrimary
+                        : FlitColors.textSecondary)
+                    .withOpacity(opacity),
                 fontSize: city.isCapital ? 10 : 8,
                 fontWeight: city.isCapital ? FontWeight.w600 : FontWeight.w400,
               ),

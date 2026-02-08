@@ -381,7 +381,8 @@ class FlitGame extends FlameGame
     if (!_isPlaying || size.x < 1 || size.y < 1) return;
 
     // --- Great-circle movement ---
-    final speed = _plane.currentSpeed;
+    // Use continuous altitude speed for smooth transitions
+    final speed = _plane.currentSpeedContinuous;
     final angularDist = speed * _speedToAngular * dt; // radians
 
     // Convert heading to navigation bearing (0 = north, clockwise)
