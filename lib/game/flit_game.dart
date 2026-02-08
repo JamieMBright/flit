@@ -726,19 +726,12 @@ class FlitGame extends FlameGame
     while (diff > pi) { diff -= 2 * pi; }
     while (diff < -pi) { diff += 2 * pi; }
 
-    // Calculate distance to waymarker for adaptive turn behavior
+    // Adaptive turn strength: use wider proportional zone for sweeping arcs,
+    // modulated by distance for smoother approach and less overshoot.
     final distToWaymarker = _greatCircleDistDeg(_worldPosition, _waymarker!);
-    
-    // Adaptive turn strength: tighter turns when far, gentler when close.
-    // This creates a more natural approach arc instead of circular motion.
     final distanceFactor = (distToWaymarker / 30.0).clamp(0.5, 1.0);
-    
-    // Steer proportionally to the angular difference, modulated by distance.
-    // Far away: full turn strength for direct approach.
-    // Close: reduce turn strength for smoother arc and less overshoot.
-    final baseTurnStrength = (diff / (pi * 0.3)).clamp(-1.0, 1.0);
+    final baseTurnStrength = (diff / (pi * 0.5)).clamp(-1.0, 1.0);
     final turnStrength = baseTurnStrength * distanceFactor;
-    
     if (turnStrength.abs() < 0.02) {
       _plane.steerToward(0, dt);
     } else {

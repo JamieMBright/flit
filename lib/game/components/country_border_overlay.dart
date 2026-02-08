@@ -15,17 +15,9 @@ import '../map/country_data.dart';
 /// This overlay projects [CountryData.countries] polygons onto the screen
 /// with semi-transparent Köppen-Geiger climate fills and border strokes.
 ///
-/// Path complexity is capped to prevent canvas overload on iOS Safari.
+/// Rendering budget scales with altitude to prevent canvas overload on iOS
+/// Safari, where large filled paths at low altitude kill the web worker.
 class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
-  /// Maximum countries to render per frame.
-  static const int _maxCountries = kIsWeb ? 12 : 40;
-
-  /// Maximum total path points per frame to avoid canvas overload.
-  static const int _maxTotalPoints = kIsWeb ? 1500 : 6000;
-
-  /// Maximum points per individual polygon before decimation kicks in.
-  static const int _maxPointsPerPoly = kIsWeb ? 30 : 60;
-
   @override
   void render(Canvas canvas) {
     super.render(canvas);
@@ -35,10 +27,59 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
       final continuousAlt = gameRef.plane.continuousAltitude;
 
+      // --- Altitude-adaptive rendering budget ---
+      // At low altitude polygons are huge on screen, so we must draw fewer
+      // with heavy decimation. At high altitude they are small and cheap.
+      final int maxCountries;
+      final int maxTotalPoints;
+      final int maxPointsPerPoly;
+      final bool drawFills;
+
+      if (kIsWeb) {
+        if (continuousAlt < 0.3) {
+          // Very low altitude: borders only, minimal countries
+          maxCountries = 4;
+          maxTotalPoints = 400;
+          maxPointsPerPoly = 15;
+          drawFills = false;
+        } else if (continuousAlt < 0.6) {
+          // Mid altitude
+          maxCountries = 8;
+          maxTotalPoints = 800;
+          maxPointsPerPoly = 20;
+          drawFills = true;
+        } else {
+          // High altitude
+          maxCountries = 12;
+          maxTotalPoints = 1200;
+          maxPointsPerPoly = 30;
+          drawFills = true;
+        }
+      } else {
+        if (continuousAlt < 0.3) {
+          maxCountries = 15;
+          maxTotalPoints = 2000;
+          maxPointsPerPoly = 40;
+          drawFills = true;
+        } else if (continuousAlt < 0.6) {
+          maxCountries = 30;
+          maxTotalPoints = 4000;
+          maxPointsPerPoly = 50;
+          drawFills = true;
+        } else {
+          maxCountries = 40;
+          maxTotalPoints = 6000;
+          maxPointsPerPoly = 60;
+          drawFills = true;
+        }
+      }
+
       // Climate fill opacity — visible at all altitudes, stronger at low alt.
-      final fillOpacity = continuousAlt >= 0.6
-          ? (0.30 * (1.0 - (continuousAlt - 0.6) / 0.4)).clamp(0.0, 0.30)
-          : (0.30 + 0.20 * (1.0 - continuousAlt / 0.6)).clamp(0.0, 0.50);
+      final fillOpacity = !drawFills
+          ? 0.0
+          : continuousAlt >= 0.6
+              ? (0.30 * (1.0 - (continuousAlt - 0.6) / 0.4)).clamp(0.0, 0.30)
+              : (0.30 + 0.20 * (1.0 - continuousAlt / 0.6)).clamp(0.0, 0.50);
 
       // Border stroke opacity.
       final borderOpacity = continuousAlt >= 0.6
@@ -91,20 +132,24 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       var totalPoints = 0;
 
       for (final entry in scored) {
-        if (rendered >= _maxCountries) break;
-        if (totalPoints >= _maxTotalPoints) break;
+        if (rendered >= maxCountries) break;
+        if (totalPoints >= maxTotalPoints) break;
 
-        final climateColor = _getClimateColor(entry.cLng, entry.cLat);
-        final fillPaint = Paint()
-          ..color = climateColor.withOpacity(fillOpacity);
+        final Paint? fillPaint;
+        if (drawFills && fillOpacity > 0.01) {
+          final climateColor = _getClimateColor(entry.cLng, entry.cLat);
+          fillPaint = Paint()..color = climateColor.withOpacity(fillOpacity);
+        } else {
+          fillPaint = null;
+        }
 
         for (final polygon in entry.country.polygons) {
           if (polygon.length < 3) continue;
-          if (totalPoints >= _maxTotalPoints) break;
+          if (totalPoints >= maxTotalPoints) break;
 
           // Decimate large polygons to keep path complexity manageable.
-          final stride = polygon.length > _maxPointsPerPoly
-              ? (polygon.length / _maxPointsPerPoly).ceil()
+          final stride = polygon.length > maxPointsPerPoly
+              ? (polygon.length / maxPointsPerPoly).ceil()
               : 1;
 
           final path = ui.Path();
@@ -141,7 +186,9 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
           if (anyVisible && started) {
             path.close();
-            canvas.drawPath(path, fillPaint);
+            if (fillPaint != null) {
+              canvas.drawPath(path, fillPaint);
+            }
             canvas.drawPath(path, borderPaint);
             rendered++;
           }
@@ -159,7 +206,6 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
   // Köppen-Geiger climate colour classification
   // ---------------------------------------------------------------------------
 
-  /// Determine land color based on Köppen-Geiger climate zone heuristics.
   static Color _getClimateColor(double lng, double lat) {
     final absLat = lat.abs();
 
