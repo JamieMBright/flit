@@ -3,6 +3,11 @@
   "buildCommand": "",
   "outputDirectory": "",
   "framework": null,
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  },
   "functions": {
     "api/errors/index.js": {
       "memory": 256,

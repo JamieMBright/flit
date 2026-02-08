@@ -355,11 +355,11 @@ class DebugScreen extends ConsumerWidget {
             children: [
               _ActionChip(
                 label: '+100 Coins',
-                onTap: () => notifier.addCoins(100),
+                onTap: () => notifier.addCoins(100, applyBoost: false),
               ),
               _ActionChip(
                 label: '+1000 Coins',
-                onTap: () => notifier.addCoins(1000),
+                onTap: () => notifier.addCoins(1000, applyBoost: false),
               ),
               _ActionChip(
                 label: '+50 XP',

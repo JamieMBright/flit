@@ -123,27 +123,27 @@ class GameHud extends StatelessWidget {
               const Spacer(),
               // Bottom row: Speed controls, Altitude indicator, Hint button
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   // Hint button
-                  if (hintTier < 3 && onHint != null)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: _HintButton(
-                        tier: hintTier,
-                        onTap: onHint,
-                      ),
+                  if (hintTier < 4 && onHint != null)
+                    _HintButton(
+                      tier: hintTier,
+                      onTap: onHint,
                     ),
                   // Speed controls
-                  _SpeedControls(
-                    current: currentSpeed,
-                    onChanged: onSpeedChanged,
+                  Flexible(
+                    child: _SpeedControls(
+                      current: currentSpeed,
+                      onChanged: onSpeedChanged,
+                    ),
                   ),
-                  const SizedBox(width: 12),
                   // Altitude indicator
-                  _AltitudeIndicator(
-                    isHigh: isHighAltitude,
-                    onToggle: onAltitudeToggle,
+                  Flexible(
+                    child: _AltitudeIndicator(
+                      isHigh: isHighAltitude,
+                      onToggle: onAltitudeToggle,
+                    ),
                   ),
                 ],
               ),
@@ -540,6 +540,10 @@ class _HintButton extends StatelessWidget {
       case 2:
         icon = '🧭';
         label = 'WAYLINE';
+        break;
+      case 3:
+        icon = '📍';
+        label = 'NAVIGATE';
         break;
       default:
         icon = '✓';

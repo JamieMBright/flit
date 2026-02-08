@@ -72,9 +72,19 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
           centerTitle: true,
           bottom: TabBar(
             controller: _tabController,
+            isScrollable: true,
+            tabAlignment: TabAlignment.center,
             indicatorColor: FlitColors.accent,
             labelColor: FlitColors.textPrimary,
             unselectedLabelColor: FlitColors.textMuted,
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.normal,
+              fontSize: 14,
+            ),
             tabs: const [
               Tab(text: 'Planes'),
               Tab(text: 'Contrails'),
@@ -1217,15 +1227,15 @@ class _CompanionPreview extends StatelessWidget {
       case 'companion_none':
         return FlitColors.textMuted;
       case 'companion_sparrow':
-        return FlitColors.textSecondary;
+        return const Color(0xFFD2A86E); // warm tan/gold
       case 'companion_eagle':
-        return const Color(0xFF8B4513);
+        return const Color(0xFFC68B59); // visible warm brown
       case 'companion_parrot':
-        return const Color(0xFF00CC44);
+        return const Color(0xFF44DD66); // bright green
       case 'companion_phoenix':
-        return const Color(0xFFFF6600);
+        return const Color(0xFFFF7722); // bright orange
       case 'companion_dragon':
-        return const Color(0xFF2E8B57);
+        return const Color(0xFF55DDAA); // bright teal
       default:
         return FlitColors.accent;
     }
@@ -1285,8 +1295,16 @@ class PlanePainter extends CustomPainter {
         _drawStealth(canvas, cx, cy);
       case 'plane_golden_jet':
         _drawGoldenJet(canvas, cx, cy);
+      case 'plane_concorde_classic':
       case 'plane_diamond_concorde':
         _drawConcorde(canvas, cx, cy);
+      case 'plane_red_baron':
+        _drawTriplane(canvas, cx, cy);
+      case 'plane_seaplane':
+        _drawSeaplane(canvas, cx, cy);
+      case 'plane_bryanair':
+      case 'plane_air_force_one':
+        _drawAirliner(canvas, cx, cy);
       case 'plane_platinum_eagle':
         _drawEagle(canvas, cx, cy);
       default:
@@ -1717,6 +1735,211 @@ class PlanePainter extends CustomPainter {
         shimmer,
       );
     }
+  }
+
+  // --- Triplane (Red Baron): three stacked wings with struts ---
+  void _drawTriplane(Canvas canvas, double cx, double cy) {
+    final body = Paint()..color = _primary;
+    final wing = Paint()..color = _secondary;
+    final strut = Paint()
+      ..color = _detail
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+
+    // Fuselage
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset(cx, cy), width: 38, height: 9),
+        const Radius.circular(4),
+      ),
+      body,
+    );
+    // Top wing (smallest)
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+            center: Offset(cx, cy - 16), width: 44, height: 6),
+        const Radius.circular(3),
+      ),
+      wing,
+    );
+    // Middle wing
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset(cx, cy), width: 52, height: 6),
+        const Radius.circular(3),
+      ),
+      wing,
+    );
+    // Bottom wing (largest)
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+            center: Offset(cx, cy + 16), width: 56, height: 6),
+        const Radius.circular(3),
+      ),
+      wing,
+    );
+    // Struts connecting wings
+    canvas.drawLine(
+        Offset(cx - 12, cy - 13), Offset(cx - 14, cy + 13), strut);
+    canvas.drawLine(
+        Offset(cx + 12, cy - 13), Offset(cx + 14, cy + 13), strut);
+    // Tail fin
+    final tail = Path()
+      ..moveTo(cx - 19, cy)
+      ..lineTo(cx - 26, cy - 10)
+      ..lineTo(cx - 17, cy)
+      ..close();
+    canvas.drawPath(tail, Paint()..color = _detail);
+    // Propeller
+    canvas.drawCircle(Offset(cx + 21, cy), 3, Paint()..color = _detail);
+  }
+
+  // --- Seaplane: biplane with float pontoons ---
+  void _drawSeaplane(Canvas canvas, double cx, double cy) {
+    final body = Paint()..color = _primary;
+    final wing = Paint()..color = _secondary;
+    final detail = Paint()..color = _detail;
+    final strutPaint = Paint()
+      ..color = _detail
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+
+    // Fuselage (raised higher to make room for pontoons)
+    final fcy = cy - 6;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset(cx, fcy), width: 40, height: 10),
+        const Radius.circular(5),
+      ),
+      body,
+    );
+    // Upper wing
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+            center: Offset(cx, fcy - 10), width: 54, height: 6),
+        const Radius.circular(3),
+      ),
+      wing,
+    );
+    // Lower wing
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+            center: Offset(cx, fcy + 10), width: 54, height: 6),
+        const Radius.circular(3),
+      ),
+      wing,
+    );
+    // Wing struts
+    canvas.drawLine(
+        Offset(cx - 12, fcy - 7), Offset(cx - 12, fcy + 7), strutPaint);
+    canvas.drawLine(
+        Offset(cx + 12, fcy - 7), Offset(cx + 12, fcy + 7), strutPaint);
+    // Propeller
+    canvas.drawCircle(Offset(cx + 22, fcy), 3, detail);
+    // Float pontoons
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+            center: Offset(cx - 2, cy + 18), width: 36, height: 6),
+        const Radius.circular(3),
+      ),
+      detail,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+            center: Offset(cx - 2, cy + 18), width: 36, height: 6),
+        const Radius.circular(3),
+      ),
+      strutPaint,
+    );
+    // Pontoon struts
+    canvas.drawLine(
+        Offset(cx - 8, fcy + 13), Offset(cx - 8, cy + 15), strutPaint);
+    canvas.drawLine(
+        Offset(cx + 8, fcy + 13), Offset(cx + 8, cy + 15), strutPaint);
+  }
+
+  // --- Airliner: commercial plane with wide fuselage, swept wings, engines ---
+  void _drawAirliner(Canvas canvas, double cx, double cy) {
+    final body = Paint()..color = _primary;
+    final wing = Paint()..color = _secondary;
+    final detail = Paint()..color = _detail;
+
+    // Wide fuselage
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset(cx, cy), width: 52, height: 12),
+        const Radius.circular(6),
+      ),
+      body,
+    );
+    // Swept wings
+    final wingTop = Path()
+      ..moveTo(cx + 4, cy - 6)
+      ..lineTo(cx - 8, cy - 26)
+      ..lineTo(cx - 16, cy - 6)
+      ..close();
+    canvas.drawPath(wingTop, wing);
+    final wingBot = Path()
+      ..moveTo(cx + 4, cy + 6)
+      ..lineTo(cx - 8, cy + 26)
+      ..lineTo(cx - 16, cy + 6)
+      ..close();
+    canvas.drawPath(wingBot, wing);
+    // Tail fin (vertical stabilizer)
+    final tail = Path()
+      ..moveTo(cx - 24, cy)
+      ..lineTo(cx - 30, cy - 14)
+      ..lineTo(cx - 22, cy)
+      ..close();
+    canvas.drawPath(tail, detail);
+    // Horizontal tail
+    final hTail = Path()
+      ..moveTo(cx - 22, cy - 2)
+      ..lineTo(cx - 28, cy - 8)
+      ..lineTo(cx - 26, cy - 2)
+      ..close();
+    canvas.drawPath(hTail, wing);
+    final hTail2 = Path()
+      ..moveTo(cx - 22, cy + 2)
+      ..lineTo(cx - 28, cy + 8)
+      ..lineTo(cx - 26, cy + 2)
+      ..close();
+    canvas.drawPath(hTail2, wing);
+    // Engines under wings
+    canvas.drawOval(
+      Rect.fromCenter(
+          center: Offset(cx - 6, cy - 14), width: 10, height: 5),
+      detail,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+          center: Offset(cx - 6, cy + 14), width: 10, height: 5),
+      detail,
+    );
+    // Cockpit windows
+    for (var i = 0; i < 5; i++) {
+      canvas.drawCircle(
+        Offset(cx + 10 - i * 5.0, cy - 2),
+        1.2,
+        Paint()..color = const Color(0xFF87CEEB),
+      );
+    }
+    // Nose
+    canvas.drawCircle(Offset(cx + 27, cy), 2, detail);
+    // Accent stripe
+    canvas.drawLine(
+      Offset(cx - 20, cy + 1),
+      Offset(cx + 24, cy + 1),
+      Paint()
+        ..color = _secondary
+        ..strokeWidth = 1.5,
+    );
   }
 
   @override
