@@ -214,6 +214,13 @@ vec3 cameraRayDir(vec2 fragCoord, vec2 resolution, vec3 camPos, vec3 camUp, floa
     // Without this, the heading direction (camera up) renders at the bottom
     // of the screen, giving an inverted chase-camera view.
     uv.y = -uv.y;
+    
+    // Tilt the view downward for a chase-camera perspective.
+    // This creates a flatter horizon at the bottom of the screen.
+    // Higher values = more downward tilt (0.25 ≈ 14° down from horizontal)
+    const float tiltDown = 0.25;
+    uv.y += tiltDown;
+    
     float halfFov = tan(fov * 0.5);
     uv *= halfFov;
 
@@ -411,6 +418,25 @@ void main() {
     vec3 normal   = normalize(hitPoint - GLOBE_ORIGIN);
     vec3 viewDir  = normalize(ro - hitPoint);
     vec2 uv       = equirectangularUV(hitPoint);
+    
+    // Check viewing angle - at extreme glancing angles (looking at the edge
+    // of the globe), we should fade to atmosphere rather than showing surface.
+    // This prevents land masses from appearing in what should be pure atmosphere.
+    float viewAngle = dot(viewDir, normal);
+    if (viewAngle < 0.05) {
+        // Very glancing angle - render atmosphere only
+        vec3 finalColor = background;
+        
+        // Atmospheric rim glow for glancing angles
+        float rim = 1.0 - viewAngle;
+        rim = pow(rim, 3.0);
+        float sunAlignment = max(dot(rayDir, uSunDir), 0.0);
+        vec3 rimColor = mix(vec3(0.3, 0.5, 1.0), vec3(1.0, 0.6, 0.3), pow(sunAlignment, 4.0));
+        finalColor += rimColor * rim * RIM_INTENSITY;
+        
+        fragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
+        return;
+    }
 
     // ----- Texture sampling ------------------------------------------------
     vec4 satColor   = texture(uSatellite, uv);
