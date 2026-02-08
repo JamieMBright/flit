@@ -33,10 +33,10 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   static const double mapHeight = 1800;
 
   /// Angular radius of the visible globe in radians.
-  /// Lower values = closer to the surface. Earth curvature just visible.
-  /// Calibrated so countries fill the screen and curvature is subtle.
-  static const double _highAltitudeRadius = 0.18; // ~10° — countries fill screen
-  static const double _lowAltitudeRadius = 0.06; // ~3.4° — city-level detail
+  /// Higher = more of the globe visible. Lower = more zoomed in.
+  /// High altitude shows continents; low altitude shows city-level detail.
+  static const double _highAltitudeRadius = 0.55; // ~31° — continents visible, horizon clear
+  static const double _lowAltitudeRadius = 0.10; // ~5.7° — city-level detail
 
   /// Current interpolated angular radius.
   double _angularRadius = _highAltitudeRadius;
@@ -382,7 +382,7 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
         sin(lat0) * sin(latR) + cos(lat0) * cos(latR) * cos(dLng);
     final c = acos(cosC.clamp(-1.0, 1.0));
 
-    if (c > _angularRadius * 1.05) return null;
+    if (c > _angularRadius * 1.15) return null;
 
     if (c < 0.0001) {
       return Offset(

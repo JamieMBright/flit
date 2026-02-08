@@ -120,10 +120,10 @@ class FlitGame extends FlameGame
   /// How far ahead (in degrees) the projection center looks along heading.
   /// Must be ~56% of angular radius (in degrees) so the plane's world
   /// position projects to its fixed screen position (y=72%, center=45%).
-  /// High: 0.18 rad = 10.3° → 10.3 × 0.56 = 5.8°
-  /// Low:  0.06 rad = 3.44° → 3.44 × 0.56 = 1.9°
-  static const double _cameraOffsetHigh = 5.8;
-  static const double _cameraOffsetLow = 1.9;
+  /// High: 0.55 rad = 31.5° → 31.5 × 0.56 = 17.6°
+  /// Low:  0.10 rad = 5.73° → 5.73 × 0.56 = 3.2°
+  static const double _cameraOffsetHigh = 17.6;
+  static const double _cameraOffsetLow = 3.2;
 
   /// Whether this is the first update (skip lerp, snap camera heading).
   bool _cameraFirstUpdate = true;
