@@ -21,9 +21,6 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
   /// Cached TextPainters to avoid recreating every frame (Safari crash cause).
   final Map<String, TextPainter> _textCache = {};
 
-  /// Last altitude for which we rendered — skip if not changed significantly.
-  double _lastRenderedAlt = -1;
-
   /// Maximum number of capital cities to show at high altitude.
   static const int _maxHighAltCapitals = kIsWeb ? 4 : 8;
 
