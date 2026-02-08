@@ -253,9 +253,18 @@ class ShaderManager {
     ].where((t) => t != null).length;
     _log.info('shader', 'Textures loaded: $loadedCount/4');
 
-    _initialized = true;
+    // Only mark as initialized if we have at least the satellite texture.
+    // Without it, the shader renders as all black, so we should fall back
+    // to the Canvas renderer which has Köppen-Geiger colors and blue ocean.
+    if (_satelliteTexture != null) {
+      _initialized = true;
+      _log.info('shader', 'ShaderManager.initialize() complete');
+    } else {
+      _initialized = false;
+      _log.warning('shader', 'ShaderManager.initialize() failed: satellite texture missing. Falling back to Canvas renderer.');
+    }
+    
     _loading = false;
-    _log.info('shader', 'ShaderManager.initialize() complete');
   }
 
   /// Get a fresh [FragmentShader] instance from the cached program.
