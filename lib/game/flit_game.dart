@@ -121,7 +121,10 @@ class FlitGame extends FlameGame
   // -- Waymarker navigation state --
 
   /// Waypoint the player has tapped — the plane auto-steers toward it.
+  /// Set by tapping anywhere on the globe (works with both renderers).
   /// null when no waypoint is set (plane flies straight).
+  /// Automatically cleared when the plane reaches the waypoint (within 1.0°)
+  /// or when keyboard controls are used.
   Vector2? _waymarker;
 
   /// Hint target — displays wayline but does NOT steer the plane.
@@ -731,31 +734,53 @@ class FlitGame extends FlameGame
 
   // -- Tap-to-waymarker touch handler --
 
+  /// Handle tap events to set waypoints for navigation.
+  /// 
+  /// When the player taps on the globe, we convert the screen coordinates
+  /// to a geographic position (lat/lng) and set it as a waymarker. The plane
+  /// will then auto-steer toward that position using great-circle navigation.
+  /// 
+  /// Works with both renderers:
+  /// - Shader renderer: uses ray-casting with camera perspective
+  /// - Canvas renderer: uses azimuthal projection inverse
   @override
   void onTapUp(TapUpInfo info) {
     if (!_isPlaying) return;
 
-    // Convert screen tap to globe lat/lng using the shader camera.
+    // Convert screen tap to globe lat/lng.
+    Vector2? latLng;
+    
     if (_globeRenderer != null) {
+      // Shader renderer: use camera-based ray-casting hit test.
       final cam = _globeRenderer!.camera;
       final screenPoint = Offset(
         info.eventPosition.widget.x,
         info.eventPosition.widget.y,
       );
-      final latLng = _hitTest.screenToLatLng(
+      final result = _hitTest.screenToLatLng(
         screenPoint,
         Size(size.x, size.y),
         cam,
       );
-      if (latLng != null) {
-        _waymarker = Vector2(latLng.dx, latLng.dy);
-        _log.info('game', 'Waymarker set', data: {
-          'lng': latLng.dx.toStringAsFixed(1),
-          'lat': latLng.dy.toStringAsFixed(1),
-        });
+      if (result != null) {
+        latLng = Vector2(result.dx, result.dy);
       }
+    } else if (_worldMap != null) {
+      // Canvas renderer: use azimuthal projection inverse.
+      final screenPoint = Vector2(
+        info.eventPosition.widget.x,
+        info.eventPosition.widget.y,
+      );
+      latLng = _worldMap!.screenToLatLng(screenPoint, size);
     }
-    // Canvas renderer fallback: no hit-test available, ignore tap.
+
+    if (latLng != null) {
+      _waymarker = latLng;
+      _log.info('game', 'Waymarker set', data: {
+        'lng': latLng.x.toStringAsFixed(1),
+        'lat': latLng.y.toStringAsFixed(1),
+      });
+    }
   }
 
   @override
