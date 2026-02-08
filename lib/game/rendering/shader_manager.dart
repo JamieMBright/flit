@@ -186,16 +186,30 @@ class ShaderManager {
         }
         
         // Report to telemetry (non-critical errors are warnings, critical are errors).
-        ErrorService.instance.report(
-          error,
-          stack,
-          context: {
-            'source': 'ShaderManager',
-            'action': 'loadTexture',
-            'texture': name,
-            'critical': isCritical.toString(),
-          },
-        );
+        if (isCritical) {
+          ErrorService.instance.reportError(
+            error,
+            stack,
+            severity: ErrorSeverity.error,
+            context: {
+              'source': 'ShaderManager',
+              'action': 'loadTexture',
+              'texture': name,
+              'critical': 'true',
+            },
+          );
+        } else {
+          ErrorService.instance.reportWarning(
+            error,
+            stack,
+            context: {
+              'source': 'ShaderManager',
+              'action': 'loadTexture',
+              'texture': name,
+              'critical': 'false',
+            },
+          );
+        }
       }
     }
 
