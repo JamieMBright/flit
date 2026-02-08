@@ -317,6 +317,7 @@ CI is the final gate, but minimize round-trips by being careful.
 - Never use non-open-license geographic data or satellite imagery
 - Never sacrifice performance for convenience
 - Never leave an agent task incomplete
+- Never push incomplete work — if a task covers N items, finish all N before committing. Do not push partial results and call it done
 - Never exceed 4 texture samplers per shader pass without multi-pass strategy
 - Never ship DevOverlay or telemetry debug code in release builds
 - Never hardcode API keys in source (use environment variables)

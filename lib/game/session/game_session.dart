@@ -77,15 +77,16 @@ class GameSession {
       return capital.location;
     }
     // Fall back to center of country bounds
+    final pts = targetCountry.allPoints;
     var sumX = 0.0;
     var sumY = 0.0;
-    for (final point in targetCountry.points) {
+    for (final point in pts) {
       sumX += point.x;
       sumY += point.y;
     }
     return Vector2(
-      sumX / targetCountry.points.length,
-      sumY / targetCountry.points.length,
+      sumX / pts.length,
+      sumY / pts.length,
     );
   }
 
@@ -128,7 +129,7 @@ class GameSession {
       final country = CountryShape(
         code: area.code,
         name: area.name,
-        points: area.points,
+        polygons: [area.points],
         capital: area.capital,
       );
 

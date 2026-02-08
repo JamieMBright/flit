@@ -1,29 +1,100 @@
 #!/bin/bash
 # Pre-commit hook: Fast checks before commit
-# Runs: format check, analyze, unit tests
+# Runs: string literal safety, format check, analyze, unit tests
 
 set -e
 
-echo "🔍 Running pre-commit checks..."
+echo "Running pre-commit checks..."
 
-# Check if Flutter is available
+# -----------------------------------------------------------------------
+# Step 1: String literal safety (runs WITHOUT Flutter - pure bash/grep)
+# Catches unterminated string literals, bad escapes, and other common
+# Dart string issues in staged files.
+# -----------------------------------------------------------------------
+echo ""
+echo "Step 1: Checking Dart string literal safety..."
+
+STAGED_DART=$(git diff --cached --name-only --diff-filter=ACM -- '*.dart' || true)
+
+if [ -n "$STAGED_DART" ]; then
+    STRING_ERRORS=0
+
+    for file in $STAGED_DART; do
+        # Skip non-existent files (deleted)
+        [ -f "$file" ] || continue
+
+        # Check 1: \\' pattern (escaped backslash + bare quote).
+        # The #1 codegen bug: Python writes \\' which Dart interprets as
+        # escaped-backslash + string-terminator.
+        MATCHES=$(grep -nP "(?<!r)(?<!r\")'\S*\\\\\\\\'" "$file" 2>/dev/null || true)
+        if [ -n "$MATCHES" ]; then
+            while IFS= read -r line; do
+                LINETEXT=$(echo "$line" | cut -d: -f2-)
+                # Skip raw strings and comments.
+                if echo "$LINETEXT" | grep -qP '^\s*//' 2>/dev/null; then continue; fi
+                if echo "$LINETEXT" | grep -qP "r['\"]" 2>/dev/null; then continue; fi
+                echo "  ERROR in $file (line $(echo "$line" | cut -d: -f1)): broken escape (\\\\') found"
+                STRING_ERRORS=$((STRING_ERRORS + 1))
+            done <<< "$MATCHES"
+        fi
+
+        # Check 2: Unescaped apostrophe in single-quoted string.
+        # Heuristic: 'text'text' pattern (apostrophe between word chars).
+        MATCHES=$(grep -nP "'[^'\\\\]*[a-zA-Z]'[a-zA-Z]" "$file" 2>/dev/null || true)
+        if [ -n "$MATCHES" ]; then
+            while IFS= read -r line; do
+                LINETEXT=$(echo "$line" | cut -d: -f2-)
+                # Skip comments.
+                if echo "$LINETEXT" | grep -qP '^\s*//' 2>/dev/null; then continue; fi
+                # Skip apostrophes safely inside double-quoted strings.
+                if echo "$LINETEXT" | grep -qP '"[^"]*'"'"'[^"]*"' 2>/dev/null; then continue; fi
+                # Skip raw strings.
+                if echo "$LINETEXT" | grep -qP "r'" 2>/dev/null; then continue; fi
+                echo "  WARNING in $file (line $(echo "$line" | cut -d: -f1)): possible unescaped apostrophe"
+                STRING_ERRORS=$((STRING_ERRORS + 1))
+            done <<< "$MATCHES"
+        fi
+    done
+
+    if [ "$STRING_ERRORS" -gt 0 ]; then
+        echo ""
+        echo "FAILED: Found $STRING_ERRORS string literal issue(s)."
+        echo "Fix the issues above before committing."
+        echo ""
+        echo "Tips:"
+        echo "  - Use double quotes for strings with apostrophes: \"St. John's\""
+        echo "  - Or escape properly in single quotes: 'St. John\\'s'"
+        echo "  - Use SafeString.toDartLiteral() in code-gen scripts"
+        echo "  - See lib/core/utils/safe_string.dart for utilities"
+        exit 1
+    fi
+
+    echo "  String literal checks passed."
+else
+    echo "  No staged Dart files to check."
+fi
+
+# -----------------------------------------------------------------------
+# Step 2+: Flutter-dependent checks (skip if Flutter not available)
+# -----------------------------------------------------------------------
 if ! command -v flutter &> /dev/null; then
-    echo "⚠️  Flutter not found locally - skipping local checks"
-    echo "   CI will run full validation on push"
+    echo ""
+    echo "Flutter not found locally - skipping format/analyze/test checks"
+    echo "CI will run full validation on push"
     exit 0
 fi
 
 echo ""
-echo "📝 Checking format..."
+echo "Step 2: Checking format..."
 dart format --set-exit-if-changed lib/ test/
 
 echo ""
-echo "🔎 Running analyzer..."
+echo "Step 3: Running analyzer..."
 flutter analyze --fatal-infos
 
 echo ""
-echo "🧪 Running unit tests..."
+echo "Step 4: Running unit tests..."
 flutter test --coverage
 
 echo ""
-echo "✅ Pre-commit checks passed!"
+echo "Pre-commit checks passed!"

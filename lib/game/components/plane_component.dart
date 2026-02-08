@@ -4,13 +4,14 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../flit_game.dart';
 
 /// The player's plane component.
 ///
 /// Renders at a fixed screen position (set by FlitGame).
 /// The world scrolls underneath - the plane doesn't move on screen.
 /// Renders a more realistic, lo-fi top-down aircraft with shadow and detail.
-class PlaneComponent extends PositionComponent with HasGameRef {
+class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   PlaneComponent({
     required this.onAltitudeChanged,
     this.colorScheme,
@@ -43,6 +44,10 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
   /// Current altitude: true = high (fast), false = low (slow, detailed)
   bool _isHighAltitude = true;
+
+  /// Continuous altitude value (0.0 = low, 1.0 = high).
+  /// Used when altitude slider is enabled for gradual altitude control.
+  double _continuousAltitude = 1.0;
 
   /// Visual heading set by the game (radians)
   double visualHeading = 0;
@@ -77,19 +82,6 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Contrail spawn interval
   static const double _contrailInterval = 0.04;
 
-  /// Base pixels-per-degree at high altitude.
-  /// Derived empirically: at high altitude zoom, 1° ≈ 8.7 pixels on screen.
-  static const double _basePixelsPerDegree = 8.7;
-
-  /// Zoom ratio at low altitude relative to high altitude.
-  /// The view is 3x more zoomed in at low altitude (angular radius 0.10 vs 0.30),
-  /// so the same screen distance covers 1/3 the angular distance.
-  static const double _lowAltitudeZoomRatio = 1.0 / 3.0; // = 0.33
-
-  /// Zoom ratio range between high and low altitude.
-  /// At high altitude: ratio = 1.0, at low altitude: ratio = 0.33
-  static const double _zoomRatioRange = 1.0 - _lowAltitudeZoomRatio; // = 0.67
-
   /// World position set by FlitGame each frame (lng, lat degrees).
   Vector2 worldPos = Vector2.zero();
 
@@ -107,10 +99,19 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
   bool get isHighAltitude => _isHighAltitude;
   double get turnDirection => _turnDirection;
+  double get continuousAltitude => _continuousAltitude;
 
   double get currentSpeed =>
       highAltitudeSpeed *
       (_isHighAltitude ? 1.0 : lowAltitudeSpeedMultiplier) *
+      fuelBoostMultiplier;
+
+  /// Get current speed based on continuous altitude (0.0 = slowest, 1.0 = fastest).
+  /// Interpolates between low altitude speed and high altitude speed.
+  double get currentSpeedContinuous =>
+      highAltitudeSpeed *
+      (lowAltitudeSpeedMultiplier +
+          _continuousAltitude * (1.0 - lowAltitudeSpeedMultiplier)) *
       fuelBoostMultiplier;
 
   @override
@@ -131,9 +132,8 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     final targetBank = _turnDirection * _maxBankAngle;
     _currentBank += (targetBank - _currentBank) * min(1.0, dt * 8);
 
-    // Smooth altitude transition
-    final targetAlt = _isHighAltitude ? 1.0 : 0.0;
-    _altitudeTransition += (targetAlt - _altitudeTransition) * min(1.0, dt * 3);
+    // Smooth altitude transition using continuous altitude
+    _altitudeTransition += (_continuousAltitude - _altitudeTransition) * min(1.0, dt * 3);
 
     // Spin propeller
     _propAngle += dt * 20;
@@ -1126,32 +1126,18 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Radians-to-degrees.
   static const double _rad2deg = 180 / pi;
 
-  /// Calculate the pixel-to-degrees conversion factor based on current altitude.
-  /// At high altitude (zoomed out), more degrees fit in each pixel.
-  /// At low altitude (zoomed in), fewer degrees fit in each pixel.
-  double _calculatePixelsToDegrees() {
-    // Convert pixels-per-degree to degrees-per-pixel
-    const basePixelsToDegrees = 1.0 / _basePixelsPerDegree;
-    
-    // At low altitude, the view is ~3x more zoomed in (angular radius
-    // goes from 0.30 to 0.10 radians), so the same pixel count covers
-    // 1/3 the angular distance. The conversion factor should be smaller.
-    // 
-    // altitudeTransition: 1.0 = high altitude, 0.0 = low altitude
-    // zoomRatio: 1.0 at high altitude, 0.33 at low altitude
-    final zoomRatio = _lowAltitudeZoomRatio + _altitudeTransition * _zoomRatioRange;
-    
-    return basePixelsToDegrees * zoomRatio;
-  }
-
   void _spawnContrailParticle() {
     // Compute wing-tip world positions using great-circle offset from
     // the plane's current world position.
     // The wing span (in pixels) needs to be converted to degrees.
-    // The conversion factor depends on the current camera zoom/altitude.
-    // At high altitude, the view is more zoomed out (more degrees per pixel).
-    // At low altitude, the view is more zoomed in (fewer degrees per pixel).
-    final pixelsToDegrees = _calculatePixelsToDegrees();
+    // The pixels-to-degrees ratio depends on the current camera distance (zoom).
+    // At high altitude (distance 2.8), roughly 1 degree ≈ 8.7 pixels.
+    // At low altitude (distance 1.3), roughly 1 degree ≈ 18.74 pixels.
+    const referenceDistance = 2.8;
+    const pixelsPerDegreeAtReference = 8.7;
+    final currentDistance = gameRef.cameraDistance;
+    final pixelsPerDegree = pixelsPerDegreeAtReference * (currentDistance / referenceDistance);
+    final pixelsToDegrees = 1.0 / pixelsPerDegree;
     final wingSpanDegrees = wingSpan * pixelsToDegrees;
 
     final lat0 = worldPos.y * _deg2rad;
@@ -1219,12 +1205,26 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
   void toggleAltitude() {
     _isHighAltitude = !_isHighAltitude;
+    _continuousAltitude = _isHighAltitude ? 1.0 : 0.0;
     onAltitudeChanged(_isHighAltitude);
   }
 
   void setAltitude({required bool high}) {
     if (_isHighAltitude != high) {
       _isHighAltitude = high;
+      _continuousAltitude = high ? 1.0 : 0.0;
+      onAltitudeChanged(_isHighAltitude);
+    }
+  }
+
+  /// Set continuous altitude value (0.0 = low, 1.0 = high).
+  /// Updates both continuous value and binary high/low state.
+  /// Threshold at 0.5: < 0.5 = low altitude, >= 0.5 = high altitude.
+  void setContinuousAltitude(double value) {
+    _continuousAltitude = value.clamp(0.0, 1.0);
+    final newIsHigh = _continuousAltitude >= 0.5;
+    if (_isHighAltitude != newIsHigh) {
+      _isHighAltitude = newIsHigh;
       onAltitudeChanged(_isHighAltitude);
     }
   }

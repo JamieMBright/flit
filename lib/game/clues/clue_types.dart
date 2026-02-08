@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:flame/components.dart';
+
 import '../map/country_data.dart';
 import '../map/region.dart';
 
@@ -42,7 +44,7 @@ class Clue {
       type: ClueType.outline,
       targetCountryCode: countryCode,
       displayData: {
-        'points': country?.points ?? [],
+        'polygons': country?.polygons ?? <List<Vector2>>[],
       },
     );
   }
