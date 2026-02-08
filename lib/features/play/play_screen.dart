@@ -110,6 +110,16 @@ class _PlayScreenState extends State<PlayScreen> {
     _log.info('screen', 'PlayScreen.dispose');
     _timer?.cancel();
     AudioManager.instance.stopEngine();
+    // Detach the Flame game to stop its loop and release resources.
+    // Without this, the game loop can outlive the widget and crash when
+    // the user navigates to a different game mode.
+    try {
+      _game.pauseEngine();
+      _game.onRemove();
+    } catch (e, st) {
+      _log.error('screen', 'PlayScreen.dispose game cleanup failed',
+          error: e, stackTrace: st);
+    }
     super.dispose();
   }
 
@@ -293,6 +303,9 @@ class _PlayScreenState extends State<PlayScreen> {
               }
             : null,
         onExit: () {
+          try {
+            _game.pauseEngine();
+          } catch (_) {}
           Navigator.of(dialogContext).pop(); // dismiss result dialog
           Navigator.of(context).pop(); // dismiss PlayScreen
         },
@@ -356,6 +369,9 @@ class _PlayScreenState extends State<PlayScreen> {
                     onPressed: () {
                       _log.info('screen', 'User confirmed exit');
                       _timer?.cancel();
+                      try {
+                        _game.pauseEngine();
+                      } catch (_) {}
                       Navigator.of(dialogContext).pop();
                       Navigator.of(context).pop();
                     },
@@ -419,6 +435,9 @@ class _PlayScreenState extends State<PlayScreen> {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
+                  try {
+                    _game.pauseEngine();
+                  } catch (_) {}
                   Navigator.of(dialogContext).pop(); // dismiss this dialog
                   Navigator.of(context).pop(); // dismiss PlayScreen
                 },

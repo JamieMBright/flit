@@ -530,10 +530,12 @@ class FlitGame extends FlameGame
     final settings = GameSettings.instance;
     final sign = settings.invertControls ? -1.0 : 1.0;
 
-    // Proportional turn: distance from start point → turn rate.
-    // Clamped to [-1, 1] at ±_swipeSensitivityPx pixels.
-    final turn = (sign * dx / (_swipeSensitivityPx * settings.turnSensitivity))
+    // Non-linear (quadratic) turn response: small swipes give very
+    // gentle turns, larger swipes ramp up steeply.
+    // linear ∈ [-1, 1], then turn = sign(linear) * linear²
+    final linear = (sign * dx / (_swipeSensitivityPx * settings.turnSensitivity))
         .clamp(-1.0, 1.0);
+    final turn = linear.abs() * linear; // preserves sign, squares magnitude
     _plane.setTurnDirection(turn);
   }
 

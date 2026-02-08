@@ -213,7 +213,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     final rightWingColor = shade > 0 ? lighten(detail, shade) : darken(detail, -shade * 0.4);
     final bodyPaint = Paint()..color = primary;
     final accentPaint = Paint()..color = secondary;
-    final highlightPaint = Paint()..color = FlitColors.planeHighlight;
+    final highlightPaint = Paint()..color = FlitColors.planeHighlight.withOpacity(0.35);
 
     // Underside color — visible when banked
     final undersidePaint = Paint()..color = darken(primary, 0.35);
@@ -455,8 +455,8 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
     // Slightly behind the plane (small offset aft along heading).
     final aftBearing = navBearing + pi;
-    const wingDist = 0.03 * _deg2rad; // ~0.03° lateral (tighter to plane)
-    const aftDist = 0.015 * _deg2rad; // ~0.015° behind
+    const wingDist = 3.0 * _deg2rad; // ~3° lateral — matches visual wing span
+    const aftDist = 1.5 * _deg2rad; // ~1.5° behind
 
     for (final bearing in [leftBearing, rightBearing]) {
       // Combine lateral offset with slight aft offset.
