@@ -102,15 +102,25 @@
     // freezes the screen with the full error text. On iOS PWA this is
     // the only way to see errors — Dart ErrorWidget never renders
     // because the WebView reloads the page on unhandled exceptions.
+    //
+    // PERSISTENCE: On iOS Safari PWA, uncaught errors can force a page
+    // reload before the error overlay is visible. We persist errors in
+    // localStorage so they survive reloads and display on next page load.
 
     var errorBox = document.getElementById('error-box');
     var errors = [];
     var frozen = false;
+    var STORAGE_KEY = 'flit_crash_errors';
 
-    function freezeWithError(msg) {
-      errors.push(msg);
+    // Restore errors from a previous page load (iOS PWA reload recovery).
+    try {
+      var stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        errors = JSON.parse(stored);
+      }
+    } catch (_) {}
 
-      // Build full-screen error display
+    function renderErrorOverlay() {
       errorBox.innerHTML = '';
       var title = document.createElement('div');
       title.className = 'error-title';
@@ -120,6 +130,19 @@
       var body = document.createElement('div');
       body.textContent = errors.join('\n\n---\n\n');
       errorBox.appendChild(body);
+
+      // Dismiss button so the user can clear errors and retry
+      var btn = document.createElement('div');
+      btn.textContent = '[TAP TO DISMISS & RETRY]';
+      btn.style.cssText = 'color:#4A90B8;margin-top:24px;font-size:14px;cursor:pointer;text-align:center;';
+      btn.onclick = function() {
+        errors = [];
+        try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+        errorBox.style.display = 'none';
+        frozen = false;
+        location.reload();
+      };
+      errorBox.appendChild(btn);
 
       errorBox.style.display = 'block';
 
@@ -133,6 +156,20 @@
       }
 
       frozen = true;
+    }
+
+    // If we restored errors from a previous crash, show them immediately.
+    if (errors.length > 0) {
+      renderErrorOverlay();
+    }
+
+    function freezeWithError(msg) {
+      errors.push(msg);
+
+      // Persist to localStorage so errors survive iOS PWA page reloads.
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(errors)); } catch (_) {}
+
+      renderErrorOverlay();
     }
 
     // Catch synchronous JS errors
@@ -193,7 +230,7 @@
         }
       };
       fl.onerror = function() {
-        showError('Could not load Flutter engine (neither flutter_bootstrap.js nor flutter.js found).');
+        freezeWithError('Could not load Flutter engine (neither flutter_bootstrap.js nor flutter.js found).');
       };
       document.body.appendChild(fl);
     };

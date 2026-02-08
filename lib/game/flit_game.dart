@@ -117,11 +117,9 @@ class FlitGame extends FlameGame
   /// Sensitivity: how many radians of camera rotation per pixel of drag.
   static const double _cameraDragSensitivity = 0.004;
 
-  /// How far ahead (in degrees) the projection center looks along heading.
-  /// Must be ~56% of angular radius (in degrees) so the plane's world
-  /// position projects to its fixed screen position (y=72%, center=45%).
-  /// High: 0.55 rad = 31.5° → 31.5 × 0.56 = 17.6°
-  /// Low:  0.10 rad = 5.73° → 5.73 × 0.56 = 3.2°
+  /// How far ahead (in degrees) the camera looks along heading.
+  /// The shader Y-flip + these offsets naturally project the plane
+  /// to approximately its fixed screen position (y ≈ 72%).
   static const double _cameraOffsetHigh = 17.6;
   static const double _cameraOffsetLow = 3.2;
 
@@ -224,10 +222,12 @@ class FlitGame extends FlameGame
     final uvX = localX / (localZ * halfFov);
     final uvY = localY / (localZ * halfFov);
 
-    // Convert to screen coords — use projection center, not screen center,
-    // so worldToScreen(planeWorldPos) aligns with the plane's fixed screen pos.
-    final screenX = uvX * size.y + size.x * projectionCenterX;
-    final screenY = uvY * size.y + size.y * projectionCenterY;
+    // Convert to screen coords. Must match the shader's cameraRayDir:
+    //   uv = (fragCoord - 0.5 * resolution) / resolution.y
+    //   uv.y = -uv.y   (Flutter y-down flip)
+    // Inverse: fragCoord = (uvX * res.y + 0.5 * res.x, -uvY * res.y + 0.5 * res.y)
+    final screenX = uvX * size.y + size.x * 0.5;
+    final screenY = -uvY * size.y + size.y * 0.5;
 
     return Vector2(screenX, screenY);
   }
@@ -237,8 +237,8 @@ class FlitGame extends FlameGame
   static const double planeScreenY = 0.72;
   static const double planeScreenX = 0.50;
 
-  /// Where the map projection is centered on screen.
-  /// This is higher up than the plane, so the map shows more world ahead.
+  /// Where the Canvas (WorldMap) renderer centers its projection on screen.
+  /// The shader renderer uses screen center (0.5, 0.5) with a Y-flip instead.
   static const double projectionCenterY = 0.45;
   static const double projectionCenterX = 0.50;
 
