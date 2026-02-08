@@ -914,9 +914,8 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
   /// Seaplane with pontoons for water landing.
   void _renderSeaplane(Canvas canvas, double bankCos, double bankSin) {
-    final primary = colorScheme != null
-        ? Color(colorScheme!['primary'] ?? 0xFFF0E68C)
-        : const Color(0xFFF0E68C);
+    // Only extract the colors we actually use (detail for pontoons, secondary for struts).
+    // The primary color and other variables are used by _renderBiPlane() which we delegate to.
     final secondary = colorScheme != null
         ? Color(colorScheme!['secondary'] ?? 0xFF2E8B57)
         : const Color(0xFF2E8B57);
@@ -924,8 +923,6 @@ class PlaneComponent extends PositionComponent with HasGameRef {
         ? Color(colorScheme!['detail'] ?? 0xFFF5F5F5)
         : const Color(0xFFF5F5F5);
 
-    final shade = bankSin;
-    final bodyShift = bankSin * 1.5;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = bankSin * 4.0;
 
