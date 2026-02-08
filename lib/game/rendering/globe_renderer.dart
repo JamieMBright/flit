@@ -158,17 +158,44 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
       // Report only once to avoid spam (errors can occur every frame).
       if (!_renderErrorReported) {
         _renderErrorReported = true;
-        ErrorService.instance.reportCritical(
-          e,
-          st,
-          context: {
-            'source': 'GlobeRenderer',
-            'action': 'render',
-            'shaderReady': '${ShaderManager.instance.isReady}',
-          },
-        );
-        // Show error to user via JS overlay (brief message, full details in telemetry).
-        WebErrorBridge.show('Shader rendering failed: $e\n\nThe app will use fallback rendering.');
+        
+        // Check if this is a shader-related error (non-fatal with fallback)
+        final errorStr = e.toString();
+        final isShaderError = errorStr.contains('shader') ||
+                              errorStr.contains('Unsupported operation') || 
+                              errorStr.contains('not supported') ||
+                              errorStr.contains('HTML renderer') ||
+                              errorStr.contains('FragmentProgram');
+        
+        if (isShaderError) {
+          // Report as warning (non-blocking, has fallback rendering)
+          ErrorService.instance.reportWarning(
+            e,
+            st,
+            context: {
+              'source': 'GlobeRenderer',
+              'action': 'render',
+              'shaderReady': '${ShaderManager.instance.isReady}',
+              'gracefulDegradation': 'true',
+              'fallbackMode': 'canvas',
+            },
+          );
+          // Log to console but don't block gameplay
+          WebErrorBridge.logNonFatal('Shader rendering failed: $e\n\nThe app will use fallback rendering.');
+        } else {
+          // Unexpected rendering error — report as critical
+          ErrorService.instance.reportCritical(
+            e,
+            st,
+            context: {
+              'source': 'GlobeRenderer',
+              'action': 'render',
+              'shaderReady': '${ShaderManager.instance.isReady}',
+            },
+          );
+          // Show error to user via JS overlay (brief message, full details in telemetry).
+          WebErrorBridge.show('Shader rendering failed: $e\n\nThe app will use fallback rendering.');
+        }
       }
       
       // Fallback to solid background to prevent blank screen.

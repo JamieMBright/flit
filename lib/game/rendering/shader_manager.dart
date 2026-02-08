@@ -110,20 +110,49 @@ class ShaderManager {
     } catch (e, st) {
       _log.error('shader', 'Failed to load fragment shader',
           error: e, stackTrace: st);
-      // Report critical error to telemetry — iOS Safari may reload before
-      // the periodic flush, so mark as critical for immediate send.
-      ErrorService.instance.reportCritical(
-        e,
-        st,
-        context: {
-          'source': 'ShaderManager',
-          'action': 'loadFragmentProgram',
-          'asset': 'shaders/globe.frag',
-        },
-      );
-      // Show error to user via JS overlay (critical for iOS PWA).
-      WebErrorBridge.show(
-          'Shader loading failed:\n$e\n\nThe game will fall back to Canvas rendering.');
+      
+      // Check if this is an "unsupported operation" error (e.g., HTML renderer on web)
+      final errorStr = e.toString();
+      final isUnsupportedError = errorStr.contains('Unsupported operation') || 
+                                  errorStr.contains('not supported') ||
+                                  errorStr.contains('HTML renderer');
+      
+      if (isUnsupportedError) {
+        // This is expected on web with HTML renderer — report as warning but don't block
+        _log.info('shader', 'FragmentProgram not supported (HTML renderer). Using fallback rendering.');
+        
+        // Report to telemetry as warning (non-blocking)
+        ErrorService.instance.reportWarning(
+          e,
+          st,
+          context: {
+            'source': 'ShaderManager',
+            'action': 'loadFragmentProgram',
+            'asset': 'shaders/globe.frag',
+            'gracefulDegradation': 'true',
+            'fallbackMode': 'canvas',
+          },
+        );
+        
+        // Log to JS console but don't block gameplay
+        WebErrorBridge.logNonFatal(
+            'Shader configuration failed: $e\n\nThe app will use fallback rendering.');
+      } else {
+        // Unexpected shader error — report as critical
+        ErrorService.instance.reportCritical(
+          e,
+          st,
+          context: {
+            'source': 'ShaderManager',
+            'action': 'loadFragmentProgram',
+            'asset': 'shaders/globe.frag',
+          },
+        );
+        // Show error to user via JS overlay (critical for iOS PWA).
+        WebErrorBridge.show(
+            'Shader loading failed:\n$e\n\nThe game will fall back to Canvas rendering.');
+      }
+      
       _loading = false;
       return;
     }
@@ -309,16 +338,41 @@ class ShaderManager {
       // This catches errors that might not be caught by render() try-catch.
       if (!_configErrorReported) {
         _configErrorReported = true;
-        ErrorService.instance.reportCritical(
-          e,
-          st,
-          context: {
-            'source': 'ShaderManager',
-            'action': 'configureShader',
-          },
-        );
-        WebErrorBridge.show(
-            'Shader configuration failed: $e\n\nThe app will use fallback rendering.');
+        
+        // Check if this is a known non-fatal error
+        final errorStr = e.toString();
+        final isUnsupportedError = errorStr.contains('Unsupported operation') || 
+                                    errorStr.contains('not supported') ||
+                                    errorStr.contains('HTML renderer');
+        
+        if (isUnsupportedError) {
+          // Report as warning (non-blocking)
+          ErrorService.instance.reportWarning(
+            e,
+            st,
+            context: {
+              'source': 'ShaderManager',
+              'action': 'configureShader',
+              'gracefulDegradation': 'true',
+              'fallbackMode': 'canvas',
+            },
+          );
+          // Log to JS console but don't block gameplay
+          WebErrorBridge.logNonFatal(
+              'Shader configuration failed: $e\n\nThe app will use fallback rendering.');
+        } else {
+          // Unexpected error — report as critical
+          ErrorService.instance.reportCritical(
+            e,
+            st,
+            context: {
+              'source': 'ShaderManager',
+              'action': 'configureShader',
+            },
+          );
+          WebErrorBridge.show(
+              'Shader configuration failed: $e\n\nThe app will use fallback rendering.');
+        }
       }
       
       return null;

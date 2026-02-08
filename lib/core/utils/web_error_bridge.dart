@@ -11,5 +11,10 @@ class WebErrorBridge {
   WebErrorBridge._();
 
   /// Show [message] in the JS error overlay. No-op on non-web platforms.
+  /// This is a FATAL error that blocks gameplay.
   static void show(String message) => showErrorOnWeb(message);
+
+  /// Log [message] to telemetry without blocking UI. No-op on non-web platforms.
+  /// This is for non-fatal errors that should be logged but allow gameplay to continue.
+  static void logNonFatal(String message) => logNonFatalErrorOnWeb(message);
 }

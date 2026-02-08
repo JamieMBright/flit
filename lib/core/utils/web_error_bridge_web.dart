@@ -14,3 +14,16 @@ void showErrorOnWeb(String message) {
     // If even this fails, nothing more we can do.
   }
 }
+
+/// Calls `window._flitLogNonFatal(message)` defined in index.html.
+/// This logs the error to telemetry without blocking the UI.
+void logNonFatalErrorOnWeb(String message) {
+  try {
+    final fn = js_util.getProperty<Object?>(html.window, '_flitLogNonFatal');
+    if (fn != null) {
+      js_util.callMethod<void>(html.window, '_flitLogNonFatal', [message]);
+    }
+  } catch (_) {
+    // If even this fails, nothing more we can do.
+  }
+}
