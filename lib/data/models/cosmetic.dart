@@ -211,7 +211,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF4A90B8,
         'detail': 0xFF808080,
       },
-      wingSpan: 24.0, // Fighter jet - shorter, swept wings
+      wingSpan: 23.0, // Fighter jet - shorter, swept wings
     ),
     Cosmetic(
       id: 'plane_red_baron',
@@ -225,7 +225,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF8B0000,
         'detail': 0xFF1A1A1A,
       },
-      wingSpan: 25.0, // Triplane - compact wings
+      wingSpan: 24.0, // Triplane - shorter individual wings
     ),
     Cosmetic(
       id: 'plane_rocket',
@@ -334,7 +334,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF1A1A1A,
         'detail': 0xFFF0D060,
       },
-      wingSpan: 28.0, // Private jet - moderate span
+      wingSpan: 29.0, // Private jet - sleek swept wings
     ),
     Cosmetic(
       id: 'plane_diamond_concorde',
