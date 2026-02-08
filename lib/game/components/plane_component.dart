@@ -966,7 +966,9 @@ class PlaneComponent extends PositionComponent with HasGameRef {
       strutPaint,
     );
 
-    // Now render the plane itself using bi-plane style
+    // Render the plane body using bi-plane style.
+    // This is safe (no recursion) because _renderBiPlane() doesn't call back
+    // to _renderPlane() - it's a leaf rendering method.
     _renderBiPlane(canvas, bankCos, bankSin);
   }
 
