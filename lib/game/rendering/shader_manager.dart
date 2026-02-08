@@ -60,6 +60,9 @@ class ShaderManager {
   /// The cached city lights texture, or null if not yet loaded.
   ui.Image? get cityLightsTexture => _cityLightsTexture;
 
+  /// Whether a shader configuration error has been reported (to avoid spam).
+  bool _configErrorReported = false;
+
   /// Load the fragment shader program and all texture images.
   ///
   /// Safe to call multiple times; subsequent calls are no-ops if already
@@ -211,8 +214,23 @@ class ShaderManager {
       return s;
     } catch (e, st) {
       _log.error('shader', 'Failed to configure shader', error: e, stackTrace: st);
-      // Don't report to ErrorService here — render() will catch and report it.
-      // This prevents duplicate error reports for the same underlying issue.
+      
+      // Report once to avoid spam — configureShader() is called every frame.
+      // This catches errors that might not be caught by render() try-catch.
+      if (!_configErrorReported) {
+        _configErrorReported = true;
+        ErrorService.instance.reportCritical(
+          e,
+          st,
+          context: {
+            'source': 'ShaderManager',
+            'action': 'configureShader',
+          },
+        );
+        WebErrorBridge.show(
+            'Shader configuration failed: $e\n\nThe app will use fallback rendering.');
+      }
+      
       return null;
     }
   }

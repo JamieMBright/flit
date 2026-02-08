@@ -167,8 +167,8 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
             'shaderReady': '${ShaderManager.instance.isReady}',
           },
         );
-        // Show error to user via JS overlay.
-        WebErrorBridge.show('Shader rendering failed:\n$e\n\n$st');
+        // Show error to user via JS overlay (brief message, full details in telemetry).
+        WebErrorBridge.show('Shader rendering failed: $e\n\nThe app will use fallback rendering.');
       }
       
       // Fallback to solid background to prevent blank screen.
