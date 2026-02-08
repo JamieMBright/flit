@@ -387,10 +387,18 @@ class AvatarEditorScreen extends ConsumerStatefulWidget {
 
 class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
   /// Current avatar configuration being edited.
-  AvatarConfig _config = const AvatarConfig();
+  late AvatarConfig _config;
 
   /// Index of the active category tab.
   int _selectedCategory = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load current avatar config from account state so edits start from
+    // the player's existing avatar rather than the default.
+    _config = ref.read(accountProvider).avatar;
+  }
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -752,8 +760,10 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
   }
 
   void _saveConfig() {
-    // Persist logic goes here in a real implementation.
-    Navigator.of(context).pop(_config);
+    // Persist avatar configuration through the account provider so it
+    // survives navigation back to the profile menu and through gameplay.
+    ref.read(accountProvider.notifier).updateAvatar(_config);
+    Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Avatar saved!'),

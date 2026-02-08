@@ -25,11 +25,21 @@ Future<bool> errorSenderHttp({
     if (apiKey.isNotEmpty) {
       headers['X-API-Key'] = apiKey;
     }
-    final response = await http.post(
-      Uri.parse(url),
-      headers: headers,
-      body: jsonBody,
-    );
+    // Add timeout to prevent hanging on slow networks (critical for iOS PWA
+    // where the app may be about to reload).
+    final response = await http
+        .post(
+          Uri.parse(url),
+          headers: headers,
+          body: jsonBody,
+        )
+        .timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            // Return a failed response if the request times out
+            return http.Response('Request timeout', 408);
+          },
+        );
     // 2xx means the server accepted the batch.
     return response.statusCode >= 200 && response.statusCode < 300;
   } catch (_) {

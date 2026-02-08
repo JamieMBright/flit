@@ -92,6 +92,7 @@ class RegionSelectScreen extends ConsumerWidget {
                 ? () {
                     final planeId = ref.read(equippedPlaneIdProvider);
                     final plane = CosmeticCatalog.getById(planeId);
+                    final companion = ref.read(accountProvider).avatar.companion;
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute<void>(
                         builder: (context) => PlayScreen(
@@ -99,6 +100,7 @@ class RegionSelectScreen extends ConsumerWidget {
                           planeColorScheme: plane?.colorScheme,
                           planeWingSpan: plane?.wingSpan,
                           equippedPlaneId: planeId,
+                          companionType: companion,
                         ),
                       ),
                     );
