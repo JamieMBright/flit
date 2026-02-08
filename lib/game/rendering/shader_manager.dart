@@ -130,8 +130,8 @@ class ShaderManager {
 
     // Load textures in parallel. Load each texture independently so that
     // missing or failed textures don't prevent the shader from working.
-    // Critical textures (satellite, heightmap) are required; optional ones
-    // (shore_distance, city_lights) will degrade gracefully if missing.
+    // All textures are optional - the game will run with black fallback
+    // textures if any fail to load.
     final textureResults = await Future.wait<Map<String, dynamic>>([
       _loadImage('assets/textures/blue_marble.png')
           .then((img) => <String, dynamic>{'name': 'satellite', 'image': img})
@@ -148,7 +148,8 @@ class ShaderManager {
     ]);
 
     // Process results and report errors for missing textures.
-    bool hasCriticalFailure = false;
+    // All textures are now optional - failures are logged but don't prevent
+    // the game from running.
     for (final result in textureResults) {
       final name = result['name'] as String;
       if (result.containsKey('image')) {
@@ -174,7 +175,6 @@ class ShaderManager {
       } else {
         final error = result['error'];
         final stack = result['stack'];
-        final isCritical = name == 'satellite' || name == 'heightmap';
         
         // Extract more details from the error for better debugging
         final errorStr = error.toString();
@@ -183,16 +183,10 @@ class ShaderManager {
             : name == 'shore_distance' ? 'assets/textures/shore_distance.png'
             : 'assets/textures/city_lights.png';
         
-        if (isCritical) {
-          hasCriticalFailure = true;
-          _log.error('shader', 
-              'Failed to load CRITICAL texture: $name from $assetPath',
-              error: error, stackTrace: stack);
-        } else {
-          _log.warning('shader', 
-              'Failed to load optional texture: $name from $assetPath (will degrade gracefully)',
-              error: error);
-        }
+        // Log the error (all textures are now treated as optional)
+        _log.error('shader', 
+            'Failed to load texture: $name from $assetPath (will use black fallback)',
+            error: error, stackTrace: stack);
         
         // Report to telemetry with enhanced context
         final context = <String, String>{
@@ -200,7 +194,7 @@ class ShaderManager {
           'action': 'loadTexture',
           'texture': name,
           'assetPath': assetPath,
-          'critical': isCritical.toString(),
+          'gracefulDegradation': 'true',
           'errorType': errorStr.contains('404') ? 'not_found'
               : errorStr.contains('network') ? 'network_failure'
               : errorStr.contains('decode') ? 'decode_failure'
@@ -208,50 +202,17 @@ class ShaderManager {
               : 'unknown',
         };
         
-        if (isCritical) {
-          ErrorService.instance.reportError(
-            'Critical texture failed to load: $name\n'
-            'Path: $assetPath\n'
-            'Error: $errorStr',
-            stack,
-            severity: ErrorSeverity.error,
-            context: context,
-          );
-        } else {
-          ErrorService.instance.reportWarning(
-            'Optional texture failed to load: $name\n'
-            'Path: $assetPath\n'
-            'Error: $errorStr',
-            stack,
-            context: context,
-          );
-        }
+        // Report as error (not critical) so it gets logged but doesn't halt execution
+        ErrorService.instance.reportError(
+          'Texture failed to load: $name\n'
+          'Path: $assetPath\n'
+          'Error: $errorStr\n'
+          'Game will continue with black fallback texture.',
+          stack,
+          severity: ErrorSeverity.error,
+          context: context,
+        );
       }
-    }
-
-    // If critical textures failed, abort shader initialization.
-    if (hasCriticalFailure) {
-      _log.error('shader', 'One or more critical textures failed to load');
-      
-      // Build a detailed error message for the user
-      final failedTextures = <String>[];
-      if (_satelliteTexture == null) failedTextures.add('satellite imagery');
-      if (_heightmapTexture == null) failedTextures.add('terrain heightmap');
-      
-      final errorMsg = 'Critical textures failed to load:\n'
-          '${failedTextures.join(', ')}\n\n'
-          'This may be due to:\n'
-          '• Poor network connection\n'
-          '• iOS Safari storage limits\n'
-          '• Corrupted cache\n\n'
-          'Try:\n'
-          '1. Reload the page\n'
-          '2. Clear browser cache\n'
-          '3. Check network connection';
-      
-      WebErrorBridge.show(errorMsg);
-      _loading = false;
-      return;
     }
 
     // Log summary of loaded textures.
