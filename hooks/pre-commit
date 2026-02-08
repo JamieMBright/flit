@@ -75,12 +75,32 @@ else
 fi
 
 # -----------------------------------------------------------------------
-# Step 2+: Flutter-dependent checks (skip if Flutter not available)
+# Step 2+: Flutter-dependent checks (or fallback to no-Flutter lint)
 # -----------------------------------------------------------------------
 if ! command -v flutter &> /dev/null; then
     echo ""
-    echo "Flutter not found locally - skipping format/analyze/test checks"
-    echo "CI will run full validation on push"
+    echo "Flutter not found - running lightweight lint checks..."
+
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+    # Handle both hooks/ source dir and .git/hooks/ installed location
+    if [ -f "$PROJECT_ROOT/scripts/lint-noflutter.sh" ]; then
+        LINT_SCRIPT="$PROJECT_ROOT/scripts/lint-noflutter.sh"
+    elif [ -f "$PROJECT_ROOT/../scripts/lint-noflutter.sh" ]; then
+        LINT_SCRIPT="$PROJECT_ROOT/../scripts/lint-noflutter.sh"
+    else
+        # Try relative to git root
+        LINT_SCRIPT="$(git rev-parse --show-toplevel 2>/dev/null)/scripts/lint-noflutter.sh"
+    fi
+
+    if [ -f "$LINT_SCRIPT" ]; then
+        bash "$LINT_SCRIPT" --staged
+        echo ""
+        echo "Pre-commit checks passed (no-Flutter mode)."
+    else
+        echo "WARNING: lint-noflutter.sh not found - skipping lint checks"
+        echo "CI will run full validation on push"
+    fi
     exit 0
 fi
 

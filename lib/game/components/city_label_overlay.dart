@@ -236,13 +236,13 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
             tp = TextPainter(
               text: TextSpan(
                 text: entry.city.name,
-                style: TextStyle(
+                style: const TextStyle(
                   color: FlitColors.textPrimary,
                   fontSize: 7,
                   fontWeight: FontWeight.w500,
                   shadows: kIsWeb
                       ? null
-                      : const [
+                      : [
                           Shadow(
                             offset: Offset(1, 1),
                             blurRadius: 2,
