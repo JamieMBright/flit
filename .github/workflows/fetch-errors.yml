@@ -23,7 +23,7 @@ jobs:
       - name: Fetch errors from Vercel endpoint
         env:
           VERCEL_ERRORS_API_KEY: ${{ secrets.VERCEL_ERRORS_API_KEY }}
-          ERRORS_ENDPOINT: https://flit-errors.vercel.app/api/errors
+          ERRORS_ENDPOINT: https://flit-olive.vercel.app/api/errors
         run: |
           set -euo pipefail
 

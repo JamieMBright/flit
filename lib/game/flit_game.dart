@@ -224,9 +224,10 @@ class FlitGame extends FlameGame
     final uvX = localX / (localZ * halfFov);
     final uvY = localY / (localZ * halfFov);
 
-    // Convert to screen coords (matches shader's fragCoord mapping)
-    final screenX = uvX * size.y + size.x * 0.5;
-    final screenY = uvY * size.y + size.y * 0.5;
+    // Convert to screen coords — use projection center, not screen center,
+    // so worldToScreen(planeWorldPos) aligns with the plane's fixed screen pos.
+    final screenX = uvX * size.y + size.x * projectionCenterX;
+    final screenY = uvY * size.y + size.y * projectionCenterY;
 
     return Vector2(screenX, screenY);
   }
