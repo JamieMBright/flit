@@ -379,6 +379,8 @@ class FlitGame extends FlameGame
   }
 
   void _updateInner(double dt) {
+    // Don't run game logic until a session is active and the game has a size.
+    if (!_isPlaying || size.x < 1 || size.y < 1) return;
 
     // --- Great-circle movement ---
     final speed = _plane.currentSpeed;

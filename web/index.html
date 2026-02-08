@@ -111,6 +111,7 @@
     var errors = [];
     var frozen = false;
     var STORAGE_KEY = 'flit_crash_errors';
+    var ERROR_ENDPOINT = 'https://flit-errors.vercel.app/api/errors';
 
     // Restore errors from a previous page load (iOS PWA reload recovery).
     try {
@@ -119,6 +120,25 @@
         errors = JSON.parse(stored);
       }
     } catch (_) {}
+
+    // POST error to Vercel telemetry (fire-and-forget, never blocks UI).
+    function sendToVercel(msg) {
+      try {
+        var payload = JSON.stringify({
+          error: msg,
+          source: 'js_error_handler',
+          url: location.href,
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString(),
+        });
+        fetch(ERROR_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,  // survives page unload on iOS
+        }).catch(function() {}); // swallow network failures
+      } catch (_) {}
+    }
 
     function renderErrorOverlay() {
       errorBox.innerHTML = '';
@@ -168,6 +188,9 @@
 
       // Persist to localStorage so errors survive iOS PWA page reloads.
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(errors)); } catch (_) {}
+
+      // Send to Vercel telemetry (fire-and-forget).
+      sendToVercel(msg);
 
       renderErrorOverlay();
     }

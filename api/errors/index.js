@@ -165,6 +165,26 @@ async function appendToGitHub(newLines) {
 // POST handler
 // ---------------------------------------------------------------------------
 
+/// Normalize a lightweight JS-sourced error into the full schema.
+/// JS errors only have { error, source, url, userAgent, timestamp }.
+function normalizeJsPayload(payload) {
+  if (!isNonEmptyString(payload.error)) return null;
+  return {
+    timestamp: payload.timestamp || new Date().toISOString(),
+    sessionId: 'js-' + Date.now(),
+    appVersion: 'web-js',
+    platform: 'web',
+    deviceInfo: payload.userAgent || navigator?.userAgent || 'unknown',
+    severity: 'critical',
+    error: payload.error,
+    stackTrace: payload.stackTrace || '',
+    context: {
+      source: payload.source || 'js_error_handler',
+      url: payload.url || '',
+    },
+  };
+}
+
 async function handlePost(req, res) {
   const body = req.body;
   const payloads = Array.isArray(body) ? body : [body];
@@ -187,18 +207,24 @@ async function handlePost(req, res) {
   const rejected = [];
 
   for (let i = 0; i < payloads.length; i++) {
-    const payload = payloads[i];
+    let payload = payloads[i];
     const validationError = validateErrorPayload(payload);
     if (validationError) {
-      rejected.push({ index: i, reason: validationError });
-    } else {
-      const enriched = {
-        ...payload,
-        _receivedAt: new Date().toISOString(),
-        _id: `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`,
-      };
-      accepted.push(enriched);
+      // Try normalizing as a lightweight JS payload before rejecting.
+      const normalized = normalizeJsPayload(payload);
+      if (normalized) {
+        payload = normalized;
+      } else {
+        rejected.push({ index: i, reason: validationError });
+        continue;
+      }
     }
+    const enriched = {
+      ...payload,
+      _receivedAt: new Date().toISOString(),
+      _id: `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`,
+    };
+    accepted.push(enriched);
   }
 
   // Store in memory for GET queries.
@@ -287,6 +313,12 @@ module.exports = async (req, res) => {
     return res.status(204).end();
   }
 
+  // POST (error ingestion) is open — anyone can report errors.
+  // GET (reading errors) requires auth to prevent data exposure.
+  if (req.method === 'POST') {
+    return handlePost(req, res);
+  }
+
   if (!authenticate(req)) {
     return res.status(401).json({
       error: 'Unauthorized',
@@ -295,8 +327,6 @@ module.exports = async (req, res) => {
   }
 
   switch (req.method) {
-    case 'POST':
-      return handlePost(req, res);
     case 'GET':
       return handleGet(req, res);
     default:
