@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
@@ -249,10 +250,52 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     final path = _createCountryPath(country, screenSize, globeRadius);
     if (path == null) return;
 
-    final center = _getCountryCenter(country);
-    final landColor = _getClimateColor(center.x, center.y);
+    // Multi-tone Köppen-Geiger: sample climate at multiple points across
+    // the country's latitude range for intra-country climate variation.
+    final pts = country.allPoints;
+    if (pts.isEmpty) return;
 
-    canvas.drawPath(path, Paint()..color = landColor);
+    var minLat = pts[0].y;
+    var maxLat = pts[0].y;
+    var sumLng = 0.0;
+    for (final p in pts) {
+      if (p.y < minLat) minLat = p.y;
+      if (p.y > maxLat) maxLat = p.y;
+      sumLng += p.x;
+    }
+    final centerLng = sumLng / pts.length;
+    final latSpan = maxLat - minLat;
+
+    // For small countries (< 5° span), use a single color for performance.
+    if (latSpan < 5.0) {
+      final center = _getCountryCenter(country);
+      canvas.drawPath(
+        path,
+        Paint()..color = _getClimateColor(center.x, center.y),
+      );
+    } else {
+      // Sample climate colors at north, center, and south of the polygon.
+      final northColor = _getClimateColor(centerLng, maxLat);
+      final midColor = _getClimateColor(centerLng, (minLat + maxLat) / 2);
+      final southColor = _getClimateColor(centerLng, minLat);
+
+      // Project north and south extremes to screen for gradient direction.
+      final northScreen =
+          _project(centerLng, maxLat, screenSize, globeRadius) ??
+              _projectClamped(centerLng, maxLat, screenSize, globeRadius);
+      final southScreen =
+          _project(centerLng, minLat, screenSize, globeRadius) ??
+              _projectClamped(centerLng, minLat, screenSize, globeRadius);
+
+      final gradient = ui.Gradient.linear(
+        northScreen,
+        southScreen,
+        [northColor, midColor, southColor],
+        [0.0, 0.5, 1.0],
+      );
+
+      canvas.drawPath(path, Paint()..shader = gradient);
+    }
 
     if (!_isHighAltitude) {
       canvas.drawPath(
@@ -276,7 +319,7 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   }
 
   /// Determine land color based on Köppen-Geiger climate zone heuristics.
-  /// Uses center (lng, lat) of each country to approximate the dominant climate.
+  /// Sampled at arbitrary (lng, lat) points for multi-tone intra-country variation.
   Color _getClimateColor(double lng, double lat) {
     final absLat = lat.abs();
 

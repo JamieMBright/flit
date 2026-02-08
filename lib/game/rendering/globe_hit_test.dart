@@ -35,12 +35,13 @@ class GlobeHitTest {
   ) {
     if (screenSize.isEmpty) return null;
 
-    // -- Step 1: Screen -> NDC --
-    // Map pixel coordinates to [-1, 1] range.
-    // x: left=-1, right=+1; y: top=+1, bottom=-1 (flip y).
-    final aspect = screenSize.width / screenSize.height;
-    final ndcX = (2.0 * screenPoint.dx / screenSize.width - 1.0) * aspect;
-    final ndcY = 1.0 - 2.0 * screenPoint.dy / screenSize.height;
+    // -- Step 1: Screen -> UV (matching shader convention) --
+    // The shader computes: uv = (fragCoord - 0.5 * resolution) / resolution.y
+    // This maps x to [-0.5*aspect, 0.5*aspect] and y to [-0.5, 0.5].
+    // The shader then flips Y (uv.y = -uv.y) because Flutter is y-down.
+    // We replicate that here so the inverse projection matches exactly.
+    final ndcX = (screenPoint.dx - 0.5 * screenSize.width) / screenSize.height;
+    final ndcY = -(screenPoint.dy - 0.5 * screenSize.height) / screenSize.height;
 
     // -- Step 2: NDC -> ray direction --
     // Use the camera's FOV to determine the view-plane distance.

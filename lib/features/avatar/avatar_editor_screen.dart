@@ -318,56 +318,6 @@ const List<_AvatarCategory> _categories = [
       ),
     ],
   ),
-
-  // -- Companion --
-  _AvatarCategory(
-    label: 'Companion',
-    icon: Icons.pets,
-    configKey: 'companion',
-    parts: [
-      _AvatarPart(id: 'companion_none', name: 'None', icon: Icons.block),
-      _AvatarPart(
-        id: 'companion_sparrow',
-        name: 'Sparrow',
-        icon: Icons.flutter_dash,
-        price: 2000,
-        requiredLevel: 10,
-        goldPrice: 5000,
-      ),
-      _AvatarPart(
-        id: 'companion_eagle',
-        name: 'Eagle',
-        icon: Icons.flight,
-        price: 5000,
-        requiredLevel: 20,
-        goldPrice: 12000,
-      ),
-      _AvatarPart(
-        id: 'companion_parrot',
-        name: 'Parrot',
-        icon: Icons.pets,
-        price: 8000,
-        requiredLevel: 25,
-        goldPrice: 18000,
-      ),
-      _AvatarPart(
-        id: 'companion_phoenix',
-        name: 'Phoenix',
-        icon: Icons.local_fire_department,
-        price: 15000,
-        requiredLevel: 35,
-        goldPrice: 35000,
-      ),
-      _AvatarPart(
-        id: 'companion_dragon',
-        name: 'Dragon',
-        icon: Icons.whatshot,
-        price: 30000,
-        requiredLevel: 45,
-        goldPrice: 60000,
-      ),
-    ],
-  ),
 ];
 
 // =============================================================================
@@ -425,8 +375,6 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
         return 'glasses_${_config.glasses.name}';
       case 'accessory':
         return 'acc_${_config.accessory.name}';
-      case 'companion':
-        return 'companion_${_config.companion.name}';
       default:
         return '';
     }
@@ -486,11 +434,6 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
           final name = _enumName('acc', partId);
           _config = _config.copyWith(
             accessory: AvatarAccessory.values.firstWhere((v) => v.name == name),
-          );
-        case 'companion':
-          final name = _enumName('companion', partId);
-          _config = _config.copyWith(
-            companion: AvatarCompanion.values.firstWhere((v) => v.name == name),
           );
       }
     });

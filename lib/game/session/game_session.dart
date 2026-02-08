@@ -151,18 +151,9 @@ class GameSession {
     final countryIndex = random.nextInt(CountryData.countries.length);
     final country = CountryData.countries[countryIndex];
 
-    // Pick clue type based on seed
-    const clueTypes = ClueType.values;
-    final clueTypeIndex = random.nextInt(clueTypes.length);
-    final clueType = clueTypes[clueTypeIndex];
-
-    final clue = switch (clueType) {
-      ClueType.flag => Clue.flag(country.code),
-      ClueType.outline => Clue.outline(country.code),
-      ClueType.borders => Clue.borders(country.code),
-      ClueType.capital => Clue.capital(country.code),
-      ClueType.stats => Clue.stats(country.code),
-    };
+    // Use Clue.random() to ensure validation and retry logic
+    // This avoids "Unknown" or empty data issues
+    final clue = Clue.random(country.code);
 
     // Generate start position based on seed
     final startLng = (random.nextDouble() * 360) - 180;

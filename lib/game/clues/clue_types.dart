@@ -63,11 +63,12 @@ class Clue {
   /// Create a capital clue
   factory Clue.capital(String countryCode) {
     final capital = CountryData.getCapital(countryCode);
+    // If no capital data available, this will be caught by validation
     return Clue(
       type: ClueType.capital,
       targetCountryCode: countryCode,
       displayData: {
-        'capitalName': capital?.name ?? 'Unknown',
+        'capitalName': capital?.name ?? '',
       },
     );
   }
@@ -81,23 +82,48 @@ class Clue {
     );
   }
 
-  /// Generate a random clue for a country
+  /// Generate a random clue for a country, with validation to avoid "Unknown" data
   factory Clue.random(String countryCode) {
     const types = ClueType.values;
-    final randomType = types[Random().nextInt(types.length)];
+    final random = Random();
+    final triedTypes = <ClueType>{};
+    const maxRetries = 10;
 
-    switch (randomType) {
-      case ClueType.flag:
-        return Clue.flag(countryCode);
-      case ClueType.outline:
-        return Clue.outline(countryCode);
-      case ClueType.borders:
-        return Clue.borders(countryCode);
-      case ClueType.capital:
-        return Clue.capital(countryCode);
-      case ClueType.stats:
-        return Clue.stats(countryCode);
+    for (var attempt = 0; attempt < maxRetries; attempt++) {
+      // Get available types that haven't been tried yet
+      final availableTypes = types.where((t) => !triedTypes.contains(t)).toList();
+      if (availableTypes.isEmpty) break;
+
+      final randomType = availableTypes[random.nextInt(availableTypes.length)];
+      triedTypes.add(randomType);
+
+      Clue clue;
+      switch (randomType) {
+        case ClueType.flag:
+          clue = Clue.flag(countryCode);
+          break;
+        case ClueType.outline:
+          clue = Clue.outline(countryCode);
+          break;
+        case ClueType.borders:
+          clue = Clue.borders(countryCode);
+          break;
+        case ClueType.capital:
+          clue = Clue.capital(countryCode);
+          break;
+        case ClueType.stats:
+          clue = Clue.stats(countryCode);
+          break;
+      }
+
+      // Validate the clue - if valid, return it
+      if (_isValidClue(clue)) {
+        return clue;
+      }
     }
+
+    // Fallback: if all retries failed, return flag clue (most reliable)
+    return Clue.flag(countryCode);
   }
 
   /// Create a clue for a regional area (state, county, island)
@@ -106,13 +132,15 @@ class Clue {
     final random = Random();
     final availableTypes = <ClueType>[ClueType.outline];
 
-    // Add capital clue if area has a capital
-    if (area.capital != null) {
+    // Add capital clue if area has a capital that's not empty or "Unknown"
+    if (area.capital != null &&
+        area.capital!.isNotEmpty &&
+        !area.capital!.toLowerCase().contains('unknown')) {
       availableTypes.add(ClueType.capital);
     }
 
     // Add stats clue if area has population
-    if (area.population != null) {
+    if (area.population != null && area.population! > 0) {
       availableTypes.add(ClueType.stats);
     }
 
@@ -133,7 +161,7 @@ class Clue {
           type: ClueType.capital,
           targetCountryCode: area.code,
           displayData: {
-            'capitalName': area.capital ?? 'Unknown',
+            'capitalName': area.capital ?? '',
             'areaName': area.name,
           },
         );
@@ -206,6 +234,42 @@ class Clue {
       lines.add('$label: ${entry.value}');
     }
     return lines.join('\n');
+  }
+
+  /// Validates that a clue has proper data and doesn't contain "Unknown" or empty values
+  static bool _isValidClue(Clue clue) {
+    switch (clue.type) {
+      case ClueType.flag:
+        // Flag clues are always valid
+        return true;
+      case ClueType.outline:
+        // Check if polygons/points exist and are not empty
+        final polygons = clue.displayData['polygons'] as List?;
+        final points = clue.displayData['points'] as List?;
+        return (polygons != null && polygons.isNotEmpty) ||
+               (points != null && points.isNotEmpty);
+      case ClueType.borders:
+        // Check if neighbors list exists and is not empty
+        final neighbors = clue.displayData['neighbors'] as List<String>?;
+        if (neighbors == null || neighbors.isEmpty) return false;
+        // Ensure no "Unknown" values in neighbor names
+        return !neighbors.any((n) => n.toLowerCase().contains('unknown'));
+      case ClueType.capital:
+        // Check if capital name exists and is not empty or "Unknown"
+        final capitalName = clue.displayData['capitalName'] as String?;
+        if (capitalName == null || capitalName.isEmpty) return false;
+        return !capitalName.toLowerCase().contains('unknown');
+      case ClueType.stats:
+        // Check if stats map exists and is not empty
+        if (clue.displayData.isEmpty) return false;
+        // Ensure no "Unknown" values in stats
+        for (final value in clue.displayData.values) {
+          if (value == null) return false;
+          final strValue = value.toString().toLowerCase();
+          if (strValue.isEmpty || strValue.contains('unknown')) return false;
+        }
+        return true;
+    }
   }
 
   static String _countryCodeToFlagEmoji(String code) {
@@ -563,7 +627,8 @@ class Clue {
       'PG': ['Indonesia'],
       'FJ': <String>[],
     };
-    return neighbors[code] ?? ['Unknown'];
+    // Return empty list if country not found - caller should handle by picking different clue type
+    return neighbors[code] ?? <String>[];
   }
 
   /// Full stats database for each country. A random trio is selected at runtime.
@@ -1489,7 +1554,8 @@ class Clue {
     };
 
     final countryStats = allStats[code];
-    if (countryStats == null) return {'population': 'Unknown'};
+    // Return empty map if country not found - caller should handle by picking different clue type
+    if (countryStats == null) return <String, dynamic>{};
 
     // Pick a random trio of stats from all available keys
     final keys = countryStats.keys.toList()..shuffle(Random());

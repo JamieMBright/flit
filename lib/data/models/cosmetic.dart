@@ -369,6 +369,67 @@ abstract class CosmeticCatalog {
   ];
 
   // ---------------------------------------------------------------
+  // Companions
+  // ---------------------------------------------------------------
+  static const List<Cosmetic> companions = [
+    Cosmetic(
+      id: 'companion_none',
+      name: 'No Companion',
+      type: CosmeticType.coPilot,
+      price: 0,
+      rarity: CosmeticRarity.common,
+      description: 'Fly solo.',
+      isOwned: true,
+      isEquipped: true,
+    ),
+    Cosmetic(
+      id: 'companion_sparrow',
+      name: 'Sparrow',
+      type: CosmeticType.coPilot,
+      price: 2000,
+      rarity: CosmeticRarity.common,
+      requiredLevel: 10,
+      description: 'A small, nimble companion for your journey.',
+    ),
+    Cosmetic(
+      id: 'companion_eagle',
+      name: 'Eagle',
+      type: CosmeticType.coPilot,
+      price: 5000,
+      rarity: CosmeticRarity.rare,
+      requiredLevel: 20,
+      description: 'A majestic bird of prey with keen eyes.',
+    ),
+    Cosmetic(
+      id: 'companion_parrot',
+      name: 'Parrot',
+      type: CosmeticType.coPilot,
+      price: 8000,
+      rarity: CosmeticRarity.rare,
+      requiredLevel: 25,
+      description: 'A colorful tropical companion.',
+    ),
+    Cosmetic(
+      id: 'companion_phoenix',
+      name: 'Phoenix',
+      type: CosmeticType.coPilot,
+      price: 15000,
+      rarity: CosmeticRarity.epic,
+      requiredLevel: 35,
+      description: 'A legendary firebird risen from the ashes.',
+    ),
+    Cosmetic(
+      id: 'companion_dragon',
+      name: 'Dragon',
+      type: CosmeticType.coPilot,
+      price: 30000,
+      rarity: CosmeticRarity.legendary,
+      requiredLevel: 45,
+      description: 'The ultimate companion. A mythical dragon.',
+    ),
+  ];
+
+  // ---------------------------------------------------------------
   // Contrails
   // ---------------------------------------------------------------
   static const List<Cosmetic> contrails = [
@@ -484,7 +545,7 @@ abstract class CosmeticCatalog {
     ),
   ];
 
-  static List<Cosmetic> get all => [...planes, ...contrails];
+  static List<Cosmetic> get all => [...planes, ...contrails, ...companions];
 
   static Cosmetic? getById(String id) {
     try {

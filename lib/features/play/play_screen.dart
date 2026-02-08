@@ -10,6 +10,7 @@ import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
 import '../../data/models/avatar_config.dart';
+import '../../game/clues/clue_types.dart';
 import '../../game/flit_game.dart';
 import '../../game/map/region.dart';
 import '../../game/session/game_session.dart';
@@ -83,11 +84,17 @@ class _PlayScreenState extends State<PlayScreen> {
   /// Accumulated score across all rounds.
   int _totalScore = 0;
 
-  /// Hints remaining for this session (1 per round, 5 per day limit).
-  int _hintsRemaining = 1;
+  /// Current hint tier (0 = no hints, 1 = clue cycled, 2 = country revealed, 3 = wayline shown).
+  int _hintTier = 0;
 
   /// Timer for auto-hint after 2 minutes of no progress.
   Timer? _autoHintTimer;
+
+  /// Current clue being shown (may differ from session.clue after tier 1 hint).
+  Clue? _currentClue;
+
+  /// Revealed country name (shown after tier 2 hint).
+  String? _revealedCountry;
 
 
   @override
@@ -175,28 +182,43 @@ class _PlayScreenState extends State<PlayScreen> {
     }
   }
 
-  /// Use a hint — briefly show a wayline to the target destination.
+  /// Use a hint — tiered system with 3 levels.
   void _useHint() {
-    if (_hintsRemaining <= 0 || _session == null) return;
+    if (_session == null || _hintTier >= 3) return;
+
     setState(() {
-      _hintsRemaining--;
-    });
-    // Set a temporary waymarker at the target location.
-    // The wayline renderer will draw the path for a few seconds.
-    _game.showHintWayline(_session!.targetPosition);
-    _log.info('hint', 'Hint used', data: {
-      'remaining': _hintsRemaining,
-      'target': _session?.targetName,
+      _hintTier++;
+
+      if (_hintTier == 1) {
+        // Tier 1: Cycle to a different clue
+        _currentClue = Clue.random(_session!.targetCountry.code);
+        _log.info('hint', 'Tier 1: Clue cycled', data: {
+          'target': _session!.targetName,
+          'newClueType': _currentClue!.type.name,
+        });
+      } else if (_hintTier == 2) {
+        // Tier 2: Reveal the country name
+        _revealedCountry = _session!.targetName;
+        _log.info('hint', 'Tier 2: Country revealed', data: {
+          'country': _revealedCountry,
+        });
+      } else if (_hintTier == 3) {
+        // Tier 3: Show wayline to destination
+        _game.showHintWayline(_session!.targetPosition);
+        _log.info('hint', 'Tier 3: Wayline shown', data: {
+          'target': _session!.targetName,
+        });
+      }
     });
   }
 
-  /// Start auto-hint timer — gives a free hint after 2 minutes of no progress.
+  /// Start auto-hint timer — gives a free tier 1 hint after 2 minutes of no progress.
   void _startAutoHintTimer() {
     _autoHintTimer?.cancel();
     _autoHintTimer = Timer(const Duration(minutes: 2), () {
-      if (mounted && _session != null && !_session!.isCompleted) {
+      if (mounted && _session != null && !_session!.isCompleted && _hintTier == 0) {
         _log.info('hint', 'Auto-hint triggered after 2 minutes');
-        _game.showHintWayline(_session!.targetPosition);
+        _useHint(); // Trigger tier 1 (clue change)
       }
     });
   }
@@ -209,6 +231,11 @@ class _PlayScreenState extends State<PlayScreen> {
     try {
       _session = GameSession.random(region: widget.region);
       _elapsed = Duration.zero;
+
+      // Reset hint state for new round
+      _hintTier = 0;
+      _revealedCountry = null;
+      _currentClue = _session!.clue;
 
       _log.info('session', 'Session created', data: {
         'target': _session!.targetName,
@@ -636,7 +663,7 @@ class _PlayScreenState extends State<PlayScreen> {
             GameHud(
               isHighAltitude: _isHighAltitude,
               elapsedTime: _elapsed,
-              currentClue: _session?.clue,
+              currentClue: _currentClue,
               onAltitudeToggle: () {
                 _game.plane.toggleAltitude();
                 AudioManager.instance.playSfx(SfxType.altitudeChange);
@@ -648,10 +675,12 @@ class _PlayScreenState extends State<PlayScreen> {
                   _game.setFlightSpeed(speed);
                 });
               },
-              onHint: _hintsRemaining > 0 ? _useHint : null,
-              hintsRemaining: _hintsRemaining,
+              onHint: _hintTier < 3 ? _useHint : null,
+              hintTier: _hintTier,
+              revealedCountry: _revealedCountry,
               countryName: _game.currentCountryName,
               heading: _game.heading,
+              countryFlashProgress: _game.countryFlashProgress,
             ),
 
           // Altitude toggle removed — tap the HUD altitude indicator instead
