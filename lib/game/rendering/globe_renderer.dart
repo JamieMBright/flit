@@ -78,8 +78,9 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
     final plane = gameRef.plane;
 
     // speedFraction: ratio of current speed to max speed.
+    // Use continuous speed for smooth FOV transitions
     final speedFraction =
-        plane.currentSpeed / PlaneComponent.highAltitudeSpeed;
+        plane.currentSpeedContinuous / PlaneComponent.highAltitudeSpeed;
 
     _camera.update(
       dt,
@@ -88,6 +89,7 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
       isHighAltitude: plane.isHighAltitude,
       speedFraction: speedFraction.clamp(0.0, 1.0),
       headingRad: gameRef.cameraHeadingBearing,
+      altitudeFraction: plane.continuousAltitude,
     );
 
     // -- Rotate the sun direction for day/night cycle --

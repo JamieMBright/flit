@@ -12,6 +12,7 @@ import '../../core/utils/web_error_bridge.dart';
 import '../../game/flit_game.dart';
 import '../../game/map/region.dart';
 import '../../game/session/game_session.dart';
+import '../../game/ui/altitude_slider.dart';
 import '../../game/ui/game_hud.dart';
 
 final _log = GameLog.instance;
@@ -69,6 +70,7 @@ class _PlayScreenState extends State<PlayScreen> {
   Timer? _timer;
   Duration _elapsed = Duration.zero;
   bool _isHighAltitude = true;
+  double _continuousAltitude = 1.0; // Track continuous altitude (0.0 = low, 1.0 = high)
   bool _gameReady = false;
   String? _error;
 
@@ -157,7 +159,19 @@ class _PlayScreenState extends State<PlayScreen> {
     if (mounted) {
       setState(() {
         _isHighAltitude = isHigh;
+        _continuousAltitude = isHigh ? 1.0 : 0.0;
       });
+    }
+  }
+
+  void _onContinuousAltitudeChanged(double altitude) {
+    _log.debug('screen', 'Continuous altitude changed', data: {'altitude': altitude});
+    if (mounted) {
+      setState(() {
+        _continuousAltitude = altitude;
+        _isHighAltitude = altitude >= 0.5;
+      });
+      _game.plane.setContinuousAltitude(altitude);
     }
   }
 
@@ -596,6 +610,14 @@ class _PlayScreenState extends State<PlayScreen> {
               currentClue: _session?.clue,
               onAltitudeToggle: () => _game.plane.toggleAltitude(),
               onExit: _requestExit,
+            ),
+
+          // Altitude slider control (right side of screen)
+          if (_gameReady)
+            AltitudeSlider(
+              altitude: _continuousAltitude,
+              onAltitudeChanged: _onContinuousAltitudeChanged,
+              isRightSide: true,
             ),
 
           // Round indicator for multi-round play

@@ -98,6 +98,8 @@ class CameraState {
   ///   used to shift the FOV for a sense of acceleration.
   /// [headingRad] - navigation bearing in radians (0 = north, clockwise).
   ///   Used to compute the heading-aligned up vector that prevents rolling.
+  /// [altitudeFraction] - optional continuous altitude 0.0 (low) to 1.0 (high),
+  ///   overrides isHighAltitude for smooth altitude transitions.
   void update(
     double dt, {
     required double planeLatDeg,
@@ -105,11 +107,22 @@ class CameraState {
     required bool isHighAltitude,
     double speedFraction = 0.0,
     double headingRad = 0.0,
+    double? altitudeFraction,
   }) {
     final targetLatRad = planeLatDeg * pi / 180.0;
     final targetLngRad = planeLngDeg * pi / 180.0;
-    final targetDistance =
-        isHighAltitude ? highAltitudeDistance : lowAltitudeDistance;
+    
+    // Use continuous altitude if provided, otherwise binary high/low
+    final double targetDistance;
+    if (altitudeFraction != null) {
+      // Interpolate between low and high altitude distances
+      targetDistance = lowAltitudeDistance +
+          altitudeFraction * (highAltitudeDistance - lowAltitudeDistance);
+    } else {
+      targetDistance =
+          isHighAltitude ? highAltitudeDistance : lowAltitudeDistance;
+    }
+    
     final targetFov = _lerpDouble(fovNarrow, fovWide, speedFraction.clamp(0, 1));
 
     if (_firstUpdate) {
