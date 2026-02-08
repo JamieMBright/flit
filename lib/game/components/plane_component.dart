@@ -4,13 +4,14 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../flit_game.dart';
 
 /// The player's plane component.
 ///
 /// Renders at a fixed screen position (set by FlitGame).
 /// The world scrolls underneath - the plane doesn't move on screen.
 /// Renders a more realistic, lo-fi top-down aircraft with shadow and detail.
-class PlaneComponent extends PositionComponent with HasGameRef {
+class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   PlaneComponent({
     required this.onAltitudeChanged,
     this.colorScheme,
@@ -80,19 +81,6 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
   /// Contrail spawn interval
   static const double _contrailInterval = 0.04;
-
-  /// Base pixels-per-degree at high altitude.
-  /// Derived empirically: at high altitude zoom, 1° ≈ 8.7 pixels on screen.
-  static const double _basePixelsPerDegree = 8.7;
-
-  /// Zoom ratio at low altitude relative to high altitude.
-  /// The view is 3x more zoomed in at low altitude (angular radius 0.10 vs 0.30),
-  /// so the same screen distance covers 1/3 the angular distance.
-  static const double _lowAltitudeZoomRatio = 1.0 / 3.0; // = 0.33
-
-  /// Zoom ratio range between high and low altitude.
-  /// At high altitude: ratio = 1.0, at low altitude: ratio = 0.33
-  static const double _zoomRatioRange = 1.0 - _lowAltitudeZoomRatio; // = 0.67
 
   /// World position set by FlitGame each frame (lng, lat degrees).
   Vector2 worldPos = Vector2.zero();
@@ -1137,24 +1125,6 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
   /// Radians-to-degrees.
   static const double _rad2deg = 180 / pi;
-
-  /// Calculate the pixel-to-degrees conversion factor based on current altitude.
-  /// At high altitude (zoomed out), more degrees fit in each pixel.
-  /// At low altitude (zoomed in), fewer degrees fit in each pixel.
-  double _calculatePixelsToDegrees() {
-    // Convert pixels-per-degree to degrees-per-pixel
-    const basePixelsToDegrees = 1.0 / _basePixelsPerDegree;
-    
-    // At low altitude, the view is ~3x more zoomed in (angular radius
-    // goes from 0.30 to 0.10 radians), so the same pixel count covers
-    // 1/3 the angular distance. The conversion factor should be smaller.
-    // 
-    // altitudeTransition: 1.0 = high altitude, 0.0 = low altitude
-    // zoomRatio: 1.0 at high altitude, 0.33 at low altitude
-    final zoomRatio = _lowAltitudeZoomRatio + _altitudeTransition * _zoomRatioRange;
-    
-    return basePixelsToDegrees * zoomRatio;
-  }
 
   void _spawnContrailParticle() {
     // Compute wing-tip world positions using great-circle offset from
