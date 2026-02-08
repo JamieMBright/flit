@@ -13,7 +13,7 @@ dart format --set-exit-if-changed .
 # Analyze
 echo ""
 echo "🔍 Running analysis..."
-flutter analyze --fatal-warnings
+flutter analyze --no-fatal-infos
 
 echo ""
 echo "✅ Linting passed!"

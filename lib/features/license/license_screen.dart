@@ -84,7 +84,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
     with SingleTickerProviderStateMixin {
   late PilotLicense _license;
   final Set<String> _lockedStats = {};
-  bool _lockClueType = false;
+  final bool _lockClueType = false;
   bool _isRolling = false;
 
   late AnimationController _shimmerController;
@@ -959,7 +959,6 @@ class _CompactStatBar extends StatelessWidget {
     required this.icon,
     required this.value,
     required this.shimmer,
-    this.showPercentage = true,
     this.onTap,
   });
 
@@ -967,7 +966,6 @@ class _CompactStatBar extends StatelessWidget {
   final IconData icon;
   final int value;
   final Animation<double> shimmer;
-  final bool showPercentage;
   final VoidCallback? onTap;
 
   @override
@@ -1007,8 +1005,7 @@ class _CompactStatBar extends StatelessWidget {
                   : _buildSegments(color, isMax),
             ),
             const SizedBox(width: 3),
-            if (showPercentage)
-              Text(
+            Text(
                 '$value',
                 textAlign: TextAlign.right,
                 style: TextStyle(
