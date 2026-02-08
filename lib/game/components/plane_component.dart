@@ -1129,7 +1129,6 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   void _spawnContrailParticle() {
     // Calculate banking for wing foreshortening (matches rendering methods).
     final bankCos = cos(_currentBank);
-    final bankSin = sin(_currentBank);
     final dynamicWingSpan = wingSpan * bankCos.abs();
 
     // Compute wing-tip world positions using great-circle offset from

@@ -266,8 +266,8 @@ class _CompassDisplay extends StatelessWidget {
     var bearingDeg = bearingRad * 180 / math.pi;
 
     // Normalize to [0, 360)
-    while (bearingDeg < 0) bearingDeg += 360;
-    while (bearingDeg >= 360) bearingDeg -= 360;
+    while (bearingDeg < 0) { bearingDeg += 360; }
+    while (bearingDeg >= 360) { bearingDeg -= 360; }
 
     // Get cardinal direction
     final direction = _getCardinalDirection(bearingDeg);

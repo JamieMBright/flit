@@ -89,8 +89,6 @@ class _PlayScreenState extends State<PlayScreen> {
   /// Timer for auto-hint after 2 minutes of no progress.
   Timer? _autoHintTimer;
 
-  /// Last distance to target — used to detect lack of progress.
-  double? _lastTargetDistance;
 
   @override
   void initState() {

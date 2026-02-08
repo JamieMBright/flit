@@ -524,8 +524,8 @@ class FlitGame extends FlameGame
     _heading += _plane.turnDirection * PlaneComponent.turnRate * dt;
 
     // Normalize heading to [-π, π] to prevent accumulation
-    while (_heading > pi) _heading -= 2 * pi;
-    while (_heading < -pi) _heading += 2 * pi;
+    while (_heading > pi) { _heading -= 2 * pi; }
+    while (_heading < -pi) { _heading += 2 * pi; }
 
     // Clear waymarker when plane arrives within ~1° of it
     if (_waymarker != null) {
@@ -669,8 +669,8 @@ class FlitGame extends FlameGame
 
     // Angle difference (shortest path)
     var diff = targetBearing - currentBearing;
-    while (diff > pi) diff -= 2 * pi;
-    while (diff < -pi) diff += 2 * pi;
+    while (diff > pi) { diff -= 2 * pi; }
+    while (diff < -pi) { diff += 2 * pi; }
 
     // Set turn direction proportional to the angular difference.
     // Clamp to [-1, 1] with a dead zone for small corrections.
