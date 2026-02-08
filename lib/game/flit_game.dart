@@ -121,7 +121,10 @@ class FlitGame extends FlameGame
   // -- Waymarker navigation state --
 
   /// Waypoint the player has tapped — the plane auto-steers toward it.
+  /// Set by tapping anywhere on the globe (works with both renderers).
   /// null when no waypoint is set (plane flies straight).
+  /// Automatically cleared when the plane reaches the waypoint (~1° distance)
+  /// or when keyboard controls are used.
   Vector2? _waymarker;
 
   /// Hint target — displays wayline but does NOT steer the plane.
@@ -731,6 +734,15 @@ class FlitGame extends FlameGame
 
   // -- Tap-to-waymarker touch handler --
 
+  /// Handle tap events to set waypoints for navigation.
+  /// 
+  /// When the player taps on the globe, we convert the screen coordinates
+  /// to a geographic position (lat/lng) and set it as a waymarker. The plane
+  /// will then auto-steer toward that position using great-circle navigation.
+  /// 
+  /// Works with both renderers:
+  /// - Shader renderer: uses ray-casting with camera perspective
+  /// - Canvas renderer: uses azimuthal projection inverse
   @override
   void onTapUp(TapUpInfo info) {
     if (!_isPlaying) return;
