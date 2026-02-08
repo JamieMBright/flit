@@ -39,6 +39,10 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Current altitude: true = high (fast), false = low (slow, detailed)
   bool _isHighAltitude = true;
 
+  /// Continuous altitude value (0.0 = low, 1.0 = high).
+  /// Used when altitude slider is enabled for gradual altitude control.
+  double _continuousAltitude = 1.0;
+
   /// Visual heading set by the game (radians)
   double visualHeading = 0;
 
@@ -89,10 +93,19 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
   bool get isHighAltitude => _isHighAltitude;
   double get turnDirection => _turnDirection;
+  double get continuousAltitude => _continuousAltitude;
 
   double get currentSpeed =>
       highAltitudeSpeed *
       (_isHighAltitude ? 1.0 : lowAltitudeSpeedMultiplier) *
+      fuelBoostMultiplier;
+
+  /// Get current speed based on continuous altitude (0.0 = slowest, 1.0 = fastest).
+  /// Interpolates between low altitude speed and high altitude speed.
+  double get currentSpeedContinuous =>
+      highAltitudeSpeed *
+      (lowAltitudeSpeedMultiplier +
+          _continuousAltitude * (1.0 - lowAltitudeSpeedMultiplier)) *
       fuelBoostMultiplier;
 
   @override
@@ -519,12 +532,26 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
   void toggleAltitude() {
     _isHighAltitude = !_isHighAltitude;
+    _continuousAltitude = _isHighAltitude ? 1.0 : 0.0;
     onAltitudeChanged(_isHighAltitude);
   }
 
   void setAltitude({required bool high}) {
     if (_isHighAltitude != high) {
       _isHighAltitude = high;
+      _continuousAltitude = high ? 1.0 : 0.0;
+      onAltitudeChanged(_isHighAltitude);
+    }
+  }
+
+  /// Set continuous altitude value (0.0 = low, 1.0 = high).
+  /// Updates both continuous value and binary high/low state.
+  /// Threshold at 0.5: < 0.5 = low altitude, >= 0.5 = high altitude.
+  void setContinuousAltitude(double value) {
+    _continuousAltitude = value.clamp(0.0, 1.0);
+    final newIsHigh = _continuousAltitude >= 0.5;
+    if (_isHighAltitude != newIsHigh) {
+      _isHighAltitude = newIsHigh;
       onAltitudeChanged(_isHighAltitude);
     }
   }
