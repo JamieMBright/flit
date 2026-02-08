@@ -445,13 +445,32 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Radians-to-degrees.
   static const double _rad2deg = 180 / pi;
 
+  /// Calculate the pixel-to-degrees conversion factor based on current altitude.
+  /// At high altitude (zoomed out), more degrees fit in each pixel.
+  /// At low altitude (zoomed in), fewer degrees fit in each pixel.
+  double _calculatePixelsToDegrees() {
+    // Base conversion at high altitude: ~1 degree = 8.7 pixels
+    const basePixelsToDegrees = 1.0 / 8.7;
+    
+    // At low altitude, the view is ~3x more zoomed in (angular radius
+    // goes from 0.30 to 0.10 radians), so the same pixel count covers
+    // 1/3 the angular distance. The conversion factor should be smaller.
+    // 
+    // altitudeTransition: 1.0 = high altitude, 0.0 = low altitude
+    // zoomRatio: 1.0 at high altitude, 0.33 at low altitude
+    final zoomRatio = 0.33 + _altitudeTransition * 0.67;
+    
+    return basePixelsToDegrees * zoomRatio;
+  }
+
   void _spawnContrailParticle() {
     // Compute wing-tip world positions using great-circle offset from
     // the plane's current world position.
     // The wing span (in pixels) needs to be converted to degrees.
-    // At zoom level 1, roughly 1 degree ≈ 8.7 pixels on screen.
-    // So we scale the wing span to degrees based on this ratio.
-    const pixelsToDegrees = 1.0 / 8.7;
+    // The conversion factor depends on the current camera zoom/altitude.
+    // At high altitude, the view is more zoomed out (more degrees per pixel).
+    // At low altitude, the view is more zoomed in (fewer degrees per pixel).
+    final pixelsToDegrees = _calculatePixelsToDegrees();
     final wingSpanDegrees = wingSpan * pixelsToDegrees;
 
     final lat0 = worldPos.y * _deg2rad;
