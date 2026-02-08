@@ -12,6 +12,8 @@
 - Always defer to AGENTS.md when handling multiple tasks.
 - Tasks must be context-bound and executed in parallel where possible.
 - Summarize learnings; don't carry raw data through conversation.
+- **Avoid reading death loops** — Don't sequentially read file after file in the main context window. Instead, spawn background agents (using `haiku` or `sonnet` models for cost/speed) to read and summarize files. Only bring concise findings back to the main context.
+- Reserve `opus` model for complex reasoning tasks (architecture decisions, tricky bugs, nuanced code changes). Use `haiku` for simple lookups, file reads, and grep tasks. Use `sonnet` for moderate exploration and code search.
 
 ---
 
@@ -195,6 +197,8 @@ flutter analyze              # Static analysis
 2. Provide clear, bounded context to each agent
 3. Run independent agents in parallel
 4. Aggregate results before proceeding
+5. **Model selection**: Use `haiku` for simple file reads/searches, `sonnet` for moderate exploration, `opus` only for complex reasoning
+6. **Prefer background agents for exploration** — Don't read 10+ files sequentially in the main context. Spawn a background agent to gather info and return a summary
 
 ---
 
