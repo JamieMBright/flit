@@ -38,21 +38,22 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   double visualHeading = 0;
 
   /// Base speed at high altitude (world units per second).
-  /// 25 units ≈ 2.5°/sec → full globe in ~144 s. Leisurely cruise, not racing.
-  static const double highAltitudeSpeed = 25;
+  /// 36 units ≈ 3.6°/sec → crossing Europe (~36°) takes ~10 seconds.
+  static const double highAltitudeSpeed = 36;
 
   /// Speed multiplier at low altitude
   static const double lowAltitudeSpeedMultiplier = 0.5;
 
-  /// Turn rate in radians per second. Tight turns, easy U-turns.
-  static const double turnRate = 2.5;
+  /// Turn rate in radians per second.
+  /// 4.0 allows a full circle in ~1.6s — tight enough for U-turns.
+  static const double turnRate = 4.0;
 
   /// Maximum bank angle for visual effect (radians, ~40 degrees).
   static const double _maxBankAngle = 0.7;
 
   /// How fast the turn decays when the player releases (per-second rate).
-  /// Higher = faster decay. 5.0 means ~0.2 seconds to coast to stop.
-  static const double _turnDecayRate = 5.0;
+  /// Higher = faster decay. 3.0 means ~0.3 seconds to coast to stop.
+  static const double _turnDecayRate = 3.0;
 
   /// Current visual bank angle (smoothed)
   double _currentBank = 0;
@@ -261,9 +262,9 @@ class PlaneComponent extends PositionComponent with HasGameRef {
       ..close();
     canvas.drawPath(finPath, accentPaint);
 
-    // --- Main wings (3D: asymmetric span and dip) ---
-    // Left wing — length and dip depend on bank
-    final leftSpan = wingSpan + bankSin * 8; // grows when banking right
+    // --- Main wings (3D: both shorten when banking, subtle asymmetry) ---
+    // Left wing — both wings foreshorten from bankCos, mild offset for depth.
+    final leftSpan = wingSpan + bankSin * 3;
     final leftDip = wingDip;
     final leftWing = Path()
       ..moveTo(-4, -1 + leftDip * 0.2)
@@ -293,7 +294,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     }
 
     // Right wing
-    final rightSpan = wingSpan - bankSin * 8; // grows when banking left
+    final rightSpan = wingSpan - bankSin * 3;
     final rightDip = -wingDip;
     final rightWing = Path()
       ..moveTo(4, -1 + rightDip * 0.2)
@@ -489,7 +490,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
       contrails.add(ContrailParticle(
         worldPosition: Vector2(lngF * _rad2deg, latF * _rad2deg),
         size: 0.6 + Random().nextDouble() * 0.4,
-        maxLife: 2.0,
+        maxLife: 6.0,
       ));
     }
   }
@@ -500,10 +501,10 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     _isDragging = true;
   }
 
-  /// Called when the player lifts their finger — plane goes straight.
+  /// Called when the player lifts their finger — plane coasts to straight.
+  /// Turn direction decays smoothly rather than snapping to zero.
   void releaseTurn() {
     _isDragging = false;
-    _turnDirection = 0;
   }
 
   void toggleAltitude() {

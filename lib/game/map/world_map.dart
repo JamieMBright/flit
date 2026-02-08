@@ -33,10 +33,10 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   static const double mapHeight = 1800;
 
   /// Angular radius of the visible globe in radians.
-  /// Lower values = closer to the surface. Earth curvature just visible.
-  /// Calibrated so countries fill the screen and curvature is subtle.
-  static const double _highAltitudeRadius = 0.18; // ~10° — countries fill screen
-  static const double _lowAltitudeRadius = 0.06; // ~3.4° — city-level detail
+  /// Higher = more of the globe visible. Lower = more zoomed in.
+  /// High altitude shows continents; low altitude shows city-level detail.
+  static const double _highAltitudeRadius = 0.55; // ~31° — continents visible, horizon clear
+  static const double _lowAltitudeRadius = 0.10; // ~5.7° — city-level detail
 
   /// Current interpolated angular radius.
   double _angularRadius = _highAltitudeRadius;
@@ -57,6 +57,9 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     super.update(dt);
     final target = _isHighAltitude ? _highAltitudeRadius : _lowAltitudeRadius;
     _angularRadius += (target - _angularRadius) * min(1.0, dt * 3);
+    // Smooth altitude fraction for globe radius interpolation.
+    final targetFrac = _isHighAltitude ? 1.0 : 0.0;
+    _altitudeFraction += (targetFrac - _altitudeFraction) * min(1.0, dt * 3);
   }
 
   // ─── Rendering ──────────────────────────────────────────────────────
@@ -72,53 +75,85 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     );
     final globeRadius = _globeScreenRadius(screenSize);
 
-    // 1. Full-screen ocean background (no space visible)
+    // 1. Dark sky/space background — always drawn, visible at high altitude.
+    _renderSkyBackground(canvas, screenSize);
+
+    // 2. Ocean globe disc — smaller at high altitude to reveal horizon.
     _renderOceanBackground(canvas, screenSize, center, globeRadius);
 
-    // 2. Grid lines
+    // 3. Atmospheric glow at globe edge (visible at high altitude).
+    _renderAtmosphereRing(canvas, center, globeRadius);
+
+    // 4. Grid lines
     _renderGrid(canvas, screenSize, globeRadius);
 
-    // 3. Countries
+    // 5. Countries
     _renderCountries(canvas, screenSize, globeRadius);
 
-    // 4. Coastline glow
+    // 6. Coastline glow
     _renderCoastlines(canvas, screenSize, globeRadius);
 
-    // 5. Cities (low altitude only)
+    // 7. Cities (low altitude only)
     if (!_isHighAltitude) {
       _renderCities(canvas, screenSize, globeRadius);
     }
-
-    // Contrails are rendered by ContrailRenderer (separate component).
-    // No clip or atmosphere needed — globe extends beyond all screen edges.
   }
 
+  /// Smoothly interpolated globe radius fraction (0 = low alt, 1 = high alt).
+  double _altitudeFraction = 1.0;
+
   double _globeScreenRadius(Vector2 screenSize) {
-    // The globe must extend beyond all screen edges so no circle boundary
-    // is visible. Compute the distance from the projection center to the
-    // farthest screen corner, then add a margin so the ocean gradient
-    // covers the entire screen without visible cutoff.
     final cx = screenSize.x * FlitGame.projectionCenterX;
     final cy = screenSize.y * FlitGame.projectionCenterY;
 
     // Distance to each corner — pick the farthest one.
-    final d1 = sqrt(cx * cx + cy * cy); // top-left
-    final d2 = sqrt((screenSize.x - cx) * (screenSize.x - cx) + cy * cy); // top-right
-    final d3 = sqrt(cx * cx + (screenSize.y - cy) * (screenSize.y - cy)); // bottom-left
+    final d1 = sqrt(cx * cx + cy * cy);
+    final d2 = sqrt((screenSize.x - cx) * (screenSize.x - cx) + cy * cy);
+    final d3 = sqrt(cx * cx + (screenSize.y - cy) * (screenSize.y - cy));
     final d4 = sqrt((screenSize.x - cx) * (screenSize.x - cx) +
-        (screenSize.y - cy) * (screenSize.y - cy)); // bottom-right
+        (screenSize.y - cy) * (screenSize.y - cy));
 
-    // Add 10% margin so nothing clips at the edges during transitions.
-    return max(max(d1, d2), max(d3, d4)) * 1.1;
+    // Low altitude: fills the entire screen (no visible horizon).
+    final maxRadius = max(max(d1, d2), max(d3, d4)) * 1.1;
+
+    // High altitude: globe disc is smaller, revealing sky/space at edges.
+    // Use ~85% of the distance to the nearest edge so horizon is visible.
+    final nearTop = cy;
+    final nearBottom = screenSize.y - cy;
+    final nearSide = min(cx, screenSize.x - cx);
+    final nearestEdge = min(min(nearTop, nearBottom), nearSide);
+    final highRadius = max(nearestEdge * 1.6, min(screenSize.x, screenSize.y) * 0.6);
+
+    // Interpolate between high-alt (horizon visible) and low-alt (fills screen).
+    return highRadius + (maxRadius - highRadius) * (1.0 - _altitudeFraction);
   }
 
-  /// Fill the entire screen with ocean. Uses a subtle radial gradient
-  /// centered on the projection point to hint at curvature without a
-  /// hard circle edge.
+  /// Dark sky gradient — visible around the globe at high altitude.
+  void _renderSkyBackground(Canvas canvas, Vector2 screenSize) {
+    final screenRect = Rect.fromLTWH(0, 0, screenSize.x, screenSize.y);
+    canvas.drawRect(screenRect, Paint()..color = FlitColors.space);
+  }
+
+  /// Atmospheric glow ring around the globe edge.
+  void _renderAtmosphereRing(Canvas canvas, Offset center, double radius) {
+    if (_altitudeFraction < 0.05) return; // Not visible at low altitude.
+    final glowWidth = radius * 0.08;
+    final glowPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0x00668FCC), // transparent inside
+          Color.fromRGBO(100, 160, 230, 0.25 * _altitudeFraction),
+          Color.fromRGBO(140, 190, 255, 0.15 * _altitudeFraction),
+          const Color(0x00000000), // transparent outside
+        ],
+        stops: const [0.88, 0.94, 0.98, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: radius + glowWidth));
+    canvas.drawCircle(center, radius + glowWidth, glowPaint);
+  }
+
+  /// Ocean background drawn as a filled circle (not full-screen rect).
   void _renderOceanBackground(
       Canvas canvas, Vector2 screenSize, Offset center, double radius) {
-    final screenRect = Rect.fromLTWH(0, 0, screenSize.x, screenSize.y);
-
     final oceanPaint = Paint()
       ..shader = const RadialGradient(
         colors: [
@@ -126,10 +161,10 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
           FlitColors.ocean,
           FlitColors.oceanDeep,
         ],
-        stops: const [0.0, 0.5, 1.0],
+        stops: [0.0, 0.5, 1.0],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
 
-    canvas.drawRect(screenRect, oceanPaint);
+    canvas.drawCircle(center, radius, oceanPaint);
   }
 
   void _renderGrid(Canvas canvas, Vector2 screenSize, double globeRadius) {
@@ -347,7 +382,7 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
         sin(lat0) * sin(latR) + cos(lat0) * cos(latR) * cos(dLng);
     final c = acos(cosC.clamp(-1.0, 1.0));
 
-    if (c > _angularRadius * 1.05) return null;
+    if (c > _angularRadius * 1.15) return null;
 
     if (c < 0.0001) {
       return Offset(

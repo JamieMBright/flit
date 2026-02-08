@@ -6,12 +6,15 @@
 - Never leave tasks incomplete. Finish what you start.
 - If blocked, document the blocker and propose solutions before stopping.
 - All changes must pass all test suites before considering work done.
+- **Apply fixes to ALL items, not a subset** — When a fix applies to multiple countries, clues, data entries, etc., apply it to every relevant instance. Don't cherry-pick 20 out of 85. If the scope is large, use parallel background agents to divide the work.
 
 ### Context Management
 - Keep context lean. Spawn agents for discrete tasks.
 - Always defer to AGENTS.md when handling multiple tasks.
 - Tasks must be context-bound and executed in parallel where possible.
 - Summarize learnings; don't carry raw data through conversation.
+- **Avoid reading death loops** — Don't sequentially read file after file in the main context window. Instead, spawn background agents (using `haiku` or `sonnet` models for cost/speed) to read and summarize files. Only bring concise findings back to the main context.
+- Reserve `opus` model for complex reasoning tasks (architecture decisions, tricky bugs, nuanced code changes). Use `haiku` for simple lookups, file reads, and grep tasks. Use `sonnet` for moderate exploration and code search.
 
 ---
 
@@ -190,11 +193,22 @@ flutter analyze              # Static analysis
 - Shader debugging across platforms
 - Asset pipeline processing
 
+### Cost & Usage Efficiency
+- **Always assign the cheapest appropriate model** to background agents to save money and usage limits:
+  - `haiku` — Repetitive/bounded edits (find-and-replace, bulk data updates, simple reads/greps)
+  - `sonnet` — Moderate exploration, multi-file code search, generating structured data
+  - `opus` — Complex reasoning, architecture decisions, tricky bugs, nuanced changes
+- Default to `haiku` unless the task genuinely needs more capability
+- See AGENTS.md for full model selection guide
+
 ### Agent Delegation Rules
 1. Check AGENTS.md for appropriate agent type
 2. Provide clear, bounded context to each agent
 3. Run independent agents in parallel
 4. Aggregate results before proceeding
+5. **Model selection**: Use `haiku` for simple file reads/searches and repetitive edits (find-and-replace, data entry), `sonnet` for moderate exploration, `opus` only for complex reasoning
+6. **Prefer background agents for exploration** — Don't read 10+ files sequentially in the main context. Spawn a background agent to gather info and return a summary
+7. **Repetitive context-bound edits** — For tasks like updating 85 country entries, replacing data across many blocks, or bulk find-and-replace, use `haiku` — it's fast, cheap, and the task is well-bounded
 
 ---
 

@@ -11,6 +11,7 @@ import '../core/services/game_settings.dart';
 import '../core/theme/flit_colors.dart';
 import '../core/utils/game_log.dart';
 import '../core/utils/web_error_bridge.dart';
+import 'components/city_label_overlay.dart';
 import 'components/contrail_renderer.dart';
 import 'map/world_map.dart';
 import 'rendering/globe_renderer.dart';
@@ -119,10 +120,10 @@ class FlitGame extends FlameGame
   /// How far ahead (in degrees) the projection center looks along heading.
   /// Must be ~56% of angular radius (in degrees) so the plane's world
   /// position projects to its fixed screen position (y=72%, center=45%).
-  /// High: 0.18 rad = 10.3° → 10.3 × 0.56 = 5.8°
-  /// Low:  0.06 rad = 3.44° → 3.44 × 0.56 = 1.9°
-  static const double _cameraOffsetHigh = 5.8;
-  static const double _cameraOffsetLow = 1.9;
+  /// High: 0.55 rad = 31.5° → 31.5 × 0.56 = 17.6°
+  /// Low:  0.10 rad = 5.73° → 5.73 × 0.56 = 3.2°
+  static const double _cameraOffsetHigh = 17.6;
+  static const double _cameraOffsetLow = 3.2;
 
   /// Whether this is the first update (skip lerp, snap camera heading).
   bool _cameraFirstUpdate = true;
@@ -151,6 +152,7 @@ class FlitGame extends FlameGame
   double get cameraHeadingBearing => _cameraHeading + pi / 2;
 
   /// Project a world position (lng, lat) to screen coordinates.
+  /// Works with both Canvas (WorldMap) and shader (GlobeRenderer) renderers.
   Vector2 worldToScreen(Vector2 lngLat) {
     if (_worldMap != null) {
       return _worldMap!.latLngToScreen(lngLat, size);
@@ -294,6 +296,11 @@ class FlitGame extends FlameGame
 
       // Contrail overlay — renders on top of globe, before the plane.
       await add(ContrailRenderer());
+
+      // City label overlay — renders city names at low altitude.
+      // Works with both shader and canvas renderers (WorldMap renders its own
+      // cities at low altitude, so the overlay skips when WorldMap is active).
+      await add(CityLabelOverlay());
 
       _plane = PlaneComponent(
         onAltitudeChanged: (isHigh) {
@@ -566,7 +573,11 @@ class FlitGame extends FlameGame
       direction += 1;
     }
 
-    _plane.setTurnDirection(direction);
+    if (direction != 0) {
+      _plane.setTurnDirection(direction);
+    } else {
+      _plane.releaseTurn();
+    }
 
     if (event is RawKeyDownEvent) {
       if (event.logicalKey == LogicalKeyboardKey.space ||

@@ -4,6 +4,14 @@
 
 When facing multiple tasks, **always spawn agents**. Keep the main context lean. Agents handle bounded work; the orchestrator synthesizes results.
 
+### Cost & Usage Efficiency
+- **Always assign the cheapest appropriate model** to background agents:
+  - `haiku` — Repetitive edits (find-and-replace, data entry, bulk updates), simple file reads, grep searches
+  - `sonnet` — Moderate exploration, code search, multi-file analysis, generating data
+  - `opus` — Complex reasoning, architecture decisions, tricky bugs, nuanced code changes
+- Default to `haiku` unless the task genuinely requires more capability
+- This saves money and preserves usage limits for tasks that need full reasoning power
+
 ---
 
 ## Agent Types
@@ -246,6 +254,7 @@ Task tool with:
 - Platform requirements (always 2+)
 - Performance expectations
 - Shader/texture context if relevant
+- model: cheapest appropriate (haiku > sonnet > opus)
 ```
 
 ### Agent Results

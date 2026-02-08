@@ -22,10 +22,11 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // Track owned and equipped items
-  final Set<String> _ownedIds = {'plane_default', 'contrail_default'};
-  String _equippedPlane = 'plane_default';
-  String _equippedContrail = 'contrail_default';
+  // Track owned and equipped items.
+  // Initialised from account provider in initState so state persists.
+  late final Set<String> _ownedIds;
+  late String _equippedPlane;
+  late String _equippedContrail;
 
   @override
   void initState() {
@@ -35,6 +36,18 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
       vsync: this,
       initialIndex: widget.initialTabIndex.clamp(0, 2),
     );
+
+    // Sync equipped state from account provider.
+    final account = ref.read(accountProvider);
+    _equippedPlane = account.equippedPlaneId;
+    _equippedContrail = account.equippedContrailId;
+    // Always own defaults + currently equipped items.
+    _ownedIds = {
+      'plane_default',
+      'contrail_default',
+      _equippedPlane,
+      _equippedContrail,
+    };
   }
 
   @override
