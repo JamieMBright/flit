@@ -156,19 +156,19 @@ class ShaderManager {
         switch (name) {
           case 'satellite':
             _satelliteTexture = image;
-            _log.info('shader', 'Loaded texture: $name');
+            _log.info('shader', 'Loaded texture: $name (${image.width}x${image.height})');
             break;
           case 'heightmap':
             _heightmapTexture = image;
-            _log.info('shader', 'Loaded texture: $name');
+            _log.info('shader', 'Loaded texture: $name (${image.width}x${image.height})');
             break;
           case 'shore_distance':
             _shoreDistTexture = image;
-            _log.info('shader', 'Loaded texture: $name');
+            _log.info('shader', 'Loaded texture: $name (${image.width}x${image.height})');
             break;
           case 'city_lights':
             _cityLightsTexture = image;
-            _log.info('shader', 'Loaded texture: $name');
+            _log.info('shader', 'Loaded texture: $name (${image.width}x${image.height})');
             break;
         }
       } else {
@@ -176,38 +176,54 @@ class ShaderManager {
         final stack = result['stack'];
         final isCritical = name == 'satellite' || name == 'heightmap';
         
+        // Extract more details from the error for better debugging
+        final errorStr = error.toString();
+        final assetPath = name == 'satellite' ? 'assets/textures/blue_marble.png'
+            : name == 'heightmap' ? 'assets/textures/heightmap.png'
+            : name == 'shore_distance' ? 'assets/textures/shore_distance.png'
+            : 'assets/textures/city_lights.png';
+        
         if (isCritical) {
           hasCriticalFailure = true;
-          _log.error('shader', 'Failed to load critical texture: $name',
+          _log.error('shader', 
+              'Failed to load CRITICAL texture: $name from $assetPath',
               error: error, stackTrace: stack);
         } else {
-          _log.warning('shader', 'Failed to load optional texture: $name (will degrade gracefully)',
+          _log.warning('shader', 
+              'Failed to load optional texture: $name from $assetPath (will degrade gracefully)',
               error: error);
         }
         
-        // Report to telemetry (non-critical errors are warnings, critical are errors).
+        // Report to telemetry with enhanced context
+        final context = <String, String>{
+          'source': 'ShaderManager',
+          'action': 'loadTexture',
+          'texture': name,
+          'assetPath': assetPath,
+          'critical': isCritical.toString(),
+          'errorType': errorStr.contains('404') ? 'not_found'
+              : errorStr.contains('network') ? 'network_failure'
+              : errorStr.contains('decode') ? 'decode_failure'
+              : errorStr.contains('quota') ? 'storage_quota'
+              : 'unknown',
+        };
+        
         if (isCritical) {
           ErrorService.instance.reportError(
-            error,
+            'Critical texture failed to load: $name\n'
+            'Path: $assetPath\n'
+            'Error: $errorStr',
             stack,
             severity: ErrorSeverity.error,
-            context: {
-              'source': 'ShaderManager',
-              'action': 'loadTexture',
-              'texture': name,
-              'critical': 'true',
-            },
+            context: context,
           );
         } else {
           ErrorService.instance.reportWarning(
-            error,
+            'Optional texture failed to load: $name\n'
+            'Path: $assetPath\n'
+            'Error: $errorStr',
             stack,
-            context: {
-              'source': 'ShaderManager',
-              'action': 'loadTexture',
-              'texture': name,
-              'critical': 'false',
-            },
+            context: context,
           );
         }
       }
@@ -216,8 +232,24 @@ class ShaderManager {
     // If critical textures failed, abort shader initialization.
     if (hasCriticalFailure) {
       _log.error('shader', 'One or more critical textures failed to load');
-      WebErrorBridge.show(
-          'Critical textures failed to load.\n\nThe game will fall back to Canvas rendering.');
+      
+      // Build a detailed error message for the user
+      final failedTextures = <String>[];
+      if (_satelliteTexture == null) failedTextures.add('satellite imagery');
+      if (_heightmapTexture == null) failedTextures.add('terrain heightmap');
+      
+      final errorMsg = 'Critical textures failed to load:\n'
+          '${failedTextures.join(', ')}\n\n'
+          'This may be due to:\n'
+          '• Poor network connection\n'
+          '• iOS Safari storage limits\n'
+          '• Corrupted cache\n\n'
+          'Try:\n'
+          '1. Reload the page\n'
+          '2. Clear browser cache\n'
+          '3. Check network connection';
+      
+      WebErrorBridge.show(errorMsg);
       _loading = false;
       return;
     }
@@ -336,12 +368,39 @@ class ShaderManager {
   /// frame as a [ui.Image].
   Future<ui.Image> _loadImage(String assetPath) async {
     _log.debug('shader', 'Loading texture: $assetPath');
-    final data = await rootBundle.load(assetPath);
-    final codec = await ui.instantiateImageCodec(
-      data.buffer.asUint8List(),
-    );
-    final frame = await codec.getNextFrame();
-    return frame.image;
+    try {
+      final data = await rootBundle.load(assetPath);
+      final sizeBytes = data.lengthInBytes;
+      _log.debug('shader', 'Texture loaded: $assetPath ($sizeBytes bytes)');
+      
+      final codec = await ui.instantiateImageCodec(
+        data.buffer.asUint8List(),
+      );
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      
+      _log.debug('shader', 
+          'Texture decoded: $assetPath (${image.width}x${image.height})');
+      
+      return image;
+    } catch (e, st) {
+      // Add detailed error context for better debugging
+      _log.error('shader', 
+          'Failed to load/decode texture: $assetPath', 
+          error: e, 
+          stackTrace: st);
+      
+      // Re-throw with enhanced context for caller to handle
+      throw Exception(
+          'Texture load failed: $assetPath\n'
+          'Error: $e\n'
+          'This may be due to:\n'
+          '- Missing asset file in pubspec.yaml\n'
+          '- Network failure (web platform)\n'
+          '- Corrupted image file\n'
+          '- Unsupported image format\n'
+          '- iOS Safari storage quota exceeded');
+    }
   }
 
   /// Create a 1x1 black texture to use as a fallback for missing samplers.
