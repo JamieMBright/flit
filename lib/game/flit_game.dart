@@ -13,6 +13,7 @@ import '../core/utils/game_log.dart';
 import '../core/utils/web_error_bridge.dart';
 import 'components/city_label_overlay.dart';
 import 'components/contrail_renderer.dart';
+import 'components/plane_component.dart';
 import 'map/world_map.dart';
 import 'rendering/globe_renderer.dart';
 import 'rendering/shader_manager.dart';
