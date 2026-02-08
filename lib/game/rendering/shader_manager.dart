@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
@@ -133,19 +132,19 @@ class ShaderManager {
     // missing or failed textures don't prevent the shader from working.
     // Critical textures (satellite, heightmap) are required; optional ones
     // (shore_distance, city_lights) will degrade gracefully if missing.
-    final textureResults = await Future.wait([
+    final textureResults = await Future.wait<Map<String, dynamic>>([
       _loadImage('assets/textures/blue_marble.png')
-          .then((img) => {'name': 'satellite', 'image': img})
-          .catchError((e, st) => {'name': 'satellite', 'error': e, 'stack': st}),
+          .then((img) => <String, dynamic>{'name': 'satellite', 'image': img})
+          .catchError((e, st) => <String, dynamic>{'name': 'satellite', 'error': e, 'stack': st}),
       _loadImage('assets/textures/heightmap.png')
-          .then((img) => {'name': 'heightmap', 'image': img})
-          .catchError((e, st) => {'name': 'heightmap', 'error': e, 'stack': st}),
+          .then((img) => <String, dynamic>{'name': 'heightmap', 'image': img})
+          .catchError((e, st) => <String, dynamic>{'name': 'heightmap', 'error': e, 'stack': st}),
       _loadImage('assets/textures/shore_distance.png')
-          .then((img) => {'name': 'shore_distance', 'image': img})
-          .catchError((e, st) => {'name': 'shore_distance', 'error': e, 'stack': st}),
+          .then((img) => <String, dynamic>{'name': 'shore_distance', 'image': img})
+          .catchError((e, st) => <String, dynamic>{'name': 'shore_distance', 'error': e, 'stack': st}),
       _loadImage('assets/textures/city_lights.png')
-          .then((img) => {'name': 'city_lights', 'image': img})
-          .catchError((e, st) => {'name': 'city_lights', 'error': e, 'stack': st}),
+          .then((img) => <String, dynamic>{'name': 'city_lights', 'image': img})
+          .catchError((e, st) => <String, dynamic>{'name': 'city_lights', 'error': e, 'stack': st}),
     ]);
 
     // Process results and report errors for missing textures.
