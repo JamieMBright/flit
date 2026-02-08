@@ -735,27 +735,37 @@ class FlitGame extends FlameGame
   void onTapUp(TapUpInfo info) {
     if (!_isPlaying) return;
 
-    // Convert screen tap to globe lat/lng using the shader camera.
+    final screenPoint = Vector2(
+      info.eventPosition.widget.x,
+      info.eventPosition.widget.y,
+    );
+
+    // Convert screen tap to globe lat/lng.
+    Vector2? latLng;
+    
     if (_globeRenderer != null) {
+      // Shader renderer: use camera-based ray-casting hit test.
       final cam = _globeRenderer!.camera;
-      final screenPoint = Offset(
-        info.eventPosition.widget.x,
-        info.eventPosition.widget.y,
-      );
-      final latLng = _hitTest.screenToLatLng(
-        screenPoint,
+      final result = _hitTest.screenToLatLng(
+        Offset(screenPoint.x, screenPoint.y),
         Size(size.x, size.y),
         cam,
       );
-      if (latLng != null) {
-        _waymarker = Vector2(latLng.dx, latLng.dy);
-        _log.info('game', 'Waymarker set', data: {
-          'lng': latLng.dx.toStringAsFixed(1),
-          'lat': latLng.dy.toStringAsFixed(1),
-        });
+      if (result != null) {
+        latLng = Vector2(result.dx, result.dy);
       }
+    } else if (_worldMap != null) {
+      // Canvas renderer: use azimuthal projection inverse.
+      latLng = _worldMap!.screenToLatLng(screenPoint, size);
     }
-    // Canvas renderer fallback: no hit-test available, ignore tap.
+
+    if (latLng != null) {
+      _waymarker = latLng;
+      _log.info('game', 'Waymarker set', data: {
+        'lng': latLng.x.toStringAsFixed(1),
+        'lat': latLng.y.toStringAsFixed(1),
+      });
+    }
   }
 
   @override
