@@ -33,6 +33,7 @@ class Cosmetic {
     this.isOwned = false,
     this.isEquipped = false,
     this.requiredLevel,
+    this.wingSpan,
   });
 
   final String id;
@@ -48,6 +49,10 @@ class Cosmetic {
   final bool isOwned;
   final bool isEquipped;
   final int? requiredLevel;
+  
+  /// Wing span in pixels (for plane cosmetics only).
+  /// Determines both visual rendering and contrail positioning.
+  final double? wingSpan;
 
   Cosmetic copyWith({
     bool? isOwned,
@@ -67,6 +72,7 @@ class Cosmetic {
         isOwned: isOwned ?? this.isOwned,
         isEquipped: isEquipped ?? this.isEquipped,
         requiredLevel: requiredLevel,
+        wingSpan: wingSpan,
       );
 
   Map<String, dynamic> toJson() => {
@@ -83,6 +89,7 @@ class Cosmetic {
         'is_owned': isOwned,
         'is_equipped': isEquipped,
         'required_level': requiredLevel,
+        'wing_span': wingSpan,
       };
 
   factory Cosmetic.fromJson(Map<String, dynamic> json) => Cosmetic(
@@ -106,6 +113,7 @@ class Cosmetic {
         isOwned: json['is_owned'] as bool? ?? false,
         isEquipped: json['is_equipped'] as bool? ?? false,
         requiredLevel: json['required_level'] as int?,
+        wingSpan: (json['wing_span'] as num?)?.toDouble(),
       );
 }
 
@@ -128,6 +136,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFFC0392B,
         'detail': 0xFF8B4513,
       },
+      wingSpan: 26.0, // Default/baseline wing span
       isOwned: true,
       isEquipped: true,
     ),
@@ -143,6 +152,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFFE0E0E0,
         'detail': 0xFFCCCCCC,
       },
+      wingSpan: 22.0, // Smaller, narrower wings
     ),
     Cosmetic(
       id: 'plane_prop',
@@ -156,6 +166,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF3B4A1F,
         'detail': 0xFF8B8B6E,
       },
+      wingSpan: 28.0, // Slightly wider than default
     ),
     Cosmetic(
       id: 'plane_bryanair',
@@ -169,6 +180,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF003580,
         'detail': 0xFFFFCC00,
       },
+      wingSpan: 32.0, // Commercial airliner - wide wings
     ),
     Cosmetic(
       id: 'plane_seaplane',
@@ -182,6 +194,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF2E8B57,
         'detail': 0xFFF5F5F5,
       },
+      wingSpan: 30.0, // Seaplane - wide for stability
     ),
 
     // --- Rare (sorted by price) ---
@@ -198,6 +211,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF4A90B8,
         'detail': 0xFF808080,
       },
+      wingSpan: 23.0, // Fighter jet - shorter, swept wings
     ),
     Cosmetic(
       id: 'plane_red_baron',
@@ -211,6 +225,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF8B0000,
         'detail': 0xFF1A1A1A,
       },
+      wingSpan: 24.0, // Triplane - shorter individual wings
     ),
     Cosmetic(
       id: 'plane_rocket',
@@ -225,6 +240,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFFF5F5F5,
         'detail': 0xFFFF6600,
       },
+      wingSpan: 18.0, // Rocket - very narrow fins
     ),
     Cosmetic(
       id: 'plane_spitfire',
@@ -239,6 +255,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF8B7355,
         'detail': 0xFFC0C0C0,
       },
+      wingSpan: 27.0, // Spitfire - iconic elliptical wings
     ),
     Cosmetic(
       id: 'plane_lancaster',
@@ -253,6 +270,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF3B3B3B,
         'detail': 0xFFCC3333,
       },
+      wingSpan: 36.0, // Heavy bomber - very wide wings
     ),
     Cosmetic(
       id: 'plane_concorde_classic',
@@ -267,6 +285,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF1A3A5C,
         'detail': 0xFFCC3333,
       },
+      wingSpan: 20.0, // Concorde - delta wing, narrow
     ),
 
     // --- Epic (sorted by price) ---
@@ -283,6 +302,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF1A1A1A,
         'detail': 0xFF444444,
       },
+      wingSpan: 38.0, // Stealth bomber - very wide flying wing
     ),
     Cosmetic(
       id: 'plane_air_force_one',
@@ -297,6 +317,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF1A3A5C,
         'detail': 0xFFD4A944,
       },
+      wingSpan: 34.0, // Large airliner - wide wings
     ),
 
     // --- Legendary (sorted by price) ---
@@ -313,6 +334,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF1A1A1A,
         'detail': 0xFFF0D060,
       },
+      wingSpan: 29.0, // Private jet - sleek swept wings
     ),
     Cosmetic(
       id: 'plane_diamond_concorde',
@@ -327,6 +349,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFFC0C0C0,
         'detail': 0xFFE0F0FF,
       },
+      wingSpan: 20.0, // Concorde variant - delta wing
     ),
     Cosmetic(
       id: 'plane_platinum_eagle',
@@ -341,6 +364,7 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF6A0DAD,
         'detail': 0xFFC0C0D0,
       },
+      wingSpan: 30.0, // Eagle - wide majestic wings
     ),
   ];
 

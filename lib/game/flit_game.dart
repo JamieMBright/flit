@@ -41,6 +41,7 @@ class FlitGame extends FlameGame
     this.fuelBoostMultiplier = 1.0,
     this.isChallenge = false,
     this.planeColorScheme,
+    this.planeWingSpan,
     this.useShaderRenderer = true,
     this.equippedPlaneId = 'plane_default',
   });
@@ -59,6 +60,9 @@ class FlitGame extends FlameGame
 
   /// Color scheme for the equipped plane cosmetic.
   final Map<String, int>? planeColorScheme;
+
+  /// Wing span for the equipped plane cosmetic.
+  final double? planeWingSpan;
 
   /// Whether to use the new GPU shader renderer (V1+) or legacy Canvas.
   final bool useShaderRenderer;
@@ -307,6 +311,7 @@ class FlitGame extends FlameGame
           }
         },
         colorScheme: planeColorScheme,
+        wingSpan: planeWingSpan ?? 26.0,
       );
       await add(_plane);
 

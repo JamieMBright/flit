@@ -91,12 +91,13 @@ class RegionSelectScreen extends ConsumerWidget {
             onTap: isUnlocked
                 ? () {
                     final planeId = ref.read(equippedPlaneIdProvider);
-                    final planeColors = CosmeticCatalog.getById(planeId)?.colorScheme;
+                    final plane = CosmeticCatalog.getById(planeId);
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute<void>(
                         builder: (context) => PlayScreen(
                           region: region,
-                          planeColorScheme: planeColors,
+                          planeColorScheme: plane?.colorScheme,
+                          planeWingSpan: plane?.wingSpan,
                           equippedPlaneId: planeId,
                         ),
                       ),

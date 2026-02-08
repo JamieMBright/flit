@@ -14,6 +14,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   PlaneComponent({
     required this.onAltitudeChanged,
     this.colorScheme,
+    this.wingSpan = 26.0,
   }) : super(
           size: Vector2(60, 60),
           anchor: Anchor.center,
@@ -24,6 +25,10 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Optional color scheme from equipped plane cosmetic.
   /// Keys: 'primary', 'secondary', 'detail' (ARGB ints).
   final Map<String, int>? colorScheme;
+
+  /// Wing span in pixels for this aircraft.
+  /// Determines both visual rendering and contrail positioning.
+  final double wingSpan;
 
   /// Current turning direction: -1 (left), 0 (straight), 1 (right)
   double _turnDirection = 0;
@@ -155,7 +160,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     canvas.translate(offset, offset);
 
     // Shadow foreshortens with bank too
-    final shadowSpan = 44.0 * bankCos.abs();
+    final shadowSpan = (wingSpan * 1.7) * bankCos.abs();
     final fuselage = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset.zero, width: 8, height: 34),
       const Radius.circular(4),
@@ -219,7 +224,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     final undersidePaint = Paint()..color = darken(primary, 0.35);
 
     // 3D foreshortening: wing span scales with cos(bank)
-    final wingSpan = 26.0 * bankCos.abs();
+    final dynamicWingSpan = wingSpan * bankCos.abs();
     // Wing vertical shift: the dipping wing moves down on screen
     final wingDip = bankSin * 4.0;
 
@@ -244,7 +249,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     }
 
     // --- Tail assembly ---
-    final tailSpan = 10.0 * bankCos.abs();
+    final tailSpan = (wingSpan * 0.38) * bankCos.abs();
     final tailPath = Path()
       ..moveTo(-tailSpan, 14 + wingDip * 0.3)
       ..quadraticBezierTo(-tailSpan - 2, 16, -tailSpan, 18)
@@ -264,7 +269,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
     // --- Main wings (3D: both shorten when banking, subtle asymmetry) ---
     // Left wing — both wings foreshorten from bankCos, mild offset for depth.
-    final leftSpan = wingSpan + bankSin * 3;
+    final leftSpan = dynamicWingSpan + bankSin * 3;
     final leftDip = wingDip;
     final leftWing = Path()
       ..moveTo(-4, -1 + leftDip * 0.2)
@@ -294,7 +299,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     }
 
     // Right wing
-    final rightSpan = wingSpan - bankSin * 3;
+    final rightSpan = dynamicWingSpan - bankSin * 3;
     final rightDip = -wingDip;
     final rightWing = Path()
       ..moveTo(4, -1 + rightDip * 0.2)
@@ -442,8 +447,13 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
   void _spawnContrailParticle() {
     // Compute wing-tip world positions using great-circle offset from
-    // the plane's current world position. The wing tips are ~0.15° away
-    // perpendicular to heading (left and right).
+    // the plane's current world position.
+    // The wing span (in pixels) needs to be converted to degrees.
+    // At zoom level 1, roughly 1 degree ≈ 8.7 pixels on screen.
+    // So we scale the wing span to degrees based on this ratio.
+    const pixelsToDegrees = 1.0 / 8.7;
+    final wingSpanDegrees = wingSpan * pixelsToDegrees;
+
     final lat0 = worldPos.y * _deg2rad;
     final lng0 = worldPos.x * _deg2rad;
     // Navigation bearing: heading + π/2 converts math convention to nav.
@@ -455,7 +465,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
 
     // Slightly behind the plane (small offset aft along heading).
     final aftBearing = navBearing + pi;
-    const wingDist = 3.0 * _deg2rad; // ~3° lateral — matches visual wing span
+    final wingDist = wingSpanDegrees * _deg2rad; // Dynamic wing-tip distance
     const aftDist = 1.5 * _deg2rad; // ~1.5° behind
 
     for (final bearing in [leftBearing, rightBearing]) {

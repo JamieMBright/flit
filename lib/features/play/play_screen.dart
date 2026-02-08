@@ -30,6 +30,7 @@ class PlayScreen extends StatefulWidget {
     this.coinReward = 0,
     this.onComplete,
     this.planeColorScheme,
+    this.planeWingSpan,
     this.equippedPlaneId = 'plane_default',
   });
 
@@ -51,6 +52,9 @@ class PlayScreen extends StatefulWidget {
 
   /// Color scheme for the equipped plane cosmetic.
   final Map<String, int>? planeColorScheme;
+
+  /// Wing span for the equipped plane cosmetic.
+  final double? planeWingSpan;
 
   /// Equipped plane ID for engine sound selection.
   final String equippedPlaneId;
@@ -89,6 +93,7 @@ class _PlayScreenState extends State<PlayScreen> {
         onError: _onGameError,
         isChallenge: widget.challengeFriendName != null,
         planeColorScheme: widget.planeColorScheme,
+        planeWingSpan: widget.planeWingSpan,
         equippedPlaneId: widget.equippedPlaneId,
       );
     } catch (e, st) {
