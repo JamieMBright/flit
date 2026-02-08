@@ -2443,7 +2443,7 @@ abstract class CountryData {
     CountryShape(
       code: 'YE',
       name: 'Yemen',
-      capital: 'Sana'a',
+      capital: 'Sanaa',
       points: [
         Vector2(42.6, 16.3), Vector2(43.0, 16.2), Vector2(43.4, 16.1), Vector2(43.8, 16.0),
         Vector2(44.2, 15.9), Vector2(44.6, 15.8), Vector2(45.0, 15.7), Vector2(45.4, 15.6),
