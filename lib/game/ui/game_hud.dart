@@ -57,8 +57,11 @@ class GameHud extends StatelessWidget {
                   const SizedBox(width: 8),
                   // Clue display
                   if (currentClue != null)
-                    Expanded(
-                      child: _ClueCard(clue: currentClue!),
+                    Flexible(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 300),
+                        child: _ClueCard(clue: currentClue!),
+                      ),
                     ),
                   const SizedBox(width: 12),
                   // Timer
@@ -418,7 +421,7 @@ class _AltitudeIndicator extends StatelessWidget {
   Widget build(BuildContext context) => GestureDetector(
         onTap: onToggle,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: FlitColors.cardBackground.withOpacity(0.85),
             borderRadius: BorderRadius.circular(20),
@@ -433,16 +436,16 @@ class _AltitudeIndicator extends StatelessWidget {
               Icon(
                 isHigh ? Icons.flight_takeoff : Icons.flight_land,
                 color: isHigh ? FlitColors.accent : FlitColors.success,
-                size: 18,
+                size: 16,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Text(
-                isHigh ? 'TAP TO DESCEND' : 'TAP TO ASCEND',
+                isHigh ? 'DESCEND' : 'ASCEND',
                 style: TextStyle(
                   color: isHigh ? FlitColors.accent : FlitColors.success,
-                  fontSize: 11,
+                  fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
+                  letterSpacing: 1.0,
                 ),
               ),
             ],
