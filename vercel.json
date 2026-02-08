@@ -3,12 +3,6 @@
   "buildCommand": "",
   "outputDirectory": "",
   "framework": null,
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    }
-  ],
   "functions": {
     "api/errors/index.js": {
       "memory": 256,

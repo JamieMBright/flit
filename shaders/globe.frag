@@ -210,6 +210,10 @@ vec2 equirectangularUV(vec3 p) {
 // to prevent rolling at non-equatorial latitudes.
 vec3 cameraRayDir(vec2 fragCoord, vec2 resolution, vec3 camPos, vec3 camUp, float fov) {
     vec2 uv = (fragCoord - 0.5 * resolution) / resolution.y;
+    // Flutter fragCoord is y-down; flip Y so camera up maps to screen top.
+    // Without this, the heading direction (camera up) renders at the bottom
+    // of the screen, giving an inverted chase-camera view.
+    uv.y = -uv.y;
     float halfFov = tan(fov * 0.5);
     uv *= halfFov;
 
