@@ -124,6 +124,10 @@ class FlitGame extends FlameGame
   /// null when no waypoint is set (plane flies straight).
   Vector2? _waymarker;
 
+  /// Hint target — displays wayline but does NOT steer the plane.
+  /// Set by showHintWayline, auto-clears after a few seconds.
+  Vector2? _hintTarget;
+
   /// Current flight speed setting.
   FlightSpeed _flightSpeed = FlightSpeed.medium;
 
@@ -145,11 +149,20 @@ class FlitGame extends FlameGame
   /// Cached country name for current position.
   String? _cachedCountryName;
 
+  /// Previous country name for detecting changes.
+  String? _previousCountryName;
+
   /// Time since last country check (to avoid checking every frame).
   double _countryCheckTimer = 0.0;
 
   /// How often to check country (seconds).
   static const double _countryCheckInterval = 0.5;
+
+  /// Flash animation timer when entering a new country (seconds remaining).
+  double _countryFlashTimer = 0.0;
+
+  /// Duration of the country entry flash animation.
+  static const double _countryFlashDuration = 1.5;
 
   bool get isPlaying => _isPlaying;
   bool get isHighAltitude => _plane.isHighAltitude;
@@ -160,8 +173,16 @@ class FlitGame extends FlameGame
   /// Current country name the plane is flying over, or null if over ocean/unknown.
   String? get currentCountryName => _cachedCountryName;
 
+  /// Flash animation progress when entering a new country (1.0 = full flash, 0.0 = no flash).
+  double get countryFlashProgress =>
+      (_countryFlashTimer / _countryFlashDuration).clamp(0.0, 1.0);
+
   /// Current waymarker position (lng, lat) or null if none set.
   Vector2? get waymarker => _waymarker;
+
+  /// Hint target position (lng, lat) or null if no hint active.
+  /// Used by WaylineRenderer to display a temporary wayline without steering.
+  Vector2? get hintTarget => _hintTarget;
 
   /// Current flight speed setting.
   FlightSpeed get flightSpeed => _flightSpeed;
@@ -469,13 +490,26 @@ class FlitGame extends FlameGame
         // Convert Vector2 list to Offset list for hit test
         final polygonOffsets = polygon.map((v) => Offset(v.x, v.y)).toList();
         if (_hitTest.isPointInPolygon(lat, lng, polygonOffsets)) {
-          _cachedCountryName = country.name;
+          // Detect country change and trigger flash animation
+          if (_cachedCountryName != country.name) {
+            _previousCountryName = _cachedCountryName;
+            _cachedCountryName = country.name;
+            // Trigger flash when entering any country (including from ocean)
+            _countryFlashTimer = _countryFlashDuration;
+            _log.info('game', 'Entered country', data: {
+              'from': _previousCountryName ?? 'ocean',
+              'to': country.name,
+            });
+          }
           return;
         }
       }
     }
 
     // Not in any country — over ocean
+    if (_cachedCountryName != null) {
+      _previousCountryName = _cachedCountryName;
+    }
     _cachedCountryName = null;
   }
 
@@ -485,6 +519,11 @@ class FlitGame extends FlameGame
 
     // --- Country detection ---
     _updateCountryDetection(dt);
+
+    // --- Decrement country flash timer ---
+    if (_countryFlashTimer > 0) {
+      _countryFlashTimer = (_countryFlashTimer - dt).clamp(0.0, _countryFlashDuration);
+    }
 
     // --- Waymarker auto-steering ---
     _updateWaymarkerSteering(dt);
@@ -517,7 +556,7 @@ class FlitGame extends FlameGame
 
     _worldPosition = Vector2(
       _normalizeLng(newLng * _rad2deg),
-      (newLat * _rad2deg).clamp(-89.9, 89.9),
+      (newLat * _rad2deg).clamp(-85.0, 85.0),
     );
 
     // Update heading based on turn input (left/right only)
@@ -526,6 +565,14 @@ class FlitGame extends FlameGame
     // Normalize heading to [-π, π] to prevent accumulation
     while (_heading > pi) { _heading -= 2 * pi; }
     while (_heading < -pi) { _heading += 2 * pi; }
+
+    // Auto-circle near poles: when within 2° of the 85° limit,
+    // add a gentle eastward turn to circle the pole instead of hitting the wall.
+    final absLat = _worldPosition.y.abs();
+    if (absLat > 83.0) {
+      final poleTurnStrength = ((absLat - 83.0) / 2.0).clamp(0.0, 1.0);
+      _heading += poleTurnStrength * 0.8 * dt;
+    }
 
     // Clear waymarker when plane arrives within ~1° of it
     if (_waymarker != null) {
@@ -692,8 +739,8 @@ class FlitGame extends FlameGame
     if (_globeRenderer != null) {
       final cam = _globeRenderer!.camera;
       final screenPoint = Offset(
-        info.eventPosition.global.x,
-        info.eventPosition.global.y,
+        info.eventPosition.widget.x,
+        info.eventPosition.widget.y,
       );
       final latLng = _hitTest.screenToLatLng(
         screenPoint,
@@ -753,17 +800,16 @@ class FlitGame extends FlameGame
   }
 
   /// Temporarily show a wayline hint toward the given position.
-  /// The wayline disappears after a few seconds.
+  /// The wayline is visual only — it does NOT steer the plane.
   void showHintWayline(Vector2 target) {
-    _waymarker = target.clone();
-    // Auto-clear after 4 seconds so it's a brief hint.
-    Future<void>.delayed(const Duration(seconds: 4), () {
-      // Only clear if waymarker is still pointing at the hint target.
-      if (_waymarker != null &&
-          (_waymarker!.x - target.x).abs() < 0.01 &&
-          (_waymarker!.y - target.y).abs() < 0.01) {
-        _waymarker = null;
-        _plane.releaseTurn();
+    _hintTarget = target.clone();
+    // Auto-clear after 6 seconds so it's a brief visual hint.
+    Future<void>.delayed(const Duration(seconds: 6), () {
+      // Only clear if hint target is still pointing at this target.
+      if (_hintTarget != null &&
+          (_hintTarget!.x - target.x).abs() < 0.01 &&
+          (_hintTarget!.y - target.y).abs() < 0.01) {
+        _hintTarget = null;
       }
     });
   }
@@ -789,6 +835,7 @@ class FlitGame extends FlameGame
     _targetLocation = targetPosition;
     _currentClue = clue;
     _waymarker = null; // clear any previous waymarker
+    _hintTarget = null; // clear any previous hint
     _flightSpeed = FlightSpeed.medium; // reset speed
     _isPlaying = true;
   }

@@ -1135,10 +1135,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // the plane's current world position.
     // The wing span (in pixels) needs to be converted to degrees.
     // The pixels-to-degrees ratio depends on the current camera distance (zoom).
-    // At high altitude (distance 2.8), roughly 1 degree ≈ 8.7 pixels.
+    // At high altitude (distance 2.5), roughly 1 degree ≈ 12.0 pixels.
     // At low altitude (distance 1.3), roughly 1 degree ≈ 18.74 pixels.
-    const referenceDistance = 2.8;
-    const pixelsPerDegreeAtReference = 8.7;
+    const referenceDistance = 2.5;
+    const pixelsPerDegreeAtReference = 12.0;
     final currentDistance = gameRef.cameraDistance;
     final pixelsPerDegree = pixelsPerDegreeAtReference * (currentDistance / referenceDistance);
     final pixelsToDegrees = 1.0 / pixelsPerDegree;
@@ -1155,7 +1155,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
 
     // Slightly behind the plane (small offset aft along heading).
     final aftBearing = navBearing + pi;
-    final wingDist = wingSpanDegrees * _deg2rad; // Dynamic wing-tip distance
+    final wingDist = wingSpanDegrees * 0.5 * _deg2rad; // Dynamic wing-tip distance (scaled to match visual wing tips)
     const aftDist = 1.5 * _deg2rad; // ~1.5° behind
 
     for (final bearing in [leftBearing, rightBearing]) {

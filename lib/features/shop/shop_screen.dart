@@ -11,7 +11,7 @@ import '../../data/providers/account_provider.dart';
 class ShopScreen extends ConsumerStatefulWidget {
   const ShopScreen({super.key, this.initialTabIndex = 0});
 
-  /// Which tab to show initially: 0 = Planes, 1 = Contrails, 2 = Gold.
+  /// Which tab to show initially: 0 = Planes, 1 = Contrails, 2 = Companions, 3 = Gold.
   final int initialTabIndex;
 
   @override
@@ -27,26 +27,30 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
   late final Set<String> _ownedIds;
   late String _equippedPlane;
   late String _equippedContrail;
+  late String _equippedCompanion;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 3,
+      length: 4,
       vsync: this,
-      initialIndex: widget.initialTabIndex.clamp(0, 2),
+      initialIndex: widget.initialTabIndex.clamp(0, 3),
     );
 
     // Sync equipped state from account provider.
     final account = ref.read(accountProvider);
     _equippedPlane = account.equippedPlaneId;
     _equippedContrail = account.equippedContrailId;
+    _equippedCompanion = 'companion_${account.avatar.companion.name}';
     // Always own defaults + currently equipped items.
     _ownedIds = {
       'plane_default',
       'contrail_default',
+      'companion_none',
       _equippedPlane,
       _equippedContrail,
+      _equippedCompanion,
     };
   }
 
@@ -74,6 +78,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
             tabs: const [
               Tab(text: 'Planes'),
               Tab(text: 'Contrails'),
+              Tab(text: 'Companions'),
               Tab(text: 'Gold'),
             ],
           ),
@@ -144,6 +149,15 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
               onPurchase: _purchaseItem,
               onEquip: _equipContrail,
             ),
+            _CosmeticGrid(
+              items: CosmeticCatalog.companions,
+              ownedIds: _ownedIds,
+              equippedId: _equippedCompanion,
+              coins: coins,
+              level: level,
+              onPurchase: _purchaseItem,
+              onEquip: _equipCompanion,
+            ),
             const _GoldShopTab(),
           ],
         ),
@@ -177,6 +191,13 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
       _equippedContrail = id;
     });
     ref.read(accountProvider.notifier).equipContrail(id);
+  }
+
+  void _equipCompanion(String id) {
+    setState(() {
+      _equippedCompanion = id;
+    });
+    ref.read(accountProvider.notifier).equipCompanion(id);
   }
 }
 
@@ -904,10 +925,15 @@ class _CosmeticCard extends StatelessWidget {
                                 painter: PlanePainter(planeId: item.id,
                                     colorScheme: item.colorScheme),
                               )
-                            : _ContrailPreview(
-                                colorScheme: item.colorScheme,
-                                isLocked: isLocked,
-                              ),
+                            : item.type == CosmeticType.coPilot
+                                ? _CompanionPreview(
+                                    companionId: item.id,
+                                    isLocked: isLocked,
+                                  )
+                                : _ContrailPreview(
+                                    colorScheme: item.colorScheme,
+                                    isLocked: isLocked,
+                                  ),
                       ),
                     ),
                   ),
@@ -1154,6 +1180,68 @@ class _ContrailPainter extends CustomPainter {
 }
 
 // =============================================================================
+// Companion Preview  (icon-based preview for companion creatures)
+// =============================================================================
+
+class _CompanionPreview extends StatelessWidget {
+  const _CompanionPreview({
+    required this.companionId,
+    required this.isLocked,
+  });
+
+  final String companionId;
+  final bool isLocked;
+
+  IconData _getCompanionIcon() {
+    switch (companionId) {
+      case 'companion_none':
+        return Icons.block;
+      case 'companion_sparrow':
+        return Icons.flutter_dash;
+      case 'companion_eagle':
+        return Icons.flight;
+      case 'companion_parrot':
+        return Icons.pets;
+      case 'companion_phoenix':
+        return Icons.local_fire_department;
+      case 'companion_dragon':
+        return Icons.whatshot;
+      default:
+        return Icons.pets;
+    }
+  }
+
+  Color _getCompanionColor() {
+    if (isLocked) return FlitColors.textMuted;
+    switch (companionId) {
+      case 'companion_none':
+        return FlitColors.textMuted;
+      case 'companion_sparrow':
+        return FlitColors.textSecondary;
+      case 'companion_eagle':
+        return const Color(0xFF8B4513);
+      case 'companion_parrot':
+        return const Color(0xFF00CC44);
+      case 'companion_phoenix':
+        return const Color(0xFFFF6600);
+      case 'companion_dragon':
+        return const Color(0xFF2E8B57);
+      default:
+        return FlitColors.accent;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
+      _getCompanionIcon(),
+      size: 48,
+      color: _getCompanionColor(),
+    );
+  }
+}
+
+// =============================================================================
 // Plane Preview Painter  (CustomPaint for distinct plane silhouettes)
 // =============================================================================
 
@@ -1174,6 +1262,13 @@ class PlanePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final cx = size.width / 2;
     final cy = size.height / 2;
+
+    // Rotate canvas so planes point upward (matching in-game orientation).
+    // Shop draws planes horizontally (nose right), but in-game they're vertical (nose up).
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.rotate(-math.pi / 2); // 90 degrees counter-clockwise
+    canvas.translate(-cx, -cy);
 
     switch (planeId) {
       case 'plane_default':
@@ -1197,6 +1292,8 @@ class PlanePainter extends CustomPainter {
       default:
         _drawBiPlane(canvas, cx, cy);
     }
+
+    canvas.restore();
   }
 
   // --- Classic Bi-Plane: two stacked wings, struts, round nose ---

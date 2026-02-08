@@ -322,7 +322,7 @@ class ErrorService {
         try {
           final success = await _sender!(
             url: _apiEndpoint!,
-            apiKey: _apiKey!,
+            apiKey: _apiKey ?? '',
             jsonBody: body,
           );
 

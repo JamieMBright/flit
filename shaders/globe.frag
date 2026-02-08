@@ -74,9 +74,9 @@ const float FOAM_NOISE_SCALE   = 40.0;
 const vec3  RAYLEIGH_COEFF     = vec3(5.8e-3, 1.35e-2, 3.31e-2);
 const float MIE_COEFF          = 4.0e-3;
 const float MIE_G              = 0.76;
-const float ATMO_THICKNESS     = 0.08;
-const float RIM_INTENSITY      = 0.6;
-const float HAZE_STRENGTH      = 0.25;
+const float ATMO_THICKNESS     = 0.05;
+const float RIM_INTENSITY      = 0.35;
+const float HAZE_STRENGTH      = 0.15;
 
 // Clouds
 const float CLOUD_COVERAGE     = 0.42;
@@ -623,7 +623,7 @@ void main() {
 
     {
         float rim = 1.0 - max(dot(viewDir, normal), 0.0);
-        rim = pow(rim, 3.0);
+        rim = pow(rim, 5.0);
 
         // Day-side rim: blue-white atmospheric glow
         float sunAlignment = max(dot(normal, uSunDir), 0.0);

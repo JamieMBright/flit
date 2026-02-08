@@ -194,6 +194,19 @@ class AccountNotifier extends StateNotifier<AccountState> {
     state = state.copyWith(equippedContrailId: id);
   }
 
+  /// Equip a companion by ID (e.g. 'companion_sparrow').
+  /// Updates the avatar configuration with the corresponding companion enum.
+  void equipCompanion(String id) {
+    final companionName = id.replaceFirst('companion_', '');
+    final companion = AvatarCompanion.values.firstWhere(
+      (c) => c.name == companionName,
+      orElse: () => AvatarCompanion.none,
+    );
+    state = state.copyWith(
+      avatar: state.avatar.copyWith(companion: companion),
+    );
+  }
+
   // --- Pilot License ---
 
   /// Reroll the pilot license. Returns true if affordable.

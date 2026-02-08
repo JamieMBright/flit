@@ -84,6 +84,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
     final reward = _challenge.coinReward;
     final planeId = ref.read(equippedPlaneIdProvider);
     final plane = CosmeticCatalog.getById(planeId);
+    final companion = ref.read(accountProvider).avatar.companion;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => PlayScreen(
@@ -93,6 +94,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           planeColorScheme: plane?.colorScheme,
           planeWingSpan: plane?.wingSpan,
           equippedPlaneId: planeId,
+          companionType: companion,
           onComplete: (totalScore) {
             ref.read(accountProvider.notifier).addCoins(reward);
           },

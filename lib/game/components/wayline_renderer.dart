@@ -19,18 +19,49 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
   void render(Canvas canvas) {
     super.render(canvas);
 
-    final waymarker = gameRef.waymarker;
-    if (waymarker == null) return;
-
     final planePos = gameRef.worldPosition;
     final screenSize = gameRef.size;
     if (screenSize.x < 1 || screenSize.y < 1) return;
 
+    // Draw navigation waymarker line (player-tapped destination).
+    final waymarker = gameRef.waymarker;
+    if (waymarker != null) {
+      _drawWayline(
+        canvas,
+        planePos,
+        waymarker,
+        FlitColors.accent.withOpacity(0.45),
+        dotOpacity: 0.7,
+      );
+    }
+
+    // Draw hint wayline (visual-only, doesn't steer).
+    final hintTarget = gameRef.hintTarget;
+    if (hintTarget != null) {
+      _drawWayline(
+        canvas,
+        planePos,
+        hintTarget,
+        FlitColors.textPrimary.withOpacity(0.35),
+        dotOpacity: 0.5,
+        isHint: true,
+      );
+    }
+  }
+
+  void _drawWayline(
+    Canvas canvas,
+    Vector2 planePos,
+    Vector2 target,
+    Color lineColor, {
+    double dotOpacity = 0.7,
+    bool isHint = false,
+  }) {
     // Build screen points along the great-circle arc.
     final points = <Offset>[];
     for (var i = 0; i <= _segments; i++) {
       final t = i / _segments;
-      final interp = _interpolateGreatCircle(planePos, waymarker, t);
+      final interp = _interpolateGreatCircle(planePos, target, t);
       final screen = gameRef.worldToScreen(interp);
       if (screen.x > -500) {
         points.add(Offset(screen.x, screen.y));
@@ -41,15 +72,15 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
 
     // Draw translucent dashed line.
     final paint = Paint()
-      ..color = FlitColors.accent.withOpacity(0.45)
-      ..strokeWidth = 2.0
+      ..color = lineColor
+      ..strokeWidth = isHint ? 2.5 : 2.0
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     var drawn = 0.0;
     var dashOn = true;
-    const onLen = 8.0;
-    const offLen = 6.0;
+    final onLen = isHint ? 12.0 : 8.0;
+    final offLen = isHint ? 4.0 : 6.0;
 
     for (var i = 0; i < points.length - 1; i++) {
       final a = points[i];
@@ -70,18 +101,19 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
       }
     }
 
-    // Waymarker target dot.
+    // Target dot.
     final markerScreen = points.last;
+    final dotColor = isHint ? FlitColors.textPrimary : FlitColors.accent;
     canvas.drawCircle(
       markerScreen,
       6.0,
-      Paint()..color = FlitColors.accent.withOpacity(0.7),
+      Paint()..color = dotColor.withOpacity(dotOpacity),
     );
     canvas.drawCircle(
       markerScreen,
       10.0,
       Paint()
-        ..color = FlitColors.accent.withOpacity(0.4)
+        ..color = dotColor.withOpacity(dotOpacity * 0.6)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );

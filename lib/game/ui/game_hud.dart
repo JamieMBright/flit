@@ -20,9 +20,11 @@ class GameHud extends StatelessWidget {
     this.currentSpeed = FlightSpeed.medium,
     this.onSpeedChanged,
     this.onHint,
-    this.hintsRemaining = 0,
+    this.hintTier = 0,
+    this.revealedCountry,
     this.countryName,
     this.heading,
+    this.countryFlashProgress = 0.0,
   });
 
   final bool isHighAltitude;
@@ -33,9 +35,11 @@ class GameHud extends StatelessWidget {
   final FlightSpeed currentSpeed;
   final ValueChanged<FlightSpeed>? onSpeedChanged;
   final VoidCallback? onHint;
-  final int hintsRemaining;
+  final int hintTier;
+  final String? revealedCountry;
   final String? countryName;
   final double? heading;
+  final double countryFlashProgress;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -66,32 +70,53 @@ class GameHud extends StatelessWidget {
                   ],
                 ],
               ),
-              // Country name bar (shown when flying over a country)
-              if (countryName != null)
+              // Revealed country name (shown after tier 2 hint)
+              if (revealedCountry != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 5,
+                        horizontal: 16,
+                        vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: FlitColors.cardBackground.withOpacity(0.75),
+                        color: FlitColors.gold.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: FlitColors.accent.withOpacity(0.3),
+                          color: FlitColors.gold.withOpacity(0.6),
+                          width: 2,
                         ),
                       ),
-                      child: Text(
-                        countryName!,
-                        style: const TextStyle(
-                          color: FlitColors.textPrimary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            '🎯 ',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          Text(
+                            revealedCountry!,
+                            style: const TextStyle(
+                              color: FlitColors.gold,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                  ),
+                ),
+              // Country name bar (shown when flying over a country)
+              if (countryName != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Center(
+                    child: _CountryNameBar(
+                      name: countryName!,
+                      flashProgress: countryFlashProgress,
                     ),
                   ),
                 ),
@@ -101,11 +126,11 @@ class GameHud extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Hint button
-                  if (hintsRemaining > 0)
+                  if (hintTier < 3 && onHint != null)
                     Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: _HintButton(
-                        remaining: hintsRemaining,
+                        tier: hintTier,
                         onTap: onHint,
                       ),
                     ),
@@ -321,6 +346,65 @@ class _CompassDisplay extends StatelessWidget {
   }
 }
 
+/// Country name bar with flash animation when entering a new country.
+class _CountryNameBar extends StatelessWidget {
+  const _CountryNameBar({
+    required this.name,
+    required this.flashProgress,
+  });
+
+  final String name;
+  final double flashProgress;
+
+  @override
+  Widget build(BuildContext context) {
+    // Flash animation: scale from 1.0 to 1.15 and back
+    final scale = 1.0 + (flashProgress * 0.15);
+
+    // Flash animation: border opacity from 0.3 to 1.0
+    final borderOpacity = 0.3 + (flashProgress * 0.7);
+
+    // Flash animation: background glow
+    final glowOpacity = flashProgress * 0.5;
+
+    return Transform.scale(
+      scale: scale,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 5,
+        ),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground.withOpacity(0.75 + glowOpacity * 0.25),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: FlitColors.accent.withOpacity(borderOpacity),
+            width: 1 + (flashProgress * 1.5),
+          ),
+          boxShadow: flashProgress > 0
+              ? [
+                  BoxShadow(
+                    color: FlitColors.accent.withOpacity(glowOpacity * 0.8),
+                    blurRadius: 8 + (flashProgress * 12),
+                    spreadRadius: flashProgress * 2,
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          name,
+          style: TextStyle(
+            color: FlitColors.textPrimary,
+            fontSize: 12 + (flashProgress * 2),
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5 + (flashProgress * 0.5),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _AltitudeIndicator extends StatelessWidget {
   const _AltitudeIndicator({
     required this.isHigh,
@@ -432,47 +516,71 @@ class _SpeedControls extends StatelessWidget {
 
 class _HintButton extends StatelessWidget {
   const _HintButton({
-    required this.remaining,
+    required this.tier,
     this.onTap,
   });
 
-  final int remaining;
+  final int tier;
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: FlitColors.gold.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: FlitColors.gold.withOpacity(0.5),
-              width: 1.5,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.lightbulb_outline,
-                color: FlitColors.gold,
-                size: 16,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '$remaining',
-                style: const TextStyle(
-                  color: FlitColors.gold,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+  Widget build(BuildContext context) {
+    // Determine icon and label based on next tier
+    final String icon;
+    final String label;
+    switch (tier) {
+      case 0:
+        icon = '💡';
+        label = 'NEW CLUE';
+        break;
+      case 1:
+        icon = '🌍';
+        label = 'REVEAL';
+        break;
+      case 2:
+        icon = '🧭';
+        label = 'WAYLINE';
+        break;
+      default:
+        icon = '✓';
+        label = 'DONE';
+        break;
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: FlitColors.gold.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: FlitColors.gold.withOpacity(0.5),
+            width: 1.5,
           ),
         ),
-      );
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              icon,
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                color: FlitColors.gold,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// Mini country outline silhouette rendered from multi-polygon data.
@@ -565,4 +673,3 @@ class _CountryOutlinePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _CountryOutlinePainter oldDelegate) => false;
 }
-
