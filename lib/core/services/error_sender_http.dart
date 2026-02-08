@@ -17,12 +17,17 @@ Future<bool> errorSenderHttp({
   required String jsonBody,
 }) async {
   try {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+    // Only include the API key if one was configured. The Vercel POST
+    // endpoint is unauthenticated, so this header is optional.
+    if (apiKey.isNotEmpty) {
+      headers['X-API-Key'] = apiKey;
+    }
     final response = await http.post(
       Uri.parse(url),
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': apiKey,
-      },
+      headers: headers,
       body: jsonBody,
     );
     // 2xx means the server accepted the batch.
