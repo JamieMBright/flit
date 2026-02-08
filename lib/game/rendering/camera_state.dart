@@ -12,19 +12,22 @@ class CameraState {
   /// Globe radius in world units (normalized to 1.0).
   static const double globeRadius = 1.0;
 
-  /// Camera distance from globe center at high altitude (~2.8 radii).
+  /// Camera distance from globe center at high altitude (~2.5 radii).
   /// Close enough to show terrain context while still revealing curvature.
-  static const double highAltitudeDistance = 2.8;
+  /// Reduced from 2.8 to provide more globe fill at gentler curvature.
+  static const double highAltitudeDistance = 2.5;
 
   /// Camera distance from globe center at low altitude (~1.3 radii).
   /// Close enough to see terrain detail and city-level geography.
   static const double lowAltitudeDistance = 1.3;
 
-  /// Narrow FOV at rest (radians). Approximately 45 degrees.
-  static const double fovNarrow = 0.785;
+  /// Narrow FOV at rest (radians). Approximately 50 degrees.
+  /// Increased from 0.785 (45°) to 0.87 (50°) for wider default view.
+  static const double fovNarrow = 0.87;
 
-  /// Wide FOV at max speed (radians). Approximately 70 degrees.
-  static const double fovWide = 1.22;
+  /// Wide FOV at max speed (radians). Approximately 75 degrees.
+  /// Increased from 1.22 (70°) to 1.30 (75°) for wider speed-up view.
+  static const double fovWide = 1.30;
 
   /// Rate of easing for altitude transitions (higher = faster).
   static const double _altitudeEaseRate = 3.0;

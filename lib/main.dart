@@ -114,7 +114,9 @@ void main() {
       error: details.exception,
       stackTrace: details.stack,
     );
-    errorService.reportError(
+    // Mark as CRITICAL to trigger immediate flush (iOS PWA may reload before
+    // the 60-second periodic timer fires).
+    errorService.reportCritical(
       details.exception,
       details.stack,
       context: {'source': 'FlutterError.onError'},
@@ -128,7 +130,9 @@ void main() {
   // Capture async / platform errors that escape the framework.
   PlatformDispatcher.instance.onError = (error, stack) {
     _log.error('platform', '$error', error: error, stackTrace: stack);
-    errorService.reportError(
+    // Mark as CRITICAL to trigger immediate flush (iOS PWA may reload before
+    // the 60-second periodic timer fires).
+    errorService.reportCritical(
       error,
       stack,
       context: {'source': 'PlatformDispatcher.onError'},
@@ -148,7 +152,9 @@ void main() {
     },
     (error, stack) {
       _log.error('zone', '$error', error: error, stackTrace: stack);
-      errorService.reportError(
+      // Mark as CRITICAL to trigger immediate flush (iOS PWA may reload before
+      // the 60-second periodic timer fires).
+      errorService.reportCritical(
         error,
         stack,
         context: {'source': 'runZonedGuarded'},

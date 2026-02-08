@@ -323,7 +323,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
 
     // --- Main wings (3D: both shorten when banking, subtle asymmetry) ---
     // Left wing — both wings foreshorten from bankCos, mild offset for depth.
-    final leftSpan = dynamicWingSpan + bankSin * 3;
+    final leftSpan = dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.5;
     final leftDip = wingDip;
     final leftWing = Path()
       ..moveTo(-4, -1 + leftDip * 0.2)
@@ -353,7 +353,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     }
 
     // Right wing
-    final rightSpan = dynamicWingSpan - bankSin * 3;
+    final rightSpan = dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.5;
     final rightDip = -wingDip;
     final rightWing = Path()
       ..moveTo(4, -1 + rightDip * 0.2)
@@ -518,8 +518,8 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // Triangular wings (simple flat design)
     final leftWingColor = shade < 0 ? primary : secondary;
     final rightWingColor = shade > 0 ? primary : secondary;
-    
-    final leftSpan = dynamicWingSpan + bankSin * 2;
+
+    final leftSpan = dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
     final leftWing = Path()
       ..moveTo(-2 + bodyShift, 0)
       ..lineTo(-leftSpan, 4 + wingDip)
@@ -528,7 +528,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
-    final rightSpan = dynamicWingSpan - bankSin * 2;
+    final rightSpan = dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
     final rightWing = Path()
       ..moveTo(2 + bodyShift, 0)
       ..lineTo(rightSpan, 4 - wingDip)
@@ -577,7 +577,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final leftWingColor = shade < 0 ? detail : Color.lerp(detail, Colors.black, 0.3)!;
     final rightWingColor = shade > 0 ? detail : Color.lerp(detail, Colors.black, 0.3)!;
 
-    final leftSpan = dynamicWingSpan * 0.8 + bankSin * 2;
+    final leftSpan = dynamicWingSpan * 0.8 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
     final leftWing = Path()
       ..moveTo(-3 + bodyShift, 2)
       ..lineTo(-leftSpan, 8 + wingDip)
@@ -586,7 +586,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
-    final rightSpan = dynamicWingSpan * 0.8 - bankSin * 2;
+    final rightSpan = dynamicWingSpan * 0.8 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
     final rightWing = Path()
       ..moveTo(3 + bodyShift, 2)
       ..lineTo(rightSpan, 8 - wingDip)
@@ -654,7 +654,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final leftWingColor = shade < 0 ? primary : secondary;
     final rightWingColor = shade > 0 ? primary : secondary;
 
-    final leftSpan = dynamicWingSpan * 1.2 + bankSin * 3;
+    final leftSpan = dynamicWingSpan * 1.2 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.5;
     final leftWing = Path()
       ..moveTo(bodyShift, -16)
       ..quadraticBezierTo(-leftSpan * 0.4, -8 + wingDip * 0.3, -leftSpan, 4 + wingDip)
@@ -663,7 +663,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
-    final rightSpan = dynamicWingSpan * 1.2 - bankSin * 3;
+    final rightSpan = dynamicWingSpan * 1.2 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.5;
     final rightWing = Path()
       ..moveTo(bodyShift, -16)
       ..quadraticBezierTo(rightSpan * 0.4, -8 - wingDip * 0.3, rightSpan, 4 - wingDip)
@@ -847,7 +847,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final leftWingColor = shade < 0 ? primary : Color.lerp(primary, Colors.grey, 0.2)!;
     final rightWingColor = shade > 0 ? primary : Color.lerp(primary, Colors.grey, 0.2)!;
 
-    final leftSpan = dynamicWingSpan * 0.9 + bankSin * 2;
+    final leftSpan = dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
     final leftWing = Path()
       ..moveTo(bodyShift - 2, -16)
       ..lineTo(-leftSpan, 10 + wingDip)
@@ -855,7 +855,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
-    final rightSpan = dynamicWingSpan * 0.9 - bankSin * 2;
+    final rightSpan = dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
     final rightWing = Path()
       ..moveTo(bodyShift + 2, -16)
       ..lineTo(rightSpan, 10 - wingDip)
@@ -1011,14 +1011,14 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     canvas.drawPath(fuselagePath, Paint()..color = primary);
 
     // Wide swept wings
-    final leftWingColor = shade < 0 
-        ? detail 
+    final leftWingColor = shade < 0
+        ? detail
         : Color.lerp(detail, Colors.grey, 0.3)!;
-    final rightWingColor = shade > 0 
-        ? detail 
+    final rightWingColor = shade > 0
+        ? detail
         : Color.lerp(detail, Colors.grey, 0.3)!;
 
-    final leftSpan = dynamicWingSpan * 1.1 + bankSin * 2;
+    final leftSpan = dynamicWingSpan * 1.1 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
     final leftWing = Path()
       ..moveTo(-6 + bodyShift, 0)
       ..quadraticBezierTo(-leftSpan * 0.5, 2 + wingDip * 0.5, -leftSpan, 6 + wingDip)
@@ -1027,7 +1027,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
-    final rightSpan = dynamicWingSpan * 1.1 - bankSin * 2;
+    final rightSpan = dynamicWingSpan * 1.1 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
     final rightWing = Path()
       ..moveTo(6 + bodyShift, 0)
       ..quadraticBezierTo(rightSpan * 0.5, 2 - wingDip * 0.5, rightSpan, 6 - wingDip)
@@ -1127,6 +1127,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   static const double _rad2deg = 180 / pi;
 
   void _spawnContrailParticle() {
+    // Calculate banking for wing foreshortening (matches rendering methods).
+    final bankCos = cos(_currentBank);
+    final dynamicWingSpan = wingSpan * bankCos.abs();
+
     // Compute wing-tip world positions using great-circle offset from
     // the plane's current world position.
     // The wing span (in pixels) needs to be converted to degrees.
@@ -1138,7 +1142,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final currentDistance = gameRef.cameraDistance;
     final pixelsPerDegree = pixelsPerDegreeAtReference * (currentDistance / referenceDistance);
     final pixelsToDegrees = 1.0 / pixelsPerDegree;
-    final wingSpanDegrees = wingSpan * pixelsToDegrees;
+    final wingSpanDegrees = dynamicWingSpan * pixelsToDegrees;
 
     final lat0 = worldPos.y * _deg2rad;
     final lng0 = worldPos.x * _deg2rad;

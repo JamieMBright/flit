@@ -1,0 +1,118 @@
+import 'dart:math';
+
+import 'package:flame/components.dart';
+import 'package:flutter/material.dart';
+
+import '../../core/theme/flit_colors.dart';
+import '../flit_game.dart';
+
+/// Renders a translucent dashed line from the plane to the current waymarker.
+///
+/// The line curves along the globe surface by interpolating intermediate
+/// points along the great-circle path, then projecting each to screen space.
+class WaylineRenderer extends Component with HasGameRef<FlitGame> {
+  static const int _segments = 30;
+  static const double _deg2rad = pi / 180;
+  static const double _rad2deg = 180 / pi;
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+
+    final waymarker = gameRef.waymarker;
+    if (waymarker == null) return;
+
+    final planePos = gameRef.worldPosition;
+    final screenSize = gameRef.size;
+    if (screenSize.x < 1 || screenSize.y < 1) return;
+
+    // Build screen points along the great-circle arc.
+    final points = <Offset>[];
+    for (var i = 0; i <= _segments; i++) {
+      final t = i / _segments;
+      final interp = _interpolateGreatCircle(planePos, waymarker, t);
+      final screen = gameRef.worldToScreen(interp);
+      if (screen.x > -500) {
+        points.add(Offset(screen.x, screen.y));
+      }
+    }
+
+    if (points.length < 2) return;
+
+    // Draw translucent dashed line.
+    final paint = Paint()
+      ..color = FlitColors.accent.withOpacity(0.45)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    var drawn = 0.0;
+    var dashOn = true;
+    const onLen = 8.0;
+    const offLen = 6.0;
+
+    for (var i = 0; i < points.length - 1; i++) {
+      final a = points[i];
+      final b = points[i + 1];
+      final segLen = (b - a).distance;
+
+      if (dashOn) {
+        canvas.drawLine(a, b, paint);
+      }
+
+      drawn += segLen;
+      if (dashOn && drawn >= onLen) {
+        dashOn = false;
+        drawn = 0;
+      } else if (!dashOn && drawn >= offLen) {
+        dashOn = true;
+        drawn = 0;
+      }
+    }
+
+    // Waymarker target dot.
+    final markerScreen = points.last;
+    canvas.drawCircle(
+      markerScreen,
+      6.0,
+      Paint()..color = FlitColors.accent.withOpacity(0.7),
+    );
+    canvas.drawCircle(
+      markerScreen,
+      10.0,
+      Paint()
+        ..color = FlitColors.accent.withOpacity(0.4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+  }
+
+  /// Spherical linear interpolation between two (lng, lat) points.
+  Vector2 _interpolateGreatCircle(Vector2 a, Vector2 b, double t) {
+    final lat1 = a.y * _deg2rad;
+    final lng1 = a.x * _deg2rad;
+    final lat2 = b.y * _deg2rad;
+    final lng2 = b.x * _deg2rad;
+
+    final dLat = lat2 - lat1;
+    final dLng = lng2 - lng1;
+    final h = sin(dLat / 2) * sin(dLat / 2) +
+        cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
+    final c = 2 * atan2(sqrt(h), sqrt(1 - h));
+
+    if (c < 1e-10) return a.clone();
+
+    final sinC = sin(c);
+    final aFrac = sin((1 - t) * c) / sinC;
+    final bFrac = sin(t * c) / sinC;
+
+    final x = aFrac * cos(lat1) * cos(lng1) + bFrac * cos(lat2) * cos(lng2);
+    final y = aFrac * sin(lat1) + bFrac * sin(lat2);
+    final z = aFrac * cos(lat1) * sin(lng1) + bFrac * cos(lat2) * sin(lng2);
+
+    final lat = atan2(y, sqrt(x * x + z * z));
+    final lng = atan2(z, x);
+
+    return Vector2(lng * _rad2deg, lat * _rad2deg);
+  }
+}

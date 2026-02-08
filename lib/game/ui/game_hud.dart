@@ -5,9 +5,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../clues/clue_types.dart';
+import '../flit_game.dart';
 
-/// Game HUD overlay showing clues, timer, altitude indicator, and exit button.
-/// Styled with a vintage atlas / lo-fi pop art aesthetic.
+/// Game HUD overlay showing clues, timer, altitude indicator, speed controls,
+/// and exit button. Styled with a vintage atlas / lo-fi pop art aesthetic.
 class GameHud extends StatelessWidget {
   const GameHud({
     super.key,
@@ -16,6 +17,12 @@ class GameHud extends StatelessWidget {
     this.currentClue,
     this.onAltitudeToggle,
     this.onExit,
+    this.currentSpeed = FlightSpeed.medium,
+    this.onSpeedChanged,
+    this.onHint,
+    this.hintsRemaining = 0,
+    this.countryName,
+    this.heading,
   });
 
   final bool isHighAltitude;
@@ -23,6 +30,12 @@ class GameHud extends StatelessWidget {
   final Clue? currentClue;
   final VoidCallback? onAltitudeToggle;
   final VoidCallback? onExit;
+  final FlightSpeed currentSpeed;
+  final ValueChanged<FlightSpeed>? onSpeedChanged;
+  final VoidCallback? onHint;
+  final int hintsRemaining;
+  final String? countryName;
+  final double? heading;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -46,15 +59,68 @@ class GameHud extends StatelessWidget {
                   const SizedBox(width: 12),
                   // Timer
                   _TimerDisplay(elapsed: elapsedTime),
+                  // Compass (when heading is available)
+                  if (heading != null) ...[
+                    const SizedBox(width: 8),
+                    _CompassDisplay(heading: heading!),
+                  ],
                 ],
               ),
-              const Spacer(),
-              // Bottom row: Altitude indicator (centered)
-              Center(
-                child: _AltitudeIndicator(
-                  isHigh: isHighAltitude,
-                  onToggle: onAltitudeToggle,
+              // Country name bar (shown when flying over a country)
+              if (countryName != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: FlitColors.cardBackground.withOpacity(0.75),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: FlitColors.accent.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        countryName!,
+                        style: const TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
+              const Spacer(),
+              // Bottom row: Speed controls, Altitude indicator, Hint button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Hint button
+                  if (hintsRemaining > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: _HintButton(
+                        remaining: hintsRemaining,
+                        onTap: onHint,
+                      ),
+                    ),
+                  // Speed controls
+                  _SpeedControls(
+                    current: currentSpeed,
+                    onChanged: onSpeedChanged,
+                  ),
+                  const SizedBox(width: 12),
+                  // Altitude indicator
+                  _AltitudeIndicator(
+                    isHigh: isHighAltitude,
+                    onToggle: onAltitudeToggle,
+                  ),
+                ],
               ),
             ],
           ),
@@ -187,6 +253,74 @@ class _TimerDisplay extends StatelessWidget {
   }
 }
 
+class _CompassDisplay extends StatelessWidget {
+  const _CompassDisplay({required this.heading});
+
+  final double heading;
+
+  @override
+  Widget build(BuildContext context) {
+    // Convert from math convention (0=east, -π/2=north) to navigation bearing (0=north)
+    // Navigation bearing: heading + π/2, then convert to degrees
+    final bearingRad = heading + math.pi / 2;
+    var bearingDeg = bearingRad * 180 / math.pi;
+
+    // Normalize to [0, 360)
+    while (bearingDeg < 0) { bearingDeg += 360; }
+    while (bearingDeg >= 360) { bearingDeg -= 360; }
+
+    // Get cardinal direction
+    final direction = _getCardinalDirection(bearingDeg);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Compass icon with rotation
+          Transform.rotate(
+            angle: -bearingRad, // Negative because we want North to point up when bearing is 0
+            child: const Icon(
+              Icons.navigation,
+              color: FlitColors.accent,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Cardinal direction text
+          Text(
+            direction,
+            style: const TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getCardinalDirection(double degrees) {
+    // 8-point compass rose
+    if (degrees >= 337.5 || degrees < 22.5) return 'N';
+    if (degrees >= 22.5 && degrees < 67.5) return 'NE';
+    if (degrees >= 67.5 && degrees < 112.5) return 'E';
+    if (degrees >= 112.5 && degrees < 157.5) return 'SE';
+    if (degrees >= 157.5 && degrees < 202.5) return 'S';
+    if (degrees >= 202.5 && degrees < 247.5) return 'SW';
+    if (degrees >= 247.5 && degrees < 292.5) return 'W';
+    if (degrees >= 292.5 && degrees < 337.5) return 'NW';
+    return 'N'; // fallback
+  }
+}
+
 class _AltitudeIndicator extends StatelessWidget {
   const _AltitudeIndicator({
     required this.isHigh,
@@ -219,12 +353,120 @@ class _AltitudeIndicator extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                isHigh ? 'CRUISING' : 'DESCENDING',
+                isHigh ? 'TAP TO DESCEND' : 'TAP TO ASCEND',
                 style: TextStyle(
                   color: isHigh ? FlitColors.accent : FlitColors.success,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+class _SpeedControls extends StatelessWidget {
+  const _SpeedControls({
+    required this.current,
+    this.onChanged,
+  });
+
+  final FlightSpeed current;
+  final ValueChanged<FlightSpeed>? onChanged;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: FlightSpeed.values.map((speed) {
+            final isActive = speed == current;
+            return GestureDetector(
+              onTap: () => onChanged?.call(speed),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? FlitColors.accent.withOpacity(0.3)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  _speedLabel(speed),
+                  style: TextStyle(
+                    color: isActive
+                        ? FlitColors.accent
+                        : FlitColors.textMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      );
+
+  String _speedLabel(FlightSpeed speed) {
+    switch (speed) {
+      case FlightSpeed.slow:
+        return 'SLOW';
+      case FlightSpeed.medium:
+        return 'MED';
+      case FlightSpeed.fast:
+        return 'FAST';
+    }
+  }
+}
+
+class _HintButton extends StatelessWidget {
+  const _HintButton({
+    required this.remaining,
+    this.onTap,
+  });
+
+  final int remaining;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: FlitColors.gold.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: FlitColors.gold.withOpacity(0.5),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.lightbulb_outline,
+                color: FlitColors.gold,
+                size: 16,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '$remaining',
+                style: const TextStyle(
+                  color: FlitColors.gold,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],

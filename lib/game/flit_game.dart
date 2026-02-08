@@ -7,14 +7,18 @@ import 'package:flutter/services.dart';
 
 import '../core/services/audio_manager.dart';
 import '../core/services/error_service.dart';
-import '../core/services/game_settings.dart';
 import '../core/theme/flit_colors.dart';
 import '../core/utils/game_log.dart';
 import '../core/utils/web_error_bridge.dart';
+import '../data/models/avatar_config.dart';
 import 'components/city_label_overlay.dart';
+import 'components/companion_renderer.dart';
 import 'components/contrail_renderer.dart';
+import 'components/wayline_renderer.dart';
+import 'map/country_data.dart';
 import 'map/world_map.dart';
 import 'rendering/camera_state.dart';
+import 'rendering/globe_hit_test.dart';
 import 'rendering/globe_renderer.dart';
 import 'rendering/shader_manager.dart';
 
@@ -33,8 +37,11 @@ const double _rad2deg = 180 / pi;
 /// The world is rendered via a GPU fragment shader (globe.frag) with
 /// fallback to the Canvas 2D renderer (default world: blue ocean, green
 /// land, country outlines) if the shader fails to load.
+/// Speed levels for flight control.
+enum FlightSpeed { slow, medium, fast }
+
 class FlitGame extends FlameGame
-    with HasKeyboardHandlerComponents, PanDetector {
+    with HasKeyboardHandlerComponents, TapDetector {
   FlitGame({
     this.onGameReady,
     this.onAltitudeChanged,
@@ -45,6 +52,7 @@ class FlitGame extends FlameGame
     this.planeWingSpan,
     this.useShaderRenderer = true,
     this.equippedPlaneId = 'plane_default',
+    this.companionType = AvatarCompanion.none,
   });
 
   final VoidCallback? onGameReady;
@@ -70,6 +78,9 @@ class FlitGame extends FlameGame
 
   /// Equipped plane ID for engine sound selection.
   final String equippedPlaneId;
+
+  /// Companion creature type (flies behind the plane as a sidekick).
+  final AvatarCompanion companionType;
 
   late PlaneComponent _plane;
 
@@ -107,15 +118,20 @@ class FlitGame extends FlameGame
   /// Lower = more lag. 1.5 gives a satisfying delayed swing on turns.
   static const double _cameraHeadingEaseRate = 1.5;
 
-  // -- Swipe-to-steer state --
+  // -- Waymarker navigation state --
 
-  /// X coordinate where the current pan gesture started (screen pixels).
-  /// null when no touch is active.
-  double? _panStartX;
+  /// Waypoint the player has tapped — the plane auto-steers toward it.
+  /// null when no waypoint is set (plane flies straight).
+  Vector2? _waymarker;
 
-  /// Pixels of horizontal drag for full turn rate (±1).
-  /// Small moves = gentle bank, large moves = steep bank.
-  static const double _swipeSensitivityPx = 120.0;
+  /// Current flight speed setting.
+  FlightSpeed _flightSpeed = FlightSpeed.medium;
+
+  /// Globe hit-test utility (screen-tap → lat/lng).
+  final GlobeHitTest _hitTest = const GlobeHitTest();
+
+  /// Wayline overlay renderer (draws translucent line to waymarker).
+  WaylineRenderer? _waylineRenderer;
 
   /// How far ahead (in degrees) the camera looks along heading.
   /// The shader Y-flip + these offsets naturally project the plane
@@ -126,11 +142,47 @@ class FlitGame extends FlameGame
   /// Whether this is the first update (skip lerp, snap camera heading).
   bool _cameraFirstUpdate = true;
 
+  /// Cached country name for current position.
+  String? _cachedCountryName;
+
+  /// Time since last country check (to avoid checking every frame).
+  double _countryCheckTimer = 0.0;
+
+  /// How often to check country (seconds).
+  static const double _countryCheckInterval = 0.5;
+
   bool get isPlaying => _isPlaying;
   bool get isHighAltitude => _plane.isHighAltitude;
   PlaneComponent get plane => _plane;
   String? get currentClue => _currentClue;
   bool get isShaderActive => _shaderReady;
+
+  /// Current country name the plane is flying over, or null if over ocean/unknown.
+  String? get currentCountryName => _cachedCountryName;
+
+  /// Current waymarker position (lng, lat) or null if none set.
+  Vector2? get waymarker => _waymarker;
+
+  /// Current flight speed setting.
+  FlightSpeed get flightSpeed => _flightSpeed;
+
+  /// Set flight speed from HUD controls.
+  void setFlightSpeed(FlightSpeed speed) {
+    _flightSpeed = speed;
+    _log.info('game', 'Speed changed', data: {'speed': speed.name});
+  }
+
+  /// Speed multiplier based on current flight speed setting.
+  double get _speedMultiplier {
+    switch (_flightSpeed) {
+      case FlightSpeed.slow:
+        return 0.5;
+      case FlightSpeed.medium:
+        return 1.0;
+      case FlightSpeed.fast:
+        return 1.6;
+    }
+  }
 
   /// World position as (longitude, latitude) degrees.
   Vector2 get worldPosition => _worldPosition;
@@ -307,6 +359,15 @@ class FlitGame extends FlameGame
       // Contrail overlay — renders on top of globe, before the plane.
       await add(ContrailRenderer());
 
+      // Wayline overlay — draws translucent line from plane to waymarker.
+      _waylineRenderer = WaylineRenderer();
+      await add(_waylineRenderer!);
+
+      // Companion creature — flies behind the plane as a sidekick.
+      if (companionType != AvatarCompanion.none) {
+        await add(CompanionRenderer(companionType: companionType));
+      }
+
       // City label overlay — renders city names at low altitude.
       // Works with both shader and canvas renderers (WorldMap renders its own
       // cities at low altitude, so the overlay skips when WorldMap is active).
@@ -389,13 +450,48 @@ class FlitGame extends FlameGame
     }
   }
 
+  /// Detect which country the plane is currently over.
+  /// Uses point-in-polygon testing with caching to avoid checking every frame.
+  void _updateCountryDetection(double dt) {
+    _countryCheckTimer += dt;
+    if (_countryCheckTimer < _countryCheckInterval) return;
+
+    _countryCheckTimer = 0.0;
+
+    // Check if current position is in any country's polygons
+    final lng = _worldPosition.x;
+    final lat = _worldPosition.y;
+
+    // Linear search through countries (fast enough for ~200 countries)
+    for (final country in CountryData.countries) {
+      // Check each polygon in the country (many countries have multiple polygons)
+      for (final polygon in country.polygons) {
+        // Convert Vector2 list to Offset list for hit test
+        final polygonOffsets = polygon.map((v) => Offset(v.x, v.y)).toList();
+        if (_hitTest.isPointInPolygon(lat, lng, polygonOffsets)) {
+          _cachedCountryName = country.name;
+          return;
+        }
+      }
+    }
+
+    // Not in any country — over ocean
+    _cachedCountryName = null;
+  }
+
   void _updateInner(double dt) {
     // Don't run game logic until a session is active and the game has a size.
     if (!_isPlaying || size.x < 1 || size.y < 1) return;
 
+    // --- Country detection ---
+    _updateCountryDetection(dt);
+
+    // --- Waymarker auto-steering ---
+    _updateWaymarkerSteering(dt);
+
     // --- Great-circle movement ---
-    // Use continuous altitude speed for smooth transitions
-    final speed = _plane.currentSpeedContinuous;
+    // Use continuous altitude speed for smooth transitions, scaled by speed setting
+    final speed = _plane.currentSpeedContinuous * _speedMultiplier;
     final angularDist = speed * _speedToAngular * dt; // radians
 
     // Convert heading to navigation bearing (0 = north, clockwise)
@@ -421,11 +517,24 @@ class FlitGame extends FlameGame
 
     _worldPosition = Vector2(
       _normalizeLng(newLng * _rad2deg),
-      newLat * _rad2deg,
+      (newLat * _rad2deg).clamp(-89.9, 89.9),
     );
 
     // Update heading based on turn input (left/right only)
     _heading += _plane.turnDirection * PlaneComponent.turnRate * dt;
+
+    // Normalize heading to [-π, π] to prevent accumulation
+    while (_heading > pi) { _heading -= 2 * pi; }
+    while (_heading < -pi) { _heading += 2 * pi; }
+
+    // Clear waymarker when plane arrives within ~1° of it
+    if (_waymarker != null) {
+      final distToWaymarker = _greatCircleDistDeg(_worldPosition, _waymarker!);
+      if (distToWaymarker < 1.0) {
+        _waymarker = null;
+        _plane.releaseTurn();
+      }
+    }
 
     // --- Chase camera: smooth heading with lag ---
     _updateChaseCamera(dt);
@@ -480,11 +589,16 @@ class FlitGame extends FlameGame
     // Compute a point ahead of the plane along the camera heading direction.
     final offsetDeg = _plane.isHighAltitude ? _cameraOffsetHigh : _cameraOffsetLow;
 
+    // Reduce camera offset near poles to prevent oscillation
+    final latAbs = _worldPosition.y.abs();
+    final polarDamping = latAbs > 80.0 ? (90.0 - latAbs) / 10.0 : 1.0;
+    final effectiveOffset = offsetDeg * polarDamping;
+
     // Convert camera heading to navigation bearing (0 = north).
     final camBearing = _cameraHeading + pi / 2;
 
     // Great-circle destination: move offsetDeg ahead of the plane.
-    final d = offsetDeg * _deg2rad;
+    final d = effectiveOffset * _deg2rad;
     final planeLat = _worldPosition.y * _deg2rad;
     final planeLng = _worldPosition.x * _deg2rad;
 
@@ -531,38 +645,70 @@ class FlitGame extends FlameGame
     return lng;
   }
 
-  // -- Swipe-to-steer touch handlers --
+  // -- Waymarker auto-steering --
 
-  @override
-  void onPanStart(DragStartInfo info) {
-    _panStartX = info.raw.globalPosition.dx;
-    // Touch down with no movement = hold current heading (turn 0).
-    _plane.setTurnDirection(0);
+  /// Computes the initial bearing from the plane to the waymarker and
+  /// smoothly steers the plane toward it.
+  void _updateWaymarkerSteering(double dt) {
+    if (_waymarker == null) return;
+
+    // Compute initial bearing from plane to waymarker (great-circle).
+    final lat1 = _worldPosition.y * _deg2rad;
+    final lng1 = _worldPosition.x * _deg2rad;
+    final lat2 = _waymarker!.y * _deg2rad;
+    final lng2 = _waymarker!.x * _deg2rad;
+    final dLng = lng2 - lng1;
+
+    final y = sin(dLng) * cos(lat2);
+    final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLng);
+    // targetBearing: 0 = north, π/2 = east (standard navigation bearing)
+    final targetBearing = atan2(y, x);
+
+    // Convert our internal heading to navigation bearing for comparison
+    final currentBearing = _heading + pi / 2;
+
+    // Angle difference (shortest path)
+    var diff = targetBearing - currentBearing;
+    while (diff > pi) { diff -= 2 * pi; }
+    while (diff < -pi) { diff += 2 * pi; }
+
+    // Set turn direction proportional to the angular difference.
+    // Clamp to [-1, 1] with a dead zone for small corrections.
+    final turnStrength = (diff / (pi * 0.3)).clamp(-1.0, 1.0);
+    if (turnStrength.abs() < 0.02) {
+      _plane.setTurnDirection(0);
+    } else {
+      _plane.setTurnDirection(turnStrength);
+    }
   }
 
-  @override
-  void onPanUpdate(DragUpdateInfo info) {
-    if (_panStartX == null) return;
-    final currentX = info.raw.globalPosition.dx;
-    final dx = currentX - _panStartX!;
-
-    final settings = GameSettings.instance;
-    final sign = settings.invertControls ? -1.0 : 1.0;
-
-    // Non-linear (quadratic) turn response: small swipes give very
-    // gentle turns, larger swipes ramp up steeply.
-    // linear ∈ [-1, 1], then turn = sign(linear) * linear²
-    final linear = (sign * dx / (_swipeSensitivityPx * settings.turnSensitivity))
-        .clamp(-1.0, 1.0);
-    final turn = linear.abs() * linear; // preserves sign, squares magnitude
-    _plane.setTurnDirection(turn);
-  }
+  // -- Tap-to-waymarker touch handler --
 
   @override
-  void onPanEnd(DragEndInfo info) {
-    _panStartX = null;
-    // Release = hold current bearing (turn decays smoothly to 0).
-    _plane.releaseTurn();
+  void onTapUp(TapUpInfo info) {
+    if (!_isPlaying) return;
+
+    // Convert screen tap to globe lat/lng using the shader camera.
+    if (_globeRenderer != null) {
+      final cam = _globeRenderer!.camera;
+      final screenPoint = Offset(
+        info.eventPosition.global.x,
+        info.eventPosition.global.y,
+      );
+      final latLng = _hitTest.screenToLatLng(
+        screenPoint,
+        Size(size.x, size.y),
+        cam,
+      );
+      if (latLng != null) {
+        _waymarker = Vector2(latLng.dx, latLng.dy);
+        _log.info('game', 'Waymarker set', data: {
+          'lng': latLng.dx.toStringAsFixed(1),
+          'lat': latLng.dy.toStringAsFixed(1),
+        });
+      }
+    }
+    // Canvas renderer fallback: no hit-test available, ignore tap.
   }
 
   @override
@@ -572,6 +718,7 @@ class FlitGame extends FlameGame
   ) {
     final superResult = super.onKeyEvent(event, keysPressed);
 
+    // Keyboard navigation still supported for desktop/web.
     double direction = 0;
 
     if (keysPressed.contains(LogicalKeyboardKey.arrowLeft) ||
@@ -584,8 +731,10 @@ class FlitGame extends FlameGame
     }
 
     if (direction != 0) {
+      // Keyboard overrides waymarker steering
+      _waymarker = null;
       _plane.setTurnDirection(direction);
-    } else {
+    } else if (_waymarker == null) {
       _plane.releaseTurn();
     }
 
@@ -601,6 +750,22 @@ class FlitGame extends FlameGame
     return superResult == KeyEventResult.handled
         ? superResult
         : KeyEventResult.handled;
+  }
+
+  /// Temporarily show a wayline hint toward the given position.
+  /// The wayline disappears after a few seconds.
+  void showHintWayline(Vector2 target) {
+    _waymarker = target.clone();
+    // Auto-clear after 4 seconds so it's a brief hint.
+    Future<void>.delayed(const Duration(seconds: 4), () {
+      // Only clear if waymarker is still pointing at the hint target.
+      if (_waymarker != null &&
+          (_waymarker!.x - target.x).abs() < 0.01 &&
+          (_waymarker!.y - target.y).abs() < 0.01) {
+        _waymarker = null;
+        _plane.releaseTurn();
+      }
+    });
   }
 
   /// Start a new game/challenge.
@@ -623,6 +788,8 @@ class FlitGame extends FlameGame
     _cameraFirstUpdate = true;
     _targetLocation = targetPosition;
     _currentClue = clue;
+    _waymarker = null; // clear any previous waymarker
+    _flightSpeed = FlightSpeed.medium; // reset speed
     _isPlaying = true;
   }
 

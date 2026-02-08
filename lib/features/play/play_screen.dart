@@ -9,10 +9,10 @@ import '../../core/services/error_service.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
+import '../../data/models/avatar_config.dart';
 import '../../game/flit_game.dart';
 import '../../game/map/region.dart';
 import '../../game/session/game_session.dart';
-import '../../game/ui/altitude_slider.dart';
 import '../../game/ui/game_hud.dart';
 
 final _log = GameLog.instance;
@@ -33,6 +33,7 @@ class PlayScreen extends StatefulWidget {
     this.planeColorScheme,
     this.planeWingSpan,
     this.equippedPlaneId = 'plane_default',
+    this.companionType = AvatarCompanion.none,
   });
 
   /// The region to play in.
@@ -60,6 +61,9 @@ class PlayScreen extends StatefulWidget {
   /// Equipped plane ID for engine sound selection.
   final String equippedPlaneId;
 
+  /// Companion creature type from avatar config.
+  final AvatarCompanion companionType;
+
   @override
   State<PlayScreen> createState() => _PlayScreenState();
 }
@@ -70,7 +74,6 @@ class _PlayScreenState extends State<PlayScreen> {
   Timer? _timer;
   Duration _elapsed = Duration.zero;
   bool _isHighAltitude = true;
-  double _continuousAltitude = 1.0; // Track continuous altitude (0.0 = low, 1.0 = high)
   bool _gameReady = false;
   String? _error;
 
@@ -79,6 +82,13 @@ class _PlayScreenState extends State<PlayScreen> {
 
   /// Accumulated score across all rounds.
   int _totalScore = 0;
+
+  /// Hints remaining for this session (1 per round, 5 per day limit).
+  int _hintsRemaining = 1;
+
+  /// Timer for auto-hint after 2 minutes of no progress.
+  Timer? _autoHintTimer;
+
 
   @override
   void initState() {
@@ -97,6 +107,7 @@ class _PlayScreenState extends State<PlayScreen> {
         planeColorScheme: widget.planeColorScheme,
         planeWingSpan: widget.planeWingSpan,
         equippedPlaneId: widget.equippedPlaneId,
+        companionType: widget.companionType,
       );
     } catch (e, st) {
       _log.error('screen', 'PlayScreen.initState FAILED',
@@ -116,6 +127,7 @@ class _PlayScreenState extends State<PlayScreen> {
   void dispose() {
     _log.info('screen', 'PlayScreen.dispose');
     _timer?.cancel();
+    _autoHintTimer?.cancel();
     AudioManager.instance.stopEngine();
     // Detach the Flame game to stop its loop and release resources.
     // Without this, the game loop can outlive the widget and crash when
@@ -159,20 +171,34 @@ class _PlayScreenState extends State<PlayScreen> {
     if (mounted) {
       setState(() {
         _isHighAltitude = isHigh;
-        _continuousAltitude = isHigh ? 1.0 : 0.0;
       });
     }
   }
 
-  void _onContinuousAltitudeChanged(double altitude) {
-    _log.debug('screen', 'Continuous altitude changed', data: {'altitude': altitude});
-    if (mounted) {
-      setState(() {
-        _continuousAltitude = altitude;
-        _isHighAltitude = altitude >= 0.5;
-      });
-      _game.plane.setContinuousAltitude(altitude);
-    }
+  /// Use a hint — briefly show a wayline to the target destination.
+  void _useHint() {
+    if (_hintsRemaining <= 0 || _session == null) return;
+    setState(() {
+      _hintsRemaining--;
+    });
+    // Set a temporary waymarker at the target location.
+    // The wayline renderer will draw the path for a few seconds.
+    _game.showHintWayline(_session!.targetPosition);
+    _log.info('hint', 'Hint used', data: {
+      'remaining': _hintsRemaining,
+      'target': _session?.targetName,
+    });
+  }
+
+  /// Start auto-hint timer — gives a free hint after 2 minutes of no progress.
+  void _startAutoHintTimer() {
+    _autoHintTimer?.cancel();
+    _autoHintTimer = Timer(const Duration(minutes: 2), () {
+      if (mounted && _session != null && !_session!.isCompleted) {
+        _log.info('hint', 'Auto-hint triggered after 2 minutes');
+        _game.showHintWayline(_session!.targetPosition);
+      }
+    });
   }
 
   bool get _isMultiRound => widget.totalRounds > 1;
@@ -217,6 +243,9 @@ class _PlayScreenState extends State<PlayScreen> {
           _checkProximity();
         }
       });
+
+      // Start auto-hint timer (gives free hint after 2 minutes of no progress).
+      _startAutoHintTimer();
 
       setState(() {
         _error = null;
@@ -608,17 +637,24 @@ class _PlayScreenState extends State<PlayScreen> {
               isHighAltitude: _isHighAltitude,
               elapsedTime: _elapsed,
               currentClue: _session?.clue,
-              onAltitudeToggle: () => _game.plane.toggleAltitude(),
+              onAltitudeToggle: () {
+                _game.plane.toggleAltitude();
+                AudioManager.instance.playSfx(SfxType.altitudeChange);
+              },
               onExit: _requestExit,
+              currentSpeed: _game.flightSpeed,
+              onSpeedChanged: (speed) {
+                setState(() {
+                  _game.setFlightSpeed(speed);
+                });
+              },
+              onHint: _hintsRemaining > 0 ? _useHint : null,
+              hintsRemaining: _hintsRemaining,
+              countryName: _game.currentCountryName,
+              heading: _game.heading,
             ),
 
-          // Altitude slider control (right side of screen)
-          if (_gameReady)
-            AltitudeSlider(
-              altitude: _continuousAltitude,
-              onAltitudeChanged: _onContinuousAltitudeChanged,
-              isRightSide: true,
-            ),
+          // Altitude toggle removed — tap the HUD altitude indicator instead
 
           // Round indicator for multi-round play
           if (_gameReady && _isMultiRound)
