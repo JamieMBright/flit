@@ -178,3 +178,27 @@ jobs:
           else
             echo "WARNING: Flutter content not detected (may be loading dynamically)."
           fi
+
+  deploy-vercel:
+    name: Deploy Vercel (Error Telemetry)
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Trigger Vercel production deployment
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$VERCEL_DEPLOY_HOOK" ]; then
+            echo "::warning::VERCEL_DEPLOY_HOOK secret not set — skipping Vercel deploy"
+            exit 0
+          fi
+
+          echo "Triggering Vercel production deployment..."
+          HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" -X POST "$VERCEL_DEPLOY_HOOK")
+
+          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 201 ]; then
+            echo "Vercel deployment triggered successfully (HTTP ${HTTP_STATUS})"
+          else
+            echo "::warning::Vercel deploy hook returned HTTP ${HTTP_STATUS}"
+          fi
