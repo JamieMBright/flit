@@ -75,6 +75,11 @@
       white-space: pre-wrap;
       word-break: break-word;
       z-index: 999999;
+      /* Make text selectable for easy copying */
+      user-select: text;
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
     }
     #error-box .error-title {
       color: #FF4444;
@@ -281,6 +286,14 @@
 
     // Expose to Dart so flutter code can push errors to the JS overlay
     window._flitShowError = freezeWithError;
+
+    // Expose non-fatal error logger to Dart (logs to Vercel without blocking UI)
+    window._flitLogNonFatal = function(msg) {
+      console.warn('[FLIT NON-FATAL ERROR]', msg);
+      // Send to Vercel telemetry without blocking UI
+      sendToVercel(msg, null);
+      // Do NOT call freezeWithError or renderErrorOverlay — let game continue
+    };
   </script>
 
   <!--
