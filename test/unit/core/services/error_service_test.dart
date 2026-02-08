@@ -176,6 +176,156 @@ void main() {
     });
   });
 
+  group('ErrorService - Flushing', () {
+    test('flush sends queued errors to endpoint', () async {
+      final service = ErrorService.instance;
+      var sendCalled = false;
+      String? receivedUrl;
+      String? receivedBody;
+
+      // Mock sender that captures the payload
+      service.setSender(({
+        required String url,
+        required String apiKey,
+        required String jsonBody,
+      }) async {
+        sendCalled = true;
+        receivedUrl = url;
+        receivedBody = jsonBody;
+        return true; // Success
+      });
+
+      service.initialize(
+        apiEndpoint: 'https://test.example.com/errors',
+        apiKey: 'test-key',
+      );
+
+      service.reportError('Test flush', StackTrace.current);
+      expect(service.pendingCount, equals(1));
+
+      final result = await service.flush();
+
+      expect(result, isTrue);
+      expect(sendCalled, isTrue);
+      expect(receivedUrl, equals('https://test.example.com/errors'));
+      expect(receivedBody, contains('Test flush'));
+      expect(service.pendingCount, equals(0)); // Queue cleared on success
+    });
+
+    test('flush retries on failure with exponential backoff', () async {
+      final service = ErrorService.instance;
+      var attemptCount = 0;
+
+      service.setSender(({
+        required String url,
+        required String apiKey,
+        required String jsonBody,
+      }) async {
+        attemptCount++;
+        return false; // Always fail
+      });
+
+      service.initialize(
+        apiEndpoint: 'https://test.example.com/errors',
+        apiKey: 'test-key',
+      );
+
+      service.reportError('Test retry', StackTrace.current);
+
+      final result = await service.flush();
+
+      expect(result, isFalse);
+      expect(attemptCount, equals(3)); // maxRetries = 3
+      expect(service.pendingCount, equals(1)); // Queue not cleared on failure
+    });
+
+    test('flush succeeds on second retry', () async {
+      final service = ErrorService.instance;
+      var attemptCount = 0;
+
+      service.setSender(({
+        required String url,
+        required String apiKey,
+        required String jsonBody,
+      }) async {
+        attemptCount++;
+        return attemptCount >= 2; // Succeed on second attempt
+      });
+
+      service.initialize(
+        apiEndpoint: 'https://test.example.com/errors',
+        apiKey: 'test-key',
+      );
+
+      service.reportError('Test partial retry', StackTrace.current);
+
+      final result = await service.flush();
+
+      expect(result, isTrue);
+      expect(attemptCount, equals(2));
+      expect(service.pendingCount, equals(0));
+    });
+
+    test('flush returns true when queue is empty', () async {
+      final service = ErrorService.instance;
+      service.initialize(
+        apiEndpoint: 'https://test.example.com/errors',
+        apiKey: 'test-key',
+      );
+
+      final result = await service.flush();
+
+      expect(result, isTrue);
+    });
+
+    test('flush returns false when endpoint not configured', () async {
+      final service = ErrorService.instance;
+      service.initialize(
+        apiEndpoint: '',
+        apiKey: '',
+      );
+
+      service.reportError('No endpoint', StackTrace.current);
+
+      final result = await service.flush();
+
+      expect(result, isFalse);
+      expect(service.pendingCount, equals(1)); // Error still queued
+    });
+
+    test('flush prevents concurrent flushes', () async {
+      final service = ErrorService.instance;
+      var sendCount = 0;
+
+      service.setSender(({
+        required String url,
+        required String apiKey,
+        required String jsonBody,
+      }) async {
+        sendCount++;
+        await Future.delayed(const Duration(milliseconds: 100));
+        return true;
+      });
+
+      service.initialize(
+        apiEndpoint: 'https://test.example.com/errors',
+        apiKey: 'test-key',
+      );
+
+      service.reportError('Test concurrent', StackTrace.current);
+
+      // Start two flushes concurrently
+      final flush1 = service.flush();
+      final flush2 = service.flush();
+
+      final results = await Future.wait([flush1, flush2]);
+
+      expect(results[0], isTrue);
+      expect(results[1], isFalse); // Second flush skipped
+      expect(sendCount, equals(1)); // Only one send
+    });
+  });
+
   group('ErrorService - Reset', () {
     test('reset clears errors and counter', () {
       final service = ErrorService.instance;
