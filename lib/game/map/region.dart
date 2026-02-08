@@ -110,7 +110,7 @@ abstract class RegionalData {
             .map((c) => RegionalArea(
                   code: c.code,
                   name: c.name,
-                  points: c.points,
+                  points: c.allPoints,
                   capital: c.capital,
                 ))
             .toList();

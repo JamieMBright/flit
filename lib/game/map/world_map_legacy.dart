@@ -252,11 +252,13 @@ class WorldMapLegacy extends Component with HasGameRef<FlitGame> {
   }
 
   double _getCountryCenterLat(CountryShape country) {
+    final pts = country.allPoints;
+    if (pts.isEmpty) return 0.0;
     var sum = 0.0;
-    for (final p in country.points) {
+    for (final p in pts) {
       sum += p.y;
     }
-    return sum / country.points.length;
+    return sum / pts.length;
   }
 
   void _renderCoastlines(
@@ -280,23 +282,25 @@ class WorldMapLegacy extends Component with HasGameRef<FlitGame> {
     final path = Path();
     var anyVisible = false;
 
-    for (var i = 0; i < country.points.length; i++) {
-      final p = country.points[i];
-      final projected = _project(p.x, p.y, screenSize, globeRadius);
+    for (final polygon in country.polygons) {
+      for (var i = 0; i < polygon.length; i++) {
+        final p = polygon[i];
+        final projected = _project(p.x, p.y, screenSize, globeRadius);
 
-      if (projected != null) anyVisible = true;
+        if (projected != null) anyVisible = true;
 
-      final pt =
-          projected ?? _projectClamped(p.x, p.y, screenSize, globeRadius);
+        final pt =
+            projected ?? _projectClamped(p.x, p.y, screenSize, globeRadius);
 
-      if (i == 0) {
-        path.moveTo(pt.dx, pt.dy);
-      } else {
-        path.lineTo(pt.dx, pt.dy);
+        if (i == 0) {
+          path.moveTo(pt.dx, pt.dy);
+        } else {
+          path.lineTo(pt.dx, pt.dy);
+        }
       }
+      path.close();
     }
 
-    path.close();
     return anyVisible ? path : null;
   }
 

@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+
+import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
@@ -117,6 +120,13 @@ class _ClueCard extends StatelessWidget {
                 clue.displayData['flagEmoji'] as String,
                 style: const TextStyle(fontSize: 48),
               )
+            else if (clue.type == ClueType.outline)
+              _CountryOutline(
+                polygons: clue.displayData['polygons'] as List<List<Vector2>>? ??
+                    (clue.displayData['points'] != null
+                        ? [(clue.displayData['points'] as List<dynamic>).cast<Vector2>()]
+                        : <List<Vector2>>[]),
+              )
             else
               Text(
                 clue.displayText,
@@ -221,5 +231,96 @@ class _AltitudeIndicator extends StatelessWidget {
           ),
         ),
       );
+}
+
+/// Mini country outline silhouette rendered from multi-polygon data.
+class _CountryOutline extends StatelessWidget {
+  const _CountryOutline({required this.polygons});
+
+  final List<List<Vector2>> polygons;
+
+  @override
+  Widget build(BuildContext context) {
+    if (polygons.isEmpty) {
+      return const Text('🗺️', style: TextStyle(fontSize: 48));
+    }
+    return SizedBox(
+      height: 80,
+      width: double.infinity,
+      child: CustomPaint(
+        painter: _CountryOutlinePainter(polygons),
+      ),
+    );
+  }
+}
+
+class _CountryOutlinePainter extends CustomPainter {
+  _CountryOutlinePainter(this.polygons);
+
+  final List<List<Vector2>> polygons;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (polygons.isEmpty || size.isEmpty) return;
+
+    // Find bounding box across ALL polygons
+    final firstPt = polygons.first.first;
+    var minX = firstPt.x;
+    var maxX = firstPt.x;
+    var minY = firstPt.y;
+    var maxY = firstPt.y;
+    for (final poly in polygons) {
+      for (final p in poly) {
+        minX = math.min(minX, p.x);
+        maxX = math.max(maxX, p.x);
+        minY = math.min(minY, p.y);
+        maxY = math.max(maxY, p.y);
+      }
+    }
+
+    final rangeX = maxX - minX;
+    final rangeY = maxY - minY;
+    if (rangeX == 0 || rangeY == 0) return;
+
+    // Scale to fit within the available size with padding
+    const padding = 4.0;
+    final drawW = size.width - padding * 2;
+    final drawH = size.height - padding * 2;
+    final scale = math.min(drawW / rangeX, drawH / rangeY);
+    final offsetX = padding + (drawW - rangeX * scale) / 2;
+    final offsetY = padding + (drawH - rangeY * scale) / 2;
+
+    final path = Path();
+    for (final poly in polygons) {
+      for (var i = 0; i < poly.length; i++) {
+        final x = offsetX + (poly[i].x - minX) * scale;
+        // Flip Y: higher latitude = higher on screen
+        final y = offsetY + (maxY - poly[i].y) * scale;
+        if (i == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
+      }
+      path.close();
+    }
+
+    // Filled silhouette
+    canvas.drawPath(
+      path,
+      Paint()..color = FlitColors.landMass.withOpacity(0.5),
+    );
+    // Border stroke
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = FlitColors.accent
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CountryOutlinePainter oldDelegate) => false;
 }
 

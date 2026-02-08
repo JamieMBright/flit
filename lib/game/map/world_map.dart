@@ -371,13 +371,15 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
 
   /// Get center (lng, lat) of a country shape.
   Vector2 _getCountryCenter(CountryShape country) {
+    final pts = country.allPoints;
+    if (pts.isEmpty) return Vector2.zero();
     var sumLng = 0.0;
     var sumLat = 0.0;
-    for (final p in country.points) {
+    for (final p in pts) {
       sumLng += p.x;
       sumLat += p.y;
     }
-    return Vector2(sumLng / country.points.length, sumLat / country.points.length);
+    return Vector2(sumLng / pts.length, sumLat / pts.length);
   }
 
   void _renderCoastlines(
@@ -401,23 +403,25 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     final path = Path();
     var anyVisible = false;
 
-    for (var i = 0; i < country.points.length; i++) {
-      final p = country.points[i];
-      final projected = _project(p.x, p.y, screenSize, globeRadius);
+    for (final polygon in country.polygons) {
+      for (var i = 0; i < polygon.length; i++) {
+        final p = polygon[i];
+        final projected = _project(p.x, p.y, screenSize, globeRadius);
 
-      if (projected != null) anyVisible = true;
+        if (projected != null) anyVisible = true;
 
-      final pt =
-          projected ?? _projectClamped(p.x, p.y, screenSize, globeRadius);
+        final pt =
+            projected ?? _projectClamped(p.x, p.y, screenSize, globeRadius);
 
-      if (i == 0) {
-        path.moveTo(pt.dx, pt.dy);
-      } else {
-        path.lineTo(pt.dx, pt.dy);
+        if (i == 0) {
+          path.moveTo(pt.dx, pt.dy);
+        } else {
+          path.lineTo(pt.dx, pt.dy);
+        }
       }
+      path.close();
     }
 
-    path.close();
     return anyVisible ? path : null;
   }
 
