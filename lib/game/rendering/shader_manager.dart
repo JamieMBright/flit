@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
@@ -41,6 +42,11 @@ class ShaderManager {
   ui.Image? _heightmapTexture;
   ui.Image? _shoreDistTexture;
   ui.Image? _cityLightsTexture;
+  
+  // Fallback 1x1 black texture for missing optional samplers.
+  // Prevents shader errors on platforms that require all declared samplers
+  // to be bound, while gracefully degrading visuals.
+  ui.Image? _blackTexture;
 
   bool _initialized = false;
   bool _loading = false;
@@ -73,6 +79,30 @@ class ShaderManager {
 
     _log.info('shader', 'ShaderManager.initialize() starting');
 
+    // Create a 1x1 black fallback texture for missing optional samplers.
+    // This ensures all shader samplers have a valid binding even if textures
+    // fail to load, preventing shader errors on strict platforms.
+    try {
+      _blackTexture = await _createBlackTexture();
+      _log.debug('shader', 'Created fallback black texture');
+    } catch (e, st) {
+      _log.error('shader', 'Failed to create fallback texture',
+          error: e, stackTrace: st);
+      // If we can't even create a 1x1 texture, something is very wrong.
+      ErrorService.instance.reportCritical(
+        e,
+        st,
+        context: {
+          'source': 'ShaderManager',
+          'action': 'createFallbackTexture',
+        },
+      );
+      WebErrorBridge.show(
+          'Critical rendering error.\n\nThe game cannot initialize graphics.');
+      _loading = false;
+      return;
+    }
+
     try {
       // Load the fragment shader program.
       _program = await ui.FragmentProgram.fromAsset('shaders/globe.frag');
@@ -98,37 +128,108 @@ class ShaderManager {
       return;
     }
 
-    // Load textures in parallel.
-    try {
-      final results = await Future.wait([
-        _loadImage('assets/textures/blue_marble.png'),
-        _loadImage('assets/textures/heightmap.png'),
-        _loadImage('assets/textures/shore_distance.png'),
-        _loadImage('assets/textures/city_lights.png'),
-      ]);
-      _satelliteTexture = results[0];
-      _heightmapTexture = results[1];
-      _shoreDistTexture = results[2];
-      _cityLightsTexture = results[3];
-      _log.info('shader', 'All textures loaded');
-    } catch (e, st) {
-      _log.error('shader', 'Failed to load one or more textures',
-          error: e, stackTrace: st);
-      // Report critical error to telemetry.
-      ErrorService.instance.reportCritical(
-        e,
-        st,
-        context: {
-          'source': 'ShaderManager',
-          'action': 'loadTextures',
-        },
-      );
-      // Show error to user via JS overlay.
+    // Load textures in parallel. Load each texture independently so that
+    // missing or failed textures don't prevent the shader from working.
+    // Critical textures (satellite, heightmap) are required; optional ones
+    // (shore_distance, city_lights) will degrade gracefully if missing.
+    final textureResults = await Future.wait<Map<String, dynamic>>([
+      _loadImage('assets/textures/blue_marble.png')
+          .then((img) => <String, dynamic>{'name': 'satellite', 'image': img})
+          .catchError((e, st) => <String, dynamic>{'name': 'satellite', 'error': e, 'stack': st}),
+      _loadImage('assets/textures/heightmap.png')
+          .then((img) => <String, dynamic>{'name': 'heightmap', 'image': img})
+          .catchError((e, st) => <String, dynamic>{'name': 'heightmap', 'error': e, 'stack': st}),
+      _loadImage('assets/textures/shore_distance.png')
+          .then((img) => <String, dynamic>{'name': 'shore_distance', 'image': img})
+          .catchError((e, st) => <String, dynamic>{'name': 'shore_distance', 'error': e, 'stack': st}),
+      _loadImage('assets/textures/city_lights.png')
+          .then((img) => <String, dynamic>{'name': 'city_lights', 'image': img})
+          .catchError((e, st) => <String, dynamic>{'name': 'city_lights', 'error': e, 'stack': st}),
+    ]);
+
+    // Process results and report errors for missing textures.
+    bool hasCriticalFailure = false;
+    for (final result in textureResults) {
+      final name = result['name'] as String;
+      if (result.containsKey('image')) {
+        final image = result['image'] as ui.Image;
+        switch (name) {
+          case 'satellite':
+            _satelliteTexture = image;
+            _log.info('shader', 'Loaded texture: $name');
+            break;
+          case 'heightmap':
+            _heightmapTexture = image;
+            _log.info('shader', 'Loaded texture: $name');
+            break;
+          case 'shore_distance':
+            _shoreDistTexture = image;
+            _log.info('shader', 'Loaded texture: $name');
+            break;
+          case 'city_lights':
+            _cityLightsTexture = image;
+            _log.info('shader', 'Loaded texture: $name');
+            break;
+        }
+      } else {
+        final error = result['error'];
+        final stack = result['stack'];
+        final isCritical = name == 'satellite' || name == 'heightmap';
+        
+        if (isCritical) {
+          hasCriticalFailure = true;
+          _log.error('shader', 'Failed to load critical texture: $name',
+              error: error, stackTrace: stack);
+        } else {
+          _log.warning('shader', 'Failed to load optional texture: $name (will degrade gracefully)',
+              error: error);
+        }
+        
+        // Report to telemetry (non-critical errors are warnings, critical are errors).
+        if (isCritical) {
+          ErrorService.instance.reportError(
+            error,
+            stack,
+            severity: ErrorSeverity.error,
+            context: {
+              'source': 'ShaderManager',
+              'action': 'loadTexture',
+              'texture': name,
+              'critical': 'true',
+            },
+          );
+        } else {
+          ErrorService.instance.reportWarning(
+            error,
+            stack,
+            context: {
+              'source': 'ShaderManager',
+              'action': 'loadTexture',
+              'texture': name,
+              'critical': 'false',
+            },
+          );
+        }
+      }
+    }
+
+    // If critical textures failed, abort shader initialization.
+    if (hasCriticalFailure) {
+      _log.error('shader', 'One or more critical textures failed to load');
       WebErrorBridge.show(
-          'Texture loading failed:\n$e\n\nThe game will fall back to Canvas rendering.');
+          'Critical textures failed to load.\n\nThe game will fall back to Canvas rendering.');
       _loading = false;
       return;
     }
+
+    // Log summary of loaded textures.
+    final loadedCount = [
+      _satelliteTexture,
+      _heightmapTexture,
+      _shoreDistTexture,
+      _cityLightsTexture,
+    ].where((t) => t != null).length;
+    _log.info('shader', 'Textures loaded: $loadedCount/4');
 
     _initialized = true;
     _loading = false;
@@ -145,8 +246,9 @@ class ShaderManager {
   /// Create a fully configured [FragmentShader] with all uniforms and
   /// samplers set, ready to be used as a [Paint.shader].
   ///
-  /// Returns null if the shader or any texture is not yet loaded, or if
-  /// shader configuration fails.
+  /// Returns null if the shader program is not loaded or if shader
+  /// configuration fails. Optional textures (shore_distance, city_lights)
+  /// are skipped if not loaded, allowing graceful degradation.
   ///
   /// [size] - viewport dimensions.
   /// [camera] - current camera state (position, target, FOV).
@@ -198,18 +300,13 @@ class ShaderManager {
       s.setFloat(14, camera.fov);
 
       // -- Image samplers (indices 0-3) --
-      if (_satelliteTexture != null) {
-        s.setImageSampler(0, _satelliteTexture!);
-      }
-      if (_heightmapTexture != null) {
-        s.setImageSampler(1, _heightmapTexture!);
-      }
-      if (_shoreDistTexture != null) {
-        s.setImageSampler(2, _shoreDistTexture!);
-      }
-      if (_cityLightsTexture != null) {
-        s.setImageSampler(3, _cityLightsTexture!);
-      }
+      // Always bind all 4 samplers to prevent shader errors on platforms that
+      // require all declared samplers to be bound. Use black fallback for
+      // missing optional textures.
+      s.setImageSampler(0, _satelliteTexture ?? _blackTexture!);
+      s.setImageSampler(1, _heightmapTexture ?? _blackTexture!);
+      s.setImageSampler(2, _shoreDistTexture ?? _blackTexture!);
+      s.setImageSampler(3, _cityLightsTexture ?? _blackTexture!);
 
       return s;
     } catch (e, st) {
@@ -247,16 +344,40 @@ class ShaderManager {
     return frame.image;
   }
 
+  /// Create a 1x1 black texture to use as a fallback for missing samplers.
+  ///
+  /// Returns a fully opaque black [ui.Image] that can be bound to shader
+  /// samplers when optional textures fail to load.
+  Future<ui.Image> _createBlackTexture() async {
+    // Create a 1x1 black image using ui.decodeImageFromPixels.
+    final completer = Completer<ui.Image>();
+    final pixels = Uint8List.fromList([0, 0, 0, 255]); // RGBA black pixel
+    
+    ui.decodeImageFromPixels(
+      pixels,
+      1, // width
+      1, // height
+      ui.PixelFormat.rgba8888,
+      (ui.Image image) {
+        completer.complete(image);
+      },
+    );
+    
+    return completer.future;
+  }
+
   /// Release all cached resources. Primarily useful for testing.
   void dispose() {
     _satelliteTexture?.dispose();
     _heightmapTexture?.dispose();
     _shoreDistTexture?.dispose();
     _cityLightsTexture?.dispose();
+    _blackTexture?.dispose();
     _satelliteTexture = null;
     _heightmapTexture = null;
     _shoreDistTexture = null;
     _cityLightsTexture = null;
+    _blackTexture = null;
     _program = null;
     _initialized = false;
     _loading = false;
