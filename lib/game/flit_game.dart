@@ -567,8 +567,7 @@ class FlitGame extends FlameGame
     );
 
     // Update heading based on turn input (left/right only).
-    // Negated so right input turns clockwise on the globe.
-    _heading -= _plane.turnDirection * PlaneComponent.turnRate * dt;
+    _heading += _plane.turnDirection * PlaneComponent.turnRate * dt;
 
     // Normalize heading to [-π, π] to prevent accumulation
     while (_heading > pi) { _heading -= 2 * pi; }
