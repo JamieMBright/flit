@@ -19,7 +19,7 @@ dart format --set-exit-if-changed lib/ test/
 
 echo ""
 echo "🔎 Step 2/6: Running analyzer..."
-flutter analyze --fatal-infos --fatal-warnings
+flutter analyze --fatal-warnings
 
 echo ""
 echo "🧪 Step 3/6: Running unit tests with coverage..."

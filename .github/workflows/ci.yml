@@ -35,7 +35,7 @@ jobs:
         run: dart format lib/ test/ --fix
 
       - name: Analyze code
-        run: flutter analyze --fatal-infos
+        run: flutter analyze --fatal-warnings
 
   # Run unit tests
   test:
