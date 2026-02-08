@@ -14,6 +14,7 @@ import '../core/utils/web_error_bridge.dart';
 import 'components/city_label_overlay.dart';
 import 'components/contrail_renderer.dart';
 import 'map/world_map.dart';
+import 'rendering/camera_state.dart';
 import 'rendering/globe_renderer.dart';
 import 'rendering/shader_manager.dart';
 
@@ -145,6 +146,17 @@ class FlitGame extends FlameGame
 
   /// Navigation bearing for the camera heading (radians).
   double get cameraHeadingBearing => _cameraHeading + pi / 2;
+
+  /// Get current camera distance from globe center (in globe radii).
+  /// Returns the distance based on current altitude for zoom-aware calculations.
+  /// Used for contrail positioning that adjusts with camera zoom.
+  double get cameraDistance {
+    if (_globeRenderer != null) {
+      return _globeRenderer!.camera.currentDistance;
+    }
+    // Fallback for Canvas renderer - use high altitude distance
+    return CameraState.highAltitudeDistance;
+  }
 
   /// Project a world position (lng, lat) to screen coordinates.
   /// Works with both Canvas (WorldMap) and shader (GlobeRenderer) renderers.

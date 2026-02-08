@@ -461,9 +461,22 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     // Compute wing-tip world positions using great-circle offset from
     // the plane's current world position.
     // The wing span (in pixels) needs to be converted to degrees.
-    // At zoom level 1, roughly 1 degree ≈ 8.7 pixels on screen.
-    // So we scale the wing span to degrees based on this ratio.
-    const pixelsToDegrees = 1.0 / 8.7;
+    // 
+    // The pixels-to-degrees ratio depends on the current camera distance (zoom).
+    // At high altitude (distance 2.8), roughly 1 degree ≈ 8.7 pixels.
+    // At low altitude (distance 1.3), roughly 1 degree ≈ 18.74 pixels.
+    // The ratio is inversely proportional to camera distance.
+    //
+    // Reference distance and pixels per degree at that distance:
+    const referenceDistance = 2.8; // High altitude distance
+    const pixelsPerDegreeAtReference = 8.7;
+    
+    // Get current camera distance from the game (accounts for continuous altitude)
+    final currentDistance = gameRef.cameraDistance;
+    
+    // Scale pixels-to-degrees based on current zoom level
+    final pixelsPerDegree = pixelsPerDegreeAtReference * (currentDistance / referenceDistance);
+    final pixelsToDegrees = 1.0 / pixelsPerDegree;
     final wingSpanDegrees = wingSpan * pixelsToDegrees;
 
     final lat0 = worldPos.y * _deg2rad;
