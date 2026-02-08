@@ -216,14 +216,14 @@ class _PlayScreenState extends State<PlayScreen> {
   void _checkProximity() {
     if (_session == null || _session!.isCompleted) return;
 
-    // Proximity detection: near target
+    // Proximity detection: near target at ANY altitude.
+    // Solution is purely positional — fly into the target area to complete.
+    // Low altitude is only a visual/speed change, not a gameplay gate.
     // 25 units = 2.5° ≈ 280km — feels right at the zoomed-in view.
     if (_game.isNearTarget(threshold: 25)) {
       if (_isMultiRound && !_isFinalRound) {
-        // Not the final round: auto-advance when near target (any altitude)
         _advanceRound();
-      } else if (!_isHighAltitude) {
-        // Final round or single round: require low altitude to land
+      } else {
         _completeLanding();
       }
     }

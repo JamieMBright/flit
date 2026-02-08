@@ -428,10 +428,16 @@ class FlitGame extends FlameGame
     // Drag offset is excluded: when the player drags to look around,
     // the globe rotates but the plane keeps facing forward on screen.
     _plane.visualHeading = _heading - _cameraHeading;
-    _plane.position = Vector2(
-      size.x * planeScreenX,
-      size.y * planeScreenY,
-    );
+
+    // Place the plane at its projected world position so it aligns with
+    // contrails and map features. Works for both Canvas and shader renderers.
+    final projectedPlane = worldToScreen(_worldPosition);
+    if (projectedPlane.x > -500) {
+      _plane.position = projectedPlane;
+    } else {
+      // Off-screen fallback (shouldn't happen with camera offset system)
+      _plane.position = Vector2(size.x * planeScreenX, size.y * planeScreenY);
+    }
 
     // Feed world state to plane for world-space contrail spawning.
     _plane.worldPos = _worldPosition.clone();
