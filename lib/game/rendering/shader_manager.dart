@@ -98,37 +98,94 @@ class ShaderManager {
       return;
     }
 
-    // Load textures in parallel.
-    try {
-      final results = await Future.wait([
-        _loadImage('assets/textures/blue_marble.png'),
-        _loadImage('assets/textures/heightmap.png'),
-        _loadImage('assets/textures/shore_distance.png'),
-        _loadImage('assets/textures/city_lights.png'),
-      ]);
-      _satelliteTexture = results[0];
-      _heightmapTexture = results[1];
-      _shoreDistTexture = results[2];
-      _cityLightsTexture = results[3];
-      _log.info('shader', 'All textures loaded');
-    } catch (e, st) {
-      _log.error('shader', 'Failed to load one or more textures',
-          error: e, stackTrace: st);
-      // Report critical error to telemetry.
-      ErrorService.instance.reportCritical(
-        e,
-        st,
-        context: {
-          'source': 'ShaderManager',
-          'action': 'loadTextures',
-        },
-      );
-      // Show error to user via JS overlay.
+    // Load textures in parallel. Load each texture independently so that
+    // missing or failed textures don't prevent the shader from working.
+    // Critical textures (satellite, heightmap) are required; optional ones
+    // (shore_distance, city_lights) will degrade gracefully if missing.
+    final textureResults = await Future.wait([
+      _loadImage('assets/textures/blue_marble.png')
+          .then((img) => {'name': 'satellite', 'image': img})
+          .catchError((e, st) => {'name': 'satellite', 'error': e, 'stack': st}),
+      _loadImage('assets/textures/heightmap.png')
+          .then((img) => {'name': 'heightmap', 'image': img})
+          .catchError((e, st) => {'name': 'heightmap', 'error': e, 'stack': st}),
+      _loadImage('assets/textures/shore_distance.png')
+          .then((img) => {'name': 'shore_distance', 'image': img})
+          .catchError((e, st) => {'name': 'shore_distance', 'error': e, 'stack': st}),
+      _loadImage('assets/textures/city_lights.png')
+          .then((img) => {'name': 'city_lights', 'image': img})
+          .catchError((e, st) => {'name': 'city_lights', 'error': e, 'stack': st}),
+    ]);
+
+    // Process results and report errors for missing textures.
+    bool hasCriticalFailure = false;
+    for (final result in textureResults) {
+      final name = result['name'] as String;
+      if (result.containsKey('image')) {
+        final image = result['image'] as ui.Image;
+        switch (name) {
+          case 'satellite':
+            _satelliteTexture = image;
+            _log.info('shader', 'Loaded texture: $name');
+            break;
+          case 'heightmap':
+            _heightmapTexture = image;
+            _log.info('shader', 'Loaded texture: $name');
+            break;
+          case 'shore_distance':
+            _shoreDistTexture = image;
+            _log.info('shader', 'Loaded texture: $name');
+            break;
+          case 'city_lights':
+            _cityLightsTexture = image;
+            _log.info('shader', 'Loaded texture: $name');
+            break;
+        }
+      } else {
+        final error = result['error'];
+        final stack = result['stack'];
+        final isCritical = name == 'satellite' || name == 'heightmap';
+        
+        if (isCritical) {
+          hasCriticalFailure = true;
+          _log.error('shader', 'Failed to load critical texture: $name',
+              error: error, stackTrace: stack);
+        } else {
+          _log.warning('shader', 'Failed to load optional texture: $name (will degrade gracefully)',
+              error: error, stackTrace: stack);
+        }
+        
+        // Report to telemetry (non-critical errors are warnings, critical are errors).
+        ErrorService.instance.report(
+          error,
+          stack,
+          context: {
+            'source': 'ShaderManager',
+            'action': 'loadTexture',
+            'texture': name,
+            'critical': isCritical.toString(),
+          },
+        );
+      }
+    }
+
+    // If critical textures failed, abort shader initialization.
+    if (hasCriticalFailure) {
+      _log.error('shader', 'One or more critical textures failed to load');
       WebErrorBridge.show(
-          'Texture loading failed:\n$e\n\nThe game will fall back to Canvas rendering.');
+          'Critical textures failed to load.\n\nThe game will fall back to Canvas rendering.');
       _loading = false;
       return;
     }
+
+    // Log summary of loaded textures.
+    final loadedCount = [
+      _satelliteTexture,
+      _heightmapTexture,
+      _shoreDistTexture,
+      _cityLightsTexture,
+    ].where((t) => t != null).length;
+    _log.info('shader', 'Textures loaded: $loadedCount/4');
 
     _initialized = true;
     _loading = false;
@@ -145,8 +202,9 @@ class ShaderManager {
   /// Create a fully configured [FragmentShader] with all uniforms and
   /// samplers set, ready to be used as a [Paint.shader].
   ///
-  /// Returns null if the shader or any texture is not yet loaded, or if
-  /// shader configuration fails.
+  /// Returns null if the shader program is not loaded or if shader
+  /// configuration fails. Optional textures (shore_distance, city_lights)
+  /// are skipped if not loaded, allowing graceful degradation.
   ///
   /// [size] - viewport dimensions.
   /// [camera] - current camera state (position, target, FOV).
