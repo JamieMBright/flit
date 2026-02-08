@@ -727,8 +727,9 @@ class FlitGame extends FlameGame
     while (diff < -pi) { diff += 2 * pi; }
 
     // Steer proportionally to the angular difference.
-    // Uses smooth interpolation so the plane banks gradually into turns.
-    final turnStrength = (diff / (pi * 0.3)).clamp(-1.0, 1.0);
+    // Wider dead-zone (pi*0.5) gives gradual sweeping arcs rather than
+    // snappy circular turns. The plane banks smoothly into each turn.
+    final turnStrength = (diff / (pi * 0.5)).clamp(-1.0, 1.0);
     if (turnStrength.abs() < 0.02) {
       _plane.steerToward(0, dt);
     } else {

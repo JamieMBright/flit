@@ -60,11 +60,11 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   static const double lowAltitudeSpeedMultiplier = 0.5;
 
   /// Turn rate in radians per second.
-  /// 4.0 allows a full circle in ~1.6s — tight enough for U-turns.
-  static const double turnRate = 4.0;
+  /// 2.2 gives sweeping arcs (~2.9s per full circle).
+  static const double turnRate = 2.2;
 
-  /// Maximum bank angle for visual effect (radians, ~40 degrees).
-  static const double _maxBankAngle = 0.7;
+  /// Maximum bank angle for visual effect (radians, ~50 degrees).
+  static const double _maxBankAngle = 0.9;
 
   /// How fast the turn decays when the player releases (per-second rate).
   /// Higher = faster decay. 3.0 means ~0.3 seconds to coast to stop.
@@ -1209,14 +1209,14 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   }
 
   /// Smoothly steer toward a target turn direction (for waypoint auto-steering).
-  /// Unlike [setTurnDirection], this interpolates gradually and does not set
-  /// the dragging flag, so the plane banks smoothly into the turn.
+  /// Sets [_isDragging] so that update()'s turn-decay doesn't fight the input.
+  /// Interpolates gradually so the plane banks smoothly into the turn.
   void steerToward(double target, double dt) {
     final clamped = target.clamp(-1.0, 1.0);
-    // Smooth interpolation toward target turn direction
-    _turnDirection += (clamped - _turnDirection) * (dt * 4.0).clamp(0.0, 1.0);
+    // Smooth interpolation toward target turn direction (responsive banking)
+    _turnDirection += (clamped - _turnDirection) * (dt * 6.0).clamp(0.0, 1.0);
     _turnDirection = _turnDirection.clamp(-1.0, 1.0);
-    _isDragging = false;
+    _isDragging = true;
   }
 
   /// Called when the player lifts their finger — plane coasts to straight.
