@@ -130,7 +130,7 @@
 
     // POST error to Vercel telemetry (fire-and-forget, never blocks UI).
     // Format matches the CapturedError batch format from error_service.dart.
-    function sendToVercel(msg) {
+    function sendToVercel(msg, stackTrace) {
       try {
         // Generate a simple session ID if not already set
         if (!window._flitSessionId) {
@@ -152,17 +152,35 @@
             url: location.href,
           },
         };
+        
+        // Add stack trace if provided
+        if (stackTrace) {
+          errorObj.stackTrace = stackTrace;
+        }
 
         // Wrap in array to match the batch format expected by Vercel endpoint
         var payload = JSON.stringify([errorObj]);
+
+        // Log to console for debugging (can be disabled in production)
+        console.log('[FLIT ERROR TELEMETRY] Sending to Vercel:', ERROR_ENDPOINT);
+        console.log('[FLIT ERROR TELEMETRY] Payload size:', payload.length, 'bytes');
 
         fetch(ERROR_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: payload,
           keepalive: true,  // survives page unload on iOS
-        }).catch(function() {}); // swallow network failures
-      } catch (_) {}
+        }).then(function(response) {
+          console.log('[FLIT ERROR TELEMETRY] Response status:', response.status);
+          return response.json();
+        }).then(function(data) {
+          console.log('[FLIT ERROR TELEMETRY] Response:', data);
+        }).catch(function(err) {
+          console.error('[FLIT ERROR TELEMETRY] Failed:', err);
+        });
+      } catch (err) {
+        console.error('[FLIT ERROR TELEMETRY] Exception:', err);
+      }
     }
 
     function renderErrorOverlay() {
@@ -209,7 +227,7 @@
       renderErrorOverlay();
     }
 
-    function freezeWithError(msg) {
+    function freezeWithError(msg, stackTrace) {
       errors.push(msg);
 
       // CRITICAL: Persist to localStorage IMMEDIATELY and SYNCHRONOUSLY
@@ -225,7 +243,7 @@
       }
 
       // Send to Vercel telemetry (fire-and-forget, with keepalive for iOS).
-      sendToVercel(msg);
+      sendToVercel(msg, stackTrace);
 
       // Render the error overlay (may not complete if page reloads).
       renderErrorOverlay();
@@ -233,7 +251,9 @@
 
     // Catch synchronous JS errors
     window.addEventListener('error', function(e) {
-      freezeWithError('[JS Error] ' + e.message + '\n' + (e.filename || '') + ':' + (e.lineno || ''));
+      var msg = '[JS Error] ' + e.message + '\n' + (e.filename || '') + ':' + (e.lineno || '');
+      var stack = e.error && e.error.stack ? e.error.stack : null;
+      freezeWithError(msg, stack);
       e.preventDefault(); // Prevent default handling / page reload
       return true;
     });
@@ -242,18 +262,20 @@
     window.addEventListener('unhandledrejection', function(e) {
       var reason = e.reason;
       var msg = '[Async Error] ';
+      var stack = null;
       if (reason && reason.stack) {
         msg += reason.message + '\n' + reason.stack;
+        stack = reason.stack;
       } else {
         msg += String(reason || e);
       }
-      freezeWithError(msg);
+      freezeWithError(msg, stack);
       e.preventDefault();
     });
 
     // Catch WebGL context loss (shader / GPU crashes)
     document.addEventListener('webglcontextlost', function(e) {
-      freezeWithError('[WebGL CRASH] GPU context lost — likely a shader or rendering failure.');
+      freezeWithError('[WebGL CRASH] GPU context lost — likely a shader or rendering failure.', null);
       e.preventDefault(); // Prevent automatic context restore attempt
     }, true); // Use capture phase to catch it on any canvas
 
@@ -289,7 +311,7 @@
         }
       };
       fl.onerror = function() {
-        freezeWithError('Could not load Flutter engine (neither flutter_bootstrap.js nor flutter.js found).');
+        freezeWithError('Could not load Flutter engine (neither flutter_bootstrap.js nor flutter.js found).', null);
       };
       document.body.appendChild(fl);
     };
