@@ -193,10 +193,10 @@ class ErrorService {
     _apiKey = apiKey.isNotEmpty ? apiKey : null;
     
     if (kDebugMode) {
-      print('[ErrorService] Initialized:');
-      print('[ErrorService]   Endpoint: ${_apiEndpoint ?? "NOT SET"}');
-      print('[ErrorService]   API Key: ${_apiKey?.isNotEmpty == true ? "SET (${_apiKey!.length} chars)" : "NOT SET"}');
-      print('[ErrorService]   Session ID: $_sessionId');
+      debugPrint('[ErrorService] Initialized:');
+      debugPrint('[ErrorService]   Endpoint: ${_apiEndpoint ?? "NOT SET"}');
+      debugPrint('[ErrorService]   API Key: ${_apiKey?.isNotEmpty == true ? "SET (${_apiKey!.length} chars)" : "NOT SET"}');
+      debugPrint('[ErrorService]   Session ID: $_sessionId');
     }
   }
 
@@ -260,8 +260,8 @@ class ErrorService {
     Map<String, String>? context,
   }) {
     if (kDebugMode) {
-      print('[ErrorService] reportCritical() called: $error');
-      print('[ErrorService] Context: $context');
+      debugPrint('[ErrorService] reportCritical() called: $error');
+      debugPrint('[ErrorService] Context: $context');
     }
     
     reportError(
@@ -273,7 +273,7 @@ class ErrorService {
     
     // Fire-and-forget immediate flush — don't await.
     if (kDebugMode) {
-      print('[ErrorService] Triggering immediate flush for critical error');
+      debugPrint('[ErrorService] Triggering immediate flush for critical error');
     }
     flush();
   }
@@ -318,7 +318,7 @@ class ErrorService {
     // Guard: nothing to do.
     if (_queue.isEmpty) {
       if (kDebugMode) {
-        print('[ErrorService] flush() called but queue is empty');
+        debugPrint('[ErrorService] flush() called but queue is empty');
       }
       return true;
     }
@@ -326,9 +326,9 @@ class ErrorService {
     // Guard: no endpoint or sender configured.
     if (_apiEndpoint == null || _sender == null) {
       if (kDebugMode) {
-        print('[ErrorService] flush() failed: no endpoint or sender configured');
-        print('[ErrorService]   endpoint: $_apiEndpoint');
-        print('[ErrorService]   sender: $_sender');
+        debugPrint('[ErrorService] flush() failed: no endpoint or sender configured');
+        debugPrint('[ErrorService]   endpoint: $_apiEndpoint');
+        debugPrint('[ErrorService]   sender: $_sender');
       }
       return false;
     }
@@ -336,13 +336,13 @@ class ErrorService {
     // Guard: another flush is already in progress.
     if (_flushing) {
       if (kDebugMode) {
-        print('[ErrorService] flush() skipped: already flushing');
+        debugPrint('[ErrorService] flush() skipped: already flushing');
       }
       return false;
     }
 
     if (kDebugMode) {
-      print('[ErrorService] flush() starting: ${_queue.length} errors queued');
+      debugPrint('[ErrorService] flush() starting: ${_queue.length} errors queued');
     }
 
     _flushing = true;
@@ -354,14 +354,14 @@ class ErrorService {
       final body = jsonEncode(batch.map((e) => e.toJson()).toList());
 
       if (kDebugMode) {
-        print('[ErrorService] Sending ${batch.length} errors (${body.length} bytes)');
-        print('[ErrorService] Endpoint: $_apiEndpoint');
+        debugPrint('[ErrorService] Sending ${batch.length} errors (${body.length} bytes)');
+        debugPrint('[ErrorService] Endpoint: $_apiEndpoint');
       }
 
       for (int attempt = 0; attempt < maxRetries; attempt++) {
         try {
           if (kDebugMode && attempt > 0) {
-            print('[ErrorService] Retry attempt $attempt');
+            debugPrint('[ErrorService] Retry attempt $attempt');
           }
 
           final success = await _sender!(
@@ -374,18 +374,18 @@ class ErrorService {
             // Remove only the errors we successfully sent.
             _queue.removeWhere((e) => batch.contains(e));
             if (kDebugMode) {
-              print('[ErrorService] flush() SUCCESS: ${batch.length} errors sent');
+              debugPrint('[ErrorService] flush() SUCCESS: ${batch.length} errors sent');
             }
             return true;
           } else {
             if (kDebugMode) {
-              print('[ErrorService] flush() returned false on attempt $attempt');
+              debugPrint('[ErrorService] flush() returned false on attempt $attempt');
             }
           }
         } catch (e) {
           // Network or serialization error — retry after backoff.
           if (kDebugMode) {
-            print('[ErrorService] flush() exception on attempt $attempt: $e');
+            debugPrint('[ErrorService] flush() exception on attempt $attempt: $e');
           }
         }
 
@@ -393,14 +393,14 @@ class ErrorService {
         if (attempt < maxRetries - 1) {
           final delay = Duration(seconds: pow(2, attempt).toInt());
           if (kDebugMode) {
-            print('[ErrorService] Backing off for ${delay.inSeconds}s');
+            debugPrint('[ErrorService] Backing off for ${delay.inSeconds}s');
           }
           await Future<void>.delayed(delay);
         }
       }
 
       if (kDebugMode) {
-        print('[ErrorService] flush() FAILED: all retries exhausted');
+        debugPrint('[ErrorService] flush() FAILED: all retries exhausted');
       }
       return false; // All retries exhausted.
     } finally {
