@@ -15,6 +15,7 @@ class PlaneComponent extends PositionComponent with HasGameRef {
     required this.onAltitudeChanged,
     this.colorScheme,
     this.wingSpan = 26.0,
+    this.equippedPlaneId = 'plane_default',
   }) : super(
           size: Vector2(60, 60),
           anchor: Anchor.center,
@@ -29,6 +30,10 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   /// Wing span in pixels for this aircraft.
   /// Determines both visual rendering and contrail positioning.
   final double wingSpan;
+
+  /// ID of the equipped plane cosmetic (e.g., 'plane_paper', 'plane_jet').
+  /// Determines which visual variant to render.
+  final String equippedPlaneId;
 
   /// Current turning direction: -1 (left), 0 (straight), 1 (right)
   double _turnDirection = 0;
@@ -190,6 +195,42 @@ class PlaneComponent extends PositionComponent with HasGameRef {
   }
 
   void _renderPlane(Canvas canvas, double bankCos, double bankSin) {
+    // Delegate to specific plane renderer based on equipped cosmetic
+    switch (equippedPlaneId) {
+      case 'plane_paper':
+        _renderPaperPlane(canvas, bankCos, bankSin);
+        break;
+      case 'plane_jet':
+      case 'plane_rocket':
+      case 'plane_golden_jet':
+        _renderJetPlane(canvas, bankCos, bankSin);
+        break;
+      case 'plane_stealth':
+        _renderStealthPlane(canvas, bankCos, bankSin);
+        break;
+      case 'plane_red_baron':
+        _renderTriplane(canvas, bankCos, bankSin);
+        break;
+      case 'plane_concorde_classic':
+      case 'plane_diamond_concorde':
+        _renderConcorde(canvas, bankCos, bankSin);
+        break;
+      case 'plane_seaplane':
+        _renderSeaplane(canvas, bankCos, bankSin);
+        break;
+      case 'plane_bryanair':
+      case 'plane_air_force_one':
+        _renderAirliner(canvas, bankCos, bankSin);
+        break;
+      default:
+        // Default bi-plane rendering (original code)
+        _renderBiPlane(canvas, bankCos, bankSin);
+        break;
+    }
+  }
+
+  /// Original bi-plane rendering (default and most planes).
+  void _renderBiPlane(Canvas canvas, double bankCos, double bankSin) {
     final primary = colorScheme != null
         ? Color(colorScheme!['primary'] ?? 0xFFF5F0E0)
         : FlitColors.planeBody;
@@ -434,6 +475,633 @@ class PlaneComponent extends PositionComponent with HasGameRef {
       Offset(rightSpan - 1, 3.5 + rightDip),
       1.8,
       Paint()..color = FlitColors.success,
+    );
+  }
+
+  /// Paper plane rendering - simple, flat, triangular design.
+  void _renderPaperPlane(Canvas canvas, double bankCos, double bankSin) {
+    final primary = colorScheme != null
+        ? Color(colorScheme!['primary'] ?? 0xFFF5F5F5)
+        : const Color(0xFFF5F5F5); // Default white
+    final secondary = colorScheme != null
+        ? Color(colorScheme!['secondary'] ?? 0xFFE0E0E0)
+        : const Color(0xFFE0E0E0);
+    final detail = colorScheme != null
+        ? Color(colorScheme!['detail'] ?? 0xFFCCCCCC)
+        : const Color(0xFFCCCCCC);
+
+    final shade = bankSin;
+    final bodyShift = bankSin * 1.5;
+    final dynamicWingSpan = wingSpan * bankCos.abs();
+    final wingDip = bankSin * 4.0;
+
+    // Simple folded paper body
+    final bodyPath = Path()
+      ..moveTo(bodyShift, -18)
+      ..lineTo(bodyShift + 3, -8)
+      ..lineTo(bodyShift + 2, 14)
+      ..lineTo(bodyShift, 16)
+      ..lineTo(bodyShift - 2, 14)
+      ..lineTo(bodyShift - 3, -8)
+      ..close();
+    canvas.drawPath(bodyPath, Paint()..color = primary);
+
+    // Paper crease line (center fold)
+    canvas.drawLine(
+      Offset(bodyShift, -18),
+      Offset(bodyShift, 16),
+      Paint()
+        ..color = detail
+        ..strokeWidth = 1.0,
+    );
+
+    // Triangular wings (simple flat design)
+    final leftWingColor = shade < 0 ? primary : secondary;
+    final rightWingColor = shade > 0 ? primary : secondary;
+    
+    final leftSpan = dynamicWingSpan + bankSin * 2;
+    final leftWing = Path()
+      ..moveTo(-2 + bodyShift, 0)
+      ..lineTo(-leftSpan, 4 + wingDip)
+      ..lineTo(-leftSpan + 3, 6 + wingDip)
+      ..lineTo(-2 + bodyShift, 2)
+      ..close();
+    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+
+    final rightSpan = dynamicWingSpan - bankSin * 2;
+    final rightWing = Path()
+      ..moveTo(2 + bodyShift, 0)
+      ..lineTo(rightSpan, 4 - wingDip)
+      ..lineTo(rightSpan - 3, 6 - wingDip)
+      ..lineTo(2 + bodyShift, 2)
+      ..close();
+    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+
+    // Simple nose point
+    canvas.drawCircle(
+      Offset(bodyShift, -18),
+      2.0,
+      Paint()..color = secondary,
+    );
+  }
+
+  /// Jet/rocket plane rendering - sleek, narrow, swept-back wings.
+  void _renderJetPlane(Canvas canvas, double bankCos, double bankSin) {
+    final primary = colorScheme != null
+        ? Color(colorScheme!['primary'] ?? 0xFFC0C0C0)
+        : const Color(0xFFC0C0C0);
+    final secondary = colorScheme != null
+        ? Color(colorScheme!['secondary'] ?? 0xFF4A90B8)
+        : const Color(0xFF4A90B8);
+    final detail = colorScheme != null
+        ? Color(colorScheme!['detail'] ?? 0xFF808080)
+        : const Color(0xFF808080);
+
+    final shade = bankSin;
+    final bodyShift = bankSin * 1.5;
+    final dynamicWingSpan = wingSpan * bankCos.abs();
+    final wingDip = bankSin * 3.0;
+
+    // Sleek fuselage (narrower than bi-plane)
+    final fuselagePath = Path()
+      ..moveTo(bodyShift, -18)
+      ..quadraticBezierTo(3 + bodyShift, -14, 3 + bodyShift, -4)
+      ..quadraticBezierTo(2.5 + bodyShift, 8, 2 + bodyShift, 15)
+      ..lineTo(-2 + bodyShift, 15)
+      ..quadraticBezierTo(-2.5 + bodyShift, 8, -3 + bodyShift, -4)
+      ..quadraticBezierTo(-3 + bodyShift, -14, bodyShift, -18)
+      ..close();
+    canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Swept delta wings
+    final leftWingColor = shade < 0 ? detail : Color.lerp(detail, Colors.black, 0.3)!;
+    final rightWingColor = shade > 0 ? detail : Color.lerp(detail, Colors.black, 0.3)!;
+
+    final leftSpan = dynamicWingSpan * 0.8 + bankSin * 2;
+    final leftWing = Path()
+      ..moveTo(-3 + bodyShift, 2)
+      ..lineTo(-leftSpan, 8 + wingDip)
+      ..lineTo(-leftSpan + 4, 10 + wingDip)
+      ..lineTo(-2 + bodyShift, 6)
+      ..close();
+    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+
+    final rightSpan = dynamicWingSpan * 0.8 - bankSin * 2;
+    final rightWing = Path()
+      ..moveTo(3 + bodyShift, 2)
+      ..lineTo(rightSpan, 8 - wingDip)
+      ..lineTo(rightSpan - 4, 10 - wingDip)
+      ..lineTo(2 + bodyShift, 6)
+      ..close();
+    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+
+    // Canopy (cockpit glass)
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(bodyShift, -10),
+        width: 4,
+        height: 7,
+      ),
+      Paint()..color = const Color(0xFF4A90B8),
+    );
+
+    // Jet exhaust (glowing)
+    if (equippedPlaneId == 'plane_rocket') {
+      canvas.drawCircle(
+        Offset(bodyShift, 15),
+        3.0,
+        Paint()..color = const Color(0xFFFF6600).withOpacity(0.8),
+      );
+    } else {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(bodyShift, 15),
+          width: 4,
+          height: 3,
+        ),
+        Paint()..color = const Color(0xFF555555),
+      );
+    }
+
+    // Accent stripe
+    canvas.drawLine(
+      Offset(bodyShift - 1, -12),
+      Offset(bodyShift - 1, 8),
+      Paint()
+        ..color = secondary
+        ..strokeWidth = 2.0,
+    );
+  }
+
+  /// Stealth bomber rendering - wide flying wing design.
+  void _renderStealthPlane(Canvas canvas, double bankCos, double bankSin) {
+    final primary = colorScheme != null
+        ? Color(colorScheme!['primary'] ?? 0xFF2A2A2A)
+        : const Color(0xFF2A2A2A);
+    final secondary = colorScheme != null
+        ? Color(colorScheme!['secondary'] ?? 0xFF1A1A1A)
+        : const Color(0xFF1A1A1A);
+    final detail = colorScheme != null
+        ? Color(colorScheme!['detail'] ?? 0xFF444444)
+        : const Color(0xFF444444);
+
+    final shade = bankSin;
+    final bodyShift = bankSin * 1.0;
+    final dynamicWingSpan = wingSpan * bankCos.abs();
+    final wingDip = bankSin * 2.0;
+
+    // Wide flying wing (no distinct fuselage)
+    final leftWingColor = shade < 0 ? primary : secondary;
+    final rightWingColor = shade > 0 ? primary : secondary;
+
+    final leftSpan = dynamicWingSpan * 1.2 + bankSin * 3;
+    final leftWing = Path()
+      ..moveTo(bodyShift, -16)
+      ..quadraticBezierTo(-leftSpan * 0.4, -8 + wingDip * 0.3, -leftSpan, 4 + wingDip)
+      ..lineTo(-leftSpan + 6, 8 + wingDip)
+      ..quadraticBezierTo(-leftSpan * 0.3, 6 + wingDip * 0.5, bodyShift, 10)
+      ..close();
+    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+
+    final rightSpan = dynamicWingSpan * 1.2 - bankSin * 3;
+    final rightWing = Path()
+      ..moveTo(bodyShift, -16)
+      ..quadraticBezierTo(rightSpan * 0.4, -8 - wingDip * 0.3, rightSpan, 4 - wingDip)
+      ..lineTo(rightSpan - 6, 8 - wingDip)
+      ..quadraticBezierTo(rightSpan * 0.3, 6 - wingDip * 0.5, bodyShift, 10)
+      ..close();
+    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+
+    // Center body section
+    final centerBody = Path()
+      ..moveTo(bodyShift - 4, -12)
+      ..lineTo(bodyShift - 3, 8)
+      ..lineTo(bodyShift + 3, 8)
+      ..lineTo(bodyShift + 4, -12)
+      ..close();
+    canvas.drawPath(centerBody, Paint()..color = detail);
+
+    // Sawtooth trailing edge (stealth feature)
+    final sawtoothPaint = Paint()
+      ..color = secondary
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+    final sawtoothPath = Path()
+      ..moveTo(-leftSpan + 6, 8 + wingDip)
+      ..lineTo(-leftSpan * 0.6, 9 + wingDip * 0.6)
+      ..lineTo(-leftSpan * 0.3, 8 + wingDip * 0.4)
+      ..lineTo(bodyShift - 3, 9)
+      ..lineTo(bodyShift + 3, 9)
+      ..lineTo(rightSpan * 0.3, 8 - wingDip * 0.4)
+      ..lineTo(rightSpan * 0.6, 9 - wingDip * 0.6)
+      ..lineTo(rightSpan - 6, 8 - wingDip);
+    canvas.drawPath(sawtoothPath, sawtoothPaint);
+
+    // Cockpit (barely visible)
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(bodyShift, -8),
+        width: 3,
+        height: 4,
+      ),
+      Paint()..color = const Color(0xFF333333),
+    );
+  }
+
+  /// Red Baron triplane - three stacked wings.
+  void _renderTriplane(Canvas canvas, double bankCos, double bankSin) {
+    final primary = colorScheme != null
+        ? Color(colorScheme!['primary'] ?? 0xFFCC3333)
+        : const Color(0xFFCC3333);
+    final secondary = colorScheme != null
+        ? Color(colorScheme!['secondary'] ?? 0xFF8B0000)
+        : const Color(0xFF8B0000);
+    final detail = colorScheme != null
+        ? Color(colorScheme!['detail'] ?? 0xFF1A1A1A)
+        : const Color(0xFF1A1A1A);
+
+    final shade = bankSin;
+    final bodyShift = bankSin * 1.5;
+    final dynamicWingSpan = wingSpan * bankCos.abs();
+    final wingDip = bankSin * 3.0;
+
+    // Fuselage (similar to bi-plane but more angular)
+    final fuselagePath = Path()
+      ..moveTo(bodyShift, -16)
+      ..quadraticBezierTo(4 + bodyShift, -12, 4 + bodyShift, -2)
+      ..quadraticBezierTo(3 + bodyShift, 10, 2 + bodyShift, 16)
+      ..quadraticBezierTo(bodyShift, 17, -2 + bodyShift, 16)
+      ..quadraticBezierTo(-3 + bodyShift, 10, -4 + bodyShift, -2)
+      ..quadraticBezierTo(-4 + bodyShift, -12, bodyShift, -16)
+      ..close();
+    canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Three stacked wings (iconic triplane design)
+    final wingColor = shade < 0 
+        ? detail 
+        : Color.lerp(detail, Colors.black, 0.2)!;
+
+    // Top wing (smallest)
+    final topSpan = dynamicWingSpan * 0.7;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset(0, -6 + wingDip * 0.3),
+          width: topSpan * 2,
+          height: 5,
+        ),
+        const Radius.circular(2),
+      ),
+      Paint()..color = wingColor,
+    );
+
+    // Middle wing
+    final midSpan = dynamicWingSpan * 0.85;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset(0, 0 + wingDip * 0.6),
+          width: midSpan * 2,
+          height: 5,
+        ),
+        const Radius.circular(2),
+      ),
+      Paint()..color = wingColor,
+    );
+
+    // Bottom wing (largest)
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset(0, 6 + wingDip),
+          width: dynamicWingSpan * 2,
+          height: 5,
+        ),
+        const Radius.circular(2),
+      ),
+      Paint()..color = wingColor,
+    );
+
+    // Struts connecting wings
+    final strutPaint = Paint()
+      ..color = detail
+      ..strokeWidth = 1.5;
+    for (var x in [-dynamicWingSpan * 0.5, dynamicWingSpan * 0.5]) {
+      canvas.drawLine(Offset(x, -4), Offset(x, 8 + wingDip * 0.5), strutPaint);
+    }
+
+    // Cockpit
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(bodyShift, -8),
+        width: 5,
+        height: 6,
+      ),
+      Paint()..color = const Color(0xFF654321),
+    );
+
+    // Tail
+    final tailPath = Path()
+      ..moveTo(-4, 12)
+      ..lineTo(-4, 16)
+      ..lineTo(4, 16)
+      ..lineTo(4, 12)
+      ..close();
+    canvas.drawPath(tailPath, Paint()..color = wingColor);
+
+    // Red Baron cross emblem
+    canvas.drawLine(
+      Offset(bodyShift - 3, 0),
+      Offset(bodyShift + 3, 0),
+      Paint()
+        ..color = secondary
+        ..strokeWidth = 2.5,
+    );
+    canvas.drawLine(
+      Offset(bodyShift, -3),
+      Offset(bodyShift, 3),
+      Paint()
+        ..color = secondary
+        ..strokeWidth = 2.5,
+    );
+  }
+
+  /// Concorde supersonic - distinctive delta wing and drooping nose.
+  void _renderConcorde(Canvas canvas, double bankCos, double bankSin) {
+    final primary = colorScheme != null
+        ? Color(colorScheme!['primary'] ?? 0xFFF5F5F5)
+        : const Color(0xFFF5F5F5);
+    final secondary = colorScheme != null
+        ? Color(colorScheme!['secondary'] ?? 0xFF1A3A5C)
+        : const Color(0xFF1A3A5C);
+    final detail = colorScheme != null
+        ? Color(colorScheme!['detail'] ?? 0xFFCC3333)
+        : const Color(0xFFCC3333);
+
+    final shade = bankSin;
+    final bodyShift = bankSin * 1.0;
+    final dynamicWingSpan = wingSpan * bankCos.abs();
+    final wingDip = bankSin * 2.5;
+
+    // Delta wing (large triangular wing integrated with fuselage)
+    final leftWingColor = shade < 0 ? primary : Color.lerp(primary, Colors.grey, 0.2)!;
+    final rightWingColor = shade > 0 ? primary : Color.lerp(primary, Colors.grey, 0.2)!;
+
+    final leftSpan = dynamicWingSpan * 0.9 + bankSin * 2;
+    final leftWing = Path()
+      ..moveTo(bodyShift - 2, -16)
+      ..lineTo(-leftSpan, 10 + wingDip)
+      ..lineTo(bodyShift - 2, 14)
+      ..close();
+    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+
+    final rightSpan = dynamicWingSpan * 0.9 - bankSin * 2;
+    final rightWing = Path()
+      ..moveTo(bodyShift + 2, -16)
+      ..lineTo(rightSpan, 10 - wingDip)
+      ..lineTo(bodyShift + 2, 14)
+      ..close();
+    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+
+    // Central fuselage
+    final fuselagePath = Path()
+      ..moveTo(bodyShift, -18)
+      ..quadraticBezierTo(3 + bodyShift, -10, 3 + bodyShift, 0)
+      ..lineTo(2 + bodyShift, 14)
+      ..lineTo(-2 + bodyShift, 14)
+      ..lineTo(-3 + bodyShift, 0)
+      ..quadraticBezierTo(-3 + bodyShift, -10, bodyShift, -18)
+      ..close();
+    canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Drooping nose (Concorde's distinctive feature)
+    canvas.drawLine(
+      Offset(bodyShift, -18),
+      Offset(bodyShift, -20),
+      Paint()
+        ..color = secondary
+        ..strokeWidth = 3.0
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // Four jet engines (two on each side)
+    for (var x in [-leftSpan * 0.4, -leftSpan * 0.6]) {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(x, 8 + wingDip * 0.5),
+          width: 3,
+          height: 4,
+        ),
+        Paint()..color = const Color(0xFF555555),
+      );
+    }
+    for (var x in [rightSpan * 0.4, rightSpan * 0.6]) {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(x, 8 - wingDip * 0.5),
+          width: 3,
+          height: 4,
+        ),
+        Paint()..color = const Color(0xFF555555),
+      );
+    }
+
+    // Accent stripe
+    canvas.drawLine(
+      Offset(bodyShift, -16),
+      Offset(bodyShift, 10),
+      Paint()
+        ..color = detail
+        ..strokeWidth = 2.0,
+    );
+
+    // Cockpit windows
+    for (var y in [-12.0, -10.0, -8.0]) {
+      canvas.drawCircle(
+        Offset(bodyShift, y),
+        1.2,
+        Paint()..color = const Color(0xFF4A90B8),
+      );
+    }
+  }
+
+  /// Seaplane with pontoons for water landing.
+  void _renderSeaplane(Canvas canvas, double bankCos, double bankSin) {
+    // Only extract the colors we actually use (detail for pontoons, secondary for struts).
+    // The primary color and other variables are used by _renderBiPlane() which we delegate to.
+    final secondary = colorScheme != null
+        ? Color(colorScheme!['secondary'] ?? 0xFF2E8B57)
+        : const Color(0xFF2E8B57);
+    final detail = colorScheme != null
+        ? Color(colorScheme!['detail'] ?? 0xFFF5F5F5)
+        : const Color(0xFFF5F5F5);
+
+    final dynamicWingSpan = wingSpan * bankCos.abs();
+    final wingDip = bankSin * 4.0;
+
+    // First render pontoons (below the plane)
+    final pontoonPaint = Paint()..color = detail;
+    final leftPontoon = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: Offset(-dynamicWingSpan * 0.5, 12 + wingDip),
+        width: 6,
+        height: 16,
+      ),
+      const Radius.circular(3),
+    );
+    canvas.drawRRect(leftPontoon, pontoonPaint);
+
+    final rightPontoon = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: Offset(dynamicWingSpan * 0.5, 12 - wingDip),
+        width: 6,
+        height: 16,
+      ),
+      const Radius.circular(3),
+    );
+    canvas.drawRRect(rightPontoon, pontoonPaint);
+
+    // Struts connecting pontoons to wings
+    final strutPaint = Paint()
+      ..color = secondary
+      ..strokeWidth = 2.0;
+    canvas.drawLine(
+      Offset(-dynamicWingSpan * 0.5, 4 + wingDip * 0.7),
+      Offset(-dynamicWingSpan * 0.5, 8 + wingDip),
+      strutPaint,
+    );
+    canvas.drawLine(
+      Offset(dynamicWingSpan * 0.5, 4 - wingDip * 0.7),
+      Offset(dynamicWingSpan * 0.5, 8 - wingDip),
+      strutPaint,
+    );
+
+    // Render the plane body using bi-plane style.
+    // This is safe (no recursion) because _renderBiPlane() doesn't call back
+    // to _renderPlane() - it's a leaf rendering method.
+    _renderBiPlane(canvas, bankCos, bankSin);
+  }
+
+  /// Commercial airliner - wide body with swept wings.
+  void _renderAirliner(Canvas canvas, double bankCos, double bankSin) {
+    final primary = colorScheme != null
+        ? Color(colorScheme!['primary'] ?? 0xFFF5F5F5)
+        : const Color(0xFFF5F5F5);
+    final secondary = colorScheme != null
+        ? Color(colorScheme!['secondary'] ?? 0xFF003580)
+        : const Color(0xFF003580);
+    final detail = colorScheme != null
+        ? Color(colorScheme!['detail'] ?? 0xFFFFCC00)
+        : const Color(0xFFFFCC00);
+
+    final shade = bankSin;
+    final bodyShift = bankSin * 1.0;
+    final dynamicWingSpan = wingSpan * bankCos.abs();
+    final wingDip = bankSin * 2.0;
+
+    // Wide fuselage (airliner body)
+    final fuselagePath = Path()
+      ..moveTo(bodyShift, -17)
+      ..quadraticBezierTo(6 + bodyShift, -12, 6 + bodyShift, 0)
+      ..quadraticBezierTo(5 + bodyShift, 10, 3 + bodyShift, 16)
+      ..lineTo(-3 + bodyShift, 16)
+      ..quadraticBezierTo(-5 + bodyShift, 10, -6 + bodyShift, 0)
+      ..quadraticBezierTo(-6 + bodyShift, -12, bodyShift, -17)
+      ..close();
+    canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Wide swept wings
+    final leftWingColor = shade < 0 
+        ? detail 
+        : Color.lerp(detail, Colors.grey, 0.3)!;
+    final rightWingColor = shade > 0 
+        ? detail 
+        : Color.lerp(detail, Colors.grey, 0.3)!;
+
+    final leftSpan = dynamicWingSpan * 1.1 + bankSin * 2;
+    final leftWing = Path()
+      ..moveTo(-6 + bodyShift, 0)
+      ..quadraticBezierTo(-leftSpan * 0.5, 2 + wingDip * 0.5, -leftSpan, 6 + wingDip)
+      ..lineTo(-leftSpan + 5, 8 + wingDip)
+      ..quadraticBezierTo(-leftSpan * 0.4, 5 + wingDip * 0.5, -5 + bodyShift, 2)
+      ..close();
+    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+
+    final rightSpan = dynamicWingSpan * 1.1 - bankSin * 2;
+    final rightWing = Path()
+      ..moveTo(6 + bodyShift, 0)
+      ..quadraticBezierTo(rightSpan * 0.5, 2 - wingDip * 0.5, rightSpan, 6 - wingDip)
+      ..lineTo(rightSpan - 5, 8 - wingDip)
+      ..quadraticBezierTo(rightSpan * 0.4, 5 - wingDip * 0.5, 5 + bodyShift, 2)
+      ..close();
+    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+
+    // Engines under wings
+    for (var x in [-leftSpan * 0.4, -leftSpan * 0.7]) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(x, 8 + wingDip * 0.6),
+            width: 4,
+            height: 7,
+          ),
+          const Radius.circular(2),
+        ),
+        Paint()..color = const Color(0xFF888888),
+      );
+    }
+    for (var x in [rightSpan * 0.4, rightSpan * 0.7]) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(x, 8 - wingDip * 0.6),
+            width: 4,
+            height: 7,
+          ),
+          const Radius.circular(2),
+        ),
+        Paint()..color = const Color(0xFF888888),
+      );
+    }
+
+    // Tail section
+    final tailPath = Path()
+      ..moveTo(-3, 14)
+      ..lineTo(-2, 16)
+      ..lineTo(2, 16)
+      ..lineTo(3, 14)
+      ..close();
+    canvas.drawPath(tailPath, Paint()..color = detail);
+
+    // Vertical stabilizer
+    final finPath = Path()
+      ..moveTo(bodyShift, 12)
+      ..quadraticBezierTo(-2 + bodyShift, 14, bodyShift, 17)
+      ..quadraticBezierTo(2 + bodyShift, 14, bodyShift, 12)
+      ..close();
+    canvas.drawPath(finPath, Paint()..color = secondary);
+
+    // Cockpit windows
+    for (var y in [-13.0, -11.0, -9.0, -7.0]) {
+      canvas.drawCircle(
+        Offset(bodyShift + 2, y),
+        0.8,
+        Paint()..color = const Color(0xFF4A90B8),
+      );
+      canvas.drawCircle(
+        Offset(bodyShift - 2, y),
+        0.8,
+        Paint()..color = const Color(0xFF4A90B8),
+      );
+    }
+
+    // Airline stripe
+    canvas.drawLine(
+      Offset(bodyShift - 4, -8),
+      Offset(bodyShift - 4, 12),
+      Paint()
+        ..color = secondary
+        ..strokeWidth = 2.5,
     );
   }
 

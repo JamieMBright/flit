@@ -312,6 +312,7 @@ class FlitGame extends FlameGame
         },
         colorScheme: planeColorScheme,
         wingSpan: planeWingSpan ?? 26.0,
+        equippedPlaneId: equippedPlaneId,
       );
       await add(_plane);
 
