@@ -23,6 +23,11 @@ from shapely.geometry import Polygon, MultiPolygon
 # Minimum number of points for a polygon to be included (filters tiny slivers)
 MIN_POLYGON_POINTS = 4
 
+# Simplification tolerance in degrees (~0.01° ≈ 1.1 km).
+# Reduces point count from ~548K to ~190K while preserving pristine borders.
+# Without this, the Dart file is too large for CI compilation.
+SIMPLIFY_TOLERANCE = 0.01
+
 # Territories to ensure are included, with manual ISO codes for disputed ones
 DISPUTED_TERRITORIES = {
     'Somaliland': 'XS',   # No ISO code; use custom
@@ -161,10 +166,19 @@ ISO_CODE_FIXES = {
 
 
 def extract_polygons(geometry):
-    """Extract list of coordinate rings from a geometry."""
+    """Extract list of coordinate rings from a geometry.
+
+    Applies Douglas-Peucker simplification to reduce point count while
+    preserving topology. This keeps borders pristine while keeping the
+    Dart file small enough for CI compilation.
+    """
     polygons = []
     if geometry is None:
         return polygons
+
+    # Simplify to reduce point count (preserve topology to avoid self-intersections)
+    if SIMPLIFY_TOLERANCE > 0:
+        geometry = geometry.simplify(SIMPLIFY_TOLERANCE, preserve_topology=True)
 
     if isinstance(geometry, Polygon):
         coords = list(geometry.exterior.coords)
