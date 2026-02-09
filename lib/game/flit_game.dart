@@ -328,7 +328,7 @@ class FlitGame extends FlameGame
     //   uv.y += tiltDown       (chase-camera tilt: 0.25)
     // Inverse: fragCoord.x = uvX * res.y + 0.5 * res.x
     //          fragCoord.y = -(uvY - tiltDown) * res.y + 0.5 * res.y
-    const tiltDown = 0.25; // Must match globe.frag cameraRayDir tiltDown
+    const tiltDown = -0.25; // Must match globe.frag cameraRayDir tiltDown
     final screenX = uvX * size.y + size.x * 0.5;
     final screenY = -(uvY - tiltDown) * size.y + size.y * 0.5;
 
@@ -606,12 +606,13 @@ class FlitGame extends FlameGame
       _heading += poleTurnStrength * 0.8 * dt;
     }
 
-    // Clear waymarker when plane arrives within ~1° of it
+    // Clear waymarker when plane arrives within ~1° of it.
+    // Snap turn to zero immediately to prevent post-arrival drift.
     if (_waymarker != null) {
       final distToWaymarker = _greatCircleDistDeg(_worldPosition, _waymarker!);
       if (distToWaymarker < 1.0) {
         _waymarker = null;
-        _plane.releaseTurn();
+        _plane.snapStraight();
       }
     }
 
@@ -734,7 +735,29 @@ class FlitGame extends FlameGame
   ///   - 0.6s+ hold: 1.0 strength (full turn)
   /// This makes short taps produce gentle corrections and holds produce
   /// sweeping arcs.
+  ///
+  /// On web, key-up events can be unreliable (browser steals focus, etc.).
+  /// We poll HardwareKeyboard each frame to detect stale key state.
   void _updateTurnInput(double dt) {
+    // Poll actual keyboard state every frame (more reliable than events on web).
+    final keys = HardwareKeyboard.instance.logicalKeysPressed;
+    int polledDir = 0;
+    if (keys.contains(LogicalKeyboardKey.arrowLeft) ||
+        keys.contains(LogicalKeyboardKey.keyA)) {
+      polledDir -= 1;
+    }
+    if (keys.contains(LogicalKeyboardKey.arrowRight) ||
+        keys.contains(LogicalKeyboardKey.keyD)) {
+      polledDir += 1;
+    }
+
+    // If the polled state disagrees with our cached state, force update.
+    // This catches missed key-up events on web.
+    if (polledDir != _keyTurnDir) {
+      _keyTurnHoldTime = polledDir != 0 ? _keyTurnHoldTime : 0.0;
+      _keyTurnDir = polledDir;
+    }
+
     // Combine keyboard and button input (button overrides keyboard).
     final dir = _buttonTurnDir != 0 ? _buttonTurnDir : _keyTurnDir;
 
