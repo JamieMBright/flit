@@ -842,7 +842,7 @@ flutter run -d chrome --enable-experiment=native-assets
 git push origin main  # triggers GitHub Action
 
 # Check error telemetry
-curl -H "X-API-Key: $VERCEL_KEY" https://flit-errors.vercel.app/api/errors?limit=10
+curl -H "X-API-Key: $VERCEL_KEY" https://flit-olive.vercel.app/api/errors?limit=10
 
 # Fetch errors into repo
 gh workflow run fetch-errors.yml

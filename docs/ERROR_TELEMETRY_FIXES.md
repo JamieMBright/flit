@@ -121,7 +121,7 @@ Added debug logging (only active in debug builds):
 Example output:
 ```
 [ErrorService] Initialized:
-[ErrorService]   Endpoint: https://flit-errors.vercel.app/api/errors
+[ErrorService]   Endpoint: https://flit-olive.vercel.app/api/errors
 [ErrorService]   API Key: SET (32 chars)
 [ErrorService]   Session ID: abc123-def456
 
@@ -198,7 +198,7 @@ Check errors via API:
 ```bash
 # Get recent errors (requires API key)
 curl -H "X-API-Key: $KEY" \
-  "https://flit-errors.vercel.app/api/errors?limit=10"
+  "https://flit-olive.vercel.app/api/errors?limit=10"
 
 # Expected response:
 {
@@ -277,7 +277,7 @@ The app uses these environment variables (passed via `--dart-define`):
 
 ```yaml
 # In GitHub Actions deploy.yml
---dart-define=ERROR_ENDPOINT=https://flit-errors.vercel.app/api/errors
+--dart-define=ERROR_ENDPOINT=https://flit-olive.vercel.app/api/errors
 --dart-define=VERCEL_ERRORS_API_KEY=${{ secrets.VERCEL_ERRORS_API_KEY }}
 ```
 

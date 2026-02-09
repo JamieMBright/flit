@@ -258,7 +258,7 @@ dart format lib/ test/ --fix # Auto-fix formatting
 flutter analyze              # Static analysis
 
 # Error Telemetry
-curl -H "X-API-Key: $KEY" https://flit-errors.vercel.app/api/errors?limit=10
+curl -H "X-API-Key: $KEY" https://flit-olive.vercel.app/api/errors?limit=10
 gh workflow run fetch-errors.yml
 ```
 

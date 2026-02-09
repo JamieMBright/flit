@@ -83,7 +83,7 @@ typedef ErrorSender = Future<bool> Function({
 /// ```dart
 /// final errorService = ErrorService.instance;
 /// errorService.initialize(
-///   apiEndpoint: 'https://flit-errors.vercel.app/api/errors',
+///   apiEndpoint: 'https://flit-olive.vercel.app/api/errors',
 ///   apiKey: const String.fromEnvironment('VERCEL_ERRORS_API_KEY'),
 /// );
 ///
