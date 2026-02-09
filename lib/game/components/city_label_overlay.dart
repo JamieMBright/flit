@@ -311,7 +311,7 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
     } catch (e, st) {
       // Silently fail high-alt labels but report to telemetry for debugging.
       final log = GameLog.instance;
-      log.warning('city_overlay', 'High altitude city rendering failed',
+      log.error('city_overlay', 'High altitude city rendering failed',
         error: e,
         stackTrace: st,
         data: {'altitude': altitude.toStringAsFixed(2)},
