@@ -81,8 +81,9 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   static const double _maxBankAngle = 1.3;
 
   /// How fast the turn decays when the player releases (per-second rate).
-  /// Higher = faster decay. 3.0 means ~0.3 seconds to coast to stop.
-  static const double _turnDecayRate = 3.0;
+  /// Higher = faster decay. 6.0 means ~0.15 seconds to snap straight,
+  /// preventing residual heading drift toward poles.
+  static const double _turnDecayRate = 6.0;
 
   /// Current visual bank angle (smoothed)
   double _currentBank = 0;
@@ -145,7 +146,8 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       // Exponential decay: multiply by e^(-rate * dt) each frame
       _turnDirection *= exp(-_turnDecayRate * dt);
       // Snap to zero when close enough to avoid endless micro-turns
-      if (_turnDirection.abs() < 0.01) _turnDirection = 0;
+      // and prevent residual polar drift.
+      if (_turnDirection.abs() < 0.05) _turnDirection = 0;
     }
     // Clamp to prevent infinite spinning from accumulated input
     _turnDirection = _turnDirection.clamp(-1.0, 1.0);
