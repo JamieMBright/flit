@@ -84,6 +84,10 @@ class Clue {
 
   /// Generate a random clue for a country, with validation to avoid "Unknown" data.
   ///
+  /// When [allowedTypes] is provided (e.g. from a daily challenge theme),
+  /// only those clue types will be considered. This overrides the
+  /// [preferredClueType]/[clueBoost] mechanism.
+  ///
   /// When [preferredClueType] and [clueBoost] are provided, the preferred
   /// type has [clueBoost]% more chance of being selected (e.g. clueBoost=5
   /// gives the preferred type a 5 percentage-point bonus).
@@ -91,8 +95,19 @@ class Clue {
     String countryCode, {
     String? preferredClueType,
     int clueBoost = 0,
+    Set<String>? allowedTypes,
   }) {
-    const types = ClueType.values;
+    // Determine the pool of clue types to draw from.
+    final List<ClueType> typePool;
+    if (allowedTypes != null && allowedTypes.isNotEmpty) {
+      typePool = ClueType.values
+          .where((t) => allowedTypes.contains(t.name))
+          .toList();
+    } else {
+      typePool = ClueType.values.toList();
+    }
+    // If the filter left nothing valid, fall back to all types.
+    final types = typePool.isEmpty ? ClueType.values : typePool;
     final random = Random();
     final triedTypes = <ClueType>{};
     const maxRetries = 10;
