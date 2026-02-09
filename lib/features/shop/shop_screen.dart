@@ -1254,6 +1254,19 @@ class _CompanionPreview extends StatelessWidget {
 // =============================================================================
 // Plane Preview Painter  (CustomPaint for distinct plane silhouettes)
 // =============================================================================
+//
+// NOTE: These rendering methods use simplified 2D shapes for shop previews.
+// The in-game PlaneComponent uses more advanced 3D perspective rendering with
+// banking, foreshortening, and dynamic lighting. The shop previews are flat
+// top-down views without these effects.
+//
+// TODO: Refactor to share rendering logic between shop and gameplay by:
+//   1. Extracting PlaneComponent render methods to static utility functions
+//   2. Passing bankCos=1.0, bankSin=0.0 for level flight in shop previews
+//   3. Or creating a PlaneRenderer class that both can use
+//
+// For now, shop shows simplified silhouettes while gameplay shows full 3D.
+// =============================================================================
 
 class PlanePainter extends CustomPainter {
   PlanePainter({required this.planeId, this.colorScheme});
