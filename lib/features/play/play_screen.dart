@@ -212,17 +212,36 @@ class _PlayScreenState extends State<PlayScreen> {
       _hintTier++;
 
       if (_hintTier == 1) {
-        // Tier 1: Cycle to a different clue
-        _currentClue = Clue.random(
-          _session!.targetCountry.code,
-          preferredClueType: widget.preferredClueType,
-          clueBoost: widget.clueBoost,
-          allowedTypes: widget.enabledClueTypes,
-        );
-        _log.info('hint', 'Tier 1: Clue cycled', data: {
-          'target': _session!.targetName,
-          'newClueType': _currentClue!.type.name,
-        });
+        // Tier 1: Cycle to a different clue type.
+        // Try up to 5 times to get a different type than the current one.
+        final previousType = _currentClue?.type;
+        Clue? newClue;
+        for (var i = 0; i < 5; i++) {
+          final candidate = Clue.random(
+            _session!.targetCountry.code,
+            preferredClueType: widget.preferredClueType,
+            clueBoost: widget.clueBoost,
+            allowedTypes: widget.enabledClueTypes,
+          );
+          if (candidate.type != previousType || i == 4) {
+            newClue = candidate;
+            break;
+          }
+        }
+        if (newClue != null && newClue.type != previousType) {
+          _currentClue = newClue;
+          _log.info('hint', 'Tier 1: Clue cycled', data: {
+            'target': _session!.targetName,
+            'newClueType': _currentClue!.type.name,
+          });
+        } else {
+          // Only one clue type available — skip directly to tier 2 (reveal).
+          _hintTier = 2;
+          _revealedCountry = _session!.targetName;
+          _log.info('hint', 'Tier 1 skipped to Tier 2: only one clue type', data: {
+            'target': _session!.targetName,
+          });
+        }
       } else if (_hintTier == 2) {
         // Tier 2: Reveal the country name
         _revealedCountry = _session!.targetName;
@@ -341,11 +360,14 @@ class _PlayScreenState extends State<PlayScreen> {
   void _checkProximity() {
     if (_session == null || _session!.isCompleted) return;
 
-    // Proximity detection: near target at ANY altitude.
-    // Solution is purely positional — fly into the target area to complete.
-    // Low altitude is only a visual/speed change, not a gameplay gate.
-    // 25 units = 2.5° ≈ 280km — feels right at the zoomed-in view.
-    if (_game.isNearTarget(threshold: 25)) {
+    // Two ways to complete: proximity to target point OR entering the
+    // target country's borders. The border check allows high-altitude
+    // fly-over to register — the player shouldn't need to descend.
+    final nearTarget = _game.isNearTarget(threshold: 25);
+    final inTargetCountry = _game.currentCountryName != null &&
+        _game.currentCountryName == _session!.targetName;
+
+    if (nearTarget || inTargetCountry) {
       if (_isMultiRound && !_isFinalRound) {
         _advanceRound();
       } else {

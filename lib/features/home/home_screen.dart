@@ -28,7 +28,7 @@ class HomeScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 28),
                 child: Column(
                   children: [
-                    const Spacer(flex: 2),
+                    const Spacer(flex: 3),
                     // Title
                     const Text(
                       'FLIT',
@@ -49,9 +49,9 @@ class HomeScreen extends StatelessWidget {
                         letterSpacing: 3,
                       ),
                     ),
-                    const Spacer(flex: 3),
+                    const Spacer(flex: 2),
                     _buildMenuButtons(context),
-                    const SizedBox(height: 48),
+                    const Spacer(flex: 1),
                   ],
                 ),
               ),

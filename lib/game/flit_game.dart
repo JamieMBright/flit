@@ -159,7 +159,7 @@ class FlitGame extends FlameGame
   /// The shader Y-flip + these offsets naturally project the plane
   /// to approximately its fixed screen position (y ≈ 72%).
   static const double _cameraOffsetHigh = 11.0;
-  static const double _cameraOffsetLow = 3.2;
+  static const double _cameraOffsetLow = 4.5;
 
   /// Whether this is the first update (skip lerp, snap camera heading).
   bool _cameraFirstUpdate = true;
@@ -283,8 +283,10 @@ class FlitGame extends FlameGame
     // Globe occlusion check: hide points on the far side of the globe.
     // For a unit sphere, a surface point P is visible from camera C
     // iff dot(P, C) > 1.0 (geometric horizon test).
+    // Use 1.05 threshold to exclude points near the limb that would
+    // overlap with the atmosphere rim glow rendered by the shader.
     final dotPC = px * cam.cameraX + py * cam.cameraY + pz * cam.cameraZ;
-    if (dotPC <= 1.0) {
+    if (dotPC <= 1.05) {
       return Vector2(-1000, -1000);
     }
 
@@ -607,7 +609,7 @@ class FlitGame extends FlameGame
     // When flying straight, compute the forward bearing at the new position
     // so the plane follows a great circle instead of a rhumb line (constant
     // heading on a sphere spirals toward the poles).
-    if (_plane.turnDirection.abs() > 0.001) {
+    if (_plane.turnDirection.abs() > 0.01) {
       _heading += _plane.turnDirection * _plane.currentTurnRate * dt;
     } else {
       // Great-circle heading correction: compute the bearing at the
@@ -664,6 +666,9 @@ class FlitGame extends FlameGame
     // contrails and map features. Works for both Canvas and shader renderers.
     final projectedPlane = worldToScreen(_worldPosition);
     if (projectedPlane.x > -500) {
+      // Clamp Y so the plane never drops off the bottom of the screen.
+      // Allow up to 90% of screen height (leaves room for HUD buttons).
+      projectedPlane.y = projectedPlane.y.clamp(size.y * 0.05, size.y * 0.90);
       _plane.position = projectedPlane;
     } else {
       // Off-screen fallback (shouldn't happen with camera offset system)
@@ -694,7 +699,9 @@ class FlitGame extends FlameGame
     }
 
     // Compute a point ahead of the plane along the camera heading direction.
-    final offsetDeg = _plane.isHighAltitude ? _cameraOffsetHigh : _cameraOffsetLow;
+    // Use continuous altitude for smooth offset interpolation.
+    final alt = _plane.continuousAltitude;
+    final offsetDeg = _cameraOffsetLow + alt * (_cameraOffsetHigh - _cameraOffsetLow);
 
     // Reduce camera offset near poles to prevent oscillation
     final latAbs = _worldPosition.y.abs();
@@ -1010,6 +1017,18 @@ class FlitGame extends FlameGame
           event.logicalKey == LogicalKeyboardKey.arrowDown) {
         _plane.toggleAltitude();
         AudioManager.instance.playSfx(SfxType.altitudeChange);
+      }
+
+      // Speed controls: 1/2/3 keys (with or without ctrl)
+      if (event.logicalKey == LogicalKeyboardKey.digit1 ||
+          event.logicalKey == LogicalKeyboardKey.numpad1) {
+        setFlightSpeed(FlightSpeed.slow);
+      } else if (event.logicalKey == LogicalKeyboardKey.digit2 ||
+          event.logicalKey == LogicalKeyboardKey.numpad2) {
+        setFlightSpeed(FlightSpeed.medium);
+      } else if (event.logicalKey == LogicalKeyboardKey.digit3 ||
+          event.logicalKey == LogicalKeyboardKey.numpad3) {
+        setFlightSpeed(FlightSpeed.fast);
       }
     }
 
