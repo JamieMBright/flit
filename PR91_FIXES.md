@@ -80,16 +80,20 @@ This is a significant refactor and is documented as a TODO in `lib/features/shop
 **Files Changed**:
 - `lib/features/shop/shop_screen.dart` - Added documentation comments explaining the limitation
 
-### 6. Land Texture Appearance (Incomplete Description)
-**Problem**: "As land texture comes into view from top of screen" (description was cut off)
+### 6. Land Texture Appearance (Fixed)
+**Problem**: "As land texture comes into view from top of screen" - Land textures were rendering outside the globe disk, appearing in the atmosphere and space.
 
-**Analysis**: 
-Without the complete description, it's unclear what the specific issue is. Possible interpretations:
-- Texture orientation is incorrect (Y-axis flip issue)
-- Texture streaming/loading appears from top first (loading order)
-- Globe rotation shows land appearing from an unexpected direction
+**Root Cause**: The shader's glancing angle check occurred AFTER texture sampling, and the threshold (0.05) was too permissive. This allowed textures to be sampled and rendered even when viewing the extreme edges of the globe where only atmosphere should be visible.
 
-**Status**: Needs clarification from the issue reporter to understand and fix.
+**Fix**:
+1. Moved the glancing angle check to occur BEFORE texture sampling in the shader
+2. Increased the threshold from 0.05 to 0.15 for a stricter boundary definition
+3. Early return when outside the globe disk prevents any texture sampling
+
+Now textures only render within the visible central disk of the globe, with pure atmosphere/space rendering outside that boundary.
+
+**Files Changed**:
+- `shaders/globe.frag` - Reordered logic and adjusted threshold
 
 ## Testing Recommendations
 
@@ -117,8 +121,14 @@ Before merging these fixes, please test:
 
 ## Summary
 
-**Fixed**: 4 out of 7 issues
-**Documented**: 2 issues need further work or clarification
-**Incomplete**: 1 issue description was cut off
+**Fixed**: 6 out of 7 issues
+**Documented**: 1 issue needs architectural refactor
 
-All critical gameplay issues (waypoint tapping, contrails, globe size, error handling) have been addressed. The remaining issues are either architectural (shop rendering) or need clarification (texture appearance).
+All critical gameplay and rendering issues have been addressed:
+- Waypoint tapping coordinates
+- Contrail positioning at wing tips
+- Globe viewport sizing
+- Navigation error handling
+- Land texture boundaries (no textures outside globe disk)
+
+The remaining issue (shop rendering differences) requires extracting shared rendering logic between the shop preview and gameplay components.
