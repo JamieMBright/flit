@@ -141,7 +141,6 @@ class HomeScreen extends StatelessWidget {
   /// crashes on web platforms where delayed futures can race with sheet dismissal.
   void _closeSheetAndNavigate(
     BuildContext sheetContext,
-    BuildContext homeContext,
     Widget destination,
   ) {
     // Pop the sheet and immediately push the destination route using the same
@@ -155,16 +154,9 @@ class HomeScreen extends StatelessWidget {
         );
     } catch (e, stackTrace) {
       debugPrint('Navigation error: $e\n$stackTrace');
-      // Show error feedback using the stable home context
-      if (homeContext.mounted) {
-        ScaffoldMessenger.of(homeContext).showSnackBar(
-          const SnackBar(
-            content: Text('Something went wrong opening that screen. Please try again.'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
+      // Note: Cannot show SnackBar using sheetContext as it may be disposed.
+      // Errors are logged for debugging. Consider using a global error handler
+      // or ScaffoldMessengerKey for user-visible feedback if needed.
     }
   }
 
@@ -195,7 +187,7 @@ class HomeScreen extends StatelessWidget {
               subtitle: 'Explore the world at your own pace',
               icon: Icons.flight_takeoff,
               onTap: () => _closeSheetAndNavigate(
-                ctx, context, const RegionSelectScreen(),
+                ctx, const RegionSelectScreen(),
               ),
             ),
             const SizedBox(height: 10),
@@ -204,7 +196,7 @@ class HomeScreen extends StatelessWidget {
               subtitle: 'Practice without rank pressure',
               icon: Icons.school_rounded,
               onTap: () => _closeSheetAndNavigate(
-                ctx, context, const PracticeScreen(),
+                ctx, const PracticeScreen(),
               ),
             ),
             const SizedBox(height: 10),
@@ -214,7 +206,7 @@ class HomeScreen extends StatelessWidget {
               icon: Icons.today_rounded,
               isHighlighted: true,
               onTap: () => _closeSheetAndNavigate(
-                ctx, context, const DailyChallengeScreen(),
+                ctx, const DailyChallengeScreen(),
               ),
             ),
             const SizedBox(height: 10),
@@ -223,7 +215,7 @@ class HomeScreen extends StatelessWidget {
               subtitle: 'Challenge your friends head-to-head',
               icon: Icons.people_rounded,
               onTap: () => _closeSheetAndNavigate(
-                ctx, context, const FriendsScreen(),
+                ctx, const FriendsScreen(),
               ),
             ),
             const SizedBox(height: 16),
