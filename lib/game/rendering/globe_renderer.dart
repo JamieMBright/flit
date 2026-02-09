@@ -78,8 +78,8 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
 
     _time += dt;
 
-    // -- Update camera from the chase camera offset position --
-    final camPos = gameRef.cameraPosition;
+    // -- Update camera from the behind-plane chase camera position --
+    final camPos = gameRef.shaderCameraPosition;
     final plane = gameRef.plane;
 
     // speedFraction: ratio of current speed to max speed.

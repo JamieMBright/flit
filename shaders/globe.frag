@@ -366,16 +366,14 @@ void main() {
     vec3 ro = uCameraPos;
 
     // =======================================================================
-    // BACKGROUND: Sky + Stars + Sun (ray-miss path)
+    // BACKGROUND: Black space + Stars + Sun (ray-miss path)
     // =======================================================================
 
-    vec3 skyColor = atmosphere(rayDir, uSunDir);
     vec3 stars    = starField(rayDir, uTime);
     vec3 sun      = sunDisc(rayDir, uSunDir);
 
-    // Stars visible only on the night side of the sky
-    float skyDayFactor = smoothstep(-0.1, 0.2, uSunDir.y);
-    vec3 background = skyColor + stars * (1.0 - skyDayFactor) + sun;
+    // Black space with stars always visible and sun disc
+    vec3 background = stars + sun;
 
     // =======================================================================
     // V5: CLOUD SHELL INTERSECTION (outer sphere)
