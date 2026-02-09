@@ -10,15 +10,15 @@ import '../../core/utils/game_log.dart';
 import '../flit_game.dart';
 import '../map/country_data.dart';
 
-/// Renders climate-coloured country fills and border outlines when the shader
-/// renderer is active.
+/// Renders country border outlines when the shader renderer is active.
 ///
 /// The shader renders a satellite-textured globe but cannot draw vector data.
 /// This overlay projects [CountryData.countries] polygons onto the screen
-/// with semi-transparent Köppen-Geiger climate fills and border strokes.
+/// as border strokes only — the satellite texture provides all the visual
+/// geographic context, so no climate fills are needed.
 ///
 /// Rendering budget scales with altitude to prevent canvas overload on iOS
-/// Safari, where large filled paths at low altitude kill the web worker.
+/// Safari, where large paths at low altitude kill the web worker.
 class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
   @override
   void render(Canvas canvas) {
@@ -35,60 +35,43 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       final int maxCountries;
       final int maxTotalPoints;
       final int maxPointsPerPoly;
-      final bool drawFills;
 
       if (kIsWeb) {
         if (continuousAlt < 0.3) {
-          // Very low altitude: borders only, minimal countries
           maxCountries = 4;
           maxTotalPoints = 400;
           maxPointsPerPoly = 15;
-          drawFills = false;
         } else if (continuousAlt < 0.6) {
-          // Mid altitude
           maxCountries = 8;
           maxTotalPoints = 800;
           maxPointsPerPoly = 20;
-          drawFills = true;
         } else {
-          // High altitude
           maxCountries = 12;
           maxTotalPoints = 1200;
           maxPointsPerPoly = 30;
-          drawFills = true;
         }
       } else {
         if (continuousAlt < 0.3) {
           maxCountries = 15;
           maxTotalPoints = 2000;
           maxPointsPerPoly = 40;
-          drawFills = true;
         } else if (continuousAlt < 0.6) {
           maxCountries = 30;
           maxTotalPoints = 4000;
           maxPointsPerPoly = 50;
-          drawFills = true;
         } else {
           maxCountries = 40;
           maxTotalPoints = 6000;
           maxPointsPerPoly = 60;
-          drawFills = true;
         }
       }
-
-      // Climate fill opacity — visible at all altitudes, stronger at low alt.
-      final fillOpacity = !drawFills
-          ? 0.0
-          : continuousAlt >= 0.6
-              ? (0.30 * (1.0 - (continuousAlt - 0.6) / 0.4)).clamp(0.05, 0.30)
-              : (0.30 + 0.20 * (1.0 - continuousAlt / 0.6)).clamp(0.0, 0.50);
 
       // Border stroke opacity - maintain minimum visibility at high altitude.
       final borderOpacity = continuousAlt >= 0.6
           ? (0.5 * (1.0 - (continuousAlt - 0.6) / 0.4)).clamp(0.15, 0.5)
           : (0.5 + 0.5 * (1.0 - continuousAlt / 0.6)).clamp(0.0, 1.0);
 
-      if (fillOpacity < 0.01 && borderOpacity < 0.01) return;
+      if (borderOpacity < 0.01) return;
 
       final borderPaint = Paint()
         ..color = FlitColors.border.withOpacity(borderOpacity * 0.7)
@@ -141,28 +124,6 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
           if (polygon.length < 3) continue;
           if (totalPoints >= maxTotalPoints) break;
 
-          // Compute per-polygon climate color from the polygon's own centroid.
-          // This gives fine-resolution climate variation within large countries
-          // (e.g. mountains vs coasts, northern vs southern regions).
-          Paint? fillPaint;
-          if (drawFills && fillOpacity > 0.01) {
-            final step = (polygon.length > 6) ? polygon.length ~/ 4 : 1;
-            var pLng = 0.0;
-            var pLat = 0.0;
-            var cnt = 0;
-            for (var i = 0; i < polygon.length; i += step) {
-              pLng += polygon[i].x;
-              pLat += polygon[i].y;
-              cnt++;
-            }
-            if (cnt > 0) {
-              pLng /= cnt;
-              pLat /= cnt;
-            }
-            final climateColor = _getClimateColor(pLng, pLat);
-            fillPaint = Paint()..color = climateColor.withOpacity(fillOpacity);
-          }
-
           // Decimate large polygons to keep path complexity manageable.
           final stride = polygon.length > maxPointsPerPoly
               ? (polygon.length / maxPointsPerPoly).ceil()
@@ -202,9 +163,6 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
           if (anyVisible && started) {
             path.close();
-            if (fillPaint != null) {
-              canvas.drawPath(path, fillPaint);
-            }
             canvas.drawPath(path, borderPaint);
             rendered++;
           }
@@ -221,7 +179,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
           'platform': kIsWeb ? 'web' : 'native',
         },
       );
-      
+
       // Report as critical for iOS to ensure immediate flush.
       ErrorService.instance.reportCritical(
         e,
@@ -232,74 +190,10 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
           'isWeb': kIsWeb.toString(),
         },
       );
-      
+
       try {
         gameRef.onError?.call(e, st);
       } catch (_) {}
     }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Köppen-Geiger climate colour classification
-  // ---------------------------------------------------------------------------
-
-  static Color _getClimateColor(double lng, double lat) {
-    final absLat = lat.abs();
-
-    if (absLat > 75) return FlitColors.climateIceCap;
-    if (absLat > 63) return FlitColors.climateTundra;
-    if (absLat > 52) return FlitColors.climateBoreal;
-
-    if (_isDesertRegion(lat, lng)) return FlitColors.climateHotDesert;
-    if (_isSemiAridRegion(lat, lng)) return FlitColors.climateSemiArid;
-
-    if (absLat > 30 && absLat < 45 && _isMediterraneanRegion(lat, lng)) {
-      return FlitColors.climateMediterranean;
-    }
-
-    if (absLat > 35) return FlitColors.climateTemperate;
-    if (absLat > 20) return FlitColors.climateHumidSubtropical;
-    if (absLat > 10) return FlitColors.climateTropicalSavanna;
-
-    return FlitColors.climateTropicalRain;
-  }
-
-  static bool _isDesertRegion(double lat, double lng) {
-    final absLat = lat.abs();
-    if (absLat < 12 || absLat > 38) return false;
-
-    if (lat > 15 && lat < 35 && lng > -15 && lng < 35) return true;
-    if (lat > 15 && lat < 32 && lng > 35 && lng < 60) return true;
-    if (lat > 25 && lat < 40 && lng > 50 && lng < 70) return true;
-    if (lat > 20 && lat < 30 && lng > 68 && lng < 76) return true;
-    if (lat < -20 && lat > -32 && lng > 120 && lng < 145) return true;
-    if (lat > 25 && lat < 35 && lng > -115 && lng < -105) return true;
-    if (lat < -18 && lat > -30 && lng > -72 && lng < -68) return true;
-    if (lat < -15 && lat > -30 && lng > 15 && lng < 25) return true;
-
-    return false;
-  }
-
-  static bool _isSemiAridRegion(double lat, double lng) {
-    final absLat = lat.abs();
-    if (absLat < 10 || absLat > 45) return false;
-
-    if (lat > 10 && lat < 15 && lng > -15 && lng < 40) return true;
-    if (lat > 35 && lat < 50 && lng > 50 && lng < 90) return true;
-    if (lat < -25 && lat > -45 && lng > -70 && lng < -60) return true;
-    if (lat > 5 && lat < 15 && lng > 40 && lng < 52) return true;
-    if (lat < -15 && lat > -25 && lng > 22 && lng < 35) return true;
-
-    return false;
-  }
-
-  static bool _isMediterraneanRegion(double lat, double lng) {
-    if (lat > 30 && lat < 45 && lng > -10 && lng < 40) return true;
-    if (lat > 32 && lat < 40 && lng > -125 && lng < -115) return true;
-    if (lat < -30 && lat > -38 && lng > -73 && lng < -70) return true;
-    if (lat < -30 && lat > -37 && lng > 114 && lng < 120) return true;
-    if (lat < -33 && lat > -35 && lng > 18 && lng < 20) return true;
-
-    return false;
   }
 }

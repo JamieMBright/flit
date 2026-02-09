@@ -324,13 +324,12 @@ class FlitGame extends FlameGame
 
     // Convert to screen coords. Must match the shader's cameraRayDir:
     //   uv = (fragCoord - 0.5 * resolution) / resolution.y
-    //   uv.y = -uv.y          (Flutter y-down flip)
-    //   uv.y += tiltDown       (chase-camera tilt: 0.25)
+    //   uv.y += tiltDown       (chase-camera tilt, no Y-flip)
     // Inverse: fragCoord.x = uvX * res.y + 0.5 * res.x
-    //          fragCoord.y = -(uvY - tiltDown) * res.y + 0.5 * res.y
-    const tiltDown = -0.25; // Must match globe.frag cameraRayDir tiltDown
+    //          fragCoord.y = (uvY - tiltDown) * res.y + 0.5 * res.y
+    const tiltDown = 0.25; // Must match globe.frag cameraRayDir tiltDown
     final screenX = uvX * size.y + size.x * 0.5;
-    final screenY = -(uvY - tiltDown) * size.y + size.y * 0.5;
+    final screenY = (uvY - tiltDown) * size.y + size.y * 0.5;
 
     return Vector2(screenX, screenY);
   }
@@ -587,12 +586,25 @@ class FlitGame extends FlameGame
       (newLat * _rad2deg).clamp(-85.0, 85.0),
     );
 
-    // Update heading based on turn input (left/right only).
-    // Positive sign because: positive turnDirection = turn right (clockwise in nav)
-    // Navigation bearing = heading + π/2, so to turn right (increase bearing),
-    // heading must increase (bearing = heading + π/2 increases when heading increases).
-    // Use dynamic turn rate: slower speeds allow tighter turns.
-    _heading += _plane.turnDirection * _plane.currentTurnRate * dt;
+    // Update heading.
+    //
+    // When actively turning, apply the player's turn rate.
+    // When flying straight, compute the forward bearing at the new position
+    // so the plane follows a great circle instead of a rhumb line (constant
+    // heading on a sphere spirals toward the poles).
+    if (_plane.turnDirection.abs() > 0.001) {
+      _heading += _plane.turnDirection * _plane.currentTurnRate * dt;
+    } else {
+      // Great-circle heading correction: compute the bearing at the
+      // destination that continues the arc.  This is the reverse bearing
+      // from (newLat,newLng) → (lat0,lng0), rotated 180°.
+      final revBearing = atan2(
+        sin(lng0 - newLng) * cosLat0,
+        cos(newLat) * sinLat0 - sin(newLat) * cosLat0 * cos(lng0 - newLng),
+      );
+      // Convert navigation bearing back to heading (heading = bearing - π/2).
+      _heading = (revBearing + pi) - pi / 2;
+    }
 
     // Normalize heading to [-π, π] to prevent accumulation
     while (_heading > pi) { _heading -= 2 * pi; }
