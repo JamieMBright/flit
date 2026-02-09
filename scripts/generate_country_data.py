@@ -23,10 +23,11 @@ from shapely.geometry import Polygon, MultiPolygon
 # Minimum number of points for a polygon to be included (filters tiny slivers)
 MIN_POLYGON_POINTS = 4
 
-# Simplification tolerance in degrees (~0.01° ≈ 1.1 km).
-# Reduces point count from ~548K to ~190K while preserving pristine borders.
-# Without this, the Dart file is too large for CI compilation.
-SIMPLIFY_TOLERANCE = 0.01
+# Simplification tolerance in degrees (~0.05° ≈ 5.5 km).
+# Reduces point count from ~548K to ~63K while keeping borders much sharper
+# than the old 110m data (~6K points). This is ~10x more detailed than before
+# while keeping the Dart file under 2MB for CI compilation.
+SIMPLIFY_TOLERANCE = 0.05
 
 # Territories to ensure are included, with manual ISO codes for disputed ones
 DISPUTED_TERRITORIES = {
