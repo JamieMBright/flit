@@ -4,7 +4,9 @@ import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/services/error_service.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/game_log.dart';
 import '../flit_game.dart';
 import '../map/country_data.dart';
 
@@ -195,7 +197,28 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         }
       }
     } catch (e, st) {
-      // Log errors instead of swallowing silently.
+      // Report errors to telemetry for iOS Safari debugging.
+      final log = GameLog.instance;
+      log.error('border_overlay', 'Country border rendering failed',
+        error: e,
+        stackTrace: st,
+        data: {
+          'altitude': gameRef.plane.continuousAltitude.toStringAsFixed(2),
+          'platform': kIsWeb ? 'web' : 'native',
+        },
+      );
+      
+      // Report as critical for iOS to ensure immediate flush.
+      ErrorService.instance.reportCritical(
+        e,
+        st,
+        context: {
+          'source': 'CountryBorderOverlay.render',
+          'altitude': gameRef.plane.continuousAltitude.toString(),
+          'isWeb': kIsWeb.toString(),
+        },
+      );
+      
       try {
         gameRef.onError?.call(e, st);
       } catch (_) {}
