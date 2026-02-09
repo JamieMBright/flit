@@ -417,14 +417,21 @@ void main() {
     vec3 hitPoint = ro + rayDir * tGlobe;
     vec3 normal   = normalize(hitPoint - GLOBE_ORIGIN);
     vec3 viewDir  = normalize(ro - hitPoint);
-    vec2 uv       = equirectangularUV(hitPoint);
     
     // Check viewing angle - at extreme glancing angles (looking at the edge
-    // of the globe), we should fade to atmosphere rather than showing surface.
-    // This prevents land masses from appearing in what should be pure atmosphere.
+    // of the globe), we blend to atmosphere rather than showing full surface.
+    // This prevents land textures from appearing outside the visible globe disk.
     float viewAngle = dot(viewDir, normal);
-    if (viewAngle < 0.05) {
-        // Very glancing angle - render atmosphere only
+    
+    // Fade surface contribution at glancing angles to avoid hard popping.
+    // Below 0.10: pure atmosphere (no textures sampled for optimization)
+    // 0.10 to 0.20: smooth blend from atmosphere to surface
+    // Above 0.20: full surface detail
+    const float atmosphereOnlyThreshold = 0.10;
+    const float fullSurfaceThreshold = 0.20;
+    
+    if (viewAngle < atmosphereOnlyThreshold) {
+        // Very glancing angle - render atmosphere only, skip texture sampling
         vec3 finalColor = background;
         
         // Atmospheric rim glow for glancing angles
@@ -438,10 +445,14 @@ void main() {
         return;
     }
 
-    // ----- Texture sampling ------------------------------------------------
+    // ----- Texture sampling (only after confirming we're within or near the globe disk) ----
+    vec2 uv         = equirectangularUV(hitPoint);
     vec4 satColor   = texture(uSatellite, uv);
     float heightVal = texture(uHeightmap, uv).r;
     float shoreDist = texture(uShoreDist, uv).r;
+    
+    // Compute surface contribution fade for smooth limb transition
+    float surfaceFade = smoothstep(atmosphereOnlyThreshold, fullSurfaceThreshold, viewAngle);
 
     // ----- Surface classification ------------------------------------------
     bool isOcean = heightVal < SEA_LEVEL;
@@ -670,9 +681,13 @@ void main() {
     // FINAL COMPOSITING
     // =======================================================================
 
+    // Apply surface fade for smooth limb transition
+    // Blend from pure atmosphere (background) to full surface rendering
+    vec3 finalColor = mix(background, surfaceColor, surfaceFade);
+
     // Tone-map to prevent blown-out highlights
-    vec3 finalColor = surfaceColor / (surfaceColor + vec3(1.0)); // Reinhard
-    finalColor = pow(finalColor, vec3(1.0 / 2.2));               // Gamma correction
+    finalColor = finalColor / (finalColor + vec3(1.0)); // Reinhard
+    finalColor = pow(finalColor, vec3(1.0 / 2.2));      // Gamma correction
 
     fragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
 }

@@ -95,6 +95,12 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// At low altitude, interval is scaled down so particles stay dense.
   static const double _contrailIntervalBase = 0.02;
 
+  /// Contrail wing span scale factor.
+  /// Reduces the visual wing span in world-space coordinates to position
+  /// contrails closer to rendered wing tips. Value of 0.5 ensures contrails
+  /// appear to emanate from the wing tips rather than beyond them.
+  static const double _contrailWingSpanScale = 0.5;
+
   /// World position set by FlitGame each frame (lng, lat degrees).
   Vector2 worldPos = Vector2.zero();
 
@@ -1163,7 +1169,9 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final pixelsPerDegree =
         pixelsPerDegreeAtReference * (referenceDistance / currentDistance);
     final pixelsToDegrees = 1.0 / pixelsPerDegree;
-    final wingSpanDegrees = dynamicWingSpan * pixelsToDegrees;
+    // Scale wing span in world-space to position contrails at wing tips.
+    // Using the scale factor brings contrails closer to the rendered wing tips.
+    final wingSpanDegrees = (dynamicWingSpan * _contrailWingSpanScale) * pixelsToDegrees;
 
     final lat0 = worldPos.y * _deg2rad;
     final lng0 = worldPos.x * _deg2rad;

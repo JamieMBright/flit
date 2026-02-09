@@ -75,44 +75,64 @@ class HomeScreen extends StatelessWidget {
           _MenuButton(
             label: 'Leaderboard',
             icon: Icons.leaderboard_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const LeaderboardScreen(),
-              ),
+            onTap: () => _navigateSafely(
+              context,
+              const LeaderboardScreen(),
             ),
           ),
           const SizedBox(height: 10),
           _MenuButton(
             label: 'Profile',
             icon: Icons.person_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const ProfileScreen(),
-              ),
+            onTap: () => _navigateSafely(
+              context,
+              const ProfileScreen(),
             ),
           ),
           const SizedBox(height: 10),
           _MenuButton(
             label: 'Shop',
             icon: Icons.storefront_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const ShopScreen(),
-              ),
+            onTap: () => _navigateSafely(
+              context,
+              const ShopScreen(),
             ),
           ),
           const SizedBox(height: 10),
           _MenuButton(
             label: 'Debug',
             icon: Icons.bug_report_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const DebugScreen(),
-              ),
+            onTap: () => _navigateSafely(
+              context,
+              const DebugScreen(),
             ),
           ),
         ],
       );
+
+  /// Safely navigate to a new screen with error handling.
+  /// Wraps Navigator.push in try-catch to prevent navigation errors from crashing the app.
+  Future<void> _navigateSafely(BuildContext context, Widget destination) async {
+    try {
+      if (!context.mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => destination,
+        ),
+      );
+    } catch (e, stackTrace) {
+      debugPrint('Navigation error: $e\n$stackTrace');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Something went wrong opening that screen. Please try again.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
 
   /// Close the bottom sheet and navigate to [destination].
   ///
@@ -126,11 +146,18 @@ class HomeScreen extends StatelessWidget {
     // Pop the sheet and immediately push the destination route using the same
     // Navigator. This eliminates context validity issues and timing races that
     // occur on iOS PWA when using delayed futures with captured contexts.
-    Navigator.of(sheetContext)
-      ..pop()
-      ..push(
-        MaterialPageRoute<void>(builder: (_) => destination),
-      );
+    try {
+      Navigator.of(sheetContext)
+        ..pop()
+        ..push(
+          MaterialPageRoute<void>(builder: (_) => destination),
+        );
+    } catch (e, stackTrace) {
+      debugPrint('Navigation error: $e\n$stackTrace');
+      // Note: Cannot show SnackBar using sheetContext as it may be disposed.
+      // Errors are logged for debugging. Consider using a global error handler
+      // or ScaffoldMessengerKey for user-visible feedback if needed.
+    }
   }
 
   void _showGameModes(BuildContext context) {
