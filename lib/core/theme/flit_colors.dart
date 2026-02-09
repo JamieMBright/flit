@@ -18,17 +18,25 @@ abstract final class FlitColors {
   static const Color landDesert = Color(0xFFD4C49A);
   static const Color landSnow = Color(0xFFE8E2D6);
 
-  // Köppen-Geiger climate zone colors (earth-tone palette)
-  static const Color climateTropicalRain = Color(0xFF2D6A4F); // Af: deep lush green
-  static const Color climateTropicalSavanna = Color(0xFF7C8B3C); // Aw: olive yellow-green
-  static const Color climateHotDesert = Color(0xFFD4A574); // BWh: warm sand
-  static const Color climateSemiArid = Color(0xFFC8A96E); // BSh/BSk: tan steppe
-  static const Color climateMediterranean = Color(0xFF8B9E6B); // Cs: sage green
-  static const Color climateTemperate = Color(0xFF5C8A5C); // Cf: fresh green
-  static const Color climateHumidSubtropical = Color(0xFF6B9E5C); // Cfa: warm green
-  static const Color climateBoreal = Color(0xFF556B4E); // Dfc: dark sage
-  static const Color climateTundra = Color(0xFF8A9A8E); // ET: grey-green
-  static const Color climateIceCap = Color(0xFFD0D8D4); // EF: near-white
+  // Köppen-Geiger climate zone colors — photorealistic satellite tones.
+  // Chosen to match what each zone looks like on NASA Blue Marble imagery.
+  static const Color climateTropicalRain = Color(0xFF1A5632); // Af: deep emerald (Amazon/Congo)
+  static const Color climateTropicalMonsoon = Color(0xFF2A6840); // Am: rich dark green (SE Asia)
+  static const Color climateTropicalSavanna = Color(0xFF8B7D40); // Aw: olive-tan (E Africa dry season)
+  static const Color climateHotDesert = Color(0xFFD8C090); // BWh: pale sand (Sahara)
+  static const Color climateColdDesert = Color(0xFFA8967A); // BWk: grey-brown (Gobi)
+  static const Color climateHotSemiArid = Color(0xFFB09060); // BSh: warm brown (Sahel)
+  static const Color climateColdSemiArid = Color(0xFF988868); // BSk: muted brown (steppe)
+  static const Color climateMediterranean = Color(0xFF7A8848); // Cs: muted olive (S Europe)
+  static const Color climateOceanic = Color(0xFF487848); // Cfb: rich green (British Isles)
+  static const Color climateHumidSubtropical = Color(0xFF5A8848); // Cfa: warm bright green
+  static const Color climateTemperate = Color(0xFF4A7A4A); // Cf: fresh green
+  static const Color climateHumidContinental = Color(0xFF4A6842); // Dfa/Dfb: mixed forest green
+  static const Color climateBoreal = Color(0xFF384C36); // Dfc: dark conifer green (taiga)
+  static const Color climateTundra = Color(0xFF787870); // ET: grey-brown sparse
+  static const Color climateIceCap = Color(0xFFD4DCE0); // EF: near-white with blue tint
+  // Compatibility alias (used by canvas renderer WorldMap)
+  static const Color climateSemiArid = climateHotSemiArid;
 
   // Border and coastline
   static const Color border = Color(0xFF3D5A3A);

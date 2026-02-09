@@ -210,15 +210,15 @@ vec2 equirectangularUV(vec3 p) {
 // to prevent rolling at non-equatorial latitudes.
 vec3 cameraRayDir(vec2 fragCoord, vec2 resolution, vec3 camPos, vec3 camUp, float fov) {
     vec2 uv = (fragCoord - 0.5 * resolution) / resolution.y;
-    // Flutter fragCoord is y-down; flip Y so camera up maps to screen top.
-    // Without this, the heading direction (camera up) renders at the bottom
-    // of the screen, giving an inverted chase-camera view.
-    uv.y = -uv.y;
-    
-    // Tilt the view upward so the globe surface stretches off the bottom
-    // of the screen and the globe's curvature (horizon) is visible at the
-    // top, near the clue menu. Negative = camera looks slightly up.
-    const float tiltDown = -0.25;
+    // Flutter fragCoord is y-down, so uv.y < 0 at screen top, > 0 at
+    // screen bottom.  Camera "up" aligns with the heading direction,
+    // so positive uv.y (bottom) shows what's ahead of the plane —
+    // a natural chase-camera view (ground below, horizon at top).
+    //
+    // tiltDown > 0 shifts the view toward heading, pushing the globe
+    // disk down so more surface is visible and the curvature / horizon
+    // sits near the top of the screen.
+    const float tiltDown = 0.25;
     uv.y += tiltDown;
     
     float halfFov = tan(fov * 0.5);

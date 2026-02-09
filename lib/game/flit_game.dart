@@ -324,13 +324,12 @@ class FlitGame extends FlameGame
 
     // Convert to screen coords. Must match the shader's cameraRayDir:
     //   uv = (fragCoord - 0.5 * resolution) / resolution.y
-    //   uv.y = -uv.y          (Flutter y-down flip)
-    //   uv.y += tiltDown       (chase-camera tilt: 0.25)
+    //   uv.y += tiltDown       (chase-camera tilt, no Y-flip)
     // Inverse: fragCoord.x = uvX * res.y + 0.5 * res.x
-    //          fragCoord.y = -(uvY - tiltDown) * res.y + 0.5 * res.y
-    const tiltDown = -0.25; // Must match globe.frag cameraRayDir tiltDown
+    //          fragCoord.y = (uvY - tiltDown) * res.y + 0.5 * res.y
+    const tiltDown = 0.25; // Must match globe.frag cameraRayDir tiltDown
     final screenX = uvX * size.y + size.x * 0.5;
-    final screenY = -(uvY - tiltDown) * size.y + size.y * 0.5;
+    final screenY = (uvY - tiltDown) * size.y + size.y * 0.5;
 
     return Vector2(screenX, screenY);
   }
@@ -587,12 +586,25 @@ class FlitGame extends FlameGame
       (newLat * _rad2deg).clamp(-85.0, 85.0),
     );
 
-    // Update heading based on turn input (left/right only).
-    // Positive sign because: positive turnDirection = turn right (clockwise in nav)
-    // Navigation bearing = heading + π/2, so to turn right (increase bearing),
-    // heading must increase (bearing = heading + π/2 increases when heading increases).
-    // Use dynamic turn rate: slower speeds allow tighter turns.
-    _heading += _plane.turnDirection * _plane.currentTurnRate * dt;
+    // Update heading.
+    //
+    // When actively turning, apply the player's turn rate.
+    // When flying straight, compute the forward bearing at the new position
+    // so the plane follows a great circle instead of a rhumb line (constant
+    // heading on a sphere spirals toward the poles).
+    if (_plane.turnDirection.abs() > 0.001) {
+      _heading += _plane.turnDirection * _plane.currentTurnRate * dt;
+    } else {
+      // Great-circle heading correction: compute the bearing at the
+      // destination that continues the arc.  This is the reverse bearing
+      // from (newLat,newLng) → (lat0,lng0), rotated 180°.
+      final revBearing = atan2(
+        sin(lng0 - newLng) * cosLat0,
+        cos(newLat) * sinLat0 - sin(newLat) * cosLat0 * cos(lng0 - newLng),
+      );
+      // Convert navigation bearing back to heading (heading = bearing - π/2).
+      _heading = (revBearing + pi) - pi / 2;
+    }
 
     // Normalize heading to [-π, π] to prevent accumulation
     while (_heading > pi) { _heading -= 2 * pi; }
@@ -830,13 +842,13 @@ class FlitGame extends FlameGame
   // -- Tap-to-waymarker touch handler --
 
   /// Handle tap events to set waypoints for navigation.
-  /// 
+  ///
   /// When the player taps on the globe, we convert the screen coordinates
   /// to a geographic position (lat/lng) and set it as a waymarker. The plane
   /// will then auto-steer toward that position using great-circle navigation.
-  /// 
+  ///
   /// Works with both renderers:
-  /// - Shader renderer: uses ray-casting with camera perspective
+  /// - Shader renderer: ray-cast initial guess + Newton refinement
   /// - Canvas renderer: uses azimuthal projection inverse
   @override
   void onTapUp(TapUpInfo info) {
@@ -844,22 +856,15 @@ class FlitGame extends FlameGame
 
     // Convert screen tap to globe lat/lng.
     Vector2? latLng;
-    
+
     if (_globeRenderer != null) {
-      // Shader renderer: use camera-based ray-casting hit test.
-      final cam = _globeRenderer!.camera;
+      // Shader renderer: ray-cast for an initial guess, then refine
+      // iteratively so the waymarker dot appears exactly at the tap point.
       final screenPoint = Offset(
         info.eventPosition.widget.x,
         info.eventPosition.widget.y,
       );
-      final result = _hitTest.screenToLatLng(
-        screenPoint,
-        Size(size.x, size.y),
-        cam,
-      );
-      if (result != null) {
-        latLng = Vector2(result.dx, result.dy);
-      }
+      latLng = _screenToLatLngRefined(screenPoint);
     } else if (_worldMap != null) {
       // Canvas renderer: use azimuthal projection inverse.
       final screenPoint = Vector2(
@@ -881,6 +886,63 @@ class FlitGame extends FlameGame
         'screenY': info.eventPosition.widget.y.toStringAsFixed(0),
       });
     }
+  }
+
+  /// Convert a screen tap to globe lat/lng using iterative refinement.
+  ///
+  /// 1. Ray-sphere intersection gives an initial geographic guess.
+  /// 2. Newton-Raphson refines the guess until [worldToScreen] projects
+  ///    the lat/lng back to within 1 px of the original tap point.
+  ///
+  /// This guarantees visual consistency: the waymarker dot (rendered via
+  /// [worldToScreen]) always appears exactly where the user tapped,
+  /// regardless of floating-point drift in the inverse projection.
+  Vector2? _screenToLatLngRefined(Offset tap) {
+    final cam = _globeRenderer!.camera;
+
+    // Step 1: ray-sphere intersection for initial guess.
+    final initial = _hitTest.screenToLatLng(tap, Size(size.x, size.y), cam);
+    if (initial == null) return null;
+
+    var lng = initial.dx;
+    var lat = initial.dy;
+
+    // Step 2: iterative Newton-Raphson refinement.
+    for (var iter = 0; iter < 8; iter++) {
+      final proj = _shaderWorldToScreen(Vector2(lng, lat));
+
+      // Off-screen sentinel — the point is behind the camera.
+      if (proj.x < -500) break;
+
+      final errX = proj.x - tap.dx;
+      final errY = proj.y - tap.dy;
+
+      // Converged to sub-pixel accuracy.
+      if (errX.abs() < 0.5 && errY.abs() < 0.5) break;
+
+      // Numerical Jacobian via finite differences.
+      const h = 0.005; // degrees (~500 m)
+      final pLng = _shaderWorldToScreen(Vector2(lng + h, lat));
+      final pLat = _shaderWorldToScreen(Vector2(lng, lat + h));
+
+      // dScreen / d(lng, lat)
+      final j00 = (pLng.x - proj.x) / h; // dSx/dLng
+      final j01 = (pLat.x - proj.x) / h; // dSx/dLat
+      final j10 = (pLng.y - proj.y) / h; // dSy/dLng
+      final j11 = (pLat.y - proj.y) / h; // dSy/dLat
+
+      final det = j00 * j11 - j01 * j10;
+      if (det.abs() < 1e-10) break; // singular near limb
+
+      // Newton step: delta = J^-1 * (-error)
+      final dLng = (-errX * j11 + errY * j01) / det;
+      final dLat = (errX * j10 - errY * j00) / det;
+
+      lng += dLng;
+      lat = (lat + dLat).clamp(-85.0, 85.0);
+    }
+
+    return Vector2(lng, lat);
   }
 
   @override
