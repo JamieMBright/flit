@@ -151,7 +151,7 @@ If more textures needed → pack into RGBA channels or use multi-pass rendering.
 ### Debugging
 ```bash
 # Fetch recent errors from Vercel
-curl -H "X-API-Key: $KEY" https://flit-errors.vercel.app/api/errors?limit=10
+curl -H "X-API-Key: $KEY" https://flit-olive.vercel.app/api/errors?limit=10
 
 # Trigger error log fetch
 gh workflow run fetch-errors.yml

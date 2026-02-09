@@ -70,7 +70,7 @@ flutter run -d chrome \
 
 # Test the endpoint directly with curl.
 # POST an error:
-curl -X POST https://flit-errors.vercel.app/api/errors \
+curl -X POST https://flit-olive.vercel.app/api/errors \
   -H "Content-Type: application/json" \
   -H "X-API-Key: $VERCEL_ERRORS_API_KEY" \
   -d '{
@@ -85,7 +85,7 @@ curl -X POST https://flit-errors.vercel.app/api/errors \
 
 # GET errors:
 curl -H "X-API-Key: $VERCEL_ERRORS_API_KEY" \
-  "https://flit-errors.vercel.app/api/errors?limit=5"
+  "https://flit-olive.vercel.app/api/errors?limit=5"
 ```
 
 You can also create a `.env` file in the project root (already in

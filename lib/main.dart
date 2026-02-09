@@ -31,7 +31,7 @@ void main() {
   errorService.initialize(
     apiEndpoint: const String.fromEnvironment(
       'ERROR_ENDPOINT',
-      defaultValue: 'https://flit-errors.vercel.app/api/errors',
+      defaultValue: 'https://flit-olive.vercel.app/api/errors',
     ),
     apiKey: const String.fromEnvironment('VERCEL_ERRORS_API_KEY'),
   );
