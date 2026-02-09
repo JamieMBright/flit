@@ -135,19 +135,27 @@ def convert_blue_marble():
     """Convert blue_marble.jpg to blue_marble.png, resized."""
     from PIL import Image
 
-    jpg_path = TEXTURES / "blue_marble.jpg"
     png_path = TEXTURES / "blue_marble.png"
+    jpg_path = TEXTURES / "blue_marble.jpg"
 
-    if not jpg_path.exists():
-        print("  blue_marble.jpg not found, skipping")
-        return
-
-    print(f"  blue_marble.jpg -> blue_marble.png ({TARGET_SIZE[0]}x{TARGET_SIZE[1]})")
-    img = Image.open(jpg_path).convert("RGB")
-    img = img.resize(TARGET_SIZE, Image.LANCZOS)
-    img.save(png_path, "PNG")
-    jpg_path.unlink()
-    print(f"    Removed blue_marble.jpg")
+    # Check for existing PNG first (just resize), then JPG (convert + resize)
+    if png_path.exists() and png_path.stat().st_size > 0:
+        img = Image.open(png_path).convert("RGB")
+        if img.size != TARGET_SIZE:
+            print(f"  blue_marble.png: resizing {img.size[0]}x{img.size[1]} -> {TARGET_SIZE[0]}x{TARGET_SIZE[1]}")
+            img = img.resize(TARGET_SIZE, Image.LANCZOS)
+            img.save(png_path, "PNG")
+        else:
+            print("  blue_marble.png already correct size, skipping")
+    elif jpg_path.exists():
+        print(f"  blue_marble.jpg -> blue_marble.png ({TARGET_SIZE[0]}x{TARGET_SIZE[1]})")
+        img = Image.open(jpg_path).convert("RGB")
+        img = img.resize(TARGET_SIZE, Image.LANCZOS)
+        img.save(png_path, "PNG")
+        jpg_path.unlink()
+        print(f"    Removed blue_marble.jpg")
+    else:
+        print("  blue_marble not found (expected .png or .jpg), skipping")
 
 
 def generate_shore_distance(heightmap_png=None):
