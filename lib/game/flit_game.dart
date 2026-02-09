@@ -793,6 +793,11 @@ class FlitGame extends FlameGame
         'lng': latLng.x.toStringAsFixed(1),
         'lat': latLng.y.toStringAsFixed(1),
       });
+    } else {
+      _log.info('game', 'Tap missed globe - no waymarker set', data: {
+        'screenX': info.eventPosition.widget.x.toStringAsFixed(0),
+        'screenY': info.eventPosition.widget.y.toStringAsFixed(0),
+      });
     }
   }
 

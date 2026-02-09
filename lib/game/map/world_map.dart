@@ -596,7 +596,8 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   }
 
   /// Inverse projection: screen → (lng, lat) degrees.
-  Vector2 screenToLatLng(Vector2 screenPos, Vector2 screenSize) {
+  /// Returns null if the screen point is outside the visible globe.
+  Vector2? screenToLatLng(Vector2 screenPos, Vector2 screenSize) {
     final cx = screenSize.x * FlitGame.projectionCenterX;
     final cy = screenSize.y * FlitGame.projectionCenterY;
     final globeRadius = _globeScreenRadius(screenSize);
@@ -606,6 +607,11 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     final dy = -(screenPos.y - cy);
 
     final rho = sqrt(dx * dx + dy * dy) / scale;
+    
+    // Check if tap is outside the visible globe (beyond angular radius).
+    // Add 15% margin to match _project's 1.15 factor.
+    if (rho > _angularRadius * 1.15) return null;
+    
     if (rho < 0.0001) return _cameraCenter.clone();
 
     final c = rho;
