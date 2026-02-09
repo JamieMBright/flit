@@ -4,7 +4,9 @@ import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/services/error_service.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/game_log.dart';
 import '../flit_game.dart';
 import '../map/country_data.dart';
 
@@ -182,8 +184,29 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
       }
     } catch (e, st) {
       // If city overlay crashes entirely, send to error telemetry.
-      // The error service will capture this and send to Vercel if configured.
-      // Also log locally for debugging.
+      // Use ErrorService directly to ensure iOS Safari crashes are captured.
+      final log = GameLog.instance;
+      log.error('city_overlay', 'City rendering failed', 
+        error: e, 
+        stackTrace: st,
+        data: {
+          'altitude': gameRef.plane.continuousAltitude.toStringAsFixed(2),
+          'platform': kIsWeb ? 'web' : 'native',
+        },
+      );
+      
+      // Report as critical for iOS to ensure immediate flush before potential reload.
+      ErrorService.instance.reportCritical(
+        e,
+        st,
+        context: {
+          'source': 'CityLabelOverlay.render',
+          'altitude': gameRef.plane.continuousAltitude.toString(),
+          'isWeb': kIsWeb.toString(),
+        },
+      );
+      
+      // Also try the game's error handler if available.
       try {
         gameRef.onError?.call(e, st);
       } catch (_) {
@@ -285,8 +308,14 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
           continue;
         }
       }
-    } catch (_) {
-      // Silently fail — don't crash the game for high-alt labels.
+    } catch (e, st) {
+      // Silently fail high-alt labels but report to telemetry for debugging.
+      final log = GameLog.instance;
+      log.error('city_overlay', 'High altitude city rendering failed',
+        error: e,
+        stackTrace: st,
+        data: {'altitude': altitude.toStringAsFixed(2)},
+      );
     }
   }
 }

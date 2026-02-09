@@ -3,6 +3,9 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  schedule:
+    # Run daily at 01:00 UTC for Vercel deploy hook
+    - cron: '0 1 * * *'
   workflow_dispatch:
 
 permissions:
@@ -181,9 +184,9 @@ jobs:
 
   deploy-vercel:
     name: Deploy Vercel (Error Telemetry)
-    needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    # Run on schedule (daily) instead of on every push
+    if: github.event_name == 'schedule'
     steps:
       - name: Trigger Vercel production deployment
         env:

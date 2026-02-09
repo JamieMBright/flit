@@ -12,14 +12,15 @@ class CameraState {
   /// Globe radius in world units (normalized to 1.0).
   static const double globeRadius = 1.0;
 
-  /// Camera distance from globe center at high altitude (~2.3 radii).
-  /// Close enough to show terrain context and fill the bottom with land.
-  /// Reduced from 2.5 to eliminate sky gap below the plane.
-  static const double highAltitudeDistance = 2.3;
+  /// Camera distance from globe center at high altitude (~2.0 radii).
+  /// Close enough to show terrain context and fill more of the screen.
+  /// Reduced from 2.3 to make the globe appear larger.
+  static const double highAltitudeDistance = 2.0;
 
-  /// Camera distance from globe center at low altitude (~1.25 radii).
+  /// Camera distance from globe center at low altitude (~1.15 radii).
   /// Close enough to see terrain detail and city-level geography.
-  static const double lowAltitudeDistance = 1.25;
+  /// Reduced from 1.25 to make the globe larger at low altitude too.
+  static const double lowAltitudeDistance = 1.15;
 
   /// Narrow FOV at rest (radians). Approximately 50 degrees.
   /// Increased from 0.785 (45°) to 0.87 (50°) for wider default view.

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
-import '../avatar/avatar_editor_screen.dart';
 import '../daily/daily_challenge_screen.dart';
 import '../debug/debug_screen.dart';
 import '../friends/friends_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
-import '../license/license_screen.dart';
 import '../play/practice_screen.dart';
 import '../play/region_select_screen.dart';
 import '../profile/profile_screen.dart';
@@ -90,26 +88,6 @@ class HomeScreen extends StatelessWidget {
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (context) => const ProfileScreen(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _MenuButton(
-            label: 'Avatar',
-            icon: Icons.face_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const AvatarEditorScreen(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _MenuButton(
-            label: 'Pilot License',
-            icon: Icons.badge_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const LicenseScreen(),
               ),
             ),
           ),

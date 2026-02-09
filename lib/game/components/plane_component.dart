@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../flit_game.dart';
+import '../rendering/camera_state.dart';
 
 /// The player's plane component.
 ///
@@ -59,9 +60,20 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Speed multiplier at low altitude
   static const double lowAltitudeSpeedMultiplier = 0.5;
 
-  /// Turn rate in radians per second.
+  /// Turn rate in radians per second at high altitude.
   /// 2.2 gives sweeping arcs (~2.9s per full circle).
+  /// At low altitude (half speed), turn rate doubles for tighter turns.
   static const double turnRate = 2.2;
+
+  /// Get current turn rate based on speed.
+  /// Lower speeds = tighter turning circles, higher speeds = wider arcs.
+  double get currentTurnRate {
+    final speedRatio = currentSpeed / highAltitudeSpeed;
+    // Inverse relationship: slower speed = higher turn rate
+    // At 50% speed (low altitude), turn rate is 2x (4.4 rad/s)
+    // At 100% speed (high altitude), turn rate is 1x (2.2 rad/s)
+    return turnRate / speedRatio.clamp(0.5, 1.0);
+  }
 
   /// Maximum bank angle for visual effect (radians, ~50 degrees).
   static const double _maxBankAngle = 0.9;
@@ -81,7 +93,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
 
   /// Base contrail spawn interval at high altitude.
   /// At low altitude, interval is scaled down so particles stay dense.
-  static const double _contrailIntervalBase = 0.04;
+  static const double _contrailIntervalBase = 0.02;
 
   /// World position set by FlitGame each frame (lng, lat degrees).
   Vector2 worldPos = Vector2.zero();
@@ -1113,7 +1125,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // Scale spawn rate with zoom: at low altitude (zoomed in), spawn
     // particles more frequently so the trail stays dense on screen.
     final zoomRatio =
-        (gameRef.cameraDistance / 2.3).clamp(0.4, 1.0); // 2.3 = high alt dist
+        (gameRef.cameraDistance / CameraState.highAltitudeDistance).clamp(0.4, 1.0);
     final interval = _contrailIntervalBase * zoomRatio;
 
     _contrailTimer += dt;
@@ -1145,7 +1157,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // the plane's current world position.
     // The wing span (in pixels) needs to be converted to degrees.
     // At closer camera (low altitude), each degree covers MORE pixels.
-    const referenceDistance = 2.3;
+    const referenceDistance = CameraState.highAltitudeDistance;
     const pixelsPerDegreeAtReference = 12.0;
     final currentDistance = gameRef.cameraDistance;
     final pixelsPerDegree =

@@ -320,7 +320,8 @@ class FlitGame extends FlameGame
 
   /// Where on screen the plane sprite is rendered (proportional).
   /// Pushed well toward the bottom to create a "behind the plane" view.
-  static const double planeScreenY = 0.72;
+  /// Y position at 0.78 (78% down) to lower the center point of the globe.
+  static const double planeScreenY = 0.78;
   static const double planeScreenX = 0.50;
 
   /// Where the Canvas (WorldMap) renderer centers its projection on screen.
@@ -570,7 +571,8 @@ class FlitGame extends FlameGame
     // Positive sign because: positive turnDirection = turn right (clockwise in nav)
     // Navigation bearing = heading + π/2, so to turn right (increase bearing),
     // heading must increase (bearing = heading + π/2 increases when heading increases).
-    _heading += _plane.turnDirection * PlaneComponent.turnRate * dt;
+    // Use dynamic turn rate: slower speeds allow tighter turns.
+    _heading += _plane.turnDirection * _plane.currentTurnRate * dt;
 
     // Normalize heading to [-π, π] to prevent accumulation
     while (_heading > pi) { _heading -= 2 * pi; }
@@ -790,6 +792,11 @@ class FlitGame extends FlameGame
       _log.info('game', 'Waymarker set', data: {
         'lng': latLng.x.toStringAsFixed(1),
         'lat': latLng.y.toStringAsFixed(1),
+      });
+    } else {
+      _log.info('game', 'Tap missed globe - no waymarker set', data: {
+        'screenX': info.eventPosition.widget.x.toStringAsFixed(0),
+        'screenY': info.eventPosition.widget.y.toStringAsFixed(0),
       });
     }
   }
