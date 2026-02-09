@@ -227,9 +227,16 @@ class FlitGame extends FlameGame
   Vector2 get worldPosition => _worldPosition;
   double get heading => _heading;
 
-  /// Camera-offset position for the renderer (ahead of plane).
+  /// Camera-offset position for the Canvas renderer (ahead of plane).
   Vector2 get cameraPosition => _cameraOffsetPosition;
   Vector2 _cameraOffsetPosition = Vector2.zero();
+
+  /// Camera-offset position for the shader renderer (behind the plane).
+  /// In the shader's chase-camera view, the camera is BEHIND the plane so
+  /// the plane appears in the lower portion of the screen (looking over its
+  /// shoulder). The tiltDown in the shader provides the forward-looking view.
+  Vector2 get shaderCameraPosition => _shaderCameraPosition;
+  Vector2 _shaderCameraPosition = Vector2.zero();
 
   /// Navigation bearing for the camera position offset (radians).
   /// Includes chase camera lag.
@@ -272,6 +279,14 @@ class FlitGame extends FlameGame
     final px = cos(latRad) * cos(lngRad);
     final py = sin(latRad);
     final pz = cos(latRad) * sin(lngRad);
+
+    // Globe occlusion check: hide points on the far side of the globe.
+    // For a unit sphere, a surface point P is visible from camera C
+    // iff dot(P, C) > 1.0 (geometric horizon test).
+    final dotPC = px * cam.cameraX + py * cam.cameraY + pz * cam.cameraZ;
+    if (dotPC <= 1.0) {
+      return Vector2(-1000, -1000);
+    }
 
     // Vector from camera to point
     final vx = px - cam.cameraX;
@@ -711,6 +726,25 @@ class FlitGame extends FlameGame
     _cameraOffsetPosition = Vector2(
       _normalizeLng(aheadLng * _rad2deg),
       aheadLat * _rad2deg,
+    );
+
+    // Compute a point BEHIND the plane for the shader chase camera.
+    // The shader camera is behind the plane so the plane appears at the
+    // bottom of the screen, creating a natural over-the-shoulder view.
+    final behindBearing = camBearing + pi;
+    final behindLat = asin(
+      (sinPLat * cosDist + cosPLat * sinDist * cos(behindBearing))
+          .clamp(-1.0, 1.0),
+    );
+    final behindLng = planeLng +
+        atan2(
+          sin(behindBearing) * sinDist * cosPLat,
+          cosDist - sinPLat * sin(behindLat),
+        );
+
+    _shaderCameraPosition = Vector2(
+      _normalizeLng(behindLng * _rad2deg),
+      behindLat * _rad2deg,
     );
   }
 

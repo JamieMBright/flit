@@ -43,10 +43,14 @@ class ShaderManager {
   ui.Image? _shoreDistTexture;
   ui.Image? _cityLightsTexture;
   
-  // Fallback 1x1 black texture for missing optional samplers.
-  // Prevents shader errors on platforms that require all declared samplers
-  // to be bound, while gracefully degrading visuals.
+  // Fallback 1x1 textures for missing optional samplers.
+  // Each fallback uses a value that produces sensible shader output:
+  //   - Black (0): for city lights (no lights when missing)
+  //   - Gray (128 ≈ 0.5): for heightmap (above SEA_LEVEL, renders as land)
+  //   - White (255 ≈ 1.0): for shore distance (far from shore, no foam)
   ui.Image? _blackTexture;
+  ui.Image? _grayTexture;
+  ui.Image? _whiteTexture;
 
   bool _initialized = false;
   bool _loading = false;
@@ -83,8 +87,10 @@ class ShaderManager {
     // This ensures all shader samplers have a valid binding even if textures
     // fail to load, preventing shader errors on strict platforms.
     try {
-      _blackTexture = await _createBlackTexture();
-      _log.debug('shader', 'Created fallback black texture');
+      _blackTexture = await _createSolidTexture(0, 0, 0);
+      _grayTexture = await _createSolidTexture(128, 128, 128);
+      _whiteTexture = await _createSolidTexture(255, 255, 255);
+      _log.debug('shader', 'Created fallback textures (black, gray, white)');
     } catch (e, st) {
       _log.error('shader', 'Failed to create fallback texture',
           error: e, stackTrace: st);
@@ -162,7 +168,7 @@ class ShaderManager {
     // All textures are optional - the game will run with black fallback
     // textures if any fail to load.
     final textureResults = await Future.wait<Map<String, dynamic>>([
-      _loadImage('assets/textures/blue_marble.png')
+      _loadImage('assets/textures/blue_marble.jpg')
           .then((img) => <String, dynamic>{'name': 'satellite', 'image': img})
           .catchError((e, st) => <String, dynamic>{'name': 'satellite', 'error': e, 'stack': st}),
       _loadImage('assets/textures/heightmap.png')
@@ -207,7 +213,7 @@ class ShaderManager {
         
         // Extract more details from the error for better debugging
         final errorStr = error.toString();
-        final assetPath = name == 'satellite' ? 'assets/textures/blue_marble.png'
+        final assetPath = name == 'satellite' ? 'assets/textures/blue_marble.jpg'
             : name == 'heightmap' ? 'assets/textures/heightmap.png'
             : name == 'shore_distance' ? 'assets/textures/shore_distance.png'
             : 'assets/textures/city_lights.png';
@@ -332,11 +338,12 @@ class ShaderManager {
 
       // -- Image samplers (indices 0-3) --
       // Always bind all 4 samplers to prevent shader errors on platforms that
-      // require all declared samplers to be bound. Use black fallback for
-      // missing optional textures.
+      // require all declared samplers to be bound. Each uses an appropriate
+      // fallback: gray for heightmap (renders as land, not ocean), white for
+      // shore distance (far from shore, no foam), black for city lights (none).
       s.setImageSampler(0, _satelliteTexture ?? _blackTexture!);
-      s.setImageSampler(1, _heightmapTexture ?? _blackTexture!);
-      s.setImageSampler(2, _shoreDistTexture ?? _blackTexture!);
+      s.setImageSampler(1, _heightmapTexture ?? _grayTexture!);
+      s.setImageSampler(2, _shoreDistTexture ?? _whiteTexture!);
       s.setImageSampler(3, _cityLightsTexture ?? _blackTexture!);
 
       return s;
@@ -427,15 +434,13 @@ class ShaderManager {
     }
   }
 
-  /// Create a 1x1 black texture to use as a fallback for missing samplers.
+  /// Create a 1x1 solid-colour texture for use as a shader sampler fallback.
   ///
-  /// Returns a fully opaque black [ui.Image] that can be bound to shader
-  /// samplers when optional textures fail to load.
-  Future<ui.Image> _createBlackTexture() async {
-    // Create a 1x1 black image using ui.decodeImageFromPixels.
+  /// [r], [g], [b] are 0-255 channel values. The alpha is always 255 (opaque).
+  Future<ui.Image> _createSolidTexture(int r, int g, int b) async {
     final completer = Completer<ui.Image>();
-    final pixels = Uint8List.fromList([0, 0, 0, 255]); // RGBA black pixel
-    
+    final pixels = Uint8List.fromList([r, g, b, 255]);
+
     ui.decodeImageFromPixels(
       pixels,
       1, // width
@@ -445,7 +450,7 @@ class ShaderManager {
         completer.complete(image);
       },
     );
-    
+
     return completer.future;
   }
 
@@ -456,11 +461,15 @@ class ShaderManager {
     _shoreDistTexture?.dispose();
     _cityLightsTexture?.dispose();
     _blackTexture?.dispose();
+    _grayTexture?.dispose();
+    _whiteTexture?.dispose();
     _satelliteTexture = null;
     _heightmapTexture = null;
     _shoreDistTexture = null;
     _cityLightsTexture = null;
     _blackTexture = null;
+    _grayTexture = null;
+    _whiteTexture = null;
     _program = null;
     _initialized = false;
     _loading = false;
