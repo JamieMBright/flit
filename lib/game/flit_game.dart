@@ -761,16 +761,14 @@ class FlitGame extends FlameGame
     if (!_isPlaying) return;
 
     // Convert screen tap to globe lat/lng.
-    // Use .game coordinates which account for the game's coordinate system
-    // (not .widget which can include areas outside the game canvas).
     Vector2? latLng;
     
     if (_globeRenderer != null) {
       // Shader renderer: use camera-based ray-casting hit test.
       final cam = _globeRenderer!.camera;
       final screenPoint = Offset(
-        info.eventPosition.game.x,
-        info.eventPosition.game.y,
+        info.eventPosition.widget.x,
+        info.eventPosition.widget.y,
       );
       final result = _hitTest.screenToLatLng(
         screenPoint,
@@ -783,8 +781,8 @@ class FlitGame extends FlameGame
     } else if (_worldMap != null) {
       // Canvas renderer: use azimuthal projection inverse.
       final screenPoint = Vector2(
-        info.eventPosition.game.x,
-        info.eventPosition.game.y,
+        info.eventPosition.widget.x,
+        info.eventPosition.widget.y,
       );
       latLng = _worldMap!.screenToLatLng(screenPoint, size);
     }
@@ -797,8 +795,8 @@ class FlitGame extends FlameGame
       });
     } else {
       _log.info('game', 'Tap missed globe - no waymarker set', data: {
-        'screenX': info.eventPosition.game.x.toStringAsFixed(0),
-        'screenY': info.eventPosition.game.y.toStringAsFixed(0),
+        'screenX': info.eventPosition.widget.x.toStringAsFixed(0),
+        'screenY': info.eventPosition.widget.y.toStringAsFixed(0),
       });
     }
   }
