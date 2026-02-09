@@ -1163,7 +1163,9 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final pixelsPerDegree =
         pixelsPerDegreeAtReference * (referenceDistance / currentDistance);
     final pixelsToDegrees = 1.0 / pixelsPerDegree;
-    final wingSpanDegrees = dynamicWingSpan * pixelsToDegrees;
+    // Reduce wing span in world-space to bring contrails closer to wing tips
+    // The previous calculation was making contrails too far apart, especially at descent altitude
+    final wingSpanDegrees = (dynamicWingSpan * 0.5) * pixelsToDegrees;
 
     final lat0 = worldPos.y * _deg2rad;
     final lng0 = worldPos.x * _deg2rad;

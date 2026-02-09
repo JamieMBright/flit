@@ -75,44 +75,64 @@ class HomeScreen extends StatelessWidget {
           _MenuButton(
             label: 'Leaderboard',
             icon: Icons.leaderboard_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const LeaderboardScreen(),
-              ),
+            onTap: () => _navigateSafely(
+              context,
+              const LeaderboardScreen(),
             ),
           ),
           const SizedBox(height: 10),
           _MenuButton(
             label: 'Profile',
             icon: Icons.person_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const ProfileScreen(),
-              ),
+            onTap: () => _navigateSafely(
+              context,
+              const ProfileScreen(),
             ),
           ),
           const SizedBox(height: 10),
           _MenuButton(
             label: 'Shop',
             icon: Icons.storefront_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const ShopScreen(),
-              ),
+            onTap: () => _navigateSafely(
+              context,
+              const ShopScreen(),
             ),
           ),
           const SizedBox(height: 10),
           _MenuButton(
             label: 'Debug',
             icon: Icons.bug_report_rounded,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const DebugScreen(),
-              ),
+            onTap: () => _navigateSafely(
+              context,
+              const DebugScreen(),
             ),
           ),
         ],
       );
+
+  /// Safely navigate to a new screen with error handling.
+  /// Wraps Navigator.push in try-catch to prevent navigation errors from crashing the app.
+  Future<void> _navigateSafely(BuildContext context, Widget destination) async {
+    try {
+      if (!context.mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => destination,
+        ),
+      );
+    } catch (e, stackTrace) {
+      debugPrint('Navigation error: $e\n$stackTrace');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Navigation failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
 
   /// Close the bottom sheet and navigate to [destination] after the sheet
   /// animation completes, preventing a white-flash / blank-frame artefact.
@@ -125,11 +145,24 @@ class HomeScreen extends StatelessWidget {
     // Wait for the bottom-sheet dismiss animation to finish before pushing
     // the new route. This eliminates a white flash on some devices.
     // On web, we need a longer delay to ensure the sheet is fully dismissed.
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (!homeContext.mounted) return;
-      Navigator.of(homeContext).push(
-        MaterialPageRoute<void>(builder: (_) => destination),
-      );
+    Future.delayed(const Duration(milliseconds: 300), () async {
+      try {
+        if (!homeContext.mounted) return;
+        await Navigator.of(homeContext).push(
+          MaterialPageRoute<void>(builder: (_) => destination),
+        );
+      } catch (e, stackTrace) {
+        debugPrint('Navigation error: $e\n$stackTrace');
+        if (homeContext.mounted) {
+          ScaffoldMessenger.of(homeContext).showSnackBar(
+            SnackBar(
+              content: Text('Navigation failed: ${e.toString()}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
     });
   }
 
