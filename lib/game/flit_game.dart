@@ -138,6 +138,20 @@ class FlitGame extends FlameGame
   /// Globe hit-test utility (screen-tap → lat/lng).
   final GlobeHitTest _hitTest = const GlobeHitTest();
 
+  // -- Progressive turn input state --
+
+  /// Keyboard turn direction: -1 (left), 0 (none), +1 (right).
+  int _keyTurnDir = 0;
+
+  /// How long the current keyboard turn has been held (seconds).
+  double _keyTurnHoldTime = 0.0;
+
+  /// On-screen button turn direction: -1 (left), 0 (none), +1 (right).
+  int _buttonTurnDir = 0;
+
+  /// How long the current button turn has been held (seconds).
+  double _buttonTurnHoldTime = 0.0;
+
   /// Wayline overlay renderer (draws translucent line to waymarker).
   WaylineRenderer? _waylineRenderer;
 
@@ -536,6 +550,9 @@ class FlitGame extends FlameGame
       _countryFlashTimer = (_countryFlashTimer - dt).clamp(0.0, _countryFlashDuration);
     }
 
+    // --- Progressive turn input (keyboard + on-screen buttons) ---
+    _updateTurnInput(dt);
+
     // --- Waymarker auto-steering ---
     _updateWaymarkerSteering(dt);
 
@@ -707,6 +724,45 @@ class FlitGame extends FlameGame
     return lng;
   }
 
+  // -- Progressive turn input --
+
+  /// Applies progressive turning from keyboard and on-screen buttons.
+  ///
+  /// Turn strength ramps up the longer the key/button is held:
+  ///   - Instant tap: ~0.08 strength (a few degrees of turn)
+  ///   - 0.3s hold: ~0.5 strength (moderate turn)
+  ///   - 0.6s+ hold: 1.0 strength (full turn)
+  /// This makes short taps produce gentle corrections and holds produce
+  /// sweeping arcs.
+  void _updateTurnInput(double dt) {
+    // Combine keyboard and button input (button overrides keyboard).
+    final dir = _buttonTurnDir != 0 ? _buttonTurnDir : _keyTurnDir;
+
+    if (dir != 0) {
+      // Ramp up hold time and compute progressive strength.
+      if (_buttonTurnDir != 0) {
+        _buttonTurnHoldTime += dt;
+      }
+      if (_keyTurnDir != 0) {
+        _keyTurnHoldTime += dt;
+      }
+      final holdTime = _buttonTurnDir != 0
+          ? _buttonTurnHoldTime
+          : _keyTurnHoldTime;
+
+      // Progressive curve: starts at 0.08, reaches 1.0 after ~0.6s.
+      final strength = (0.08 + holdTime * holdTime * 4.5).clamp(0.0, 1.0);
+      _plane.setTurnDirection(dir * strength);
+      _waymarker = null; // keyboard/button overrides waymarker
+    } else if (_waymarker == null &&
+        (_keyTurnHoldTime > 0 || _buttonTurnHoldTime > 0)) {
+      // Just released — coast to straight.
+      _keyTurnHoldTime = 0.0;
+      _buttonTurnHoldTime = 0.0;
+      _plane.releaseTurn();
+    }
+  }
+
   // -- Waymarker auto-steering --
 
   /// Computes the initial bearing from the plane to the waymarker and
@@ -811,26 +867,24 @@ class FlitGame extends FlameGame
   ) {
     final superResult = super.onKeyEvent(event, keysPressed);
 
-    // Keyboard navigation still supported for desktop/web.
-    double direction = 0;
-
+    // Track keyboard turn direction (progressive turn applied in _updateTurnInput).
+    int dir = 0;
     if (keysPressed.contains(LogicalKeyboardKey.arrowLeft) ||
         keysPressed.contains(LogicalKeyboardKey.keyA)) {
-      direction -= 1;
+      dir -= 1;
     }
     if (keysPressed.contains(LogicalKeyboardKey.arrowRight) ||
         keysPressed.contains(LogicalKeyboardKey.keyD)) {
-      direction += 1;
+      dir += 1;
     }
 
-    if (direction != 0) {
-      // Keyboard overrides waymarker steering
-      _waymarker = null;
-      _plane.setTurnDirection(direction);
-    } else if (_waymarker == null) {
-      _plane.releaseTurn();
+    // Reset hold time when direction changes.
+    if (dir != _keyTurnDir) {
+      _keyTurnHoldTime = 0.0;
+      _keyTurnDir = dir;
     }
 
+    // Altitude toggle on key-down only (not hold).
     if (event is RawKeyDownEvent) {
       if (event.logicalKey == LogicalKeyboardKey.space ||
           event.logicalKey == LogicalKeyboardKey.arrowUp ||
@@ -890,6 +944,39 @@ class FlitGame extends FlameGame
     _hintTarget = null; // clear any previous hint
     _flightSpeed = FlightSpeed.medium; // reset speed
     _isPlaying = true;
+  }
+
+  /// Continue the game with a new target without moving the plane.
+  ///
+  /// Used for multi-round play: when the player finds the correct country,
+  /// the plane keeps flying in its current position/direction and only the
+  /// target and clue change. This avoids the jarring teleport effect.
+  void continueWithNewTarget({
+    required Vector2 targetPosition,
+    required String clue,
+  }) {
+    _log.info('game', 'continueWithNewTarget', data: {
+      'target':
+          '${targetPosition.x.toStringAsFixed(1)},${targetPosition.y.toStringAsFixed(1)}',
+    });
+
+    _targetLocation = targetPosition;
+    _currentClue = clue;
+    _waymarker = null;
+    _hintTarget = null;
+    // Keep position, heading, speed, and camera — seamless transition.
+  }
+
+  /// Set on-screen button turn direction. Called by mobile L/R buttons.
+  void setButtonTurn(int direction) {
+    _buttonTurnDir = direction.clamp(-1, 1);
+    if (direction == 0) _buttonTurnHoldTime = 0.0;
+  }
+
+  /// Release on-screen button turn.
+  void releaseButtonTurn() {
+    _buttonTurnDir = 0;
+    _buttonTurnHoldTime = 0.0;
   }
 
   /// Check if plane is near target using great-circle distance.

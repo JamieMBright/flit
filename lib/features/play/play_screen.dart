@@ -39,6 +39,7 @@ class PlayScreen extends StatefulWidget {
     this.clueBoost = 0,
     this.clueChance = 0,
     this.preferredClueType,
+    this.enabledClueTypes,
   });
 
   /// The region to play in.
@@ -80,6 +81,10 @@ class PlayScreen extends StatefulWidget {
 
   /// Preferred clue type name (from pilot license, e.g. 'flag', 'capital').
   final String? preferredClueType;
+
+  /// Allowed clue types (from daily challenge theme). When non-null, only
+  /// these types will be generated, overriding the preferred type.
+  final Set<String>? enabledClueTypes;
 
   @override
   State<PlayScreen> createState() => _PlayScreenState();
@@ -212,6 +217,7 @@ class _PlayScreenState extends State<PlayScreen> {
           _session!.targetCountry.code,
           preferredClueType: widget.preferredClueType,
           clueBoost: widget.clueBoost,
+          allowedTypes: widget.enabledClueTypes,
         );
         _log.info('hint', 'Tier 1: Clue cycled', data: {
           'target': _session!.targetName,
@@ -260,6 +266,7 @@ class _PlayScreenState extends State<PlayScreen> {
         region: widget.region,
         preferredClueType: widget.preferredClueType,
         clueBoost: widget.clueBoost,
+        allowedClueTypes: widget.enabledClueTypes,
       );
       _elapsed = Duration.zero;
 
@@ -347,7 +354,11 @@ class _PlayScreenState extends State<PlayScreen> {
     }
   }
 
-  /// Advance to the next round without showing a dialog.
+  /// Advance to the next round seamlessly — plane keeps flying.
+  ///
+  /// Instead of teleporting the plane to a new start position, we only
+  /// swap the target and clue. The plane continues from its current
+  /// position and heading, giving a smooth "correct! next clue" feel.
   void _advanceRound() {
     _timer?.cancel();
     _session?.complete();
@@ -363,9 +374,58 @@ class _PlayScreenState extends State<PlayScreen> {
       _currentRound++;
     });
 
-    // Brief delay so the player sees they arrived, then start next round
+    // Brief delay so the player registers success, then continue seamlessly
     Future<void>.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) _startNewGame();
+      if (!mounted) return;
+      try {
+        // Create new session for the next round
+        _session = GameSession.random(
+          region: widget.region,
+          preferredClueType: widget.preferredClueType,
+          clueBoost: widget.clueBoost,
+          allowedClueTypes: widget.enabledClueTypes,
+        );
+        _elapsed = Duration.zero;
+        _hintTier = 0;
+        _revealedCountry = null;
+        _currentClue = _session!.clue;
+
+        _log.info('session', 'Seamless round advance', data: {
+          'target': _session!.targetName,
+          'clue': _session!.clue.type.name,
+          'round': _currentRound,
+        });
+
+        // Continue flying — only change target and clue, no teleport.
+        _game.continueWithNewTarget(
+          targetPosition: _session!.targetPosition,
+          clue: _session!.clue.displayText,
+        );
+
+        AudioManager.instance.playSfx(SfxType.cluePop);
+
+        // Restart timer
+        _timer?.cancel();
+        _timer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+          if (mounted && _session != null && !_session!.isCompleted) {
+            setState(() {
+              _elapsed = _session!.elapsed;
+            });
+            if (_elapsed.inMilliseconds % 100 < 20) {
+              _session!.recordPosition(_game.worldPosition);
+            }
+            _checkProximity();
+          }
+        });
+
+        _startAutoHintTimer();
+        setState(() {});
+      } catch (e, st) {
+        _log.error('session', 'Failed to advance round',
+            error: e, stackTrace: st);
+        // Fall back to full restart if seamless advance fails.
+        _startNewGame();
+      }
     });
   }
 
@@ -714,7 +774,28 @@ class _PlayScreenState extends State<PlayScreen> {
               countryFlashProgress: _game.countryFlashProgress,
             ),
 
-          // Altitude toggle removed — tap the HUD altitude indicator instead
+          // Mobile turn buttons (L/R) — positioned at bottom corners.
+          // Use GestureDetector for press/release to get progressive turning.
+          if (_gameReady && _session != null) ...[
+            Positioned(
+              left: 16,
+              bottom: MediaQuery.of(context).padding.bottom + 80,
+              child: _TurnButton(
+                icon: Icons.turn_left,
+                onPressStart: () => _game.setButtonTurn(-1),
+                onPressEnd: () => _game.releaseButtonTurn(),
+              ),
+            ),
+            Positioned(
+              right: 16,
+              bottom: MediaQuery.of(context).padding.bottom + 80,
+              child: _TurnButton(
+                icon: Icons.turn_right,
+                onPressStart: () => _game.setButtonTurn(1),
+                onPressEnd: () => _game.releaseButtonTurn(),
+              ),
+            ),
+          ],
 
           // Round indicator for multi-round play
           if (_gameReady && _isMultiRound)
@@ -762,6 +843,69 @@ class _PlayScreenState extends State<PlayScreen> {
       ),
     );
   }
+}
+
+/// Translucent on-screen turn button for mobile/touch users.
+///
+/// Triggers on press-and-hold: [onPressStart] fires when the finger goes
+/// down, [onPressEnd] fires when it lifts. The progressive turning ramp-up
+/// is handled by FlitGame._updateTurnInput.
+class _TurnButton extends StatefulWidget {
+  const _TurnButton({
+    required this.icon,
+    required this.onPressStart,
+    required this.onPressEnd,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressStart;
+  final VoidCallback onPressEnd;
+
+  @override
+  State<_TurnButton> createState() => _TurnButtonState();
+}
+
+class _TurnButtonState extends State<_TurnButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTapDown: (_) {
+          setState(() => _pressed = true);
+          widget.onPressStart();
+        },
+        onTapUp: (_) {
+          setState(() => _pressed = false);
+          widget.onPressEnd();
+        },
+        onTapCancel: () {
+          setState(() => _pressed = false);
+          widget.onPressEnd();
+        },
+        child: AnimatedOpacity(
+          opacity: _pressed ? 0.9 : 0.45,
+          duration: const Duration(milliseconds: 100),
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: FlitColors.cardBackground.withOpacity(0.7),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: _pressed
+                    ? FlitColors.accent.withOpacity(0.8)
+                    : FlitColors.cardBorder.withOpacity(0.5),
+                width: 2,
+              ),
+            ),
+            child: Icon(
+              widget.icon,
+              color: _pressed ? FlitColors.accent : FlitColors.textSecondary,
+              size: 28,
+            ),
+          ),
+        ),
+      );
 }
 
 class _ResultDialog extends StatelessWidget {

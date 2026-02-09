@@ -95,12 +95,16 @@ class GameSession {
 
   /// Create a new random game session.
   ///
+  /// When [allowedClueTypes] is provided (e.g. from a daily challenge
+  /// theme), only those clue types will be generated.
+  ///
   /// When [preferredClueType] and [clueBoost] are provided, the generated
-  /// clue will favour the preferred type.
+  /// clue will favour the preferred type within the allowed set.
   factory GameSession.random({
     GameRegion region = GameRegion.world,
     String? preferredClueType,
     int clueBoost = 0,
+    Set<String>? allowedClueTypes,
   }) {
     final random = Random();
 
@@ -111,6 +115,7 @@ class GameSession {
         country.code,
         preferredClueType: preferredClueType,
         clueBoost: clueBoost,
+        allowedTypes: allowedClueTypes,
       );
 
       // Generate random start position (not too close to target)

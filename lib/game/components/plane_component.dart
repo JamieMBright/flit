@@ -96,10 +96,11 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   static const double _contrailIntervalBase = 0.02;
 
   /// Contrail wing span scale factor.
-  /// Reduces the visual wing span in world-space coordinates to position
-  /// contrails closer to rendered wing tips. Value of 0.5 ensures contrails
-  /// appear to emanate from the wing tips rather than beyond them.
-  static const double _contrailWingSpanScale = 0.5;
+  /// Scales the visual wing span in world-space coordinates to position
+  /// contrails at the wing tips. Value of 0.7 keeps contrails near the
+  /// rendered wing tips while making the gap wide enough that the
+  /// banking foreshortening (bankCos) visibly narrows contrails during turns.
+  static const double _contrailWingSpanScale = 0.7;
 
   /// World position set by FlitGame each frame (lng, lat degrees).
   Vector2 worldPos = Vector2.zero();
