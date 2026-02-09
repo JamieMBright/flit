@@ -114,23 +114,23 @@ class HomeScreen extends StatelessWidget {
         ],
       );
 
-  /// Close the bottom sheet and navigate to [destination] after the sheet
-  /// animation completes, preventing a white-flash / blank-frame artefact.
+  /// Close the bottom sheet and navigate to [destination].
+  ///
+  /// Uses the sheet's navigator to avoid context lifecycle issues on iOS PWA.
+  /// The pop() and push() happen in the same event loop to prevent timing-based
+  /// crashes on web platforms where delayed futures can race with sheet dismissal.
   void _closeSheetAndNavigate(
     BuildContext sheetContext,
-    BuildContext homeContext,
     Widget destination,
   ) {
-    Navigator.of(sheetContext).pop();
-    // Wait for the bottom-sheet dismiss animation to finish before pushing
-    // the new route. This eliminates a white flash on some devices.
-    // On web, we need a longer delay to ensure the sheet is fully dismissed.
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (!homeContext.mounted) return;
-      Navigator.of(homeContext).push(
+    // Pop the sheet and immediately push the destination route using the same
+    // Navigator. This eliminates context validity issues and timing races that
+    // occur on iOS PWA when using delayed futures with captured contexts.
+    Navigator.of(sheetContext)
+      ..pop()
+      ..push(
         MaterialPageRoute<void>(builder: (_) => destination),
       );
-    });
   }
 
   void _showGameModes(BuildContext context) {
@@ -160,7 +160,7 @@ class HomeScreen extends StatelessWidget {
               subtitle: 'Explore the world at your own pace',
               icon: Icons.flight_takeoff,
               onTap: () => _closeSheetAndNavigate(
-                ctx, context, const RegionSelectScreen(),
+                ctx, const RegionSelectScreen(),
               ),
             ),
             const SizedBox(height: 10),
@@ -169,7 +169,7 @@ class HomeScreen extends StatelessWidget {
               subtitle: 'Practice without rank pressure',
               icon: Icons.school_rounded,
               onTap: () => _closeSheetAndNavigate(
-                ctx, context, const PracticeScreen(),
+                ctx, const PracticeScreen(),
               ),
             ),
             const SizedBox(height: 10),
@@ -179,7 +179,7 @@ class HomeScreen extends StatelessWidget {
               icon: Icons.today_rounded,
               isHighlighted: true,
               onTap: () => _closeSheetAndNavigate(
-                ctx, context, const DailyChallengeScreen(),
+                ctx, const DailyChallengeScreen(),
               ),
             ),
             const SizedBox(height: 10),
@@ -188,7 +188,7 @@ class HomeScreen extends StatelessWidget {
               subtitle: 'Challenge your friends head-to-head',
               icon: Icons.people_rounded,
               onTap: () => _closeSheetAndNavigate(
-                ctx, context, const FriendsScreen(),
+                ctx, const FriendsScreen(),
               ),
             ),
             const SizedBox(height: 16),
