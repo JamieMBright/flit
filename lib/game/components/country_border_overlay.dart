@@ -137,17 +137,31 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         if (rendered >= maxCountries) break;
         if (totalPoints >= maxTotalPoints) break;
 
-        final Paint? fillPaint;
-        if (drawFills && fillOpacity > 0.01) {
-          final climateColor = _getClimateColor(entry.cLng, entry.cLat);
-          fillPaint = Paint()..color = climateColor.withOpacity(fillOpacity);
-        } else {
-          fillPaint = null;
-        }
-
         for (final polygon in entry.country.polygons) {
           if (polygon.length < 3) continue;
           if (totalPoints >= maxTotalPoints) break;
+
+          // Compute per-polygon climate color from the polygon's own centroid.
+          // This gives fine-resolution climate variation within large countries
+          // (e.g. mountains vs coasts, northern vs southern regions).
+          Paint? fillPaint;
+          if (drawFills && fillOpacity > 0.01) {
+            final step = (polygon.length > 6) ? polygon.length ~/ 4 : 1;
+            var pLng = 0.0;
+            var pLat = 0.0;
+            var cnt = 0;
+            for (var i = 0; i < polygon.length; i += step) {
+              pLng += polygon[i].x;
+              pLat += polygon[i].y;
+              cnt++;
+            }
+            if (cnt > 0) {
+              pLng /= cnt;
+              pLat /= cnt;
+            }
+            final climateColor = _getClimateColor(pLng, pLat);
+            fillPaint = Paint()..color = climateColor.withOpacity(fillOpacity);
+          }
 
           // Decimate large polygons to keep path complexity manageable.
           final stride = polygon.length > maxPointsPerPoly

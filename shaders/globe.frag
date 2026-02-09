@@ -215,10 +215,10 @@ vec3 cameraRayDir(vec2 fragCoord, vec2 resolution, vec3 camPos, vec3 camUp, floa
     // of the screen, giving an inverted chase-camera view.
     uv.y = -uv.y;
     
-    // Tilt the view downward for a chase-camera perspective.
-    // This creates a flatter horizon at the bottom of the screen.
-    // Higher values = more downward tilt (0.25 ≈ 14° down from horizontal)
-    const float tiltDown = 0.25;
+    // Tilt the view upward so the globe surface stretches off the bottom
+    // of the screen and the globe's curvature (horizon) is visible at the
+    // top, near the clue menu. Negative = camera looks slightly up.
+    const float tiltDown = -0.25;
     uv.y += tiltDown;
     
     float halfFov = tan(fov * 0.5);

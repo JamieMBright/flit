@@ -75,8 +75,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     return turnRate / speedRatio.clamp(0.5, 1.0);
   }
 
-  /// Maximum bank angle for visual effect (radians, ~50 degrees).
-  static const double _maxBankAngle = 0.9;
+  /// Maximum bank angle for visual effect (radians, ~75 degrees).
+  /// At max bank, cos(1.3) ≈ 0.27 so contrails narrow to ~27% width,
+  /// making them nearly touch at full turn.
+  static const double _maxBankAngle = 1.3;
 
   /// How fast the turn decays when the player releases (per-second rate).
   /// Higher = faster decay. 3.0 means ~0.3 seconds to coast to stop.
@@ -148,9 +150,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // Clamp to prevent infinite spinning from accumulated input
     _turnDirection = _turnDirection.clamp(-1.0, 1.0);
 
-    // Smooth bank angle
+    // Smooth bank angle: fast into turns, slow release for lingering contrail effect.
     final targetBank = _turnDirection * _maxBankAngle;
-    _currentBank += (targetBank - _currentBank) * min(1.0, dt * 8);
+    final bankRate = targetBank.abs() > _currentBank.abs() ? 10.0 : 2.5;
+    _currentBank += (targetBank - _currentBank) * min(1.0, dt * bankRate);
 
     // Smooth altitude transition using continuous altitude
     _altitudeTransition += (_continuousAltitude - _altitudeTransition) * min(1.0, dt * 3);
@@ -267,7 +270,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // Darken/lighten colors based on bank for 3D shading.
     // Bank left (negative) = left wing lit, right wing shadowed.
     // Bank right (positive) = right wing lit, left wing shadowed.
-    final shade = bankSin; // -1..+1
+    final shade = -bankSin; // Invert: turning-side wing darkens
 
     Color darken(Color c, double amount) {
       final f = (1.0 - amount).clamp(0.0, 1.0);
@@ -513,7 +516,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ? Color(colorScheme!['detail'] ?? 0xFFCCCCCC)
         : const Color(0xFFCCCCCC);
 
-    final shade = bankSin;
+    final shade = -bankSin; // Invert: turning-side wing darkens
     final bodyShift = bankSin * 1.5;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = bankSin * 4.0;
@@ -580,7 +583,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ? Color(colorScheme!['detail'] ?? 0xFF808080)
         : const Color(0xFF808080);
 
-    final shade = bankSin;
+    final shade = -bankSin; // Invert: turning-side wing darkens
     final bodyShift = bankSin * 1.5;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = bankSin * 3.0;
@@ -668,7 +671,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ? Color(colorScheme!['detail'] ?? 0xFF444444)
         : const Color(0xFF444444);
 
-    final shade = bankSin;
+    final shade = -bankSin; // Invert: turning-side wing darkens
     final bodyShift = bankSin * 1.0;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = bankSin * 2.0;
@@ -743,7 +746,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ? Color(colorScheme!['detail'] ?? 0xFF1A1A1A)
         : const Color(0xFF1A1A1A);
 
-    final shade = bankSin;
+    final shade = -bankSin; // Invert: turning-side wing darkens
     final bodyShift = bankSin * 1.5;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = bankSin * 3.0;
@@ -861,7 +864,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ? Color(colorScheme!['detail'] ?? 0xFFCC3333)
         : const Color(0xFFCC3333);
 
-    final shade = bankSin;
+    final shade = -bankSin; // Invert: turning-side wing darkens
     final bodyShift = bankSin * 1.0;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = bankSin * 2.5;
@@ -1017,7 +1020,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ? Color(colorScheme!['detail'] ?? 0xFFFFCC00)
         : const Color(0xFFFFCC00);
 
-    final shade = bankSin;
+    final shade = -bankSin; // Invert: turning-side wing darkens
     final bodyShift = bankSin * 1.0;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = bankSin * 2.0;
@@ -1234,11 +1237,12 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
 
   /// Smoothly steer toward a target turn direction (for waypoint auto-steering).
   /// Sets [_isDragging] so that update()'s turn-decay doesn't fight the input.
-  /// Interpolates gradually so the plane banks smoothly into the turn.
+  /// Interpolates with fast attack (dt*12) so banking is clearly visible
+  /// when following a waypoint.
   void steerToward(double target, double dt) {
     final clamped = target.clamp(-1.0, 1.0);
-    // Smooth interpolation toward target turn direction (responsive banking)
-    _turnDirection += (clamped - _turnDirection) * (dt * 6.0).clamp(0.0, 1.0);
+    // Fast interpolation toward target turn direction for visible banking
+    _turnDirection += (clamped - _turnDirection) * (dt * 12.0).clamp(0.0, 1.0);
     _turnDirection = _turnDirection.clamp(-1.0, 1.0);
     _isDragging = true;
   }
@@ -1246,6 +1250,14 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Called when the player lifts their finger — plane coasts to straight.
   /// Turn direction decays smoothly rather than snapping to zero.
   void releaseTurn() {
+    _isDragging = false;
+  }
+
+  /// Immediately zero turn direction and bank — used when waymarker clears
+  /// to prevent post-arrival drift.
+  void snapStraight() {
+    _turnDirection = 0;
+    _currentBank = 0;
     _isDragging = false;
   }
 
