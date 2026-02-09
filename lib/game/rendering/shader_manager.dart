@@ -168,7 +168,7 @@ class ShaderManager {
     // All textures are optional - the game will run with black fallback
     // textures if any fail to load.
     final textureResults = await Future.wait<Map<String, dynamic>>([
-      _loadImage('assets/textures/blue_marble.jpg')
+      _loadImage('assets/textures/blue_marble.png')
           .then((img) => <String, dynamic>{'name': 'satellite', 'image': img})
           .catchError((e, st) => <String, dynamic>{'name': 'satellite', 'error': e, 'stack': st}),
       _loadImage('assets/textures/heightmap.png')
@@ -213,7 +213,7 @@ class ShaderManager {
         
         // Extract more details from the error for better debugging
         final errorStr = error.toString();
-        final assetPath = name == 'satellite' ? 'assets/textures/blue_marble.jpg'
+        final assetPath = name == 'satellite' ? 'assets/textures/blue_marble.png'
             : name == 'heightmap' ? 'assets/textures/heightmap.png'
             : name == 'shore_distance' ? 'assets/textures/shore_distance.png'
             : 'assets/textures/city_lights.png';
