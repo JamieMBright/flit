@@ -417,14 +417,17 @@ void main() {
     vec3 hitPoint = ro + rayDir * tGlobe;
     vec3 normal   = normalize(hitPoint - GLOBE_ORIGIN);
     vec3 viewDir  = normalize(ro - hitPoint);
-    vec2 uv       = equirectangularUV(hitPoint);
     
-    // Check viewing angle - at extreme glancing angles (looking at the edge
-    // of the globe), we should fade to atmosphere rather than showing surface.
-    // This prevents land masses from appearing in what should be pure atmosphere.
+    // Check viewing angle BEFORE texture sampling - at extreme glancing angles
+    // (looking at the edge of the globe), we should render atmosphere only.
+    // This prevents land textures from appearing outside the visible globe disk,
+    // in what should be pure atmosphere/space.
     float viewAngle = dot(viewDir, normal);
-    if (viewAngle < 0.05) {
-        // Very glancing angle - render atmosphere only
+    
+    // More strict threshold (0.15 instead of 0.05) to ensure land textures
+    // only appear within the central disk of the globe, not at the edges.
+    if (viewAngle < 0.15) {
+        // Glancing angle - render atmosphere/rim only, no surface textures
         vec3 finalColor = background;
         
         // Atmospheric rim glow for glancing angles
@@ -438,7 +441,8 @@ void main() {
         return;
     }
 
-    // ----- Texture sampling ------------------------------------------------
+    // ----- Texture sampling (only after confirming we're within the globe disk) ----
+    vec2 uv         = equirectangularUV(hitPoint);
     vec4 satColor   = texture(uSatellite, uv);
     float heightVal = texture(uHeightmap, uv).r;
     float shoreDist = texture(uShoreDist, uv).r;
