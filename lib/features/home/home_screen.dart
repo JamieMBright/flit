@@ -146,7 +146,8 @@ class HomeScreen extends StatelessWidget {
     Navigator.of(sheetContext).pop();
     // Wait for the bottom-sheet dismiss animation to finish before pushing
     // the new route. This eliminates a white flash on some devices.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // On web, we need a longer delay to ensure the sheet is fully dismissed.
+    Future.delayed(const Duration(milliseconds: 300), () {
       if (!homeContext.mounted) return;
       Navigator.of(homeContext).push(
         MaterialPageRoute<void>(builder: (_) => destination),

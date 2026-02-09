@@ -567,10 +567,10 @@ class FlitGame extends FlameGame
     );
 
     // Update heading based on turn input (left/right only).
-    // Negative sign because: positive turnDirection = turn right (clockwise in nav)
-    // but positive rotation in math convention is counter-clockwise.
-    // Navigation bearing = heading + π/2, so to turn right, heading must decrease.
-    _heading -= _plane.turnDirection * PlaneComponent.turnRate * dt;
+    // Positive sign because: positive turnDirection = turn right (clockwise in nav)
+    // Navigation bearing = heading + π/2, so to turn right (increase bearing),
+    // heading must increase (bearing = heading + π/2 increases when heading increases).
+    _heading += _plane.turnDirection * PlaneComponent.turnRate * dt;
 
     // Normalize heading to [-π, π] to prevent accumulation
     while (_heading > pi) { _heading -= 2 * pi; }
@@ -719,6 +719,7 @@ class FlitGame extends FlameGame
     final y = sin(dLng) * cos(lat2);
     final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLng);
     // targetBearing: 0 = north, π/2 = east (standard navigation bearing)
+    // atan2(y, x) computes the initial bearing using the great-circle formula
     final targetBearing = atan2(y, x);
 
     // Convert our internal heading to navigation bearing for comparison
