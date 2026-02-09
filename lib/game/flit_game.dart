@@ -310,10 +310,13 @@ class FlitGame extends FlameGame
 
     // Convert to screen coords. Must match the shader's cameraRayDir:
     //   uv = (fragCoord - 0.5 * resolution) / resolution.y
-    //   uv.y = -uv.y   (Flutter y-down flip)
-    // Inverse: fragCoord = (uvX * res.y + 0.5 * res.x, -uvY * res.y + 0.5 * res.y)
+    //   uv.y = -uv.y          (Flutter y-down flip)
+    //   uv.y += tiltDown       (chase-camera tilt: 0.25)
+    // Inverse: fragCoord.x = uvX * res.y + 0.5 * res.x
+    //          fragCoord.y = -(uvY - tiltDown) * res.y + 0.5 * res.y
+    const tiltDown = 0.25; // Must match globe.frag cameraRayDir tiltDown
     final screenX = uvX * size.y + size.x * 0.5;
-    final screenY = -uvY * size.y + size.y * 0.5;
+    final screenY = -(uvY - tiltDown) * size.y + size.y * 0.5;
 
     return Vector2(screenX, screenY);
   }

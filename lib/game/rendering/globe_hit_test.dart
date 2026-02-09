@@ -38,10 +38,14 @@ class GlobeHitTest {
     // -- Step 1: Screen -> UV (matching shader convention) --
     // The shader computes: uv = (fragCoord - 0.5 * resolution) / resolution.y
     // This maps x to [-0.5*aspect, 0.5*aspect] and y to [-0.5, 0.5].
-    // The shader then flips Y (uv.y = -uv.y) because Flutter is y-down.
+    // The shader then flips Y (uv.y = -uv.y) because Flutter is y-down,
+    // and adds a tiltDown offset (uv.y += 0.25) for the chase-camera view.
     // We replicate that here so the inverse projection matches exactly.
+    const tiltDown = 0.25; // Must match globe.frag cameraRayDir tiltDown
     final ndcX = (screenPoint.dx - 0.5 * screenSize.width) / screenSize.height;
-    final ndcY = -(screenPoint.dy - 0.5 * screenSize.height) / screenSize.height;
+    final ndcY =
+        -(screenPoint.dy - 0.5 * screenSize.height) / screenSize.height +
+            tiltDown;
 
     // -- Step 2: NDC -> ray direction --
     // Use the camera's FOV to determine the view-plane distance.
