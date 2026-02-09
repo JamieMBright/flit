@@ -110,7 +110,6 @@ class HomeScreen extends StatelessWidget {
         ],
       );
 
-<<<<<<< HEAD
   /// Safely navigate to a new screen with error handling.
   /// Wraps Navigator.push in try-catch to prevent navigation errors from crashing the app.
   Future<void> _navigateSafely(BuildContext context, Widget destination) async {
@@ -135,8 +134,6 @@ class HomeScreen extends StatelessWidget {
     }
   }
 
-=======
->>>>>>> origin/main
   /// Close the bottom sheet and navigate to [destination].
   ///
   /// Uses the sheet's navigator to avoid context lifecycle issues on iOS PWA.
@@ -149,7 +146,6 @@ class HomeScreen extends StatelessWidget {
     // Pop the sheet and immediately push the destination route using the same
     // Navigator. This eliminates context validity issues and timing races that
     // occur on iOS PWA when using delayed futures with captured contexts.
-<<<<<<< HEAD
     try {
       Navigator.of(sheetContext)
         ..pop()
@@ -162,13 +158,6 @@ class HomeScreen extends StatelessWidget {
       // Errors are logged for debugging. Consider using a global error handler
       // or ScaffoldMessengerKey for user-visible feedback if needed.
     }
-=======
-    Navigator.of(sheetContext)
-      ..pop()
-      ..push(
-        MaterialPageRoute<void>(builder: (_) => destination),
-      );
->>>>>>> origin/main
   }
 
   void _showGameModes(BuildContext context) {
