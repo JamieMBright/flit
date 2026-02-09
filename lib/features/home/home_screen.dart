@@ -124,10 +124,10 @@ class HomeScreen extends StatelessWidget {
       debugPrint('Navigation error: $e\n$stackTrace');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Navigation failed: ${e.toString()}'),
+          const SnackBar(
+            content: Text('Something went wrong opening that screen. Please try again.'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
+            duration: Duration(seconds: 3),
           ),
         );
       }
@@ -141,6 +141,7 @@ class HomeScreen extends StatelessWidget {
   /// crashes on web platforms where delayed futures can race with sheet dismissal.
   void _closeSheetAndNavigate(
     BuildContext sheetContext,
+    BuildContext homeContext,
     Widget destination,
   ) {
     // Pop the sheet and immediately push the destination route using the same
@@ -154,7 +155,16 @@ class HomeScreen extends StatelessWidget {
         );
     } catch (e, stackTrace) {
       debugPrint('Navigation error: $e\n$stackTrace');
-      // Note: Can't show SnackBar here as sheetContext may be disposed
+      // Show error feedback using the stable home context
+      if (homeContext.mounted) {
+        ScaffoldMessenger.of(homeContext).showSnackBar(
+          const SnackBar(
+            content: Text('Something went wrong opening that screen. Please try again.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -185,7 +195,7 @@ class HomeScreen extends StatelessWidget {
               subtitle: 'Explore the world at your own pace',
               icon: Icons.flight_takeoff,
               onTap: () => _closeSheetAndNavigate(
-                ctx, const RegionSelectScreen(),
+                ctx, context, const RegionSelectScreen(),
               ),
             ),
             const SizedBox(height: 10),
@@ -194,7 +204,7 @@ class HomeScreen extends StatelessWidget {
               subtitle: 'Practice without rank pressure',
               icon: Icons.school_rounded,
               onTap: () => _closeSheetAndNavigate(
-                ctx, const PracticeScreen(),
+                ctx, context, const PracticeScreen(),
               ),
             ),
             const SizedBox(height: 10),
@@ -204,7 +214,7 @@ class HomeScreen extends StatelessWidget {
               icon: Icons.today_rounded,
               isHighlighted: true,
               onTap: () => _closeSheetAndNavigate(
-                ctx, const DailyChallengeScreen(),
+                ctx, context, const DailyChallengeScreen(),
               ),
             ),
             const SizedBox(height: 10),
@@ -213,7 +223,7 @@ class HomeScreen extends StatelessWidget {
               subtitle: 'Challenge your friends head-to-head',
               icon: Icons.people_rounded,
               onTap: () => _closeSheetAndNavigate(
-                ctx, const FriendsScreen(),
+                ctx, context, const FriendsScreen(),
               ),
             ),
             const SizedBox(height: 16),
