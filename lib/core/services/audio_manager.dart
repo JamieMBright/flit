@@ -102,6 +102,11 @@ class AudioManager {
   /// Whether [initialize] has been called.
   bool _initialized = false;
 
+  /// Asset paths that have failed to load. Once an asset fails, we skip
+  /// future attempts to avoid repeated errors (especially on Safari where
+  /// MEDIA_ELEMENT_ERROR from missing files can destabilise the audio context).
+  final Set<String> _failedAssets = {};
+
   // -----------------------------------------------------------------
   // Plane ID → Engine type mapping
   // -----------------------------------------------------------------
@@ -239,13 +244,17 @@ class AudioManager {
   Future<void> _playMusicTrack() async {
     if (!_enabled) return;
 
+    final asset = _musicTracks[_currentTrackIndex];
+
+    // Skip assets that have already failed.
+    if (_failedAssets.contains(asset)) return;
+
     try {
       await _musicPlayer.setVolume(_musicVolume);
-      await _musicPlayer.play(
-        AssetSource(_musicTracks[_currentTrackIndex]),
-      );
+      await _musicPlayer.play(AssetSource(asset));
     } catch (e) {
-      _log.warning('audio', 'Music track failed: ${_musicTracks[_currentTrackIndex]}', error: e);
+      _log.warning('audio', 'Music track failed: $asset', error: e);
+      _failedAssets.add(asset);
     }
   }
 
@@ -277,16 +286,21 @@ class AudioManager {
     // Already playing this engine type — no-op.
     if (_currentEngine == type) return;
 
+    final asset = _engineAsset(type);
+
+    // Skip assets that have already failed (avoids repeated errors on Safari).
+    if (_failedAssets.contains(asset)) return;
+
     _currentEngine = type;
 
     try {
       await _enginePlayer.stop();
       await _enginePlayer.setVolume(_engineBaseVolume);
-      await _enginePlayer.play(
-        AssetSource(_engineAsset(type)),
-      );
+      await _enginePlayer.play(AssetSource(asset));
     } catch (e) {
-      _log.warning('audio', 'Engine sound failed: ${_engineAsset(type)}', error: e);
+      _log.warning('audio', 'Engine sound failed: $asset', error: e);
+      _failedAssets.add(asset);
+      _currentEngine = null; // Prevent updateEngineVolume from firing every frame
     }
   }
 
@@ -322,14 +336,20 @@ class AudioManager {
   Future<void> playSfx(SfxType type) async {
     if (!_enabled) return;
 
+    final asset = _sfxAsset(type);
+
+    // Skip assets that have already failed (avoids repeated errors on Safari).
+    if (_failedAssets.contains(asset)) return;
+
     final player = _sfxPool[_sfxPoolIndex];
     _sfxPoolIndex = (_sfxPoolIndex + 1) % _sfxPool.length;
 
     try {
       await player.setVolume(_sfxVolume);
-      await player.play(AssetSource(_sfxAsset(type)));
+      await player.play(AssetSource(asset));
     } catch (e) {
-      _log.warning('audio', 'SFX failed: ${_sfxAsset(type)}', error: e);
+      _log.warning('audio', 'SFX failed: $asset', error: e);
+      _failedAssets.add(asset);
     }
   }
 
