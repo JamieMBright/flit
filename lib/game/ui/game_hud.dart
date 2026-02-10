@@ -17,6 +17,7 @@ class GameHud extends StatelessWidget {
     this.currentClue,
     this.onAltitudeToggle,
     this.onExit,
+    this.onSettings,
     this.currentSpeed = FlightSpeed.medium,
     this.onSpeedChanged,
     this.onHint,
@@ -32,6 +33,7 @@ class GameHud extends StatelessWidget {
   final Clue? currentClue;
   final VoidCallback? onAltitudeToggle;
   final VoidCallback? onExit;
+  final VoidCallback? onSettings;
   final FlightSpeed currentSpeed;
   final ValueChanged<FlightSpeed>? onSpeedChanged;
   final VoidCallback? onHint;
@@ -54,6 +56,9 @@ class GameHud extends StatelessWidget {
                 children: [
                   // Exit button
                   _ExitButton(onTap: onExit),
+                  const SizedBox(width: 6),
+                  // Settings gear
+                  _GearButton(onTap: onSettings),
                   const SizedBox(width: 8),
                   // Clue display
                   if (currentClue != null)
@@ -173,6 +178,30 @@ class _ExitButton extends StatelessWidget {
           ),
           child: const Icon(
             Icons.close,
+            color: FlitColors.textSecondary,
+            size: 20,
+          ),
+        ),
+      );
+}
+
+class _GearButton extends StatelessWidget {
+  const _GearButton({this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: FlitColors.cardBackground.withOpacity(0.85),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
+          ),
+          child: const Icon(
+            Icons.settings,
             color: FlitColors.textSecondary,
             size: 20,
           ),

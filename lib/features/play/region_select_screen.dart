@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/providers/account_provider.dart';
@@ -70,7 +71,19 @@ class RegionSelectScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView.builder(
+      body: Column(
+        children: [
+          // Difficulty selector bar
+          ListenableBuilder(
+            listenable: GameSettings.instance,
+            builder: (context, _) => _DifficultyBar(
+              difficulty: GameSettings.instance.difficulty,
+              onChanged: (d) => GameSettings.instance.difficulty = d,
+            ),
+          ),
+          // Region list
+          Expanded(
+            child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: GameRegion.values.length,
         itemBuilder: (context, index) {
@@ -118,6 +131,9 @@ class RegionSelectScreen extends ConsumerWidget {
                 : null,
           );
         },
+      ),
+          ), // Expanded
+        ], // Column
       ),
     );
   }
@@ -351,6 +367,96 @@ class _RegionCard extends StatelessWidget {
         return Icons.beach_access;
       case GameRegion.ireland:
         return Icons.grass;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Difficulty quick-pick bar shown above the region list
+// ---------------------------------------------------------------------------
+
+class _DifficultyBar extends StatelessWidget {
+  const _DifficultyBar({
+    required this.difficulty,
+    required this.onChanged,
+  });
+
+  final GameDifficulty difficulty;
+  final ValueChanged<GameDifficulty> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        color: FlitColors.backgroundMid,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            const Icon(Icons.tune, color: FlitColors.textSecondary, size: 18),
+            const SizedBox(width: 8),
+            const Text(
+              'Difficulty',
+              style: TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 12),
+            ...GameDifficulty.values.map((d) {
+              final isActive = d == difficulty;
+              return Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: GestureDetector(
+                  onTap: () => onChanged(d),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? _color(d).withOpacity(0.2)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isActive ? _color(d) : FlitColors.cardBorder,
+                        width: isActive ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Text(
+                      _label(d),
+                      style: TextStyle(
+                        color: isActive ? _color(d) : FlitColors.textMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      );
+
+  static String _label(GameDifficulty d) {
+    switch (d) {
+      case GameDifficulty.easy:
+        return 'EASY';
+      case GameDifficulty.normal:
+        return 'NORMAL';
+      case GameDifficulty.hard:
+        return 'HARD';
+    }
+  }
+
+  static Color _color(GameDifficulty d) {
+    switch (d) {
+      case GameDifficulty.easy:
+        return FlitColors.success;
+      case GameDifficulty.normal:
+        return FlitColors.accent;
+      case GameDifficulty.hard:
+        return FlitColors.gold;
     }
   }
 }

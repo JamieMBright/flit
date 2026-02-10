@@ -9,6 +9,7 @@ import '../../core/services/error_service.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
+import '../../core/widgets/settings_sheet.dart';
 import '../../data/models/avatar_config.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/flit_game.dart';
@@ -782,6 +783,7 @@ class _PlayScreenState extends State<PlayScreen> {
                 AudioManager.instance.playSfx(SfxType.altitudeChange);
               },
               onExit: _requestExit,
+              onSettings: () => showSettingsSheet(context),
               currentSpeed: _game.flightSpeed,
               onSpeedChanged: (speed) {
                 setState(() {
