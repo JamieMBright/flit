@@ -26,6 +26,8 @@ uniform float uTime;         // Index 11:   elapsed time (seconds)
 uniform float uGlobeRadius;  // Index 12:   globe radius (typically 1.0)
 uniform float uCloudRadius;  // Index 13:   cloud shell radius (> globe)
 uniform float uFOV;          // Index 14:   field of view (radians)
+uniform float uEnableShading; // Index 15:  0.0 = raw texture, 1.0 = full shading
+uniform float uEnableNight;   // Index 16:  0.0 = always day,  1.0 = day/night cycle
 
 // ---------------------------------------------------------------------------
 // Samplers — maximum 4 per shader pass
@@ -452,6 +454,19 @@ void main() {
     // Compute surface contribution fade for smooth limb transition
     float surfaceFade = smoothstep(atmosphereOnlyThreshold, fullSurfaceThreshold, viewAngle);
 
+    // ----- Raw texture mode (shading disabled) -----------------------------
+    // When uEnableShading is off, output the satellite texture directly
+    // with no lighting, ocean, foam, clouds, or atmosphere. Useful for
+    // debugging texture projection and plane direction.
+    if (uEnableShading < 0.5) {
+        vec3 rawColor = satColor.rgb;
+        vec3 finalColor = mix(background, rawColor, surfaceFade);
+        // Gamma correction only (no tone-mapping needed for raw texture)
+        finalColor = pow(finalColor, vec3(1.0 / 2.2));
+        fragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
+        return;
+    }
+
     // ----- Surface classification ------------------------------------------
     bool isOcean = heightVal < SEA_LEVEL;
 
@@ -463,10 +478,15 @@ void main() {
     // V6: DAY/NIGHT TERMINATOR
     // =======================================================================
 
-    float dayFactor = smoothstep(TERMINATOR_SOFT, TERMINATOR_HARD, NdotL);
+    // When night is disabled, force full daylight everywhere.
+    float dayFactor = uEnableNight > 0.5
+        ? smoothstep(TERMINATOR_SOFT, TERMINATOR_HARD, NdotL)
+        : 1.0;
 
     // Warm terminator glow (sunset orange at the day/night boundary)
-    float terminatorZone = smoothstep(-0.15, 0.0, NdotL) * smoothstep(0.25, 0.05, NdotL);
+    float terminatorZone = uEnableNight > 0.5
+        ? smoothstep(-0.15, 0.0, NdotL) * smoothstep(0.25, 0.05, NdotL)
+        : 0.0;
     vec3 terminatorGlow  = TERMINATOR_WARM * terminatorZone * 0.5;
 
     // =======================================================================
@@ -569,7 +589,7 @@ void main() {
 
     {
         float nightFactor = 1.0 - dayFactor;
-        if (nightFactor > 0.01) {
+        if (uEnableNight > 0.5 && nightFactor > 0.01) {
             vec3 cityLights = texture(uCityLights, uv).rgb;
             // Boost and warm the city light emissions
             cityLights *= CITY_LIGHT_BOOST;

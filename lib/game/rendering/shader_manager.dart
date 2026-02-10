@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 
 import '../../core/services/error_service.dart';
+import '../../core/services/game_settings.dart';
 import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
 import 'camera_state.dart';
@@ -27,6 +28,8 @@ final _log = GameLog.instance;
 /// Index 12  : uGlobeRadius (1.0)
 /// Index 13  : uCloudRadius (1.02)
 /// Index 14  : uFOV (field of view radians)
+/// Index 15  : uEnableShading (0.0 = raw texture, 1.0 = full shading)
+/// Index 16  : uEnableNight   (0.0 = always day,  1.0 = day/night cycle)
 /// ```
 /// Plus 4 image samplers: uSatellite, uHeightmap, uShoreDist, uCityLights
 class ShaderManager {
@@ -335,6 +338,12 @@ class ShaderManager {
 
       // uFOV
       s.setFloat(14, camera.fov);
+
+      // uEnableShading (0.0 = raw texture, 1.0 = full shading)
+      s.setFloat(15, GameSettings.instance.enableShading ? 1.0 : 0.0);
+
+      // uEnableNight (0.0 = always day, 1.0 = day/night cycle)
+      s.setFloat(16, GameSettings.instance.enableNight ? 1.0 : 0.0);
 
       // -- Image samplers (indices 0-3) --
       // Always bind all 4 samplers to prevent shader errors on platforms that

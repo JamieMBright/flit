@@ -33,6 +33,33 @@ class GameSettings extends ChangeNotifier {
     return 'Very High';
   }
 
+  // ─── Shader Debug: Shading ───────────────────────────────────────
+
+  /// When false, the globe renders the raw satellite texture with no
+  /// diffuse lighting, ocean effects, foam, clouds, or atmosphere.
+  /// Useful for debugging texture projection and plane direction.
+  bool _enableShading = true;
+
+  bool get enableShading => _enableShading;
+
+  set enableShading(bool value) {
+    _enableShading = value;
+    notifyListeners();
+  }
+
+  // ─── Shader Debug: Night / Day-Night Cycle ─────────────────────
+
+  /// When false, the globe is always fully lit (daytime everywhere).
+  /// No city lights, no terminator glow, no stars behind the globe.
+  bool _enableNight = true;
+
+  bool get enableNight => _enableNight;
+
+  set enableNight(bool value) {
+    _enableNight = value;
+    notifyListeners();
+  }
+
   // ─── Invert Controls ──────────────────────────────────────────────
 
   /// When true, dragging right banks the plane left (and vice versa).

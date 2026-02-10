@@ -144,6 +144,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const Divider(color: FlitColors.cardBorder, height: 1),
               const SizedBox(height: 16),
               const Center(
+                child: Text(
+                  'Debug',
+                  style: TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _SettingsToggle(
+                label: 'Shading',
+                icon: Icons.wb_sunny_outlined,
+                value: GameSettings.instance.enableShading,
+                onChanged: (value) {
+                  GameSettings.instance.enableShading = value;
+                  setSheetState(() {});
+                },
+              ),
+              const Divider(color: FlitColors.cardBorder, height: 1),
+              _SettingsToggle(
+                label: 'Night / Day Cycle',
+                icon: Icons.nightlight_outlined,
+                value: GameSettings.instance.enableNight,
+                onChanged: (value) {
+                  GameSettings.instance.enableNight = value;
+                  setSheetState(() {});
+                },
+              ),
+              const Divider(color: FlitColors.cardBorder, height: 1),
+              const SizedBox(height: 16),
+              const Center(
                 child: Column(
                   children: [
                     Text(
