@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../core/services/audio_manager.dart';
 import '../core/services/error_service.dart';
+import '../core/services/game_settings.dart';
 import '../core/theme/flit_colors.dart';
 import '../core/utils/game_log.dart';
 import '../core/utils/web_error_bridge.dart';
@@ -518,30 +519,56 @@ class FlitGame extends FlameGame
     }
   }
 
+  /// Cached bounding boxes for each country (minLng, minLat, maxLng, maxLat).
+  /// Computed once on first use to avoid per-frame allocations.
+  static List<Rect>? _countryBounds;
+
   /// Detect which country the plane is currently over.
-  /// Uses point-in-polygon testing with caching to avoid checking every frame.
+  /// Uses bounding-box pre-filtering and point-in-polygon testing.
   void _updateCountryDetection(double dt) {
     _countryCheckTimer += dt;
     if (_countryCheckTimer < _countryCheckInterval) return;
 
     _countryCheckTimer = 0.0;
 
-    // Check if current position is in any country's polygons
+    final countries = CountryData.countries;
+
+    // Lazy-init bounding boxes (once, first frame that needs them).
+    if (_countryBounds == null) {
+      _countryBounds = List<Rect>.generate(countries.length, (i) {
+        var minLng = double.infinity;
+        var minLat = double.infinity;
+        var maxLng = double.negativeInfinity;
+        var maxLat = double.negativeInfinity;
+        for (final polygon in countries[i].polygons) {
+          for (final v in polygon) {
+            if (v.x < minLng) minLng = v.x;
+            if (v.x > maxLng) maxLng = v.x;
+            if (v.y < minLat) minLat = v.y;
+            if (v.y > maxLat) maxLat = v.y;
+          }
+        }
+        return Rect.fromLTRB(minLng, minLat, maxLng, maxLat);
+      });
+    }
+
     final lng = _worldPosition.x;
     final lat = _worldPosition.y;
 
-    // Linear search through countries (fast enough for ~200 countries)
-    for (final country in CountryData.countries) {
-      // Check each polygon in the country (many countries have multiple polygons)
+    for (var ci = 0; ci < countries.length; ci++) {
+      // Fast bounding-box reject (skips ~95% of countries).
+      final b = _countryBounds![ci];
+      if (lng < b.left || lng > b.right || lat < b.top || lat > b.bottom) {
+        continue;
+      }
+
+      final country = countries[ci];
       for (final polygon in country.polygons) {
-        // Convert Vector2 list to Offset list for hit test
-        final polygonOffsets = polygon.map((v) => Offset(v.x, v.y)).toList();
-        if (_hitTest.isPointInPolygon(lat, lng, polygonOffsets)) {
-          // Detect country change and trigger flash animation
+        // Use Vector2 overload directly — no Offset allocation.
+        if (_hitTest.isPointInPolygonVec2(lat, lng, polygon)) {
           if (_cachedCountryName != country.name) {
             _previousCountryName = _cachedCountryName;
             _cachedCountryName = country.name;
-            // Trigger flash when entering any country (including from ocean)
             _countryFlashTimer = _countryFlashDuration;
             _log.info('game', 'Entered country', data: {
               'from': _previousCountryName ?? 'ocean',
@@ -666,7 +693,12 @@ class FlitGame extends FlameGame
     // Update plane visual — heading is relative to camera heading only.
     // Drag offset is excluded: when the player drags to look around,
     // the globe rotates but the plane keeps facing forward on screen.
-    _plane.visualHeading = _heading - _cameraHeading;
+    // Use shortest-path difference to avoid ±π wrapping jumps (the raw
+    // subtraction can produce ~2π spikes when heading crosses ±π).
+    var visualDiff = _heading - _cameraHeading;
+    while (visualDiff > pi) { visualDiff -= 2 * pi; }
+    while (visualDiff < -pi) { visualDiff += 2 * pi; }
+    _plane.visualHeading = visualDiff;
 
     // Place the plane at its projected world position so it aligns with
     // contrails and map features. Works for both Canvas and shader renderers.
@@ -834,7 +866,10 @@ class FlitGame extends FlameGame
 
       // Progressive curve: starts at 0.08, reaches 1.0 after ~0.6s.
       final strength = (0.08 + holdTime * holdTime * 4.5).clamp(0.0, 1.0);
-      _plane.setTurnDirection(dir * strength);
+      // Negate direction so left input = left visual turn (direct mapping).
+      // When invertControls is true, skip the negation (left input = right turn).
+      final invert = GameSettings.instance.invertControls ? 1.0 : -1.0;
+      _plane.setTurnDirection(dir * strength * invert);
       _waymarker = null; // keyboard/button overrides waymarker
     } else if (_waymarker == null &&
         (_keyTurnHoldTime > 0 || _buttonTurnHoldTime > 0)) {

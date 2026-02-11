@@ -255,27 +255,58 @@
       renderErrorOverlay();
     }
 
+    // Check whether an error message is a known non-fatal shader/renderer
+    // issue. These are handled gracefully in Dart with fallback rendering,
+    // so the JS handler should NOT freeze the UI for them.
+    function isShaderError(msg) {
+      return msg && (
+        msg.indexOf('FragmentProgram') >= 0 ||
+        msg.indexOf('Unsupported operation') >= 0 ||
+        msg.indexOf('HTML renderer') >= 0 ||
+        msg.indexOf('not supported for the') >= 0 ||
+        msg.indexOf('shader') >= 0 && msg.indexOf('failed') >= 0
+      );
+    }
+
     // Catch synchronous JS errors
     window.addEventListener('error', function(e) {
-      var msg = '[JS Error] ' + e.message + '\n' + (e.filename || '') + ':' + (e.lineno || '');
+      var msg = (e.message || '') + '\n' + (e.filename || '') + ':' + (e.lineno || '');
+
+      // Shader/renderer errors are recovered in Dart — log but don't freeze.
+      if (isShaderError(msg)) {
+        console.warn('[FLIT] Non-fatal shader error caught at JS level:', msg);
+        if (window._flitLogNonFatal) window._flitLogNonFatal('[JS] ' + msg);
+        e.preventDefault();
+        return true;
+      }
+
       var stack = e.error && e.error.stack ? e.error.stack : null;
-      freezeWithError(msg, stack);
-      e.preventDefault(); // Prevent default handling / page reload
+      freezeWithError('[JS Error] ' + msg, stack);
+      e.preventDefault();
       return true;
     });
 
     // Catch unhandled promise rejections (async errors)
     window.addEventListener('unhandledrejection', function(e) {
       var reason = e.reason;
-      var msg = '[Async Error] ';
+      var msg = '';
       var stack = null;
       if (reason && reason.stack) {
-        msg += reason.message + '\n' + reason.stack;
+        msg = (reason.message || '') + '\n' + reason.stack;
         stack = reason.stack;
       } else {
-        msg += String(reason || e);
+        msg = String(reason || e);
       }
-      freezeWithError(msg, stack);
+
+      // Shader/renderer errors are recovered in Dart — log but don't freeze.
+      if (isShaderError(msg)) {
+        console.warn('[FLIT] Non-fatal shader error caught at JS level:', msg);
+        if (window._flitLogNonFatal) window._flitLogNonFatal('[JS Async] ' + msg);
+        e.preventDefault();
+        return;
+      }
+
+      freezeWithError('[Async Error] ' + msg, stack);
       e.preventDefault();
     });
 
@@ -300,8 +331,15 @@
   <!--
     Flutter bootstrap: try flutter_bootstrap.js first (Flutter 3.22+).
     If it 404s, fall back to flutter.js + _flutter.loader (Flutter 3.16-3.21).
+    Force CanvasKit renderer so fragment shaders work on iOS Safari.
   -->
   <script>
+    // Force CanvasKit renderer (required for fragment shaders on iOS Safari).
+    // HTML renderer doesn't support FragmentProgram, causing black-screen
+    // fallback and broken night/day toggle. CanvasKit uses WebGL which
+    // supports our GLSL shaders on all modern browsers.
+    window.flutterWebRenderer = 'canvaskit';
+
     var bs = document.createElement('script');
     bs.src = 'flutter_bootstrap.js';
     bs.async = true;
@@ -311,13 +349,14 @@
       fl.src = 'flutter.js';
       fl.defer = true;
       fl.onload = function() {
+        var canvasKitConfig = { renderer: 'canvaskit' };
         // Flutter 3.22+ uses load(), 3.16-3.21 uses loadEntrypoint().
         if (_flutter.loader.load) {
-          _flutter.loader.load();
+          _flutter.loader.load({ config: canvasKitConfig });
         } else {
           _flutter.loader.loadEntrypoint({
             onEntrypointLoaded: function(engineInitializer) {
-              engineInitializer.initializeEngine().then(function(appRunner) {
+              engineInitializer.initializeEngine(canvasKitConfig).then(function(appRunner) {
                 appRunner.runApp();
               });
             }

@@ -45,9 +45,10 @@ class GameSettings extends ChangeNotifier {
     return 'Very High';
   }
 
-  /// When true, dragging right banks the plane left (and vice versa).
-  /// This is the default "natural" feel for a behind-the-plane camera.
-  bool _invertControls = true;
+  /// When true, left input steers the plane right (and vice versa).
+  /// Some players prefer this for a behind-the-plane camera feel.
+  /// Default is false: left input = left turn (direct mapping).
+  bool _invertControls = false;
 
   bool get invertControls => _invertControls;
 

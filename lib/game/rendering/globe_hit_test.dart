@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flame/components.dart';
 import 'package:flutter/painting.dart';
 
 import 'camera_state.dart';
@@ -175,6 +176,33 @@ class GlobeHitTest {
       final xj = polygon[j].dx;
 
       // Check if the ray crosses this edge.
+      final crossesEdge = ((yi > lat) != (yj > lat)) &&
+          (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+
+      if (crossesEdge) {
+        inside = !inside;
+      }
+    }
+
+    return inside;
+  }
+
+  /// Point-in-polygon test using Vector2 directly (avoids Offset allocation).
+  ///
+  /// Same algorithm as [isPointInPolygon] but accepts the polygon as
+  /// `List<Vector2>` where x = longitude, y = latitude.
+  bool isPointInPolygonVec2(double lat, double lng, List<Vector2> polygon) {
+    if (polygon.length < 3) return false;
+
+    var inside = false;
+    final n = polygon.length;
+
+    for (var i = 0, j = n - 1; i < n; j = i++) {
+      final yi = polygon[i].y; // latitude of vertex i
+      final xi = polygon[i].x; // longitude of vertex i
+      final yj = polygon[j].y;
+      final xj = polygon[j].x;
+
       final crossesEdge = ((yi > lat) != (yj > lat)) &&
           (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
 
