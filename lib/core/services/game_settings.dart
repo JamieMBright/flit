@@ -58,17 +58,6 @@ class GameSettings extends ChangeNotifier {
 
   // ─── Display ────────────────────────────────────────────────────
 
-  /// When false, the globe renders the raw satellite texture with no
-  /// diffuse lighting, ocean effects, foam, clouds, or atmosphere.
-  bool _enableShading = true;
-
-  bool get enableShading => _enableShading;
-
-  set enableShading(bool value) {
-    _enableShading = value;
-    notifyListeners();
-  }
-
   /// When false, the globe is always fully lit (daytime everywhere).
   /// No city lights, no terminator glow, no stars behind the globe.
   bool _enableNight = true;

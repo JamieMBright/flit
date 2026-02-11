@@ -1237,15 +1237,14 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     _isDragging = true;
   }
 
-  /// Smoothly steer toward a target turn direction (for waypoint auto-steering).
+  /// Steer toward a target turn direction (for waypoint auto-steering).
   /// Sets [_isDragging] so that update()'s turn-decay doesn't fight the input.
-  /// Interpolates with fast attack (dt*12) so banking is clearly visible
-  /// when following a waypoint.
+  /// Sets _turnDirection directly (like keyboard input) so that the bank
+  /// animation in update() is clearly visible during waypoint turns.
+  /// The bank smoothing in update() already provides visual easing.
   void steerToward(double target, double dt) {
     final clamped = target.clamp(-1.0, 1.0);
-    // Fast interpolation toward target turn direction for visible banking
-    _turnDirection += (clamped - _turnDirection) * (dt * 12.0).clamp(0.0, 1.0);
-    _turnDirection = _turnDirection.clamp(-1.0, 1.0);
+    _turnDirection = clamped;
     _isDragging = true;
   }
 

@@ -118,16 +118,6 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
           // ── Display ────────────────────────────────────────
           const _SectionHeader(title: 'Display'),
           _SettingsToggle(
-            label: 'Shading',
-            icon: Icons.wb_sunny_outlined,
-            value: GameSettings.instance.enableShading,
-            onChanged: (value) {
-              GameSettings.instance.enableShading = value;
-              setState(() {});
-            },
-          ),
-          const Divider(color: FlitColors.cardBorder, height: 1),
-          _SettingsToggle(
             label: 'Night / Day Cycle',
             icon: Icons.nightlight_outlined,
             value: GameSettings.instance.enableNight,
