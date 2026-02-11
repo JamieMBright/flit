@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../core/services/audio_manager.dart';
 import '../core/services/error_service.dart';
+import '../core/services/game_settings.dart';
 import '../core/theme/flit_colors.dart';
 import '../core/utils/game_log.dart';
 import '../core/utils/web_error_bridge.dart';
@@ -834,7 +835,10 @@ class FlitGame extends FlameGame
 
       // Progressive curve: starts at 0.08, reaches 1.0 after ~0.6s.
       final strength = (0.08 + holdTime * holdTime * 4.5).clamp(0.0, 1.0);
-      _plane.setTurnDirection(dir * strength);
+      // Negate direction so left input = left visual turn (direct mapping).
+      // When invertControls is true, skip the negation (left input = right turn).
+      final invert = GameSettings.instance.invertControls ? 1.0 : -1.0;
+      _plane.setTurnDirection(dir * strength * invert);
       _waymarker = null; // keyboard/button overrides waymarker
     } else if (_waymarker == null &&
         (_keyTurnHoldTime > 0 || _buttonTurnHoldTime > 0)) {
