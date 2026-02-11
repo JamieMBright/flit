@@ -257,9 +257,9 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
     if (borderOpacity < 0.01) return;
 
     final borderPaint = Paint()
-      ..color = FlitColors.border.withOpacity(borderOpacity * 0.7)
+      ..color = Colors.white.withOpacity(borderOpacity * 0.8)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = continuousAlt >= 0.6 ? 0.6 : 1.0
+      ..strokeWidth = continuousAlt >= 0.6 ? 1.0 : 1.5
       ..strokeJoin = StrokeJoin.round;
 
     // Active country highlight: thicker, brighter border.

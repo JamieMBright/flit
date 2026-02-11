@@ -286,11 +286,20 @@ class Clue {
         // Flag clues are always valid
         return true;
       case ClueType.outline:
-        // Check if polygons/points exist and are not empty
+        // Check if polygons/points exist and have enough vertices to be
+        // recognisable.  Countries with fewer than 10 total vertices look
+        // like generic rectangles and are impossible to identify by shape.
         final polygons = clue.displayData['polygons'] as List?;
         final points = clue.displayData['points'] as List?;
-        return (polygons != null && polygons.isNotEmpty) ||
-               (points != null && points.isNotEmpty);
+        if (polygons != null && polygons.isNotEmpty) {
+          var totalVertices = 0;
+          for (final poly in polygons) {
+            totalVertices += (poly as List).length;
+          }
+          return totalVertices >= 10;
+        }
+        if (points != null && points.length >= 10) return true;
+        return false;
       case ClueType.borders:
         // Check if neighbors list exists and is not empty
         final neighbors = clue.displayData['neighbors'] as List<String>?;

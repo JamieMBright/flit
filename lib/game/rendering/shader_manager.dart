@@ -339,8 +339,8 @@ class ShaderManager {
       // uFOV
       s.setFloat(14, camera.fov);
 
-      // uEnableShading (0.0 = raw texture, 1.0 = full shading)
-      s.setFloat(15, GameSettings.instance.enableShading ? 1.0 : 0.0);
+      // uEnableShading — always disabled (raw satellite texture, no lighting)
+      s.setFloat(15, 0.0);
 
       // uEnableNight (0.0 = always day, 1.0 = day/night cycle)
       s.setFloat(16, GameSettings.instance.enableNight ? 1.0 : 0.0);

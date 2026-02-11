@@ -174,7 +174,11 @@ class FlitGame extends FlameGame
   double _countryCheckTimer = 0.0;
 
   /// How often to check country (seconds).
-  static const double _countryCheckInterval = 0.5;
+  /// Must be short enough that at max speed the plane doesn't skip over
+  /// small countries between checks. At high altitude + fast speed the
+  /// plane covers ~5.8°/s, so 0.1 s → 0.58° per check — safe for most
+  /// countries.
+  static const double _countryCheckInterval = 0.1;
 
   /// Flash animation timer when entering a new country (seconds remaining).
   double _countryFlashTimer = 0.0;
@@ -341,12 +345,14 @@ class FlitGame extends FlameGame
 
     // Convert to screen coords. Must match the shader's cameraRayDir:
     //   uv = (fragCoord - 0.5 * resolution) / resolution.y
-    //   uv.y += tiltDown       (chase-camera tilt, no Y-flip)
-    // Inverse: fragCoord.x = uvX * res.y + 0.5 * res.x
-    //          fragCoord.y = (uvY - tiltDown) * res.y + 0.5 * res.y
+    //   uv.y = -uv.y           (Y-flip: Flutter y-down → screen y-up)
+    //   uv.y += tiltDown        (chase-camera tilt)
+    // Solving for fragCoord:
+    //   fragCoord.x = uvX * res.y + 0.5 * res.x
+    //   fragCoord.y = (tiltDown - uvY) * res.y + 0.5 * res.y
     const tiltDown = 0.25; // Must match globe.frag cameraRayDir tiltDown
     final screenX = uvX * size.y + size.x * 0.5;
-    final screenY = (uvY - tiltDown) * size.y + size.y * 0.5;
+    final screenY = (tiltDown - uvY) * size.y + size.y * 0.5;
 
     return Vector2(screenX, screenY);
   }

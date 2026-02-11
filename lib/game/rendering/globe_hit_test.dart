@@ -37,14 +37,13 @@ class GlobeHitTest {
 
     // -- Step 1: Screen -> UV (matching shader convention) --
     // The shader computes: uv = (fragCoord - 0.5 * resolution) / resolution.y
-    // This maps x to [-0.5*aspect, 0.5*aspect] and y to [-0.5, 0.5].
-    // The shader computes uv.y = (fragCoord.y - 0.5*res.y) / res.y + tiltDown.
-    // No Y-flip: positive uv.y = screen bottom = heading direction.
+    // then flips Y: uv.y = -uv.y (Flutter y-down → screen y-up).
+    // Then adds tiltDown to shift view toward heading.
     // We replicate that here so the inverse projection matches exactly.
     const tiltDown = 0.25; // Must match globe.frag cameraRayDir tiltDown
     final ndcX = (screenPoint.dx - 0.5 * screenSize.width) / screenSize.height;
     final ndcY =
-        (screenPoint.dy - 0.5 * screenSize.height) / screenSize.height +
+        -((screenPoint.dy - 0.5 * screenSize.height) / screenSize.height) +
             tiltDown;
 
     // -- Step 2: NDC -> ray direction --
