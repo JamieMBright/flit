@@ -58,8 +58,9 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
     bool isHint = false,
   }) {
     // Build screen points along the great-circle arc.
+    // Start from i=1 (skip the plane origin) — we prepend the nose below.
     final points = <Offset>[];
-    for (var i = 0; i <= _segments; i++) {
+    for (var i = 1; i <= _segments; i++) {
       final t = i / _segments;
       final interp = _interpolateGreatCircle(planePos, target, t);
       final screen = gameRef.worldToScreen(interp);
@@ -67,6 +68,19 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
         points.add(Offset(screen.x, screen.y));
       }
     }
+
+    if (points.isEmpty) return;
+
+    // Prepend the plane's nose screen position so the line visually
+    // originates from the front of the aircraft, not the center.
+    final plane = gameRef.plane;
+    final totalRotation = plane.visualHeading + plane.turnDirection * 0.4;
+    const noseLength = 13.0; // ~16px nose offset * perspectiveScaleY(0.80)
+    final nosePos = Offset(
+      plane.position.x + sin(totalRotation) * noseLength,
+      plane.position.y - cos(totalRotation) * noseLength,
+    );
+    points.insert(0, nosePos);
 
     if (points.length < 2) return;
 

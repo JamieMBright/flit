@@ -802,11 +802,11 @@ class FlitGame extends FlameGame
     } else {
       // Smooth ease-out: camera heading chases plane heading.
       // During turns, reduce the tracking speed so the camera lags behind,
-      // creating a cinematic "catch-up" effect. At full bank the rate drops
-      // to 40% of normal (~4.8), giving a ~0.6s convergence time vs ~0.25s
-      // in straight flight. This prevents motion sickness during sharp turns.
+      // creating a really gradual "catch-up" effect. At full bank the rate
+      // drops to 20% of normal (~2.4), giving a ~1.3s convergence time vs
+      // ~0.25s in straight flight. This prevents motion sickness.
       final turnMag = _plane.turnDirection.abs();
-      final easeRate = _cameraHeadingEaseRate * (1.0 - turnMag * 0.6);
+      final easeRate = _cameraHeadingEaseRate * (1.0 - turnMag * 0.8);
       final factor = 1.0 - exp(-easeRate * dt);
       _cameraHeading = _lerpAngle(_cameraHeading, _heading, factor);
     }
@@ -957,7 +957,7 @@ class FlitGame extends FlameGame
       _waymarker = null; // keyboard/button overrides waymarker
     } else if (_waymarker == null &&
         (_keyTurnHoldTime > 0 || _buttonTurnHoldTime > 0)) {
-      // Just released — coast to straight.
+      // Just released — immediately stop turning and straighten.
       _keyTurnHoldTime = 0.0;
       _buttonTurnHoldTime = 0.0;
       _plane.releaseTurn();
