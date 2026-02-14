@@ -169,11 +169,11 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
 
     // Rotate to face heading. Camera up vector is the heading direction,
     // so visualHeading=0 means the plane faces "up" on screen (forward).
-    // Add a proportional yaw toward the turn direction so the nose, fuselage,
-    // and entire plane body visibly point toward the turn. At max turn,
-    // the plane rotates ~23° (0.4 rad) which is clearly visible.
-    // Proportional: gentle tap (8% turn) → ~1.8°, full hold → ~23°.
-    final turnAdjustment = _turnDirection * 0.4;
+    // Add a proportional yaw toward the bank direction so the nose, fuselage,
+    // and entire plane body visibly point toward the turn. Uses smoothed
+    // _currentBank for a gradual rotation that follows the wing banking.
+    // At full bank (1.3 rad), the nose rotates ~34° (0.6 rad) into the turn.
+    final turnAdjustment = (_currentBank / _maxBankAngle) * 0.6;
     canvas.rotate(visualHeading + turnAdjustment);
 
     // Apply perspective foreshortening: the camera is above and behind the
@@ -271,7 +271,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // Darken/lighten colors based on bank for 3D shading.
     // Bank left (negative) = left wing lit, right wing shadowed.
     // Bank right (positive) = right wing lit, left wing shadowed.
-    final shade = -bankSin; // Invert: turning-side wing darkens
+    final shade = -bankSin; // Right turn (bankSin>0) → shade<0 → left lit, right dark
 
     Color darken(Color c, double amount) {
       final f = (1.0 - amount).clamp(0.0, 1.0);
@@ -307,7 +307,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // 3D foreshortening: wing span scales with cos(bank)
     final dynamicWingSpan = wingSpan * bankCos.abs();
     // Wing vertical shift: the dipping wing moves down on screen
-    final wingDip = bankSin * 4.0;
+    final wingDip = -bankSin * 4.0;
 
     // --- Underside strip (visible when significantly banked) ---
     final bankAbs = bankSin.abs();
@@ -517,10 +517,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ? Color(colorScheme!['detail'] ?? 0xFFCCCCCC)
         : const Color(0xFFCCCCCC);
 
-    final shade = -bankSin; // Invert: turning-side wing darkens
+    final shade = -bankSin; // Right turn (bankSin>0) → shade<0 → left lit, right dark
     final bodyShift = bankSin * 1.5;
     final dynamicWingSpan = wingSpan * bankCos.abs();
-    final wingDip = bankSin * 4.0;
+    final wingDip = -bankSin * 4.0;
 
     // Simple folded paper body
     final bodyPath = Path()
@@ -584,10 +584,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ? Color(colorScheme!['detail'] ?? 0xFF808080)
         : const Color(0xFF808080);
 
-    final shade = -bankSin; // Invert: turning-side wing darkens
+    final shade = -bankSin; // Right turn (bankSin>0) → shade<0 → left lit, right dark
     final bodyShift = bankSin * 1.5;
     final dynamicWingSpan = wingSpan * bankCos.abs();
-    final wingDip = bankSin * 3.0;
+    final wingDip = -bankSin * 3.0;
 
     // Sleek fuselage (narrower than bi-plane)
     final fuselagePath = Path()
@@ -672,10 +672,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ? Color(colorScheme!['detail'] ?? 0xFF444444)
         : const Color(0xFF444444);
 
-    final shade = -bankSin; // Invert: turning-side wing darkens
+    final shade = -bankSin; // Right turn (bankSin>0) → shade<0 → left lit, right dark
     final bodyShift = bankSin * 1.0;
     final dynamicWingSpan = wingSpan * bankCos.abs();
-    final wingDip = bankSin * 2.0;
+    final wingDip = -bankSin * 2.0;
 
     // Wide flying wing (no distinct fuselage)
     final leftWingColor = shade < 0 ? primary : secondary;
@@ -747,10 +747,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ? Color(colorScheme!['detail'] ?? 0xFF1A1A1A)
         : const Color(0xFF1A1A1A);
 
-    final shade = -bankSin; // Invert: turning-side wing darkens
+    final shade = -bankSin; // Right turn (bankSin>0) → shade<0 → left lit, right dark
     final bodyShift = bankSin * 1.5;
     final dynamicWingSpan = wingSpan * bankCos.abs();
-    final wingDip = bankSin * 3.0;
+    final wingDip = -bankSin * 3.0;
 
     // Fuselage (similar to bi-plane but more angular)
     final fuselagePath = Path()
@@ -865,10 +865,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ? Color(colorScheme!['detail'] ?? 0xFFCC3333)
         : const Color(0xFFCC3333);
 
-    final shade = -bankSin; // Invert: turning-side wing darkens
+    final shade = -bankSin; // Right turn (bankSin>0) → shade<0 → left lit, right dark
     final bodyShift = bankSin * 1.0;
     final dynamicWingSpan = wingSpan * bankCos.abs();
-    final wingDip = bankSin * 2.5;
+    final wingDip = -bankSin * 2.5;
 
     // Delta wing (large triangular wing integrated with fuselage)
     final leftWingColor = shade < 0 ? primary : Color.lerp(primary, Colors.grey, 0.2)!;
@@ -964,7 +964,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         : const Color(0xFFF5F5F5);
 
     final dynamicWingSpan = wingSpan * bankCos.abs();
-    final wingDip = bankSin * 4.0;
+    final wingDip = -bankSin * 4.0;
 
     // First render pontoons (below the plane)
     final pontoonPaint = Paint()..color = detail;
@@ -1021,10 +1021,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ? Color(colorScheme!['detail'] ?? 0xFFFFCC00)
         : const Color(0xFFFFCC00);
 
-    final shade = -bankSin; // Invert: turning-side wing darkens
+    final shade = -bankSin; // Right turn (bankSin>0) → shade<0 → left lit, right dark
     final bodyShift = bankSin * 1.0;
     final dynamicWingSpan = wingSpan * bankCos.abs();
-    final wingDip = bankSin * 2.0;
+    final wingDip = -bankSin * 2.0;
 
     // Wide fuselage (airliner body)
     final fuselagePath = Path()

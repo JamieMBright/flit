@@ -955,9 +955,9 @@ class FlitGame extends FlameGame
       final invert = GameSettings.instance.invertControls ? 1.0 : -1.0;
       _plane.setTurnDirection(dir * strength * invert);
       _waymarker = null; // keyboard/button overrides waymarker
-    } else if (_waymarker == null &&
-        (_keyTurnHoldTime > 0 || _buttonTurnHoldTime > 0)) {
-      // Just released — immediately stop turning and straighten.
+    } else if (_waymarker == null) {
+      // No input and no waymarker — stop turning immediately.
+      // releaseTurn() is idempotent so calling every frame is safe.
       _keyTurnHoldTime = 0.0;
       _buttonTurnHoldTime = 0.0;
       _plane.releaseTurn();
@@ -1001,11 +1001,13 @@ class FlitGame extends FlameGame
     while (diff > pi) { diff -= 2 * pi; }
     while (diff < -pi) { diff += 2 * pi; }
 
-    // Adaptive turn strength: use wider proportional zone for sweeping arcs,
-    // modulated by distance for smoother approach and less overshoot.
+    // Sharp turn strength: narrow proportional zone so the plane commits to
+    // the turn quickly and doesn't spiral around the waypoint.
+    // At 45° error → full turn. Distance factor only slightly dampens when
+    // very close (within 10°) to prevent overshoot on final approach.
     final distToWaymarker = _greatCircleDistDeg(_worldPosition, _waymarker!);
-    final distanceFactor = (distToWaymarker / 30.0).clamp(0.5, 1.0);
-    final baseTurnStrength = (diff / (pi * 0.5)).clamp(-1.0, 1.0);
+    final distanceFactor = (distToWaymarker / 10.0).clamp(0.6, 1.0);
+    final baseTurnStrength = (diff / (pi * 0.25)).clamp(-1.0, 1.0);
     final turnStrength = baseTurnStrength * distanceFactor;
     if (turnStrength.abs() < 0.02) {
       _plane.steerToward(0, dt);
