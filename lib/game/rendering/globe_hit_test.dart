@@ -41,7 +41,7 @@ class GlobeHitTest {
     // then flips Y: uv.y = -uv.y (Flutter y-down → screen y-up).
     // Then adds tiltDown to shift view toward heading.
     // We replicate that here so the inverse projection matches exactly.
-    const tiltDown = 0.25; // Must match globe.frag cameraRayDir tiltDown
+    const tiltDown = 0.35; // Must match globe.frag cameraRayDir tiltDown
     final ndcX = (screenPoint.dx - 0.5 * screenSize.width) / screenSize.height;
     final ndcY =
         -((screenPoint.dy - 0.5 * screenSize.height) / screenSize.height) +

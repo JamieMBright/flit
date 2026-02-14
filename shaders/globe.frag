@@ -219,7 +219,10 @@ vec3 cameraRayDir(vec2 fragCoord, vec2 resolution, vec3 camPos, vec3 camUp, floa
     // tiltDown > 0 shifts the view toward heading (up on screen),
     // pushing the globe disk down so more surface is visible and
     // the curvature / horizon sits near the top of the screen.
-    const float tiltDown = 0.25;
+    // 0.35 places the horizon just above the top edge at high altitude
+    // (d=1.8, fov=1.4), creating a "behind and above the plane" POV
+    // where ground fills the screen and curvature is visible at the top.
+    const float tiltDown = 0.35;
     uv.y += tiltDown;
     
     float halfFov = tan(fov * 0.5);
