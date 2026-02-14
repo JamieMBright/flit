@@ -1328,6 +1328,7 @@ class PlanePainter extends CustomPainter {
   }
 
   // --- Classic Bi-Plane: two stacked wings, struts, round nose ---
+  // Top-down view: fuselage horizontal (nose right), wings perpendicular.
   void _drawBiPlane(Canvas canvas, double cx, double cy) {
     final body = Paint()..color = _primary;
     final wing = Paint()..color = _secondary;
@@ -1336,7 +1337,7 @@ class PlanePainter extends CustomPainter {
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
 
-    // Fuselage
+    // Fuselage (horizontal, nose right)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(center: Offset(cx, cy), width: 40, height: 10),
@@ -1344,40 +1345,41 @@ class PlanePainter extends CustomPainter {
       ),
       body,
     );
-    // Upper wing
+    // Rear wing (perpendicular to fuselage, slightly aft)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
-            center: Offset(cx, cy - 12), width: 56, height: 7),
+            center: Offset(cx - 3, cy), width: 7, height: 56),
         const Radius.circular(3),
       ),
       wing,
     );
-    // Lower wing
+    // Front wing (perpendicular, slightly forward)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
-            center: Offset(cx, cy + 12), width: 56, height: 7),
+            center: Offset(cx + 3, cy), width: 7, height: 56),
         const Radius.circular(3),
       ),
       wing,
     );
-    // Struts
+    // Struts (connecting wing planes along the span)
     canvas.drawLine(
-        Offset(cx - 14, cy - 8), Offset(cx - 14, cy + 8), strut);
+        Offset(cx - 3, cy - 14), Offset(cx + 3, cy - 14), strut);
     canvas.drawLine(
-        Offset(cx + 14, cy - 8), Offset(cx + 14, cy + 8), strut);
+        Offset(cx - 3, cy + 14), Offset(cx + 3, cy + 14), strut);
     // Propeller
     canvas.drawCircle(Offset(cx + 22, cy), 3, Paint()..color = _detail);
   }
 
   // --- Prop Plane: single low wing, big propeller disc ---
+  // Top-down view: fuselage horizontal (nose right), wing perpendicular.
   void _drawPropPlane(Canvas canvas, double cx, double cy) {
     final body = Paint()..color = _primary;
     final wing = Paint()..color = _secondary;
     final detail = Paint()..color = _detail;
 
-    // Fuselage
+    // Fuselage (horizontal, nose right)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(center: Offset(cx, cy), width: 44, height: 11),
@@ -1385,20 +1387,20 @@ class PlanePainter extends CustomPainter {
       ),
       body,
     );
-    // Wing (single, lower)
+    // Wing (single, perpendicular to fuselage)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
-            center: Offset(cx - 2, cy + 2), width: 60, height: 8),
+            center: Offset(cx - 2, cy), width: 8, height: 60),
         const Radius.circular(3),
       ),
       wing,
     );
-    // Tail fin
+    // Tail fin (extends perpendicular at the tail)
     final tail = Path()
       ..moveTo(cx - 22, cy)
       ..lineTo(cx - 28, cy - 12)
-      ..lineTo(cx - 18, cy)
+      ..lineTo(cx - 28, cy + 12)
       ..close();
     canvas.drawPath(tail, detail);
     // Propeller disc
@@ -1751,6 +1753,7 @@ class PlanePainter extends CustomPainter {
   }
 
   // --- Triplane (Red Baron): three stacked wings with struts ---
+  // Top-down view: fuselage horizontal (nose right), 3 wings perpendicular.
   void _drawTriplane(Canvas canvas, double cx, double cy) {
     final body = Paint()..color = _primary;
     final wing = Paint()..color = _secondary;
@@ -1759,7 +1762,7 @@ class PlanePainter extends CustomPainter {
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
 
-    // Fuselage
+    // Fuselage (horizontal, nose right)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(center: Offset(cx, cy), width: 38, height: 9),
@@ -1767,42 +1770,42 @@ class PlanePainter extends CustomPainter {
       ),
       body,
     );
-    // Top wing (smallest)
+    // Front wing (perpendicular, forward position, smallest span)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
-            center: Offset(cx, cy - 16), width: 44, height: 6),
+            center: Offset(cx + 5, cy), width: 6, height: 44),
         const Radius.circular(3),
       ),
       wing,
     );
-    // Middle wing
+    // Middle wing (perpendicular, centered)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(cx, cy), width: 52, height: 6),
+        Rect.fromCenter(center: Offset(cx, cy), width: 6, height: 52),
         const Radius.circular(3),
       ),
       wing,
     );
-    // Bottom wing (largest)
+    // Rear wing (perpendicular, aft position, largest span)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
-            center: Offset(cx, cy + 16), width: 56, height: 6),
+            center: Offset(cx - 5, cy), width: 6, height: 56),
         const Radius.circular(3),
       ),
       wing,
     );
-    // Struts connecting wings
+    // Struts (fore-aft connecting the 3 wing planes)
     canvas.drawLine(
-        Offset(cx - 12, cy - 13), Offset(cx - 14, cy + 13), strut);
+        Offset(cx - 5, cy - 14), Offset(cx + 5, cy - 14), strut);
     canvas.drawLine(
-        Offset(cx + 12, cy - 13), Offset(cx + 14, cy + 13), strut);
-    // Tail fin
+        Offset(cx - 5, cy + 14), Offset(cx + 5, cy + 14), strut);
+    // Tail fin (perpendicular at tail)
     final tail = Path()
       ..moveTo(cx - 19, cy)
       ..lineTo(cx - 26, cy - 10)
-      ..lineTo(cx - 17, cy)
+      ..lineTo(cx - 26, cy + 10)
       ..close();
     canvas.drawPath(tail, Paint()..color = _detail);
     // Propeller
@@ -1810,6 +1813,7 @@ class PlanePainter extends CustomPainter {
   }
 
   // --- Seaplane: biplane with float pontoons ---
+  // Top-down view: fuselage horizontal (nose right), wings perpendicular.
   void _drawSeaplane(Canvas canvas, double cx, double cy) {
     final body = Paint()..color = _primary;
     final wing = Paint()..color = _secondary;
@@ -1819,45 +1823,44 @@ class PlanePainter extends CustomPainter {
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
 
-    // Fuselage (raised higher to make room for pontoons)
-    final fcy = cy - 6;
+    // Fuselage (horizontal, nose right)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(cx, fcy), width: 40, height: 10),
+        Rect.fromCenter(center: Offset(cx, cy), width: 40, height: 10),
         const Radius.circular(5),
       ),
       body,
     );
-    // Upper wing
+    // Rear wing (perpendicular, slightly aft)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
-            center: Offset(cx, fcy - 10), width: 54, height: 6),
+            center: Offset(cx - 3, cy), width: 6, height: 54),
         const Radius.circular(3),
       ),
       wing,
     );
-    // Lower wing
+    // Front wing (perpendicular, slightly forward)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
-            center: Offset(cx, fcy + 10), width: 54, height: 6),
+            center: Offset(cx + 3, cy), width: 6, height: 54),
         const Radius.circular(3),
       ),
       wing,
     );
-    // Wing struts
+    // Wing struts (fore-aft connecting wing planes)
     canvas.drawLine(
-        Offset(cx - 12, fcy - 7), Offset(cx - 12, fcy + 7), strutPaint);
+        Offset(cx - 3, cy - 14), Offset(cx + 3, cy - 14), strutPaint);
     canvas.drawLine(
-        Offset(cx + 12, fcy - 7), Offset(cx + 12, fcy + 7), strutPaint);
+        Offset(cx - 3, cy + 14), Offset(cx + 3, cy + 14), strutPaint);
     // Propeller
-    canvas.drawCircle(Offset(cx + 22, fcy), 3, detail);
-    // Float pontoons
+    canvas.drawCircle(Offset(cx + 22, cy), 3, detail);
+    // Float pontoons (one on each side, perpendicular direction)
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
-            center: Offset(cx - 2, cy + 18), width: 36, height: 6),
+            center: Offset(cx - 2, cy - 20), width: 36, height: 5),
         const Radius.circular(3),
       ),
       detail,
@@ -1865,16 +1868,20 @@ class PlanePainter extends CustomPainter {
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
-            center: Offset(cx - 2, cy + 18), width: 36, height: 6),
+            center: Offset(cx - 2, cy + 20), width: 36, height: 5),
         const Radius.circular(3),
       ),
-      strutPaint,
+      detail,
     );
     // Pontoon struts
     canvas.drawLine(
-        Offset(cx - 8, fcy + 13), Offset(cx - 8, cy + 15), strutPaint);
+        Offset(cx - 8, cy - 14), Offset(cx - 8, cy - 18), strutPaint);
     canvas.drawLine(
-        Offset(cx + 8, fcy + 13), Offset(cx + 8, cy + 15), strutPaint);
+        Offset(cx + 8, cy - 14), Offset(cx + 8, cy - 18), strutPaint);
+    canvas.drawLine(
+        Offset(cx - 8, cy + 14), Offset(cx - 8, cy + 18), strutPaint);
+    canvas.drawLine(
+        Offset(cx + 8, cy + 14), Offset(cx + 8, cy + 18), strutPaint);
   }
 
   // --- Airliner: commercial plane with wide fuselage, swept wings, engines ---
