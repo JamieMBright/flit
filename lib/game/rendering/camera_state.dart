@@ -31,7 +31,9 @@ class CameraState {
   static const double fovWide = 1.40;
 
   /// Rate of easing for altitude transitions (higher = faster).
-  static const double _altitudeEaseRate = 3.0;
+  /// 1.5 gives a gradual ~2s transition where the map slowly zooms in/out.
+  /// Low enough to feel smooth, not jarring.
+  static const double _altitudeEaseRate = 1.5;
 
   /// Rate of easing for FOV transitions (higher = faster).
   static const double _fovEaseRate = 4.0;

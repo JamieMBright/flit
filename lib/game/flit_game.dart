@@ -55,7 +55,7 @@ class FlitGame extends FlameGame
     this.useShaderRenderer = true,
     this.equippedPlaneId = 'plane_default',
     this.companionType = AvatarCompanion.none,
-    this.motionEnabled = false,
+    this.motionEnabled = true,
   });
 
   final VoidCallback? onGameReady;
@@ -124,7 +124,10 @@ class FlitGame extends FlameGame
 
   /// Rate at which camera heading catches up to plane heading.
   /// Lower = more lag. 1.5 gives a satisfying delayed swing on turns.
-  static const double _cameraHeadingEaseRate = 1.5;
+  /// Camera heading ease rate. Higher = tighter tracking of plane heading.
+  /// 12.0 converges within ~15 frames (~0.25s) so the plane always faces
+  /// forward on screen with no visible drift during straight flight.
+  static const double _cameraHeadingEaseRate = 12.0;
 
   // -- Waymarker navigation state --
 
@@ -365,9 +368,9 @@ class FlitGame extends FlameGame
   }
 
   /// Where on screen the plane sprite is rendered (proportional).
-  /// Pushed well toward the bottom to create a "behind the plane" view.
-  /// Y position at 0.78 (78% down) to lower the center point of the globe.
-  static const double planeScreenY = 0.78;
+  /// Centered horizontally, 20% from the bottom of the screen (80% from top).
+  /// This position is FIXED — the world scrolls underneath, the plane stays put.
+  static const double planeScreenY = 0.80;
   static const double planeScreenX = 0.50;
 
   /// Where the Canvas (WorldMap) renderer centers its projection on screen.
@@ -632,18 +635,10 @@ class FlitGame extends FlameGame
     while (visualDiff < -pi) { visualDiff += 2 * pi; }
     _plane.visualHeading = visualDiff;
 
-    // Place the plane at its projected world position so it aligns with
-    // contrails and map features. Works for both Canvas and shader renderers.
-    final projectedPlane = worldToScreen(_worldPosition);
-    if (projectedPlane.x > -500) {
-      // Clamp Y so the plane never drops off the bottom of the screen.
-      // Allow up to 90% of screen height (leaves room for HUD buttons).
-      projectedPlane.y = projectedPlane.y.clamp(size.y * 0.05, size.y * 0.90);
-      _plane.position = projectedPlane;
-    } else {
-      // Off-screen fallback (shouldn't happen with camera offset system)
-      _plane.position = Vector2(size.x * planeScreenX, size.y * planeScreenY);
-    }
+    // Plane is always at a fixed screen position — the world scrolls underneath.
+    // This ensures the plane stays centered and at 20% from the bottom
+    // regardless of altitude, heading, or any camera transition.
+    _plane.position = Vector2(size.x * planeScreenX, size.y * planeScreenY);
 
     // Feed world state to plane for world-space contrail spawning.
     _plane.worldPos = _worldPosition.clone();
@@ -653,87 +648,100 @@ class FlitGame extends FlameGame
     AudioManager.instance.updateEngineVolume(_plane.turnDirection.abs());
   }
 
-  /// All movement, steering, and input processing. Extracted so it can
-  /// be gated behind [motionEnabled] without touching the camera/render path.
+  /// Forward-only flight using 3D great-circle movement.
+  ///
+  /// Uses cartesian (x,y,z) math on the unit sphere to avoid the lat/lng
+  /// singularity at poles. The plane follows a great circle — the true
+  /// "straight line" on a sphere — with heading updated correctly at each
+  /// step. No clamping, no auto-circle, no polar drift.
+  ///
+  /// The heading update ensures the plane continues along the same great
+  /// circle. The camera tracks the heading, so the plane always faces "up"
+  /// on screen and the world rotates smoothly underneath.
   void _updateMotion(double dt) {
-    // --- Progressive turn input (keyboard + on-screen buttons) ---
-    _updateTurnInput(dt);
+    // --- Forward-only: no turn input or waymarker steering for now ---
 
-    // --- Waymarker auto-steering ---
-    _updateWaymarkerSteering(dt);
-
-    // --- Great-circle movement ---
-    // Use continuous altitude speed for smooth transitions, scaled by speed setting
     final speed = _plane.currentSpeedContinuous * _speedMultiplier;
-    final angularDist = speed * _speedToAngular * dt; // radians
+    final angularDist = speed * _speedToAngular * dt; // radians on unit sphere
 
-    // Convert heading to navigation bearing (0 = north, clockwise)
+    if (angularDist < 1e-12) return; // Avoid division by zero when stationary
+
+    // --- Convert current state to 3D ---
+    final latRad = _worldPosition.y * _deg2rad;
+    final lngRad = _worldPosition.x * _deg2rad;
+    final cosLat = cos(latRad);
+    final sinLat = sin(latRad);
+    final cosLng = cos(lngRad);
+    final sinLng = sin(lngRad);
+
+    // Position on unit sphere
+    final px = cosLat * cosLng;
+    final py = sinLat;
+    final pz = cosLat * sinLng;
+
+    // Local tangent basis at current position
+    // East  = (-sin(lng), 0, cos(lng))
+    // North = (-sin(lat)*cos(lng), cos(lat), -sin(lat)*sin(lng))
+    final ex = -sinLng;
+    const ey = 0.0;
+    final ez = cosLng;
+    final nx = -sinLat * cosLng;
+    final ny = cosLat;
+    final nz = -sinLat * sinLng;
+
+    // Heading tangent vector (bearing = heading + π/2 converts to nav bearing)
     final bearing = _heading + pi / 2;
+    final cosB = cos(bearing);
+    final sinB = sin(bearing);
+    final hx = cosB * nx + sinB * ex;
+    final hy = cosB * ny + sinB * ey;
+    final hz = cosB * nz + sinB * ez;
 
-    final lat0 = _worldPosition.y * _deg2rad;
-    final lng0 = _worldPosition.x * _deg2rad;
-
-    final sinLat0 = sin(lat0);
-    final cosLat0 = cos(lat0);
-    final sinD = sin(angularDist);
+    // --- Move along great circle arc: P' = P·cos(d) + H·sin(d) ---
     final cosD = cos(angularDist);
+    final sinD = sin(angularDist);
+    final newPx = px * cosD + hx * sinD;
+    final newPy = py * cosD + hy * sinD;
+    final newPz = pz * cosD + hz * sinD;
 
-    final newLat = asin(
-      (sinLat0 * cosD + cosLat0 * sinD * cos(bearing)).clamp(-1.0, 1.0),
-    );
-
-    final newLng = lng0 +
-        atan2(
-          sin(bearing) * sinD * cosLat0,
-          cosD - sinLat0 * sin(newLat),
-        );
+    // Convert back to lat/lng
+    final newLatRad = asin(newPy.clamp(-1.0, 1.0));
+    final newLngRad = atan2(newPz, newPx);
 
     _worldPosition = Vector2(
-      _normalizeLng(newLng * _rad2deg),
-      (newLat * _rad2deg).clamp(-85.0, 85.0),
+      _normalizeLng(newLngRad * _rad2deg),
+      newLatRad * _rad2deg, // No clamp — asin naturally limits to [-90°, 90°]
     );
 
-    // Update heading.
-    //
-    // When actively turning, apply the player's turn rate.
-    // When flying straight, compute the forward bearing at the new position
-    // so the plane follows a great circle instead of a rhumb line (constant
-    // heading on a sphere spirals toward the poles).
-    if (_plane.turnDirection.abs() > 0.01) {
-      _heading += _plane.turnDirection * _plane.currentTurnRate * dt;
-    } else {
-      // Great-circle heading correction: compute the bearing at the
-      // destination that continues the arc.  This is the reverse bearing
-      // from (newLat,newLng) → (lat0,lng0), rotated 180°.
-      final revBearing = atan2(
-        sin(lng0 - newLng) * cosLat0,
-        cos(newLat) * sinLat0 - sin(newLat) * cosLat0 * cos(lng0 - newLng),
-      );
-      // Convert navigation bearing back to heading (heading = bearing - π/2).
-      _heading = (revBearing + pi) - pi / 2;
-    }
+    // --- Update heading: project velocity onto new local tangent basis ---
+    // Velocity direction on the great circle: V = -P·sin(d) + H·cos(d)
+    final vx = -px * sinD + hx * cosD;
+    final vy = -py * sinD + hy * cosD;
+    final vz = -pz * sinD + hz * cosD;
 
-    // Normalize heading to [-π, π] to prevent accumulation
+    // New local tangent basis at destination
+    final newCosLat = cos(newLatRad);
+    final newSinLat = sin(newLatRad);
+    final newCosLng = cos(newLngRad);
+    final newSinLng = sin(newLngRad);
+    final newNx = -newSinLat * newCosLng;
+    final newNy = newCosLat;
+    final newNz = -newSinLat * newSinLng;
+    final newEx = -newSinLng;
+    const newEy = 0.0;
+    final newEz = newCosLng;
+
+    // Project velocity onto new North/East to get the bearing at destination
+    final northComp = vx * newNx + vy * newNy + vz * newNz;
+    final eastComp = vx * newEx + vy * newEy + vz * newEz;
+    final newBearing = atan2(eastComp, northComp);
+
+    // Convert nav bearing back to heading (heading = bearing - π/2)
+    _heading = newBearing - pi / 2;
+
+    // Normalize heading to [-π, π]
     while (_heading > pi) { _heading -= 2 * pi; }
     while (_heading < -pi) { _heading += 2 * pi; }
-
-    // Auto-circle near poles: when within 2° of the 85° limit,
-    // add a gentle eastward turn to circle the pole instead of hitting the wall.
-    final absLat = _worldPosition.y.abs();
-    if (absLat > 83.0) {
-      final poleTurnStrength = ((absLat - 83.0) / 2.0).clamp(0.0, 1.0);
-      _heading += poleTurnStrength * 0.8 * dt;
-    }
-
-    // Clear waymarker when plane arrives within ~1° of it.
-    // Snap turn to zero immediately to prevent post-arrival drift.
-    if (_waymarker != null) {
-      final distToWaymarker = _greatCircleDistDeg(_worldPosition, _waymarker!);
-      if (distToWaymarker < 1.0) {
-        _waymarker = null;
-        _plane.snapStraight();
-      }
-    }
   }
 
   /// Update the chase camera heading and compute the offset camera position.
