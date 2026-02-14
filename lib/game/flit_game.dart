@@ -165,12 +165,6 @@ class FlitGame extends FlameGame
   /// Wayline overlay renderer (draws translucent line to waymarker).
   WaylineRenderer? _waylineRenderer;
 
-  /// How far ahead (in degrees) the camera looks along heading.
-  /// The shader Y-flip + these offsets naturally project the plane
-  /// to approximately its fixed screen position (y ≈ 72%).
-  static const double _cameraOffsetHigh = 11.0;
-  static const double _cameraOffsetLow = 4.5;
-
   /// Whether this is the first update (skip lerp, snap camera heading).
   bool _cameraFirstUpdate = true;
 
@@ -746,9 +740,11 @@ class FlitGame extends FlameGame
 
   /// Update the chase camera heading and compute the offset camera position.
   ///
-  /// The camera heading smoothly interpolates toward the plane heading,
-  /// creating a satisfying lag when the plane turns. The camera center
-  /// is offset ahead of the plane along the camera heading direction.
+  /// The camera heading smoothly interpolates toward the plane heading.
+  /// The camera is positioned BEHIND the plane by a distance that places
+  /// the plane's world position at exactly (planeScreenX, planeScreenY) on
+  /// screen. This offset is computed dynamically from the current camera
+  /// distance and FOV so contrails and overlays align with the plane sprite.
   void _updateChaseCamera(double dt) {
     if (_cameraFirstUpdate) {
       _cameraHeading = _heading;
@@ -759,28 +755,37 @@ class FlitGame extends FlameGame
       _cameraHeading = _lerpAngle(_cameraHeading, _heading, factor);
     }
 
-    // Compute a point ahead of the plane along the camera heading direction.
-    // Use continuous altitude for smooth offset interpolation.
-    final alt = _plane.continuousAltitude;
-    final offsetDeg = _cameraOffsetLow + alt * (_cameraOffsetHigh - _cameraOffsetLow);
-
-    // Reduce camera offset near poles to prevent oscillation
-    final latAbs = _worldPosition.y.abs();
-    final polarDamping = latAbs > 80.0 ? (90.0 - latAbs) / 10.0 : 1.0;
-    final effectiveOffset = offsetDeg * polarDamping;
+    // --- Dynamic camera offset ---
+    // Compute the angular offset behind the plane that makes
+    // worldToScreen(_worldPosition) land at planeScreenY (80%).
+    //
+    // From the projection math:
+    //   screenY/resY = tiltDown - uvY + 0.5
+    //   uvY = sin(δ) / ((d - cos(δ)) * tan(fov/2))
+    //
+    // For planeScreenY = 0.80:
+    //   uvY = tiltDown - 0.30 = 0.05
+    //
+    // Small-angle approximation (δ < 3°):
+    //   δ ≈ uvY * (d - R) * tan(fov/2)
+    // where d = camera distance from center, R = globe radius.
+    const desiredUvY = 0.05; // tiltDown(0.35) - (planeScreenY(0.80) - 0.50)
+    final d = cameraDistance;
+    final fov = _globeRenderer?.camera.fov ?? CameraState.fovNarrow;
+    final halfFovTan = tan(fov / 2);
+    final offsetRad = desiredUvY * (d - CameraState.globeRadius) * halfFovTan;
 
     // Convert camera heading to navigation bearing (0 = north).
     final camBearing = _cameraHeading + pi / 2;
 
-    // Great-circle destination: move offsetDeg ahead of the plane.
-    final d = effectiveOffset * _deg2rad;
+    // Great-circle destination: move offsetRad ahead of the plane (for Canvas).
     final planeLat = _worldPosition.y * _deg2rad;
     final planeLng = _worldPosition.x * _deg2rad;
 
     final sinPLat = sin(planeLat);
     final cosPLat = cos(planeLat);
-    final sinDist = sin(d);
-    final cosDist = cos(d);
+    final sinDist = sin(offsetRad);
+    final cosDist = cos(offsetRad);
 
     final aheadLat = asin(
       (sinPLat * cosDist + cosPLat * sinDist * cos(camBearing)).clamp(-1.0, 1.0),
@@ -797,8 +802,8 @@ class FlitGame extends FlameGame
     );
 
     // Compute a point BEHIND the plane for the shader chase camera.
-    // The shader camera is behind the plane so the plane appears at the
-    // bottom of the screen, creating a natural over-the-shoulder view.
+    // The shader camera is behind the plane so the plane appears at
+    // planeScreenY on screen, creating a natural over-the-shoulder view.
     final behindBearing = camBearing + pi;
     final behindLat = asin(
       (sinPLat * cosDist + cosPLat * sinDist * cos(behindBearing))
