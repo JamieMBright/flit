@@ -80,11 +80,6 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// making them nearly touch at full turn.
   static const double _maxBankAngle = 1.3;
 
-  /// How fast the turn decays when the player releases (per-second rate).
-  /// Higher = faster decay. 6.0 means ~0.15 seconds to snap straight,
-  /// preventing residual heading drift toward poles.
-  static const double _turnDecayRate = 6.0;
-
   /// Current visual bank angle (smoothed)
   double _currentBank = 0;
 
@@ -141,15 +136,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   void update(double dt) {
     super.update(dt);
 
-    // Decay turn direction when not actively dragging (dt-based)
-    if (!_isDragging) {
-      // Exponential decay: multiply by e^(-rate * dt) each frame
-      _turnDirection *= exp(-_turnDecayRate * dt);
-      // Snap to zero when close enough to avoid endless micro-turns
-      // and prevent residual polar drift.
-      if (_turnDirection.abs() < 0.05) _turnDirection = 0;
-    }
-    // Clamp to prevent infinite spinning from accumulated input
+    // Clamp to prevent infinite spinning from accumulated input.
+    // releaseTurn() zeroes _turnDirection immediately on release,
+    // so no exponential decay is needed — the heading stops changing
+    // the moment the player lifts their finger.
     _turnDirection = _turnDirection.clamp(-1.0, 1.0);
 
     // Smooth bank angle: fast into turns, slow release for lingering contrail effect.
@@ -182,9 +172,11 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
 
     // Rotate to face heading. Camera up vector is the heading direction,
     // so visualHeading=0 means the plane faces "up" on screen (forward).
-    // Add a small adjustment based on turn direction to make the plane
-    // "lean into" turns more naturally (nose points toward turn direction).
-    final turnAdjustment = _turnDirection * 0.15; // Subtle nose-in effect
+    // Add a proportional yaw toward the turn direction so the nose, fuselage,
+    // and entire plane body visibly point toward the turn. At max turn,
+    // the plane rotates ~23° (0.4 rad) which is clearly visible.
+    // Proportional: gentle tap (8% turn) → ~1.8°, full hold → ~23°.
+    final turnAdjustment = _turnDirection * 0.4;
     canvas.rotate(visualHeading + turnAdjustment);
 
     // Apply perspective foreshortening: the camera is above and behind the
@@ -1258,9 +1250,12 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     _isDragging = true;
   }
 
-  /// Called when the player lifts their finger — plane coasts to straight.
-  /// Turn direction decays smoothly rather than snapping to zero.
+  /// Called when the player releases input — plane stops turning immediately.
+  /// Turn direction is zeroed so the heading stops changing, but the bank
+  /// angle decays smoothly (via the 2.5 rate in update()) for a natural
+  /// visual leveling-out of the wings.
   void releaseTurn() {
+    _turnDirection = 0;
     _isDragging = false;
   }
 
