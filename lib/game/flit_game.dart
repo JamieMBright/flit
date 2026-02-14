@@ -347,10 +347,10 @@ class FlitGame extends FlameGame
     final fy = -cam.cameraY / fwdLen;
     final fz = -cam.cameraZ / fwdLen;
 
-    // Right = normalize(cross(forward, camUp))
-    var rx = fy * cam.upZ - fz * cam.upY;
-    var ry = fz * cam.upX - fx * cam.upZ;
-    var rz = fx * cam.upY - fy * cam.upX;
+    // Right = normalize(cross(camUp, forward)) — east on screen-right
+    var rx = cam.upY * fz - cam.upZ * fy;
+    var ry = cam.upZ * fx - cam.upX * fz;
+    var rz = cam.upX * fy - cam.upY * fx;
     final rLen = sqrt(rx * rx + ry * ry + rz * rz);
     if (rLen < 1e-8) {
       return Vector2(size.x * 0.5, size.y * 0.5);
@@ -359,10 +359,10 @@ class FlitGame extends FlameGame
     ry /= rLen;
     rz /= rLen;
 
-    // Up = cross(right, forward)
-    final ux = ry * fz - rz * fy;
-    final uy = rz * fx - rx * fz;
-    final uz = rx * fy - ry * fx;
+    // Up = cross(forward, right) — heading direction on screen-up
+    final ux = fy * rz - fz * ry;
+    final uy = fz * rx - fx * rz;
+    final uz = fx * ry - fy * rx;
 
     // Project onto camera basis
     final localZ = vx * fx + vy * fy + vz * fz;
@@ -968,9 +968,9 @@ class FlitGame extends FlameGame
 
       // Progressive curve: starts at 0.08, reaches 1.0 after ~0.6s.
       final strength = (0.08 + holdTime * holdTime * 4.5).clamp(0.0, 1.0);
-      // Negate direction so left input = left visual turn (direct mapping).
-      // When invertControls is true, skip the negation (left input = right turn).
-      final invert = GameSettings.instance.invertControls ? 1.0 : -1.0;
+      // When invertControls is false, pass direction through (right = right).
+      // When invertControls is true, negate (right input = left turn).
+      final invert = GameSettings.instance.invertControls ? -1.0 : 1.0;
       _plane.setTurnDirection(dir * strength * invert);
       _waymarker = null; // keyboard/button overrides waymarker
     } else if (_waymarker == null) {
@@ -1232,7 +1232,17 @@ class FlitGame extends FlameGame
 
     // startPosition is already (lng, lat) degrees — use directly
     _worldPosition = startPosition.clone();
-    _heading = Random().nextDouble() * 2 * pi;
+
+    // Compute initial heading toward the target (great-circle initial bearing).
+    final lat1 = startPosition.y * _deg2rad;
+    final lat2 = targetPosition.y * _deg2rad;
+    final dLng = (targetPosition.x - startPosition.x) * _deg2rad;
+    final bearing = atan2(
+      sin(dLng) * cos(lat2),
+      cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLng),
+    );
+    // Convert nav bearing (0=north) to code heading (heading = bearing - π/2).
+    _heading = bearing - pi / 2;
     _cameraHeading = _heading; // snap camera to heading on game start
     _cameraFirstUpdate = true;
     _plane.fadeIn(); // Hide plane during camera snap, fade in over 0.5s

@@ -75,17 +75,17 @@ class GlobeHitTest {
     final cupY = camera.upY;
     final cupZ = camera.upZ;
 
-    // Right = normalize(cross(forward, camUp))
-    var rX = fY * cupZ - fZ * cupY;
-    var rY = fZ * cupX - fX * cupZ;
-    var rZ = fX * cupY - fY * cupX;
+    // Right = normalize(cross(camUp, forward)) — east on screen-right
+    var rX = cupY * fZ - cupZ * fY;
+    var rY = cupZ * fX - cupX * fZ;
+    var rZ = cupX * fY - cupY * fX;
 
     final rLen = sqrt(rX * rX + rY * rY + rZ * rZ);
     if (rLen < 1e-8) {
-      // Degenerate: forward and up are parallel. Fall back to world up.
-      rX = fY * 0.0 - fZ * 1.0;
-      rY = fZ * 0.0 - fX * 0.0;
-      rZ = fX * 1.0 - fY * 0.0;
+      // Degenerate: forward and up are parallel. Fall back to cross(worldUp, forward).
+      rX = 1.0 * fZ - 0.0 * fY;
+      rY = 0.0 * fX - 0.0 * fZ;
+      rZ = 0.0 * fY - 1.0 * fX;
       final rLen2 = sqrt(rX * rX + rY * rY + rZ * rZ);
       if (rLen2 < 1e-8) return null;
       rX /= rLen2;
@@ -97,10 +97,10 @@ class GlobeHitTest {
       rZ /= rLen;
     }
 
-    // Up = cross(right, forward)
-    final uX = rY * fZ - rZ * fY;
-    final uY = rZ * fX - rX * fZ;
-    final uZ = rX * fY - rY * fX;
+    // Up = cross(forward, right) — heading direction on screen-up
+    final uX = fY * rZ - fZ * rY;
+    final uY = fZ * rX - fX * rZ;
+    final uZ = fX * rY - fY * rX;
 
     // Transform local ray direction to world space.
     // rayWorld = right * localX + up * localY + forward * (-localZ)

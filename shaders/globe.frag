@@ -230,8 +230,8 @@ vec3 cameraRayDir(vec2 fragCoord, vec2 resolution, vec3 camPos, vec3 camUp, floa
 
     // Camera always looks at the globe center (origin).
     vec3 forward = normalize(-camPos);
-    vec3 right   = normalize(cross(forward, camUp));
-    vec3 up      = cross(right, forward);
+    vec3 right   = normalize(cross(camUp, forward));
+    vec3 up      = cross(forward, right);
 
     return normalize(uv.x * right + uv.y * up + forward);
 }
