@@ -140,7 +140,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     _turnDirection = _turnDirection.clamp(-1.0, 1.0);
 
     // Smooth bank angle: fast into turns, slow release for lingering contrail effect.
-    final targetBank = _turnDirection * _maxBankAngle;
+    // Negate _turnDirection so positive bank = right turn (matching visual effects).
+    // Input mapping sends negative _turnDirection for right turns, but the rendering
+    // code (span, shade, bodyShift, underside) all assume positive = right.
+    final targetBank = -_turnDirection * _maxBankAngle;
     final bankRate = targetBank.abs() > _currentBank.abs() ? 10.0 : 2.5;
     _currentBank += (targetBank - _currentBank) * min(1.0, dt * bankRate);
 
@@ -169,11 +172,12 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
 
     // Rotate to face heading. Camera up vector is the heading direction,
     // so visualHeading=0 means the plane faces "up" on screen (forward).
-    // Add a proportional yaw toward the bank direction so the nose, fuselage,
+    // Add a proportional yaw toward the turn direction so the nose, fuselage,
     // and entire plane body visibly point toward the turn. Uses smoothed
     // _currentBank for a gradual rotation that follows the wing banking.
-    // At full bank (1.3 rad), the nose rotates ~34° (0.6 rad) into the turn.
-    final turnAdjustment = (_currentBank / _maxBankAngle) * 0.6;
+    // Negated because positive _currentBank = right turn but clockwise
+    // canvas rotation (negative) = yaw right. At full bank → ~34° yaw.
+    final turnAdjustment = -(_currentBank / _maxBankAngle) * 0.6;
     canvas.rotate(visualHeading + turnAdjustment);
 
     // Apply perspective foreshortening: the camera is above and behind the
