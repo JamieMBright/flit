@@ -162,11 +162,11 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         final color = _getClimateColor(cLng, cLat);
 
         // Project corner points to screen.
-        final tl = gameRef.worldToScreen(Vector2(lng, lat + cellSize));
+        final tl = gameRef.worldToScreenGlobe(Vector2(lng, lat + cellSize));
         final tr =
-            gameRef.worldToScreen(Vector2(lng + cellSize, lat + cellSize));
-        final br = gameRef.worldToScreen(Vector2(lng + cellSize, lat));
-        final bl = gameRef.worldToScreen(Vector2(lng, lat));
+            gameRef.worldToScreenGlobe(Vector2(lng + cellSize, lat + cellSize));
+        final br = gameRef.worldToScreenGlobe(Vector2(lng + cellSize, lat));
+        final bl = gameRef.worldToScreenGlobe(Vector2(lng, lat));
 
         // Skip cells behind camera.
         if (tl.x < -500 || tr.x < -500 || br.x < -500 || bl.x < -500) {
@@ -323,13 +323,17 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         final path = ui.Path();
         var started = false;
         var anyVisible = false;
+        var hasOccluded = false;
         var pointsInPath = 0;
 
         for (var i = 0; i < polygon.length; i += stride) {
-          final screenPos = gameRef.worldToScreen(polygon[i]);
+          final screenPos = gameRef.worldToScreenGlobe(polygon[i]);
 
           if (screenPos.x < -500 || screenPos.y < -500) {
+            // Point is on the far side of the globe — break the path here
+            // so no line is drawn from the last visible vertex to the next.
             started = false;
+            hasOccluded = true;
             continue;
           }
 
@@ -351,8 +355,13 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
         totalPoints += pointsInPath;
 
-        if (anyVisible && started) {
-          path.close();
+        if (anyVisible && pointsInPath > 1) {
+          // Only close the path if the ENTIRE polygon was on the visible
+          // hemisphere. If any vertex was occluded, leave the path open
+          // to prevent a line cutting straight across the globe.
+          if (!hasOccluded) {
+            path.close();
+          }
           canvas.drawPath(path, paint);
           rendered++;
         }
