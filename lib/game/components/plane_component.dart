@@ -40,9 +40,6 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Current turning direction: -1 (left), 0 (straight), 1 (right)
   double _turnDirection = 0;
 
-  /// Whether the player is actively dragging (vs. coasting).
-  bool _isDragging = false;
-
   /// Current altitude: true = high (fast), false = low (slow, detailed)
   bool _isHighAltitude = true;
 
@@ -1233,21 +1230,16 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     }
   }
 
-  /// Set turn direction from active input (drag or keyboard).
+  /// Set turn direction from active input (keyboard or button).
   void setTurnDirection(double direction) {
     _turnDirection = direction.clamp(-1, 1);
-    _isDragging = true;
   }
 
   /// Steer toward a target turn direction (for waypoint auto-steering).
-  /// Sets [_isDragging] so that update()'s turn-decay doesn't fight the input.
-  /// Sets _turnDirection directly (like keyboard input) so that the bank
-  /// animation in update() is clearly visible during waypoint turns.
-  /// The bank smoothing in update() already provides visual easing.
+  /// Sets _turnDirection directly so that the bank animation in update()
+  /// is clearly visible during waypoint turns.
   void steerToward(double target, double dt) {
-    final clamped = target.clamp(-1.0, 1.0);
-    _turnDirection = clamped;
-    _isDragging = true;
+    _turnDirection = target.clamp(-1.0, 1.0);
   }
 
   /// Called when the player releases input — plane stops turning immediately.
@@ -1256,7 +1248,6 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// visual leveling-out of the wings.
   void releaseTurn() {
     _turnDirection = 0;
-    _isDragging = false;
   }
 
   /// Immediately zero turn direction and bank — used when waymarker clears
@@ -1264,7 +1255,6 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   void snapStraight() {
     _turnDirection = 0;
     _currentBank = 0;
-    _isDragging = false;
   }
 
   void toggleAltitude() {
