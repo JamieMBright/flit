@@ -165,6 +165,11 @@ class FlitGame extends FlameGame
   /// Wayline overlay renderer (draws translucent line to waymarker).
   WaylineRenderer? _waylineRenderer;
 
+  /// Per-frame correction vector that aligns worldToScreen(_worldPosition)
+  /// with the fixed plane sprite position. Accounts for CameraState easing
+  /// lag, one-frame delay, and FOV transitions.
+  Vector2 _screenCorrection = Vector2.zero();
+
   /// Whether this is the first update (skip lerp, snap camera heading).
   bool _cameraFirstUpdate = true;
 
@@ -266,12 +271,20 @@ class FlitGame extends FlameGame
 
   /// Project a world position (lng, lat) to screen coordinates.
   /// Works with both Canvas (WorldMap) and shader (GlobeRenderer) renderers.
+  ///
+  /// When the shader is active, applies a per-frame screen correction so that
+  /// worldToScreen(_worldPosition) == plane sprite position. This guarantees
+  /// contrails, waypoints, and overlays align with the plane regardless of
+  /// CameraState easing lag or one-frame delays.
   Vector2 worldToScreen(Vector2 lngLat) {
     if (_worldMap != null) {
       return _worldMap!.latLngToScreen(lngLat, size);
     }
     if (_globeRenderer != null) {
-      return _shaderWorldToScreen(lngLat);
+      final projected = _shaderWorldToScreen(lngLat);
+      // Don't correct off-screen / occluded points.
+      if (projected.x < -500) return projected;
+      return projected + _screenCorrection;
     }
     return Vector2(size.x * projectionCenterX, size.y * projectionCenterY);
   }
@@ -359,6 +372,27 @@ class FlitGame extends FlameGame
     final screenY = (tiltDown - uvY) * size.y + size.y * 0.5;
 
     return Vector2(screenX, screenY);
+  }
+
+  /// Recompute the per-frame screen correction vector.
+  ///
+  /// Called at the end of each update after both the camera and plane position
+  /// have been updated. Measures the gap between where the shader projects
+  /// the plane's world position and where the plane sprite actually sits,
+  /// then caches the difference so worldToScreen can apply it.
+  void _computeScreenCorrection() {
+    if (_globeRenderer == null || size.x < 1 || size.y < 1) {
+      _screenCorrection = Vector2.zero();
+      return;
+    }
+    final projected = _shaderWorldToScreen(_worldPosition);
+    if (projected.x < -500) {
+      // Plane is occluded (shouldn't happen) — skip correction.
+      _screenCorrection = Vector2.zero();
+      return;
+    }
+    final target = Vector2(size.x * planeScreenX, size.y * planeScreenY);
+    _screenCorrection = target - projected;
   }
 
   /// Where on screen the plane sprite is rendered (proportional).
@@ -640,6 +674,12 @@ class FlitGame extends FlameGame
 
     // Modulate engine volume with turn intensity.
     AudioManager.instance.updateEngineVolume(_plane.turnDirection.abs());
+
+    // Compute per-frame screen correction so worldToScreen aligns with
+    // the plane sprite. Must run AFTER chase camera and motion updates
+    // but uses the camera state from super.update(dt) (this frame's
+    // camera position after CameraState easing).
+    _computeScreenCorrection();
   }
 
   /// Forward-only flight using 3D great-circle movement.
