@@ -138,6 +138,11 @@ class FlitGame extends FlameGame
   /// or when keyboard controls are used.
   Vector2? _waymarker;
 
+  /// Time since the current waymarker was set (seconds).
+  /// Used to ramp up turn strength smoothly over 0.6s after a tap, giving
+  /// the plane a natural-feeling response rather than an instant snap.
+  double _waymarkerAge = 0.0;
+
   /// Hint target — displays wayline but does NOT steer the plane.
   /// Set by showHintWayline, auto-clears after a few seconds.
   Vector2? _hintTarget;
@@ -285,6 +290,19 @@ class FlitGame extends FlameGame
       // Don't correct off-screen / occluded points.
       if (projected.x < -500) return projected;
       return projected + _screenCorrection;
+    }
+    return Vector2(-1000, -1000);
+  }
+
+  /// Project world coordinates to screen WITHOUT the plane-tracking correction.
+  /// Use this for globe-surface overlays (borders, climate grid) that must
+  /// stay glued to the satellite texture rather than tracking the plane sprite.
+  Vector2 worldToScreenGlobe(Vector2 lngLat) {
+    if (_worldMap != null) {
+      return _worldMap!.latLngToScreen(lngLat, size);
+    }
+    if (_globeRenderer != null) {
+      return _shaderWorldToScreen(lngLat);
     }
     return Vector2(size.x * projectionCenterX, size.y * projectionCenterY);
   }
@@ -971,6 +989,9 @@ class FlitGame extends FlameGame
   void _updateWaymarkerSteering(double dt) {
     if (_waymarker == null) return;
 
+    // Advance waymarker age for smooth ramp-up.
+    _waymarkerAge += dt;
+
     // Check if plane has reached the waymarker (within ~1 degree / ~111 km).
     final arrivalDist = _greatCircleDistDeg(_worldPosition, _waymarker!);
     if (arrivalDist < 1.0) {
@@ -989,14 +1010,10 @@ class FlitGame extends FlameGame
 
     final y = sin(dLng) * cos(lat2);
     final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLng);
-    // targetBearing: 0 = north, π/2 = east (standard navigation bearing)
-    // atan2(y, x) computes the initial bearing using the great-circle formula
     final targetBearing = atan2(y, x);
 
-    // Convert our internal heading to navigation bearing for comparison
     final currentBearing = _heading + pi / 2;
 
-    // Angle difference (shortest path)
     var diff = targetBearing - currentBearing;
     while (diff > pi) { diff -= 2 * pi; }
     while (diff < -pi) { diff += 2 * pi; }
@@ -1008,7 +1025,11 @@ class FlitGame extends FlameGame
     final distToWaymarker = _greatCircleDistDeg(_worldPosition, _waymarker!);
     final distanceFactor = (distToWaymarker / 10.0).clamp(0.6, 1.0);
     final baseTurnStrength = (diff / (pi * 0.25)).clamp(-1.0, 1.0);
-    final turnStrength = baseTurnStrength * distanceFactor;
+
+    // Smooth ramp-up: ease into the turn over 0.6s so the plane doesn't
+    // snap instantly when the player taps a waypoint.
+    final rampUp = (_waymarkerAge / 0.6).clamp(0.0, 1.0);
+    final turnStrength = baseTurnStrength * distanceFactor * rampUp;
     if (turnStrength.abs() < 0.02) {
       _plane.steerToward(0, dt);
     } else {
@@ -1053,6 +1074,7 @@ class FlitGame extends FlameGame
 
     if (latLng != null) {
       _waymarker = latLng;
+      _waymarkerAge = 0.0; // Reset ramp-up timer for smooth turn onset
       _log.info('game', 'Waymarker set', data: {
         'lng': latLng.x.toStringAsFixed(1),
         'lat': latLng.y.toStringAsFixed(1),
@@ -1192,6 +1214,7 @@ class FlitGame extends FlameGame
   /// The plane will auto-steer toward this position.
   void setWaymarker(Vector2 position) {
     _waymarker = position.clone();
+    _waymarkerAge = 0.0;
   }
 
   /// Start a new game/challenge.
@@ -1212,6 +1235,7 @@ class FlitGame extends FlameGame
     _heading = Random().nextDouble() * 2 * pi;
     _cameraHeading = _heading; // snap camera to heading on game start
     _cameraFirstUpdate = true;
+    _plane.fadeIn(); // Hide plane during camera snap, fade in over 0.5s
     _targetLocation = targetPosition;
     _currentClue = clue;
     _waymarker = null; // clear any previous waymarker

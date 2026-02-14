@@ -85,7 +85,7 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
             continue;
           }
 
-          final screenPos = gameRef.worldToScreen(city.location);
+          final screenPos = gameRef.worldToScreenGlobe(city.location);
 
           // Skip if off-screen (with margin) or invalid coordinates.
           if (!screenPos.x.isFinite ||
@@ -243,7 +243,7 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
             continue;
           }
 
-          final screenPos = gameRef.worldToScreen(city.location);
+          final screenPos = gameRef.worldToScreenGlobe(city.location);
           if (!screenPos.x.isFinite ||
               !screenPos.y.isFinite ||
               screenPos.x < -20 ||

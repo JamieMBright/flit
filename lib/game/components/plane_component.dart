@@ -50,6 +50,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Visual heading set by the game (radians)
   double visualHeading = 0;
 
+  /// Opacity for fade-in after game start (0.0 = invisible, 1.0 = fully visible).
+  /// Prevents the plane from appearing to fly sideways during the camera snap.
+  double _spawnOpacity = 1.0;
+
   /// Base speed at high altitude (world units per second).
   /// 36 units ≈ 3.6°/sec → crossing Europe (~36°) takes ~10 seconds.
   static const double highAltitudeSpeed = 36;
@@ -90,12 +94,6 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// At low altitude, interval is scaled down so particles stay dense.
   static const double _contrailIntervalBase = 0.02;
 
-  /// Contrail wing span scale factor.
-  /// Scales the visual wing span in world-space coordinates to position
-  /// contrails at the wing tips. Value of 0.7 keeps contrails near the
-  /// rendered wing tips while making the gap wide enough that the
-  /// banking foreshortening (bankCos) visibly narrows contrails during turns.
-  static const double _contrailWingSpanScale = 0.7;
 
   /// World position set by FlitGame each frame (lng, lat degrees).
   Vector2 worldPos = Vector2.zero();
@@ -153,6 +151,11 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // Spin propeller
     _propAngle += dt * 20;
 
+    // Fade in after game start (0 → 1 over 0.5s)
+    if (_spawnOpacity < 1.0) {
+      _spawnOpacity = (_spawnOpacity + dt * 2.0).clamp(0.0, 1.0);
+    }
+
     // Update contrails
     _updateContrails(dt);
   }
@@ -166,8 +169,15 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   @override
   void render(Canvas canvas) {
     super.render(canvas);
+    if (_spawnOpacity < 0.01) return; // Invisible during fade-in start
 
     canvas.save();
+    if (_spawnOpacity < 1.0) {
+      canvas.saveLayer(
+        Rect.fromLTWH(0, 0, size.x, size.y),
+        Paint()..color = Color.fromARGB((_spawnOpacity * 255).round(), 255, 255, 255),
+      );
+    }
     canvas.translate(size.x / 2, size.y / 2);
 
     // Rotate to face heading. Camera up vector is the heading direction,
@@ -198,6 +208,9 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     _renderPlane(canvas, bankCos, bankSin);
 
     canvas.restore();
+    if (_spawnOpacity < 1.0) {
+      canvas.restore(); // Match saveLayer
+    }
   }
 
   void _renderPlaneShadow(Canvas canvas, double offset, double bankCos) {
@@ -1178,9 +1191,11 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final pixelsPerDegree =
         pixelsPerDegreeAtReference * (referenceDistance / currentDistance);
     final pixelsToDegrees = 1.0 / pixelsPerDegree;
-    // Scale wing span in world-space to position contrails at wing tips.
-    // Using the scale factor brings contrails closer to the rendered wing tips.
-    final wingSpanDegrees = (dynamicWingSpan * _contrailWingSpanScale) * pixelsToDegrees;
+    // Altitude-dependent scale: at low altitude (zoomed in) the plane's pixel
+    // size doesn't change but covers more world degrees, so contrails need a
+    // tighter scale. At high altitude (zoomed out), slightly wider.
+    final altScale = 0.42 + _continuousAltitude * 0.35; // 0.42 low → 0.77 high
+    final wingSpanDegrees = (dynamicWingSpan * altScale) * pixelsToDegrees;
 
     final lat0 = worldPos.y * _deg2rad;
     final lng0 = worldPos.x * _deg2rad;
@@ -1197,6 +1212,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // Aft offset also scales with zoom so contrails stay near the plane.
     final aftDist = 1.5 * pixelsToDegrees * _deg2rad;
 
+    var isLeft = true;
     for (final bearing in [leftBearing, rightBearing]) {
       // Combine lateral offset with slight aft offset.
       final sinLat0 = sin(lat0);
@@ -1229,8 +1245,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       contrails.add(ContrailParticle(
         worldPosition: Vector2(lngF * _rad2deg, latF * _rad2deg),
         size: 0.6 + Random().nextDouble() * 0.4,
+        isLeft: isLeft,
         maxLife: 6.0,
       ));
+      isLeft = false;
     }
   }
 
@@ -1259,6 +1277,12 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   void snapStraight() {
     _turnDirection = 0;
     _currentBank = 0;
+  }
+
+  /// Start a fade-in from invisible. Called on game start so the plane
+  /// doesn't appear to fly sideways during the camera snap.
+  void fadeIn() {
+    _spawnOpacity = 0.0;
   }
 
   void toggleAltitude() {
@@ -1293,6 +1317,7 @@ class ContrailParticle {
   ContrailParticle({
     required this.worldPosition,
     required this.size,
+    required this.isLeft,
     this.maxLife = 4.0,
   }) : life = maxLife;
 
@@ -1301,5 +1326,8 @@ class ContrailParticle {
   final Vector2 worldPosition;
   final double size;
   final double maxLife;
+
+  /// Which wing trail this particle belongs to (for connected-line rendering).
+  final bool isLeft;
   double life;
 }
