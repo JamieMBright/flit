@@ -682,18 +682,28 @@ class FlitGame extends FlameGame
     _computeScreenCorrection();
   }
 
-  /// Forward-only flight using 3D great-circle movement.
+  /// Flight using 3D great-circle movement with turn input.
   ///
   /// Uses cartesian (x,y,z) math on the unit sphere to avoid the lat/lng
   /// singularity at poles. The plane follows a great circle — the true
   /// "straight line" on a sphere — with heading updated correctly at each
   /// step. No clamping, no auto-circle, no polar drift.
   ///
-  /// The heading update ensures the plane continues along the same great
-  /// circle. The camera tracks the heading, so the plane always faces "up"
-  /// on screen and the world rotates smoothly underneath.
+  /// Turn input (keyboard/button or waymarker auto-steer) modifies the
+  /// heading before each movement step, curving the flight path.
   void _updateMotion(double dt) {
-    // --- Forward-only: no turn input or waymarker steering for now ---
+    // --- Process turn input (keyboard/button progressive, waymarker auto-steer) ---
+    _updateTurnInput(dt);
+    _updateWaymarkerSteering(dt);
+
+    // --- Apply turn to heading ---
+    final turnDir = _plane.turnDirection;
+    if (turnDir.abs() > 0.001) {
+      final turnRate = _plane.currentTurnRate;
+      _heading += turnDir * turnRate * dt;
+      while (_heading > pi) { _heading -= 2 * pi; }
+      while (_heading < -pi) { _heading += 2 * pi; }
+    }
 
     final speed = _plane.currentSpeedContinuous * _speedMultiplier;
     final angularDist = speed * _speedToAngular * dt; // radians on unit sphere
@@ -791,7 +801,13 @@ class FlitGame extends FlameGame
       _cameraFirstUpdate = false;
     } else {
       // Smooth ease-out: camera heading chases plane heading.
-      final factor = 1.0 - exp(-_cameraHeadingEaseRate * dt);
+      // During turns, reduce the tracking speed so the camera lags behind,
+      // creating a cinematic "catch-up" effect. At full bank the rate drops
+      // to 40% of normal (~4.8), giving a ~0.6s convergence time vs ~0.25s
+      // in straight flight. This prevents motion sickness during sharp turns.
+      final turnMag = _plane.turnDirection.abs();
+      final easeRate = _cameraHeadingEaseRate * (1.0 - turnMag * 0.6);
+      final factor = 1.0 - exp(-easeRate * dt);
       _cameraHeading = _lerpAngle(_cameraHeading, _heading, factor);
     }
 
@@ -954,6 +970,15 @@ class FlitGame extends FlameGame
   /// smoothly steers the plane toward it.
   void _updateWaymarkerSteering(double dt) {
     if (_waymarker == null) return;
+
+    // Check if plane has reached the waymarker (within ~1 degree / ~111 km).
+    final arrivalDist = _greatCircleDistDeg(_worldPosition, _waymarker!);
+    if (arrivalDist < 1.0) {
+      _waymarker = null;
+      _plane.releaseTurn();
+      _log.info('game', 'Waymarker reached — cleared');
+      return;
+    }
 
     // Compute initial bearing from plane to waymarker (great-circle).
     final lat1 = _worldPosition.y * _deg2rad;
