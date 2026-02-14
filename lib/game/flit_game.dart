@@ -165,11 +165,10 @@ class FlitGame extends FlameGame
   /// Wayline overlay renderer (draws translucent line to waymarker).
   WaylineRenderer? _waylineRenderer;
 
-  /// How far ahead (in degrees) the camera looks along heading.
-  /// The shader Y-flip + these offsets naturally project the plane
-  /// to approximately its fixed screen position (y ≈ 72%).
-  static const double _cameraOffsetHigh = 11.0;
-  static const double _cameraOffsetLow = 4.5;
+  /// Per-frame correction vector that aligns worldToScreen(_worldPosition)
+  /// with the fixed plane sprite position. Accounts for CameraState easing
+  /// lag, one-frame delay, and FOV transitions.
+  Vector2 _screenCorrection = Vector2.zero();
 
   /// Whether this is the first update (skip lerp, snap camera heading).
   bool _cameraFirstUpdate = true;
@@ -272,12 +271,20 @@ class FlitGame extends FlameGame
 
   /// Project a world position (lng, lat) to screen coordinates.
   /// Works with both Canvas (WorldMap) and shader (GlobeRenderer) renderers.
+  ///
+  /// When the shader is active, applies a per-frame screen correction so that
+  /// worldToScreen(_worldPosition) == plane sprite position. This guarantees
+  /// contrails, waypoints, and overlays align with the plane regardless of
+  /// CameraState easing lag or one-frame delays.
   Vector2 worldToScreen(Vector2 lngLat) {
     if (_worldMap != null) {
       return _worldMap!.latLngToScreen(lngLat, size);
     }
     if (_globeRenderer != null) {
-      return _shaderWorldToScreen(lngLat);
+      final projected = _shaderWorldToScreen(lngLat);
+      // Don't correct off-screen / occluded points.
+      if (projected.x < -500) return projected;
+      return projected + _screenCorrection;
     }
     return Vector2(size.x * projectionCenterX, size.y * projectionCenterY);
   }
@@ -365,6 +372,27 @@ class FlitGame extends FlameGame
     final screenY = (tiltDown - uvY) * size.y + size.y * 0.5;
 
     return Vector2(screenX, screenY);
+  }
+
+  /// Recompute the per-frame screen correction vector.
+  ///
+  /// Called at the end of each update after both the camera and plane position
+  /// have been updated. Measures the gap between where the shader projects
+  /// the plane's world position and where the plane sprite actually sits,
+  /// then caches the difference so worldToScreen can apply it.
+  void _computeScreenCorrection() {
+    if (_globeRenderer == null || size.x < 1 || size.y < 1) {
+      _screenCorrection = Vector2.zero();
+      return;
+    }
+    final projected = _shaderWorldToScreen(_worldPosition);
+    if (projected.x < -500) {
+      // Plane is occluded (shouldn't happen) — skip correction.
+      _screenCorrection = Vector2.zero();
+      return;
+    }
+    final target = Vector2(size.x * planeScreenX, size.y * planeScreenY);
+    _screenCorrection = target - projected;
   }
 
   /// Where on screen the plane sprite is rendered (proportional).
@@ -646,20 +674,36 @@ class FlitGame extends FlameGame
 
     // Modulate engine volume with turn intensity.
     AudioManager.instance.updateEngineVolume(_plane.turnDirection.abs());
+
+    // Compute per-frame screen correction so worldToScreen aligns with
+    // the plane sprite. Must run AFTER chase camera and motion updates
+    // but uses the camera state from super.update(dt) (this frame's
+    // camera position after CameraState easing).
+    _computeScreenCorrection();
   }
 
-  /// Forward-only flight using 3D great-circle movement.
+  /// Flight using 3D great-circle movement with turn input.
   ///
   /// Uses cartesian (x,y,z) math on the unit sphere to avoid the lat/lng
   /// singularity at poles. The plane follows a great circle — the true
   /// "straight line" on a sphere — with heading updated correctly at each
   /// step. No clamping, no auto-circle, no polar drift.
   ///
-  /// The heading update ensures the plane continues along the same great
-  /// circle. The camera tracks the heading, so the plane always faces "up"
-  /// on screen and the world rotates smoothly underneath.
+  /// Turn input (keyboard/button or waymarker auto-steer) modifies the
+  /// heading before each movement step, curving the flight path.
   void _updateMotion(double dt) {
-    // --- Forward-only: no turn input or waymarker steering for now ---
+    // --- Process turn input (keyboard/button progressive, waymarker auto-steer) ---
+    _updateTurnInput(dt);
+    _updateWaymarkerSteering(dt);
+
+    // --- Apply turn to heading ---
+    final turnDir = _plane.turnDirection;
+    if (turnDir.abs() > 0.001) {
+      final turnRate = _plane.currentTurnRate;
+      _heading += turnDir * turnRate * dt;
+      while (_heading > pi) { _heading -= 2 * pi; }
+      while (_heading < -pi) { _heading += 2 * pi; }
+    }
 
     final speed = _plane.currentSpeedContinuous * _speedMultiplier;
     final angularDist = speed * _speedToAngular * dt; // radians on unit sphere
@@ -746,41 +790,58 @@ class FlitGame extends FlameGame
 
   /// Update the chase camera heading and compute the offset camera position.
   ///
-  /// The camera heading smoothly interpolates toward the plane heading,
-  /// creating a satisfying lag when the plane turns. The camera center
-  /// is offset ahead of the plane along the camera heading direction.
+  /// The camera heading smoothly interpolates toward the plane heading.
+  /// The camera is positioned BEHIND the plane by a distance that places
+  /// the plane's world position at exactly (planeScreenX, planeScreenY) on
+  /// screen. This offset is computed dynamically from the current camera
+  /// distance and FOV so contrails and overlays align with the plane sprite.
   void _updateChaseCamera(double dt) {
     if (_cameraFirstUpdate) {
       _cameraHeading = _heading;
       _cameraFirstUpdate = false;
     } else {
       // Smooth ease-out: camera heading chases plane heading.
-      final factor = 1.0 - exp(-_cameraHeadingEaseRate * dt);
+      // During turns, reduce the tracking speed so the camera lags behind,
+      // creating a cinematic "catch-up" effect. At full bank the rate drops
+      // to 40% of normal (~4.8), giving a ~0.6s convergence time vs ~0.25s
+      // in straight flight. This prevents motion sickness during sharp turns.
+      final turnMag = _plane.turnDirection.abs();
+      final easeRate = _cameraHeadingEaseRate * (1.0 - turnMag * 0.6);
+      final factor = 1.0 - exp(-easeRate * dt);
       _cameraHeading = _lerpAngle(_cameraHeading, _heading, factor);
     }
 
-    // Compute a point ahead of the plane along the camera heading direction.
-    // Use continuous altitude for smooth offset interpolation.
-    final alt = _plane.continuousAltitude;
-    final offsetDeg = _cameraOffsetLow + alt * (_cameraOffsetHigh - _cameraOffsetLow);
-
-    // Reduce camera offset near poles to prevent oscillation
-    final latAbs = _worldPosition.y.abs();
-    final polarDamping = latAbs > 80.0 ? (90.0 - latAbs) / 10.0 : 1.0;
-    final effectiveOffset = offsetDeg * polarDamping;
+    // --- Dynamic camera offset ---
+    // Compute the angular offset behind the plane that makes
+    // worldToScreen(_worldPosition) land at planeScreenY (80%).
+    //
+    // From the projection math:
+    //   screenY/resY = tiltDown - uvY + 0.5
+    //   uvY = sin(δ) / ((d - cos(δ)) * tan(fov/2))
+    //
+    // For planeScreenY = 0.80:
+    //   uvY = tiltDown - 0.30 = 0.05
+    //
+    // Small-angle approximation (δ < 3°):
+    //   δ ≈ uvY * (d - R) * tan(fov/2)
+    // where d = camera distance from center, R = globe radius.
+    const desiredUvY = 0.05; // tiltDown(0.35) - (planeScreenY(0.80) - 0.50)
+    final d = cameraDistance;
+    final fov = _globeRenderer?.camera.fov ?? CameraState.fovNarrow;
+    final halfFovTan = tan(fov / 2);
+    final offsetRad = desiredUvY * (d - CameraState.globeRadius) * halfFovTan;
 
     // Convert camera heading to navigation bearing (0 = north).
     final camBearing = _cameraHeading + pi / 2;
 
-    // Great-circle destination: move offsetDeg ahead of the plane.
-    final d = effectiveOffset * _deg2rad;
+    // Great-circle destination: move offsetRad ahead of the plane (for Canvas).
     final planeLat = _worldPosition.y * _deg2rad;
     final planeLng = _worldPosition.x * _deg2rad;
 
     final sinPLat = sin(planeLat);
     final cosPLat = cos(planeLat);
-    final sinDist = sin(d);
-    final cosDist = cos(d);
+    final sinDist = sin(offsetRad);
+    final cosDist = cos(offsetRad);
 
     final aheadLat = asin(
       (sinPLat * cosDist + cosPLat * sinDist * cos(camBearing)).clamp(-1.0, 1.0),
@@ -797,8 +858,8 @@ class FlitGame extends FlameGame
     );
 
     // Compute a point BEHIND the plane for the shader chase camera.
-    // The shader camera is behind the plane so the plane appears at the
-    // bottom of the screen, creating a natural over-the-shoulder view.
+    // The shader camera is behind the plane so the plane appears at
+    // planeScreenY on screen, creating a natural over-the-shoulder view.
     final behindBearing = camBearing + pi;
     final behindLat = asin(
       (sinPLat * cosDist + cosPLat * sinDist * cos(behindBearing))
@@ -909,6 +970,15 @@ class FlitGame extends FlameGame
   /// smoothly steers the plane toward it.
   void _updateWaymarkerSteering(double dt) {
     if (_waymarker == null) return;
+
+    // Check if plane has reached the waymarker (within ~1 degree / ~111 km).
+    final arrivalDist = _greatCircleDistDeg(_worldPosition, _waymarker!);
+    if (arrivalDist < 1.0) {
+      _waymarker = null;
+      _plane.releaseTurn();
+      _log.info('game', 'Waymarker reached — cleared');
+      return;
+    }
 
     // Compute initial bearing from plane to waymarker (great-circle).
     final lat1 = _worldPosition.y * _deg2rad;
