@@ -55,6 +55,7 @@ class FlitGame extends FlameGame
     this.useShaderRenderer = true,
     this.equippedPlaneId = 'plane_default',
     this.companionType = AvatarCompanion.none,
+    this.motionEnabled = false,
   });
 
   final VoidCallback? onGameReady;
@@ -83,6 +84,11 @@ class FlitGame extends FlameGame
 
   /// Companion creature type (flies behind the plane as a sidekick).
   final AvatarCompanion companionType;
+
+  /// Whether plane motion is enabled. When false, the plane stays stationary
+  /// and no movement/steering/input is processed. Used for Step 1 rebuild
+  /// to verify static camera + projection before adding motion.
+  final bool motionEnabled;
 
   late PlaneComponent _plane;
 
@@ -351,7 +357,7 @@ class FlitGame extends FlameGame
     // Solving for fragCoord:
     //   fragCoord.x = uvX * res.y + 0.5 * res.x
     //   fragCoord.y = (tiltDown - uvY) * res.y + 0.5 * res.y
-    const tiltDown = 0.25; // Must match globe.frag cameraRayDir tiltDown
+    const tiltDown = 0.35; // Must match globe.frag cameraRayDir tiltDown
     final screenX = uvX * size.y + size.x * 0.5;
     final screenY = (tiltDown - uvY) * size.y + size.y * 0.5;
 
@@ -599,6 +605,57 @@ class FlitGame extends FlameGame
       _countryFlashTimer = (_countryFlashTimer - dt).clamp(0.0, _countryFlashDuration);
     }
 
+    // --- Motion-gated: input, steering, movement ---
+    if (motionEnabled) {
+      _updateMotion(dt);
+    }
+
+    // --- Chase camera: smooth heading with lag ---
+    _updateChaseCamera(dt);
+
+    // Feed camera position to the active renderer.
+    // GlobeRenderer reads position from gameRef in its own update(),
+    // so we only drive the Canvas renderer explicitly.
+    if (!_shaderReady && _worldMap != null) {
+      _worldMap!.setCameraCenter(_cameraOffsetPosition);
+      _worldMap!.setCameraHeading(cameraHeadingBearing);
+      _worldMap!.setAltitude(high: _plane.isHighAltitude);
+    }
+
+    // Update plane visual — heading is relative to camera heading only.
+    // Drag offset is excluded: when the player drags to look around,
+    // the globe rotates but the plane keeps facing forward on screen.
+    // Use shortest-path difference to avoid ±π wrapping jumps (the raw
+    // subtraction can produce ~2π spikes when heading crosses ±π).
+    var visualDiff = _heading - _cameraHeading;
+    while (visualDiff > pi) { visualDiff -= 2 * pi; }
+    while (visualDiff < -pi) { visualDiff += 2 * pi; }
+    _plane.visualHeading = visualDiff;
+
+    // Place the plane at its projected world position so it aligns with
+    // contrails and map features. Works for both Canvas and shader renderers.
+    final projectedPlane = worldToScreen(_worldPosition);
+    if (projectedPlane.x > -500) {
+      // Clamp Y so the plane never drops off the bottom of the screen.
+      // Allow up to 90% of screen height (leaves room for HUD buttons).
+      projectedPlane.y = projectedPlane.y.clamp(size.y * 0.05, size.y * 0.90);
+      _plane.position = projectedPlane;
+    } else {
+      // Off-screen fallback (shouldn't happen with camera offset system)
+      _plane.position = Vector2(size.x * planeScreenX, size.y * planeScreenY);
+    }
+
+    // Feed world state to plane for world-space contrail spawning.
+    _plane.worldPos = _worldPosition.clone();
+    _plane.worldHeading = _heading;
+
+    // Modulate engine volume with turn intensity.
+    AudioManager.instance.updateEngineVolume(_plane.turnDirection.abs());
+  }
+
+  /// All movement, steering, and input processing. Extracted so it can
+  /// be gated behind [motionEnabled] without touching the camera/render path.
+  void _updateMotion(double dt) {
     // --- Progressive turn input (keyboard + on-screen buttons) ---
     _updateTurnInput(dt);
 
@@ -677,48 +734,6 @@ class FlitGame extends FlameGame
         _plane.snapStraight();
       }
     }
-
-    // --- Chase camera: smooth heading with lag ---
-    _updateChaseCamera(dt);
-
-    // Feed camera position to the active renderer.
-    // GlobeRenderer reads position from gameRef in its own update(),
-    // so we only drive the Canvas renderer explicitly.
-    if (!_shaderReady && _worldMap != null) {
-      _worldMap!.setCameraCenter(_cameraOffsetPosition);
-      _worldMap!.setCameraHeading(cameraHeadingBearing);
-      _worldMap!.setAltitude(high: _plane.isHighAltitude);
-    }
-
-    // Update plane visual — heading is relative to camera heading only.
-    // Drag offset is excluded: when the player drags to look around,
-    // the globe rotates but the plane keeps facing forward on screen.
-    // Use shortest-path difference to avoid ±π wrapping jumps (the raw
-    // subtraction can produce ~2π spikes when heading crosses ±π).
-    var visualDiff = _heading - _cameraHeading;
-    while (visualDiff > pi) { visualDiff -= 2 * pi; }
-    while (visualDiff < -pi) { visualDiff += 2 * pi; }
-    _plane.visualHeading = visualDiff;
-
-    // Place the plane at its projected world position so it aligns with
-    // contrails and map features. Works for both Canvas and shader renderers.
-    final projectedPlane = worldToScreen(_worldPosition);
-    if (projectedPlane.x > -500) {
-      // Clamp Y so the plane never drops off the bottom of the screen.
-      // Allow up to 90% of screen height (leaves room for HUD buttons).
-      projectedPlane.y = projectedPlane.y.clamp(size.y * 0.05, size.y * 0.90);
-      _plane.position = projectedPlane;
-    } else {
-      // Off-screen fallback (shouldn't happen with camera offset system)
-      _plane.position = Vector2(size.x * planeScreenX, size.y * planeScreenY);
-    }
-
-    // Feed world state to plane for world-space contrail spawning.
-    _plane.worldPos = _worldPosition.clone();
-    _plane.worldHeading = _heading;
-
-    // Modulate engine volume with turn intensity.
-    AudioManager.instance.updateEngineVolume(_plane.turnDirection.abs());
   }
 
   /// Update the chase camera heading and compute the offset camera position.

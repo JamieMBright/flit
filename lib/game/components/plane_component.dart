@@ -167,6 +167,12 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     _updateContrails(dt);
   }
 
+  /// Vertical perspective scale to simulate the camera being above and behind
+  /// the plane. Compresses the forward-backward (Y) axis to give the illusion
+  /// of viewing the plane at an angle rather than straight top-down.
+  /// 0.7 ≈ camera ~45° above the horizontal.
+  static const double perspectiveScaleY = 0.7;
+
   @override
   void render(Canvas canvas) {
     super.render(canvas);
@@ -180,6 +186,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // "lean into" turns more naturally (nose points toward turn direction).
     final turnAdjustment = _turnDirection * 0.15; // Subtle nose-in effect
     canvas.rotate(visualHeading + turnAdjustment);
+
+    // Apply perspective foreshortening: the camera is above and behind the
+    // plane, so the forward-backward dimension appears compressed.
+    canvas.scale(1.0, perspectiveScaleY);
 
     // --- 3D banking perspective ---
     // cos(bank) foreshortens the horizontal axis; sin(bank) gives the
