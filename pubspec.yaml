@@ -22,6 +22,9 @@ dependencies:
   # HTTP client (cross-platform, for error telemetry)
   http: ^1.1.0
 
+  # Country flag SVGs (cross-platform: iOS, Android, Web)
+  flag: ^7.0.2
+
   # Audio (cross-platform: iOS, Android, Web)
   # Pinned to v5 for Dart SDK 3.2 compatibility (Flutter 3.16)
   audioplayers: ^5.2.1
