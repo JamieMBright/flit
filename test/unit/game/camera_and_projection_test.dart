@@ -755,7 +755,7 @@ void main() {
       // When crossing the north pole heading north, the heading should
       // become south (facing away from the pole on the other side).
       const stepDeg = 0.5;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       // Start very close to the pole heading north
       final result = simulateNSteps(89.5, 0, -pi / 2, stepRad, 4); // 2° past pole
 
@@ -782,7 +782,7 @@ void main() {
   group('Heading stability', () {
     test('heading north stays north over 1000 steps', () {
       const stepDeg = 0.05;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(0, 0, -pi / 2, stepRad, 1000); // 50°
 
       // Heading should still be approximately north (-π/2)
@@ -793,7 +793,7 @@ void main() {
 
     test('heading east stays east over 1000 steps', () {
       const stepDeg = 0.05;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(0, 0, 0, stepRad, 1000); // 50°
 
       // Heading should still be approximately east (0)
@@ -807,7 +807,7 @@ void main() {
       // This is correct (great circles curve in heading space).
       // The key test is that the change is SMOOTH (no jumps).
       const stepDeg = 0.1;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       var lat = 0.0;
       var lng = 0.0;
       var heading = -pi / 4; // NE
@@ -842,7 +842,7 @@ void main() {
       // Fly 100 steps of 0.1° each = 10° total.
       // Verify the actual distance between start and end is ~10°.
       const stepDeg = 0.1;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(0, 0, -pi / 2, stepRad, 100);
 
       // Great-circle distance from (0,0) to (result lat, result lng)
