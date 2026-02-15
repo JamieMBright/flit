@@ -430,7 +430,8 @@ class FlitGame extends FlameGame
   static const double _speedToAngular = pi / 1800;
 
   @override
-  Color backgroundColor() => FlitColors.oceanDeep;
+  Color backgroundColor() =>
+      _plane.isHighAltitude ? FlitColors.oceanDeep : const Color(0x00000000);
 
   @override
   Future<void> onLoad() async {

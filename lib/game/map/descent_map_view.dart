@@ -28,7 +28,8 @@ class DescentMapView extends StatefulWidget {
   final double centerLng;
   final double centerLat;
 
-  /// Player heading in radians (code convention: 0 = east, π/2 = north).
+  /// Camera heading as navigation bearing in radians (0 = north, π/2 = east).
+  /// Uses the lagged camera heading for smooth rotation matching the globe view.
   final double heading;
 
   /// Altitude transition value (0.0 = ground, 1.0 = high altitude).
@@ -53,11 +54,10 @@ class _DescentMapViewState extends State<DescentMapView> {
     return 4.0 + (1.0 - widget.altitudeTransition) * 6.0;
   }
 
-  /// Convert game heading (radians, 0=east, π/2=north) to map rotation
-  /// (degrees). The map rotates so the plane's direction faces screen-up.
+  /// Convert camera bearing (radians, 0=north, π/2=east) to map rotation
+  /// (degrees). The map rotates so the flight direction faces screen-up.
   double get _rotation {
-    final headingDeg = widget.heading * 180.0 / math.pi;
-    return -(90.0 - headingDeg);
+    return -widget.heading * 180.0 / math.pi;
   }
 
   @override

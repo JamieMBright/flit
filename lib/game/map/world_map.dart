@@ -78,6 +78,10 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   void render(Canvas canvas) {
     super.render(canvas);
 
+    // In descent mode the OSM tile map provides the background.
+    // Skip the canvas globe so the game canvas stays transparent.
+    if (!gameRef.plane.isHighAltitude) return;
+
     final screenSize = gameRef.size;
     final center = Offset(
       screenSize.x * FlitGame.projectionCenterX,

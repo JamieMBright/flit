@@ -743,7 +743,23 @@ class _PlayScreenState extends State<PlayScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Game canvas – use builders to avoid white flash during init
+          // OSM tile map — shown during descent mode (low altitude).
+          // Sits BEHIND the game canvas so the plane sprite floats on top.
+          // In descent mode the game canvas is transparent (globe shader skipped).
+          if (_gameReady && _session != null && !_isHighAltitude)
+            Positioned.fill(
+              child: DescentMapView(
+                centerLng: _game.cameraPosition.x,
+                centerLat: _game.cameraPosition.y,
+                heading: _game.cameraHeadingBearing,
+                altitudeTransition: 0.0,
+                tileUrl: GameSettings.instance.mapTileUrl,
+              ),
+            ),
+
+          // Game canvas – use builders to avoid white flash during init.
+          // In descent mode the background is transparent so the OSM map
+          // shows through, with the plane sprite rendered on top.
           GameWidget(
             game: _game,
             loadingBuilder: (_) => Container(
@@ -773,19 +789,6 @@ class _PlayScreenState extends State<PlayScreen> {
               return Container(color: FlitColors.backgroundDark);
             },
           ),
-
-          // OSM tile map — shown during descent mode (low altitude).
-          // Covers the globe shader with real-world map tiles.
-          if (_gameReady && _session != null && !_isHighAltitude)
-            Positioned.fill(
-              child: DescentMapView(
-                centerLng: _game.cameraPosition.x,
-                centerLat: _game.cameraPosition.y,
-                heading: _game.heading,
-                altitudeTransition: 0.0,
-                tileUrl: GameSettings.instance.mapTileUrl,
-              ),
-            ),
 
           // HUD overlay
           if (_gameReady && _session != null)
