@@ -178,6 +178,12 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     }
     canvas.translate(size.x / 2, size.y / 2);
 
+    // In flat map mode, scale the plane down so it fits the regional view.
+    // The plane needs to be smaller since it's moving across the whole region.
+    if (gameRef.isFlatMapMode) {
+      canvas.scale(0.5);
+    }
+
     // Rotate to face heading. Camera up vector is the heading direction,
     // so visualHeading=0 means the plane faces "up" on screen (forward).
     // Add a proportional yaw toward the turn direction so the nose, fuselage,

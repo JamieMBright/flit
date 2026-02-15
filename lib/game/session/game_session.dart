@@ -133,8 +133,8 @@ class GameSession {
       final areas = RegionalData.getAreas(region);
       final area = areas[random.nextInt(areas.length)];
 
-      // Create a clue for the regional area
-      final clue = Clue.regionalArea(area);
+      // Create a clue for the regional area (with region for rich data)
+      final clue = Clue.regionalArea(area, region: region);
 
       // Generate start position within region bounds
       final bounds = region.bounds;

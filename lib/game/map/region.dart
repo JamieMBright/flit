@@ -9,6 +9,24 @@ enum GameRegion {
   ukCounties,
   caribbean,
   ireland,
+  canadianProvinces,
+}
+
+/// Whether a region uses a flat map projection instead of the globe.
+///
+/// Flat-map regions show a static satellite view with the plane moving
+/// across the screen, rather than the globe-centred view.
+bool isRegionalFlatMap(GameRegion region) {
+  switch (region) {
+    case GameRegion.world:
+    case GameRegion.caribbean:
+      return false;
+    case GameRegion.usStates:
+    case GameRegion.ukCounties:
+    case GameRegion.ireland:
+    case GameRegion.canadianProvinces:
+      return true;
+  }
 }
 
 extension GameRegionExtension on GameRegion {
@@ -19,11 +37,13 @@ extension GameRegionExtension on GameRegion {
       case GameRegion.usStates:
         return 'US States';
       case GameRegion.ukCounties:
-        return 'UK Counties';
+        return 'British Counties';
       case GameRegion.caribbean:
         return 'Caribbean';
       case GameRegion.ireland:
         return 'Ireland';
+      case GameRegion.canadianProvinces:
+        return 'Canada';
     }
   }
 
@@ -39,6 +59,8 @@ extension GameRegionExtension on GameRegion {
         return 'Island hop through the Caribbean';
       case GameRegion.ireland:
         return 'Tour all 32 counties of Ireland';
+      case GameRegion.canadianProvinces:
+        return 'Fly across Canada\'s provinces';
     }
   }
 
@@ -55,6 +77,8 @@ extension GameRegionExtension on GameRegion {
         return [-85, 10, -59, 28];
       case GameRegion.ireland:
         return [-11, 51, -5, 56];
+      case GameRegion.canadianProvinces:
+        return [-141, 42, -52, 72];
     }
   }
 
@@ -77,8 +101,13 @@ extension GameRegionExtension on GameRegion {
         return 7;
       case GameRegion.ireland:
         return 10;
+      case GameRegion.canadianProvinces:
+        return 4;
     }
   }
+
+  /// Whether this region uses a flat map projection instead of the globe.
+  bool get isFlatMap => isRegionalFlatMap(this);
 }
 
 /// Regional area shape (state, county, island, etc.)
@@ -122,6 +151,8 @@ abstract class RegionalData {
         return _caribbeanIslands;
       case GameRegion.ireland:
         return _irelandCounties;
+      case GameRegion.canadianProvinces:
+        return _canadianProvinces;
     }
   }
 
@@ -351,5 +382,24 @@ abstract class RegionalData {
     RegionalArea(code: 'FRM', name: 'Fermanagh', capital: 'Enniskillen', population: 64740, funFact: 'Home to beautiful island-dotted Lough Erne', points: [Vector2(-8.2, 54.6), Vector2(-7.2, 54.6), Vector2(-7.2, 54.1), Vector2(-8.2, 54.1), Vector2(-8.2, 54.6)]),
     RegionalArea(code: 'LDY', name: 'Derry', capital: 'Derry', population: 247132, funFact: 'Has the most complete set of city walls in Ireland', points: [Vector2(-7.5, 55.2), Vector2(-6.5, 55.2), Vector2(-6.5, 54.7), Vector2(-7.5, 54.7), Vector2(-7.5, 55.2)]),
     RegionalArea(code: 'TYR', name: 'Tyrone', capital: 'Omagh', population: 177986, funFact: 'Largest of the six Northern Ireland counties', points: [Vector2(-7.9, 54.9), Vector2(-6.6, 54.9), Vector2(-6.6, 54.3), Vector2(-7.9, 54.3), Vector2(-7.9, 54.9)]),
+  ];
+
+  // All 13 Canadian Provinces and Territories
+  static final List<RegionalArea> _canadianProvinces = [
+    // Provinces (10)
+    RegionalArea(code: 'ON', name: 'Ontario', capital: 'Toronto', population: 14223942, funFact: 'Home to Niagara Falls and the CN Tower', points: [Vector2(-95.2, 56.9), Vector2(-89.5, 56.9), Vector2(-79.5, 51.5), Vector2(-74.3, 46), Vector2(-74.7, 44.9), Vector2(-76.8, 44), Vector2(-82.4, 41.7), Vector2(-89.5, 48), Vector2(-95.2, 49), Vector2(-95.2, 56.9)]),
+    RegionalArea(code: 'QC', name: 'Quebec', capital: 'Quebec City', population: 8501833, funFact: 'Largest province by area, French-speaking heartland', points: [Vector2(-79.5, 51.5), Vector2(-74.3, 46), Vector2(-66.4, 47.3), Vector2(-57.1, 51.4), Vector2(-63, 55), Vector2(-65, 58.5), Vector2(-69.7, 58.5), Vector2(-79.5, 55), Vector2(-79.5, 51.5)]),
+    RegionalArea(code: 'BC', name: 'British Columbia', capital: 'Victoria', population: 5000879, funFact: 'Home to ancient temperate rainforests and orcas', points: [Vector2(-139, 60), Vector2(-120, 60), Vector2(-120, 54), Vector2(-114.1, 49), Vector2(-123, 49), Vector2(-126, 50.5), Vector2(-131, 54), Vector2(-139, 60)]),
+    RegionalArea(code: 'AB', name: 'Alberta', capital: 'Edmonton', population: 4262635, funFact: 'Home to the Canadian Rockies and Banff National Park', points: [Vector2(-120, 60), Vector2(-110, 60), Vector2(-110, 49), Vector2(-114.1, 49), Vector2(-120, 54), Vector2(-120, 60)]),
+    RegionalArea(code: 'MB', name: 'Manitoba', capital: 'Winnipeg', population: 1342153, funFact: 'Known as the Polar Bear Capital of the World', points: [Vector2(-102, 60), Vector2(-95.2, 60), Vector2(-95.2, 56.9), Vector2(-95.2, 49), Vector2(-102, 49), Vector2(-102, 60)]),
+    RegionalArea(code: 'SK', name: 'Saskatchewan', capital: 'Regina', population: 1132505, funFact: 'Produces more wheat than any other province', points: [Vector2(-110, 60), Vector2(-102, 60), Vector2(-102, 49), Vector2(-110, 49), Vector2(-110, 60)]),
+    RegionalArea(code: 'NS', name: 'Nova Scotia', capital: 'Halifax', population: 969383, funFact: 'Home to the world\'s highest tides in the Bay of Fundy', points: [Vector2(-66.4, 47.1), Vector2(-63, 47), Vector2(-59.7, 44), Vector2(-61, 43.4), Vector2(-66, 44.5), Vector2(-66.4, 47.1)]),
+    RegionalArea(code: 'NB', name: 'New Brunswick', capital: 'Fredericton', population: 775610, funFact: 'The only officially bilingual province', points: [Vector2(-69.1, 48.1), Vector2(-66, 47.9), Vector2(-64.5, 46.2), Vector2(-66.1, 44.5), Vector2(-67.8, 45), Vector2(-69.1, 47), Vector2(-69.1, 48.1)]),
+    RegionalArea(code: 'NL', name: 'Newfoundland and Labrador', capital: "St. John's", population: 510550, funFact: 'The first place in North America reached by Europeans', points: [Vector2(-67, 60), Vector2(-57.1, 51.4), Vector2(-52.6, 47.5), Vector2(-55.4, 46.6), Vector2(-59, 47.6), Vector2(-59.3, 50), Vector2(-57, 51.5), Vector2(-60.5, 56), Vector2(-67, 60)]),
+    RegionalArea(code: 'PE', name: 'Prince Edward Island', capital: 'Charlottetown', population: 154331, funFact: 'Birthplace of Canadian Confederation in 1864', points: [Vector2(-64.4, 47.1), Vector2(-62, 47.1), Vector2(-62, 46), Vector2(-64.4, 46), Vector2(-64.4, 47.1)]),
+    // Territories (3)
+    RegionalArea(code: 'NT', name: 'Northwest Territories', capital: 'Yellowknife', population: 41070, funFact: 'Home to spectacular Northern Lights displays', points: [Vector2(-136.5, 70), Vector2(-120, 70), Vector2(-110, 65), Vector2(-102, 60), Vector2(-110, 60), Vector2(-120, 60), Vector2(-136.5, 60), Vector2(-136.5, 70)]),
+    RegionalArea(code: 'YT', name: 'Yukon', capital: 'Whitehorse', population: 40232, funFact: 'Home to Canada\'s highest peak, Mount Logan', points: [Vector2(-141, 70), Vector2(-136.5, 70), Vector2(-136.5, 60), Vector2(-139, 60), Vector2(-141, 60), Vector2(-141, 70)]),
+    RegionalArea(code: 'NU', name: 'Nunavut', capital: 'Iqaluit', population: 36858, funFact: 'Largest and newest territory, created in 1999', points: [Vector2(-120, 70), Vector2(-85, 70), Vector2(-61, 70), Vector2(-64, 63.4), Vector2(-69.7, 58.5), Vector2(-79.5, 55), Vector2(-89.5, 56.9), Vector2(-95.2, 60), Vector2(-102, 60), Vector2(-110, 65), Vector2(-120, 70)]),
   ];
 }

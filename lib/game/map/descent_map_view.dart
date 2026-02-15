@@ -48,10 +48,10 @@ class _DescentMapViewState extends State<DescentMapView> {
   bool _mapReady = false;
 
   /// Convert altitude transition (0.0–1.0) to flutter_map zoom level.
-  /// Low altitude (0.0) → zoom 10 (city-level detail)
+  /// Low altitude (0.0) → zoom 7 (regional overview)
   /// High altitude (1.0) → zoom 4 (continent-level)
   double get _zoom {
-    return 4.0 + (1.0 - widget.altitudeTransition) * 6.0;
+    return 4.0 + (1.0 - widget.altitudeTransition) * 3.0;
   }
 
   /// Convert camera bearing (radians, 0=north, π/2=east) to map rotation

@@ -120,6 +120,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
 IconData _clueIcon(String clueType) {
   switch (clueType) {
     case 'flag':
+    case 'flagDescription':
       return Icons.flag_rounded;
     case 'outline':
       return Icons.crop_square_rounded;
@@ -129,6 +130,14 @@ IconData _clueIcon(String clueType) {
       return Icons.location_city_rounded;
     case 'stats':
       return Icons.bar_chart_rounded;
+    case 'sportsTeam':
+      return Icons.sports_rounded;
+    case 'leader':
+      return Icons.person_rounded;
+    case 'nickname':
+      return Icons.label_rounded;
+    case 'landmark':
+      return Icons.landscape_rounded;
     default:
       return Icons.help_outline_rounded;
   }
@@ -147,6 +156,16 @@ String _clueLabel(String clueType) {
       return 'Capital';
     case 'stats':
       return 'Stats';
+    case 'sportsTeam':
+      return 'Sports';
+    case 'leader':
+      return 'Leader';
+    case 'nickname':
+      return 'Nickname';
+    case 'landmark':
+      return 'Landmark';
+    case 'flagDescription':
+      return 'Flag Desc';
     default:
       return clueType;
   }

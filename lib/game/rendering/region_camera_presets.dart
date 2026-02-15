@@ -101,6 +101,16 @@ abstract class RegionCameraPresets {
     fovOverride: 42.0,
   );
 
+  /// Canada: centered on the southern populated belt.
+  static const CameraPreset _canadianProvincesPreset = CameraPreset(
+    centerLat: 55.0,
+    centerLng: -96.0,
+    altitudeDistance: 2.2,
+    maxBoundsLat: 25.0,
+    maxBoundsLng: 50.0,
+    fovOverride: 50.0,
+  );
+
   // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
@@ -118,6 +128,8 @@ abstract class RegionCameraPresets {
         return _caribbeanPreset;
       case GameRegion.ireland:
         return _irelandPreset;
+      case GameRegion.canadianProvinces:
+        return _canadianProvincesPreset;
     }
   }
 
