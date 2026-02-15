@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flag/flag.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
@@ -239,9 +240,14 @@ class _ClueCard extends StatelessWidget {
             const SizedBox(height: 4),
             // Clue content
             if (clue.type == ClueType.flag)
-              Text(
-                clue.displayData['flagEmoji'] as String,
-                style: const TextStyle(fontSize: 48),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: Flag.fromString(
+                  clue.targetCountryCode,
+                  height: 48,
+                  width: 72,
+                  fit: BoxFit.contain,
+                ),
               )
             else if (clue.type == ClueType.outline)
               _CountryOutline(

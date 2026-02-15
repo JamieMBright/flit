@@ -6,6 +6,7 @@ import 'package:flutter/scheduler.dart';
 
 import '../../core/services/audio_manager.dart';
 import '../../core/services/error_service.dart';
+import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
@@ -13,6 +14,7 @@ import '../../core/widgets/settings_sheet.dart';
 import '../../data/models/avatar_config.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/flit_game.dart';
+import '../../game/map/descent_map_view.dart';
 import '../../game/map/region.dart';
 import '../../game/session/game_session.dart';
 import '../../game/ui/game_hud.dart';
@@ -771,6 +773,20 @@ class _PlayScreenState extends State<PlayScreen> {
               return Container(color: FlitColors.backgroundDark);
             },
           ),
+
+          // OSM tile map — shown during descent mode (low altitude).
+          // Covers the globe shader with real-world map tiles.
+          // flutter_map's built-in caching stores tiles for offline use.
+          if (_gameReady && _session != null && !_isHighAltitude)
+            Positioned.fill(
+              child: DescentMapView(
+                playerLng: _game.worldPosition.x,
+                playerLat: _game.worldPosition.y,
+                heading: _game.heading,
+                altitudeTransition: 0.0,
+                tileUrl: GameSettings.instance.mapTileUrl,
+              ),
+            ),
 
           // HUD overlay
           if (_gameReady && _session != null)

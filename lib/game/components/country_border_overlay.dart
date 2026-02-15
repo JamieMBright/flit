@@ -207,7 +207,8 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
   }
 
   // -----------------------------------------------------------------------
-  // Country borders + active country highlight
+  // Active country highlight only — all border lines are now rendered by
+  // the globe shader (V7) from the distance field in uShoreDist green channel.
   // -----------------------------------------------------------------------
 
   void _renderCountryBorders(
@@ -216,39 +217,19 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
     double screenW,
     double screenH,
   ) {
-    final int maxCountries;
-    final int maxTotalPoints;
-    final int maxPointsPerPoly;
+    // Only draw the active (hovered) country highlight
+    final activeCountryName = gameRef.currentCountryName;
+    if (activeCountryName == null) return;
 
-    if (kIsWeb) {
-      if (continuousAlt < 0.3) {
-        maxCountries = 4;
-        maxTotalPoints = 400;
-        maxPointsPerPoly = 15;
-      } else if (continuousAlt < 0.6) {
-        maxCountries = 8;
-        maxTotalPoints = 800;
-        maxPointsPerPoly = 20;
-      } else {
-        maxCountries = 12;
-        maxTotalPoints = 1200;
-        maxPointsPerPoly = 30;
-      }
-    } else {
-      if (continuousAlt < 0.3) {
-        maxCountries = 15;
-        maxTotalPoints = 2000;
-        maxPointsPerPoly = 40;
-      } else if (continuousAlt < 0.6) {
-        maxCountries = 30;
-        maxTotalPoints = 4000;
-        maxPointsPerPoly = 50;
-      } else {
-        maxCountries = 40;
-        maxTotalPoints = 6000;
-        maxPointsPerPoly = 60;
+    // Find the active country
+    CountryShape? activeCountry;
+    for (final country in CountryData.countries) {
+      if (country.name == activeCountryName) {
+        activeCountry = country;
+        break;
       }
     }
+    if (activeCountry == null) return;
 
     final borderOpacity = continuousAlt >= 0.6
         ? (0.5 * (1.0 - (continuousAlt - 0.6) / 0.4)).clamp(0.15, 0.5)
@@ -256,14 +237,6 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
     if (borderOpacity < 0.01) return;
 
-    final borderPaint = Paint()
-      ..color = Colors.white.withOpacity(borderOpacity * 0.8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = continuousAlt >= 0.6 ? 1.0 : 1.5
-      ..strokeJoin = StrokeJoin.round;
-
-    // Active country highlight: thicker, brighter border.
-    final activeCountryName = gameRef.currentCountryName;
     final highlightPaint = Paint()
       ..color =
           FlitColors.accent.withOpacity((borderOpacity * 0.9).clamp(0.3, 0.9))
@@ -271,100 +244,50 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       ..strokeWidth = continuousAlt >= 0.6 ? 1.5 : 2.5
       ..strokeJoin = StrokeJoin.round;
 
-    final playerPos = gameRef.worldPosition;
-    final scored =
-        <({double dist, CountryShape country, double cLng, double cLat})>[];
+    // Point budget per polygon (web is tighter)
+    final maxPointsPerPoly = kIsWeb ? 30 : 60;
 
-    for (final country in CountryData.countries) {
-      final pts = country.polygons.first;
-      if (pts.isEmpty) continue;
-      var sumLng = 0.0;
-      var sumLat = 0.0;
-      final step = (pts.length > 10) ? pts.length ~/ 5 : 1;
-      var count = 0;
-      for (var i = 0; i < pts.length; i += step) {
-        sumLng += pts[i].x;
-        sumLat += pts[i].y;
-        count++;
+    for (final polygon in activeCountry.polygons) {
+      if (polygon.length < 3) continue;
+
+      final stride = polygon.length > maxPointsPerPoly
+          ? (polygon.length / maxPointsPerPoly).ceil()
+          : 1;
+
+      final path = ui.Path();
+      var started = false;
+      var anyVisible = false;
+      var hasOccluded = false;
+
+      for (var i = 0; i < polygon.length; i += stride) {
+        final screenPos = gameRef.worldToScreenGlobe(polygon[i]);
+
+        if (screenPos.x < -500 || screenPos.y < -500) {
+          started = false;
+          hasOccluded = true;
+          continue;
+        }
+
+        if (screenPos.x > -100 &&
+            screenPos.x < screenW + 100 &&
+            screenPos.y > -100 &&
+            screenPos.y < screenH + 100) {
+          anyVisible = true;
+        }
+
+        if (!started) {
+          path.moveTo(screenPos.x, screenPos.y);
+          started = true;
+        } else {
+          path.lineTo(screenPos.x, screenPos.y);
+        }
       }
-      final cLng = sumLng / count;
-      final cLat = sumLat / count;
-      final dx = cLng - playerPos.x;
-      final dy = cLat - playerPos.y;
-      scored.add((
-        dist: dx * dx + dy * dy,
-        country: country,
-        cLng: cLng,
-        cLat: cLat,
-      ));
-    }
 
-    scored.sort((a, b) => a.dist.compareTo(b.dist));
-
-    var rendered = 0;
-    var totalPoints = 0;
-
-    for (final entry in scored) {
-      if (rendered >= maxCountries) break;
-      if (totalPoints >= maxTotalPoints) break;
-
-      final isActive = activeCountryName != null &&
-          entry.country.name == activeCountryName;
-      final paint = isActive ? highlightPaint : borderPaint;
-
-      for (final polygon in entry.country.polygons) {
-        if (polygon.length < 3) continue;
-        if (totalPoints >= maxTotalPoints) break;
-
-        final stride = polygon.length > maxPointsPerPoly
-            ? (polygon.length / maxPointsPerPoly).ceil()
-            : 1;
-
-        final path = ui.Path();
-        var started = false;
-        var anyVisible = false;
-        var hasOccluded = false;
-        var pointsInPath = 0;
-
-        for (var i = 0; i < polygon.length; i += stride) {
-          final screenPos = gameRef.worldToScreenGlobe(polygon[i]);
-
-          if (screenPos.x < -500 || screenPos.y < -500) {
-            // Point is on the far side of the globe — break the path here
-            // so no line is drawn from the last visible vertex to the next.
-            started = false;
-            hasOccluded = true;
-            continue;
-          }
-
-          if (screenPos.x > -100 &&
-              screenPos.x < screenW + 100 &&
-              screenPos.y > -100 &&
-              screenPos.y < screenH + 100) {
-            anyVisible = true;
-          }
-
-          if (!started) {
-            path.moveTo(screenPos.x, screenPos.y);
-            started = true;
-          } else {
-            path.lineTo(screenPos.x, screenPos.y);
-          }
-          pointsInPath++;
+      if (anyVisible) {
+        if (!hasOccluded) {
+          path.close();
         }
-
-        totalPoints += pointsInPath;
-
-        if (anyVisible && pointsInPath > 1) {
-          // Only close the path if the ENTIRE polygon was on the visible
-          // hemisphere. If any vertex was occluded, leave the path open
-          // to prevent a line cutting straight across the globe.
-          if (!hasOccluded) {
-            path.close();
-          }
-          canvas.drawPath(path, paint);
-          rendered++;
-        }
+        canvas.drawPath(path, highlightPaint);
       }
     }
   }

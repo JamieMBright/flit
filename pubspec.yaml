@@ -22,6 +22,14 @@ dependencies:
   # HTTP client (cross-platform, for error telemetry)
   http: ^1.1.0
 
+  # Country flag SVGs (cross-platform: iOS, Android, Web)
+  flag: ^7.0.2
+
+  # OSM tile map for descent mode (cross-platform: iOS, Android, Web)
+  # Built-in tile caching since v8.2 (1GB soft limit, auto on non-web)
+  flutter_map: ^8.2.2
+  latlong2: ^0.9.1
+
   # Audio (cross-platform: iOS, Android, Web)
   # Pinned to v5 for Dart SDK 3.2 compatibility (Flutter 3.16)
   audioplayers: ^5.2.1
