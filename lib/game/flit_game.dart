@@ -641,23 +641,21 @@ class FlitGame extends FlameGame
     final countries = CountryData.countries;
 
     // Lazy-init bounding boxes (once, first frame that needs them).
-    if (_countryBounds == null) {
-      _countryBounds = List<Rect>.generate(countries.length, (i) {
-        var minLng = double.infinity;
-        var minLat = double.infinity;
-        var maxLng = double.negativeInfinity;
-        var maxLat = double.negativeInfinity;
-        for (final polygon in countries[i].polygons) {
-          for (final v in polygon) {
-            if (v.x < minLng) minLng = v.x;
-            if (v.x > maxLng) maxLng = v.x;
-            if (v.y < minLat) minLat = v.y;
-            if (v.y > maxLat) maxLat = v.y;
-          }
+    _countryBounds ??= List<Rect>.generate(countries.length, (i) {
+      var minLng = double.infinity;
+      var minLat = double.infinity;
+      var maxLng = double.negativeInfinity;
+      var maxLat = double.negativeInfinity;
+      for (final polygon in countries[i].polygons) {
+        for (final v in polygon) {
+          if (v.x < minLng) minLng = v.x;
+          if (v.x > maxLng) maxLng = v.x;
+          if (v.y < minLat) minLat = v.y;
+          if (v.y > maxLat) maxLat = v.y;
         }
-        return Rect.fromLTRB(minLng, minLat, maxLng, maxLat);
-      });
-    }
+      }
+      return Rect.fromLTRB(minLng, minLat, maxLng, maxLat);
+    });
 
     final lng = _worldPosition.x;
     final lat = _worldPosition.y;

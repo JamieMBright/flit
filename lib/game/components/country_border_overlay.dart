@@ -254,7 +254,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
     final playerPos = gameRef.worldPosition;
     final visRadius = alt < 0.5 ? 30.0 : 70.0;
-    final maxPeaks = kIsWeb ? 8 : 15;
+    const maxPeaks = kIsWeb ? 8 : 15;
     var drawn = 0;
 
     for (final peak in OsmFeatures.peaks) {
@@ -297,7 +297,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
     final playerPos = gameRef.worldPosition;
     final visRadius = alt < 0.5 ? 30.0 : 70.0;
-    final maxVolcanoes = kIsWeb ? 6 : 12;
+    const maxVolcanoes = kIsWeb ? 6 : 12;
     var drawn = 0;
 
     for (final volcano in OsmFeatures.volcanoes) {
@@ -357,8 +357,8 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       ..style = PaintingStyle.fill;
 
     final playerPos = gameRef.worldPosition;
-    final visRadius = 50.0;
-    final maxAirports = kIsWeb ? 6 : 12;
+    const visRadius = 50.0;
+    const maxAirports = kIsWeb ? 6 : 12;
     var drawn = 0;
 
     for (final airport in OsmFeatures.airports) {
@@ -450,7 +450,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       ..strokeJoin = StrokeJoin.round;
 
     // Point budget per polygon (web is tighter)
-    final maxPointsPerPoly = kIsWeb ? 30 : 60;
+    const maxPointsPerPoly = kIsWeb ? 30 : 60;
 
     for (final polygon in activeCountry.polygons) {
       if (polygon.length < 3) continue;

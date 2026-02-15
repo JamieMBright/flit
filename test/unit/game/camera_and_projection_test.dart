@@ -62,7 +62,7 @@ void main() {
 
       // At (lat=0, lng=0) on the unit sphere, the surface normal points
       // along +x. Camera should be at (distance, 0, 0).
-      final d = CameraState.highAltitudeDistance;
+      const d = CameraState.highAltitudeDistance;
       expect(camera.cameraX, closeTo(d, 1e-6));
       expect(camera.cameraY, closeTo(0, 1e-6));
       expect(camera.cameraZ, closeTo(0, 1e-6));
@@ -76,7 +76,7 @@ void main() {
           isHighAltitude: true,
           headingRad: 0);
 
-      final d = CameraState.highAltitudeDistance;
+      const d = CameraState.highAltitudeDistance;
       final latRad = 45 * pi / 180;
       final lngRad = 90 * pi / 180;
       final expectedX = cos(latRad) * cos(lngRad) * d;
@@ -164,7 +164,7 @@ void main() {
       // The horizon (globe limb) is at angle arcsin(R/d) from the
       // camera-to-center direction, where R=1.0 (globe radius) and
       // d=camera distance from center.
-      final d = CameraState.highAltitudeDistance;
+      const d = CameraState.highAltitudeDistance;
       final horizonAngleRad = asin(CameraState.globeRadius / d);
       final horizonAngleDeg = horizonAngleRad * 180 / pi;
 
@@ -178,14 +178,14 @@ void main() {
       // has uv.y = 0.5 + tiltDown (after y-flip and tilt shift).
       // After FOV scaling: uv_scaled = uv.y * tan(fov/2)
       // Ray angle from forward = atan(uv_scaled)
-      final fov = CameraState.fovNarrow; // Use narrow (static, no speed)
-      final uvTopY = 0.5 + tiltDown;
+      const fov = CameraState.fovNarrow; // Use narrow (static, no speed)
+      const uvTopY = 0.5 + tiltDown;
       final halfFovTan = tan(fov / 2);
       final rayAngleRad = atan(uvTopY * halfFovTan);
       final rayAngleDeg = rayAngleRad * 180 / pi;
 
       // Horizon angle at high altitude
-      final d = CameraState.highAltitudeDistance;
+      const d = CameraState.highAltitudeDistance;
       final horizonAngleDeg = asin(CameraState.globeRadius / d) * 180 / pi;
 
       // The top-of-screen ray must exceed the horizon angle for curvature
@@ -210,13 +210,13 @@ void main() {
     test('horizon visible at top with wide FOV (speed-adjusted)', () {
       // When moving, FOV widens to fovWide, which pushes the horizon
       // into view at the top of the screen.
-      final fov = CameraState.fovWide;
-      final uvTopY = 0.5 + tiltDown;
+      const fov = CameraState.fovWide;
+      const uvTopY = 0.5 + tiltDown;
       final halfFovTan = tan(fov / 2);
       final rayAngleRad = atan(uvTopY * halfFovTan);
       final rayAngleDeg = rayAngleRad * 180 / pi;
 
-      final d = CameraState.highAltitudeDistance;
+      const d = CameraState.highAltitudeDistance;
       final horizonAngleDeg = asin(CameraState.globeRadius / d) * 180 / pi;
 
       expect(rayAngleDeg, greaterThan(horizonAngleDeg),
@@ -229,13 +229,13 @@ void main() {
       // At the bottom of the screen (fragCoord.y = resolution.y),
       // uv.y = -0.5 + tiltDown = -0.15
       // This should point at the globe surface (below the horizon).
-      final fov = CameraState.fovNarrow;
-      final uvBottomY = -0.5 + tiltDown;
+      const fov = CameraState.fovNarrow;
+      const uvBottomY = -0.5 + tiltDown;
       final halfFovTan = tan(fov / 2);
       final rayAngleRad = atan(uvBottomY * halfFovTan);
       final rayAngleDeg = rayAngleRad * 180 / pi;
 
-      final d = CameraState.highAltitudeDistance;
+      const d = CameraState.highAltitudeDistance;
       final horizonAngleDeg = asin(CameraState.globeRadius / d) * 180 / pi;
 
       expect(rayAngleDeg.abs(), lessThan(horizonAngleDeg),
@@ -245,13 +245,13 @@ void main() {
 
     test('screen center ray hits globe surface', () {
       // At screen center, uv.y = tiltDown (after flip, center = 0 + tiltDown)
-      final fov = CameraState.fovNarrow;
-      final uvCenterY = tiltDown;
+      const fov = CameraState.fovNarrow;
+      const uvCenterY = tiltDown;
       final halfFovTan = tan(fov / 2);
       final rayAngleRad = atan(uvCenterY * halfFovTan);
       final rayAngleDeg = rayAngleRad * 180 / pi;
 
-      final d = CameraState.highAltitudeDistance;
+      const d = CameraState.highAltitudeDistance;
       final horizonAngleDeg = asin(CameraState.globeRadius / d) * 180 / pi;
 
       expect(rayAngleDeg, lessThan(horizonAngleDeg),
@@ -266,18 +266,18 @@ void main() {
       // At the left/right edge of center row:
       // uv.x = ±0.5 * (width/height) = ±0.5 * (9/16) = ±0.281
       // The combined angular extent from center should be within the horizon.
-      final fov = CameraState.fovNarrow;
+      const fov = CameraState.fovNarrow;
       final halfFovTan = tan(fov / 2);
       const aspectRatio = 9.0 / 16.0; // portrait phone
-      final uvEdgeX = 0.5 * aspectRatio;
-      final uvEdgeY = tiltDown; // center row, after tilt
+      const uvEdgeX = 0.5 * aspectRatio;
+      const uvEdgeY = tiltDown; // center row, after tilt
 
       final scaledX = uvEdgeX * halfFovTan;
       final scaledY = uvEdgeY * halfFovTan;
       final combinedAngleRad = atan(sqrt(scaledX * scaledX + scaledY * scaledY));
       final combinedAngleDeg = combinedAngleRad * 180 / pi;
 
-      final d = CameraState.highAltitudeDistance;
+      const d = CameraState.highAltitudeDistance;
       final horizonAngleDeg = asin(CameraState.globeRadius / d) * 180 / pi;
 
       expect(combinedAngleDeg, lessThan(horizonAngleDeg),
@@ -374,7 +374,7 @@ void main() {
           isHighAltitude: true,
           headingRad: 0);
 
-      final d = CameraState.highAltitudeDistance;
+      const d = CameraState.highAltitudeDistance;
       final latRad = -30 * pi / 180;
       final lngRad = -60 * pi / 180;
       final expectedX = cos(latRad) * cos(lngRad) * d;
@@ -846,8 +846,8 @@ void main() {
       final result = simulateNSteps(0, 0, -pi / 2, stepRad, 100);
 
       // Great-circle distance from (0,0) to (result lat, result lng)
-      final lat1 = 0.0;
-      final lng1 = 0.0;
+      const lat1 = 0.0;
+      const lng1 = 0.0;
       final lat2 = result['lat']! * pi / 180;
       final lng2 = result['lng']! * pi / 180;
       final dLat = lat2 - lat1;

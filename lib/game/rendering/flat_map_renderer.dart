@@ -121,7 +121,7 @@ class FlatMapRenderer extends Component with HasGameRef<FlitGame> {
       ..strokeJoin = StrokeJoin.round;
 
     // Limit points per polygon on web for performance
-    final maxPointsPerPoly = kIsWeb ? 40 : 80;
+    const maxPointsPerPoly = kIsWeb ? 40 : 80;
 
     for (final area in areas) {
       if (area.points.length < 3) continue;
@@ -236,7 +236,7 @@ class FlatMapRenderer extends Component with HasGameRef<FlitGame> {
       ..color = FlitColors.accent.withOpacity(0.1)
       ..style = PaintingStyle.fill;
 
-    final maxPointsPerPoly = kIsWeb ? 40 : 80;
+    const maxPointsPerPoly = kIsWeb ? 40 : 80;
     final stride = activeArea.points.length > maxPointsPerPoly
         ? (activeArea.points.length / maxPointsPerPoly).ceil()
         : 1;

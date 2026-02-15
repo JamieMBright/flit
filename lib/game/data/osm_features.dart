@@ -346,21 +346,21 @@ abstract class OsmFeatures {
 
   // Major Deserts (bounding boxes: [minLng, minLat, maxLng, maxLat])
   static final List<Desert> deserts = [
-    Desert('Sahara', [-17.0, 15.0, 35.0, 30.0]),
-    Desert('Arabian', [35.0, 16.0, 60.0, 32.0]),
-    Desert('Gobi', [90.0, 38.0, 110.0, 46.0]),
-    Desert('Kalahari', [20.0, -27.0, 26.0, -18.0]),
-    Desert('Patagonian', [-73.0, -52.0, -66.0, -40.0]),
-    Desert('Great Victoria', [123.0, -32.0, 135.0, -24.0]),
-    Desert('Syrian', [36.0, 30.0, 44.0, 36.0]),
-    Desert('Great Basin', [-120.0, 38.0, -110.0, 42.0]),
-    Desert('Chihuahuan', [-110.0, 25.0, -102.0, 32.0]),
-    Desert('Karakum', [55.0, 38.0, 66.0, 42.0]),
-    Desert('Namib', [12.0, -26.0, 16.0, -15.0]),
-    Desert('Thar', [69.0, 24.0, 75.0, 28.0]),
-    Desert('Atacama', [-71.0, -27.0, -68.5, -18.0]),
-    Desert('Sonoran', [-116.0, 27.0, -108.0, 34.0]),
-    Desert('Simpson', [135.0, -27.0, 139.0, -24.0]),
+    const Desert('Sahara', [-17.0, 15.0, 35.0, 30.0]),
+    const Desert('Arabian', [35.0, 16.0, 60.0, 32.0]),
+    const Desert('Gobi', [90.0, 38.0, 110.0, 46.0]),
+    const Desert('Kalahari', [20.0, -27.0, 26.0, -18.0]),
+    const Desert('Patagonian', [-73.0, -52.0, -66.0, -40.0]),
+    const Desert('Great Victoria', [123.0, -32.0, 135.0, -24.0]),
+    const Desert('Syrian', [36.0, 30.0, 44.0, 36.0]),
+    const Desert('Great Basin', [-120.0, 38.0, -110.0, 42.0]),
+    const Desert('Chihuahuan', [-110.0, 25.0, -102.0, 32.0]),
+    const Desert('Karakum', [55.0, 38.0, 66.0, 42.0]),
+    const Desert('Namib', [12.0, -26.0, 16.0, -15.0]),
+    const Desert('Thar', [69.0, 24.0, 75.0, 28.0]),
+    const Desert('Atacama', [-71.0, -27.0, -68.5, -18.0]),
+    const Desert('Sonoran', [-116.0, 27.0, -108.0, 34.0]),
+    const Desert('Simpson', [135.0, -27.0, 139.0, -24.0]),
   ];
 
   // Named Seas/Oceans (label center points)
