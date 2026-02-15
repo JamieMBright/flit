@@ -4,7 +4,7 @@ import 'package:flit/game/clues/clue_types.dart';
 void main() {
   group('ClueType Enum', () {
     test('ClueType.values contains all expected types', () {
-      final expectedTypes = {
+      const expectedTypes = {
         'flag',
         'outline',
         'borders',
@@ -296,7 +296,7 @@ void main() {
         'key4': ['list', 'of', 'items'],
       };
 
-      final clue = const Clue(
+      final clue = Clue(
         type: ClueType.stats,
         targetCountryCode: 'US',
         displayData: data,
