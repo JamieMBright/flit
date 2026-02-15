@@ -92,6 +92,9 @@ class FlitGame extends FlameGame
 
   late PlaneComponent _plane;
 
+  /// Whether _plane has been initialized (late field, set in onLoad).
+  bool _planeReady = false;
+
   /// Canvas renderer — default world (blue ocean, green land, outlines).
   WorldMap? _worldMap;
 
@@ -431,7 +434,9 @@ class FlitGame extends FlameGame
 
   @override
   Color backgroundColor() =>
-      _plane.isHighAltitude ? FlitColors.oceanDeep : const Color(0x00000000);
+      _planeReady && !_plane.isHighAltitude
+          ? const Color(0x00000000)
+          : FlitColors.oceanDeep;
 
   @override
   Future<void> onLoad() async {
@@ -513,6 +518,7 @@ class FlitGame extends FlameGame
         equippedPlaneId: equippedPlaneId,
       );
       await add(_plane);
+      _planeReady = true;
 
       if (!isChallenge) {
         _plane.fuelBoostMultiplier = fuelBoostMultiplier;
