@@ -296,7 +296,7 @@ void main() {
         'key4': ['list', 'of', 'items'],
       };
 
-      final clue = const Clue(
+      final clue = Clue(
         type: ClueType.stats,
         targetCountryCode: 'US',
         displayData: data,
