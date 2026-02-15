@@ -127,6 +127,16 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
             },
           ),
           const Divider(color: FlitColors.cardBorder, height: 1),
+          _SettingsToggle(
+            label: 'English Labels',
+            icon: Icons.translate,
+            value: GameSettings.instance.englishLabels,
+            onChanged: (value) {
+              GameSettings.instance.englishLabels = value;
+              setState(() {});
+            },
+          ),
+          const Divider(color: FlitColors.cardBorder, height: 1),
           _MapStyleSelector(
             value: GameSettings.instance.mapStyle,
             onChanged: (value) {

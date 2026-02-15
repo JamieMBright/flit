@@ -10,6 +10,10 @@ class Player {
     this.coins = 0,
     this.gamesPlayed = 0,
     this.bestTime,
+    this.bestTimeLicensed,
+    this.bestTimeUnlicensed,
+    this.totalFlightTime = Duration.zero,
+    this.countriesFound = 0,
     this.createdAt,
   });
 
@@ -22,6 +26,19 @@ class Player {
   final int coins;
   final int gamesPlayed;
   final Duration? bestTime;
+
+  /// Best single-round time achieved with pilot license bonuses active.
+  final Duration? bestTimeLicensed;
+
+  /// Best single-round time achieved without license bonuses (raw skill).
+  final Duration? bestTimeUnlicensed;
+
+  /// Total cumulative flight time across all sessions.
+  final Duration totalFlightTime;
+
+  /// Total countries successfully found across all sessions.
+  final int countriesFound;
+
   final DateTime? createdAt;
 
   /// XP required for next level
@@ -43,6 +60,10 @@ class Player {
     int? coins,
     int? gamesPlayed,
     Duration? bestTime,
+    Duration? bestTimeLicensed,
+    Duration? bestTimeUnlicensed,
+    Duration? totalFlightTime,
+    int? countriesFound,
     DateTime? createdAt,
   }) =>
       Player(
@@ -55,6 +76,10 @@ class Player {
         coins: coins ?? this.coins,
         gamesPlayed: gamesPlayed ?? this.gamesPlayed,
         bestTime: bestTime ?? this.bestTime,
+        bestTimeLicensed: bestTimeLicensed ?? this.bestTimeLicensed,
+        bestTimeUnlicensed: bestTimeUnlicensed ?? this.bestTimeUnlicensed,
+        totalFlightTime: totalFlightTime ?? this.totalFlightTime,
+        countriesFound: countriesFound ?? this.countriesFound,
         createdAt: createdAt ?? this.createdAt,
       );
 
@@ -68,6 +93,10 @@ class Player {
         'coins': coins,
         'games_played': gamesPlayed,
         'best_time_ms': bestTime?.inMilliseconds,
+        'best_time_licensed_ms': bestTimeLicensed?.inMilliseconds,
+        'best_time_unlicensed_ms': bestTimeUnlicensed?.inMilliseconds,
+        'total_flight_time_ms': totalFlightTime.inMilliseconds,
+        'countries_found': countriesFound,
         'created_at': createdAt?.toIso8601String(),
       };
 
@@ -83,6 +112,16 @@ class Player {
         bestTime: json['best_time_ms'] != null
             ? Duration(milliseconds: json['best_time_ms'] as int)
             : null,
+        bestTimeLicensed: json['best_time_licensed_ms'] != null
+            ? Duration(milliseconds: json['best_time_licensed_ms'] as int)
+            : null,
+        bestTimeUnlicensed: json['best_time_unlicensed_ms'] != null
+            ? Duration(milliseconds: json['best_time_unlicensed_ms'] as int)
+            : null,
+        totalFlightTime: json['total_flight_time_ms'] != null
+            ? Duration(milliseconds: json['total_flight_time_ms'] as int)
+            : Duration.zero,
+        countriesFound: json['countries_found'] as int? ?? 0,
         createdAt: json['created_at'] != null
             ? DateTime.parse(json['created_at'] as String)
             : null,

@@ -140,6 +140,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           clueBoost: license.clueBoost,
           clueChance: license.clueChance,
           preferredClueType: license.preferredClueType,
+          enableFuel: true,
         ),
       ),
     ).then((_) {

@@ -233,6 +233,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           clueChance: license.clueChance,
           preferredClueType: license.preferredClueType,
           enabledClueTypes: enabledClueTypeNames,
+          enableFuel: true,
         ),
       ),
     );

@@ -29,6 +29,7 @@ class GameHud extends StatelessWidget {
     this.countryFlashProgress = 0.0,
     this.currentRound,
     this.totalRounds,
+    this.fuelLevel,
   });
 
   final bool isHighAltitude;
@@ -47,6 +48,9 @@ class GameHud extends StatelessWidget {
   final double countryFlashProgress;
   final int? currentRound;
   final int? totalRounds;
+
+  /// Current fuel level (0.0–1.0). When null, fuel gauge is hidden.
+  final double? fuelLevel;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -151,6 +155,12 @@ class GameHud extends StatelessWidget {
                   ),
                 ),
               const Spacer(),
+              // Fuel gauge (shown only when fuel is active)
+              if (fuelLevel != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _FuelGauge(level: fuelLevel!),
+                ),
               // Bottom row: Speed controls, Altitude indicator, Hint button
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -814,4 +824,69 @@ class _CountryOutlinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _CountryOutlinePainter oldDelegate) => false;
+}
+
+/// Horizontal fuel gauge bar displayed above the bottom controls.
+class _FuelGauge extends StatelessWidget {
+  const _FuelGauge({required this.level});
+
+  /// Fuel level: 0.0 (empty) to 1.0 (full).
+  final double level;
+
+  @override
+  Widget build(BuildContext context) {
+    // Color shifts from green → amber → red as fuel depletes.
+    final Color barColor;
+    if (level > 0.5) {
+      barColor = FlitColors.success;
+    } else if (level > 0.2) {
+      barColor = FlitColors.warning;
+    } else {
+      barColor = FlitColors.error;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.local_gas_station,
+            color: barColor,
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: level.clamp(0.0, 1.0),
+                backgroundColor: FlitColors.backgroundMid,
+                valueColor: AlwaysStoppedAnimation<Color>(barColor),
+                minHeight: 8,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 36,
+            child: Text(
+              '${(level * 100).round()}%',
+              style: TextStyle(
+                color: barColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'monospace',
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

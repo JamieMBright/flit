@@ -236,6 +236,40 @@ class FlitGame extends FlameGame
   /// Duration of the plane fly-in animation.
   static const double _flyInDuration = 0.8;
 
+  // -- Fuel system --
+
+  /// Whether fuel mechanics are active for this session.
+  /// Off for free flight; on for training, daily, dogfight.
+  bool _fuelEnabled = false;
+
+  /// Current fuel level (0.0 = empty, 1.0 = full tank).
+  double _fuel = 1.0;
+
+  /// Base fuel burn rate per second at normal speed.
+  /// At 1/60 per second, a full tank lasts exactly 60 seconds.
+  static const double _baseFuelBurnRate = 1.0 / 60.0;
+
+  /// Callback when fuel runs out.
+  void Function()? onFuelEmpty;
+
+  /// Current fuel level (0.0–1.0).
+  double get fuel => _fuel;
+
+  /// Whether fuel is enabled for this session.
+  bool get fuelEnabled => _fuelEnabled;
+
+  /// Enable or disable fuel for this session.
+  set fuelEnabled(bool value) => _fuelEnabled = value;
+
+  /// Refuel the tank (called when a clue is answered correctly).
+  /// The license boost extends how much fuel is restored.
+  void refuel() {
+    if (!_fuelEnabled) return;
+    // Restore fuel, license boost adds extra: base * (1 + boost%)
+    final refuelAmount = 1.0 * fuelBoostMultiplier;
+    _fuel = (_fuel + refuelAmount).clamp(0.0, 1.0);
+  }
+
   bool get isPlaying => _isPlaying;
   bool get isHighAltitude => _plane.isHighAltitude;
   PlaneComponent get plane => _plane;
@@ -779,6 +813,19 @@ class FlitGame extends FlameGame
     // --- Decrement country flash timer ---
     if (_countryFlashTimer > 0) {
       _countryFlashTimer = (_countryFlashTimer - dt).clamp(0.0, _countryFlashDuration);
+    }
+
+    // --- Fuel consumption ---
+    if (_fuelEnabled && _fuel > 0) {
+      // Burn rate scales with speed multiplier so faster = more fuel.
+      final burnRate = _baseFuelBurnRate * _speedMultiplier;
+      // License boost reduces effective burn: burn / boostMultiplier.
+      // A 10% boost (1.1x) means fuel lasts 10% longer.
+      final effectiveBurn = burnRate / fuelBoostMultiplier;
+      _fuel = (_fuel - effectiveBurn * dt).clamp(0.0, 1.0);
+      if (_fuel <= 0) {
+        onFuelEmpty?.call();
+      }
     }
 
     // --- Motion-gated: input, steering, movement ---
@@ -1389,6 +1436,7 @@ class FlitGame extends FlameGame
     _waymarker = null; // clear any previous waymarker
     _hintTarget = null; // clear any previous hint
     _flightSpeed = FlightSpeed.medium; // reset speed
+    _fuel = 1.0; // full tank
     // Start launch animation sequence.
     _launchPhase = LaunchPhase.positioning;
     _launchTimer = 0.0;
@@ -1413,6 +1461,8 @@ class FlitGame extends FlameGame
     _currentClue = clue;
     _waymarker = null;
     _hintTarget = null;
+    // Refuel on new target (clue answered correctly).
+    refuel();
     // Keep position, heading, speed, and camera — seamless transition.
   }
 
