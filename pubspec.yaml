@@ -23,7 +23,8 @@ dependencies:
   http: ^1.1.0
 
   # Country flag SVGs (cross-platform: iOS, Android, Web)
-  flag: ^7.0.2
+  # Pinned to 7.0.0 for Dart SDK 3.2 compatibility (>=7.0.1 needs >=3.4.0)
+  flag: 7.0.0
 
   # OSM tile map for descent mode (cross-platform: iOS, Android, Web)
   # Pinned to v6 for Dart SDK 3.2 compatibility (Flutter 3.16)
