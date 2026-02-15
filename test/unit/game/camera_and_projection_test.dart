@@ -77,8 +77,8 @@ void main() {
           headingRad: 0);
 
       const d = CameraState.highAltitudeDistance;
-      final latRad = 45 * pi / 180;
-      final lngRad = 90 * pi / 180;
+      const latRad = 45 * pi / 180;
+      const lngRad = 90 * pi / 180;
       final expectedX = cos(latRad) * cos(lngRad) * d;
       final expectedY = sin(latRad) * d;
       final expectedZ = cos(latRad) * sin(lngRad) * d;
@@ -375,8 +375,8 @@ void main() {
           headingRad: 0);
 
       const d = CameraState.highAltitudeDistance;
-      final latRad = -30 * pi / 180;
-      final lngRad = -60 * pi / 180;
+      const latRad = -30 * pi / 180;
+      const lngRad = -60 * pi / 180;
       final expectedX = cos(latRad) * cos(lngRad) * d;
       final expectedY = sin(latRad) * d;
       final expectedZ = cos(latRad) * sin(lngRad) * d;
@@ -619,7 +619,7 @@ void main() {
       // Start at (0°N, 10°E), heading north (heading = -π/2 in math convention)
       // After moving 10° north, should be at (10°N, 10°E)
       const stepDeg = 0.1; // 0.1° per step
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(0, 10, -pi / 2, stepRad, 100); // 100 * 0.1° = 10°
 
       expect(result['lat'], closeTo(10.0, 0.1),
@@ -631,7 +631,7 @@ void main() {
     test('no lateral drift over long distance', () {
       // Fly 60° north from (0°N, 0°E) — should arrive at (60°N, 0°E)
       const stepDeg = 0.05;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(0, 0, -pi / 2, stepRad, 1200); // 60°
 
       expect(result['lat'], closeTo(60.0, 0.2),
@@ -646,7 +646,7 @@ void main() {
       // Start at (0°N, 0°E), heading east (heading = 0 in math convention)
       // After moving 30° east, should be at (0°N, 30°E)
       const stepDeg = 0.1;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(0, 0, 0, stepRad, 300); // 30°
 
       expect(result['lat']!.abs(), lessThan(0.1),
@@ -662,7 +662,7 @@ void main() {
       // A great circle heading NE from the equator curves toward the pole.
       // After 45° of travel, we should be significantly north and east.
       const stepDeg = 0.1;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       // bearing = heading + π/2 = -π/4 + π/2 = π/4 (45° nav bearing = NE)
       final result = simulateNSteps(0, 0, -pi / 4, stepRad, 450); // 45°
 
@@ -677,7 +677,7 @@ void main() {
     test('heading north from mid-latitude, no longitude drift', () {
       // Start at (45°N, 30°E), heading due north
       const stepDeg = 0.1;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(45, 30, -pi / 2, stepRad, 200); // 20°
 
       expect(result['lat'], closeTo(65.0, 0.2),
@@ -697,7 +697,7 @@ void main() {
       // After 20° of travel, should have crossed the north pole
       // and be at approximately (80°N, 190°E = -170°E)
       const stepDeg = 0.1;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(80, 10, -pi / 2, stepRad, 200); // 20°
 
       // After crossing the pole, latitude should be back around 80° but
@@ -715,7 +715,7 @@ void main() {
     test('south pole crossing: fly from -80°S heading south', () {
       // Start at (80°S, 0°E), heading due south (heading = π/2 in math)
       const stepDeg = 0.1;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(-80, 0, pi / 2, stepRad, 200); // 20°
 
       expect(result['lat'], closeTo(-80.0, 1.0),
@@ -730,7 +730,7 @@ void main() {
       // Fly from 85°N all the way through the pole and out the other side.
       // Check every step for NaN/Inf.
       const stepDeg = 0.5;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       var lat = 85.0;
       var lng = 0.0;
       var heading = -pi / 2; // due north
@@ -755,7 +755,7 @@ void main() {
       // When crossing the north pole heading north, the heading should
       // become south (facing away from the pole on the other side).
       const stepDeg = 0.5;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       // Start very close to the pole heading north
       final result = simulateNSteps(89.5, 0, -pi / 2, stepRad, 4); // 2° past pole
 
@@ -782,7 +782,7 @@ void main() {
   group('Heading stability', () {
     test('heading north stays north over 1000 steps', () {
       const stepDeg = 0.05;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(0, 0, -pi / 2, stepRad, 1000); // 50°
 
       // Heading should still be approximately north (-π/2)
@@ -793,7 +793,7 @@ void main() {
 
     test('heading east stays east over 1000 steps', () {
       const stepDeg = 0.05;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(0, 0, 0, stepRad, 1000); // 50°
 
       // Heading should still be approximately east (0)
@@ -807,7 +807,7 @@ void main() {
       // This is correct (great circles curve in heading space).
       // The key test is that the change is SMOOTH (no jumps).
       const stepDeg = 0.1;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       var lat = 0.0;
       var lng = 0.0;
       var heading = -pi / 4; // NE
@@ -842,7 +842,7 @@ void main() {
       // Fly 100 steps of 0.1° each = 10° total.
       // Verify the actual distance between start and end is ~10°.
       const stepDeg = 0.1;
-      final stepRad = stepDeg * pi / 180;
+      const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(0, 0, -pi / 2, stepRad, 100);
 
       // Great-circle distance from (0,0) to (result lat, result lng)
