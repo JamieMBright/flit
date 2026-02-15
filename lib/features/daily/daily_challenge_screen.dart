@@ -321,7 +321,7 @@ class _ClueChip extends StatelessWidget {
       );
 
   void _showClueExplanation(BuildContext context) {
-    final explanations = {
+    const explanations = {
       'flag': 'You will see the national flag of a country. Identify which country it belongs to!',
       'outline': 'The country silhouette/shape is shown. Recognise the outline to identify the country.',
       'borders': 'You are told which countries border the mystery country. Use your geography knowledge!',

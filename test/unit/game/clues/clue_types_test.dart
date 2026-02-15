@@ -4,7 +4,7 @@ import 'package:flit/game/clues/clue_types.dart';
 void main() {
   group('ClueType Enum', () {
     test('ClueType.values contains all expected types', () {
-      final expectedTypes = {
+      const expectedTypes = {
         'flag',
         'outline',
         'borders',
