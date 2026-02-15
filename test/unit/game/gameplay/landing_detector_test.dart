@@ -171,13 +171,13 @@ void main() {
 
     test('known distance: New York to London', () {
       // NYC: lng=-73.94, lat=40.67; London: lng=-0.12, lat=51.51
-      // Great circle distance ~ 55.5 degrees (roughly 6160 km / 111.2 km per deg)
+      // Great circle distance ~ 50.08 degrees (approximately 5585 km / 111.32 km per deg)
       final nyc = Vector2(-73.94, 40.67);
       final london = Vector2(-0.12, 51.51);
       final dist = LandingDetector.greatCircleDistanceDeg(nyc, london);
 
-      // Expected: ~55.4 degrees (actual Haversine result)
-      expect(dist, inInclusiveRange(54.0, 57.0));
+      // Expected: ~50.08 degrees (actual Haversine result)
+      expect(dist, inInclusiveRange(49.5, 50.5));
     });
 
     test('date line crossing is handled correctly', () {
