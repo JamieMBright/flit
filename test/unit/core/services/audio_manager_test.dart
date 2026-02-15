@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flit/core/services/audio_manager.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('AudioManager - Singleton', () {
     test('returns the same instance every time', () {
       final a = AudioManager.instance;

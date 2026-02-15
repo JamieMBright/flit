@@ -19,8 +19,8 @@ class SafeString {
   /// - Trims leading/trailing whitespace.
   /// - Truncates to [maxLength] if provided.
   static String sanitize(String input, {int? maxLength}) {
-    // Strip control characters except newline (\n = 0x0A).
-    var result = input.replaceAll(RegExp(r'[\x00-\x09\x0B-\x1F\x7F]'), '');
+    // Replace control characters (except newline) with spaces.
+    var result = input.replaceAll(RegExp(r'[\x00-\x09\x0B-\x1F\x7F]'), ' ');
 
     // Collapse runs of whitespace (spaces, tabs) into single space.
     result = result.replaceAll(RegExp(r'[ \t]+'), ' ');
