@@ -102,6 +102,16 @@ class _PlayScreenState extends State<PlayScreen> {
   bool _gameReady = false;
   String? _error;
 
+  /// Compute altitude transition for DescentMapView zoom in flat map mode.
+  /// Maps region bounds to a zoom level where the whole region fits on screen.
+  double get _flatMapZoom {
+    final bounds = widget.region.bounds;
+    final lngSpan = (bounds[2] - bounds[0]).abs();
+    // Larger regions need higher altitudeTransition (lower zoom).
+    // US CONUS (~59° lng) → 0.7, Ireland (~6° lng) → 0.2, Canada (~89°) → 0.85
+    return (lngSpan / 100.0).clamp(0.15, 0.9);
+  }
+
   /// Current round (1-indexed).
   int _currentRound = 1;
 
@@ -140,6 +150,7 @@ class _PlayScreenState extends State<PlayScreen> {
         planeWingSpan: widget.planeWingSpan,
         equippedPlaneId: widget.equippedPlaneId,
         companionType: widget.companionType,
+        region: widget.region,
       );
     } catch (e, st) {
       _log.error('screen', 'PlayScreen.initState FAILED',
@@ -743,17 +754,34 @@ class _PlayScreenState extends State<PlayScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // OSM tile map — shown during descent mode (low altitude).
-          // Sits BEHIND the game canvas so the plane sprite floats on top.
-          // In descent mode the game canvas is transparent (globe shader skipped).
-          if (_gameReady && _session != null && !_isHighAltitude)
+          // Flat map regional mode — static satellite tile map behind
+          // the game canvas. Centered on the region, zoom fits the region.
+          if (_gameReady && _session != null && _game.isFlatMapMode)
             Positioned.fill(
               child: DescentMapView(
-                centerLng: _game.cameraPosition.x,
-                centerLat: _game.cameraPosition.y,
-                heading: _game.cameraHeadingBearing,
-                altitudeTransition: 0.0,
+                centerLng: widget.region.center.x,
+                centerLat: widget.region.center.y,
+                heading: 0, // No rotation for flat map
+                altitudeTransition: _flatMapZoom,
                 tileUrl: GameSettings.instance.mapTileUrl,
+              ),
+            )
+          // Globe mode — OSM tile map shown during descent transition.
+          // Appears when altitude drops below 0.6 and crossfades with the
+          // globe shader which fades out between 0.6→0.3.
+          else if (_gameReady && _session != null &&
+              _game.plane.continuousAltitude < 0.6)
+            Positioned.fill(
+              child: Opacity(
+                opacity: (1.0 - _game.plane.continuousAltitude / 0.6)
+                    .clamp(0.0, 1.0),
+                child: DescentMapView(
+                  centerLng: _game.cameraPosition.x,
+                  centerLat: _game.cameraPosition.y,
+                  heading: _game.cameraHeadingBearing,
+                  altitudeTransition: _game.plane.continuousAltitude,
+                  tileUrl: GameSettings.instance.mapTileUrl,
+                ),
               ),
             ),
 

@@ -241,13 +241,8 @@ class _ClueCard extends StatelessWidget {
             // Clue content
             if (clue.type == ClueType.flag)
               ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: Flag.fromString(
-                  clue.targetCountryCode,
-                  height: 48,
-                  width: 72,
-                  fit: BoxFit.contain,
-                ),
+                borderRadius: BorderRadius.circular(6),
+                child: _buildFlagWidget(clue.targetCountryCode),
               )
             else if (clue.type == ClueType.outline)
               _CountryOutline(
@@ -269,6 +264,51 @@ class _ClueCard extends StatelessWidget {
         ),
       );
 
+  /// Builds a flag widget with error handling for unsupported country codes
+  /// (e.g. XK for Kosovo). Falls back to the flag emoji text if the SVG
+  /// flag can't be rendered.
+  Widget _buildFlagWidget(String countryCode) {
+    // Codes known to be unsupported by the flag package
+    const unsupportedCodes = {'XK'}; // Kosovo
+
+    if (unsupportedCodes.contains(countryCode.toUpperCase())) {
+      return _flagEmojiFallback(countryCode);
+    }
+
+    try {
+      return Flag.fromString(
+        countryCode,
+        height: 56,
+        width: 84,
+        fit: BoxFit.contain,
+        borderRadius: 4,
+      );
+    } catch (_) {
+      return _flagEmojiFallback(countryCode);
+    }
+  }
+
+  Widget _flagEmojiFallback(String countryCode) {
+    // Convert 2-letter code to regional indicator emoji
+    final codeUnits = countryCode.toUpperCase().codeUnits;
+    final emoji = String.fromCharCodes(
+      codeUnits.map((c) => c + 127397),
+    );
+    return Container(
+      height: 56,
+      width: 84,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: FlitColors.backgroundMid,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        emoji,
+        style: const TextStyle(fontSize: 36),
+      ),
+    );
+  }
+
   String _clueTypeLabel(ClueType type) {
     switch (type) {
       case ClueType.flag:
@@ -281,6 +321,16 @@ class _ClueCard extends StatelessWidget {
         return 'CAPITAL';
       case ClueType.stats:
         return 'STATS';
+      case ClueType.sportsTeam:
+        return 'SPORTS';
+      case ClueType.leader:
+        return 'LEADER';
+      case ClueType.nickname:
+        return 'NICKNAME';
+      case ClueType.landmark:
+        return 'LANDMARK';
+      case ClueType.flagDescription:
+        return 'FLAG';
     }
   }
 }

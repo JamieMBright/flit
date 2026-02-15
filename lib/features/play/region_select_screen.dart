@@ -19,6 +19,8 @@ class RegionSelectScreen extends ConsumerWidget {
         return 0; // Always unlocked
       case GameRegion.usStates:
         return 500; // Level 3
+      case GameRegion.canadianProvinces:
+        return 750; // Level 4
       case GameRegion.ukCounties:
         return 1000; // Level 5
       case GameRegion.caribbean:
@@ -367,6 +369,8 @@ class _RegionCard extends StatelessWidget {
         return Icons.beach_access;
       case GameRegion.ireland:
         return Icons.grass;
+      case GameRegion.canadianProvinces:
+        return Icons.landscape;
     }
   }
 }

@@ -2,6 +2,10 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 
+import '../data/canada_clues.dart';
+import '../data/ireland_clues.dart';
+import '../data/uk_clues.dart';
+import '../data/us_state_clues.dart';
 import '../map/country_data.dart';
 import '../map/region.dart';
 
@@ -12,6 +16,12 @@ enum ClueType {
   borders,
   capital,
   stats,
+  // Regional clue types
+  sportsTeam,
+  leader,
+  nickname,
+  landmark,
+  flagDescription,
 }
 
 /// A clue for the player to guess the target country.
@@ -157,6 +167,14 @@ class Clue {
         case ClueType.stats:
           clue = Clue.stats(countryCode);
           break;
+        // Regional types fallback to stats for world mode
+        case ClueType.sportsTeam:
+        case ClueType.leader:
+        case ClueType.nickname:
+        case ClueType.landmark:
+        case ClueType.flagDescription:
+          clue = Clue.stats(countryCode);
+          break;
       }
 
       // Validate the clue - if valid, return it
@@ -169,75 +187,182 @@ class Clue {
     return Clue.flag(countryCode);
   }
 
-  /// Create a clue for a regional area (state, county, island)
-  factory Clue.regionalArea(RegionalArea area) {
-    // For regional areas, randomly choose between available clue types
+  /// Create a clue for a regional area (state, county, island).
+  ///
+  /// Uses rich data from regional clue databases when available. Randomly
+  /// selects from all available clue types for the region.
+  factory Clue.regionalArea(RegionalArea area, {GameRegion? region}) {
     final random = Random();
-    final availableTypes = <ClueType>[ClueType.outline];
+    final availableClues = <Clue>[];
 
-    // Add capital clue if area has a capital that's not empty or "Unknown"
+    // Always available: outline and capital
+    availableClues.add(Clue(
+      type: ClueType.outline,
+      targetCountryCode: area.code,
+      displayData: {'points': area.points, 'areaName': area.name},
+    ));
+
     if (area.capital != null &&
         area.capital!.isNotEmpty &&
         !area.capital!.toLowerCase().contains('unknown')) {
-      availableTypes.add(ClueType.capital);
+      availableClues.add(Clue(
+        type: ClueType.capital,
+        targetCountryCode: area.code,
+        displayData: {'capitalName': area.capital ?? '', 'areaName': area.name},
+      ));
     }
 
-    // Add stats clue if area has population
     if (area.population != null && area.population! > 0) {
-      availableTypes.add(ClueType.stats);
+      final pop = area.population!;
+      final popString = pop >= 1000000
+          ? '${(pop / 1000000).toStringAsFixed(1)}M'
+          : pop >= 1000
+              ? '${(pop / 1000).toStringAsFixed(0)}K'
+              : pop.toString();
+      availableClues.add(Clue(
+        type: ClueType.stats,
+        targetCountryCode: area.code,
+        displayData: {
+          'population': popString,
+          'areaName': area.name,
+          if (area.funFact != null) 'funFact': area.funFact,
+        },
+      ));
     }
 
-    final selectedType = availableTypes[random.nextInt(availableTypes.length)];
-
-    switch (selectedType) {
-      case ClueType.outline:
-        return Clue(
-          type: ClueType.outline,
-          targetCountryCode: area.code,
-          displayData: {
-            'points': area.points,
-            'areaName': area.name,
-          },
-        );
-      case ClueType.capital:
-        return Clue(
-          type: ClueType.capital,
-          targetCountryCode: area.code,
-          displayData: {
-            'capitalName': area.capital ?? '',
-            'areaName': area.name,
-          },
-        );
-      case ClueType.stats:
-        final population = area.population ?? 0;
-        String popString;
-        if (population >= 1000000) {
-          popString = '${(population / 1000000).toStringAsFixed(1)}M';
-        } else if (population >= 1000) {
-          popString = '${(population / 1000).toStringAsFixed(0)}K';
-        } else {
-          popString = population.toString();
-        }
-        return Clue(
-          type: ClueType.stats,
-          targetCountryCode: area.code,
-          displayData: {
-            'population': popString,
-            'areaName': area.name,
-            if (area.funFact != null) 'funFact': area.funFact,
-          },
-        );
-      default:
-        // Fallback to outline
-        return Clue(
-          type: ClueType.outline,
-          targetCountryCode: area.code,
-          displayData: {
-            'points': area.points,
-            'areaName': area.name,
-          },
-        );
+    // Rich regional clue data from data files
+    if (region == GameRegion.usStates) {
+      _addUsStateClues(area.code, availableClues);
+    } else if (region == GameRegion.ireland) {
+      _addIrelandClues(area.code, availableClues);
+    } else if (region == GameRegion.ukCounties) {
+      _addUkClues(area.code, availableClues);
+    } else if (region == GameRegion.canadianProvinces) {
+      _addCanadaClues(area.code, availableClues);
     }
+
+    return availableClues[random.nextInt(availableClues.length)];
+  }
+
+  /// Add US state-specific clues from the data file.
+  static void _addUsStateClues(String code, List<Clue> clues) {
+    final data = UsStateClues.data[code];
+    if (data == null) return;
+
+    if (data.sportsTeams.isNotEmpty) {
+      final team = data.sportsTeams[Random().nextInt(data.sportsTeams.length)];
+      clues.add(Clue(
+        type: ClueType.sportsTeam,
+        targetCountryCode: code,
+        displayData: {'team': team},
+      ));
+    }
+    if (data.senators.isNotEmpty) {
+      clues.add(Clue(
+        type: ClueType.leader,
+        targetCountryCode: code,
+        displayData: {'leader': 'Senator: ${data.senators.join(', ')}'},
+      ));
+    }
+    clues.add(Clue(
+      type: ClueType.nickname,
+      targetCountryCode: code,
+      displayData: {'nickname': data.nickname},
+    ));
+    clues.add(Clue(
+      type: ClueType.landmark,
+      targetCountryCode: code,
+      displayData: {'landmark': data.famousLandmark},
+    ));
+    clues.add(Clue(
+      type: ClueType.flagDescription,
+      targetCountryCode: code,
+      displayData: {'flagDesc': data.flag},
+    ));
+  }
+
+  /// Add Ireland county-specific clues.
+  static void _addIrelandClues(String code, List<Clue> clues) {
+    final data = IrelandClues.data[code];
+    if (data == null) return;
+
+    clues.add(Clue(
+      type: ClueType.nickname,
+      targetCountryCode: code,
+      displayData: {'nickname': '${data.nickname} (${data.province})'},
+    ));
+    clues.add(Clue(
+      type: ClueType.landmark,
+      targetCountryCode: code,
+      displayData: {'landmark': data.famousLandmark},
+    ));
+    clues.add(Clue(
+      type: ClueType.sportsTeam,
+      targetCountryCode: code,
+      displayData: {'team': 'GAA: ${data.gaaTeam}'},
+    ));
+    clues.add(Clue(
+      type: ClueType.leader,
+      targetCountryCode: code,
+      displayData: {'leader': data.famousPerson},
+    ));
+  }
+
+  /// Add UK county-specific clues.
+  static void _addUkClues(String code, List<Clue> clues) {
+    final data = UkClues.data[code];
+    if (data == null) return;
+
+    clues.add(Clue(
+      type: ClueType.sportsTeam,
+      targetCountryCode: code,
+      displayData: {'team': data.footballTeam},
+    ));
+    clues.add(Clue(
+      type: ClueType.landmark,
+      targetCountryCode: code,
+      displayData: {'landmark': data.famousLandmark},
+    ));
+    clues.add(Clue(
+      type: ClueType.leader,
+      targetCountryCode: code,
+      displayData: {'leader': data.famousPerson},
+    ));
+    clues.add(Clue(
+      type: ClueType.nickname,
+      targetCountryCode: code,
+      displayData: {'nickname': '${data.nickname} (${data.country})'},
+    ));
+  }
+
+  /// Add Canadian province-specific clues.
+  static void _addCanadaClues(String code, List<Clue> clues) {
+    final data = CanadaClues.data[code];
+    if (data == null) return;
+
+    if (data.sportsTeams.isNotEmpty) {
+      final team = data.sportsTeams[Random().nextInt(data.sportsTeams.length)];
+      clues.add(Clue(
+        type: ClueType.sportsTeam,
+        targetCountryCode: code,
+        displayData: {'team': team},
+      ));
+    }
+    clues.add(Clue(
+      type: ClueType.leader,
+      targetCountryCode: code,
+      displayData: {'leader': 'Premier: ${data.premier}'},
+    ));
+    clues.add(Clue(
+      type: ClueType.nickname,
+      targetCountryCode: code,
+      displayData: {'nickname': data.nickname},
+    ));
+    clues.add(Clue(
+      type: ClueType.landmark,
+      targetCountryCode: code,
+      displayData: {'landmark': data.famousLandmark},
+    ));
   }
 
   /// Get the display text for this clue
@@ -246,7 +371,7 @@ class Clue {
       case ClueType.flag:
         return displayData['flagEmoji'] as String;
       case ClueType.outline:
-        return '🗺️ [Country Outline]';
+        return '[Country Outline]';
       case ClueType.borders:
         final neighbors = displayData['neighbors'] as List<String>;
         return 'Borders: ${neighbors.join(', ')}';
@@ -254,6 +379,16 @@ class Clue {
         return 'Capital: ${displayData['capitalName']}';
       case ClueType.stats:
         return _formatStats(displayData);
+      case ClueType.sportsTeam:
+        return displayData['team'] as String;
+      case ClueType.leader:
+        return displayData['leader'] as String;
+      case ClueType.nickname:
+        return displayData['nickname'] as String;
+      case ClueType.landmark:
+        return displayData['landmark'] as String;
+      case ClueType.flagDescription:
+        return displayData['flagDesc'] as String;
     }
   }
 
@@ -321,6 +456,21 @@ class Clue {
           if (strValue.isEmpty || strValue.contains('unknown')) return false;
         }
         return true;
+      case ClueType.sportsTeam:
+        final team = clue.displayData['team'] as String?;
+        return team != null && team.isNotEmpty;
+      case ClueType.leader:
+        final leader = clue.displayData['leader'] as String?;
+        return leader != null && leader.isNotEmpty;
+      case ClueType.nickname:
+        final nick = clue.displayData['nickname'] as String?;
+        return nick != null && nick.isNotEmpty;
+      case ClueType.landmark:
+        final lm = clue.displayData['landmark'] as String?;
+        return lm != null && lm.isNotEmpty;
+      case ClueType.flagDescription:
+        final desc = clue.displayData['flagDesc'] as String?;
+        return desc != null && desc.isNotEmpty;
     }
   }
 

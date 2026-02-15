@@ -18,8 +18,10 @@ import 'components/companion_renderer.dart';
 import 'components/contrail_renderer.dart';
 import 'components/wayline_renderer.dart';
 import 'map/country_data.dart';
+import 'map/region.dart';
 import 'map/world_map.dart';
 import 'rendering/camera_state.dart';
+import 'rendering/flat_map_renderer.dart';
 import 'rendering/globe_hit_test.dart';
 import 'rendering/globe_renderer.dart';
 import 'rendering/shader_manager.dart';
@@ -56,7 +58,17 @@ class FlitGame extends FlameGame
     this.equippedPlaneId = 'plane_default',
     this.companionType = AvatarCompanion.none,
     this.motionEnabled = true,
+    this.region = GameRegion.world,
   });
+
+  /// The game region being played. Determines renderer (globe vs flat map).
+  final GameRegion region;
+
+  /// Whether this game uses a flat map projection (regional modes).
+  bool get isFlatMapMode => region.isFlatMap;
+
+  /// The flat map renderer (only set in flat map mode).
+  FlatMapRenderer? _flatMapRenderer;
 
   final VoidCallback? onGameReady;
   final void Function(bool isHigh)? onAltitudeChanged;
@@ -233,14 +245,30 @@ class FlitGame extends FlameGame
   }
 
   /// Speed multiplier based on current flight speed setting.
+  /// Different scales for ascend (globe cruising) vs descend (map exploration).
+  /// Ascend base speed is 36 units/s, descend base is 3.6 units/s (10% of high).
   double get _speedMultiplier {
+    if (_planeReady && !_plane.isHighAltitude) {
+      // Descend mode: really slow for cruising / exploring the OSM map.
+      // Effective speeds: slow ≈ 1.1, medium ≈ 2.2, fast ≈ 3.6 units/s.
+      switch (_flightSpeed) {
+        case FlightSpeed.slow:
+          return 0.3;
+        case FlightSpeed.medium:
+          return 0.6;
+        case FlightSpeed.fast:
+          return 1.0;
+      }
+    }
+    // Ascend mode: fast globe traversal.
+    // Effective speeds: slow = 18, medium = 36, fast = 90 units/s.
     switch (_flightSpeed) {
       case FlightSpeed.slow:
         return 0.5;
       case FlightSpeed.medium:
         return 1.0;
       case FlightSpeed.fast:
-        return 1.6;
+        return 2.5;
     }
   }
 
@@ -278,13 +306,17 @@ class FlitGame extends FlameGame
   }
 
   /// Project a world position (lng, lat) to screen coordinates.
-  /// Works with both Canvas (WorldMap) and shader (GlobeRenderer) renderers.
+  /// Works with Canvas (WorldMap), shader (GlobeRenderer), and flat map
+  /// (FlatMapRenderer) renderers.
   ///
   /// When the shader is active, applies a per-frame screen correction so that
   /// worldToScreen(_worldPosition) == plane sprite position. This guarantees
   /// contrails, waypoints, and overlays align with the plane regardless of
   /// CameraState easing lag or one-frame delays.
   Vector2 worldToScreen(Vector2 lngLat) {
+    if (_flatMapRenderer != null) {
+      return _flatMapRenderer!.worldToScreen(lngLat, size.x, size.y);
+    }
     if (_worldMap != null) {
       return _worldMap!.latLngToScreen(lngLat, size);
     }
@@ -298,9 +330,13 @@ class FlitGame extends FlameGame
   }
 
   /// Project world coordinates to screen WITHOUT the plane-tracking correction.
-  /// Use this for globe-surface overlays (borders, climate grid) that must
+  /// Use this for globe-surface overlays (borders, geographic features) that must
   /// stay glued to the satellite texture rather than tracking the plane sprite.
+  /// In flat map mode, this is the same as worldToScreen (no correction needed).
   Vector2 worldToScreenGlobe(Vector2 lngLat) {
+    if (_flatMapRenderer != null) {
+      return _flatMapRenderer!.worldToScreen(lngLat, size.x, size.y);
+    }
     if (_worldMap != null) {
       return _worldMap!.latLngToScreen(lngLat, size);
     }
@@ -444,43 +480,52 @@ class FlitGame extends FlameGame
     try {
       await super.onLoad();
 
-      // Try to initialise the GPU shader renderer (V1+).
-      if (useShaderRenderer) {
-        try {
-          final shaderManager = ShaderManager.instance;
-          await shaderManager.initialize();
+      if (isFlatMapMode) {
+        // Regional flat map mode — static satellite view with boundaries.
+        // The satellite tiles come from an OSM tile layer behind the game canvas.
+        _flatMapRenderer = FlatMapRenderer(region: region);
+        await add(_flatMapRenderer!);
+        _shaderReady = false;
+        _log.info('game', 'Using flat map renderer for ${region.displayName}');
+      } else {
+        // Globe mode — try to initialise the GPU shader renderer (V1+).
+        if (useShaderRenderer) {
+          try {
+            final shaderManager = ShaderManager.instance;
+            await shaderManager.initialize();
 
-          // ShaderManager.initialize() swallows errors internally.
-          // Verify it actually succeeded before creating the renderer.
-          if (shaderManager.isReady) {
-            _globeRenderer = GlobeRenderer();
-            await add(_globeRenderer!);
-            _shaderReady = true;
-            _log.info('game', 'Shader renderer initialised');
-          } else {
+            // ShaderManager.initialize() swallows errors internally.
+            // Verify it actually succeeded before creating the renderer.
+            if (shaderManager.isReady) {
+              _globeRenderer = GlobeRenderer();
+              await add(_globeRenderer!);
+              _shaderReady = true;
+              _log.info('game', 'Shader renderer initialised');
+            } else {
+              _log.warning(
+                'game',
+                'ShaderManager not ready after initialize, falling back to Canvas',
+              );
+              _shaderReady = false;
+            }
+          } catch (e) {
             _log.warning(
               'game',
-              'ShaderManager not ready after initialize, falling back to Canvas',
+              'Shader renderer failed, falling back to Canvas',
+              error: e,
             );
             _shaderReady = false;
+            _globeRenderer = null;
           }
-        } catch (e) {
-          _log.warning(
-            'game',
-            'Shader renderer failed, falling back to Canvas',
-            error: e,
-          );
-          _shaderReady = false;
-          _globeRenderer = null;
         }
-      }
 
-      // If shader failed or not requested, use the Canvas world renderer.
-      // This is the default world: simple blue ocean, green land, outlines.
-      if (!_shaderReady) {
-        _worldMap = WorldMap();
-        await add(_worldMap!);
-        _log.info('game', 'Using Canvas world renderer');
+        // If shader failed or not requested, use the Canvas world renderer.
+        // This is the default world: simple blue ocean, green land, outlines.
+        if (!_shaderReady) {
+          _worldMap = WorldMap();
+          await add(_worldMap!);
+          _log.info('game', 'Using Canvas world renderer');
+        }
       }
 
       // Contrail overlay — renders on top of globe, before the plane.
@@ -688,10 +733,18 @@ class FlitGame extends FlameGame
     while (visualDiff < -pi) { visualDiff += 2 * pi; }
     _plane.visualHeading = visualDiff;
 
-    // Plane is always at a fixed screen position — the world scrolls underneath.
-    // This ensures the plane stays centered and at 20% from the bottom
-    // regardless of altitude, heading, or any camera transition.
-    _plane.position = Vector2(size.x * planeScreenX, size.y * planeScreenY);
+    // In flat map mode, the plane moves across the screen.
+    // In globe mode, the plane stays fixed and the world scrolls underneath.
+    if (isFlatMapMode && _flatMapRenderer != null) {
+      final screenPos = _flatMapRenderer!.worldToScreen(
+        _worldPosition,
+        size.x,
+        size.y,
+      );
+      _plane.position = screenPos;
+    } else {
+      _plane.position = Vector2(size.x * planeScreenX, size.y * planeScreenY);
+    }
 
     // Feed world state to plane for world-space contrail spawning.
     _plane.worldPos = _worldPosition.clone();

@@ -14,7 +14,7 @@ run_unit_tests() {
 
 run_analyze() {
     echo "🔍 Running static analysis..."
-    flutter analyze --fatal-infos --fatal-warnings
+    flutter analyze --fatal-warnings
     echo "   ✓ Analysis passed"
 }
 

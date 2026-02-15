@@ -118,9 +118,11 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
   void render(Canvas canvas) {
     super.render(canvas);
 
-    // In descent mode the OSM tile map sits behind the transparent game canvas.
-    // Skip the full-screen globe shader so the plane sprite floats on top.
-    if (!gameRef.plane.isHighAltitude) return;
+    // Below altitude 0.3 the OSM tile map provides all visuals — skip shader
+    // entirely. Between 0.3 and 0.6 we fade the shader out so the transition
+    // from globe to flat map is smooth (no abrupt pop).
+    final alt = gameRef.plane.continuousAltitude;
+    if (alt < 0.3) return;
 
     try {
       final screenSize = gameRef.size;
@@ -149,11 +151,22 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
       }
 
       // Draw full-screen rect with the shader paint.
+      // Fade out as altitude drops below 0.6 for smooth globe→map transition.
+      final shaderOpacity = alt >= 0.6 ? 1.0 : ((alt - 0.3) / 0.3).clamp(0.0, 1.0);
       final paint = Paint()..shader = shader;
+      if (shaderOpacity < 1.0) {
+        canvas.saveLayer(
+          Rect.fromLTWH(0, 0, _lastSize.width, _lastSize.height),
+          Paint()..color = Color.fromRGBO(0, 0, 0, shaderOpacity),
+        );
+      }
       canvas.drawRect(
         Rect.fromLTWH(0, 0, _lastSize.width, _lastSize.height),
         paint,
       );
+      if (shaderOpacity < 1.0) {
+        canvas.restore();
+      }
     } catch (e, st) {
       // Catch any shader rendering errors — critical for iOS Safari where
       // shader compilation or uniform setting can fail and crash the app.

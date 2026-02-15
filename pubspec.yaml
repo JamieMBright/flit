@@ -16,9 +16,6 @@ dependencies:
   # State Management
   flutter_riverpod: ^2.4.9
 
-  # Cupertino icons (required by Flutter framework for iOS-style widgets)
-  cupertino_icons: ^1.0.6
-
   # HTTP client (cross-platform, for error telemetry)
   http: ^1.1.0
 
@@ -52,8 +49,3 @@ flutter:
   # Texture and image assets
   assets:
     - assets/textures/
-    - assets/images/
-    - assets/audio/music/
-    - assets/audio/sfx/
-    - assets/audio/engines/
-    - assets/geo/

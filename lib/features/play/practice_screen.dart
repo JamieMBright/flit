@@ -146,9 +146,18 @@ class PracticeScreen extends ConsumerStatefulWidget {
 }
 
 class _PracticeScreenState extends ConsumerState<PracticeScreen> {
+  /// The 5 world-mode clue types that can be toggled in practice.
+  static const _worldClueTypes = [
+    ClueType.flag,
+    ClueType.outline,
+    ClueType.borders,
+    ClueType.capital,
+    ClueType.stats,
+  ];
+
   /// Which clue types are currently enabled.
   final Map<ClueType, bool> _enabledClues = {
-    for (final type in ClueType.values) type: true,
+    for (final type in _worldClueTypes) type: true,
   };
 
   /// Placeholder clue progress data (correct answers per type).

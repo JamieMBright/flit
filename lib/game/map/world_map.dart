@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
@@ -254,52 +253,11 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     final path = _createCountryPath(country, screenSize, globeRadius);
     if (path == null) return;
 
-    // Multi-tone Köppen-Geiger: sample climate at multiple points across
-    // the country's latitude range for intra-country climate variation.
-    final pts = country.allPoints;
-    if (pts.isEmpty) return;
-
-    var minLat = pts[0].y;
-    var maxLat = pts[0].y;
-    var sumLng = 0.0;
-    for (final p in pts) {
-      if (p.y < minLat) minLat = p.y;
-      if (p.y > maxLat) maxLat = p.y;
-      sumLng += p.x;
-    }
-    final centerLng = sumLng / pts.length;
-    final latSpan = maxLat - minLat;
-
-    // For small countries (< 5° span), use a single color for performance.
-    if (latSpan < 5.0) {
-      final center = _getCountryCenter(country);
-      canvas.drawPath(
-        path,
-        Paint()..color = _getClimateColor(center.x, center.y),
-      );
-    } else {
-      // Sample climate colors at north, center, and south of the polygon.
-      final northColor = _getClimateColor(centerLng, maxLat);
-      final midColor = _getClimateColor(centerLng, (minLat + maxLat) / 2);
-      final southColor = _getClimateColor(centerLng, minLat);
-
-      // Project north and south extremes to screen for gradient direction.
-      final northScreen =
-          _project(centerLng, maxLat, screenSize, globeRadius) ??
-              _projectClamped(centerLng, maxLat, screenSize, globeRadius);
-      final southScreen =
-          _project(centerLng, minLat, screenSize, globeRadius) ??
-              _projectClamped(centerLng, minLat, screenSize, globeRadius);
-
-      final gradient = ui.Gradient.linear(
-        northScreen,
-        southScreen,
-        [northColor, midColor, southColor],
-        [0.0, 0.5, 1.0],
-      );
-
-      canvas.drawPath(path, Paint()..shader = gradient);
-    }
+    // Simple land fill — satellite texture provides visual detail.
+    canvas.drawPath(
+      path,
+      Paint()..color = FlitColors.landMass,
+    );
 
     if (!_isHighAltitude) {
       canvas.drawPath(
@@ -320,113 +278,6 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
         ..style = PaintingStyle.stroke
         ..strokeWidth = _isHighAltitude ? 0.8 : 1.5,
     );
-  }
-
-  /// Determine land color based on Köppen-Geiger climate zone heuristics.
-  /// Sampled at arbitrary (lng, lat) points for multi-tone intra-country variation.
-  Color _getClimateColor(double lng, double lat) {
-    final absLat = lat.abs();
-
-    // Polar / ice cap
-    if (absLat > 75) return FlitColors.climateIceCap;
-    // Tundra
-    if (absLat > 63) return FlitColors.climateTundra;
-    // Boreal / subarctic (taiga)
-    if (absLat > 52) return FlitColors.climateBoreal;
-
-    // Desert detection: major arid belts (15-35° lat band + specific regions)
-    if (_isDesertRegion(lat, lng)) return FlitColors.climateHotDesert;
-    if (_isSemiAridRegion(lat, lng)) return FlitColors.climateSemiArid;
-
-    // Mediterranean (western coasts, 30-45° lat)
-    if (absLat > 30 && absLat < 45 && _isMediterraneanRegion(lat, lng)) {
-      return FlitColors.climateMediterranean;
-    }
-
-    // Temperate (35-52° lat, not desert)
-    if (absLat > 35) return FlitColors.climateTemperate;
-
-    // Humid subtropical (20-35° lat, not desert)
-    if (absLat > 20) return FlitColors.climateHumidSubtropical;
-
-    // Tropical savanna (10-20° lat)
-    if (absLat > 10) return FlitColors.climateTropicalSavanna;
-
-    // Tropical rainforest (0-10° lat)
-    return FlitColors.climateTropicalRain;
-  }
-
-  /// Heuristic for hot desert zones (BWh) based on geographic position.
-  bool _isDesertRegion(double lat, double lng) {
-    final absLat = lat.abs();
-    if (absLat < 12 || absLat > 38) return false;
-
-    // Sahara (N Africa: 15-35°N, 15°W-35°E)
-    if (lat > 15 && lat < 35 && lng > -15 && lng < 35) return true;
-    // Arabian (15-32°N, 35-60°E)
-    if (lat > 15 && lat < 32 && lng > 35 && lng < 60) return true;
-    // Iranian/Central Asian (25-40°N, 50-70°E)
-    if (lat > 25 && lat < 40 && lng > 50 && lng < 70) return true;
-    // Thar / Rajasthan (20-30°N, 68-76°E)
-    if (lat > 20 && lat < 30 && lng > 68 && lng < 76) return true;
-    // Australian interior (20-32°S, 120-145°E)
-    if (lat < -20 && lat > -32 && lng > 120 && lng < 145) return true;
-    // Sonoran/Chihuahuan (25-35°N, 105-115°W)
-    if (lat > 25 && lat < 35 && lng > -115 && lng < -105) return true;
-    // Atacama (18-30°S, 68-72°W)
-    if (lat < -18 && lat > -30 && lng > -72 && lng < -68) return true;
-    // Namib/Kalahari (15-30°S, 15-25°E)
-    if (lat < -15 && lat > -30 && lng > 15 && lng < 25) return true;
-
-    return false;
-  }
-
-  /// Heuristic for semi-arid steppe zones (BS).
-  bool _isSemiAridRegion(double lat, double lng) {
-    final absLat = lat.abs();
-    if (absLat < 10 || absLat > 45) return false;
-
-    // Sahel (10-15°N, 15°W-40°E)
-    if (lat > 10 && lat < 15 && lng > -15 && lng < 40) return true;
-    // Central Asian steppe (35-50°N, 50-90°E)
-    if (lat > 35 && lat < 50 && lng > 50 && lng < 90) return true;
-    // Patagonia/Gran Chaco (25-45°S, 60-70°W)
-    if (lat < -25 && lat > -45 && lng > -70 && lng < -60) return true;
-    // Horn of Africa (5-15°N, 40-52°E)
-    if (lat > 5 && lat < 15 && lng > 40 && lng < 52) return true;
-    // Southern Africa interior (15-25°S, 22-35°E)
-    if (lat < -15 && lat > -25 && lng > 22 && lng < 35) return true;
-
-    return false;
-  }
-
-  /// Heuristic for Mediterranean climate zones (Cs).
-  bool _isMediterraneanRegion(double lat, double lng) {
-    // Southern Europe / North Africa coast (30-45°N, 10°W-40°E)
-    if (lat > 30 && lat < 45 && lng > -10 && lng < 40) return true;
-    // California (32-40°N, 115-125°W)
-    if (lat > 32 && lat < 40 && lng > -125 && lng < -115) return true;
-    // Chile central (30-38°S, 70-73°W)
-    if (lat < -30 && lat > -38 && lng > -73 && lng < -70) return true;
-    // SW Australia (30-37°S, 114-120°E)
-    if (lat < -30 && lat > -37 && lng > 114 && lng < 120) return true;
-    // South Africa cape (33-35°S, 18-20°E)
-    if (lat < -33 && lat > -35 && lng > 18 && lng < 20) return true;
-
-    return false;
-  }
-
-  /// Get center (lng, lat) of a country shape.
-  Vector2 _getCountryCenter(CountryShape country) {
-    final pts = country.allPoints;
-    if (pts.isEmpty) return Vector2.zero();
-    var sumLng = 0.0;
-    var sumLat = 0.0;
-    for (final p in pts) {
-      sumLng += p.x;
-      sumLat += p.y;
-    }
-    return Vector2(sumLng / pts.length, sumLat / pts.length);
   }
 
   void _renderCoastlines(

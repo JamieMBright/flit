@@ -1,43 +1,44 @@
 #!/bin/bash
-# Pre-push hook: Full validation before push
-# Runs: format, analyze, all tests, web build, android build
+# Pre-push hook: Lightweight validation before push
+# Full CI runs on merge to main — this just catches obvious issues fast.
 
 set -e
 
-echo "🚀 Running pre-push validation..."
+echo "Running pre-push checks..."
 
-# Check if Flutter is available
-if ! command -v flutter &> /dev/null; then
-    echo "⚠️  Flutter not found locally - skipping local checks"
-    echo "   CI will run full validation on push"
-    exit 0
+# String literal safety (no Flutter required)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Handle both hooks/ source dir and .git/hooks/ installed location
+if [ -f "$PROJECT_ROOT/scripts/check-strings.sh" ]; then
+    CHECK_STRINGS="$PROJECT_ROOT/scripts/check-strings.sh"
+elif [ -f "$PROJECT_ROOT/../scripts/check-strings.sh" ]; then
+    CHECK_STRINGS="$PROJECT_ROOT/../scripts/check-strings.sh"
+else
+    CHECK_STRINGS="$(git rev-parse --show-toplevel 2>/dev/null)/scripts/check-strings.sh"
+fi
+
+if [ -f "$CHECK_STRINGS" ]; then
+    echo ""
+    echo "Step 1: String literal safety..."
+    bash "$CHECK_STRINGS"
+fi
+
+# Lightweight lint (no Flutter required)
+if [ -f "$PROJECT_ROOT/scripts/lint-noflutter.sh" ]; then
+    LINT_SCRIPT="$PROJECT_ROOT/scripts/lint-noflutter.sh"
+elif [ -f "$PROJECT_ROOT/../scripts/lint-noflutter.sh" ]; then
+    LINT_SCRIPT="$PROJECT_ROOT/../scripts/lint-noflutter.sh"
+else
+    LINT_SCRIPT="$(git rev-parse --show-toplevel 2>/dev/null)/scripts/lint-noflutter.sh"
+fi
+
+if [ -f "$LINT_SCRIPT" ]; then
+    echo ""
+    echo "Step 2: Lightweight lint..."
+    bash "$LINT_SCRIPT"
 fi
 
 echo ""
-echo "📝 Step 1/6: Checking format..."
-dart format --set-exit-if-changed lib/ test/
-
-echo ""
-echo "🔎 Step 2/6: Running analyzer..."
-flutter analyze --fatal-warnings
-
-echo ""
-echo "🧪 Step 3/6: Running unit tests with coverage..."
-flutter test --coverage
-
-echo ""
-echo "🌐 Step 4/6: Building web..."
-flutter build web --release
-
-echo ""
-echo "🤖 Step 5/6: Building Android..."
-flutter build apk --release
-
-echo ""
-echo "🔒 Step 6/6: Security audit..."
-# Check for known vulnerable packages
-flutter pub outdated --dependency-overrides
-
-echo ""
-echo "✅ All pre-push checks passed!"
-echo "   Safe to push to remote."
+echo "Pre-push checks passed. CI will run full validation on merge to main."

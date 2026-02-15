@@ -42,6 +42,10 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
       // Skip when using Canvas renderer — WorldMap renders cities directly.
       if (!gameRef.isShaderActive) return;
 
+      // In descent mode, OSM tiles provide city names — skip our overlay
+      // to avoid parallax mismatch with the flat map projection.
+      if (!gameRef.plane.isHighAltitude) return;
+
       // Get continuous altitude from plane (0.0 = low, 1.0 = high)
       final continuousAlt = gameRef.plane.continuousAltitude;
 
