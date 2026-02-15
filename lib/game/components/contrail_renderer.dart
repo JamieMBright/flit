@@ -16,6 +16,7 @@ class ContrailRenderer extends Component with HasGameRef<FlitGame> {
   @override
   void render(Canvas canvas) {
     super.render(canvas);
+    if (gameRef.isInLaunchIntro) return;
 
     final plane = gameRef.plane;
     final particles = plane.contrails;

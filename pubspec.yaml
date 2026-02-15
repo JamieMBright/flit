@@ -46,6 +46,9 @@ flutter:
   shaders:
     - shaders/globe.frag
 
-  # Texture and image assets
+  # Texture, audio, and image assets
   assets:
     - assets/textures/
+    - assets/audio/engines/
+    - assets/audio/music/
+    - assets/audio/sfx/

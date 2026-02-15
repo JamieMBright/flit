@@ -33,6 +33,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
   @override
   void update(double dt) {
     super.update(dt);
+    if (gameRef.isInLaunchIntro) return;
 
     if (companionType == AvatarCompanion.none) return;
 
@@ -53,6 +54,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
   @override
   void render(Canvas canvas) {
     super.render(canvas);
+    if (gameRef.isInLaunchIntro) return;
 
     if (companionType == AvatarCompanion.none) return;
     if (_trailPositions.length < _trailDelay) return;

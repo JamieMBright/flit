@@ -131,6 +131,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       MaterialPageRoute<void>(
         builder: (context) => PlayScreen(
           challengeFriendName: friend.name,
+          totalRounds: 5,
           planeColorScheme: plane?.colorScheme,
           planeWingSpan: plane?.wingSpan,
           equippedPlaneId: planeId,

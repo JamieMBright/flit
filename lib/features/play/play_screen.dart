@@ -98,6 +98,7 @@ class _PlayScreenState extends State<PlayScreen> {
   GameSession? _session;
   Timer? _timer;
   Duration _elapsed = Duration.zero;
+  Duration _cumulativeTime = Duration.zero;
   bool _isHighAltitude = true;
   bool _gameReady = false;
   String? _error;
@@ -130,6 +131,8 @@ class _PlayScreenState extends State<PlayScreen> {
   /// Revealed country name (shown after tier 2 hint).
   String? _revealedCountry;
 
+  /// Whether the launch intro overlay is visible (black screen during globe snap).
+  bool _launchIntroVisible = false;
 
   @override
   void initState() {
@@ -302,6 +305,7 @@ class _PlayScreenState extends State<PlayScreen> {
         allowedClueTypes: widget.enabledClueTypes,
       );
       _elapsed = Duration.zero;
+      _cumulativeTime = Duration.zero;
 
       // Reset hint state for new round
       _hintTier = 0;
@@ -312,6 +316,14 @@ class _PlayScreenState extends State<PlayScreen> {
         'target': _session!.targetName,
         'clue': _session!.clue.type.name,
         'round': _currentRound,
+      });
+
+      // Show launch intro overlay (black screen while globe positions).
+      _launchIntroVisible = true;
+      Future<void>.delayed(const Duration(milliseconds: 1200), () {
+        if (mounted) {
+          setState(() { _launchIntroVisible = false; });
+        }
       });
 
       // Start the game with the session data
@@ -399,6 +411,7 @@ class _PlayScreenState extends State<PlayScreen> {
     _timer?.cancel();
     _session?.complete();
     _totalScore += _session?.score ?? 0;
+    _cumulativeTime += _elapsed;
 
     _log.info('session', 'Round $_currentRound complete, advancing', data: {
       'target': _session?.targetName,
@@ -469,6 +482,7 @@ class _PlayScreenState extends State<PlayScreen> {
     _timer?.cancel();
     _session?.complete();
     _totalScore += _session?.score ?? 0;
+    _cumulativeTime += _elapsed;
     AudioManager.instance.playSfx(SfxType.landingSuccess);
 
     _log.info('session', 'Landing complete', data: {
@@ -493,6 +507,7 @@ class _PlayScreenState extends State<PlayScreen> {
         challengeFriendName: friendName,
         totalScore: _totalScore,
         totalRounds: widget.totalRounds,
+        cumulativeTime: _cumulativeTime,
         coinReward: widget.coinReward,
         onPlayAgain: friendName == null
             ? () {
@@ -500,6 +515,7 @@ class _PlayScreenState extends State<PlayScreen> {
                 setState(() {
                   _currentRound = 1;
                   _totalScore = 0;
+                  _cumulativeTime = Duration.zero;
                 });
                 _startNewGame();
               }
@@ -818,6 +834,39 @@ class _PlayScreenState extends State<PlayScreen> {
             },
           ),
 
+          // Launch intro overlay (black screen while globe positions)
+          if (_gameReady && _launchIntroVisible)
+            AnimatedOpacity(
+              opacity: _launchIntroVisible ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 500),
+              child: IgnorePointer(
+                child: Container(
+                  color: FlitColors.backgroundDark,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.flight_takeoff,
+                          color: FlitColors.accent,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Preparing Flight...',
+                          style: TextStyle(
+                            color: FlitColors.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
           // HUD overlay
           if (_gameReady && _session != null)
             GameHud(
@@ -842,6 +891,8 @@ class _PlayScreenState extends State<PlayScreen> {
               countryName: _game.currentCountryName,
               heading: _game.heading,
               countryFlashProgress: _game.countryFlashProgress,
+              currentRound: _isMultiRound ? _currentRound : null,
+              totalRounds: _isMultiRound ? widget.totalRounds : null,
             ),
 
           // Mobile turn buttons (L/R) — positioned at bottom corners.
@@ -866,38 +917,6 @@ class _PlayScreenState extends State<PlayScreen> {
               ),
             ),
           ],
-
-          // Round indicator for multi-round play
-          if (_gameReady && _isMultiRound)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 8,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: FlitColors.cardBackground.withOpacity(0.85),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: FlitColors.accent.withOpacity(0.5),
-                    ),
-                  ),
-                  child: Text(
-                    'Round $_currentRound / ${widget.totalRounds}',
-                    style: const TextStyle(
-                      color: FlitColors.accent,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-              ),
-            ),
 
           // Loading overlay
           if (!_gameReady)
@@ -987,6 +1006,7 @@ class _ResultDialog extends StatelessWidget {
     this.onSendChallenge,
     this.totalScore = 0,
     this.totalRounds = 1,
+    this.cumulativeTime = Duration.zero,
     this.coinReward = 0,
   });
 
@@ -997,16 +1017,19 @@ class _ResultDialog extends StatelessWidget {
   final VoidCallback? onSendChallenge;
   final int totalScore;
   final int totalRounds;
+  final Duration cumulativeTime;
   final int coinReward;
 
   @override
   Widget build(BuildContext context) {
     final isChallenge = challengeFriendName != null;
-    final totalSeconds = session.elapsed.inMilliseconds / 1000;
-    final minutes = session.elapsed.inMinutes;
-    final seconds = session.elapsed.inSeconds % 60;
-    final millis = (session.elapsed.inMilliseconds % 1000) ~/ 10;
     final isMultiRound = totalRounds > 1;
+    // Use cumulative time for multi-round modes, single round time otherwise.
+    final displayTime = isMultiRound ? cumulativeTime : session.elapsed;
+    final totalSeconds = displayTime.inMilliseconds / 1000;
+    final minutes = displayTime.inMinutes;
+    final seconds = displayTime.inSeconds % 60;
+    final millis = (displayTime.inMilliseconds % 1000) ~/ 10;
 
     return Dialog(
       backgroundColor: FlitColors.cardBackground,
@@ -1043,7 +1066,7 @@ class _ResultDialog extends StatelessWidget {
             if (isChallenge) ...[
               const SizedBox(height: 12),
               Text(
-                'Round 1 vs $challengeFriendName: Your time ${totalSeconds.toStringAsFixed(2)}s',
+                'vs $challengeFriendName — Total: ${totalSeconds.toStringAsFixed(2)}s',
                 style: const TextStyle(
                   color: FlitColors.gold,
                   fontSize: 15,
@@ -1082,6 +1105,15 @@ class _ResultDialog extends StatelessWidget {
                 style: const TextStyle(
                   color: FlitColors.textMuted,
                   fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Total time: ${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}.${millis.toString().padLeft(2, '0')}',
+                style: const TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 12,
+                  fontFamily: 'monospace',
                 ),
               ),
             ],

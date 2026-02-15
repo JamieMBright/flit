@@ -44,6 +44,13 @@ const double _rad2deg = 180 / pi;
 /// Speed levels for flight control.
 enum FlightSpeed { slow, medium, fast }
 
+/// Phases of the game launch animation.
+///
+/// [positioning] — Globe snaps to start position, black overlay covers screen.
+/// [flyIn] — Plane animates from bottom of screen to final position.
+/// [playing] — Normal gameplay.
+enum LaunchPhase { none, positioning, flyIn, playing }
+
 class FlitGame extends FlameGame
     with HasKeyboardHandlerComponents, TapDetector {
   FlitGame({
@@ -215,6 +222,20 @@ class FlitGame extends FlameGame
   /// Duration of the country entry flash animation.
   static const double _countryFlashDuration = 1.5;
 
+  // -- Launch animation state --
+
+  /// Current phase of the launch intro animation.
+  LaunchPhase _launchPhase = LaunchPhase.none;
+
+  /// Timer within the current launch phase (seconds).
+  double _launchTimer = 0.0;
+
+  /// Duration of the positioning phase (globe snaps to start position).
+  static const double _positioningDuration = 1.0;
+
+  /// Duration of the plane fly-in animation.
+  static const double _flyInDuration = 0.8;
+
   bool get isPlaying => _isPlaying;
   bool get isHighAltitude => _plane.isHighAltitude;
   PlaneComponent get plane => _plane;
@@ -227,6 +248,14 @@ class FlitGame extends FlameGame
   /// Flash animation progress when entering a new country (1.0 = full flash, 0.0 = no flash).
   double get countryFlashProgress =>
       (_countryFlashTimer / _countryFlashDuration).clamp(0.0, 1.0);
+
+  /// Current launch animation phase.
+  LaunchPhase get launchPhase => _launchPhase;
+
+  /// Whether the game is in the launch intro (positioning or fly-in).
+  bool get isInLaunchIntro =>
+      _launchPhase == LaunchPhase.positioning ||
+      _launchPhase == LaunchPhase.flyIn;
 
   /// Current waymarker position (lng, lat) or null if none set.
   Vector2? get waymarker => _waymarker;
@@ -469,10 +498,18 @@ class FlitGame extends FlameGame
   static const double _speedToAngular = pi / 1800;
 
   @override
-  Color backgroundColor() =>
-      _planeReady && !_plane.isHighAltitude
-          ? const Color(0x00000000)
-          : FlitColors.oceanDeep;
+  Color backgroundColor() {
+    if (_planeReady) {
+      final alt = _plane.continuousAltitude;
+      if (alt < 0.6) {
+        // Fade background to transparent as altitude drops below 0.6,
+        // allowing the DescentMapView behind to show through smoothly.
+        final alpha = (alt / 0.6).clamp(0.0, 1.0);
+        return FlitColors.oceanDeep.withOpacity(alpha);
+      }
+    }
+    return FlitColors.oceanDeep;
+  }
 
   @override
   Future<void> onLoad() async {
@@ -695,6 +732,46 @@ class FlitGame extends FlameGame
   void _updateInner(double dt) {
     // Don't run game logic until a session is active and the game has a size.
     if (!_isPlaying || size.x < 1 || size.y < 1) return;
+
+    // --- Launch intro sequence ---
+    if (_launchPhase == LaunchPhase.positioning) {
+      _launchTimer += dt;
+      _updateChaseCamera(dt);
+      // Keep plane off-screen below the viewport during globe snap.
+      _plane.position = Vector2(size.x * planeScreenX, size.y * 1.5);
+      _plane.worldPos = _worldPosition.clone();
+      _plane.worldHeading = _heading;
+      _computeScreenCorrection();
+      if (_launchTimer >= _positioningDuration) {
+        _launchPhase = LaunchPhase.flyIn;
+        _launchTimer = 0.0;
+        _plane.setVisible(); // Make plane visible for fly-in
+      }
+      return;
+    }
+
+    if (_launchPhase == LaunchPhase.flyIn) {
+      _launchTimer += dt;
+      final t = (_launchTimer / _flyInDuration).clamp(0.0, 1.0);
+      // Ease-out cubic for smooth deceleration into final position.
+      final eased = 1.0 - pow(1.0 - t, 3);
+      final startY = size.y * 1.3; // Below screen
+      final endY = size.y * planeScreenY; // Final position (80%)
+      _plane.position = Vector2(
+        size.x * planeScreenX,
+        startY + (endY - startY) * eased,
+      );
+      _updateChaseCamera(dt);
+      _plane.worldPos = _worldPosition.clone();
+      _plane.worldHeading = _heading;
+      _computeScreenCorrection();
+      if (t >= 1.0) {
+        _launchPhase = LaunchPhase.playing;
+      }
+      return;
+    }
+
+    // --- Normal gameplay below ---
 
     // --- Country detection ---
     _updateCountryDetection(dt);
@@ -1025,7 +1102,9 @@ class FlitGame extends FlameGame
           : _keyTurnHoldTime;
 
       // Progressive curve: starts at 0.08, reaches 1.0 after ~0.6s.
-      final strength = (0.08 + holdTime * holdTime * 4.5).clamp(0.0, 1.0);
+      // Scale ramp speed with turn sensitivity setting (default 0.5 → 1.0x).
+      final sensitivityScale = GameSettings.instance.turnSensitivity / 0.5;
+      final strength = (0.08 + holdTime * holdTime * 4.5 * sensitivityScale).clamp(0.0, 1.0);
       // When invertControls is false, pass direction through (right = right).
       // When invertControls is true, negate (right input = left turn).
       final invert = GameSettings.instance.invertControls ? -1.0 : 1.0;
@@ -1303,12 +1382,16 @@ class FlitGame extends FlameGame
     _heading = bearing - pi / 2;
     _cameraHeading = _heading; // snap camera to heading on game start
     _cameraFirstUpdate = true;
-    _plane.fadeIn(); // Hide plane during camera snap, fade in over 0.5s
+    _plane.fadeIn(); // Start invisible during positioning phase
+    _plane.contrails.clear(); // Clear leftover contrails from previous games
     _targetLocation = targetPosition;
     _currentClue = clue;
     _waymarker = null; // clear any previous waymarker
     _hintTarget = null; // clear any previous hint
     _flightSpeed = FlightSpeed.medium; // reset speed
+    // Start launch animation sequence.
+    _launchPhase = LaunchPhase.positioning;
+    _launchTimer = 0.0;
     _isPlaying = true;
   }
 
