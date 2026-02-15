@@ -297,8 +297,6 @@ void main() {
 
     test('provinces have non-empty motto, territories can have empty motto', () {
       final provinceKeys = {'ON', 'QC', 'BC', 'AB', 'MB', 'SK', 'NS', 'NB', 'NL', 'PE'};
-      final territoryKeys = {'NT', 'YT', 'NU'};
-
       for (final entry in CanadaClues.data.entries) {
         if (provinceKeys.contains(entry.key)) {
           expect(entry.value.motto, isNotEmpty,

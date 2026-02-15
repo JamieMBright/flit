@@ -160,7 +160,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
           screenPos.y < -50 || screenPos.y > screenH + 50) continue;
 
       // Scale radius based on altitude and lake size
-      final screenRadius = (lake.radiusDeg * 8.0 / (alt + 0.3)).clamp(2.0, 15.0);
+      final screenRadius = (lake.radiusDegrees * 8.0 / (alt + 0.3)).clamp(2.0, 15.0);
       canvas.drawCircle(
         Offset(screenPos.x, screenPos.y),
         screenRadius,
@@ -189,7 +189,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
     final playerPos = gameRef.worldPosition;
 
-    for (final sea in OsmFeatures.seaLabels) {
+    for (final sea in OsmFeatures.seas) {
       if ((sea.center.x - playerPos.x).abs() > 90 ||
           (sea.center.y - playerPos.y).abs() > 90) continue;
 
