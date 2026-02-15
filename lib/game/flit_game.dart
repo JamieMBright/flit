@@ -233,14 +233,30 @@ class FlitGame extends FlameGame
   }
 
   /// Speed multiplier based on current flight speed setting.
+  /// Different scales for ascend (globe cruising) vs descend (map exploration).
+  /// Ascend base speed is 36 units/s, descend base is 3.6 units/s (10% of high).
   double get _speedMultiplier {
+    if (_planeReady && !_plane.isHighAltitude) {
+      // Descend mode: really slow for cruising / exploring the OSM map.
+      // Effective speeds: slow ≈ 1.1, medium ≈ 2.2, fast ≈ 3.6 units/s.
+      switch (_flightSpeed) {
+        case FlightSpeed.slow:
+          return 0.3;
+        case FlightSpeed.medium:
+          return 0.6;
+        case FlightSpeed.fast:
+          return 1.0;
+      }
+    }
+    // Ascend mode: fast globe traversal.
+    // Effective speeds: slow = 18, medium = 36, fast = 90 units/s.
     switch (_flightSpeed) {
       case FlightSpeed.slow:
         return 0.5;
       case FlightSpeed.medium:
         return 1.0;
       case FlightSpeed.fast:
-        return 1.6;
+        return 2.5;
     }
   }
 

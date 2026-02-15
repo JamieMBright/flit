@@ -64,6 +64,10 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
     try {
       if (!gameRef.isShaderActive) return;
 
+      // In descent mode, OSM tiles provide borders — skip our overlay
+      // to avoid parallax mismatch with the flat map projection.
+      if (!gameRef.plane.isHighAltitude) return;
+
       // Lazy-build land mask on first frame.
       _buildLandMask();
 
