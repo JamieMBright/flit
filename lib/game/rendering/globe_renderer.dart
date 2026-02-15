@@ -118,6 +118,10 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
   void render(Canvas canvas) {
     super.render(canvas);
 
+    // In descent mode the OSM tile map sits behind the transparent game canvas.
+    // Skip the full-screen globe shader so the plane sprite floats on top.
+    if (!gameRef.plane.isHighAltitude) return;
+
     try {
       final screenSize = gameRef.size;
       _lastSize = Size(screenSize.x, screenSize.y);
