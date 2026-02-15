@@ -183,9 +183,9 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // Add a proportional yaw toward the turn direction so the nose, fuselage,
     // and entire plane body visibly point toward the turn. Uses smoothed
     // _currentBank for a gradual rotation that follows the wing banking.
-    // Negated because positive _currentBank = right turn, and negative
+    // Positive because positive _currentBank = right turn, and positive
     // canvas.rotate() = clockwise = yaw right on screen. At full bank → ~34°.
-    final turnAdjustment = -(_currentBank / _maxBankAngle) * 0.6;
+    final turnAdjustment = (_currentBank / _maxBankAngle) * 0.6;
     canvas.rotate(visualHeading + turnAdjustment);
 
     // Apply perspective foreshortening: the camera is above and behind the
@@ -346,46 +346,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       );
     }
 
-    // --- Underside strip (visible when significantly banked) ---
-    final bankAbs = bankSin.abs();
-    if (bankAbs > 0.15) {
-      final undersideWidth = 6.0 * bankAbs;
-      final undersideX = bankSin > 0 ? -undersideWidth / 2 : undersideWidth / 2;
-      final undersidePath = Path()
-        ..moveTo(undersideX - undersideWidth / 2, -12)
-        ..quadraticBezierTo(
-          undersideX - undersideWidth / 2 - 1, 0,
-          undersideX - undersideWidth / 2, 14,
-        )
-        ..lineTo(undersideX + undersideWidth / 2, 14)
-        ..quadraticBezierTo(
-          undersideX + undersideWidth / 2 + 1, 0,
-          undersideX + undersideWidth / 2, -12,
-        )
-        ..close();
-      canvas.drawPath(undersidePath, undersidePaint);
-    }
-
-    // --- Tail assembly ---
-    final tailSpan = (wingSpan * 0.38) * bankCos.abs();
-    final tailPath = Path()
-      ..moveTo(-tailSpan, 14 + wingDip * 0.3)
-      ..quadraticBezierTo(-tailSpan - 2, 16, -tailSpan, 18)
-      ..lineTo(tailSpan, 18 - wingDip * 0.3)
-      ..quadraticBezierTo(tailSpan + 2, 16, tailSpan, 14 - wingDip * 0.3)
-      ..close();
-    canvas.drawPath(tailPath, Paint()..color = darken(detail, 0.1));
-
-    // Vertical fin — slightly rotated with bank
-    final finPath = Path()
-      ..moveTo(bankSin * 2, 11)
-      ..quadraticBezierTo(-4 + bankSin * 3, 15, -2 + bankSin * 2, 18)
-      ..lineTo(2 + bankSin * 2, 18)
-      ..quadraticBezierTo(4 + bankSin * 3, 15, bankSin * 2, 11)
-      ..close();
-    canvas.drawPath(finPath, accentPaint);
-
-    // --- Main wings (3D: both shorten when banking, subtle asymmetry) ---
+    // --- Main wings (stable base layer, not affected by roll) ---
     // Left wing — both wings foreshorten from bankCos, mild offset for depth.
     final leftSpan = dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.5;
     final leftDip = wingDip;
@@ -446,13 +407,53 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       );
     }
 
-    // --- Fuselage (3D: roll = horizontal compression when banked) ---
+    // --- Body group (underside + tail + fuselage roll together on top of wings) ---
     canvas.save();
     final rollScale = 0.55 + bankCos.abs() * 0.45; // 0.55 at max bank → 1.0 level
     canvas.translate(bodyShift, 0);
     canvas.scale(rollScale, 1.0);
     canvas.translate(-bodyShift, 0);
 
+    // --- Underside strip (visible when significantly banked) ---
+    final bankAbs = bankSin.abs();
+    if (bankAbs > 0.15) {
+      final undersideWidth = 6.0 * bankAbs;
+      final undersideX = bankSin > 0 ? -undersideWidth / 2 : undersideWidth / 2;
+      final undersidePath = Path()
+        ..moveTo(undersideX - undersideWidth / 2, -12)
+        ..quadraticBezierTo(
+          undersideX - undersideWidth / 2 - 1, 0,
+          undersideX - undersideWidth / 2, 14,
+        )
+        ..lineTo(undersideX + undersideWidth / 2, 14)
+        ..quadraticBezierTo(
+          undersideX + undersideWidth / 2 + 1, 0,
+          undersideX + undersideWidth / 2, -12,
+        )
+        ..close();
+      canvas.drawPath(undersidePath, undersidePaint);
+    }
+
+    // --- Tail assembly ---
+    final tailSpan = (wingSpan * 0.38) * bankCos.abs();
+    final tailPath = Path()
+      ..moveTo(-tailSpan, 14 + wingDip * 0.3)
+      ..quadraticBezierTo(-tailSpan - 2, 16, -tailSpan, 18)
+      ..lineTo(tailSpan, 18 - wingDip * 0.3)
+      ..quadraticBezierTo(tailSpan + 2, 16, tailSpan, 14 - wingDip * 0.3)
+      ..close();
+    canvas.drawPath(tailPath, Paint()..color = darken(detail, 0.1));
+
+    // Vertical fin — slightly rotated with bank
+    final finPath = Path()
+      ..moveTo(bankSin * 2, 11)
+      ..quadraticBezierTo(-4 + bankSin * 3, 15, -2 + bankSin * 2, 18)
+      ..lineTo(2 + bankSin * 2, 18)
+      ..quadraticBezierTo(4 + bankSin * 3, 15, bankSin * 2, 11)
+      ..close();
+    canvas.drawPath(finPath, accentPaint);
+
+    // --- Fuselage ---
     final fuselagePath = Path()
       ..moveTo(bodyShift, -16)
       ..quadraticBezierTo(5 + bodyShift, -12, 5 + bodyShift, -2)
@@ -512,7 +513,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       1.5,
       Paint()..color = const Color(0xFF555555),
     );
-    canvas.restore(); // End fuselage roll transform
+    canvas.restore(); // End body roll transform
 
     // Wing tip navigation lights (positioned at actual wing tips)
     canvas.drawCircle(
@@ -548,6 +549,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final leftWingColor = shade < 0 ? primary : secondary;
     final rightWingColor = shade > 0 ? primary : secondary;
 
+    // --- Triangular wings (stable base layer, not affected by roll) ---
     final leftSpan = dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
     final leftWing = Path()
       ..moveTo(-2 + bodyShift, 0)
@@ -566,7 +568,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
-    // --- Fuselage (3D: roll = horizontal compression when banked) ---
+    // --- Body group (fuselage rolls on top of wings) ---
     canvas.save();
     final rollScale = 0.55 + bankCos.abs() * 0.45;
     canvas.translate(bodyShift, 0);
@@ -599,7 +601,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       2.0,
       Paint()..color = secondary,
     );
-    canvas.restore(); // End fuselage roll transform
+    canvas.restore(); // End body roll transform
   }
 
   /// Jet/rocket plane rendering - sleek, narrow, swept-back wings.
@@ -623,6 +625,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final leftWingColor = shade < 0 ? detail : Color.lerp(detail, Colors.black, 0.3)!;
     final rightWingColor = shade > 0 ? detail : Color.lerp(detail, Colors.black, 0.3)!;
 
+    // --- Swept delta wings (stable base layer, not affected by roll) ---
     final leftSpan = dynamicWingSpan * 0.8 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
     final leftWing = Path()
       ..moveTo(-3 + bodyShift, 2)
@@ -641,7 +644,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
-    // --- Fuselage (3D: roll = horizontal compression when banked) ---
+    // --- Body group (fuselage rolls on top of wings) ---
     canvas.save();
     final rollScale = 0.55 + bankCos.abs() * 0.45;
     canvas.translate(bodyShift, 0);
@@ -695,7 +698,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ..color = secondary
         ..strokeWidth = 2.0,
     );
-    canvas.restore(); // End fuselage roll transform
+    canvas.restore(); // End body roll transform
   }
 
   /// Stealth bomber rendering - wide flying wing design.
@@ -715,7 +718,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 2.0;
 
-    // Wide flying wing (no distinct fuselage)
+    // Wide flying wing (stable base layer, not affected by roll)
     final leftWingColor = shade < 0 ? primary : secondary;
     final rightWingColor = shade > 0 ? primary : secondary;
 
@@ -737,7 +740,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
-    // --- Fuselage (3D: roll = horizontal compression when banked) ---
+    // --- Body group (center body + sawtooth + cockpit roll together on top of wings) ---
     canvas.save();
     final rollScale = 0.55 + bankCos.abs() * 0.45;
     canvas.translate(bodyShift, 0);
@@ -778,7 +781,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       ),
       Paint()..color = const Color(0xFF333333),
     );
-    canvas.restore(); // End fuselage roll transform
+    canvas.restore(); // End body roll transform
   }
 
   /// Red Baron triplane - three stacked wings.
@@ -822,22 +825,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       );
     }
 
-    // Fuselage (with roll: horizontal compression when banked)
-    canvas.save();
-    final rollScale = 0.55 + bankCos.abs() * 0.45;
-    canvas.translate(bodyShift, 0);
-    canvas.scale(rollScale, 1.0);
-    canvas.translate(-bodyShift, 0);
-    final fuselagePath = Path()
-      ..moveTo(bodyShift, -16)
-      ..quadraticBezierTo(4 + bodyShift, -12, 4 + bodyShift, -2)
-      ..quadraticBezierTo(3 + bodyShift, 10, 2 + bodyShift, 16)
-      ..quadraticBezierTo(bodyShift, 17, -2 + bodyShift, 16)
-      ..quadraticBezierTo(-3 + bodyShift, 10, -4 + bodyShift, -2)
-      ..quadraticBezierTo(-4 + bodyShift, -12, bodyShift, -16)
-      ..close();
-    canvas.drawPath(fuselagePath, Paint()..color = primary);
-
+    // --- Three stacked wings (stable base layer, not affected by roll) ---
     // Top wing (smallest)
     final topSpan = dynamicWingSpan * 0.7;
     canvas.drawRRect(
@@ -879,6 +867,33 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       Paint()..color = wingColor,
     );
 
+    // --- Body group (tail + fuselage + struts + cockpit + emblem roll together on top of wings) ---
+    canvas.save();
+    final rollScale = 0.55 + bankCos.abs() * 0.45;
+    canvas.translate(bodyShift, 0);
+    canvas.scale(rollScale, 1.0);
+    canvas.translate(-bodyShift, 0);
+
+    // Tail
+    final tailPath = Path()
+      ..moveTo(-4, 12)
+      ..lineTo(-4, 16)
+      ..lineTo(4, 16)
+      ..lineTo(4, 12)
+      ..close();
+    canvas.drawPath(tailPath, Paint()..color = wingColor);
+
+    // Fuselage
+    final fuselagePath = Path()
+      ..moveTo(bodyShift, -16)
+      ..quadraticBezierTo(4 + bodyShift, -12, 4 + bodyShift, -2)
+      ..quadraticBezierTo(3 + bodyShift, 10, 2 + bodyShift, 16)
+      ..quadraticBezierTo(bodyShift, 17, -2 + bodyShift, 16)
+      ..quadraticBezierTo(-3 + bodyShift, 10, -4 + bodyShift, -2)
+      ..quadraticBezierTo(-4 + bodyShift, -12, bodyShift, -16)
+      ..close();
+    canvas.drawPath(fuselagePath, Paint()..color = primary);
+
     // Struts connecting wings
     final strutPaint = Paint()
       ..color = detail
@@ -897,15 +912,6 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       Paint()..color = const Color(0xFF654321),
     );
 
-    // Tail
-    final tailPath = Path()
-      ..moveTo(-4, 12)
-      ..lineTo(-4, 16)
-      ..lineTo(4, 16)
-      ..lineTo(4, 12)
-      ..close();
-    canvas.drawPath(tailPath, Paint()..color = wingColor);
-
     // Red Baron cross emblem
     canvas.drawLine(
       Offset(bodyShift - 3, 0),
@@ -921,7 +927,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ..color = secondary
         ..strokeWidth = 2.5,
     );
-    canvas.restore(); // End fuselage roll transform
+    canvas.restore(); // End body roll transform
   }
 
   /// Concorde supersonic - distinctive delta wing and drooping nose.
@@ -941,7 +947,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 2.5;
 
-    // Delta wing (large triangular wing integrated with fuselage)
+    // --- Delta wing (stable base layer, not affected by roll) ---
     final leftWingColor = shade < 0 ? primary : Color.lerp(primary, Colors.grey, 0.2)!;
     final rightWingColor = shade > 0 ? primary : Color.lerp(primary, Colors.grey, 0.2)!;
 
@@ -961,7 +967,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
-    // --- Fuselage (3D: roll = horizontal compression when banked) ---
+    // --- Body group (fuselage rolls on top of wings) ---
     canvas.save();
     final rollScale = 0.55 + bankCos.abs() * 0.45;
     canvas.translate(bodyShift, 0);
@@ -1006,7 +1012,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         Paint()..color = const Color(0xFF4A90B8),
       );
     }
-    canvas.restore(); // End fuselage roll transform
+    canvas.restore(); // End body roll transform
 
     // Four jet engines (two on each side)
     for (var x in [-leftSpan * 0.4, -leftSpan * 0.6]) {
@@ -1105,7 +1111,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 2.0;
 
-    // Wide swept wings
+    // --- Wide swept wings (stable base layer, not affected by roll) ---
     final leftWingColor = shade < 0
         ? detail
         : Color.lerp(detail, Colors.grey, 0.3)!;
@@ -1131,23 +1137,12 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
-    // --- Fuselage (3D: roll = horizontal compression when banked) ---
+    // --- Body group (tail + fuselage roll together on top of wings) ---
     canvas.save();
     final rollScale = 0.55 + bankCos.abs() * 0.45;
     canvas.translate(bodyShift, 0);
     canvas.scale(rollScale, 1.0);
     canvas.translate(-bodyShift, 0);
-
-    // Wide fuselage (airliner body)
-    final fuselagePath = Path()
-      ..moveTo(bodyShift, -17)
-      ..quadraticBezierTo(6 + bodyShift, -12, 6 + bodyShift, 0)
-      ..quadraticBezierTo(5 + bodyShift, 10, 3 + bodyShift, 16)
-      ..lineTo(-3 + bodyShift, 16)
-      ..quadraticBezierTo(-5 + bodyShift, 10, -6 + bodyShift, 0)
-      ..quadraticBezierTo(-6 + bodyShift, -12, bodyShift, -17)
-      ..close();
-    canvas.drawPath(fuselagePath, Paint()..color = primary);
 
     // Tail section
     final tailPath = Path()
@@ -1165,6 +1160,17 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
       ..quadraticBezierTo(2 + bodyShift, 14, bodyShift, 12)
       ..close();
     canvas.drawPath(finPath, Paint()..color = secondary);
+
+    // Wide fuselage (airliner body)
+    final fuselagePath = Path()
+      ..moveTo(bodyShift, -17)
+      ..quadraticBezierTo(6 + bodyShift, -12, 6 + bodyShift, 0)
+      ..quadraticBezierTo(5 + bodyShift, 10, 3 + bodyShift, 16)
+      ..lineTo(-3 + bodyShift, 16)
+      ..quadraticBezierTo(-5 + bodyShift, 10, -6 + bodyShift, 0)
+      ..quadraticBezierTo(-6 + bodyShift, -12, bodyShift, -17)
+      ..close();
+    canvas.drawPath(fuselagePath, Paint()..color = primary);
 
     // Cockpit windows
     for (var y in [-13.0, -11.0, -9.0, -7.0]) {
@@ -1188,7 +1194,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         ..color = secondary
         ..strokeWidth = 2.5,
     );
-    canvas.restore(); // End fuselage roll transform
+    canvas.restore(); // End body roll transform
 
     // Engines under wings
     for (var x in [-leftSpan * 0.4, -leftSpan * 0.7]) {
