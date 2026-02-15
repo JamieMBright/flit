@@ -16,16 +16,17 @@ import 'package:latlong2/latlong.dart';
 class DescentMapView extends StatefulWidget {
   const DescentMapView({
     super.key,
-    required this.playerLng,
-    required this.playerLat,
+    required this.centerLng,
+    required this.centerLat,
     required this.heading,
     required this.altitudeTransition,
     required this.tileUrl,
   });
 
-  /// Player position in degrees.
-  final double playerLng;
-  final double playerLat;
+  /// Map center in degrees (offset ahead of player so the player
+  /// appears at ~80% screen height, matching the plane sprite).
+  final double centerLng;
+  final double centerLat;
 
   /// Player heading in radians (code convention: 0 = east, π/2 = north).
   final double heading;
@@ -64,7 +65,7 @@ class _DescentMapViewState extends State<DescentMapView> {
     super.didUpdateWidget(oldWidget);
     if (_mapReady) {
       _mapController.move(
-        LatLng(widget.playerLat, widget.playerLng),
+        LatLng(widget.centerLat, widget.centerLng),
         _zoom,
       );
       _mapController.rotate(_rotation);
@@ -77,7 +78,7 @@ class _DescentMapViewState extends State<DescentMapView> {
       child: FlutterMap(
         mapController: _mapController,
         options: MapOptions(
-          initialCenter: LatLng(widget.playerLat, widget.playerLng),
+          initialCenter: LatLng(widget.centerLat, widget.centerLng),
           initialZoom: _zoom,
           initialRotation: _rotation,
           // Disable all user interaction — game controls the camera
@@ -98,35 +99,8 @@ class _DescentMapViewState extends State<DescentMapView> {
             // On web, the browser cache handles tile storage.
           ),
 
-          // Player position marker (plane icon)
-          MarkerLayer(
-            markers: [
-              Marker(
-                point: LatLng(widget.playerLat, widget.playerLng),
-                width: 40,
-                height: 40,
-                child: Transform.rotate(
-                  // Rotate plane icon to match heading.
-                  // Icon points up (north) by default. Map is rotated so
-                  // the player's heading faces screen-up, so the plane
-                  // icon should point up = forward.
-                  angle: 0, // already aligned via map rotation
-                  child: const Icon(
-                    Icons.airplanemode_active,
-                    color: Colors.white,
-                    size: 32,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 4,
-                        color: Colors.black54,
-                        offset: Offset(1, 1),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+          // No plane marker — the game's existing plane sprite stays visible
+          // on the Canvas overlay at its fixed screen position (50%, 80%).
 
           // OSM attribution (required by tile usage policy)
           const RichAttributionWidget(

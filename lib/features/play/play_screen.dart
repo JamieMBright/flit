@@ -779,8 +779,8 @@ class _PlayScreenState extends State<PlayScreen> {
           if (_gameReady && _session != null && !_isHighAltitude)
             Positioned.fill(
               child: DescentMapView(
-                playerLng: _game.worldPosition.x,
-                playerLat: _game.worldPosition.y,
+                centerLng: _game.cameraPosition.x,
+                centerLat: _game.cameraPosition.y,
                 heading: _game.heading,
                 altitudeTransition: 0.0,
                 tileUrl: GameSettings.instance.mapTileUrl,
