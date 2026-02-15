@@ -776,7 +776,6 @@ class _PlayScreenState extends State<PlayScreen> {
 
           // OSM tile map — shown during descent mode (low altitude).
           // Covers the globe shader with real-world map tiles.
-          // flutter_map's built-in caching stores tiles for offline use.
           if (_gameReady && _session != null && !_isHighAltitude)
             Positioned.fill(
               child: DescentMapView(

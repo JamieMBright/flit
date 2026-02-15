@@ -7,8 +7,8 @@ import 'package:latlong2/latlong.dart';
 /// OSM tile map shown during descent mode.
 ///
 /// Renders OpenStreetMap tiles with the player's current position and heading.
-/// Uses flutter_map's built-in tile caching (1 GB soft limit on non-web;
-/// browser cache on web). No additional caching package needed.
+/// Uses flutter_map v6 (compatible with Dart 3.2 / Flutter 3.16).
+/// On web, the browser cache handles tile storage.
 ///
 /// The map is non-interactive — position and zoom are driven entirely by
 /// the game state (player lng/lat and altitude transition). Wrapped in
@@ -95,7 +95,6 @@ class _DescentMapViewState extends State<DescentMapView> {
             userAgentPackageName: 'com.jamiembright.flit',
             maxZoom: 18,
             subdomains: const ['a', 'b', 'c'],
-            // Built-in caching is enabled by default on non-web platforms.
             // On web, the browser cache handles tile storage.
           ),
 
