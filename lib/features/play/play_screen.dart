@@ -6,6 +6,7 @@ import 'package:flutter/scheduler.dart';
 
 import '../../core/services/audio_manager.dart';
 import '../../core/services/error_service.dart';
+import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
@@ -783,6 +784,7 @@ class _PlayScreenState extends State<PlayScreen> {
                 playerLat: _game.worldPosition.y,
                 heading: _game.heading,
                 altitudeTransition: 0.0,
+                tileUrl: GameSettings.instance.mapTileUrl,
               ),
             ),
 

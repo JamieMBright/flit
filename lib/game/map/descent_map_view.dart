@@ -20,6 +20,7 @@ class DescentMapView extends StatefulWidget {
     required this.playerLat,
     required this.heading,
     required this.altitudeTransition,
+    required this.tileUrl,
   });
 
   /// Player position in degrees.
@@ -32,6 +33,9 @@ class DescentMapView extends StatefulWidget {
   /// Altitude transition value (0.0 = ground, 1.0 = high altitude).
   /// Used to compute zoom level.
   final double altitudeTransition;
+
+  /// Tile URL template (e.g. OSM, CARTO Dark, Voyager, OpenTopoMap).
+  final String tileUrl;
 
   @override
   State<DescentMapView> createState() => _DescentMapViewState();
@@ -85,11 +89,12 @@ class _DescentMapViewState extends State<DescentMapView> {
           },
         ),
         children: [
-          // OSM raster tiles
+          // Map tiles (style selected in settings)
           TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            urlTemplate: widget.tileUrl,
             userAgentPackageName: 'com.jamiembright.flit',
             maxZoom: 18,
+            subdomains: const ['a', 'b', 'c'],
             // Built-in caching is enabled by default on non-web platforms.
             // On web, the browser cache handles tile storage.
           ),

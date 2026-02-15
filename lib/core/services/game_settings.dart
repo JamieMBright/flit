@@ -1,5 +1,21 @@
 import 'package:flutter/foundation.dart';
 
+/// Map tile style for descent mode — different visual themes.
+/// All tile servers are free and open-license (no API key required).
+enum MapStyle {
+  /// OpenStreetMap default — light, detailed, familiar.
+  standard,
+
+  /// CARTO Dark Matter — dark background, subtle labels.
+  dark,
+
+  /// CARTO Voyager — colorful, modern, easy to read.
+  voyager,
+
+  /// OpenTopoMap — topographic with elevation contours.
+  topo,
+}
+
 /// Game difficulty level — affects country selection and hint availability.
 enum GameDifficulty {
   /// Well-known countries, extra hints, skip clue option.
@@ -68,6 +84,44 @@ class GameSettings extends ChangeNotifier {
   set enableNight(bool value) {
     _enableNight = value;
     notifyListeners();
+  }
+
+  /// Map tile style for descent mode (OSM, dark, voyager, topo).
+  MapStyle _mapStyle = MapStyle.dark;
+
+  MapStyle get mapStyle => _mapStyle;
+
+  set mapStyle(MapStyle value) {
+    _mapStyle = value;
+    notifyListeners();
+  }
+
+  /// Tile URL template for the selected map style.
+  String get mapTileUrl {
+    switch (_mapStyle) {
+      case MapStyle.standard:
+        return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+      case MapStyle.dark:
+        return 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+      case MapStyle.voyager:
+        return 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+      case MapStyle.topo:
+        return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+    }
+  }
+
+  /// Human-readable label for the selected map style.
+  String get mapStyleLabel {
+    switch (_mapStyle) {
+      case MapStyle.standard:
+        return 'Standard';
+      case MapStyle.dark:
+        return 'Dark';
+      case MapStyle.voyager:
+        return 'Voyager';
+      case MapStyle.topo:
+        return 'Topo';
+    }
   }
 
   // ─── Gameplay ───────────────────────────────────────────────────
