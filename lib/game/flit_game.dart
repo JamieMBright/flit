@@ -330,7 +330,7 @@ class FlitGame extends FlameGame
   }
 
   /// Project world coordinates to screen WITHOUT the plane-tracking correction.
-  /// Use this for globe-surface overlays (borders, climate grid) that must
+  /// Use this for globe-surface overlays (borders, geographic features) that must
   /// stay glued to the satellite texture rather than tracking the plane sprite.
   /// In flat map mode, this is the same as worldToScreen (no correction needed).
   Vector2 worldToScreenGlobe(Vector2 lngLat) {
