@@ -1,5 +1,5 @@
 // =============================================================================
-// globe.frag — Flit Globe Fragment Shader (V1–V6 Complete)
+// globe.frag — Flit Globe Fragment Shader (V1–V7 Complete)
 //
 // Renders a photorealistic Earth globe with:
 //   V1: Ray-sphere globe with satellite texture + diffuse lighting
@@ -8,6 +8,7 @@
 //   V4: Atmospheric scattering, rim glow, sky gradient, sun disc
 //   V5: Procedural volumetric clouds on a shell above the globe
 //   V6: Day/night cycle, city lights, star field, terminator glow
+//   V7: Country borders from distance field (packed in uShoreDist green channel)
 //
 // Compatible with Flutter FragmentProgram.fromAsset() on iOS, Android, Web.
 // =============================================================================
@@ -35,7 +36,7 @@ uniform float uEnableNight;   // Index 16:  0.0 = always day,  1.0 = day/night c
 
 uniform sampler2D uSatellite;   // NASA Blue Marble (equirectangular)
 uniform sampler2D uHeightmap;   // ETOPO heightmap (0 = deep ocean, 1 = peak)
-uniform sampler2D uShoreDist;   // Shore distance field (0 = shore, 1 = far)
+uniform sampler2D uShoreDist;   // R = shore distance, G = border distance
 uniform sampler2D uCityLights;  // NASA Earth at Night
 
 // Fragment output
@@ -583,6 +584,33 @@ void main() {
         // Blend foam into surface (white, lit by sun)
         vec3 foamColor = vec3(0.9, 0.93, 0.95) * (diffuse * 0.7 + 0.3);
         surfaceColor = mix(surfaceColor, foamColor, foam * 0.8);
+    }
+
+    // =======================================================================
+    // V7: COUNTRY BORDERS (distance field from uShoreDist green channel)
+    // =======================================================================
+
+    {
+        float borderDist = texture(uShoreDist, uv).g;
+
+        // Camera altitude modulates border appearance
+        float camAlt = length(uCameraPos) - uGlobeRadius;
+
+        // Border width: thicker when close, thinner when far away
+        // At low altitude (~0.3): ~1.5 px at texture resolution
+        // At high altitude (~3.0): ~0.5 px — subtle hairline
+        float borderWidth = mix(0.10, 0.03, smoothstep(0.3, 3.0, camAlt));
+
+        // Anti-aliased border line (smooth falloff at edges)
+        float borderLine = 1.0 - smoothstep(0.0, borderWidth, borderDist);
+
+        // Opacity: visible on day side, dimmer at night
+        float borderAlpha = borderLine * 0.5 * (dayFactor * 0.7 + 0.3);
+
+        // Border color: light tone that reads on both land and ocean
+        vec3 borderColor = vec3(0.85, 0.85, 0.80) * (diffuse * 0.4 + 0.6);
+
+        surfaceColor = mix(surfaceColor, borderColor, borderAlpha);
     }
 
     // =======================================================================
