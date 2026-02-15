@@ -7,7 +7,7 @@ import 'package:flit/game/rendering/flat_map_renderer.dart';
 void main() {
   group('GameRegion enum', () {
     test('has all expected enum values', () {
-      final values = GameRegion.values;
+      const values = GameRegion.values;
       expect(values.length, equals(6));
       expect(values, contains(GameRegion.world));
       expect(values, contains(GameRegion.usStates));
