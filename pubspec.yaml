@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 0.1.0+1
 
 environment:
-  sdk: '>=3.6.0 <4.0.0'
+  sdk: '>=3.2.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -26,8 +26,8 @@ dependencies:
   flag: ^7.0.2
 
   # OSM tile map for descent mode (cross-platform: iOS, Android, Web)
-  # Built-in tile caching since v8.2 (1GB soft limit, auto on non-web)
-  flutter_map: ^8.2.2
+  # Pinned to v6 for Dart SDK 3.2 compatibility (Flutter 3.16)
+  flutter_map: ^6.1.0
   latlong2: ^0.9.1
 
   # Audio (cross-platform: iOS, Android, Web)
