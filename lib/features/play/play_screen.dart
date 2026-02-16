@@ -899,14 +899,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(
+                      children: [
+                        const Icon(
                           Icons.flight_takeoff,
                           color: FlitColors.accent,
                           size: 48,
                         ),
-                        SizedBox(height: 16),
-                        Text(
+                        const SizedBox(height: 16),
+                        const Text(
                           'Preparing Flight...',
                           style: TextStyle(
                             color: FlitColors.textPrimary,
