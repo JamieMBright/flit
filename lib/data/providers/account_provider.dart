@@ -154,13 +154,80 @@ class AccountNotifier extends StateNotifier<AccountState> {
     );
   }
 
-  /// Update best time if better
+  /// Update best time if better (overall).
   void updateBestTime(Duration time) {
     final current = state.currentPlayer.bestTime;
     if (current == null || time < current) {
       state = state.copyWith(
         currentPlayer: state.currentPlayer.copyWith(bestTime: time),
       );
+    }
+  }
+
+  /// Update best time for licensed play (with pilot license bonuses).
+  void updateBestTimeLicensed(Duration time) {
+    final current = state.currentPlayer.bestTimeLicensed;
+    if (current == null || time < current) {
+      state = state.copyWith(
+        currentPlayer: state.currentPlayer.copyWith(bestTimeLicensed: time),
+      );
+    }
+  }
+
+  /// Update best time for unlicensed play (raw skill, no bonuses).
+  void updateBestTimeUnlicensed(Duration time) {
+    final current = state.currentPlayer.bestTimeUnlicensed;
+    if (current == null || time < current) {
+      state = state.copyWith(
+        currentPlayer: state.currentPlayer.copyWith(bestTimeUnlicensed: time),
+      );
+    }
+  }
+
+  /// Add flight time to the cumulative total.
+  void addFlightTime(Duration time) {
+    state = state.copyWith(
+      currentPlayer: state.currentPlayer.copyWith(
+        totalFlightTime:
+            state.currentPlayer.totalFlightTime + time,
+      ),
+    );
+  }
+
+  /// Increment countries found counter.
+  void incrementCountriesFound({int count = 1}) {
+    state = state.copyWith(
+      currentPlayer: state.currentPlayer.copyWith(
+        countriesFound: state.currentPlayer.countriesFound + count,
+      ),
+    );
+  }
+
+  /// Record a completed game session — updates all relevant stats in one call.
+  void recordGameCompletion({
+    required Duration elapsed,
+    required int score,
+    required int roundsCompleted,
+    required bool hasLicenseBonus,
+    int coinReward = 0,
+  }) {
+    incrementGamesPlayed();
+    updateBestTime(elapsed);
+    addFlightTime(elapsed);
+    incrementCountriesFound(count: roundsCompleted);
+
+    if (hasLicenseBonus) {
+      updateBestTimeLicensed(elapsed);
+    } else {
+      updateBestTimeUnlicensed(elapsed);
+    }
+
+    // XP: base 50 + 10 per round + score/100
+    final xpEarned = 50 + (roundsCompleted * 10) + (score ~/ 100);
+    addXp(xpEarned);
+
+    if (coinReward > 0) {
+      addCoins(coinReward);
     }
   }
 

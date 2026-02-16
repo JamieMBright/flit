@@ -131,6 +131,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       MaterialPageRoute<void>(
         builder: (context) => PlayScreen(
           challengeFriendName: friend.name,
+          totalRounds: 5,
           planeColorScheme: plane?.colorScheme,
           planeWingSpan: plane?.wingSpan,
           equippedPlaneId: planeId,
@@ -139,6 +140,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           clueBoost: license.clueBoost,
           clueChance: license.clueChance,
           preferredClueType: license.preferredClueType,
+          enableFuel: true,
         ),
       ),
     ).then((_) {

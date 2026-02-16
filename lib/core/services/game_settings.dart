@@ -97,15 +97,19 @@ class GameSettings extends ChangeNotifier {
   }
 
   /// Tile URL template for the selected map style.
+  /// Appends `?language=en` to CARTO tiles when [englishLabels] is true.
   String get mapTileUrl {
+    final langSuffix = _englishLabels ? '?language=en' : '';
     switch (_mapStyle) {
       case MapStyle.standard:
+        // OSM default tiles don't support language parameter.
         return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
       case MapStyle.dark:
-        return 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+        return 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png$langSuffix';
       case MapStyle.voyager:
-        return 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+        return 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png$langSuffix';
       case MapStyle.topo:
+        // OpenTopoMap doesn't support language parameter.
         return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
     }
   }
@@ -122,6 +126,18 @@ class GameSettings extends ChangeNotifier {
       case MapStyle.topo:
         return 'Topo';
     }
+  }
+
+  /// Whether to force English labels on map tiles (where supported).
+  /// CARTO tiles (dark, voyager) support `?language=en`.
+  /// OpenStreetMap and OpenTopoMap always use local-language labels.
+  bool _englishLabels = true;
+
+  bool get englishLabels => _englishLabels;
+
+  set englishLabels(bool value) {
+    _englishLabels = value;
+    notifyListeners();
   }
 
   // ─── Gameplay ───────────────────────────────────────────────────

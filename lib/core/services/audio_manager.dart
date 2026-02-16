@@ -155,17 +155,17 @@ class AudioManager {
   static String _engineAsset(EngineType type) {
     switch (type) {
       case EngineType.biplane:
-        return 'audio/engines/biplane_engine.ogg';
+        return 'audio/engines/biplane_engine.mp3';
       case EngineType.prop:
-        return 'audio/engines/prop_engine.ogg';
+        return 'audio/engines/prop_engine.mp3';
       case EngineType.bomber:
-        return 'audio/engines/bomber_engine.ogg';
+        return 'audio/engines/bomber_engine.mp3';
       case EngineType.jet:
-        return 'audio/engines/jet_engine.ogg';
+        return 'audio/engines/jet_engine.mp3';
       case EngineType.rocket:
-        return 'audio/engines/rocket_engine.ogg';
+        return 'audio/engines/rocket_engine.mp3';
       case EngineType.wind:
-        return 'audio/engines/wind.ogg';
+        return 'audio/engines/wind.mp3';
     }
   }
 
@@ -173,17 +173,17 @@ class AudioManager {
   static String _sfxAsset(SfxType type) {
     switch (type) {
       case SfxType.cluePop:
-        return 'audio/sfx/clue_pop.ogg';
+        return 'audio/sfx/clue_pop.mp3';
       case SfxType.landingSuccess:
-        return 'audio/sfx/landing_success.ogg';
+        return 'audio/sfx/landing_success.mp3';
       case SfxType.coinCollect:
-        return 'audio/sfx/coin_collect.ogg';
+        return 'audio/sfx/coin_collect.mp3';
       case SfxType.uiClick:
-        return 'audio/sfx/ui_click.ogg';
+        return 'audio/sfx/ui_click.mp3';
       case SfxType.altitudeChange:
-        return 'audio/sfx/altitude_change.ogg';
+        return 'audio/sfx/altitude_change.mp3';
       case SfxType.boostStart:
-        return 'audio/sfx/boost_start.ogg';
+        return 'audio/sfx/boost_start.mp3';
     }
   }
 
@@ -225,9 +225,9 @@ class AudioManager {
 
   /// Available music tracks (shuffled per session).
   static const List<String> _musicTracks = [
-    'audio/music/lofi_track_01.ogg',
-    'audio/music/lofi_track_02.ogg',
-    'audio/music/lofi_track_03.ogg',
+    'audio/music/lofi_track_01.mp3',
+    'audio/music/lofi_track_02.mp3',
+    'audio/music/lofi_track_03.mp3',
   ];
 
   int _currentTrackIndex = 0;

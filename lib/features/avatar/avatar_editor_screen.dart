@@ -15,30 +15,20 @@ import 'avatar_widget.dart';
 class _AvatarPart {
   const _AvatarPart({
     required this.id,
-    required this.name,
-    required this.icon,
+    required this.label,
     this.price = 0,
-    this.requiredLevel = 0,
-    this.goldPrice = 0,
+    this.colorHex,
   });
 
   final String id;
-  final String name;
-  final IconData icon;
+  final String label;
   final int price;
 
-  /// Minimum player level to unlock this part via XP progression.
-  /// 0 means no level requirement.
-  final int requiredLevel;
+  /// Optional color hex for color-swatch categories (hair color, skin color).
+  final String? colorHex;
 
-  /// Gold cost to bypass the [requiredLevel] requirement.
-  /// 0 means no gold alternative (or no level gate).
-  final int goldPrice;
-
-  bool get isFree => price == 0 && requiredLevel == 0;
-
-  /// Whether this part has a level gate (XP-based unlock).
-  bool get hasLevelGate => requiredLevel > 0;
+  bool get isFree => price == 0;
+  bool get isColorSwatch => colorHex != null;
 }
 
 // =============================================================================
@@ -60,274 +50,151 @@ class _AvatarCategory {
   final List<_AvatarPart> parts;
 }
 
-const List<_AvatarCategory> _categories = [
-  // -- Body Type --
-  _AvatarCategory(
-    label: 'Body',
-    icon: Icons.accessibility_new,
-    configKey: 'bodyType',
-    parts: [
-      _AvatarPart(id: 'body_masculine', name: 'Boy', icon: Icons.male),
-      _AvatarPart(id: 'body_feminine', name: 'Girl', icon: Icons.female),
-    ],
-  ),
+/// Build the category list from the DiceBear Adventurer enums and pricing.
+List<_AvatarCategory> _buildCategories() {
+  return [
+    // -- Eyes (26 variants) --
+    _AvatarCategory(
+      label: 'Eyes',
+      icon: Icons.visibility,
+      configKey: 'eyes',
+      parts: AvatarEyes.values
+          .map((e) => _AvatarPart(
+                id: 'eyes_${e.name}',
+                label: e.name.replaceAll('variant', '#'),
+                price: AvatarConfig.eyesPrice(e),
+              ))
+          .toList(),
+    ),
 
-  // -- Face --
-  _AvatarCategory(
-    label: 'Face',
-    icon: Icons.face,
-    configKey: 'face',
-    parts: [
-      _AvatarPart(id: 'face_round', name: 'Round', icon: Icons.circle_outlined),
-      _AvatarPart(id: 'face_square', name: 'Square', icon: Icons.square_outlined),
-      _AvatarPart(id: 'face_oval', name: 'Oval', icon: Icons.egg_outlined),
-      _AvatarPart(
-        id: 'face_diamond',
-        name: 'Diamond',
-        icon: Icons.diamond_outlined,
-        price: 200,
-      ),
-      _AvatarPart(
-        id: 'face_heart',
-        name: 'Heart',
-        icon: Icons.favorite_outline,
-        price: 350,
-      ),
-    ],
-  ),
+    // -- Eyebrows (15 variants) --
+    _AvatarCategory(
+      label: 'Brows',
+      icon: Icons.remove,
+      configKey: 'eyebrows',
+      parts: AvatarEyebrows.values
+          .map((e) => _AvatarPart(
+                id: 'eyebrows_${e.name}',
+                label: e.name.replaceAll('variant', '#'),
+                price: AvatarConfig.eyebrowsPrice(e),
+              ))
+          .toList(),
+    ),
 
-  // -- Skin --
-  _AvatarCategory(
-    label: 'Skin',
-    icon: Icons.palette,
-    configKey: 'skin',
-    parts: [
-      _AvatarPart(id: 'skin_light', name: 'Light', icon: Icons.light_mode),
-      _AvatarPart(id: 'skin_fair', name: 'Fair', icon: Icons.wb_sunny_outlined),
-      _AvatarPart(id: 'skin_medium', name: 'Medium', icon: Icons.contrast),
-      _AvatarPart(id: 'skin_tan', name: 'Tan', icon: Icons.wb_twilight),
-      _AvatarPart(id: 'skin_brown', name: 'Brown', icon: Icons.dark_mode_outlined),
-      _AvatarPart(id: 'skin_dark', name: 'Dark', icon: Icons.nights_stay_outlined),
-    ],
-  ),
+    // -- Mouth (30 variants) --
+    _AvatarCategory(
+      label: 'Mouth',
+      icon: Icons.mood,
+      configKey: 'mouth',
+      parts: AvatarMouth.values
+          .map((e) => _AvatarPart(
+                id: 'mouth_${e.name}',
+                label: e.name.replaceAll('variant', '#'),
+                price: AvatarConfig.mouthPrice(e),
+              ))
+          .toList(),
+    ),
 
-  // -- Eyes --
-  _AvatarCategory(
-    label: 'Eyes',
-    icon: Icons.visibility,
-    configKey: 'eyes',
-    parts: [
-      _AvatarPart(id: 'eyes_round', name: 'Round', icon: Icons.remove_red_eye_outlined),
-      _AvatarPart(id: 'eyes_almond', name: 'Almond', icon: Icons.visibility_outlined),
-      _AvatarPart(id: 'eyes_wide', name: 'Wide', icon: Icons.sentiment_satisfied),
-      _AvatarPart(id: 'eyes_narrow', name: 'Narrow', icon: Icons.bedtime_outlined),
-      _AvatarPart(
-        id: 'eyes_wink',
-        name: 'Wink',
-        icon: Icons.mood,
-        price: 150,
-      ),
-    ],
-  ),
+    // -- Hair (46 variants) --
+    _AvatarCategory(
+      label: 'Hair',
+      icon: Icons.content_cut,
+      configKey: 'hair',
+      parts: AvatarHair.values
+          .map((e) => _AvatarPart(
+                id: 'hair_${e.name}',
+                label: e.label,
+                price: AvatarConfig.hairPrice(e),
+              ))
+          .toList(),
+    ),
 
-  // -- Hair --
-  _AvatarCategory(
-    label: 'Hair',
-    icon: Icons.content_cut,
-    configKey: 'hair',
-    parts: [
-      _AvatarPart(id: 'hair_none', name: 'None', icon: Icons.block),
-      _AvatarPart(id: 'hair_short', name: 'Short', icon: Icons.person),
-      _AvatarPart(id: 'hair_medium', name: 'Medium', icon: Icons.person_outline),
-      _AvatarPart(id: 'hair_long', name: 'Long', icon: Icons.face_retouching_natural),
-      _AvatarPart(
-        id: 'hair_mohawk',
-        name: 'Mohawk',
-        icon: Icons.whatshot,
-        price: 400,
-      ),
-      _AvatarPart(
-        id: 'hair_curly',
-        name: 'Curly',
-        icon: Icons.bubble_chart,
-        price: 400,
-      ),
-      _AvatarPart(
-        id: 'hair_afro',
-        name: 'Afro',
-        icon: Icons.circle,
-        price: 500,
-      ),
-      _AvatarPart(
-        id: 'hair_ponytail',
-        name: 'Ponytail',
-        icon: Icons.bolt,
-        price: 600,
-      ),
-    ],
-  ),
+    // -- Hair Color (14 colors) --
+    _AvatarCategory(
+      label: 'Hair Color',
+      icon: Icons.color_lens,
+      configKey: 'hairColor',
+      parts: AvatarHairColor.values
+          .map((c) => _AvatarPart(
+                id: 'hairColor_${c.name}',
+                label: c.label,
+                price: AvatarConfig.hairColorPrice(c),
+                colorHex: c.hex,
+              ))
+          .toList(),
+    ),
 
-  // -- Outfit --
-  _AvatarCategory(
-    label: 'Outfit',
-    icon: Icons.checkroom,
-    configKey: 'outfit',
-    parts: [
-      _AvatarPart(id: 'outfit_tshirt', name: 'T-Shirt', icon: Icons.dry_cleaning),
-      _AvatarPart(
-        id: 'outfit_pilot',
-        name: 'Pilot',
-        icon: Icons.flight,
-        price: 300,
-      ),
-      _AvatarPart(
-        id: 'outfit_suit',
-        name: 'Suit',
-        icon: Icons.business_center,
-        price: 600,
-      ),
-      _AvatarPart(
-        id: 'outfit_leather',
-        name: 'Leather',
-        icon: Icons.layers,
-        price: 1000,
-      ),
-      _AvatarPart(
-        id: 'outfit_spacesuit',
-        name: 'Spacesuit',
-        icon: Icons.rocket_launch,
-        price: 1500,
-        requiredLevel: 15,
-        goldPrice: 3500,
-      ),
-      _AvatarPart(
-        id: 'outfit_captain',
-        name: 'Captain',
-        icon: Icons.anchor,
-        price: 2000,
-        requiredLevel: 20,
-        goldPrice: 5000,
-      ),
-    ],
-  ),
+    // -- Skin Color (4 tones) --
+    _AvatarCategory(
+      label: 'Skin',
+      icon: Icons.palette,
+      configKey: 'skinColor',
+      parts: AvatarSkinColor.values
+          .map((c) => _AvatarPart(
+                id: 'skinColor_${c.name}',
+                label: c.label,
+                price: 0,
+                colorHex: c.hex,
+              ))
+          .toList(),
+    ),
 
-  // -- Hat --
-  _AvatarCategory(
-    label: 'Hat',
-    icon: Icons.hdr_strong,
-    configKey: 'hat',
-    parts: [
-      _AvatarPart(id: 'hat_none', name: 'None', icon: Icons.block),
-      _AvatarPart(id: 'hat_cap', name: 'Cap', icon: Icons.sports_baseball),
-      _AvatarPart(
-        id: 'hat_aviator',
-        name: 'Aviator',
-        icon: Icons.flight_takeoff,
-        price: 400,
-      ),
-      _AvatarPart(
-        id: 'hat_tophat',
-        name: 'Top Hat',
-        icon: Icons.vertical_align_top,
-        price: 800,
-      ),
-      _AvatarPart(
-        id: 'hat_crown',
-        name: 'Crown',
-        icon: Icons.workspace_premium,
-        price: 2000,
-        requiredLevel: 15,
-        goldPrice: 5000,
-      ),
-      _AvatarPart(
-        id: 'hat_helmet',
-        name: 'Helmet',
-        icon: Icons.shield,
-        price: 3000,
-        requiredLevel: 25,
-        goldPrice: 7000,
-      ),
-    ],
-  ),
+    // -- Glasses (6 options incl. none) --
+    _AvatarCategory(
+      label: 'Glasses',
+      icon: Icons.remove_red_eye,
+      configKey: 'glasses',
+      parts: AvatarGlasses.values
+          .map((g) => _AvatarPart(
+                id: 'glasses_${g.name}',
+                label: g == AvatarGlasses.none
+                    ? 'None'
+                    : g.name.replaceAll('variant', '#'),
+                price: AvatarConfig.glassesPrice(g),
+              ))
+          .toList(),
+    ),
 
-  // -- Glasses --
-  _AvatarCategory(
-    label: 'Glasses',
-    icon: Icons.remove_red_eye,
-    configKey: 'glasses',
-    parts: [
-      _AvatarPart(id: 'glasses_none', name: 'None', icon: Icons.block),
-      _AvatarPart(id: 'glasses_round', name: 'Round', icon: Icons.lens_outlined),
-      _AvatarPart(
-        id: 'glasses_aviator',
-        name: 'Aviator',
-        icon: Icons.airplanemode_active,
-        price: 300,
-      ),
-      _AvatarPart(
-        id: 'glasses_monocle',
-        name: 'Monocle',
-        icon: Icons.search,
-        price: 800,
-      ),
-      _AvatarPart(
-        id: 'glasses_futuristic',
-        name: 'Visor',
-        icon: Icons.vrpano,
-        price: 1500,
-      ),
-    ],
-  ),
+    // -- Earrings (7 options incl. none) --
+    _AvatarCategory(
+      label: 'Earrings',
+      icon: Icons.radio_button_unchecked,
+      configKey: 'earrings',
+      parts: AvatarEarrings.values
+          .map((e) => _AvatarPart(
+                id: 'earrings_${e.name}',
+                label: e == AvatarEarrings.none
+                    ? 'None'
+                    : e.name.replaceAll('variant', '#'),
+                price: AvatarConfig.earringsPrice(e),
+              ))
+          .toList(),
+    ),
 
-  // -- Accessories --
-  _AvatarCategory(
-    label: 'Accessories',
-    icon: Icons.auto_awesome,
-    configKey: 'accessory',
-    parts: [
-      _AvatarPart(id: 'acc_none', name: 'None', icon: Icons.block),
-      _AvatarPart(
-        id: 'acc_scarf',
-        name: 'Scarf',
-        icon: Icons.waves,
-        price: 500,
-      ),
-      _AvatarPart(
-        id: 'acc_medal',
-        name: 'Medal',
-        icon: Icons.military_tech,
-        price: 1000,
-      ),
-      _AvatarPart(
-        id: 'acc_earring',
-        name: 'Earring',
-        icon: Icons.radio_button_unchecked,
-        price: 1500,
-      ),
-      _AvatarPart(
-        id: 'acc_goldChain',
-        name: 'Gold Chain',
-        icon: Icons.all_inclusive,
-        price: 3000,
-      ),
-      _AvatarPart(
-        id: 'acc_parrot',
-        name: 'Parrot',
-        icon: Icons.pets,
-        price: 5000,
-      ),
-    ],
-  ),
-];
+    // -- Features (5 options incl. none) --
+    _AvatarCategory(
+      label: 'Features',
+      icon: Icons.auto_awesome,
+      configKey: 'feature',
+      parts: AvatarFeature.values
+          .map((f) => _AvatarPart(
+                id: 'feature_${f.name}',
+                label: f.label,
+                price: 0,
+              ))
+          .toList(),
+    ),
+  ];
+}
 
 // =============================================================================
 // Avatar Editor Screen
 // =============================================================================
 
-/// Full-screen avatar customisation editor.
+/// Full-screen avatar customisation editor using DiceBear Adventurer style.
 ///
-/// Players can browse categories, preview different avatar parts, purchase
-/// locked items with coins, and save their chosen configuration.
+/// Players can browse categories, preview different avatar parts via the
+/// live DiceBear preview, purchase locked items with coins, and save.
 class AvatarEditorScreen extends ConsumerStatefulWidget {
   const AvatarEditorScreen({super.key});
 
@@ -342,12 +209,14 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
   /// Index of the active category tab.
   int _selectedCategory = 0;
 
+  /// Cached category list (built once).
+  late final List<_AvatarCategory> _categories;
+
   @override
   void initState() {
     super.initState();
-    // Load current avatar config from account state so edits start from
-    // the player's existing avatar rather than the default.
     _config = ref.read(accountProvider).avatar;
+    _categories = _buildCategories();
   }
 
   // ---------------------------------------------------------------------------
@@ -357,83 +226,73 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
   /// Returns the currently selected part id for the given [categoryKey].
   String _selectedPartForCategory(String categoryKey) {
     switch (categoryKey) {
-      case 'bodyType':
-        return 'body_${_config.bodyType.name}';
-      case 'face':
-        return 'face_${_config.face.name}';
-      case 'skin':
-        return 'skin_${_config.skin.name}';
       case 'eyes':
         return 'eyes_${_config.eyes.name}';
+      case 'eyebrows':
+        return 'eyebrows_${_config.eyebrows.name}';
+      case 'mouth':
+        return 'mouth_${_config.mouth.name}';
       case 'hair':
         return 'hair_${_config.hair.name}';
-      case 'outfit':
-        return 'outfit_${_config.outfit.name}';
-      case 'hat':
-        return 'hat_${_config.hat.name}';
+      case 'hairColor':
+        return 'hairColor_${_config.hairColor.name}';
+      case 'skinColor':
+        return 'skinColor_${_config.skinColor.name}';
       case 'glasses':
         return 'glasses_${_config.glasses.name}';
-      case 'accessory':
-        return 'acc_${_config.accessory.name}';
+      case 'earrings':
+        return 'earrings_${_config.earrings.name}';
+      case 'feature':
+        return 'feature_${_config.feature.name}';
       default:
         return '';
     }
   }
 
-  /// Extracts the enum name suffix from a part ID.
-  /// e.g. 'face_round' → 'round', 'acc_goldChain' → 'goldChain'
-  static String _enumName(String prefix, String partId) {
-    return partId.substring(prefix.length + 1);
-  }
-
   /// Updates `_config` so that [categoryKey] now points to [partId].
   void _selectPart(String categoryKey, String partId) {
     setState(() {
+      final suffix = partId.substring(partId.indexOf('_') + 1);
       switch (categoryKey) {
-        case 'bodyType':
-          final name = _enumName('body', partId);
-          _config = _config.copyWith(
-            bodyType: AvatarBodyType.values.firstWhere((v) => v.name == name),
-          );
-        case 'face':
-          final name = _enumName('face', partId);
-          _config = _config.copyWith(
-            face: AvatarFace.values.firstWhere((v) => v.name == name),
-          );
-        case 'skin':
-          final name = _enumName('skin', partId);
-          _config = _config.copyWith(
-            skin: AvatarSkin.values.firstWhere((v) => v.name == name),
-          );
         case 'eyes':
-          final name = _enumName('eyes', partId);
           _config = _config.copyWith(
-            eyes: AvatarEyes.values.firstWhere((v) => v.name == name),
+            eyes: AvatarEyes.values.firstWhere((v) => v.name == suffix),
+          );
+        case 'eyebrows':
+          _config = _config.copyWith(
+            eyebrows:
+                AvatarEyebrows.values.firstWhere((v) => v.name == suffix),
+          );
+        case 'mouth':
+          _config = _config.copyWith(
+            mouth: AvatarMouth.values.firstWhere((v) => v.name == suffix),
           );
         case 'hair':
-          final name = _enumName('hair', partId);
           _config = _config.copyWith(
-            hair: AvatarHair.values.firstWhere((v) => v.name == name),
+            hair: AvatarHair.values.firstWhere((v) => v.name == suffix),
           );
-        case 'outfit':
-          final name = _enumName('outfit', partId);
+        case 'hairColor':
           _config = _config.copyWith(
-            outfit: AvatarOutfit.values.firstWhere((v) => v.name == name),
+            hairColor:
+                AvatarHairColor.values.firstWhere((v) => v.name == suffix),
           );
-        case 'hat':
-          final name = _enumName('hat', partId);
+        case 'skinColor':
           _config = _config.copyWith(
-            hat: AvatarHat.values.firstWhere((v) => v.name == name),
+            skinColor:
+                AvatarSkinColor.values.firstWhere((v) => v.name == suffix),
           );
         case 'glasses':
-          final name = _enumName('glasses', partId);
           _config = _config.copyWith(
-            glasses: AvatarGlasses.values.firstWhere((v) => v.name == name),
+            glasses: AvatarGlasses.values.firstWhere((v) => v.name == suffix),
           );
-        case 'accessory':
-          final name = _enumName('acc', partId);
+        case 'earrings':
           _config = _config.copyWith(
-            accessory: AvatarAccessory.values.firstWhere((v) => v.name == name),
+            earrings:
+                AvatarEarrings.values.firstWhere((v) => v.name == suffix),
+          );
+        case 'feature':
+          _config = _config.copyWith(
+            feature: AvatarFeature.values.firstWhere((v) => v.name == suffix),
           );
       }
     });
@@ -441,7 +300,8 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
 
   /// Whether the player can use [part] (either free or already owned).
   bool _canUsePart(_AvatarPart part) =>
-      part.isFree || ref.read(accountProvider).ownedAvatarParts.contains(part.id);
+      part.isFree ||
+      ref.read(accountProvider).ownedAvatarParts.contains(part.id);
 
   // ---------------------------------------------------------------------------
   // Dialogs
@@ -449,12 +309,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
 
   void _showPurchaseDialog(_AvatarPart part, String categoryKey) {
     final coins = ref.read(currentCoinsProvider);
-    final level = ref.read(currentLevelProvider);
     final canAfford = coins >= part.price;
-    final meetsLevel = !part.hasLevelGate || level >= part.requiredLevel;
-    final canBuyWithGold = part.hasLevelGate && !meetsLevel && coins >= part.goldPrice;
-    // Player can buy if: meets level + has coins, OR can pay gold bypass price
-    final canBuy = (meetsLevel && canAfford) || canBuyWithGold;
 
     showDialog<void>(
       context: context,
@@ -465,24 +320,12 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
           side: const BorderSide(color: FlitColors.cardBorder),
         ),
         title: Text(
-          'Unlock ${part.name}?',
+          'Unlock ${part.label}?',
           style: const TextStyle(color: FlitColors.textPrimary),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Part icon preview
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: FlitColors.backgroundMid,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(part.icon, color: FlitColors.accent, size: 32),
-            ),
-            const SizedBox(height: 16),
-            // Unlock conditions info box
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -491,34 +334,6 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
               ),
               child: Column(
                 children: [
-                  // XP / Level unlock path
-                  if (part.hasLevelGate) ...[
-                    Row(
-                      children: [
-                        Icon(
-                          meetsLevel ? Icons.check_circle : Icons.lock,
-                          color: meetsLevel ? FlitColors.success : FlitColors.textMuted,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            meetsLevel
-                                ? 'Level ${part.requiredLevel} reached'
-                                : 'Reach Level ${part.requiredLevel} (you are Lv.$level)',
-                            style: TextStyle(
-                              color: meetsLevel
-                                  ? FlitColors.success
-                                  : FlitColors.textSecondary,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                  ],
-                  // Coin price row
                   Row(
                     children: [
                       Icon(
@@ -528,9 +343,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        meetsLevel || !part.hasLevelGate
-                            ? '${part.price} coins'
-                            : '${part.price} coins (after reaching Lv.${part.requiredLevel})',
+                        '${part.price} coins',
                         style: TextStyle(
                           color: canAfford
                               ? FlitColors.textSecondary
@@ -540,36 +353,11 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                       ),
                     ],
                   ),
-                  // Gold bypass option
-                  if (part.hasLevelGate && !meetsLevel) ...[
-                    const Divider(color: FlitColors.cardBorder, height: 16),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.bolt,
-                          color: canBuyWithGold ? FlitColors.gold : FlitColors.textMuted,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            'Skip level: ${part.goldPrice} coins',
-                            style: TextStyle(
-                              color: canBuyWithGold
-                                  ? FlitColors.gold
-                                  : FlitColors.textMuted,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.info_outline, color: FlitColors.textMuted, size: 16),
+                      const Icon(Icons.info_outline,
+                          color: FlitColors.textMuted, size: 16),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text.rich(
@@ -577,7 +365,8 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                             children: [
                               const TextSpan(
                                 text: 'Play games to earn coins or ',
-                                style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
+                                style: TextStyle(
+                                    color: FlitColors.textMuted, fontSize: 11),
                               ),
                               WidgetSpan(
                                 alignment: PlaceholderAlignment.baseline,
@@ -587,7 +376,8 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                                     Navigator.of(dialogContext).pop();
                                     Navigator.of(context).push(
                                       MaterialPageRoute<void>(
-                                        builder: (_) => const ShopScreen(initialTabIndex: 2),
+                                        builder: (_) =>
+                                            const ShopScreen(initialTabIndex: 2),
                                       ),
                                     );
                                   },
@@ -612,13 +402,14 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                 ],
               ),
             ),
-            if (!canBuy) ...[
+            if (!canAfford) ...[
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: () {
                   Navigator.of(dialogContext).pop();
                   Navigator.of(context).push(
-                    MaterialPageRoute<void>(builder: (_) => const ShopScreen()),
+                    MaterialPageRoute<void>(
+                        builder: (_) => const ShopScreen()),
                   );
                 },
                 child: const Text(
@@ -641,70 +432,43 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
               style: TextStyle(color: FlitColors.textMuted),
             ),
           ),
-          if (part.hasLevelGate && !meetsLevel && canBuyWithGold)
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                ref.read(accountProvider.notifier).purchaseAvatarPart(part.id, part.goldPrice);
-                _selectPart(categoryKey, part.id);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Unlocked ${part.name} with gold!'),
-                    backgroundColor: FlitColors.gold,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: FlitColors.gold,
-                foregroundColor: FlitColors.backgroundDark,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('Buy with Gold'),
-            ),
-          if (meetsLevel || !part.hasLevelGate)
-            ElevatedButton(
-              onPressed: canAfford
-                  ? () {
-                      Navigator.of(dialogContext).pop();
-                      ref.read(accountProvider.notifier).purchaseAvatarPart(part.id, part.price);
-                      _selectPart(categoryKey, part.id);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Unlocked ${part.name}!'),
-                          backgroundColor: FlitColors.success,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+          ElevatedButton(
+            onPressed: canAfford
+                ? () {
+                    Navigator.of(dialogContext).pop();
+                    ref
+                        .read(accountProvider.notifier)
+                        .purchaseAvatarPart(part.id, part.price);
+                    _selectPart(categoryKey, part.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Unlocked ${part.label}!'),
+                        backgroundColor: FlitColors.success,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      );
-                    }
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: FlitColors.accent,
-                foregroundColor: FlitColors.textPrimary,
-                disabledBackgroundColor: FlitColors.textMuted.withOpacity(0.3),
-                disabledForegroundColor: FlitColors.textMuted,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                      ),
+                    );
+                  }
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FlitColors.accent,
+              foregroundColor: FlitColors.textPrimary,
+              disabledBackgroundColor: FlitColors.textMuted.withOpacity(0.3),
+              disabledForegroundColor: FlitColors.textMuted,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text('Buy'),
             ),
+            child: const Text('Buy'),
+          ),
         ],
       ),
     );
   }
 
   void _saveConfig() {
-    // Persist avatar configuration through the account provider so it
-    // survives navigation back to the profile menu and through gameplay.
     ref.read(accountProvider.notifier).updateAvatar(_config);
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -729,88 +493,88 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
     final ownedParts = ref.watch(accountProvider).ownedAvatarParts;
 
     return Scaffold(
-        backgroundColor: FlitColors.backgroundDark,
-        appBar: AppBar(
-          backgroundColor: FlitColors.backgroundMid,
-          title: const Text('Edit Avatar'),
-          centerTitle: true,
-          actions: [
-            // Coin balance pill
-            GestureDetector(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const ShopScreen(initialTabIndex: 2),
-                ),
-              ),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                margin: const EdgeInsets.only(right: 16),
-                decoration: BoxDecoration(
-                  color: FlitColors.warning.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.monetization_on,
-                      color: FlitColors.warning,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      coins.toString(),
-                      style: const TextStyle(
-                        color: FlitColors.warning,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
+      backgroundColor: FlitColors.backgroundDark,
+      appBar: AppBar(
+        backgroundColor: FlitColors.backgroundMid,
+        title: const Text('Edit Avatar'),
+        centerTitle: true,
+        actions: [
+          // Coin balance pill
+          GestureDetector(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const ShopScreen(initialTabIndex: 2),
               ),
             ),
-          ],
-        ),
-        body: Column(
-          children: [
-            // -- Avatar preview --
-            _AvatarPreviewSection(config: _config),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              margin: const EdgeInsets.only(right: 16),
+              decoration: BoxDecoration(
+                color: FlitColors.warning.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.monetization_on,
+                    color: FlitColors.warning,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    coins.toString(),
+                    style: const TextStyle(
+                      color: FlitColors.warning,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // -- Avatar preview --
+          _AvatarPreviewSection(config: _config),
 
-            // -- Category tabs --
-            _CategoryTabBar(
-              categories: _categories,
-              selectedIndex: _selectedCategory,
-              onSelected: (index) {
-                setState(() => _selectedCategory = index);
+          // -- Category tabs --
+          _CategoryTabBar(
+            categories: _categories,
+            selectedIndex: _selectedCategory,
+            onSelected: (index) {
+              setState(() => _selectedCategory = index);
+            },
+          ),
+
+          // -- Parts grid --
+          Expanded(
+            child: _PartsGrid(
+              category: _categories[_selectedCategory],
+              selectedPartId: _selectedPartForCategory(
+                _categories[_selectedCategory].configKey,
+              ),
+              ownedParts: ownedParts,
+              coins: coins,
+              onPartTapped: (part) {
+                final key = _categories[_selectedCategory].configKey;
+                if (_canUsePart(part)) {
+                  _selectPart(key, part.id);
+                } else {
+                  _showPurchaseDialog(part, key);
+                }
               },
             ),
+          ),
 
-            // -- Parts grid --
-            Expanded(
-              child: _PartsGrid(
-                category: _categories[_selectedCategory],
-                selectedPartId: _selectedPartForCategory(
-                  _categories[_selectedCategory].configKey,
-                ),
-                ownedParts: ownedParts,
-                coins: coins,
-                baseConfig: _config,
-                onPartTapped: (part) {
-                  final key = _categories[_selectedCategory].configKey;
-                  if (_canUsePart(part)) {
-                    _selectPart(key, part.id);
-                  } else {
-                    _showPurchaseDialog(part, key);
-                  }
-                },
-              ),
-            ),
-
-            // -- Save button --
-            _SaveBar(coins: coins, onSave: _saveConfig),
-          ],
-        ),
-      );
+          // -- Save button --
+          _SaveBar(coins: coins, onSave: _saveConfig),
+        ],
+      ),
+    );
   }
 }
 
@@ -946,7 +710,6 @@ class _PartsGrid extends StatelessWidget {
     required this.selectedPartId,
     required this.ownedParts,
     required this.coins,
-    required this.baseConfig,
     required this.onPartTapped,
   });
 
@@ -954,74 +717,16 @@ class _PartsGrid extends StatelessWidget {
   final String selectedPartId;
   final Set<String> ownedParts;
   final int coins;
-  final AvatarConfig baseConfig;
   final void Function(_AvatarPart) onPartTapped;
-
-  /// Build a preview config with a specific part applied.
-  static AvatarConfig _previewConfig(
-    AvatarConfig base,
-    String configKey,
-    String partId,
-  ) {
-    switch (configKey) {
-      case 'bodyType':
-        final name = partId.substring('body_'.length);
-        return base.copyWith(
-          bodyType: AvatarBodyType.values.firstWhere((v) => v.name == name),
-        );
-      case 'face':
-        final name = partId.substring('face_'.length);
-        return base.copyWith(
-          face: AvatarFace.values.firstWhere((v) => v.name == name),
-        );
-      case 'skin':
-        final name = partId.substring('skin_'.length);
-        return base.copyWith(
-          skin: AvatarSkin.values.firstWhere((v) => v.name == name),
-        );
-      case 'eyes':
-        final name = partId.substring('eyes_'.length);
-        return base.copyWith(
-          eyes: AvatarEyes.values.firstWhere((v) => v.name == name),
-        );
-      case 'hair':
-        final name = partId.substring('hair_'.length);
-        return base.copyWith(
-          hair: AvatarHair.values.firstWhere((v) => v.name == name),
-        );
-      case 'outfit':
-        final name = partId.substring('outfit_'.length);
-        return base.copyWith(
-          outfit: AvatarOutfit.values.firstWhere((v) => v.name == name),
-        );
-      case 'hat':
-        final name = partId.substring('hat_'.length);
-        return base.copyWith(
-          hat: AvatarHat.values.firstWhere((v) => v.name == name),
-        );
-      case 'glasses':
-        final name = partId.substring('glasses_'.length);
-        return base.copyWith(
-          glasses: AvatarGlasses.values.firstWhere((v) => v.name == name),
-        );
-      case 'accessory':
-        final name = partId.substring('acc_'.length);
-        return base.copyWith(
-          accessory: AvatarAccessory.values.firstWhere((v) => v.name == name),
-        );
-      default:
-        return base;
-    }
-  }
 
   @override
   Widget build(BuildContext context) => GridView.builder(
         padding: const EdgeInsets.all(16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.78,
+          crossAxisCount: 4,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 0.85,
         ),
         itemCount: category.parts.length,
         itemBuilder: (context, index) {
@@ -1030,8 +735,6 @@ class _PartsGrid extends StatelessWidget {
           final isOwned = part.isFree || ownedParts.contains(part.id);
           final canAfford = coins >= part.price;
           final isLocked = !isOwned && !part.isFree;
-          final previewConfig =
-              _previewConfig(baseConfig, category.configKey, part.id);
 
           return _PartCard(
             part: part,
@@ -1039,7 +742,6 @@ class _PartsGrid extends StatelessWidget {
             isOwned: isOwned,
             isLocked: isLocked,
             canAfford: canAfford,
-            previewConfig: previewConfig,
             onTap: () => onPartTapped(part),
           );
         },
@@ -1057,7 +759,6 @@ class _PartCard extends StatelessWidget {
     required this.isOwned,
     required this.isLocked,
     required this.canAfford,
-    required this.previewConfig,
     required this.onTap,
   });
 
@@ -1066,7 +767,6 @@ class _PartCard extends StatelessWidget {
   final bool isOwned;
   final bool isLocked;
   final bool canAfford;
-  final AvatarConfig previewConfig;
   final VoidCallback onTap;
 
   @override
@@ -1088,11 +788,11 @@ class _PartCard extends StatelessWidget {
             children: [
               // Main content
               Padding(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(6),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Avatar art preview
+                    // Visual preview area
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
@@ -1100,27 +800,23 @@ class _PartCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Center(
-                          child: AvatarWidget(
-                            config: previewConfig,
-                            size: 64,
-                          ),
+                          child: part.isColorSwatch
+                              ? _ColorSwatch(hex: part.colorHex!)
+                              : Text(
+                                  part.label,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? FlitColors.accent
+                                        : FlitColors.textPrimary,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-
-                    // Name
-                    Text(
-                      part.name,
-                      style: TextStyle(
-                        color: isLocked && !canAfford
-                            ? FlitColors.textMuted
-                            : FlitColors.textPrimary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
 
@@ -1130,7 +826,7 @@ class _PartCard extends StatelessWidget {
                         'FREE',
                         style: TextStyle(
                           color: FlitColors.success,
-                          fontSize: 11,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
                         ),
@@ -1140,46 +836,35 @@ class _PartCard extends StatelessWidget {
                         'OWNED',
                         style: TextStyle(
                           color: FlitColors.textSecondary,
-                          fontSize: 11,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
                         ),
                       )
-                    else ...[
+                    else
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.monetization_on,
-                            size: 13,
-                            color: canAfford
-                                ? FlitColors.warning
-                                : FlitColors.error,
+                            size: 11,
+                            color:
+                                canAfford ? FlitColors.warning : FlitColors.error,
                           ),
-                          const SizedBox(width: 3),
+                          const SizedBox(width: 2),
                           Text(
                             '${part.price}',
                             style: TextStyle(
                               color: canAfford
                                   ? FlitColors.warning
                                   : FlitColors.error,
-                              fontSize: 11,
+                              fontSize: 10,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
-                      if (part.hasLevelGate)
-                        Text(
-                          'Lv.${part.requiredLevel}',
-                          style: const TextStyle(
-                            color: FlitColors.gold,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                    ],
                   ],
                 ),
               ),
@@ -1187,18 +872,18 @@ class _PartCard extends StatelessWidget {
               // Selected check badge
               if (isSelected)
                 Positioned(
-                  top: 6,
-                  right: 6,
+                  top: 4,
+                  right: 4,
                   child: Container(
-                    width: 20,
-                    height: 20,
+                    width: 18,
+                    height: 18,
                     decoration: const BoxDecoration(
                       color: FlitColors.accent,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.check,
-                      size: 14,
+                      size: 12,
                       color: FlitColors.textPrimary,
                     ),
                   ),
@@ -1216,7 +901,7 @@ class _PartCard extends StatelessWidget {
                       child: Icon(
                         Icons.lock,
                         color: FlitColors.textMuted,
-                        size: 28,
+                        size: 24,
                       ),
                     ),
                   ),
@@ -1225,6 +910,39 @@ class _PartCard extends StatelessWidget {
           ),
         ),
       );
+}
+
+// =============================================================================
+// Color Swatch
+// =============================================================================
+
+class _ColorSwatch extends StatelessWidget {
+  const _ColorSwatch({required this.hex});
+
+  final String hex;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Color(int.parse('FF$hex', radix: 16));
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: FlitColors.cardBorder,
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.3),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // =============================================================================

@@ -44,6 +44,13 @@ const double _rad2deg = 180 / pi;
 /// Speed levels for flight control.
 enum FlightSpeed { slow, medium, fast }
 
+/// Phases of the game launch animation.
+///
+/// [positioning] — Globe snaps to start position, black overlay covers screen.
+/// [flyIn] — Plane animates from bottom of screen to final position.
+/// [playing] — Normal gameplay.
+enum LaunchPhase { none, positioning, flyIn, playing }
+
 class FlitGame extends FlameGame
     with HasKeyboardHandlerComponents, TapDetector {
   FlitGame({
@@ -215,6 +222,54 @@ class FlitGame extends FlameGame
   /// Duration of the country entry flash animation.
   static const double _countryFlashDuration = 1.5;
 
+  // -- Launch animation state --
+
+  /// Current phase of the launch intro animation.
+  LaunchPhase _launchPhase = LaunchPhase.none;
+
+  /// Timer within the current launch phase (seconds).
+  double _launchTimer = 0.0;
+
+  /// Duration of the positioning phase (globe snaps to start position).
+  static const double _positioningDuration = 1.0;
+
+  /// Duration of the plane fly-in animation.
+  static const double _flyInDuration = 0.8;
+
+  // -- Fuel system --
+
+  /// Whether fuel mechanics are active for this session.
+  /// Off for free flight; on for training, daily, dogfight.
+  bool _fuelEnabled = false;
+
+  /// Current fuel level (0.0 = empty, 1.0 = full tank).
+  double _fuel = 1.0;
+
+  /// Base fuel burn rate per second at normal speed.
+  /// At 1/60 per second, a full tank lasts exactly 60 seconds.
+  static const double _baseFuelBurnRate = 1.0 / 60.0;
+
+  /// Callback when fuel runs out.
+  void Function()? onFuelEmpty;
+
+  /// Current fuel level (0.0–1.0).
+  double get fuel => _fuel;
+
+  /// Whether fuel is enabled for this session.
+  bool get fuelEnabled => _fuelEnabled;
+
+  /// Enable or disable fuel for this session.
+  set fuelEnabled(bool value) => _fuelEnabled = value;
+
+  /// Refuel the tank (called when a clue is answered correctly).
+  /// The license boost extends how much fuel is restored.
+  void refuel() {
+    if (!_fuelEnabled) return;
+    // Restore fuel, license boost adds extra: base * (1 + boost%)
+    final refuelAmount = 1.0 * fuelBoostMultiplier;
+    _fuel = (_fuel + refuelAmount).clamp(0.0, 1.0);
+  }
+
   bool get isPlaying => _isPlaying;
   bool get isHighAltitude => _plane.isHighAltitude;
   PlaneComponent get plane => _plane;
@@ -227,6 +282,14 @@ class FlitGame extends FlameGame
   /// Flash animation progress when entering a new country (1.0 = full flash, 0.0 = no flash).
   double get countryFlashProgress =>
       (_countryFlashTimer / _countryFlashDuration).clamp(0.0, 1.0);
+
+  /// Current launch animation phase.
+  LaunchPhase get launchPhase => _launchPhase;
+
+  /// Whether the game is in the launch intro (positioning or fly-in).
+  bool get isInLaunchIntro =>
+      _launchPhase == LaunchPhase.positioning ||
+      _launchPhase == LaunchPhase.flyIn;
 
   /// Current waymarker position (lng, lat) or null if none set.
   Vector2? get waymarker => _waymarker;
@@ -469,10 +532,18 @@ class FlitGame extends FlameGame
   static const double _speedToAngular = pi / 1800;
 
   @override
-  Color backgroundColor() =>
-      _planeReady && !_plane.isHighAltitude
-          ? const Color(0x00000000)
-          : FlitColors.oceanDeep;
+  Color backgroundColor() {
+    if (_planeReady) {
+      final alt = _plane.continuousAltitude;
+      if (alt < 0.6) {
+        // Fade background to transparent as altitude drops below 0.6,
+        // allowing the DescentMapView behind to show through smoothly.
+        final alpha = (alt / 0.6).clamp(0.0, 1.0);
+        return FlitColors.oceanDeep.withOpacity(alpha);
+      }
+    }
+    return FlitColors.oceanDeep;
+  }
 
   @override
   Future<void> onLoad() async {
@@ -696,12 +767,65 @@ class FlitGame extends FlameGame
     // Don't run game logic until a session is active and the game has a size.
     if (!_isPlaying || size.x < 1 || size.y < 1) return;
 
+    // --- Launch intro sequence ---
+    if (_launchPhase == LaunchPhase.positioning) {
+      _launchTimer += dt;
+      _updateChaseCamera(dt);
+      // Keep plane off-screen below the viewport during globe snap.
+      _plane.position = Vector2(size.x * planeScreenX, size.y * 1.5);
+      _plane.worldPos = _worldPosition.clone();
+      _plane.worldHeading = _heading;
+      _computeScreenCorrection();
+      if (_launchTimer >= _positioningDuration) {
+        _launchPhase = LaunchPhase.flyIn;
+        _launchTimer = 0.0;
+        _plane.setVisible(); // Make plane visible for fly-in
+      }
+      return;
+    }
+
+    if (_launchPhase == LaunchPhase.flyIn) {
+      _launchTimer += dt;
+      final t = (_launchTimer / _flyInDuration).clamp(0.0, 1.0);
+      // Ease-out cubic for smooth deceleration into final position.
+      final eased = 1.0 - pow(1.0 - t, 3);
+      final startY = size.y * 1.3; // Below screen
+      final endY = size.y * planeScreenY; // Final position (80%)
+      _plane.position = Vector2(
+        size.x * planeScreenX,
+        startY + (endY - startY) * eased,
+      );
+      _updateChaseCamera(dt);
+      _plane.worldPos = _worldPosition.clone();
+      _plane.worldHeading = _heading;
+      _computeScreenCorrection();
+      if (t >= 1.0) {
+        _launchPhase = LaunchPhase.playing;
+      }
+      return;
+    }
+
+    // --- Normal gameplay below ---
+
     // --- Country detection ---
     _updateCountryDetection(dt);
 
     // --- Decrement country flash timer ---
     if (_countryFlashTimer > 0) {
       _countryFlashTimer = (_countryFlashTimer - dt).clamp(0.0, _countryFlashDuration);
+    }
+
+    // --- Fuel consumption ---
+    if (_fuelEnabled && _fuel > 0) {
+      // Burn rate scales with speed multiplier so faster = more fuel.
+      final burnRate = _baseFuelBurnRate * _speedMultiplier;
+      // License boost reduces effective burn: burn / boostMultiplier.
+      // A 10% boost (1.1x) means fuel lasts 10% longer.
+      final effectiveBurn = burnRate / fuelBoostMultiplier;
+      _fuel = (_fuel - effectiveBurn * dt).clamp(0.0, 1.0);
+      if (_fuel <= 0) {
+        onFuelEmpty?.call();
+      }
     }
 
     // --- Motion-gated: input, steering, movement ---
@@ -1025,7 +1149,9 @@ class FlitGame extends FlameGame
           : _keyTurnHoldTime;
 
       // Progressive curve: starts at 0.08, reaches 1.0 after ~0.6s.
-      final strength = (0.08 + holdTime * holdTime * 4.5).clamp(0.0, 1.0);
+      // Scale ramp speed with turn sensitivity setting (default 0.5 → 1.0x).
+      final sensitivityScale = GameSettings.instance.turnSensitivity / 0.5;
+      final strength = (0.08 + holdTime * holdTime * 4.5 * sensitivityScale).clamp(0.0, 1.0);
       // When invertControls is false, pass direction through (right = right).
       // When invertControls is true, negate (right input = left turn).
       final invert = GameSettings.instance.invertControls ? -1.0 : 1.0;
@@ -1303,12 +1429,17 @@ class FlitGame extends FlameGame
     _heading = bearing - pi / 2;
     _cameraHeading = _heading; // snap camera to heading on game start
     _cameraFirstUpdate = true;
-    _plane.fadeIn(); // Hide plane during camera snap, fade in over 0.5s
+    _plane.fadeIn(); // Start invisible during positioning phase
+    _plane.contrails.clear(); // Clear leftover contrails from previous games
     _targetLocation = targetPosition;
     _currentClue = clue;
     _waymarker = null; // clear any previous waymarker
     _hintTarget = null; // clear any previous hint
     _flightSpeed = FlightSpeed.medium; // reset speed
+    _fuel = 1.0; // full tank
+    // Start launch animation sequence.
+    _launchPhase = LaunchPhase.positioning;
+    _launchTimer = 0.0;
     _isPlaying = true;
   }
 
@@ -1330,6 +1461,8 @@ class FlitGame extends FlameGame
     _currentClue = clue;
     _waymarker = null;
     _hintTarget = null;
+    // Refuel on new target (clue answered correctly).
+    refuel();
     // Keep position, heading, speed, and camera — seamless transition.
   }
 

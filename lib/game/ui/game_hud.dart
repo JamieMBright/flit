@@ -27,6 +27,9 @@ class GameHud extends StatelessWidget {
     this.countryName,
     this.heading,
     this.countryFlashProgress = 0.0,
+    this.currentRound,
+    this.totalRounds,
+    this.fuelLevel,
   });
 
   final bool isHighAltitude;
@@ -43,6 +46,11 @@ class GameHud extends StatelessWidget {
   final String? countryName;
   final double? heading;
   final double countryFlashProgress;
+  final int? currentRound;
+  final int? totalRounds;
+
+  /// Current fuel level (0.0–1.0). When null, fuel gauge is hidden.
+  final double? fuelLevel;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -51,32 +59,49 @@ class GameHud extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Top row: Exit, Clue, Timer
+              // Top row: [Exit/Settings] [Clue] [Timer/Compass/Round]
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Exit button
-                  _ExitButton(onTap: onExit),
-                  const SizedBox(width: 6),
-                  // Settings gear
-                  _GearButton(onTap: onSettings),
+                  // Left column: Exit and Settings stacked
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _ExitButton(onTap: onExit),
+                      const SizedBox(height: 6),
+                      _GearButton(onTap: onSettings),
+                    ],
+                  ),
                   const SizedBox(width: 8),
-                  // Clue display
+                  // Center: Clue display (expanded to fill available space)
                   if (currentClue != null)
-                    Flexible(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 300),
-                        child: _ClueCard(clue: currentClue!),
-                      ),
-                    ),
-                  const SizedBox(width: 12),
-                  // Timer
-                  _TimerDisplay(elapsed: elapsedTime),
-                  // Compass (when heading is available)
-                  if (heading != null) ...[
-                    const SizedBox(width: 8),
-                    _CompassDisplay(heading: heading!),
-                  ],
+                    Expanded(
+                      child: _ClueCard(clue: currentClue!),
+                    )
+                  else
+                    const Spacer(),
+                  const SizedBox(width: 8),
+                  // Right column: Timer, Compass, Round indicator
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _TimerDisplay(elapsed: elapsedTime),
+                      if (heading != null) ...[
+                        const SizedBox(height: 6),
+                        _CompassDisplay(heading: heading!),
+                      ],
+                      if (currentRound != null &&
+                          totalRounds != null &&
+                          totalRounds! > 1) ...[
+                        const SizedBox(height: 6),
+                        _RoundIndicator(
+                          current: currentRound!,
+                          total: totalRounds!,
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ),
               // Revealed country name (shown after tier 2 hint)
@@ -130,6 +155,12 @@ class GameHud extends StatelessWidget {
                   ),
                 ),
               const Spacer(),
+              // Fuel gauge (shown only when fuel is active)
+              if (fuelLevel != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _FuelGauge(level: fuelLevel!),
+                ),
               // Bottom row: Speed controls, Altitude indicator, Hint button
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -432,6 +463,35 @@ class _CompassDisplay extends StatelessWidget {
     if (degrees >= 292.5 && degrees < 337.5) return 'NW';
     return 'N'; // fallback
   }
+}
+
+class _RoundIndicator extends StatelessWidget {
+  const _RoundIndicator({
+    required this.current,
+    required this.total,
+  });
+
+  final int current;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: FlitColors.accent.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.accent.withOpacity(0.5)),
+        ),
+        child: Text(
+          '$current/$total',
+          style: const TextStyle(
+            color: FlitColors.accent,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+          ),
+        ),
+      );
 }
 
 /// Country name bar with flash animation when entering a new country.
@@ -764,4 +824,69 @@ class _CountryOutlinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _CountryOutlinePainter oldDelegate) => false;
+}
+
+/// Horizontal fuel gauge bar displayed above the bottom controls.
+class _FuelGauge extends StatelessWidget {
+  const _FuelGauge({required this.level});
+
+  /// Fuel level: 0.0 (empty) to 1.0 (full).
+  final double level;
+
+  @override
+  Widget build(BuildContext context) {
+    // Color shifts from green → amber → red as fuel depletes.
+    final Color barColor;
+    if (level > 0.5) {
+      barColor = FlitColors.success;
+    } else if (level > 0.2) {
+      barColor = FlitColors.warning;
+    } else {
+      barColor = FlitColors.error;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.local_gas_station,
+            color: barColor,
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: level.clamp(0.0, 1.0),
+                backgroundColor: FlitColors.backgroundMid,
+                valueColor: AlwaysStoppedAnimation<Color>(barColor),
+                minHeight: 8,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 36,
+            child: Text(
+              '${(level * 100).round()}%',
+              style: TextStyle(
+                color: barColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'monospace',
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

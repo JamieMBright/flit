@@ -103,6 +103,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           clueChance: license.clueChance,
           preferredClueType: license.preferredClueType,
           enabledClueTypes: _challenge.enabledClueTypes,
+          enableFuel: true,
           onComplete: (totalScore) {
             ref.read(accountProvider.notifier).addCoins(reward);
           },

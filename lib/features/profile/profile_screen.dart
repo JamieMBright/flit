@@ -452,40 +452,85 @@ class _StatsGrid extends StatelessWidget {
 
   final Player player;
 
+  static String _fmtTime(Duration? d) {
+    if (d == null) return '--';
+    final s = d.inSeconds;
+    final ms = (d.inMilliseconds % 1000) ~/ 10;
+    return '${s}.${ms.toString().padLeft(2, '0')}s';
+  }
+
+  static String _fmtFlightTime(Duration d) {
+    if (d.inMinutes < 1) return '${d.inSeconds}s';
+    if (d.inHours < 1) return '${d.inMinutes}m';
+    return '${d.inHours}h ${d.inMinutes % 60}m';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bestTime = player.bestTime;
-    final bestTimeText = bestTime != null
-        ? '${bestTime.inSeconds}.${(bestTime.inMilliseconds % 1000) ~/ 10}s'
-        : '--';
-
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: _StatCard(
-            icon: Icons.monetization_on,
-            iconColor: FlitColors.warning,
-            value: player.coins.toString(),
-            label: 'Coins',
-          ),
+        // Top row: Coins, Games, Countries
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                icon: Icons.monetization_on,
+                iconColor: FlitColors.warning,
+                value: player.coins.toString(),
+                label: 'Coins',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.games,
+                iconColor: FlitColors.accent,
+                value: player.gamesPlayed.toString(),
+                label: 'Games',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.public,
+                iconColor: FlitColors.success,
+                value: player.countriesFound.toString(),
+                label: 'Found',
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatCard(
-            icon: Icons.games,
-            iconColor: FlitColors.accent,
-            value: player.gamesPlayed.toString(),
-            label: 'Games',
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatCard(
-            icon: Icons.timer,
-            iconColor: FlitColors.success,
-            value: bestTimeText,
-            label: 'Best Time',
-          ),
+        const SizedBox(height: 12),
+        // Bottom row: Licensed Time, Unlicensed Time, Flight Time
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                icon: Icons.badge,
+                iconColor: FlitColors.gold,
+                value: _fmtTime(player.bestTimeLicensed),
+                label: 'Licensed',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.timer,
+                iconColor: FlitColors.accent,
+                value: _fmtTime(player.bestTimeUnlicensed),
+                label: 'Unlicensed',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.flight,
+                iconColor: FlitColors.textSecondary,
+                value: _fmtFlightTime(player.totalFlightTime),
+                label: 'Air Time',
+              ),
+            ),
+          ],
         ),
       ],
     );

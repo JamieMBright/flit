@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
 import '../flit_game.dart';
 import '../rendering/camera_state.dart';
@@ -70,10 +71,13 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Lower speeds = tighter turning circles, higher speeds = wider arcs.
   double get currentTurnRate {
     final speedRatio = currentSpeed / highAltitudeSpeed;
+    // Apply turn sensitivity setting (default 0.5 → 1.0x multiplier).
+    final sensitivity = GameSettings.instance.turnSensitivity;
+    final sensitivityScale = sensitivity / 0.5;
     // Inverse relationship: slower speed = higher turn rate
     // At 50% speed (low altitude), turn rate is 2x (4.4 rad/s)
     // At 100% speed (high altitude), turn rate is 1x (2.2 rad/s)
-    return turnRate / speedRatio.clamp(0.5, 1.0);
+    return turnRate * sensitivityScale / speedRatio.clamp(0.5, 1.0);
   }
 
   /// Maximum bank angle for visual effect (radians, ~75 degrees).
@@ -1232,6 +1236,9 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   }
 
   void _updateContrails(double dt) {
+    // Don't spawn contrails during launch animation.
+    if (gameRef.isInLaunchIntro) return;
+
     // Scale spawn rate with zoom: at low altitude (zoomed in), spawn
     // particles more frequently so the trail stays dense on screen.
     final zoomRatio =
@@ -1365,6 +1372,11 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// doesn't appear to fly sideways during the camera snap.
   void fadeIn() {
     _spawnOpacity = 0.0;
+  }
+
+  /// Make the plane immediately visible (used after launch positioning phase).
+  void setVisible() {
+    _spawnOpacity = 1.0;
   }
 
   void toggleAltitude() {

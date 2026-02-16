@@ -215,6 +215,10 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     final companion = account.avatar.companion;
     final fuelBoost = ref.read(accountProvider.notifier).fuelBoostMultiplier;
     final license = account.license;
+    final enabledClueTypeNames = _enabledClues.entries
+        .where((entry) => entry.value)
+        .map((entry) => entry.key.name)
+        .toSet();
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => PlayScreen(
@@ -228,6 +232,8 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           clueBoost: license.clueBoost,
           clueChance: license.clueChance,
           preferredClueType: license.preferredClueType,
+          enabledClueTypes: enabledClueTypeNames,
+          enableFuel: true,
         ),
       ),
     );

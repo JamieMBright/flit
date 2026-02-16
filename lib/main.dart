@@ -42,7 +42,7 @@ void main() {
   // Periodically flush queued errors to the Vercel endpoint.
   Timer.periodic(_flushInterval, (_) => errorService.flush());
 
-  // Initialize audio system.
+  // Initialize audio system (fire-and-forget; errors handled internally).
   AudioManager.instance.initialize();
 
   _log.info('app', 'Flit starting up');

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/services/audio_manager.dart';
 import '../../core/services/error_service.dart';
@@ -12,6 +13,7 @@ import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
 import '../../core/widgets/settings_sheet.dart';
 import '../../data/models/avatar_config.dart';
+import '../../data/providers/account_provider.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/flit_game.dart';
 import '../../game/map/descent_map_view.dart';
@@ -26,7 +28,7 @@ final _log = GameLog.instance;
 /// Supports multi-round play: when [totalRounds] > 1, the player
 /// automatically advances through rounds without landing until the
 /// final round.
-class PlayScreen extends StatefulWidget {
+class PlayScreen extends ConsumerStatefulWidget {
   const PlayScreen({
     super.key,
     this.region = GameRegion.world,
@@ -43,6 +45,7 @@ class PlayScreen extends StatefulWidget {
     this.clueChance = 0,
     this.preferredClueType,
     this.enabledClueTypes,
+    this.enableFuel = false,
   });
 
   /// The region to play in.
@@ -89,15 +92,20 @@ class PlayScreen extends StatefulWidget {
   /// these types will be generated, overriding the preferred type.
   final Set<String>? enabledClueTypes;
 
+  /// Whether fuel mechanics are active. True for training, daily, dogfight.
+  /// False for free flight.
+  final bool enableFuel;
+
   @override
-  State<PlayScreen> createState() => _PlayScreenState();
+  ConsumerState<PlayScreen> createState() => _PlayScreenState();
 }
 
-class _PlayScreenState extends State<PlayScreen> {
+class _PlayScreenState extends ConsumerState<PlayScreen> {
   late final FlitGame _game;
   GameSession? _session;
   Timer? _timer;
   Duration _elapsed = Duration.zero;
+  Duration _cumulativeTime = Duration.zero;
   bool _isHighAltitude = true;
   bool _gameReady = false;
   String? _error;
@@ -130,6 +138,11 @@ class _PlayScreenState extends State<PlayScreen> {
   /// Revealed country name (shown after tier 2 hint).
   String? _revealedCountry;
 
+  /// Whether the launch intro overlay is visible (black screen during globe snap).
+  bool _launchIntroVisible = false;
+
+  /// Per-round results for the summary screen.
+  final List<_RoundResult> _roundResults = [];
 
   @override
   void initState() {
@@ -292,6 +305,13 @@ class _PlayScreenState extends State<PlayScreen> {
   bool get _isMultiRound => widget.totalRounds > 1;
   bool get _isFinalRound => _currentRound >= widget.totalRounds;
 
+  /// Called when fuel runs out — ends the current session.
+  void _onFuelEmpty() {
+    if (_session == null || _session!.isCompleted) return;
+    _log.info('fuel', 'Fuel depleted — ending session');
+    _completeLanding();
+  }
+
   void _startNewGame() {
     _log.info('session', 'Starting round $_currentRound/${widget.totalRounds}');
     try {
@@ -302,6 +322,8 @@ class _PlayScreenState extends State<PlayScreen> {
         allowedClueTypes: widget.enabledClueTypes,
       );
       _elapsed = Duration.zero;
+      _cumulativeTime = Duration.zero;
+      _roundResults.clear();
 
       // Reset hint state for new round
       _hintTier = 0;
@@ -314,12 +336,24 @@ class _PlayScreenState extends State<PlayScreen> {
         'round': _currentRound,
       });
 
+      // Show launch intro overlay (black screen while globe positions).
+      _launchIntroVisible = true;
+      Future<void>.delayed(const Duration(milliseconds: 1200), () {
+        if (mounted) {
+          setState(() { _launchIntroVisible = false; });
+        }
+      });
+
       // Start the game with the session data
       _game.startGame(
         startPosition: _session!.startPosition,
         targetPosition: _session!.targetPosition,
         clue: _session!.clue.displayText,
       );
+
+      // Configure fuel system.
+      _game.fuelEnabled = widget.enableFuel;
+      _game.onFuelEmpty = _onFuelEmpty;
 
       // Play clue popup sound.
       AudioManager.instance.playSfx(SfxType.cluePop);
@@ -399,6 +433,17 @@ class _PlayScreenState extends State<PlayScreen> {
     _timer?.cancel();
     _session?.complete();
     _totalScore += _session?.score ?? 0;
+    _cumulativeTime += _elapsed;
+
+    // Record per-round result for summary.
+    if (_session != null) {
+      _roundResults.add(_RoundResult(
+        countryName: _session!.targetName,
+        clueType: _session!.clue.type,
+        elapsed: _elapsed,
+        score: _session!.score,
+      ));
+    }
 
     _log.info('session', 'Round $_currentRound complete, advancing', data: {
       'target': _session?.targetName,
@@ -469,7 +514,18 @@ class _PlayScreenState extends State<PlayScreen> {
     _timer?.cancel();
     _session?.complete();
     _totalScore += _session?.score ?? 0;
+    _cumulativeTime += _elapsed;
     AudioManager.instance.playSfx(SfxType.landingSuccess);
+
+    // Record final round result for summary.
+    if (_session != null) {
+      _roundResults.add(_RoundResult(
+        countryName: _session!.targetName,
+        clueType: _session!.clue.type,
+        elapsed: _elapsed,
+        score: _session!.score,
+      ));
+    }
 
     _log.info('session', 'Landing complete', data: {
       'target': _session?.targetName,
@@ -478,6 +534,17 @@ class _PlayScreenState extends State<PlayScreen> {
       'totalScore': _totalScore,
       'round': _currentRound,
     });
+
+    // Record stats via Riverpod account provider.
+    final hasLicenseBonus = widget.fuelBoostMultiplier > 1.0 ||
+        widget.clueBoost > 0;
+    ref.read(accountProvider.notifier).recordGameCompletion(
+      elapsed: _cumulativeTime,
+      score: _totalScore,
+      roundsCompleted: _currentRound,
+      hasLicenseBonus: hasLicenseBonus,
+      coinReward: widget.coinReward,
+    );
 
     // Notify completion callback
     widget.onComplete?.call(_totalScore);
@@ -493,13 +560,16 @@ class _PlayScreenState extends State<PlayScreen> {
         challengeFriendName: friendName,
         totalScore: _totalScore,
         totalRounds: widget.totalRounds,
+        cumulativeTime: _cumulativeTime,
         coinReward: widget.coinReward,
+        roundResults: _roundResults,
         onPlayAgain: friendName == null
             ? () {
                 Navigator.of(dialogContext).pop();
                 setState(() {
                   _currentRound = 1;
                   _totalScore = 0;
+                  _cumulativeTime = Duration.zero;
                 });
                 _startNewGame();
               }
@@ -818,6 +888,39 @@ class _PlayScreenState extends State<PlayScreen> {
             },
           ),
 
+          // Launch intro overlay (black screen while globe positions)
+          if (_gameReady && _launchIntroVisible)
+            AnimatedOpacity(
+              opacity: _launchIntroVisible ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 500),
+              child: IgnorePointer(
+                child: Container(
+                  color: FlitColors.backgroundDark,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.flight_takeoff,
+                          color: FlitColors.accent,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Preparing Flight...',
+                          style: TextStyle(
+                            color: FlitColors.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
           // HUD overlay
           if (_gameReady && _session != null)
             GameHud(
@@ -842,6 +945,9 @@ class _PlayScreenState extends State<PlayScreen> {
               countryName: _game.currentCountryName,
               heading: _game.heading,
               countryFlashProgress: _game.countryFlashProgress,
+              currentRound: _isMultiRound ? _currentRound : null,
+              totalRounds: _isMultiRound ? widget.totalRounds : null,
+              fuelLevel: _game.fuelEnabled ? _game.fuel : null,
             ),
 
           // Mobile turn buttons (L/R) — positioned at bottom corners.
@@ -866,38 +972,6 @@ class _PlayScreenState extends State<PlayScreen> {
               ),
             ),
           ],
-
-          // Round indicator for multi-round play
-          if (_gameReady && _isMultiRound)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 8,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: FlitColors.cardBackground.withOpacity(0.85),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: FlitColors.accent.withOpacity(0.5),
-                    ),
-                  ),
-                  child: Text(
-                    'Round $_currentRound / ${widget.totalRounds}',
-                    style: const TextStyle(
-                      color: FlitColors.accent,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-              ),
-            ),
 
           // Loading overlay
           if (!_gameReady)
@@ -978,6 +1052,21 @@ class _TurnButtonState extends State<_TurnButton> {
       );
 }
 
+/// Per-round result data for the summary screen.
+class _RoundResult {
+  const _RoundResult({
+    required this.countryName,
+    required this.clueType,
+    required this.elapsed,
+    required this.score,
+  });
+
+  final String countryName;
+  final ClueType clueType;
+  final Duration elapsed;
+  final int score;
+}
+
 class _ResultDialog extends StatelessWidget {
   const _ResultDialog({
     required this.session,
@@ -987,7 +1076,9 @@ class _ResultDialog extends StatelessWidget {
     this.onSendChallenge,
     this.totalScore = 0,
     this.totalRounds = 1,
+    this.cumulativeTime = Duration.zero,
     this.coinReward = 0,
+    this.roundResults = const [],
   });
 
   final GameSession session;
@@ -997,188 +1088,285 @@ class _ResultDialog extends StatelessWidget {
   final VoidCallback? onSendChallenge;
   final int totalScore;
   final int totalRounds;
+  final Duration cumulativeTime;
   final int coinReward;
+  final List<_RoundResult> roundResults;
+
+  static String _formatTime(Duration d) {
+    final m = d.inMinutes;
+    final s = d.inSeconds % 60;
+    final ms = (d.inMilliseconds % 1000) ~/ 10;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}.${ms.toString().padLeft(2, '0')}';
+  }
+
+  static String _clueLabel(ClueType type) {
+    switch (type) {
+      case ClueType.flag:
+      case ClueType.flagDescription:
+        return 'Flag';
+      case ClueType.outline:
+        return 'Outline';
+      case ClueType.borders:
+        return 'Borders';
+      case ClueType.capital:
+        return 'Capital';
+      case ClueType.stats:
+        return 'Stats';
+      case ClueType.sportsTeam:
+        return 'Sports';
+      case ClueType.leader:
+        return 'Leader';
+      case ClueType.nickname:
+        return 'Nickname';
+      case ClueType.landmark:
+        return 'Landmark';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isChallenge = challengeFriendName != null;
-    final totalSeconds = session.elapsed.inMilliseconds / 1000;
-    final minutes = session.elapsed.inMinutes;
-    final seconds = session.elapsed.inSeconds % 60;
-    final millis = (session.elapsed.inMilliseconds % 1000) ~/ 10;
     final isMultiRound = totalRounds > 1;
+    final displayTime = isMultiRound ? cumulativeTime : session.elapsed;
+    final totalSeconds = displayTime.inMilliseconds / 1000;
 
     return Dialog(
       backgroundColor: FlitColors.cardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.flight_land,
-              color: FlitColors.success,
-              size: 44,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'LANDED',
-              style: TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 3,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.flight_land,
+                color: FlitColors.success,
+                size: 44,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              session.targetName,
-              style: const TextStyle(
-                color: FlitColors.accent,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            if (isChallenge) ...[
               const SizedBox(height: 12),
-              Text(
-                'Round 1 vs $challengeFriendName: Your time ${totalSeconds.toStringAsFixed(2)}s',
-                style: const TextStyle(
-                  color: FlitColors.gold,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-            if (!isChallenge) ...[
-              const SizedBox(height: 20),
-              // Time
-              Text(
-                '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}.${millis.toString().padLeft(2, '0')}',
-                style: const TextStyle(
+              const Text(
+                'LANDED',
+                style: TextStyle(
                   color: FlitColors.textPrimary,
-                  fontSize: 28,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  fontFamily: 'monospace',
+                  letterSpacing: 3,
                 ),
               ),
-            ],
-            const SizedBox(height: 6),
-            Text(
-              isMultiRound
-                  ? 'Total Score: $totalScore'
-                  : 'Score: ${session.score}',
-              style: const TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 14,
-              ),
-            ),
-            if (isMultiRound) ...[
-              const SizedBox(height: 4),
-              Text(
-                '$totalRounds rounds completed',
-                style: const TextStyle(
-                  color: FlitColors.textMuted,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-            if (coinReward > 0) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: FlitColors.gold.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: FlitColors.gold.withOpacity(0.4),
+              if (!isMultiRound) ...[
+                const SizedBox(height: 8),
+                Text(
+                  session.targetName,
+                  style: const TextStyle(
+                    color: FlitColors.accent,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.monetization_on,
-                      color: FlitColors.gold,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '+$coinReward coins',
-                      style: const TextStyle(
-                        color: FlitColors.gold,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 24),
-            // Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                TextButton(
-                  onPressed: onExit,
-                  child: const Text(
-                    'EXIT',
-                    style: TextStyle(color: FlitColors.textMuted),
-                  ),
-                ),
-                if (isChallenge && onSendChallenge != null)
-                  ElevatedButton(
-                    onPressed: onSendChallenge,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: FlitColors.accent,
-                      foregroundColor: FlitColors.textPrimary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 28,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'SEND CHALLENGE',
-                      style: TextStyle(
-                        letterSpacing: 1,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                if (!isChallenge && onPlayAgain != null)
-                  ElevatedButton(
-                    onPressed: onPlayAgain,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: FlitColors.accent,
-                      foregroundColor: FlitColors.textPrimary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 28,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'PLAY AGAIN',
-                      style: TextStyle(
-                        letterSpacing: 1,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
               ],
-            ),
-          ],
+              if (isChallenge) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'vs $challengeFriendName — Total: ${totalSeconds.toStringAsFixed(2)}s',
+                  style: const TextStyle(
+                    color: FlitColors.gold,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              if (!isChallenge) ...[
+                const SizedBox(height: 16),
+                Text(
+                  _formatTime(displayTime),
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
+              const SizedBox(height: 6),
+              Text(
+                isMultiRound
+                    ? 'Total Score: $totalScore'
+                    : 'Score: ${session.score}',
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 14,
+                ),
+              ),
+              // Per-round summary table for multi-round modes.
+              if (isMultiRound && roundResults.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const Divider(color: FlitColors.cardBorder, height: 1),
+                const SizedBox(height: 12),
+                const Text(
+                  'ROUND SUMMARY',
+                  style: TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    itemCount: roundResults.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    itemBuilder: (_, i) {
+                      final r = roundResults[i];
+                      return Row(
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            child: Text(
+                              '${i + 1}.',
+                              style: const TextStyle(
+                                color: FlitColors.textMuted,
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              r.countryName,
+                              style: const TextStyle(
+                                color: FlitColors.textPrimary,
+                                fontSize: 13,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _clueLabel(r.clueType),
+                            style: const TextStyle(
+                              color: FlitColors.textMuted,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            _formatTime(r.elapsed),
+                            style: const TextStyle(
+                              color: FlitColors.accent,
+                              fontSize: 12,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Divider(color: FlitColors.cardBorder, height: 1),
+              ],
+              if (coinReward > 0) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: FlitColors.gold.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: FlitColors.gold.withOpacity(0.4),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.monetization_on,
+                        color: FlitColors.gold,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '+$coinReward coins',
+                        style: const TextStyle(
+                          color: FlitColors.gold,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton(
+                    onPressed: onExit,
+                    child: const Text(
+                      'EXIT',
+                      style: TextStyle(color: FlitColors.textMuted),
+                    ),
+                  ),
+                  if (isChallenge && onSendChallenge != null)
+                    ElevatedButton(
+                      onPressed: onSendChallenge,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: FlitColors.accent,
+                        foregroundColor: FlitColors.textPrimary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'SEND CHALLENGE',
+                        style: TextStyle(
+                          letterSpacing: 1,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  if (!isChallenge && onPlayAgain != null)
+                    ElevatedButton(
+                      onPressed: onPlayAgain,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: FlitColors.accent,
+                        foregroundColor: FlitColors.textPrimary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'PLAY AGAIN',
+                        style: TextStyle(
+                          letterSpacing: 1,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

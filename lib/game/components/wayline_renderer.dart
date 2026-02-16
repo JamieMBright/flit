@@ -18,6 +18,7 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
   @override
   void render(Canvas canvas) {
     super.render(canvas);
+    if (gameRef.isInLaunchIntro) return;
 
     final planePos = gameRef.worldPosition;
     final screenSize = gameRef.size;
@@ -115,22 +116,26 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
       }
     }
 
-    // Target dot.
-    final markerScreen = points.last;
-    final dotColor = isHint ? FlitColors.textPrimary : FlitColors.accent;
-    canvas.drawCircle(
-      markerScreen,
-      6.0,
-      Paint()..color = dotColor.withOpacity(dotOpacity),
-    );
-    canvas.drawCircle(
-      markerScreen,
-      10.0,
-      Paint()
-        ..color = dotColor.withOpacity(dotOpacity * 0.6)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
+    // Target dot — only draw if the actual target is visible (not occluded
+    // by the globe). worldToScreen returns (-1000, -1000) for hidden points.
+    final targetScreen = gameRef.worldToScreen(target);
+    if (targetScreen.x > -500) {
+      final markerPos = Offset(targetScreen.x, targetScreen.y);
+      final dotColor = isHint ? FlitColors.textPrimary : FlitColors.accent;
+      canvas.drawCircle(
+        markerPos,
+        6.0,
+        Paint()..color = dotColor.withOpacity(dotOpacity),
+      );
+      canvas.drawCircle(
+        markerPos,
+        10.0,
+        Paint()
+          ..color = dotColor.withOpacity(dotOpacity * 0.6)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
+    }
   }
 
   /// Spherical linear interpolation between two (lng, lat) points.
