@@ -1,8 +1,8 @@
 /// Base avatar art style. Maps to a DiceBear style collection.
 ///
 /// Adventurer has full per-feature customisation (eyes, mouth, hair, etc.).
-/// Other styles use a deterministic seed derived from the current config so
-/// changing any option still produces a different avatar.
+/// Other styles also receive explicit per-feature params; DiceBear applies
+/// the ones it recognises and uses a fixed seed for everything else.
 enum AvatarStyle {
   adventurer('adventurer', 'Adventurer'),
   avataaars('avataaars', 'Avataaars'),
@@ -169,9 +169,12 @@ enum AvatarCompanion {
 ///
 /// Each field corresponds to a DiceBear customisation option.
 /// The [style] determines which DiceBear collection is used.
-/// For [AvatarStyle.adventurer], all per-feature fields map directly to
-/// the Adventurer API params. For other styles, the fields are hashed into
-/// a seed string that produces a deterministic avatar.
+/// All per-feature fields (eyes, mouth, hair, etc.) are passed as explicit
+/// API params for every style. For [AvatarStyle.adventurer] this gives full
+/// 1:1 control. For other styles DiceBear uses params it recognises and
+/// ignores the rest; a fixed per-style seed keeps the base avatar (face
+/// shape, overall structure) stable so changing one option doesn't alter
+/// everything.
 /// Free defaults are chosen so every new player has a complete look.
 class AvatarConfig {
   const AvatarConfig({
@@ -237,57 +240,64 @@ class AvatarConfig {
 
   /// Builds the DiceBear SVG URL for this avatar configuration.
   ///
-  /// For [AvatarStyle.adventurer], every option is passed explicitly so the
-  /// result is fully deterministic. For other styles the per-feature choices
-  /// are hashed into a seed string — changing any option still produces a
-  /// different avatar, but the mapping is seed-based rather than 1:1.
+  /// For [AvatarStyle.adventurer], the seed encodes all options for cache
+  /// uniqueness and every feature is pinned via explicit API params.
+  /// For other styles a **fixed** seed keeps the base avatar stable (face
+  /// shape, etc.) while explicit per-feature params override individual
+  /// features where the style supports them. DiceBear silently ignores
+  /// params that don't apply to a given style.
   Uri get svgUri {
-    // Seed derived from every config field — guarantees uniqueness across
-    // styles even when per-feature params aren't applicable.
-    final configSeed = '${eyes.name}-${eyebrows.name}-${mouth.name}-'
-        '${hair.name}-${hairColor.name}-${skinColor.name}-'
-        '${glasses.name}-${earrings.name}-${feature.name}';
-
     final params = <String, String>{
-      'seed': configSeed,
       'backgroundColor': 'transparent',
     };
 
-    // For Adventurer we pass full per-feature params.
+    // Adventurer: config-derived seed (all features are explicit anyway).
+    // Other styles: fixed per-style seed so the base look never jumps when
+    // a single option like eyes is changed.
     if (style == AvatarStyle.adventurer) {
-      params['eyes[]'] = eyes.apiValue;
-      params['eyebrows[]'] = eyebrows.apiValue;
-      params['mouth[]'] = mouth.apiValue;
-      params['skinColor[]'] = skinColor.hex;
-      params['hairColor[]'] = hairColor.hex;
+      params['seed'] = '${eyes.name}-${eyebrows.name}-${mouth.name}-'
+          '${hair.name}-${hairColor.name}-${skinColor.name}-'
+          '${glasses.name}-${earrings.name}-${feature.name}';
+    } else {
+      params['seed'] = 'flit-${style.slug}';
+    }
 
-      if (hair == AvatarHair.none) {
-        params['hairProbability'] = '0';
-      } else {
-        params['hair[]'] = hair.apiValue;
-        params['hairProbability'] = '100';
-      }
+    // Pass explicit per-feature params for every style. For Adventurer each
+    // value maps 1:1. For other DiceBear styles the API uses values it
+    // recognises and ignores the rest, keeping the base seed-determined look
+    // stable while still allowing per-feature control where supported.
+    params['eyes[]'] = eyes.apiValue;
+    params['eyebrows[]'] = eyebrows.apiValue;
+    params['mouth[]'] = mouth.apiValue;
+    params['skinColor[]'] = skinColor.hex;
+    params['hairColor[]'] = hairColor.hex;
 
-      if (glasses == AvatarGlasses.none) {
-        params['glassesProbability'] = '0';
-      } else {
-        params['glasses[]'] = glasses.apiValue;
-        params['glassesProbability'] = '100';
-      }
+    if (hair == AvatarHair.none) {
+      params['hairProbability'] = '0';
+    } else {
+      params['hair[]'] = hair.apiValue;
+      params['hairProbability'] = '100';
+    }
 
-      if (earrings == AvatarEarrings.none) {
-        params['earringsProbability'] = '0';
-      } else {
-        params['earrings[]'] = earrings.apiValue;
-        params['earringsProbability'] = '100';
-      }
+    if (glasses == AvatarGlasses.none) {
+      params['glassesProbability'] = '0';
+    } else {
+      params['glasses[]'] = glasses.apiValue;
+      params['glassesProbability'] = '100';
+    }
 
-      if (feature == AvatarFeature.none) {
-        params['featuresProbability'] = '0';
-      } else {
-        params['features[]'] = feature.name;
-        params['featuresProbability'] = '100';
-      }
+    if (earrings == AvatarEarrings.none) {
+      params['earringsProbability'] = '0';
+    } else {
+      params['earrings[]'] = earrings.apiValue;
+      params['earringsProbability'] = '100';
+    }
+
+    if (feature == AvatarFeature.none) {
+      params['featuresProbability'] = '0';
+    } else {
+      params['features[]'] = feature.name;
+      params['featuresProbability'] = '100';
     }
 
     return Uri.https('api.dicebear.com', '/7.x/${style.slug}/svg', params);
