@@ -893,20 +893,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             AnimatedOpacity(
               opacity: _launchIntroVisible ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 500),
-              child: IgnorePointer(
-                child: Container(
+              child: const IgnorePointer(
+                child: ColoredBox(
                   color: FlitColors.backgroundDark,
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.flight_takeoff,
                           color: FlitColors.accent,
                           size: 48,
                         ),
-                        const SizedBox(height: 16),
-                        const Text(
+                        SizedBox(height: 16),
+                        Text(
                           'Preparing Flight...',
                           style: TextStyle(
                             color: FlitColors.textPrimary,
