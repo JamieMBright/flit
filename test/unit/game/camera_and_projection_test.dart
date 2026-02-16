@@ -439,10 +439,10 @@ void main() {
 
       // After one frame at dt=0.016 with easeRate=1.5:
       // factor = 1 - exp(-1.5 * 0.016) = 1 - exp(-0.024) ≈ 0.0237
-      // distance moved = (1.8 - 1.1) * 0.0237 ≈ 0.017
-      // So distance ≈ 1.8 - 0.017 = 1.783 (barely moved)
+      // distance moved = (1.8 - 1.35) * 0.0237 ≈ 0.0107
+      // So distance ≈ 1.8 - 0.0107 = 1.789 (barely moved)
       expect(camera.currentDistance,
-          greaterThan(CameraState.lowAltitudeDistance + 0.5),
+          greaterThan(CameraState.lowAltitudeDistance + 0.4),
           reason: 'Distance should barely change after one frame — '
               'transition must be gradual');
     });

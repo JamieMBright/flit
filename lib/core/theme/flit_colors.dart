@@ -28,9 +28,9 @@ abstract final class FlitColors {
   static const Color backgroundLight = Color(0xFF264050);
 
   // Accent - warm vintage red/orange (pop art touch)
-  static const Color accent = Color(0xFFD4654A);
-  static const Color accentLight = Color(0xFFE8825A);
-  static const Color accentDark = Color(0xFFB84E38);
+  static const Color accent = Color(0xFFE87A5A);
+  static const Color accentLight = Color(0xFFFF8C68);
+  static const Color accentDark = Color(0xFFD4654A);
 
   // Secondary accent - vintage gold
   static const Color gold = Color(0xFFD4A944);

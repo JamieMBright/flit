@@ -298,16 +298,11 @@ abstract class OsmFeatures {
     Peak('Mount Vinson', Vector2(-85.617, -78.525), 4892),
     Peak('Mont Blanc', Vector2(6.865, 45.833), 4808),
     Peak('Matterhorn', Vector2(7.658, 45.977), 4478),
-    Peak('Mount Fuji', Vector2(138.727, 35.361), 3776),
     Peak('Mount Olympus', Vector2(22.358, 40.086), 2918),
     Peak('Mount Rainier', Vector2(-121.758, 46.853), 4392),
     Peak('Mount Cook', Vector2(170.142, -43.595), 3724),
     Peak('Mount Logan', Vector2(-140.406, 60.567), 5959),
     Peak('Chimborazo', Vector2(-78.817, -1.469), 6263),
-    Peak('Cotopaxi', Vector2(-78.436, -0.677), 5897),
-    Peak('Popocatépetl', Vector2(-98.628, 19.023), 5426),
-    Peak('Mount Etna', Vector2(14.996, 37.748), 3357),
-    Peak('Mount Vesuvius', Vector2(14.426, 40.821), 1281),
   ];
 
   // Major Airports (IATA code, name, location)
@@ -384,7 +379,6 @@ abstract class OsmFeatures {
     SeaLabel('North Sea', Vector2(3.0, 56.0)),
     SeaLabel('Baltic Sea', Vector2(20.0, 58.0)),
     SeaLabel('Persian Gulf', Vector2(51.0, 27.0)),
-    SeaLabel('Caspian Sea', Vector2(51.0, 42.0)),
   ];
 
   // Major Volcanoes (active/notable)
