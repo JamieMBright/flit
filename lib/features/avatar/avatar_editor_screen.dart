@@ -345,6 +345,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
   void _showPurchaseDialog(_AvatarPart part, String categoryKey) {
     final coins = ref.read(currentCoinsProvider);
     final canAfford = coins >= part.price;
+    final preview = _previewConfig(_config, categoryKey, part.id);
 
     showDialog<void>(
       context: context,
@@ -361,6 +362,20 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Avatar preview showing what this option looks like
+            Container(
+              width: 100,
+              height: 100,
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundLight,
+                shape: BoxShape.circle,
+                border: Border.all(color: FlitColors.accent, width: 2),
+              ),
+              child: ClipOval(
+                child: AvatarWidget(config: preview, size: 100),
+              ),
+            ),
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
