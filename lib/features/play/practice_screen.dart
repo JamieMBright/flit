@@ -234,6 +234,9 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           preferredClueType: license.preferredClueType,
           enabledClueTypes: enabledClueTypeNames,
           enableFuel: true,
+          planeHandling: plane?.handling ?? 1.0,
+          planeSpeed: plane?.speed ?? 1.0,
+          planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
         ),
       ),
     );

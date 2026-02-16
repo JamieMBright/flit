@@ -985,6 +985,21 @@ class _CosmeticCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
+                  // Plane attribute bars (only for planes with non-default attributes)
+                  if (item.type == CosmeticType.plane &&
+                      (item.handling != 1.0 ||
+                          item.speed != 1.0 ||
+                          item.fuelEfficiency != 1.0)) ...[
+                    _AttrBar(
+                        label: 'HDL', value: item.handling, color: FlitColors.accent),
+                    _AttrBar(
+                        label: 'SPD', value: item.speed, color: FlitColors.success),
+                    _AttrBar(
+                        label: 'FUL',
+                        value: item.fuelEfficiency,
+                        color: FlitColors.warning),
+                    const SizedBox(height: 4),
+                  ],
                   // Price or status
                   if (isOwned)
                     Text(
@@ -1079,6 +1094,66 @@ class _CosmeticCard extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Attribute Bar  (compact stat indicator for plane cards)
+// =============================================================================
+
+class _AttrBar extends StatelessWidget {
+  const _AttrBar({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final double value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    // Map value range [0.5 – 1.5] → [0.0 – 1.0] for display.
+    final pct = ((value - 0.5) / 1.0).clamp(0.0, 1.0);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 24,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 8,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Container(
+              height: 4,
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(2),
+              ),
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: pct,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

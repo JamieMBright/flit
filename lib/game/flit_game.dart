@@ -67,6 +67,9 @@ class FlitGame extends FlameGame
     this.companionType = AvatarCompanion.none,
     this.motionEnabled = true,
     this.region = GameRegion.world,
+    this.planeHandling = 1.0,
+    this.planeSpeed = 1.0,
+    this.planeFuelEfficiency = 1.0,
   });
 
   /// The game region being played. Determines renderer (globe vs flat map).
@@ -109,6 +112,18 @@ class FlitGame extends FlameGame
   /// and no movement/steering/input is processed. Used for Step 1 rebuild
   /// to verify static camera + projection before adding motion.
   final bool motionEnabled;
+
+  /// Plane handling multiplier (from equipped plane attributes).
+  /// Higher = tighter turning circle. Applied to turn rate.
+  final double planeHandling;
+
+  /// Plane speed multiplier (from equipped plane attributes).
+  /// Higher = faster movement. Applied to flight speed.
+  final double planeSpeed;
+
+  /// Plane fuel efficiency multiplier (from equipped plane attributes).
+  /// Higher = less fuel consumed. Applied inversely to burn rate.
+  final double planeFuelEfficiency;
 
   late PlaneComponent _plane;
 
@@ -835,7 +850,8 @@ class FlitGame extends FlameGame
       //     exploration without fuel anxiety
       final isLow = _planeReady && !_plane.isHighAltitude;
       final altitudeFactor = isLow ? 0.25 : 1.0;
-      final burnRate = _baseFuelBurnRate * _speedMultiplier * altitudeFactor;
+      // planeFuelEfficiency > 1 = less burn; divide to invert.
+      final burnRate = _baseFuelBurnRate * _speedMultiplier * altitudeFactor / planeFuelEfficiency;
       _fuel = (_fuel - burnRate * dt).clamp(0.0, maxFuel);
       if (_fuel <= 0) {
         onFuelEmpty?.call();
@@ -917,15 +933,17 @@ class FlitGame extends FlameGame
     _updateWaymarkerSteering(dt);
 
     // --- Apply turn to heading ---
+    // planeHandling multiplier makes nimble planes turn tighter.
     final turnDir = _plane.turnDirection;
     if (turnDir.abs() > 0.001) {
-      final turnRate = _plane.currentTurnRate;
+      final turnRate = _plane.currentTurnRate * planeHandling;
       _heading += turnDir * turnRate * dt;
       while (_heading > pi) { _heading -= 2 * pi; }
       while (_heading < -pi) { _heading += 2 * pi; }
     }
 
-    final speed = _plane.currentSpeedContinuous * _speedMultiplier;
+    // planeSpeed multiplier makes faster planes cover more ground.
+    final speed = _plane.currentSpeedContinuous * _speedMultiplier * planeSpeed;
     final angularDist = speed * _speedToAngular * dt; // radians on unit sphere
 
     if (angularDist < 1e-12) return; // Avoid division by zero when stationary

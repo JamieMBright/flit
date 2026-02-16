@@ -41,6 +41,9 @@ class PlayScreen extends ConsumerStatefulWidget {
     this.equippedPlaneId = 'plane_default',
     this.companionType = AvatarCompanion.none,
     this.fuelBoostMultiplier = 1.0,
+    this.planeHandling = 1.0,
+    this.planeSpeed = 1.0,
+    this.planeFuelEfficiency = 1.0,
     this.clueBoost = 0,
     this.clueChance = 0,
     this.preferredClueType,
@@ -78,6 +81,15 @@ class PlayScreen extends ConsumerStatefulWidget {
 
   /// Fuel boost multiplier from pilot license (1.0 = no boost).
   final double fuelBoostMultiplier;
+
+  /// Plane handling multiplier from equipped plane (affects turn rate).
+  final double planeHandling;
+
+  /// Plane speed multiplier from equipped plane (affects movement speed).
+  final double planeSpeed;
+
+  /// Plane fuel efficiency from equipped plane (higher = less burn).
+  final double planeFuelEfficiency;
 
   /// Bonus % chance of receiving the preferred clue type (from pilot license).
   final int clueBoost;
@@ -164,6 +176,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         equippedPlaneId: widget.equippedPlaneId,
         companionType: widget.companionType,
         region: widget.region,
+        planeHandling: widget.planeHandling,
+        planeSpeed: widget.planeSpeed,
+        planeFuelEfficiency: widget.planeFuelEfficiency,
       );
     } catch (e, st) {
       _log.error('screen', 'PlayScreen.initState FAILED',
@@ -540,13 +555,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     });
 
     // Record stats via Riverpod account provider.
-    final hasLicenseBonus = widget.fuelBoostMultiplier > 1.0 ||
-        widget.clueBoost > 0;
     ref.read(accountProvider.notifier).recordGameCompletion(
       elapsed: _cumulativeTime,
       score: _totalScore,
       roundsCompleted: _currentRound,
-      hasLicenseBonus: hasLicenseBonus,
       coinReward: widget.coinReward,
     );
 

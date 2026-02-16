@@ -501,24 +501,15 @@ class _StatsGrid extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        // Bottom row: Licensed Time, Unlicensed Time, Flight Time
+        // Bottom row: Best Time, Flight Time
         Row(
           children: [
             Expanded(
               child: _StatCard(
-                icon: Icons.badge,
-                iconColor: FlitColors.gold,
-                value: _fmtTime(player.bestTimeLicensed),
-                label: 'Licensed',
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _StatCard(
                 icon: Icons.timer,
-                iconColor: FlitColors.accent,
-                value: _fmtTime(player.bestTimeUnlicensed),
-                label: 'Unlicensed',
+                iconColor: FlitColors.gold,
+                value: _fmtTime(player.bestTime),
+                label: 'Best Time',
               ),
             ),
             const SizedBox(width: 12),

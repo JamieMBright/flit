@@ -219,6 +219,8 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
               const SizedBox(height: 24),
               _buildLockSection(coins),
               const SizedBox(height: 24),
+              _buildFreeRerollButton(),
+              const SizedBox(height: 12),
               _buildRerollButton(coins),
               const SizedBox(height: 16),
             ],
@@ -717,6 +719,60 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
 
   // ---------------------------------------------------------------------------
   // Reroll button
+  // ---------------------------------------------------------------------------
+
+  Widget _buildFreeRerollButton() {
+    final hasFree = ref.watch(accountProvider).hasFreeRerollToday;
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton.icon(
+        onPressed: hasFree && !_isRolling ? _freeReroll : null,
+        icon: Icon(
+          hasFree ? Icons.card_giftcard : Icons.check_circle_outline,
+          size: 20,
+        ),
+        label: Text(
+          hasFree ? 'FREE DAILY REROLL' : 'FREE REROLL USED TODAY',
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              hasFree ? FlitColors.success : FlitColors.backgroundMid,
+          foregroundColor: FlitColors.textPrimary,
+          disabledBackgroundColor: FlitColors.backgroundMid,
+          disabledForegroundColor: FlitColors.textMuted,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          elevation: hasFree ? 4 : 0,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _freeReroll() async {
+    if (_isRolling) return;
+
+    setState(() => _isRolling = true);
+
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+
+    if (!mounted) return;
+
+    final success = ref.read(accountProvider.notifier).useFreeReroll();
+    if (success) {
+      _license = ref.read(licenseProvider);
+    }
+    setState(() => _isRolling = false);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Paid reroll button
   // ---------------------------------------------------------------------------
 
   Widget _buildRerollButton(int coins) => Column(

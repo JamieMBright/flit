@@ -34,6 +34,9 @@ class Cosmetic {
     this.isEquipped = false,
     this.requiredLevel,
     this.wingSpan,
+    this.handling = 1.0,
+    this.speed = 1.0,
+    this.fuelEfficiency = 1.0,
   });
 
   final String id;
@@ -49,10 +52,22 @@ class Cosmetic {
   final bool isOwned;
   final bool isEquipped;
   final int? requiredLevel;
-  
+
   /// Wing span in pixels (for plane cosmetics only).
   /// Determines both visual rendering and contrail positioning.
   final double? wingSpan;
+
+  /// Handling multiplier (planes only). Higher = tighter turning circle.
+  /// 1.0 = baseline. Range: 0.6 (sluggish) to 1.4 (nimble).
+  final double handling;
+
+  /// Speed multiplier (planes only). Higher = faster movement.
+  /// 1.0 = baseline. Range: 0.7 (slow) to 1.5 (very fast).
+  final double speed;
+
+  /// Fuel efficiency multiplier (planes only). Higher = less fuel consumed.
+  /// 1.0 = baseline. Range: 0.6 (gas guzzler) to 1.4 (economical).
+  final double fuelEfficiency;
 
   Cosmetic copyWith({
     bool? isOwned,
@@ -73,6 +88,9 @@ class Cosmetic {
         isEquipped: isEquipped ?? this.isEquipped,
         requiredLevel: requiredLevel,
         wingSpan: wingSpan,
+        handling: handling,
+        speed: speed,
+        fuelEfficiency: fuelEfficiency,
       );
 
   Map<String, dynamic> toJson() => {
@@ -90,6 +108,9 @@ class Cosmetic {
         'is_equipped': isEquipped,
         'required_level': requiredLevel,
         'wing_span': wingSpan,
+        'handling': handling,
+        'speed': speed,
+        'fuel_efficiency': fuelEfficiency,
       };
 
   factory Cosmetic.fromJson(Map<String, dynamic> json) => Cosmetic(
@@ -114,6 +135,9 @@ class Cosmetic {
         isEquipped: json['is_equipped'] as bool? ?? false,
         requiredLevel: json['required_level'] as int?,
         wingSpan: (json['wing_span'] as num?)?.toDouble(),
+        handling: (json['handling'] as num?)?.toDouble() ?? 1.0,
+        speed: (json['speed'] as num?)?.toDouble() ?? 1.0,
+        fuelEfficiency: (json['fuel_efficiency'] as num?)?.toDouble() ?? 1.0,
       );
 }
 
@@ -121,6 +145,15 @@ class Cosmetic {
 abstract class CosmeticCatalog {
   // ---------------------------------------------------------------
   // Planes
+  //
+  // Attributes — handling / speed / fuelEfficiency — are multipliers
+  // around 1.0. Each plane has a distinct feel: some are nimble but
+  // thirsty, others are fast but sluggish in turns. Better planes are
+  // more expensive and tend to have higher overall stats.
+  //
+  // Pricing follows gacha progression: early planes are ~4 games apart,
+  // mid-tier stretches to ~20-40 games, and legendaries are aspirational
+  // long-term goals (hundreds of games).
   // ---------------------------------------------------------------
   static const List<Cosmetic> planes = [
     // --- Common (sorted by price) ---
@@ -130,13 +163,16 @@ abstract class CosmeticCatalog {
       type: CosmeticType.plane,
       price: 0,
       rarity: CosmeticRarity.common,
-      description: 'The original flit plane.',
+      description: 'The original flit plane. Balanced and reliable.',
       colorScheme: {
         'primary': 0xFFF5F0E0,
         'secondary': 0xFFC0392B,
         'detail': 0xFF8B4513,
       },
-      wingSpan: 26.0, // Default/baseline wing span
+      wingSpan: 26.0,
+      handling: 1.0,
+      speed: 1.0,
+      fuelEfficiency: 1.0,
       isOwned: true,
       isEquipped: true,
     ),
@@ -144,35 +180,41 @@ abstract class CosmeticCatalog {
       id: 'plane_paper',
       name: 'Paper Plane',
       type: CosmeticType.plane,
-      price: 500,
+      price: 200,
       rarity: CosmeticRarity.common,
-      description: 'Simple and elegant.',
+      description: 'Light and nimble. Glides on the wind.',
       colorScheme: {
         'primary': 0xFFF5F5F5,
         'secondary': 0xFFE0E0E0,
         'detail': 0xFFCCCCCC,
       },
-      wingSpan: 22.0, // Smaller, narrower wings
+      wingSpan: 22.0,
+      handling: 1.2,
+      speed: 0.85,
+      fuelEfficiency: 1.15,
     ),
     Cosmetic(
       id: 'plane_prop',
       name: 'Prop Plane',
       type: CosmeticType.plane,
-      price: 800,
+      price: 400,
       rarity: CosmeticRarity.common,
-      description: 'Classic propeller aircraft.',
+      description: 'Classic propeller aircraft. Solid all-rounder.',
       colorScheme: {
         'primary': 0xFF556B2F,
         'secondary': 0xFF3B4A1F,
         'detail': 0xFF8B8B6E,
       },
-      wingSpan: 28.0, // Slightly wider than default
+      wingSpan: 28.0,
+      handling: 1.1,
+      speed: 0.95,
+      fuelEfficiency: 1.1,
     ),
     Cosmetic(
       id: 'plane_bryanair',
       name: 'Bryanair',
       type: CosmeticType.plane,
-      price: 1500,
+      price: 750,
       rarity: CosmeticRarity.common,
       description: 'No frills, no legroom, but it gets you there. Eventually.',
       colorScheme: {
@@ -180,13 +222,16 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF003580,
         'detail': 0xFFFFCC00,
       },
-      wingSpan: 32.0, // Commercial airliner - wide wings
+      wingSpan: 32.0,
+      handling: 0.75,
+      speed: 1.0,
+      fuelEfficiency: 1.3,
     ),
     Cosmetic(
       id: 'plane_seaplane',
       name: 'Island Hopper',
       type: CosmeticType.plane,
-      price: 2000,
+      price: 750,
       rarity: CosmeticRarity.common,
       description: 'Float pontoons for water landings. Perfect for the Caribbean.',
       colorScheme: {
@@ -194,7 +239,10 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF2E8B57,
         'detail': 0xFFF5F5F5,
       },
-      wingSpan: 30.0, // Seaplane - wide for stability
+      wingSpan: 30.0,
+      handling: 0.9,
+      speed: 0.85,
+      fuelEfficiency: 1.15,
     ),
 
     // --- Rare (sorted by price) ---
@@ -202,22 +250,25 @@ abstract class CosmeticCatalog {
       id: 'plane_jet',
       name: 'Sleek Jet',
       type: CosmeticType.plane,
-      price: 2500,
+      price: 1200,
       rarity: CosmeticRarity.rare,
       requiredLevel: 3,
-      description: 'A modern jet fighter look.',
+      description: 'Fast and sharp. Burns fuel like water.',
       colorScheme: {
         'primary': 0xFFC0C0C0,
         'secondary': 0xFF4A90B8,
         'detail': 0xFF808080,
       },
-      wingSpan: 23.0, // Fighter jet - shorter, swept wings
+      wingSpan: 23.0,
+      handling: 0.9,
+      speed: 1.3,
+      fuelEfficiency: 0.7,
     ),
     Cosmetic(
       id: 'plane_red_baron',
       name: 'Red Baron Triplane',
       type: CosmeticType.plane,
-      price: 3500,
+      price: 1800,
       rarity: CosmeticRarity.rare,
       description: 'The most feared ace of WWI. Triple the wings, triple the style.',
       colorScheme: {
@@ -225,58 +276,70 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF8B0000,
         'detail': 0xFF1A1A1A,
       },
-      wingSpan: 24.0, // Triplane - shorter individual wings
+      wingSpan: 24.0,
+      handling: 1.3,
+      speed: 0.8,
+      fuelEfficiency: 0.9,
     ),
     Cosmetic(
       id: 'plane_rocket',
       name: 'Rocket Ship',
       type: CosmeticType.plane,
-      price: 3500,
+      price: 1800,
       rarity: CosmeticRarity.rare,
       requiredLevel: 5,
-      description: 'Blast off to new heights!',
+      description: 'Blazing speed. Turns like a bus. Drinks fuel for breakfast.',
       colorScheme: {
         'primary': 0xFFCC3333,
         'secondary': 0xFFF5F5F5,
         'detail': 0xFFFF6600,
       },
-      wingSpan: 18.0, // Rocket - very narrow fins
+      wingSpan: 18.0,
+      handling: 0.65,
+      speed: 1.4,
+      fuelEfficiency: 0.6,
     ),
     Cosmetic(
       id: 'plane_spitfire',
       name: 'Spitfire',
       type: CosmeticType.plane,
-      price: 4000,
+      price: 2500,
       rarity: CosmeticRarity.rare,
       requiredLevel: 5,
-      description: 'The legendary Battle of Britain fighter.',
+      description: 'The legendary Battle of Britain fighter. Agile and fast.',
       colorScheme: {
         'primary': 0xFF556B2F,
         'secondary': 0xFF8B7355,
         'detail': 0xFFC0C0C0,
       },
-      wingSpan: 27.0, // Spitfire - iconic elliptical wings
+      wingSpan: 27.0,
+      handling: 1.2,
+      speed: 1.15,
+      fuelEfficiency: 0.9,
     ),
     Cosmetic(
       id: 'plane_lancaster',
       name: 'Lancaster Bomber',
       type: CosmeticType.plane,
-      price: 5000,
+      price: 3500,
       rarity: CosmeticRarity.rare,
       requiredLevel: 7,
-      description: 'The mighty heavy bomber. Low and slow, full of character.',
+      description: 'The mighty heavy bomber. Low and slow, but goes forever.',
       colorScheme: {
         'primary': 0xFF2F2F2F,
         'secondary': 0xFF3B3B3B,
         'detail': 0xFFCC3333,
       },
-      wingSpan: 36.0, // Heavy bomber - very wide wings
+      wingSpan: 36.0,
+      handling: 0.7,
+      speed: 0.75,
+      fuelEfficiency: 1.4,
     ),
     Cosmetic(
       id: 'plane_concorde_classic',
       name: 'Concorde Classic',
       type: CosmeticType.plane,
-      price: 6000,
+      price: 5000,
       rarity: CosmeticRarity.rare,
       requiredLevel: 8,
       description: 'Supersonic nostalgia. Mach 2 in style.',
@@ -285,7 +348,10 @@ abstract class CosmeticCatalog {
         'secondary': 0xFF1A3A5C,
         'detail': 0xFFCC3333,
       },
-      wingSpan: 20.0, // Concorde - delta wing, narrow
+      wingSpan: 20.0,
+      handling: 0.8,
+      speed: 1.35,
+      fuelEfficiency: 0.7,
     ),
 
     // --- Epic (sorted by price) ---
@@ -296,28 +362,34 @@ abstract class CosmeticCatalog {
       price: 8000,
       rarity: CosmeticRarity.epic,
       requiredLevel: 10,
-      description: 'Dark and mysterious.',
+      description: 'Dark and mysterious. Silent but deadly efficient.',
       colorScheme: {
         'primary': 0xFF2A2A2A,
         'secondary': 0xFF1A1A1A,
         'detail': 0xFF444444,
       },
-      wingSpan: 38.0, // Stealth bomber - very wide flying wing
+      wingSpan: 38.0,
+      handling: 1.05,
+      speed: 1.15,
+      fuelEfficiency: 1.2,
     ),
     Cosmetic(
       id: 'plane_air_force_one',
       name: 'Air Force One',
       type: CosmeticType.plane,
-      price: 15000,
+      price: 12000,
       rarity: CosmeticRarity.epic,
       requiredLevel: 10,
-      description: 'Presidential luxury at 35,000 feet.',
+      description: 'Presidential luxury. Smooth, fast, and fuel-efficient.',
       colorScheme: {
         'primary': 0xFFF5F5F5,
         'secondary': 0xFF1A3A5C,
         'detail': 0xFFD4A944,
       },
-      wingSpan: 34.0, // Large airliner - wide wings
+      wingSpan: 34.0,
+      handling: 0.85,
+      speed: 1.2,
+      fuelEfficiency: 1.25,
     ),
 
     // --- Legendary (sorted by price) ---
@@ -328,13 +400,16 @@ abstract class CosmeticCatalog {
       price: 25000,
       rarity: CosmeticRarity.legendary,
       isPremium: true,
-      description: 'The ultimate status symbol. Pure gold luxury.',
+      description: 'Pure gold luxury. Handles like a dream.',
       colorScheme: {
         'primary': 0xFFD4A944,
         'secondary': 0xFF1A1A1A,
         'detail': 0xFFF0D060,
       },
-      wingSpan: 29.0, // Private jet - sleek swept wings
+      wingSpan: 29.0,
+      handling: 1.15,
+      speed: 1.25,
+      fuelEfficiency: 1.1,
     ),
     Cosmetic(
       id: 'plane_diamond_concorde',
@@ -343,13 +418,16 @@ abstract class CosmeticCatalog {
       price: 50000,
       rarity: CosmeticRarity.legendary,
       isPremium: true,
-      description: 'Supersonic elegance. Diamond-encrusted speed.',
+      description: 'Supersonic elegance. Fastest plane in the game.',
       colorScheme: {
         'primary': 0xFFB0D4F1,
         'secondary': 0xFFC0C0C0,
         'detail': 0xFFE0F0FF,
       },
-      wingSpan: 20.0, // Concorde variant - delta wing
+      wingSpan: 20.0,
+      handling: 0.95,
+      speed: 1.5,
+      fuelEfficiency: 0.85,
     ),
     Cosmetic(
       id: 'plane_platinum_eagle',
@@ -358,13 +436,16 @@ abstract class CosmeticCatalog {
       price: 100000,
       rarity: CosmeticRarity.legendary,
       isPremium: true,
-      description: 'Ultra-rare. The sky bows to the eagle.',
+      description: 'Ultra-rare. The sky bows to the eagle. Best all-rounder.',
       colorScheme: {
         'primary': 0xFFE5E4E2,
         'secondary': 0xFF6A0DAD,
         'detail': 0xFFC0C0D0,
       },
-      wingSpan: 30.0, // Eagle - wide majestic wings
+      wingSpan: 30.0,
+      handling: 1.3,
+      speed: 1.3,
+      fuelEfficiency: 1.25,
     ),
   ];
 
