@@ -456,7 +456,7 @@ class _StatsGrid extends StatelessWidget {
     if (d == null) return '--';
     final s = d.inSeconds;
     final ms = (d.inMilliseconds % 1000) ~/ 10;
-    return '${s}.${ms.toString().padLeft(2, '0')}s';
+    return '$s.${ms.toString().padLeft(2, '0')}s';
   }
 
   static String _fmtFlightTime(Duration d) {
