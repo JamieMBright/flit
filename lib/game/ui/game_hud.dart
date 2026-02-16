@@ -30,6 +30,7 @@ class GameHud extends StatelessWidget {
     this.currentRound,
     this.totalRounds,
     this.fuelLevel,
+    this.maxFuel = 1.0,
   });
 
   final bool isHighAltitude;
@@ -49,8 +50,11 @@ class GameHud extends StatelessWidget {
   final int? currentRound;
   final int? totalRounds;
 
-  /// Current fuel level (0.0–1.0). When null, fuel gauge is hidden.
+  /// Current fuel level (0.0–[maxFuel]). When null, fuel gauge is hidden.
   final double? fuelLevel;
+
+  /// Maximum fuel (licence-boosted). 1.0 = no bonus, 1.1 = 10% bonus.
+  final double maxFuel;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -159,7 +163,7 @@ class GameHud extends StatelessWidget {
               if (fuelLevel != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: _FuelGauge(level: fuelLevel!),
+                  child: _FuelGauge(level: fuelLevel!, maxFuel: maxFuel),
                 ),
               // Bottom row: Speed controls, Altitude indicator, Hint button
               Row(
@@ -827,23 +831,40 @@ class _CountryOutlinePainter extends CustomPainter {
 }
 
 /// Horizontal fuel gauge bar displayed above the bottom controls.
+///
+/// Shows fuel as a percentage of the base tank (100%). When the pilot licence
+/// provides a fuel boost, the gauge displays above 100% (e.g. "110%") and the
+/// bar fills past the 100% mark. Color smoothly transitions from green through
+/// amber to red as fuel depletes.
 class _FuelGauge extends StatelessWidget {
-  const _FuelGauge({required this.level});
+  const _FuelGauge({required this.level, this.maxFuel = 1.0});
 
-  /// Fuel level: 0.0 (empty) to 1.0 (full).
+  /// Current fuel level (0.0–[maxFuel]).
   final double level;
+
+  /// Maximum fuel. >1.0 when licence-boosted.
+  final double maxFuel;
+
+  /// Smooth green → amber → red color based on fuel proportion.
+  Color _fuelColor(double proportion) {
+    // proportion: 0.0 (empty) to 1.0 (full of maxFuel).
+    if (proportion > 0.5) {
+      // Green → Amber (1.0→0.5 maps to pure green → amber).
+      final t = ((proportion - 0.5) / 0.5).clamp(0.0, 1.0);
+      return Color.lerp(FlitColors.warning, FlitColors.success, t)!;
+    } else {
+      // Amber → Red (0.5→0.0 maps to amber → red).
+      final t = (proportion / 0.5).clamp(0.0, 1.0);
+      return Color.lerp(FlitColors.error, FlitColors.warning, t)!;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Color shifts from green → amber → red as fuel depletes.
-    final Color barColor;
-    if (level > 0.5) {
-      barColor = FlitColors.success;
-    } else if (level > 0.2) {
-      barColor = FlitColors.warning;
-    } else {
-      barColor = FlitColors.error;
-    }
+    final proportion = maxFuel > 0 ? (level / maxFuel).clamp(0.0, 1.0) : 0.0;
+    final barColor = _fuelColor(proportion);
+    final percentage = (level * 100).round();
+    final hasBoost = maxFuel > 1.0;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -864,7 +885,7 @@ class _FuelGauge extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: level.clamp(0.0, 1.0),
+                value: proportion,
                 backgroundColor: FlitColors.backgroundMid,
                 valueColor: AlwaysStoppedAnimation<Color>(barColor),
                 minHeight: 8,
@@ -873,9 +894,9 @@ class _FuelGauge extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           SizedBox(
-            width: 36,
+            width: hasBoost ? 48 : 36,
             child: Text(
-              '${(level * 100).round()}%',
+              '$percentage%',
               style: TextStyle(
                 color: barColor,
                 fontSize: 11,
@@ -885,6 +906,15 @@ class _FuelGauge extends StatelessWidget {
               textAlign: TextAlign.right,
             ),
           ),
+          // Licence boost badge
+          if (hasBoost) ...[
+            const SizedBox(width: 4),
+            Icon(
+              Icons.shield,
+              color: FlitColors.gold.withOpacity(0.7),
+              size: 12,
+            ),
+          ],
         ],
       ),
     );

@@ -1,7 +1,6 @@
 import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
@@ -115,25 +114,19 @@ class FlatMapRenderer extends Component with HasGameRef<FlitGame> {
     double screenH,
   ) {
     final borderPaint = Paint()
-      ..color = const Color(0xAAFFFFFF)
+      ..color = const Color(0xCCFFFFFF)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..strokeJoin = StrokeJoin.round;
-
-    // Limit points per polygon on web for performance
-    const maxPointsPerPoly = kIsWeb ? 40 : 80;
+      ..strokeWidth = 1.8
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true;
 
     for (final area in areas) {
       if (area.points.length < 3) continue;
 
-      final stride = area.points.length > maxPointsPerPoly
-          ? (area.points.length / maxPointsPerPoly).ceil()
-          : 1;
-
       final path = ui.Path();
       var started = false;
 
-      for (var i = 0; i < area.points.length; i += stride) {
+      for (var i = 0; i < area.points.length; i++) {
         final screenPos = worldToScreen(area.points[i], screenW, screenH);
         if (screenPos.x < -500) continue;
 
@@ -236,15 +229,10 @@ class FlatMapRenderer extends Component with HasGameRef<FlitGame> {
       ..color = FlitColors.accent.withOpacity(0.1)
       ..style = PaintingStyle.fill;
 
-    const maxPointsPerPoly = kIsWeb ? 40 : 80;
-    final stride = activeArea.points.length > maxPointsPerPoly
-        ? (activeArea.points.length / maxPointsPerPoly).ceil()
-        : 1;
-
     final path = ui.Path();
     var started = false;
 
-    for (var i = 0; i < activeArea.points.length; i += stride) {
+    for (var i = 0; i < activeArea.points.length; i++) {
       final screenPos = worldToScreen(activeArea.points[i], screenW, screenH);
       if (screenPos.x < -500) continue;
 

@@ -232,8 +232,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   }
 
   /// Use a hint — tiered system with 4 levels.
+  /// Each hint costs a small amount of fuel.
   void _useHint() {
     if (_session == null || _hintTier >= 4) return;
+
+    // Deduct fuel for using a hint. If tank is empty, abort.
+    if (!_game.useHintFuel()) return;
 
     setState(() {
       _hintTier++;
@@ -948,6 +952,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               currentRound: _isMultiRound ? _currentRound : null,
               totalRounds: _isMultiRound ? widget.totalRounds : null,
               fuelLevel: _game.fuelEnabled ? _game.fuel : null,
+              maxFuel: _game.maxFuel,
             ),
 
           // Mobile turn buttons (L/R) — positioned at bottom corners.

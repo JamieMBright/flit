@@ -242,27 +242,42 @@ class FlitGame extends FlameGame
   /// Off for free flight; on for training, daily, dogfight.
   bool fuelEnabled = false;
 
-  /// Current fuel level (0.0 = empty, 1.0 = full tank).
-  double _fuel = 1.0;
+  /// Current fuel level (0.0 = empty, [maxFuel] = full tank).
+  late double _fuel;
+
+  /// Maximum fuel level. License boost gives a larger tank:
+  /// e.g. 10% boost → maxFuel = 1.1 → displayed as "110%".
+  double get maxFuel => fuelBoostMultiplier;
 
   /// Base fuel burn rate per second at normal speed.
-  /// At 1/60 per second, a full tank lasts exactly 60 seconds.
-  static const double _baseFuelBurnRate = 1.0 / 60.0;
+  /// At 1/90 per second, a full base tank lasts 90 seconds.
+  static const double _baseFuelBurnRate = 1.0 / 90.0;
+
+  /// Fuel cost for using a hint (each tier costs 5% of base tank).
+  static const double _hintFuelCost = 0.05;
 
   /// Callback when fuel runs out.
   void Function()? onFuelEmpty;
 
-  /// Current fuel level (0.0–1.0).
+  /// Current fuel level (0.0–[maxFuel]).
   double get fuel => _fuel;
 
-
   /// Refuel the tank (called when a clue is answered correctly).
-  /// The license boost extends how much fuel is restored.
+  /// Restores +75% of base tank, capped at [maxFuel].
   void refuel() {
     if (!fuelEnabled) return;
-    // Restore fuel, license boost adds extra: base * (1 + boost%)
-    final refuelAmount = 1.0 * fuelBoostMultiplier;
-    _fuel = (_fuel + refuelAmount).clamp(0.0, 1.0);
+    _fuel = (_fuel + 0.75).clamp(0.0, maxFuel);
+  }
+
+  /// Deduct fuel for using a hint. Returns false if tank is empty.
+  bool useHintFuel() {
+    if (!fuelEnabled) return true;
+    _fuel = (_fuel - _hintFuelCost).clamp(0.0, maxFuel);
+    if (_fuel <= 0) {
+      onFuelEmpty?.call();
+      return false;
+    }
+    return true;
   }
 
   bool get isPlaying => _isPlaying;
@@ -543,6 +558,7 @@ class FlitGame extends FlameGame
   @override
   Future<void> onLoad() async {
     _log.info('game', 'FlitGame.onLoad started');
+    _fuel = maxFuel; // Initialize fuel to full tank (licence-boosted).
     try {
       await super.onLoad();
 
@@ -813,11 +829,9 @@ class FlitGame extends FlameGame
     // --- Fuel consumption ---
     if (fuelEnabled && _fuel > 0) {
       // Burn rate scales with speed multiplier so faster = more fuel.
+      // License bonus is already captured in the larger tank (maxFuel).
       final burnRate = _baseFuelBurnRate * _speedMultiplier;
-      // License boost reduces effective burn: burn / boostMultiplier.
-      // A 10% boost (1.1x) means fuel lasts 10% longer.
-      final effectiveBurn = burnRate / fuelBoostMultiplier;
-      _fuel = (_fuel - effectiveBurn * dt).clamp(0.0, 1.0);
+      _fuel = (_fuel - burnRate * dt).clamp(0.0, maxFuel);
       if (_fuel <= 0) {
         onFuelEmpty?.call();
       }
@@ -1431,7 +1445,7 @@ class FlitGame extends FlameGame
     _waymarker = null; // clear any previous waymarker
     _hintTarget = null; // clear any previous hint
     _flightSpeed = FlightSpeed.medium; // reset speed
-    _fuel = 1.0; // full tank
+    _fuel = maxFuel; // full tank (includes licence bonus)
     // Start launch animation sequence.
     _launchPhase = LaunchPhase.positioning;
     _launchTimer = 0.0;
