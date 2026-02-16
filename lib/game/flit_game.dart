@@ -240,7 +240,7 @@ class FlitGame extends FlameGame
 
   /// Whether fuel mechanics are active for this session.
   /// Off for free flight; on for training, daily, dogfight.
-  bool _fuelEnabled = false;
+  bool fuelEnabled = false;
 
   /// Current fuel level (0.0 = empty, 1.0 = full tank).
   double _fuel = 1.0;
@@ -255,16 +255,11 @@ class FlitGame extends FlameGame
   /// Current fuel level (0.0–1.0).
   double get fuel => _fuel;
 
-  /// Whether fuel is enabled for this session.
-  bool get fuelEnabled => _fuelEnabled;
-
-  /// Enable or disable fuel for this session.
-  set fuelEnabled(bool value) => _fuelEnabled = value;
 
   /// Refuel the tank (called when a clue is answered correctly).
   /// The license boost extends how much fuel is restored.
   void refuel() {
-    if (!_fuelEnabled) return;
+    if (!fuelEnabled) return;
     // Restore fuel, license boost adds extra: base * (1 + boost%)
     final refuelAmount = 1.0 * fuelBoostMultiplier;
     _fuel = (_fuel + refuelAmount).clamp(0.0, 1.0);
@@ -816,7 +811,7 @@ class FlitGame extends FlameGame
     }
 
     // --- Fuel consumption ---
-    if (_fuelEnabled && _fuel > 0) {
+    if (fuelEnabled && _fuel > 0) {
       // Burn rate scales with speed multiplier so faster = more fuel.
       final burnRate = _baseFuelBurnRate * _speedMultiplier;
       // License boost reduces effective burn: burn / boostMultiplier.
