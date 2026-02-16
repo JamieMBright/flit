@@ -50,9 +50,25 @@ class _AvatarCategory {
   final List<_AvatarPart> parts;
 }
 
-/// Build the category list from the DiceBear Adventurer enums and pricing.
+/// Build the category list. The first category is always "Style" which lets
+/// the player pick a DiceBear collection. The remaining categories control
+/// per-feature customisation (directly for Adventurer, via seed for others).
 List<_AvatarCategory> _buildCategories() {
   return [
+    // -- Style (10 DiceBear collections) --
+    _AvatarCategory(
+      label: 'Style',
+      icon: Icons.style,
+      configKey: 'style',
+      parts: AvatarStyle.values
+          .map((s) => _AvatarPart(
+                id: 'style_${s.name}',
+                label: s.label,
+                price: AvatarConfig.stylePrice(s),
+              ))
+          .toList(),
+    ),
+
     // -- Eyes (26 variants) --
     _AvatarCategory(
       label: 'Eyes',
@@ -197,6 +213,8 @@ List<_AvatarCategory> _buildCategories() {
 AvatarConfig _previewConfig(AvatarConfig base, String categoryKey, String partId) {
   final suffix = partId.substring(partId.indexOf('_') + 1);
   return switch (categoryKey) {
+    'style' => base.copyWith(
+        style: AvatarStyle.values.firstWhere((v) => v.name == suffix)),
     'eyes' => base.copyWith(
         eyes: AvatarEyes.values.firstWhere((v) => v.name == suffix)),
     'eyebrows' => base.copyWith(
@@ -261,6 +279,8 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
   /// Returns the currently selected part id for the given [categoryKey].
   String _selectedPartForCategory(String categoryKey) {
     switch (categoryKey) {
+      case 'style':
+        return 'style_${_config.style.name}';
       case 'eyes':
         return 'eyes_${_config.eyes.name}';
       case 'eyebrows':
@@ -289,6 +309,10 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
     setState(() {
       final suffix = partId.substring(partId.indexOf('_') + 1);
       switch (categoryKey) {
+        case 'style':
+          _config = _config.copyWith(
+            style: AvatarStyle.values.firstWhere((v) => v.name == suffix),
+          );
         case 'eyes':
           _config = _config.copyWith(
             eyes: AvatarEyes.values.firstWhere((v) => v.name == suffix),

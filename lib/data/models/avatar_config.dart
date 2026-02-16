@@ -1,3 +1,29 @@
+/// Base avatar art style. Maps to a DiceBear style collection.
+///
+/// Adventurer has full per-feature customisation (eyes, mouth, hair, etc.).
+/// Other styles use a deterministic seed derived from the current config so
+/// changing any option still produces a different avatar.
+enum AvatarStyle {
+  adventurer('adventurer', 'Adventurer'),
+  avataaars('avataaars', 'Avataaars'),
+  bigEars('big-ears', 'Big Ears'),
+  lorelei('lorelei', 'Lorelei'),
+  micah('micah', 'Micah'),
+  pixelArt('pixel-art', 'Pixel Art'),
+  bottts('bottts', 'Bottts'),
+  notionists('notionists', 'Notionists'),
+  openPeeps('open-peeps', 'Open Peeps'),
+  thumbs('thumbs', 'Thumbs');
+
+  const AvatarStyle(this.slug, this.label);
+
+  /// URL path segment used by the DiceBear API.
+  final String slug;
+
+  /// Human-readable label for the avatar editor.
+  final String label;
+}
+
 /// Avatar eyes variant. Maps to DiceBear Adventurer 'eyes' option.
 /// 26 variants available. First 13 are free, rest cost coins.
 enum AvatarEyes {
@@ -141,10 +167,15 @@ enum AvatarCompanion {
 
 /// Configuration that fully describes a player avatar.
 ///
-/// Each field corresponds to a DiceBear Adventurer customisation option.
+/// Each field corresponds to a DiceBear customisation option.
+/// The [style] determines which DiceBear collection is used.
+/// For [AvatarStyle.adventurer], all per-feature fields map directly to
+/// the Adventurer API params. For other styles, the fields are hashed into
+/// a seed string that produces a deterministic avatar.
 /// Free defaults are chosen so every new player has a complete look.
 class AvatarConfig {
   const AvatarConfig({
+    this.style = AvatarStyle.adventurer,
     this.eyes = AvatarEyes.variant01,
     this.eyebrows = AvatarEyebrows.variant01,
     this.mouth = AvatarMouth.variant01,
@@ -157,6 +188,7 @@ class AvatarConfig {
     this.companion = AvatarCompanion.none,
   });
 
+  final AvatarStyle style;
   final AvatarEyes eyes;
   final AvatarEyebrows eyebrows;
   final AvatarMouth mouth;
@@ -173,6 +205,7 @@ class AvatarConfig {
   // ---------------------------------------------------------------------------
 
   AvatarConfig copyWith({
+    AvatarStyle? style,
     AvatarEyes? eyes,
     AvatarEyebrows? eyebrows,
     AvatarMouth? mouth,
@@ -185,6 +218,7 @@ class AvatarConfig {
     AvatarCompanion? companion,
   }) =>
       AvatarConfig(
+        style: style ?? this.style,
         eyes: eyes ?? this.eyes,
         eyebrows: eyebrows ?? this.eyebrows,
         mouth: mouth ?? this.mouth,
@@ -201,61 +235,82 @@ class AvatarConfig {
   // DiceBear URL builder
   // ---------------------------------------------------------------------------
 
-  /// Builds the DiceBear Adventurer SVG URL for this avatar configuration.
+  /// Builds the DiceBear SVG URL for this avatar configuration.
   ///
-  /// Uses the v7 API with all customisation parameters specified so the
-  /// result is fully deterministic (seed is irrelevant when all options are set).
+  /// For [AvatarStyle.adventurer], every option is passed explicitly so the
+  /// result is fully deterministic. For other styles the per-feature choices
+  /// are hashed into a seed string — changing any option still produces a
+  /// different avatar, but the mapping is seed-based rather than 1:1.
   Uri get svgUri {
+    // Seed derived from every config field — guarantees uniqueness across
+    // styles even when per-feature params aren't applicable.
+    final configSeed = '${eyes.name}-${eyebrows.name}-${mouth.name}-'
+        '${hair.name}-${hairColor.name}-${skinColor.name}-'
+        '${glasses.name}-${earrings.name}-${feature.name}';
+
     final params = <String, String>{
-      'seed': 'flit',
-      'eyes[]': eyes.apiValue,
-      'eyebrows[]': eyebrows.apiValue,
-      'mouth[]': mouth.apiValue,
-      'skinColor[]': skinColor.hex,
-      'hairColor[]': hairColor.hex,
+      'seed': configSeed,
+      'backgroundColor': 'transparent',
     };
 
-    // Hair: omit if none, set probability to 0
-    if (hair == AvatarHair.none) {
-      params['hairProbability'] = '0';
-    } else {
-      params['hair[]'] = hair.apiValue;
-      params['hairProbability'] = '100';
+    // For Adventurer we pass full per-feature params.
+    if (style == AvatarStyle.adventurer) {
+      params['eyes[]'] = eyes.apiValue;
+      params['eyebrows[]'] = eyebrows.apiValue;
+      params['mouth[]'] = mouth.apiValue;
+      params['skinColor[]'] = skinColor.hex;
+      params['hairColor[]'] = hairColor.hex;
+
+      if (hair == AvatarHair.none) {
+        params['hairProbability'] = '0';
+      } else {
+        params['hair[]'] = hair.apiValue;
+        params['hairProbability'] = '100';
+      }
+
+      if (glasses == AvatarGlasses.none) {
+        params['glassesProbability'] = '0';
+      } else {
+        params['glasses[]'] = glasses.apiValue;
+        params['glassesProbability'] = '100';
+      }
+
+      if (earrings == AvatarEarrings.none) {
+        params['earringsProbability'] = '0';
+      } else {
+        params['earrings[]'] = earrings.apiValue;
+        params['earringsProbability'] = '100';
+      }
+
+      if (feature == AvatarFeature.none) {
+        params['featuresProbability'] = '0';
+      } else {
+        params['features[]'] = feature.name;
+        params['featuresProbability'] = '100';
+      }
     }
 
-    // Glasses: probability-based visibility
-    if (glasses == AvatarGlasses.none) {
-      params['glassesProbability'] = '0';
-    } else {
-      params['glasses[]'] = glasses.apiValue;
-      params['glassesProbability'] = '100';
-    }
-
-    // Earrings: probability-based visibility
-    if (earrings == AvatarEarrings.none) {
-      params['earringsProbability'] = '0';
-    } else {
-      params['earrings[]'] = earrings.apiValue;
-      params['earringsProbability'] = '100';
-    }
-
-    // Features: probability-based visibility
-    if (feature == AvatarFeature.none) {
-      params['featuresProbability'] = '0';
-    } else {
-      params['features[]'] = feature.name;
-      params['featuresProbability'] = '100';
-    }
-
-    // Transparent background so it blends with app theme
-    params['backgroundColor'] = 'transparent';
-
-    return Uri.https('api.dicebear.com', '/7.x/adventurer/svg', params);
+    return Uri.https('api.dicebear.com', '/7.x/${style.slug}/svg', params);
   }
 
   // ---------------------------------------------------------------------------
   // Pricing helpers — returns 0 for free items
   // ---------------------------------------------------------------------------
+
+  /// Coin cost for the given [style].
+  /// Adventurer, Avataaars, and Big Ears are free starter styles.
+  static int stylePrice(AvatarStyle style) => switch (style) {
+        AvatarStyle.adventurer => 0,
+        AvatarStyle.avataaars => 0,
+        AvatarStyle.bigEars => 0,
+        AvatarStyle.lorelei => 500,
+        AvatarStyle.micah => 500,
+        AvatarStyle.pixelArt => 500,
+        AvatarStyle.bottts => 800,
+        AvatarStyle.notionists => 800,
+        AvatarStyle.openPeeps => 1000,
+        AvatarStyle.thumbs => 1000,
+      };
 
   /// Coin cost for the given [eyes] variant.
   /// First 13 variants are free.
@@ -325,6 +380,7 @@ class AvatarConfig {
 
   /// Total coin cost of every non-free item in this configuration.
   int get totalCost =>
+      stylePrice(style) +
       eyesPrice(eyes) +
       eyebrowsPrice(eyebrows) +
       mouthPrice(mouth) +
@@ -366,6 +422,7 @@ class AvatarConfig {
   // ---------------------------------------------------------------------------
 
   Map<String, dynamic> toJson() => {
+        'style': style.name,
         'eyes': eyes.name,
         'eyebrows': eyebrows.name,
         'mouth': mouth.name,
@@ -379,6 +436,10 @@ class AvatarConfig {
       };
 
   factory AvatarConfig.fromJson(Map<String, dynamic> json) => AvatarConfig(
+        style: AvatarStyle.values.firstWhere(
+          (v) => v.name == json['style'],
+          orElse: () => AvatarStyle.adventurer,
+        ),
         eyes: AvatarEyes.values.firstWhere(
           (v) => v.name == json['eyes'],
           orElse: () => AvatarEyes.variant01,
@@ -425,6 +486,7 @@ class AvatarConfig {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is AvatarConfig &&
+          style == other.style &&
           eyes == other.eyes &&
           eyebrows == other.eyebrows &&
           mouth == other.mouth &&
@@ -438,6 +500,7 @@ class AvatarConfig {
 
   @override
   int get hashCode => Object.hash(
+        style,
         eyes,
         eyebrows,
         mouth,
