@@ -17,6 +17,7 @@ class AccountState {
     this.ownedAvatarParts = const {},
     this.equippedPlaneId = 'plane_default',
     this.equippedContrailId = 'contrail_default',
+    this.lastFreeRerollDate,
   })  : avatar = avatar ?? const AvatarConfig(),
         license = license ?? PilotLicense.random();
 
@@ -41,6 +42,19 @@ class AccountState {
   /// Currently equipped contrail cosmetic ID.
   final String equippedContrailId;
 
+  /// Date of the last free licence reroll (YYYY-MM-DD string).
+  /// null means the player has never used a free reroll.
+  final String? lastFreeRerollDate;
+
+  /// Whether the daily free reroll is available today.
+  bool get hasFreeRerollToday {
+    if (lastFreeRerollDate == null) return true;
+    final today = DateTime.now();
+    final todayStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    return lastFreeRerollDate != todayStr;
+  }
+
   AccountState copyWith({
     Player? currentPlayer,
     bool? isDebugMode,
@@ -50,6 +64,7 @@ class AccountState {
     Set<String>? ownedAvatarParts,
     String? equippedPlaneId,
     String? equippedContrailId,
+    String? lastFreeRerollDate,
   }) =>
       AccountState(
         currentPlayer: currentPlayer ?? this.currentPlayer,
@@ -60,6 +75,7 @@ class AccountState {
         ownedAvatarParts: ownedAvatarParts ?? this.ownedAvatarParts,
         equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
         equippedContrailId: equippedContrailId ?? this.equippedContrailId,
+        lastFreeRerollDate: lastFreeRerollDate ?? this.lastFreeRerollDate,
       );
 }
 
@@ -164,26 +180,6 @@ class AccountNotifier extends StateNotifier<AccountState> {
     }
   }
 
-  /// Update best time for licensed play (with pilot license bonuses).
-  void updateBestTimeLicensed(Duration time) {
-    final current = state.currentPlayer.bestTimeLicensed;
-    if (current == null || time < current) {
-      state = state.copyWith(
-        currentPlayer: state.currentPlayer.copyWith(bestTimeLicensed: time),
-      );
-    }
-  }
-
-  /// Update best time for unlicensed play (raw skill, no bonuses).
-  void updateBestTimeUnlicensed(Duration time) {
-    final current = state.currentPlayer.bestTimeUnlicensed;
-    if (current == null || time < current) {
-      state = state.copyWith(
-        currentPlayer: state.currentPlayer.copyWith(bestTimeUnlicensed: time),
-      );
-    }
-  }
-
   /// Add flight time to the cumulative total.
   void addFlightTime(Duration time) {
     state = state.copyWith(
@@ -204,23 +200,18 @@ class AccountNotifier extends StateNotifier<AccountState> {
   }
 
   /// Record a completed game session — updates all relevant stats in one call.
+  ///
+  /// Licence bonuses always apply (there is no unlicensed flight mode).
   void recordGameCompletion({
     required Duration elapsed,
     required int score,
     required int roundsCompleted,
-    required bool hasLicenseBonus,
     int coinReward = 0,
   }) {
     incrementGamesPlayed();
     updateBestTime(elapsed);
     addFlightTime(elapsed);
     incrementCountriesFound(count: roundsCompleted);
-
-    if (hasLicenseBonus) {
-      updateBestTimeLicensed(elapsed);
-    } else {
-      updateBestTimeUnlicensed(elapsed);
-    }
 
     // XP: base 50 + 10 per round + score/100
     final xpEarned = 50 + (roundsCompleted * 10) + (score ~/ 100);
@@ -309,6 +300,27 @@ class AccountNotifier extends StateNotifier<AccountState> {
         lockType: lockType,
         luckBonus: state.avatar.luckBonus,
       ),
+    );
+    return true;
+  }
+
+  /// Use the daily free reroll. Returns true if the free reroll was available.
+  ///
+  /// The free reroll rerolls ALL stats and the clue type (no locks).
+  /// Locking individual stats still costs coins via [rerollLicense].
+  bool useFreeReroll() {
+    if (!state.hasFreeRerollToday) return false;
+
+    final today = DateTime.now();
+    final todayStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+    state = state.copyWith(
+      license: PilotLicense.reroll(
+        state.license,
+        luckBonus: state.avatar.luckBonus,
+      ),
+      lastFreeRerollDate: todayStr,
     );
     return true;
   }

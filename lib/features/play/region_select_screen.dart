@@ -123,6 +123,9 @@ class RegionSelectScreen extends ConsumerWidget {
                           clueBoost: license.clueBoost,
                           clueChance: license.clueChance,
                           preferredClueType: license.preferredClueType,
+                          planeHandling: plane?.handling ?? 1.0,
+                          planeSpeed: plane?.speed ?? 1.0,
+                          planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
                         ),
                       ),
                     );

@@ -16,6 +16,7 @@ import 'components/city_label_overlay.dart';
 import 'components/country_border_overlay.dart';
 import 'components/companion_renderer.dart';
 import 'components/contrail_renderer.dart';
+import 'components/plane_component.dart';
 import 'components/wayline_renderer.dart';
 import 'map/country_data.dart';
 import 'map/region.dart';
@@ -66,6 +67,9 @@ class FlitGame extends FlameGame
     this.companionType = AvatarCompanion.none,
     this.motionEnabled = true,
     this.region = GameRegion.world,
+    this.planeHandling = 1.0,
+    this.planeSpeed = 1.0,
+    this.planeFuelEfficiency = 1.0,
   });
 
   /// The game region being played. Determines renderer (globe vs flat map).
@@ -108,6 +112,18 @@ class FlitGame extends FlameGame
   /// and no movement/steering/input is processed. Used for Step 1 rebuild
   /// to verify static camera + projection before adding motion.
   final bool motionEnabled;
+
+  /// Plane handling multiplier (from equipped plane attributes).
+  /// Higher = tighter turning circle. Applied to turn rate.
+  final double planeHandling;
+
+  /// Plane speed multiplier (from equipped plane attributes).
+  /// Higher = faster movement. Applied to flight speed.
+  final double planeSpeed;
+
+  /// Plane fuel efficiency multiplier (from equipped plane attributes).
+  /// Higher = less fuel consumed. Applied inversely to burn rate.
+  final double planeFuelEfficiency;
 
   late PlaneComponent _plane;
 
@@ -834,7 +850,8 @@ class FlitGame extends FlameGame
       //     exploration without fuel anxiety
       final isLow = _planeReady && !_plane.isHighAltitude;
       final altitudeFactor = isLow ? 0.25 : 1.0;
-      final burnRate = _baseFuelBurnRate * _speedMultiplier * altitudeFactor;
+      // planeFuelEfficiency > 1 = less burn; divide to invert.
+      final burnRate = _baseFuelBurnRate * _speedMultiplier * altitudeFactor / planeFuelEfficiency;
       _fuel = (_fuel - burnRate * dt).clamp(0.0, maxFuel);
       if (_fuel <= 0) {
         onFuelEmpty?.call();
@@ -858,15 +875,21 @@ class FlitGame extends FlameGame
       _worldMap!.setAltitude(high: _plane.isHighAltitude);
     }
 
-    // Update plane visual — heading is relative to camera heading only.
-    // Drag offset is excluded: when the player drags to look around,
-    // the globe rotates but the plane keeps facing forward on screen.
-    // Use shortest-path difference to avoid ±π wrapping jumps (the raw
-    // subtraction can produce ~2π spikes when heading crosses ±π).
-    var visualDiff = _heading - _cameraHeading;
-    while (visualDiff > pi) { visualDiff -= 2 * pi; }
-    while (visualDiff < -pi) { visualDiff += 2 * pi; }
-    _plane.visualHeading = visualDiff;
+    // Update plane visual heading.
+    if (isFlatMapMode) {
+      // Flat map: north-up static map. The plane must visually face its
+      // heading direction. Convert from math convention (0 = east) to
+      // canvas convention (0 = up/north) by adding π/2.
+      _plane.visualHeading = _heading + pi / 2;
+    } else {
+      // Globe mode: world rotates under the plane, so the visual heading
+      // is the difference between the plane heading and the camera heading.
+      // Use shortest-path difference to avoid ±π wrapping jumps.
+      var visualDiff = _heading - _cameraHeading;
+      while (visualDiff > pi) { visualDiff -= 2 * pi; }
+      while (visualDiff < -pi) { visualDiff += 2 * pi; }
+      _plane.visualHeading = visualDiff;
+    }
 
     // In flat map mode, the plane moves across the screen.
     // In globe mode, the plane stays fixed and the world scrolls underneath.
@@ -910,15 +933,17 @@ class FlitGame extends FlameGame
     _updateWaymarkerSteering(dt);
 
     // --- Apply turn to heading ---
+    // planeHandling multiplier makes nimble planes turn tighter.
     final turnDir = _plane.turnDirection;
     if (turnDir.abs() > 0.001) {
-      final turnRate = _plane.currentTurnRate;
+      final turnRate = _plane.currentTurnRate * planeHandling;
       _heading += turnDir * turnRate * dt;
       while (_heading > pi) { _heading -= 2 * pi; }
       while (_heading < -pi) { _heading += 2 * pi; }
     }
 
-    final speed = _plane.currentSpeedContinuous * _speedMultiplier;
+    // planeSpeed multiplier makes faster planes cover more ground.
+    final speed = _plane.currentSpeedContinuous * _speedMultiplier * planeSpeed;
     final angularDist = speed * _speedToAngular * dt; // radians on unit sphere
 
     if (angularDist < 1e-12) return; // Avoid division by zero when stationary

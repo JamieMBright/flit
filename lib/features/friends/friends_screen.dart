@@ -141,6 +141,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           clueChance: license.clueChance,
           preferredClueType: license.preferredClueType,
           enableFuel: true,
+          planeHandling: plane?.handling ?? 1.0,
+          planeSpeed: plane?.speed ?? 1.0,
+          planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
         ),
       ),
     ).then((_) {
