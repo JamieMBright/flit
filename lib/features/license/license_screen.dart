@@ -373,6 +373,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
                 painter: PlanePainter(
                   planeId: equippedPlaneId,
                   colorScheme: equippedPlane?.colorScheme,
+                  wingSpan: equippedPlane?.wingSpan ?? 26.0,
                 ),
               ),
             ),
