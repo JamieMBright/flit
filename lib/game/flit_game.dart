@@ -16,6 +16,7 @@ import 'components/city_label_overlay.dart';
 import 'components/country_border_overlay.dart';
 import 'components/companion_renderer.dart';
 import 'components/contrail_renderer.dart';
+import 'components/plane_component.dart';
 import 'components/wayline_renderer.dart';
 import 'map/country_data.dart';
 import 'map/region.dart';
@@ -858,15 +859,21 @@ class FlitGame extends FlameGame
       _worldMap!.setAltitude(high: _plane.isHighAltitude);
     }
 
-    // Update plane visual — heading is relative to camera heading only.
-    // Drag offset is excluded: when the player drags to look around,
-    // the globe rotates but the plane keeps facing forward on screen.
-    // Use shortest-path difference to avoid ±π wrapping jumps (the raw
-    // subtraction can produce ~2π spikes when heading crosses ±π).
-    var visualDiff = _heading - _cameraHeading;
-    while (visualDiff > pi) { visualDiff -= 2 * pi; }
-    while (visualDiff < -pi) { visualDiff += 2 * pi; }
-    _plane.visualHeading = visualDiff;
+    // Update plane visual heading.
+    if (isFlatMapMode) {
+      // Flat map: north-up static map. The plane must visually face its
+      // heading direction. Convert from math convention (0 = east) to
+      // canvas convention (0 = up/north) by adding π/2.
+      _plane.visualHeading = _heading + pi / 2;
+    } else {
+      // Globe mode: world rotates under the plane, so the visual heading
+      // is the difference between the plane heading and the camera heading.
+      // Use shortest-path difference to avoid ±π wrapping jumps.
+      var visualDiff = _heading - _cameraHeading;
+      while (visualDiff > pi) { visualDiff -= 2 * pi; }
+      while (visualDiff < -pi) { visualDiff += 2 * pi; }
+      _plane.visualHeading = visualDiff;
+    }
 
     // In flat map mode, the plane moves across the screen.
     // In globe mode, the plane stays fixed and the world scrolls underneath.
