@@ -59,8 +59,9 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// 36 units ≈ 3.6°/sec → crossing Europe (~36°) takes ~10 seconds.
   static const double highAltitudeSpeed = 36;
 
-  /// Speed multiplier at low altitude (really slow for descent exploration).
-  static const double lowAltitudeSpeedMultiplier = 0.1;
+  /// Speed multiplier at low altitude. 0.2 = 20% of high altitude speed.
+  /// At medium flight speed: 36 × 0.2 × 0.6 = 4.3 units/s (~0.4°/s).
+  static const double lowAltitudeSpeedMultiplier = 0.2;
 
   /// Turn rate in radians per second at high altitude.
   /// 2.2 gives sweeping arcs (~2.9s per full circle).

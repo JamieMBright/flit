@@ -242,27 +242,42 @@ class FlitGame extends FlameGame
   /// Off for free flight; on for training, daily, dogfight.
   bool fuelEnabled = false;
 
-  /// Current fuel level (0.0 = empty, 1.0 = full tank).
-  double _fuel = 1.0;
+  /// Current fuel level (0.0 = empty, [maxFuel] = full tank).
+  late double _fuel;
+
+  /// Maximum fuel level. License boost gives a larger tank:
+  /// e.g. 10% boost → maxFuel = 1.1 → displayed as "110%".
+  double get maxFuel => fuelBoostMultiplier;
 
   /// Base fuel burn rate per second at normal speed.
-  /// At 1/60 per second, a full tank lasts exactly 60 seconds.
-  static const double _baseFuelBurnRate = 1.0 / 60.0;
+  /// At 1/90 per second, a full base tank lasts 90 seconds.
+  static const double _baseFuelBurnRate = 1.0 / 90.0;
+
+  /// Fuel cost for using a hint (each tier costs 5% of base tank).
+  static const double _hintFuelCost = 0.05;
 
   /// Callback when fuel runs out.
   void Function()? onFuelEmpty;
 
-  /// Current fuel level (0.0–1.0).
+  /// Current fuel level (0.0–[maxFuel]).
   double get fuel => _fuel;
 
-
   /// Refuel the tank (called when a clue is answered correctly).
-  /// The license boost extends how much fuel is restored.
+  /// Restores +75% of base tank, capped at [maxFuel].
   void refuel() {
     if (!fuelEnabled) return;
-    // Restore fuel, license boost adds extra: base * (1 + boost%)
-    final refuelAmount = 1.0 * fuelBoostMultiplier;
-    _fuel = (_fuel + refuelAmount).clamp(0.0, 1.0);
+    _fuel = (_fuel + 0.75).clamp(0.0, maxFuel);
+  }
+
+  /// Deduct fuel for using a hint. Returns false if tank is empty.
+  bool useHintFuel() {
+    if (!fuelEnabled) return true;
+    _fuel = (_fuel - _hintFuelCost).clamp(0.0, maxFuel);
+    if (_fuel <= 0) {
+      onFuelEmpty?.call();
+      return false;
+    }
+    return true;
   }
 
   bool get isPlaying => _isPlaying;
@@ -543,6 +558,7 @@ class FlitGame extends FlameGame
   @override
   Future<void> onLoad() async {
     _log.info('game', 'FlitGame.onLoad started');
+    _fuel = maxFuel; // Initialize fuel to full tank (licence-boosted).
     try {
       await super.onLoad();
 
@@ -812,12 +828,14 @@ class FlitGame extends FlameGame
 
     // --- Fuel consumption ---
     if (fuelEnabled && _fuel > 0) {
-      // Burn rate scales with speed multiplier so faster = more fuel.
-      final burnRate = _baseFuelBurnRate * _speedMultiplier;
-      // License boost reduces effective burn: burn / boostMultiplier.
-      // A 10% boost (1.1x) means fuel lasts 10% longer.
-      final effectiveBurn = burnRate / fuelBoostMultiplier;
-      _fuel = (_fuel - effectiveBurn * dt).clamp(0.0, 1.0);
+      // Burn rate scales with speed setting AND altitude:
+      //   - Faster speeds burn more fuel (2.5× at fast vs 0.5× at slow)
+      //   - Descent mode burns much less (25% of ascend rate) to encourage
+      //     exploration without fuel anxiety
+      final isLow = _planeReady && !_plane.isHighAltitude;
+      final altitudeFactor = isLow ? 0.25 : 1.0;
+      final burnRate = _baseFuelBurnRate * _speedMultiplier * altitudeFactor;
+      _fuel = (_fuel - burnRate * dt).clamp(0.0, maxFuel);
       if (_fuel <= 0) {
         onFuelEmpty?.call();
       }
@@ -997,11 +1015,17 @@ class FlitGame extends FlameGame
     } else {
       // Smooth ease-out: camera heading chases plane heading.
       // During turns, reduce the tracking speed so the camera lags behind,
-      // creating a really gradual "catch-up" effect. At full bank the rate
-      // drops to 20% of normal (~2.4), giving a ~1.3s convergence time vs
-      // ~0.25s in straight flight. This prevents motion sickness.
+      // creating a gradual "catch-up" effect.
+      //
+      // In descent mode the plane moves slowly so we need much tighter
+      // camera tracking — otherwise the camera drifts far behind during
+      // turns, making controls feel broken and unresponsive.
       final turnMag = _plane.turnDirection.abs();
-      final easeRate = _cameraHeadingEaseRate * (1.0 - turnMag * 0.8);
+      final isLow = _planeReady && !_plane.isHighAltitude;
+      // High altitude: lag up to 80% during turns (cinematic).
+      // Low altitude: lag only up to 30% during turns (responsive).
+      final lagFactor = isLow ? 0.3 : 0.8;
+      final easeRate = _cameraHeadingEaseRate * (1.0 - turnMag * lagFactor);
       final factor = 1.0 - exp(-easeRate * dt);
       _cameraHeading = _lerpAngle(_cameraHeading, _heading, factor);
     }
@@ -1133,11 +1157,15 @@ class FlitGame extends FlameGame
 
     if (dir != 0) {
       // Ramp up hold time and compute progressive strength.
+      // In descent mode, scale ramp rate faster (2×) so the plane
+      // responds immediately despite the lower movement speed.
+      final isLow = _planeReady && !_plane.isHighAltitude;
+      final rampDt = isLow ? dt * 2.0 : dt;
       if (_buttonTurnDir != 0) {
-        _buttonTurnHoldTime += dt;
+        _buttonTurnHoldTime += rampDt;
       }
       if (_keyTurnDir != 0) {
-        _keyTurnHoldTime += dt;
+        _keyTurnHoldTime += rampDt;
       }
       final holdTime = _buttonTurnDir != 0
           ? _buttonTurnHoldTime
@@ -1145,6 +1173,8 @@ class FlitGame extends FlameGame
 
       // Progressive curve: starts at 0.08, reaches 1.0 after ~0.6s.
       // Scale ramp speed with turn sensitivity setting (default 0.5 → 1.0x).
+      // In descent mode the faster ramp-up + higher base turn rate gives
+      // immediate, snappy steering that matches the slower movement.
       final sensitivityScale = GameSettings.instance.turnSensitivity / 0.5;
       final strength = (0.08 + holdTime * holdTime * 4.5 * sensitivityScale).clamp(0.0, 1.0);
       // When invertControls is false, pass direction through (right = right).
@@ -1205,9 +1235,12 @@ class FlitGame extends FlameGame
     final distanceFactor = (distToWaymarker / 10.0).clamp(0.6, 1.0);
     final baseTurnStrength = (diff / (pi * 0.25)).clamp(-1.0, 1.0);
 
-    // Smooth ramp-up: ease into the turn over 0.6s so the plane doesn't
-    // snap instantly when the player taps a waypoint.
-    final rampUp = (_waymarkerAge / 0.6).clamp(0.0, 1.0);
+    // Smooth ramp-up: ease into the turn so the plane doesn't snap instantly.
+    // In descent mode, ramp up faster (0.25s vs 0.6s) since the plane is slow
+    // and delayed response feels broken.
+    final isLow = _planeReady && !_plane.isHighAltitude;
+    final rampDuration = isLow ? 0.25 : 0.6;
+    final rampUp = (_waymarkerAge / rampDuration).clamp(0.0, 1.0);
     final turnStrength = baseTurnStrength * distanceFactor * rampUp;
     if (turnStrength.abs() < 0.02) {
       _plane.steerToward(0, dt);
@@ -1431,7 +1464,7 @@ class FlitGame extends FlameGame
     _waymarker = null; // clear any previous waymarker
     _hintTarget = null; // clear any previous hint
     _flightSpeed = FlightSpeed.medium; // reset speed
-    _fuel = 1.0; // full tank
+    _fuel = maxFuel; // full tank (includes licence bonus)
     // Start launch animation sequence.
     _launchPhase = LaunchPhase.positioning;
     _launchTimer = 0.0;
