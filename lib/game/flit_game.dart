@@ -16,7 +16,6 @@ import 'components/city_label_overlay.dart';
 import 'components/country_border_overlay.dart';
 import 'components/companion_renderer.dart';
 import 'components/contrail_renderer.dart';
-import 'components/plane_component.dart';
 import 'components/wayline_renderer.dart';
 import 'map/country_data.dart';
 import 'map/region.dart';
