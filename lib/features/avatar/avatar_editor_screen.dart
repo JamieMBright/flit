@@ -188,6 +188,41 @@ List<_AvatarCategory> _buildCategories() {
 }
 
 // =============================================================================
+// Preview config builder
+// =============================================================================
+
+/// Creates an [AvatarConfig] with one category option swapped from [base].
+///
+/// Used to generate mini avatar previews for each selectable part card.
+AvatarConfig _previewConfig(AvatarConfig base, String categoryKey, String partId) {
+  final suffix = partId.substring(partId.indexOf('_') + 1);
+  return switch (categoryKey) {
+    'eyes' => base.copyWith(
+        eyes: AvatarEyes.values.firstWhere((v) => v.name == suffix)),
+    'eyebrows' => base.copyWith(
+        eyebrows: AvatarEyebrows.values.firstWhere((v) => v.name == suffix)),
+    'mouth' => base.copyWith(
+        mouth: AvatarMouth.values.firstWhere((v) => v.name == suffix)),
+    'hair' => base.copyWith(
+        hair: AvatarHair.values.firstWhere((v) => v.name == suffix)),
+    'hairColor' => base.copyWith(
+        hairColor:
+            AvatarHairColor.values.firstWhere((v) => v.name == suffix)),
+    'skinColor' => base.copyWith(
+        skinColor:
+            AvatarSkinColor.values.firstWhere((v) => v.name == suffix)),
+    'glasses' => base.copyWith(
+        glasses: AvatarGlasses.values.firstWhere((v) => v.name == suffix)),
+    'earrings' => base.copyWith(
+        earrings:
+            AvatarEarrings.values.firstWhere((v) => v.name == suffix)),
+    'feature' => base.copyWith(
+        feature: AvatarFeature.values.firstWhere((v) => v.name == suffix)),
+    _ => base,
+  };
+}
+
+// =============================================================================
 // Avatar Editor Screen
 // =============================================================================
 
@@ -554,6 +589,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
           Expanded(
             child: _PartsGrid(
               category: _categories[_selectedCategory],
+              currentConfig: _config,
               selectedPartId: _selectedPartForCategory(
                 _categories[_selectedCategory].configKey,
               ),
@@ -707,6 +743,7 @@ class _CategoryTabBar extends StatelessWidget {
 class _PartsGrid extends StatelessWidget {
   const _PartsGrid({
     required this.category,
+    required this.currentConfig,
     required this.selectedPartId,
     required this.ownedParts,
     required this.coins,
@@ -714,6 +751,7 @@ class _PartsGrid extends StatelessWidget {
   });
 
   final _AvatarCategory category;
+  final AvatarConfig currentConfig;
   final String selectedPartId;
   final Set<String> ownedParts;
   final int coins;
@@ -738,6 +776,11 @@ class _PartsGrid extends StatelessWidget {
 
           return _PartCard(
             part: part,
+            previewConfig: _previewConfig(
+              currentConfig,
+              category.configKey,
+              part.id,
+            ),
             isSelected: isSelected,
             isOwned: isOwned,
             isLocked: isLocked,
@@ -755,6 +798,7 @@ class _PartsGrid extends StatelessWidget {
 class _PartCard extends StatelessWidget {
   const _PartCard({
     required this.part,
+    required this.previewConfig,
     required this.isSelected,
     required this.isOwned,
     required this.isLocked,
@@ -763,6 +807,7 @@ class _PartCard extends StatelessWidget {
   });
 
   final _AvatarPart part;
+  final AvatarConfig previewConfig;
   final bool isSelected;
   final bool isOwned;
   final bool isLocked;
@@ -802,18 +847,15 @@ class _PartCard extends StatelessWidget {
                         child: Center(
                           child: part.isColorSwatch
                               ? _ColorSwatch(hex: part.colorHex!)
-                              : Text(
-                                  part.label,
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? FlitColors.accent
-                                        : FlitColors.textPrimary,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
+                              : LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final previewSize =
+                                        constraints.maxWidth.clamp(32.0, 56.0);
+                                    return AvatarWidget(
+                                      config: previewConfig,
+                                      size: previewSize,
+                                    );
+                                  },
                                 ),
                         ),
                       ),
