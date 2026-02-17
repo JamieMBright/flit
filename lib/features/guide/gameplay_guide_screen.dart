@@ -27,15 +27,15 @@ class GameplayGuideScreen extends StatelessWidget {
           color: FlitColors.textPrimary,
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Row(
+        title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.airplanemode_active_rounded,
               color: FlitColors.accent,
               size: 22,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               'How to Play',
               style: TextStyle(
@@ -197,19 +197,19 @@ class _WelcomeSection extends StatelessWidget {
                 child: CustomPaint(painter: _WelcomeGlobePainter()),
               ),
               const SizedBox(width: 16),
-              Expanded(
+              const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.airplanemode_active_rounded,
                           color: FlitColors.accent,
                           size: 18,
                         ),
-                        const SizedBox(width: 6),
-                        const Text(
+                        SizedBox(width: 6),
+                        Text(
                           'FLIT',
                           style: TextStyle(
                             color: FlitColors.accent,
@@ -220,8 +220,8 @@ class _WelcomeSection extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
+                    SizedBox(height: 4),
+                    Text(
                       'How to Play',
                       style: TextStyle(
                         color: FlitColors.textPrimary,
@@ -277,14 +277,14 @@ class _WelcomeGlobePainter extends CustomPainter {
 
     // Globe gradient
     final globePaint = Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(-0.3, -0.3),
+      ..shader = const RadialGradient(
+        center: Alignment(-0.3, -0.3),
         colors: [
           FlitColors.oceanHighlight,
           FlitColors.ocean,
           FlitColors.oceanDeep,
         ],
-        stops: const [0.0, 0.55, 1.0],
+        stops: [0.0, 0.55, 1.0],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
     canvas.drawCircle(center, radius, globePaint);
 
@@ -418,21 +418,21 @@ class _GlobeSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _InteractionRow(
+          const _InteractionRow(
             icon: Icons.swipe_rounded,
             iconColor: FlitColors.oceanHighlight,
             label: 'Drag to rotate',
             description: 'Spin the globe freely in any direction.',
           ),
           const SizedBox(height: 8),
-          _InteractionRow(
+          const _InteractionRow(
             icon: Icons.pinch_rounded,
             iconColor: FlitColors.gold,
             label: 'Pinch to zoom',
             description: 'Zoom in for detail, out for context.',
           ),
           const SizedBox(height: 8),
-          _InteractionRow(
+          const _InteractionRow(
             icon: Icons.touch_app_rounded,
             iconColor: FlitColors.accent,
             label: 'Tap to select',
@@ -459,14 +459,14 @@ class _GlobeIllustrationPainter extends CustomPainter {
 
     // Ocean fill
     final oceanPaint = Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(-0.25, -0.35),
+      ..shader = const RadialGradient(
+        center: Alignment(-0.25, -0.35),
         colors: [
           FlitColors.oceanShallow,
           FlitColors.ocean,
           FlitColors.oceanDeep,
         ],
-        stops: const [0.0, 0.5, 1.0],
+        stops: [0.0, 0.5, 1.0],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
     canvas.drawCircle(center, radius, oceanPaint);
 
@@ -693,7 +693,7 @@ class _MissionSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // Clue card illustration
-          _ClueCardIllustration(),
+          const _ClueCardIllustration(),
           const SizedBox(height: 16),
           const _BodyText(
             'Clues range from geographic (hemisphere, coastline, climate) '
@@ -708,6 +708,8 @@ class _MissionSection extends StatelessWidget {
 }
 
 class _ClueCardIllustration extends StatelessWidget {
+  const _ClueCardIllustration({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -757,15 +759,15 @@ class _ClueCardIllustration extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          _ClueRow(number: 1, text: 'Located in the Northern Hemisphere', revealed: true),
+          const _ClueRow(number: 1, text: 'Located in the Northern Hemisphere', revealed: true),
           const SizedBox(height: 6),
-          _ClueRow(number: 2, text: 'Borders the Atlantic Ocean', revealed: true),
+          const _ClueRow(number: 2, text: 'Borders the Atlantic Ocean', revealed: true),
           const SizedBox(height: 6),
-          _ClueRow(number: 3, text: 'Has a monarchy as its government', revealed: true),
+          const _ClueRow(number: 3, text: 'Has a monarchy as its government', revealed: true),
           const SizedBox(height: 6),
-          _ClueRow(number: 4, text: '???', revealed: false),
+          const _ClueRow(number: 4, text: '???', revealed: false),
           const SizedBox(height: 6),
-          _ClueRow(number: 5, text: '???', revealed: false),
+          const _ClueRow(number: 5, text: '???', revealed: false),
         ],
       ),
     );
@@ -852,7 +854,7 @@ class _ScoringSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // Step indicators
-          _ScoringStep(
+          const _ScoringStep(
             step: 1,
             color: FlitColors.success,
             label: 'Correct Answer',
@@ -860,7 +862,7 @@ class _ScoringSection extends StatelessWidget {
             icon: Icons.check_rounded,
           ),
           const SizedBox(height: 8),
-          _ScoringStep(
+          const _ScoringStep(
             step: 2,
             color: FlitColors.gold,
             label: 'Speed Bonus',
@@ -868,7 +870,7 @@ class _ScoringSection extends StatelessWidget {
             icon: Icons.bolt_rounded,
           ),
           const SizedBox(height: 8),
-          _ScoringStep(
+          const _ScoringStep(
             step: 3,
             color: FlitColors.oceanHighlight,
             label: 'Clue Penalty',
@@ -876,7 +878,7 @@ class _ScoringSection extends StatelessWidget {
             icon: Icons.remove_circle_outline_rounded,
           ),
           const SizedBox(height: 8),
-          _ScoringStep(
+          const _ScoringStep(
             step: 4,
             color: FlitColors.accent,
             label: 'Distance Penalty',
@@ -885,7 +887,7 @@ class _ScoringSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // Score bar illustration
-          _ScoreBar(),
+          const _ScoreBar(),
         ],
       ),
     );
@@ -963,6 +965,8 @@ class _ScoringStep extends StatelessWidget {
 }
 
 class _ScoreBar extends StatelessWidget {
+  const _ScoreBar({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -985,18 +989,18 @@ class _ScoreBar extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          _ScoreBarRow(label: 'Base', value: 1000, max: 1500, color: FlitColors.success),
+          const _ScoreBarRow(label: 'Base', value: 1000, max: 1500, color: FlitColors.success),
           const SizedBox(height: 6),
-          _ScoreBarRow(label: 'Speed', value: 380, max: 500, color: FlitColors.gold),
+          const _ScoreBarRow(label: 'Speed', value: 380, max: 500, color: FlitColors.gold),
           const SizedBox(height: 6),
-          _ScoreBarRow(label: 'Clues', value: -200, max: 500, color: FlitColors.accent),
+          const _ScoreBarRow(label: 'Clues', value: -200, max: 500, color: FlitColors.accent),
           const SizedBox(height: 10),
           const Divider(color: FlitColors.cardBorder, height: 1),
           const SizedBox(height: 8),
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'TOTAL',
                 style: TextStyle(
                   color: FlitColors.textPrimary,
@@ -1007,7 +1011,7 @@ class _ScoreBar extends StatelessWidget {
               ),
               Text(
                 '1,180 pts',
-                style: const TextStyle(
+                style: TextStyle(
                   color: FlitColors.gold,
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -1261,7 +1265,7 @@ class _ControlsSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // Controls diagram
-          _ControlsDiagram(),
+          const _ControlsDiagram(),
           const SizedBox(height: 16),
           const _ControlRow(
             gesture: 'One finger drag',
@@ -1299,6 +1303,8 @@ class _ControlsSection extends StatelessWidget {
 }
 
 class _ControlsDiagram extends StatelessWidget {
+  const _ControlsDiagram({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Container(

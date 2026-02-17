@@ -565,7 +565,6 @@ class _AuthButton extends StatelessWidget {
     required this.onTap,
     this.icon,
     this.isPrimary = false,
-    this.isSubtle = false,
     this.isDisabled = false,
   });
 
@@ -573,7 +572,6 @@ class _AuthButton extends StatelessWidget {
   final VoidCallback onTap;
   final IconData? icon;
   final bool isPrimary;
-  final bool isSubtle;
   final bool isDisabled;
 
   @override
@@ -582,14 +580,10 @@ class _AuthButton extends StatelessWidget {
         ? FlitColors.cardBackground.withOpacity(0.5)
         : isPrimary
             ? FlitColors.accent
-            : isSubtle
-                ? Colors.transparent
-                : FlitColors.cardBackground.withOpacity(0.8);
+            : FlitColors.cardBackground.withOpacity(0.8);
     final textColor = isDisabled
         ? FlitColors.textMuted
-        : isSubtle
-            ? FlitColors.textSecondary
-            : FlitColors.textPrimary;
+        : FlitColors.textPrimary;
 
     return Material(
       color: effectiveColor,
@@ -601,9 +595,7 @@ class _AuthButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            border: isSubtle
-                ? Border.all(color: FlitColors.cardBorder.withOpacity(0.4))
-                : isPrimary && !isDisabled
+            border: isPrimary && !isDisabled
                     ? null
                     : Border.all(
                         color: FlitColors.cardBorder.withOpacity(
