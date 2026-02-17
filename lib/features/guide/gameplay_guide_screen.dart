@@ -679,7 +679,7 @@ class _MissionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _GuideCard(
+    return const _GuideCard(
       icon: Icons.location_searching_rounded,
       iconColor: FlitColors.accent,
       title: 'Your Mission',
@@ -840,7 +840,7 @@ class _ScoringSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _GuideCard(
+    return const _GuideCard(
       icon: Icons.military_tech_rounded,
       iconColor: FlitColors.gold,
       title: 'Scoring',
@@ -1252,7 +1252,7 @@ class _ControlsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _GuideCard(
+    return const _GuideCard(
       icon: Icons.gamepad_rounded,
       iconColor: FlitColors.landMassHighlight,
       title: 'Controls',
