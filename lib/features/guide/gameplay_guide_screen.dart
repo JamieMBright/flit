@@ -683,7 +683,7 @@ class _MissionSection extends StatelessWidget {
       icon: Icons.location_searching_rounded,
       iconColor: FlitColors.accent,
       title: 'Your Mission',
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _BodyText(
@@ -708,7 +708,7 @@ class _MissionSection extends StatelessWidget {
 }
 
 class _ClueCardIllustration extends StatelessWidget {
-  const _ClueCardIllustration({super.key});
+  const _ClueCardIllustration();
 
   @override
   Widget build(BuildContext context) {
@@ -844,7 +844,7 @@ class _ScoringSection extends StatelessWidget {
       icon: Icons.military_tech_rounded,
       iconColor: FlitColors.gold,
       title: 'Scoring',
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _BodyText(
@@ -965,7 +965,7 @@ class _ScoringStep extends StatelessWidget {
 }
 
 class _ScoreBar extends StatelessWidget {
-  const _ScoreBar({super.key});
+  const _ScoreBar();
 
   @override
   Widget build(BuildContext context) {
@@ -976,7 +976,7 @@ class _ScoreBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: FlitColors.cardBorder),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -1256,7 +1256,7 @@ class _ControlsSection extends StatelessWidget {
       icon: Icons.gamepad_rounded,
       iconColor: FlitColors.landMassHighlight,
       title: 'Controls',
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _BodyText(
@@ -1303,7 +1303,7 @@ class _ControlsSection extends StatelessWidget {
 }
 
 class _ControlsDiagram extends StatelessWidget {
-  const _ControlsDiagram({super.key});
+  const _ControlsDiagram();
 
   @override
   Widget build(BuildContext context) {
