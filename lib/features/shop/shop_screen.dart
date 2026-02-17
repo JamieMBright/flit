@@ -941,7 +941,6 @@ class _CosmeticCard extends StatelessWidget {
                             : item.type == CosmeticType.coPilot
                                 ? _CompanionPreview(
                                     companionId: item.id,
-                                    isLocked: isLocked,
                                   )
                                 : _ContrailPreview(
                                     colorScheme: item.colorScheme,
@@ -1272,61 +1271,145 @@ class _ContrailPainter extends CustomPainter {
 // =============================================================================
 
 class _CompanionPreview extends StatelessWidget {
-  const _CompanionPreview({
-    required this.companionId,
-    required this.isLocked,
-  });
+  const _CompanionPreview({required this.companionId});
 
   final String companionId;
-  final bool isLocked;
-
-  IconData _getCompanionIcon() {
-    switch (companionId) {
-      case 'companion_none':
-        return Icons.block;
-      case 'companion_sparrow':
-        return Icons.flutter_dash;
-      case 'companion_eagle':
-        return Icons.flight;
-      case 'companion_parrot':
-        return Icons.pets;
-      case 'companion_phoenix':
-        return Icons.local_fire_department;
-      case 'companion_dragon':
-        return Icons.whatshot;
-      default:
-        return Icons.pets;
-    }
-  }
-
-  Color _getCompanionColor() {
-    if (isLocked) return FlitColors.textMuted;
-    switch (companionId) {
-      case 'companion_none':
-        return FlitColors.textMuted;
-      case 'companion_sparrow':
-        return const Color(0xFFD2A86E); // warm tan/gold
-      case 'companion_eagle':
-        return const Color(0xFFC68B59); // visible warm brown
-      case 'companion_parrot':
-        return const Color(0xFF44DD66); // bright green
-      case 'companion_phoenix':
-        return const Color(0xFFFF7722); // bright orange
-      case 'companion_dragon':
-        return const Color(0xFF55DDAA); // bright teal
-      default:
-        return FlitColors.accent;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Icon(
-      _getCompanionIcon(),
-      size: 48,
-      color: _getCompanionColor(),
+    if (companionId == 'companion_none') {
+      return const Icon(Icons.block, size: 48, color: FlitColors.textMuted);
+    }
+    return CustomPaint(
+      size: const Size(64, 64),
+      painter: _CompanionPreviewPainter(companionId: companionId),
     );
   }
+}
+
+class _CompanionPreviewPainter extends CustomPainter {
+  _CompanionPreviewPainter({required this.companionId});
+
+  final String companionId;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    canvas.save();
+    canvas.translate(cx, cy);
+
+    switch (companionId) {
+      case 'companion_sparrow':
+        _paintBird(canvas, FlitColors.textSecondary, 12);
+      case 'companion_eagle':
+        _paintBird(canvas, const Color(0xFF8B4513), 18);
+      case 'companion_parrot':
+        _paintBird(canvas, const Color(0xFF00CC44), 15);
+      case 'companion_phoenix':
+        _paintPhoenix(canvas);
+      case 'companion_dragon':
+        _paintDragon(canvas);
+    }
+
+    canvas.restore();
+  }
+
+  void _paintBird(Canvas canvas, Color color, double birdSize) {
+    final bodyPaint = Paint()..color = color;
+    final wingPaint = Paint()..color = color.withOpacity(0.7);
+    final beakPaint = Paint()..color = const Color(0xFFFFAA00);
+
+    // Body
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset.zero, width: birdSize * 1.5, height: birdSize),
+      bodyPaint,
+    );
+
+    // Wings (spread for preview)
+    final wingPath = Path()
+      ..moveTo(0, -birdSize * 0.3)
+      ..lineTo(-birdSize * 1.5, -birdSize * 1.2)
+      ..lineTo(-birdSize * 0.4, 0)
+      ..close();
+    canvas.drawPath(wingPath, wingPaint);
+
+    final wingPath2 = Path()
+      ..moveTo(0, -birdSize * 0.3)
+      ..lineTo(birdSize * 1.5, -birdSize * 1.2)
+      ..lineTo(birdSize * 0.4, 0)
+      ..close();
+    canvas.drawPath(wingPath2, wingPaint);
+
+    // Beak
+    canvas.drawCircle(Offset(0, -birdSize * 0.6), birdSize * 0.15, beakPaint);
+
+    // Eye
+    canvas.drawCircle(
+      Offset(-birdSize * 0.2, -birdSize * 0.2),
+      birdSize * 0.1,
+      Paint()..color = Colors.white,
+    );
+    canvas.drawCircle(
+      Offset(-birdSize * 0.2, -birdSize * 0.2),
+      birdSize * 0.05,
+      Paint()..color = Colors.black,
+    );
+  }
+
+  void _paintPhoenix(Canvas canvas) {
+    // Glow
+    final glowPaint = Paint()
+      ..color = const Color(0xFFFF6600).withOpacity(0.3)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+    canvas.drawCircle(Offset.zero, 22, glowPaint);
+
+    _paintBird(canvas, const Color(0xFFFF6600), 15);
+  }
+
+  void _paintDragon(Canvas canvas) {
+    const bodyColor = Color(0xFF2E8B57);
+    final bodyPaint = Paint()..color = bodyColor;
+    final wingPaint = Paint()..color = bodyColor.withOpacity(0.6);
+
+    // Body
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset.zero, width: 24, height: 16),
+      bodyPaint,
+    );
+
+    // Bat wings
+    final leftWing = Path()
+      ..moveTo(-6, -4)
+      ..quadraticBezierTo(-24, -22, -18, -2)
+      ..quadraticBezierTo(-20, -14, -10, -2)
+      ..close();
+    canvas.drawPath(leftWing, wingPaint);
+
+    final rightWing = Path()
+      ..moveTo(6, -4)
+      ..quadraticBezierTo(24, -22, 18, -2)
+      ..quadraticBezierTo(20, -14, 10, -2)
+      ..close();
+    canvas.drawPath(rightWing, wingPaint);
+
+    // Tail
+    final tailPath = Path()
+      ..moveTo(0, 8)
+      ..quadraticBezierTo(8, 20, 4, 24)
+      ..lineTo(-2, 18)
+      ..close();
+    canvas.drawPath(tailPath, bodyPaint);
+
+    // Eyes
+    final eyePaint = Paint()..color = const Color(0xFFFFDD00);
+    canvas.drawCircle(const Offset(-4, -4), 2.5, eyePaint);
+    canvas.drawCircle(const Offset(4, -4), 2.5, eyePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CompanionPreviewPainter old) =>
+      companionId != old.companionId;
 }
 
 // =============================================================================

@@ -111,6 +111,8 @@ class RegionSelectScreen extends ConsumerWidget {
                     final companion = account.avatar.companion;
                     final fuelBoost = ref.read(accountProvider.notifier).fuelBoostMultiplier;
                     final license = account.license;
+                    final contrailId = ref.read(accountProvider).equippedContrailId;
+                    final contrail = CosmeticCatalog.getById(contrailId);
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute<void>(
                         builder: (context) => PlayScreen(
@@ -126,6 +128,12 @@ class RegionSelectScreen extends ConsumerWidget {
                           planeHandling: plane?.handling ?? 1.0,
                           planeSpeed: plane?.speed ?? 1.0,
                           planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
+                          contrailPrimaryColor: contrail?.colorScheme?['primary'] != null
+                              ? Color(contrail!.colorScheme!['primary']!)
+                              : null,
+                          contrailSecondaryColor: contrail?.colorScheme?['secondary'] != null
+                              ? Color(contrail!.colorScheme!['secondary']!)
+                              : null,
                         ),
                       ),
                     );

@@ -396,9 +396,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                 shape: BoxShape.circle,
                 border: Border.all(color: FlitColors.accent, width: 2),
               ),
-              child: ClipOval(
-                child: AvatarWidget(config: preview, size: 100),
-              ),
+              child: AvatarWidget(config: preview, size: 100),
             ),
             Container(
               padding: const EdgeInsets.all(10),
@@ -688,9 +686,7 @@ class _AvatarPreviewSection extends StatelessWidget {
                 ),
               ],
             ),
-            child: ClipOval(
-              child: AvatarWidget(config: config, size: 160),
-            ),
+            child: AvatarWidget(config: config, size: 160),
           ),
         ),
       );

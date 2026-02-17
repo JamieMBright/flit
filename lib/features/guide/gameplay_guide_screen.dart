@@ -243,8 +243,8 @@ class _WelcomeSection extends StatelessWidget {
           const SizedBox(height: 16),
           const _BodyText(
             'Welcome, pilot. You are about to embark on a geography flight '
-            'adventure around our planet. Spin the globe, read the clues, '
-            'identify countries, and rack up points — the faster you fly, '
+            'adventure around our planet. Fly your plane across the globe, read the clues, '
+            'identify countries, and fly into their airspace — the faster you guess, '
             'the higher you score.',
           ),
           const SizedBox(height: 12),
@@ -419,24 +419,24 @@ class _GlobeSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const _InteractionRow(
-            icon: Icons.swipe_rounded,
+            icon: Icons.flight_rounded,
             iconColor: FlitColors.oceanHighlight,
-            label: 'Drag to rotate',
-            description: 'Spin the globe freely in any direction.',
+            label: 'Steer your plane',
+            description: 'Use the L/R turn buttons to fly in any direction.',
           ),
           const SizedBox(height: 8),
           const _InteractionRow(
-            icon: Icons.pinch_rounded,
+            icon: Icons.height_rounded,
             iconColor: FlitColors.gold,
-            label: 'Pinch to zoom',
-            description: 'Zoom in for detail, out for context.',
+            label: 'Change altitude',
+            description: 'Toggle altitude to switch between globe view and ground level.',
           ),
           const SizedBox(height: 8),
           const _InteractionRow(
             icon: Icons.touch_app_rounded,
             iconColor: FlitColors.accent,
-            label: 'Tap to select',
-            description: 'Tap a country to submit your answer.',
+            label: 'Tap to set waypoint',
+            description: 'Tap the globe to set a waypoint — your plane auto-steers toward it.',
           ),
         ],
       ),
@@ -573,8 +573,8 @@ class _GlobeIllustrationPainter extends CustomPainter {
       fontSize: 9,
       letterSpacing: 0.5,
     );
-    _drawLabel(canvas, 'DRAG', center + Offset(-radius - 28, 0), labelStyle);
-    _drawLabel(canvas, 'ZOOM', center + Offset(radius + 28, 0), labelStyle);
+    _drawLabel(canvas, 'FLY', center + Offset(-radius - 28, 0), labelStyle);
+    _drawLabel(canvas, 'ALT', center + Offset(radius + 28, 0), labelStyle);
 
     // Arrow hints
     final arrowPaint = Paint()
@@ -1261,40 +1261,34 @@ class _ControlsSection extends StatelessWidget {
         children: [
           const _BodyText(
             'Flit is designed for touchscreens but also works with mouse '
-            'and trackpad. All interactions are gesture-based.',
+            'and trackpad.',
           ),
           const SizedBox(height: 16),
           // Controls diagram
           const _ControlsDiagram(),
           const SizedBox(height: 16),
           const _ControlRow(
-            gesture: 'One finger drag',
-            icon: Icons.swipe_rounded,
-            effect: 'Rotate the globe in any direction',
+            gesture: 'L/R turn buttons',
+            icon: Icons.swap_horiz_rounded,
+            effect: 'Steer the plane left or right',
           ),
           const SizedBox(height: 8),
           const _ControlRow(
-            gesture: 'Two finger pinch',
-            icon: Icons.pinch_rounded,
-            effect: 'Zoom in and out',
+            gesture: 'Altitude toggle',
+            icon: Icons.height_rounded,
+            effect: 'Switch between high and low altitude',
           ),
           const SizedBox(height: 8),
           const _ControlRow(
             gesture: 'Single tap',
             icon: Icons.ads_click_rounded,
-            effect: 'Select a country / submit answer',
+            effect: 'Set a navigation waypoint on the globe',
           ),
           const SizedBox(height: 8),
           const _ControlRow(
-            gesture: 'Double tap',
-            icon: Icons.touch_app_rounded,
-            effect: 'Quick zoom to tapped region',
-          ),
-          const SizedBox(height: 8),
-          const _ControlRow(
-            gesture: 'Two finger rotate',
-            icon: Icons.rotate_90_degrees_ccw_rounded,
-            effect: 'Tilt the globe axis',
+            gesture: 'Speed selector',
+            icon: Icons.speed_rounded,
+            effect: 'Choose slow, medium, or fast flight',
           ),
         ],
       ),
@@ -1332,23 +1326,22 @@ class _ControlsDiagramPainter extends CustomPainter {
     // Arrow right
     _drawArrow(canvas, Offset(zone1cx, cy - 8), Offset(zone1cx + 26, cy - 8),
         FlitColors.oceanHighlight);
-    _drawLabel(canvas, 'DRAG', Offset(zone1cx, cy + 22), FlitColors.textMuted);
+    _drawLabel(canvas, 'STEER', Offset(zone1cx, cy + 22), FlitColors.textMuted);
 
-    // --- Zone 2: Pinch ---
+    // --- Zone 2: Altitude ---
     final zone2cx = third * 1.5;
-    _drawGestureCircle(canvas, Offset(zone2cx - 14, cy - 8), 10, FlitColors.gold);
-    _drawGestureCircle(canvas, Offset(zone2cx + 14, cy - 8), 10, FlitColors.gold);
-    // Converging arrows
-    final arrowPaint = Paint()
+    _drawGestureCircle(canvas, Offset(zone2cx, cy - 8), 18, FlitColors.gold);
+    // Up/down arrow
+    final altPaint = Paint()
       ..color = FlitColors.gold.withOpacity(0.7)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
     canvas.drawLine(
-      Offset(zone2cx - 6, cy - 8),
-      Offset(zone2cx + 6, cy - 8),
-      arrowPaint,
+      Offset(zone2cx, cy - 20),
+      Offset(zone2cx, cy + 4),
+      altPaint,
     );
-    _drawLabel(canvas, 'PINCH', Offset(zone2cx, cy + 22), FlitColors.textMuted);
+    _drawLabel(canvas, 'ALT', Offset(zone2cx, cy + 22), FlitColors.textMuted);
 
     // --- Zone 3: Tap ---
     final zone3cx = third * 2.5;

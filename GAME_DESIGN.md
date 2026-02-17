@@ -70,7 +70,7 @@ cruising altitude.
 - Seasonal events with themed vehicles (Christmas sleigh, etc.)
 - Medal progression: Bronze -> Silver -> Gold -> Platinum (20 steps)
 - Hall of Fame shows yesterday's winner
-- Licensed vs Unlicensed leaderboard toggle
+- Single global leaderboard (licence boosts always apply)
 
 ### 4. Dogfight (Challenge)
 - **Best of 5 rounds** head-to-head
@@ -253,11 +253,10 @@ Points are determined by **speed** (faster = higher score).
 | Yearly     | January 1st |
 | All-Time   | Never |
 
-### Licensed vs Unlicensed
-Players can optionally verify their "Pilot License" (identity
-verification). Two separate leaderboards:
-- **Unlicensed:** Open to all, may include casual/alt accounts
-- **Licensed:** Verified accounts only, competitive integrity
+### Single Global Board
+All players compete on one global leaderboard. Pilot licence boosts
+(coin, clue, fuel) always apply, so every board reflects the full
+gameplay experience.
 
 ### Hall of Fame
 Previous daily winners are preserved in a historical record showing date,

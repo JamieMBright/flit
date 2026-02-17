@@ -126,6 +126,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     final companion = account.avatar.companion;
     final fuelBoost = ref.read(accountProvider.notifier).fuelBoostMultiplier;
     final license = account.license;
+    final contrailId = ref.read(accountProvider).equippedContrailId;
+    final contrail = CosmeticCatalog.getById(contrailId);
     // Navigate directly to play screen for round 1
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -144,6 +146,12 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           planeHandling: plane?.handling ?? 1.0,
           planeSpeed: plane?.speed ?? 1.0,
           planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
+          contrailPrimaryColor: contrail?.colorScheme?['primary'] != null
+              ? Color(contrail!.colorScheme!['primary']!)
+              : null,
+          contrailSecondaryColor: contrail?.colorScheme?['secondary'] != null
+              ? Color(contrail!.colorScheme!['secondary']!)
+              : null,
         ),
       ),
     ).then((_) {
