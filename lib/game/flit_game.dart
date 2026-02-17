@@ -69,6 +69,8 @@ class FlitGame extends FlameGame
     this.planeHandling = 1.0,
     this.planeSpeed = 1.0,
     this.planeFuelEfficiency = 1.0,
+    this.contrailPrimaryColor,
+    this.contrailSecondaryColor,
   });
 
   /// The game region being played. Determines renderer (globe vs flat map).
@@ -97,6 +99,12 @@ class FlitGame extends FlameGame
 
   /// Wing span for the equipped plane cosmetic.
   final double? planeWingSpan;
+
+  /// Primary contrail color from equipped contrail cosmetic.
+  final Color? contrailPrimaryColor;
+
+  /// Secondary contrail color from equipped contrail cosmetic.
+  final Color? contrailSecondaryColor;
 
   /// Whether to use the new GPU shader renderer (V1+) or legacy Canvas.
   final bool useShaderRenderer;
@@ -626,7 +634,10 @@ class FlitGame extends FlameGame
       }
 
       // Contrail overlay — renders on top of globe, before the plane.
-      await add(ContrailRenderer());
+      await add(ContrailRenderer(
+        primaryColor: contrailPrimaryColor,
+        secondaryColor: contrailSecondaryColor,
+      ));
 
       // Wayline overlay — draws translucent line from plane to waymarker.
       _waylineRenderer = WaylineRenderer();

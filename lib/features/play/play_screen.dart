@@ -49,6 +49,8 @@ class PlayScreen extends ConsumerStatefulWidget {
     this.preferredClueType,
     this.enabledClueTypes,
     this.enableFuel = false,
+    this.contrailPrimaryColor,
+    this.contrailSecondaryColor,
   });
 
   /// The region to play in.
@@ -107,6 +109,12 @@ class PlayScreen extends ConsumerStatefulWidget {
   /// Whether fuel mechanics are active. True for training, daily, dogfight.
   /// False for free flight.
   final bool enableFuel;
+
+  /// Primary contrail color from equipped cosmetic.
+  final Color? contrailPrimaryColor;
+
+  /// Secondary contrail color from equipped cosmetic.
+  final Color? contrailSecondaryColor;
 
   @override
   ConsumerState<PlayScreen> createState() => _PlayScreenState();
@@ -179,6 +187,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         planeHandling: widget.planeHandling,
         planeSpeed: widget.planeSpeed,
         planeFuelEfficiency: widget.planeFuelEfficiency,
+        contrailPrimaryColor: widget.contrailPrimaryColor,
+        contrailSecondaryColor: widget.contrailSecondaryColor,
       );
     } catch (e, st) {
       _log.error('screen', 'PlayScreen.initState FAILED',

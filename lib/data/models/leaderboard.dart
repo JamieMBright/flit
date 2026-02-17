@@ -1,12 +1,11 @@
-// Enhanced leaderboard models supporting separate licensed/unlicensed play,
-// daily/seasonal/all-time boards, regional and friends boards, annual cosmetic
-// rewards, and rich placeholder data for UI development.
+// Leaderboard models supporting global, daily/seasonal/all-time boards,
+// regional and friends boards, annual cosmetic rewards, and rich placeholder
+// data for UI development.
 //
-// **Design rationale** -- Licensed players have gacha advantages (coin boost,
-// clue boost, fuel boost from their PilotLicense), so their scores are
-// tracked on a separate board. The unlicensed board is a level playing field
-// for pure skill ranking. Both boards are intended to drive competitive play
-// and streaming appeal.
+// **Design rationale** -- All players compete on the same boards. Pilot
+// license boosts always apply, so every board reflects the full gameplay
+// experience. Daily, all-time, regional and friends boards provide additional
+// filters for competitive play and streaming appeal.
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -14,14 +13,10 @@
 
 /// The type / scope of a leaderboard.
 ///
-/// Licensed and unlicensed boards are the two primary competitive axes.
-/// Daily, all-time, regional and friends boards provide additional filters.
+/// Global, daily, all-time, regional and friends boards.
 enum LeaderboardType {
-  /// Fair play -- no pilot license boosts applied.
-  globalUnlicensed,
-
-  /// With pilot license boosts (coin, clue, fuel) applied to scoring.
-  globalLicensed,
+  /// Global leaderboard — pilot license boosts always apply.
+  global,
 
   /// Today's daily challenge leaderboard (resets at midnight UTC).
   daily,
@@ -39,10 +34,8 @@ enum LeaderboardType {
 extension LeaderboardTypeExtension on LeaderboardType {
   String get displayName {
     switch (this) {
-      case LeaderboardType.globalUnlicensed:
-        return 'Global (Unlicensed)';
-      case LeaderboardType.globalLicensed:
-        return 'Global (Licensed)';
+      case LeaderboardType.global:
+        return 'Global';
       case LeaderboardType.daily:
         return 'Daily Challenge';
       case LeaderboardType.allTime:
@@ -56,10 +49,8 @@ extension LeaderboardTypeExtension on LeaderboardType {
 
   String get shortName {
     switch (this) {
-      case LeaderboardType.globalUnlicensed:
-        return 'Unlicensed';
-      case LeaderboardType.globalLicensed:
-        return 'Licensed';
+      case LeaderboardType.global:
+        return 'Global';
       case LeaderboardType.daily:
         return 'Daily';
       case LeaderboardType.allTime:
@@ -73,10 +64,8 @@ extension LeaderboardTypeExtension on LeaderboardType {
 
   String get description {
     switch (this) {
-      case LeaderboardType.globalUnlicensed:
-        return 'No boosts — pure skill ranking on a level playing field';
-      case LeaderboardType.globalLicensed:
-        return 'Players using Pilot License boosts (coin, clue, fuel)';
+      case LeaderboardType.global:
+        return 'All pilots compete on a single global board';
       case LeaderboardType.daily:
         return "Today's challenge — resets at midnight UTC";
       case LeaderboardType.allTime:
@@ -87,9 +76,6 @@ extension LeaderboardTypeExtension on LeaderboardType {
         return 'How you stack up against your friends';
     }
   }
-
-  /// Whether this board type separates licensed / unlicensed play.
-  bool get isLicensedBoard => this == LeaderboardType.globalLicensed;
 }
 
 /// The time window a leaderboard covers.
@@ -275,9 +261,9 @@ class LeaderboardEntry {
 
 /// An annual reward granted to top-ranked players on the all-time board.
 ///
-/// At the end of each calendar year, the top N players on both the licensed
-/// and unlicensed all-time boards receive a unique cosmetic that can never
-/// be obtained again. This drives long-term competitive motivation.
+/// At the end of each calendar year, the top N players on the all-time
+/// board receive a unique cosmetic that can never be obtained again. This
+/// drives long-term competitive motivation.
 class LeaderboardReward {
   const LeaderboardReward({
     required this.id,
@@ -340,52 +326,28 @@ class LeaderboardReward {
   /// Placeholder annual rewards for UI development.
   static const List<LeaderboardReward> placeholderRewards = [
     LeaderboardReward(
-      id: 'reward_2025_unlicensed_1',
+      id: 'reward_2025_global_1',
       year: 2025,
-      boardType: LeaderboardType.globalUnlicensed,
+      boardType: LeaderboardType.global,
       minRank: 1,
       maxRank: 1,
       cosmeticId: 'plane_aurora_2025',
       cosmeticName: 'Aurora Champion 2025',
       description:
-          'One-of-a-kind plane awarded to the #1 unlicensed pilot of 2025. '
+          'One-of-a-kind plane awarded to the #1 pilot of 2025. '
           'A shimmering aurora-painted fuselage that can never be obtained again.',
     ),
     LeaderboardReward(
-      id: 'reward_2025_unlicensed_top10',
+      id: 'reward_2025_global_top10',
       year: 2025,
-      boardType: LeaderboardType.globalUnlicensed,
+      boardType: LeaderboardType.global,
       minRank: 2,
       maxRank: 10,
       cosmeticId: 'contrail_frost_2025',
       cosmeticName: 'Frost Trail 2025',
       description:
-          'Exclusive contrail awarded to the top 10 unlicensed pilots of 2025. '
+          'Exclusive contrail awarded to the top 10 pilots of 2025. '
           'Ice crystals shimmer in your wake.',
-    ),
-    LeaderboardReward(
-      id: 'reward_2025_licensed_1',
-      year: 2025,
-      boardType: LeaderboardType.globalLicensed,
-      minRank: 1,
-      maxRank: 1,
-      cosmeticId: 'plane_phoenix_2025',
-      cosmeticName: 'Phoenix Champion 2025',
-      description:
-          'One-of-a-kind plane awarded to the #1 licensed pilot of 2025. '
-          'Blazing feathers trail behind this legendary craft.',
-    ),
-    LeaderboardReward(
-      id: 'reward_2025_licensed_top10',
-      year: 2025,
-      boardType: LeaderboardType.globalLicensed,
-      minRank: 2,
-      maxRank: 10,
-      cosmeticId: 'contrail_ember_2025',
-      cosmeticName: 'Ember Trail 2025',
-      description:
-          'Exclusive contrail awarded to the top 10 licensed pilots of 2025. '
-          'Glowing embers dance behind your plane.',
     ),
   ];
 }
@@ -641,8 +603,7 @@ class Leaderboard {
   /// Generate a fully populated placeholder leaderboard for UI development.
   ///
   /// Returns different data per [type]:
-  /// - **globalLicensed** scores are ~8-15% higher than unlicensed to
-  ///   reflect pilot license boost advantages.
+  /// - **global** uses 50 entries with pilot license boosts applied.
   /// - **daily** has fewer entries and tighter score spreads.
   /// - **allTime** includes annual reward metadata.
   /// - **regional** / **friends** use smaller entry sets with region/friend
@@ -658,16 +619,10 @@ class Leaderboard {
     final List<LeaderboardReward> rewards;
 
     switch (type) {
-      case LeaderboardType.globalUnlicensed:
+      case LeaderboardType.global:
         timeframe = LeaderboardTimeframe.thisMonth;
-        entries = _buildGlobalEntries(licensed: false);
+        entries = _buildGlobalEntries();
         totalEntries = 12847;
-        rewards = const [];
-        break;
-      case LeaderboardType.globalLicensed:
-        timeframe = LeaderboardTimeframe.thisMonth;
-        entries = _buildGlobalEntries(licensed: true);
-        totalEntries = 8923;
         rewards = const [];
         break;
       case LeaderboardType.daily:
@@ -720,12 +675,8 @@ class Leaderboard {
 
   // ── Private placeholder builders ─────────────────────────────────────
 
-  /// 50 entries for global boards. Licensed scores are ~10% higher.
-  static List<LeaderboardEntry> _buildGlobalEntries({
-    required bool licensed,
-  }) {
-    // Score boost multiplier for licensed play.
-    final double boostFactor = licensed ? 1.12 : 1.0;
+  /// 50 entries for the global board.
+  static List<LeaderboardEntry> _buildGlobalEntries() {
 
     // Creative usernames -- geography, aviation and exploration themed.
     const topNames = <_PlaceholderPlayer>[
@@ -816,9 +767,8 @@ class Leaderboard {
         rawScore = baseScore - 4690 - (rank - 40) * 80;
       }
 
-      // Apply licensed boost and add small per-rank variance.
-      final int score =
-          ((rawScore + (rank.isEven ? 37 : -23)) * boostFactor).round();
+      // Add small per-rank variance.
+      final int score = rawScore + (rank.isEven ? 37 : -23);
 
       // Time increases with rank (worse players are slower).
       final timeMs = 72000 + (rank * 1850) + (rank.isOdd ? 430 : -210);
@@ -835,7 +785,7 @@ class Leaderboard {
         bestTime: Duration(milliseconds: timeMs),
         rank: rank,
         gamesPlayed: gamesPlayed,
-        isLicensed: licensed,
+        isLicensed: true,
         displayTitle: player.title,
         level: player.level,
         streak: rank <= 5 ? (20 - rank * 3) : (rank <= 15 ? 5 : 0),

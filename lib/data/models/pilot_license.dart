@@ -11,7 +11,7 @@ const List<String> clueTypes = [
 
 /// A pilot license with gacha-rolled stat boosts.
 ///
-/// Each license has three boost percentages (1-10) and a preferred clue type.
+/// Each license has three boost percentages (1-25) and a preferred clue type.
 /// Higher stat values are exponentially rarer, making a perfect license
 /// extraordinarily unlikely.
 class PilotLicense {
@@ -23,16 +23,16 @@ class PilotLicense {
     required this.preferredClueType,
   });
 
-  /// Bonus coin percentage earned per game (1-10).
+  /// Bonus coin percentage earned per game (1-25).
   final int coinBoost;
 
-  /// Bonus percentage chance of receiving [preferredClueType] clues (1-10).
+  /// Bonus percentage chance of receiving [preferredClueType] clues (1-25).
   final int clueBoost;
 
-  /// Bonus percentage chance of receiving extra clues (1-10).
+  /// Bonus percentage chance of receiving extra clues (1-25).
   final int clueChance;
 
-  /// Bonus fuel / speed-boost duration percentage in solo play (1-10).
+  /// Bonus fuel / speed-boost duration percentage in solo play (1-25).
   final int fuelBoost;
 
   /// Which clue type receives the [clueBoost] bonus.
@@ -54,15 +54,15 @@ class PilotLicense {
   /// Additional cost to lock the preferred clue type during a reroll.
   static const int lockTypeCost = 150;
 
-  /// Scaling cost to lock a stat based on its current value (1-10).
-  /// Low values (1-3) are cheap to lock, high values (7-10) are expensive.
+  /// Scaling cost to lock a stat based on its current value (1-25).
+  /// Low values (1-5) are cheap to lock, high values (21-25) are expensive.
   static int lockCostForValue(int statValue) {
     if (statValue <= 1) return 0;
-    if (statValue <= 3) return 50;
-    if (statValue <= 5) return 150;
-    if (statValue <= 7) return 400;
-    if (statValue <= 9) return 1000;
-    return 2500; // value == 10
+    if (statValue <= 5) return 50;
+    if (statValue <= 10) return 150;
+    if (statValue <= 15) return 400;
+    if (statValue <= 20) return 1000;
+    return 2500; // value 21-25
   }
 
   // ---------------------------------------------------------------------------
@@ -72,32 +72,43 @@ class PilotLicense {
   /// Weighted stat roll table.
   ///
   /// Distribution:
-  ///   1-3  : ~60 %  (common)
-  ///   4-6  : ~25 %  (uncommon)
-  ///   7-8  : ~10 %  (rare)
-  ///   9    : ~4  %  (epic)
-  ///   10   : ~1  %  (legendary)
+  ///   1-5  : ~50 %  (common)
+  ///   6-10 : ~25 %  (uncommon)
+  ///   11-15: ~15 %  (rare)
+  ///   16-20: ~8  %  (epic)
+  ///   21-24: ~1.75% (legendary — 0.44% each)
+  ///   25   : ~0.25% (perfect)
   ///
-  /// Implemented as a 100-entry lookup table for O(1) rolls.
-  static const List<int> _weightTable = [
-    // 1-3 common — 20 entries each = 60 total
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //  1 x20
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, //  2 x20
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, //  3 x20
-    // 4-6 uncommon — ~8-9 entries each = 25 total
-    4, 4, 4, 4, 4, 4, 4, 4, 4, //  4 x9
-    5, 5, 5, 5, 5, 5, 5, 5,    //  5 x8
-    6, 6, 6, 6, 6, 6, 6, 6,    //  6 x8
-    // 7-8 rare — 5 entries each = 10 total
-    7, 7, 7, 7, 7, //  7 x5
-    8, 8, 8, 8, 8, //  8 x5
-    // 9 epic — 4 entries
-    9, 9, 9, 9, //  9 x4
-    // 10 legendary — 1 entry
-    10, // 10 x1
+  /// Implemented as a 400-entry lookup table for O(1) rolls.
+  static final List<int> _weightTable = [
+    for (var i = 0; i < 40; i++) 1,
+    for (var i = 0; i < 40; i++) 2,
+    for (var i = 0; i < 40; i++) 3,
+    for (var i = 0; i < 40; i++) 4,
+    for (var i = 0; i < 40; i++) 5,
+    for (var i = 0; i < 20; i++) 6,
+    for (var i = 0; i < 20; i++) 7,
+    for (var i = 0; i < 20; i++) 8,
+    for (var i = 0; i < 20; i++) 9,
+    for (var i = 0; i < 20; i++) 10,
+    for (var i = 0; i < 12; i++) 11,
+    for (var i = 0; i < 12; i++) 12,
+    for (var i = 0; i < 12; i++) 13,
+    for (var i = 0; i < 12; i++) 14,
+    for (var i = 0; i < 12; i++) 15,
+    for (var i = 0; i < 7; i++) 16,
+    for (var i = 0; i < 7; i++) 17,
+    for (var i = 0; i < 6; i++) 18,
+    for (var i = 0; i < 6; i++) 19,
+    for (var i = 0; i < 6; i++) 20,
+    for (var i = 0; i < 2; i++) 21,
+    for (var i = 0; i < 2; i++) 22,
+    for (var i = 0; i < 2; i++) 23,
+    24,
+    25,
   ];
 
-  /// Roll a single stat value (1-10) using the rarity-weighted distribution.
+  /// Roll a single stat value (1-25) using the rarity-weighted distribution.
   ///
   /// When [luckBonus] > 0, the roll is attempted multiple times and the
   /// best result is kept. This simulates "advantage" — rarer avatars give
@@ -193,16 +204,16 @@ class PilotLicense {
 
   /// Rarity tier derived from [totalBoost].
   ///
-  ///   4-12  → Bronze
-  ///   13-22 → Silver
-  ///   23-32 → Gold
-  ///   33-38 → Diamond
-  ///   39-40 → Perfect
+  ///   4-25  → Bronze
+  ///   26-50 → Silver
+  ///   51-75 → Gold
+  ///   76-90 → Diamond
+  ///   91-100 → Perfect
   String get rarityTier {
-    if (totalBoost >= 39) return 'Perfect';
-    if (totalBoost >= 33) return 'Diamond';
-    if (totalBoost >= 23) return 'Gold';
-    if (totalBoost >= 13) return 'Silver';
+    if (totalBoost >= 91) return 'Perfect';
+    if (totalBoost >= 76) return 'Diamond';
+    if (totalBoost >= 51) return 'Gold';
+    if (totalBoost >= 26) return 'Silver';
     return 'Bronze';
   }
 

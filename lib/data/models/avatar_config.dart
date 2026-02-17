@@ -172,9 +172,8 @@ enum AvatarCompanion {
 /// All per-feature fields (eyes, mouth, hair, etc.) are passed as explicit
 /// API params for every style. For [AvatarStyle.adventurer] this gives full
 /// 1:1 control. For other styles DiceBear uses params it recognises and
-/// ignores the rest; a fixed per-style seed keeps the base avatar (face
-/// shape, overall structure) stable so changing one option doesn't alter
-/// everything.
+/// ignores the rest; the seed encodes all selected features so changing any
+/// option produces a visually distinct avatar.
 /// Free defaults are chosen so every new player has a complete look.
 class AvatarConfig {
   const AvatarConfig({
@@ -251,16 +250,14 @@ class AvatarConfig {
       'backgroundColor': 'transparent',
     };
 
-    // Adventurer: config-derived seed (all features are explicit anyway).
-    // Other styles: fixed per-style seed so the base look never jumps when
-    // a single option like eyes is changed.
-    if (style == AvatarStyle.adventurer) {
-      params['seed'] = '${eyes.name}-${eyebrows.name}-${mouth.name}-'
-          '${hair.name}-${hairColor.name}-${skinColor.name}-'
-          '${glasses.name}-${earrings.name}-${feature.name}';
-    } else {
-      params['seed'] = 'flit-${style.slug}';
-    }
+    // All styles: config-derived seed so that changing any feature produces
+    // a visually distinct avatar. The explicit per-feature params give 1:1
+    // control for Adventurer; for other styles DiceBear uses what it
+    // recognises, and the seed variation ensures the base shape also changes
+    // when features are swapped.
+    params['seed'] = 'flit-${style.slug}-${eyes.name}-${eyebrows.name}-'
+        '${mouth.name}-${hair.name}-${hairColor.name}-${skinColor.name}-'
+        '${glasses.name}-${earrings.name}-${feature.name}';
 
     // Pass explicit per-feature params for every style. For Adventurer each
     // value maps 1:1. For other DiceBear styles the API uses values it

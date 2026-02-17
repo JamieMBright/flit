@@ -12,7 +12,19 @@ import 'plane_component.dart';
 /// stay fixed on the map as the plane flies away — creating a trailing
 /// ribbon effect. Particles are separated by wing side (left/right) and
 /// drawn as continuous lines that fade with age.
+///
+/// Contrail color is driven by the equipped cosmetic's [primaryColor] and
+/// [secondaryColor]. When both are set the trail lerps between them; when
+/// only primary is set a single color is used; the default falls back to
+/// [FlitColors.contrail].
 class ContrailRenderer extends Component with HasGameRef<FlitGame> {
+  ContrailRenderer({this.primaryColor, this.secondaryColor});
+
+  /// Primary contrail color from equipped cosmetic.
+  final Color? primaryColor;
+
+  /// Secondary contrail color from equipped cosmetic (lerped from primary).
+  final Color? secondaryColor;
   @override
   void render(Canvas canvas) {
     super.render(canvas);
@@ -67,8 +79,13 @@ class ContrailRenderer extends Component with HasGameRef<FlitGame> {
 
       // Use the average opacity for this segment and fade the stroke width.
       final opacity = (opacityA + opacityB) * 0.5;
+      final t = 1.0 - opacity; // 0 = fresh (primary), 1 = old (secondary)
+      final baseColor = primaryColor ?? FlitColors.contrail;
+      final trailColor = secondaryColor != null
+          ? Color.lerp(baseColor, secondaryColor!, t)!
+          : baseColor;
       final paint = Paint()
-        ..color = FlitColors.contrail.withOpacity(opacity * 0.7)
+        ..color = trailColor.withOpacity(opacity * 0.7)
         ..strokeWidth = 1.2 + opacity * 0.8
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;

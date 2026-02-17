@@ -299,24 +299,42 @@ class _ClueCard extends StatelessWidget {
         ),
       );
 
-  /// Builds a flag widget with error handling for unsupported country codes
-  /// (e.g. XK for Kosovo). Falls back to the flag emoji text if the SVG
-  /// flag can't be rendered.
+  /// Builds a flag widget with error handling for unsupported country codes.
+  /// Falls back to the flag emoji text if the SVG flag can't be rendered.
   Widget _buildFlagWidget(String countryCode) {
-    // Codes known to be unsupported by the flag package
-    const unsupportedCodes = {'XK'}; // Kosovo
+    // Codes known to be unsupported or problematic in the flag package v7
+    const unsupportedCodes = {
+      'XK', // Kosovo
+      'AN', // Netherlands Antilles (dissolved)
+      'CS', // Serbia and Montenegro (dissolved)
+      'EH', // Western Sahara
+      'BQ', // Caribbean Netherlands
+      'SX', // Sint Maarten
+      'CW', // Curaçao
+      'MF', // Saint Martin
+      'BL', // Saint Barthélemy
+      'SS', // South Sudan
+      'TP', // East Timor (old code)
+    };
 
-    if (unsupportedCodes.contains(countryCode.toUpperCase())) {
+    final code = countryCode.toUpperCase();
+    if (code.length != 2 || unsupportedCodes.contains(code)) {
       return _flagEmojiFallback(countryCode);
     }
 
+    // Wrap in a Builder + try/catch for construction errors, and an
+    // _ErrorBoundary for render-time errors from the flag SVG package.
     try {
-      return Flag.fromString(
+      final flagWidget = Flag.fromString(
         countryCode,
         height: 56,
         width: 84,
         fit: BoxFit.contain,
         borderRadius: 4,
+      );
+      return _FlagErrorBoundary(
+        fallback: _flagEmojiFallback(countryCode),
+        child: flagWidget,
       );
     } catch (_) {
       return _flagEmojiFallback(countryCode);
@@ -918,5 +936,52 @@ class _FuelGauge extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Catches render-time errors from the flag SVG package and shows [fallback].
+class _FlagErrorBoundary extends StatefulWidget {
+  const _FlagErrorBoundary({required this.child, required this.fallback});
+
+  final Widget child;
+  final Widget fallback;
+
+  @override
+  State<_FlagErrorBoundary> createState() => _FlagErrorBoundaryState();
+}
+
+class _FlagErrorBoundaryState extends State<_FlagErrorBoundary> {
+  bool _hasError = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasError) return widget.fallback;
+
+    // Wrap child so that layout/render errors trigger the fallback.
+    return _ErrorCatcher(
+      onError: () {
+        if (mounted) setState(() => _hasError = true);
+      },
+      child: widget.child,
+    );
+  }
+}
+
+class _ErrorCatcher extends StatelessWidget {
+  const _ErrorCatcher({required this.onError, required this.child});
+
+  final VoidCallback onError;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    // If the child throws during build, catch it here.
+    try {
+      return child;
+    } catch (_) {
+      // Schedule the error callback after the current frame.
+      WidgetsBinding.instance.addPostFrameCallback((_) => onError());
+      return const SizedBox.shrink();
+    }
   }
 }

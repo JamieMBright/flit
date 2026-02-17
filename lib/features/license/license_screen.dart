@@ -46,12 +46,12 @@ Color _colorForRarity(String rarityTier) {
   }
 }
 
-/// Returns the stat bar segment color based on the boost value (1-10).
+/// Returns the stat bar segment color based on the boost value (1-25).
 Color _statColor(int value) {
-  if (value >= 10) return const Color(0xFFFFD700);
-  if (value >= 9) return const Color(0xFFFF8C00);
-  if (value >= 7) return const Color(0xFF9B59B6);
-  if (value >= 4) return const Color(0xFF4A90D9);
+  if (value >= 25) return const Color(0xFFFFD700);
+  if (value >= 21) return const Color(0xFFFF8C00);
+  if (value >= 16) return const Color(0xFF9B59B6);
+  if (value >= 6) return const Color(0xFF4A90D9);
   return const Color(0xFF6AAB5C);
 }
 
@@ -1028,7 +1028,7 @@ class _CompactStatBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _statColor(value);
-    final isMax = value >= 10;
+    final isMax = value >= 25;
 
     return GestureDetector(
       onTap: onTap,
@@ -1080,7 +1080,7 @@ class _CompactStatBar extends StatelessWidget {
   Widget _buildSegments(Color color, bool isMax) => LayoutBuilder(
         builder: (context, constraints) {
           return Row(
-            children: List.generate(10, (i) {
+            children: List.generate(25, (i) {
               final filled = i < value;
               final isLastFilled = i == value - 1 && isMax;
               final baseOpacity = filled ? 1.0 : 0.15;
@@ -1090,7 +1090,7 @@ class _CompactStatBar extends StatelessWidget {
 
               return Expanded(
                 child: Container(
-                  margin: EdgeInsets.only(right: i < 9 ? 1.5 : 0),
+                  margin: EdgeInsets.only(right: i < 24 ? 0.5 : 0),
                   height: 7,
                   decoration: BoxDecoration(
                     color: filled

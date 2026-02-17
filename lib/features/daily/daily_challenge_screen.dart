@@ -10,7 +10,7 @@ import '../../game/map/region.dart';
 import '../play/play_screen.dart';
 
 /// Daily challenge screen showing today's challenge details, seasonal events,
-/// rewards, and leaderboards with licensed/unlicensed toggle.
+/// rewards, and leaderboard.
 class DailyChallengeScreen extends ConsumerStatefulWidget {
   const DailyChallengeScreen({super.key});
 
@@ -22,8 +22,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
   late final DailyChallenge _challenge;
   final SeasonalTheme? _seasonalTheme = SeasonalTheme.current();
 
-  /// 0 = Unlicensed, 1 = Licensed.
-  int _leaderboardTab = 0;
+  // Licence bonuses always apply — no unlicensed/licensed split.
 
   @override
   void initState() {
@@ -59,12 +58,6 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                   const _MedalProgressSection(),
                   const SizedBox(height: 16),
                   _LeaderboardSection(
-                    selectedTab: _leaderboardTab,
-                    onTabChanged: (tab) {
-                      setState(() {
-                        _leaderboardTab = tab;
-                      });
-                    },
                     entries: DailyChallenge.placeholderLeaderboard,
                   ),
                   const SizedBox(height: 16),
@@ -88,6 +81,8 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
     final companion = account.avatar.companion;
     final fuelBoost = ref.read(accountProvider.notifier).fuelBoostMultiplier;
     final license = account.license;
+    final contrailId = ref.read(accountProvider).equippedContrailId;
+    final contrail = CosmeticCatalog.getById(contrailId);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => PlayScreen(
@@ -107,6 +102,12 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           planeHandling: plane?.handling ?? 1.0,
           planeSpeed: plane?.speed ?? 1.0,
           planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
+          contrailPrimaryColor: contrail?.colorScheme?['primary'] != null
+              ? Color(contrail!.colorScheme!['primary']!)
+              : null,
+          contrailSecondaryColor: contrail?.colorScheme?['secondary'] != null
+              ? Color(contrail!.colorScheme!['secondary']!)
+              : null,
           onComplete: (totalScore) {
             ref.read(accountProvider.notifier).addCoins(reward);
           },
@@ -620,13 +621,9 @@ class _RewardTile extends StatelessWidget {
 
 class _LeaderboardSection extends StatelessWidget {
   const _LeaderboardSection({
-    required this.selectedTab,
-    required this.onTabChanged,
     required this.entries,
   });
 
-  final int selectedTab;
-  final ValueChanged<int> onTabChanged;
   final List<DailyLeaderboardEntry> entries;
 
   @override
@@ -639,18 +636,18 @@ class _LeaderboardSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Section header + tab toggle
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+            // Section header
+            const Padding(
+              padding: EdgeInsets.fromLTRB(14, 14, 14, 0),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.leaderboard_rounded,
                     color: FlitColors.gold,
                     size: 18,
                   ),
-                  const SizedBox(width: 6),
-                  const Text(
+                  SizedBox(width: 6),
+                  Text(
                     'LEADERBOARD',
                     style: TextStyle(
                       color: FlitColors.textMuted,
@@ -658,11 +655,6 @@ class _LeaderboardSection extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.2,
                     ),
-                  ),
-                  const Spacer(),
-                  _LeaderboardToggle(
-                    selectedTab: selectedTab,
-                    onTabChanged: onTabChanged,
                   ),
                 ],
               ),
@@ -674,74 +666,6 @@ class _LeaderboardSection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
           ],
-        ),
-      );
-}
-
-class _LeaderboardToggle extends StatelessWidget {
-  const _LeaderboardToggle({
-    required this.selectedTab,
-    required this.onTabChanged,
-  });
-
-  final int selectedTab;
-  final ValueChanged<int> onTabChanged;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          color: FlitColors.backgroundDark,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        padding: const EdgeInsets.all(2),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _ToggleTab(
-              label: 'Unlicensed',
-              isSelected: selectedTab == 0,
-              onTap: () => onTabChanged(0),
-            ),
-            _ToggleTab(
-              label: 'Licensed',
-              isSelected: selectedTab == 1,
-              onTap: () => onTabChanged(1),
-            ),
-          ],
-        ),
-      );
-}
-
-class _ToggleTab extends StatelessWidget {
-  const _ToggleTab({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: isSelected ? FlitColors.accent : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected
-                  ? FlitColors.textPrimary
-                  : FlitColors.textMuted,
-              fontSize: 11,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
         ),
       );
 }

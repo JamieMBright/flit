@@ -391,72 +391,144 @@ class _MapBackgroundPainter extends CustomPainter {
       canvas.drawPath(vPath, gridPaint);
     }
 
-    // Continent silhouettes
-    final landPaint = Paint()..color = FlitColors.landMass.withOpacity(0.15);
+    // Continent silhouettes — more recognisable shapes with terrain layers
+    final landPaint = Paint()..color = FlitColors.landMass.withOpacity(0.18);
+    final terrainPaint = Paint()..color = FlitColors.landMass.withOpacity(0.10);
     final coastPaint = Paint()
-      ..color = FlitColors.coastline.withOpacity(0.2)
+      ..color = FlitColors.coastline.withOpacity(0.25)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 1.2;
+    final coastGlowPaint = Paint()
+      ..color = FlitColors.oceanHighlight.withOpacity(0.08)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.0
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
 
-    // Europe/Africa
+    // Europe + Mediterranean
     final europe = Path()
-      ..moveTo(size.width * 0.48, size.height * 0.15)
-      ..quadraticBezierTo(size.width * 0.55, size.height * 0.18,
-          size.width * 0.52, size.height * 0.28)
-      ..quadraticBezierTo(size.width * 0.54, size.height * 0.35,
-          size.width * 0.50, size.height * 0.55)
-      ..quadraticBezierTo(size.width * 0.48, size.height * 0.60,
-          size.width * 0.46, size.height * 0.50)
-      ..quadraticBezierTo(size.width * 0.44, size.height * 0.30,
-          size.width * 0.46, size.height * 0.20)
+      ..moveTo(size.width * 0.47, size.height * 0.12)
+      ..cubicTo(size.width * 0.50, size.height * 0.10, size.width * 0.55,
+          size.height * 0.11, size.width * 0.56, size.height * 0.14)
+      ..cubicTo(size.width * 0.57, size.height * 0.18, size.width * 0.54,
+          size.height * 0.20, size.width * 0.52, size.height * 0.22)
+      ..quadraticBezierTo(size.width * 0.55, size.height * 0.24,
+          size.width * 0.53, size.height * 0.27)
+      ..quadraticBezierTo(size.width * 0.50, size.height * 0.28,
+          size.width * 0.48, size.height * 0.26)
+      ..quadraticBezierTo(size.width * 0.45, size.height * 0.22,
+          size.width * 0.44, size.height * 0.17)
       ..close();
+    canvas.drawPath(europe, coastGlowPaint);
     canvas.drawPath(europe, landPaint);
     canvas.drawPath(europe, coastPaint);
 
-    // Americas
-    final americas = Path()
-      ..moveTo(size.width * 0.22, size.height * 0.12)
-      ..quadraticBezierTo(size.width * 0.28, size.height * 0.15,
-          size.width * 0.26, size.height * 0.30)
-      ..quadraticBezierTo(size.width * 0.28, size.height * 0.38,
-          size.width * 0.24, size.height * 0.55)
-      ..quadraticBezierTo(size.width * 0.22, size.height * 0.65,
-          size.width * 0.20, size.height * 0.70)
-      ..quadraticBezierTo(size.width * 0.18, size.height * 0.60,
-          size.width * 0.17, size.height * 0.45)
-      ..quadraticBezierTo(size.width * 0.16, size.height * 0.30,
-          size.width * 0.19, size.height * 0.18)
+    // Africa
+    final africa = Path()
+      ..moveTo(size.width * 0.47, size.height * 0.30)
+      ..cubicTo(size.width * 0.52, size.height * 0.28, size.width * 0.55,
+          size.height * 0.32, size.width * 0.54, size.height * 0.38)
+      ..cubicTo(size.width * 0.56, size.height * 0.44, size.width * 0.54,
+          size.height * 0.52, size.width * 0.51, size.height * 0.58)
+      ..quadraticBezierTo(size.width * 0.49, size.height * 0.62,
+          size.width * 0.47, size.height * 0.58)
+      ..cubicTo(size.width * 0.44, size.height * 0.52, size.width * 0.43,
+          size.height * 0.44, size.width * 0.44, size.height * 0.36)
       ..close();
-    canvas.drawPath(americas, landPaint);
-    canvas.drawPath(americas, coastPaint);
+    canvas.drawPath(africa, coastGlowPaint);
+    canvas.drawPath(africa, landPaint);
+    canvas.drawPath(africa, terrainPaint);
+    canvas.drawPath(africa, coastPaint);
+
+    // North America
+    final northAmerica = Path()
+      ..moveTo(size.width * 0.15, size.height * 0.12)
+      ..cubicTo(size.width * 0.22, size.height * 0.08, size.width * 0.30,
+          size.height * 0.10, size.width * 0.32, size.height * 0.14)
+      ..cubicTo(size.width * 0.33, size.height * 0.18, size.width * 0.30,
+          size.height * 0.24, size.width * 0.28, size.height * 0.28)
+      ..quadraticBezierTo(size.width * 0.27, size.height * 0.32,
+          size.width * 0.24, size.height * 0.34)
+      ..quadraticBezierTo(size.width * 0.22, size.height * 0.30,
+          size.width * 0.20, size.height * 0.28)
+      ..cubicTo(size.width * 0.16, size.height * 0.24, size.width * 0.13,
+          size.height * 0.20, size.width * 0.13, size.height * 0.16)
+      ..close();
+    canvas.drawPath(northAmerica, coastGlowPaint);
+    canvas.drawPath(northAmerica, landPaint);
+    canvas.drawPath(northAmerica, coastPaint);
+
+    // South America
+    final southAmerica = Path()
+      ..moveTo(size.width * 0.26, size.height * 0.38)
+      ..cubicTo(size.width * 0.29, size.height * 0.36, size.width * 0.30,
+          size.height * 0.40, size.width * 0.29, size.height * 0.48)
+      ..cubicTo(size.width * 0.28, size.height * 0.56, size.width * 0.26,
+          size.height * 0.64, size.width * 0.23, size.height * 0.70)
+      ..quadraticBezierTo(size.width * 0.21, size.height * 0.68,
+          size.width * 0.21, size.height * 0.62)
+      ..cubicTo(size.width * 0.20, size.height * 0.54, size.width * 0.22,
+          size.height * 0.46, size.width * 0.24, size.height * 0.40)
+      ..close();
+    canvas.drawPath(southAmerica, coastGlowPaint);
+    canvas.drawPath(southAmerica, landPaint);
+    canvas.drawPath(southAmerica, terrainPaint);
+    canvas.drawPath(southAmerica, coastPaint);
 
     // Asia
     final asia = Path()
-      ..moveTo(size.width * 0.60, size.height * 0.12)
-      ..quadraticBezierTo(size.width * 0.72, size.height * 0.15,
-          size.width * 0.78, size.height * 0.22)
-      ..quadraticBezierTo(size.width * 0.82, size.height * 0.30,
-          size.width * 0.75, size.height * 0.38)
-      ..quadraticBezierTo(size.width * 0.68, size.height * 0.42,
-          size.width * 0.62, size.height * 0.35)
-      ..quadraticBezierTo(size.width * 0.56, size.height * 0.25,
-          size.width * 0.58, size.height * 0.15)
+      ..moveTo(size.width * 0.58, size.height * 0.10)
+      ..cubicTo(size.width * 0.65, size.height * 0.08, size.width * 0.76,
+          size.height * 0.10, size.width * 0.82, size.height * 0.16)
+      ..cubicTo(size.width * 0.86, size.height * 0.20, size.width * 0.85,
+          size.height * 0.28, size.width * 0.80, size.height * 0.34)
+      ..cubicTo(size.width * 0.76, size.height * 0.38, size.width * 0.68,
+          size.height * 0.40, size.width * 0.62, size.height * 0.36)
+      ..cubicTo(size.width * 0.58, size.height * 0.30, size.width * 0.56,
+          size.height * 0.22, size.width * 0.56, size.height * 0.15)
       ..close();
+    canvas.drawPath(asia, coastGlowPaint);
     canvas.drawPath(asia, landPaint);
+    canvas.drawPath(asia, terrainPaint);
     canvas.drawPath(asia, coastPaint);
 
     // Australia
     final australia = Path()
-      ..moveTo(size.width * 0.73, size.height * 0.55)
-      ..quadraticBezierTo(size.width * 0.80, size.height * 0.52,
-          size.width * 0.84, size.height * 0.58)
-      ..quadraticBezierTo(size.width * 0.85, size.height * 0.66,
-          size.width * 0.80, size.height * 0.70)
-      ..quadraticBezierTo(size.width * 0.75, size.height * 0.68,
-          size.width * 0.72, size.height * 0.62)
+      ..moveTo(size.width * 0.74, size.height * 0.52)
+      ..cubicTo(size.width * 0.78, size.height * 0.50, size.width * 0.84,
+          size.height * 0.52, size.width * 0.86, size.height * 0.57)
+      ..cubicTo(size.width * 0.87, size.height * 0.62, size.width * 0.84,
+          size.height * 0.68, size.width * 0.80, size.height * 0.70)
+      ..cubicTo(size.width * 0.76, size.height * 0.69, size.width * 0.73,
+          size.height * 0.64, size.width * 0.73, size.height * 0.58)
       ..close();
+    canvas.drawPath(australia, coastGlowPaint);
     canvas.drawPath(australia, landPaint);
     canvas.drawPath(australia, coastPaint);
+
+    // City light dots on continents (animated twinkle)
+    final cityLightPaint = Paint();
+    const cityPositions = [
+      // Europe
+      [0.50, 0.18], [0.52, 0.20], [0.48, 0.16],
+      // Africa
+      [0.49, 0.36], [0.51, 0.42], [0.48, 0.48],
+      // North America
+      [0.22, 0.18], [0.26, 0.22], [0.28, 0.26],
+      // South America
+      [0.26, 0.48], [0.24, 0.56],
+      // Asia
+      [0.68, 0.20], [0.74, 0.24], [0.78, 0.28], [0.64, 0.32],
+      // Australia
+      [0.80, 0.62], [0.78, 0.58],
+    ];
+    for (var i = 0; i < cityPositions.length; i++) {
+      final pos = cityPositions[i];
+      final x = size.width * pos[0];
+      final y = size.height * pos[1];
+      final twinkle = 0.15 + 0.2 * sin(t * 2 * pi * 1.5 + i * 1.3);
+      cityLightPaint.color = FlitColors.gold.withOpacity(twinkle);
+      canvas.drawCircle(Offset(x, y), 1.5, cityLightPaint);
+    }
 
     // Animated dashed flight path (arc across the screen)
     _drawFlightPath(canvas, size);
