@@ -3,14 +3,17 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/avatar_config.dart';
+import 'avatar_compositor.dart';
 
-/// Renders a DiceBear avatar from the network as an SVG.
+/// Renders a DiceBear avatar as an SVG.
 ///
-/// Builds a fully-specified DiceBear API URL from the given [AvatarConfig]
-/// so the avatar is deterministic. Shows a themed placeholder while loading
-/// and a fallback icon on error or timeout.
+/// For [AvatarStyle.adventurer], the avatar is composited entirely from local
+/// SVG parts — no network call, no loading state, instant render.
 ///
-/// The widget sizes itself to [size] x [size] logical pixels and is safe
+/// For other styles, falls back to fetching from the DiceBear API with proper
+/// error handling and a timeout.
+///
+/// The widget sizes itself to [size] × [size] logical pixels and is safe
 /// to use anywhere a square widget is expected (lists, cards, profiles).
 class AvatarWidget extends StatefulWidget {
   const AvatarWidget({
@@ -27,32 +30,33 @@ class AvatarWidget extends StatefulWidget {
 }
 
 class _AvatarWidgetState extends State<AvatarWidget> {
+  /// Cached composed SVG string for the current config (adventurer only).
+  String? _composedSvg;
+
+  /// Whether a network fetch has failed or timed out (non-adventurer only).
   bool _timedOut = false;
   bool _hasError = false;
 
   @override
   void initState() {
     super.initState();
-    _startTimeout();
+    _compose();
   }
 
   @override
   void didUpdateWidget(AvatarWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.config != widget.config) {
-      setState(() {
-        _timedOut = false;
-        _hasError = false;
-      });
-      _startTimeout();
+      _compose();
     }
   }
 
-  void _startTimeout() {
-    Future.delayed(const Duration(seconds: 8), () {
-      if (mounted && !_hasError) {
-        setState(() => _timedOut = true);
-      }
+  void _compose() {
+    final svg = AvatarCompositor.compose(widget.config);
+    setState(() {
+      _composedSvg = svg;
+      _timedOut = false;
+      _hasError = false;
     });
   }
 
@@ -71,18 +75,69 @@ class _AvatarWidgetState extends State<AvatarWidget> {
               width: widget.size * 0.02,
             ),
           ),
-          child: (_timedOut || _hasError)
-              ? _AvatarFallback(size: widget.size)
-              : SvgPicture.network(
-                  widget.config.svgUri.toString(),
+          child: _composedSvg != null
+              ? SvgPicture.string(
+                  _composedSvg!,
                   width: widget.size,
                   height: widget.size,
                   fit: BoxFit.cover,
-                  placeholderBuilder: (_) =>
-                      _AvatarPlaceholder(size: widget.size),
-                ),
+                )
+              : (_timedOut || _hasError)
+                  ? _AvatarFallback(size: widget.size)
+                  : _NetworkAvatar(
+                      config: widget.config,
+                      size: widget.size,
+                      onError: () {
+                        if (mounted) setState(() => _hasError = true);
+                      },
+                      onTimeout: () {
+                        if (mounted) setState(() => _timedOut = true);
+                      },
+                    ),
         ),
       ),
+    );
+  }
+}
+
+/// Fallback network-based avatar for non-adventurer styles.
+///
+/// Wraps [SvgPicture.network] with a proper timeout timer that is cancelled
+/// on successful load, config change, or disposal.
+class _NetworkAvatar extends StatefulWidget {
+  const _NetworkAvatar({
+    required this.config,
+    required this.size,
+    required this.onError,
+    required this.onTimeout,
+  });
+
+  final AvatarConfig config;
+  final double size;
+  final VoidCallback onError;
+  final VoidCallback onTimeout;
+
+  @override
+  State<_NetworkAvatar> createState() => _NetworkAvatarState();
+}
+
+class _NetworkAvatarState extends State<_NetworkAvatar> {
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(const Duration(seconds: 8), () {
+      if (mounted) widget.onTimeout();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SvgPicture.network(
+      widget.config.svgUri.toString(),
+      width: widget.size,
+      height: widget.size,
+      fit: BoxFit.cover,
+      placeholderBuilder: (_) => _AvatarPlaceholder(size: widget.size),
     );
   }
 }

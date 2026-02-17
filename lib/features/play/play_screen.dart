@@ -130,6 +130,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   bool _gameReady = false;
   String? _error;
 
+  /// Safety timeout — if the game engine hasn't signalled ready after 20s,
+  /// show an error instead of spinning forever.
+  Timer? _gameReadyTimeout;
+
   /// Compute altitude transition for DescentMapView zoom in flat map mode.
   /// Maps region bounds to a zoom level where the whole region fits on screen.
   double get _flatMapZoom {
@@ -190,6 +194,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         contrailPrimaryColor: widget.contrailPrimaryColor,
         contrailSecondaryColor: widget.contrailSecondaryColor,
       );
+      // Safety timeout — if onLoad takes too long, show an error rather than
+      // spinning forever. The timer is cancelled in _onGameReady or dispose.
+      _gameReadyTimeout = Timer(const Duration(seconds: 20), () {
+        if (mounted && !_gameReady && _error == null) {
+          _log.error('screen', 'Game ready timeout (20s)');
+          setState(() {
+            _error = 'Game engine failed to start.\n\nPlease go back and try '
+                'again. If the problem persists, restart the app.';
+          });
+        }
+      });
     } catch (e, st) {
       _log.error('screen', 'PlayScreen.initState FAILED',
           error: e, stackTrace: st);
@@ -209,6 +224,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     _log.info('screen', 'PlayScreen.dispose');
     _timer?.cancel();
     _autoHintTimer?.cancel();
+    _gameReadyTimeout?.cancel();
     AudioManager.instance.stopEngine();
     // Detach the Flame game to stop its loop and release resources.
     // Without this, the game loop can outlive the widget and crash when
@@ -225,6 +241,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
   void _onGameReady() {
     _log.info('screen', 'Game engine ready');
+    _gameReadyTimeout?.cancel();
+    _gameReadyTimeout = null;
     if (!mounted) return;
     setState(() {
       _gameReady = true;
