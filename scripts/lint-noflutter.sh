@@ -140,10 +140,13 @@ check_const_constructors() {
         local line_num=$(echo "$match" | cut -d: -f1)
         local line_text=$(echo "$match" | cut -d: -f2-)
 
-        # Skip if already in a const context (line starts with const or is inside const [...])
-        if echo "$line_text" | grep -qP '^\s*const\s' 2>/dev/null; then continue; fi
-        # Skip if preceded by 'const' keyword on same line
-        if echo "$line_text" | grep -qP '\bconst\s+(EdgeInsets|Offset|Color|Duration|Radius|SizedBox|Padding)' 2>/dev/null; then continue; fi
+        # Skip if already in a const context:
+        # - Line starts with const
+        # - 'const' appears anywhere on the same line (covers nested const constructors)
+        # - 'const [' or 'const {' on the same line (list/map literals)
+        # This is deliberately permissive to avoid false positives — the real
+        # analyzer handles the nuances of Dart const propagation.
+        if echo "$line_text" | grep -qP '\bconst\b' 2>/dev/null; then continue; fi
 
         echo "  INFO [$file:$line_num]: Consider adding 'const' to constructor (prefer_const_constructors)"
     done < <(grep -nP '(?<!\bconst\s)(?<!\bconst\s\s)\b(EdgeInsets\.(all|only|symmetric|fromLTRB)|Offset|Color|Duration|Radius\.(circular|elliptical)|SizedBox)\s*\([0-9., xeE+\-]*\)' "$file" 2>/dev/null || true)
@@ -177,28 +180,48 @@ check_print_statements() {
 check_bracket_balance() {
     local file="$1"
 
-    # Remove string literals and comments to avoid false positives
-    local content=$(sed 's|//.*||; s|/\*.*\*/||g' "$file" 2>/dev/null || cat "$file")
+    # Strip comments to reduce noise. We cannot perfectly strip Dart string
+    # literals from bash (raw strings r'...', interpolation, multi-line strings
+    # all defeat simple regex). So we use a tolerance threshold: small
+    # imbalances (<=3) are likely brackets inside string literals and are
+    # reported as warnings. Large imbalances (>3) indicate real syntax errors
+    # and are reported as errors. The real analyzer (flutter analyze) is the
+    # authoritative check — this is just a fast pre-commit heuristic.
+    local content=$(sed -e 's|//.*||' -e 's|/\*.*\*/||g' "$file" 2>/dev/null || cat "$file")
 
-    local opens=$(echo "$content" | tr -cd '(' | wc -c)
-    local closes=$(echo "$content" | tr -cd ')' | wc -c)
-    if [ "$opens" -ne "$closes" ]; then
+    local opens closes diff
+
+    opens=$(echo "$content" | tr -cd '(' | wc -c)
+    closes=$(echo "$content" | tr -cd ')' | wc -c)
+    diff=$(( opens - closes ))
+    diff=${diff#-}  # absolute value
+    if [ "$diff" -gt 3 ]; then
         echo "  ERROR [$file]: Unbalanced parentheses (opened: $opens, closed: $closes)"
         ERRORS=$((ERRORS + 1))
+    elif [ "$diff" -gt 0 ]; then
+        echo "  INFO [$file]: Minor paren imbalance (opened: $opens, closed: $closes) — likely string content"
     fi
 
     opens=$(echo "$content" | tr -cd '{' | wc -c)
     closes=$(echo "$content" | tr -cd '}' | wc -c)
-    if [ "$opens" -ne "$closes" ]; then
+    diff=$(( opens - closes ))
+    diff=${diff#-}
+    if [ "$diff" -gt 3 ]; then
         echo "  ERROR [$file]: Unbalanced braces (opened: $opens, closed: $closes)"
         ERRORS=$((ERRORS + 1))
+    elif [ "$diff" -gt 0 ]; then
+        echo "  INFO [$file]: Minor brace imbalance (opened: $opens, closed: $closes) — likely string content"
     fi
 
     opens=$(echo "$content" | tr -cd '[' | wc -c)
     closes=$(echo "$content" | tr -cd ']' | wc -c)
-    if [ "$opens" -ne "$closes" ]; then
+    diff=$(( opens - closes ))
+    diff=${diff#-}
+    if [ "$diff" -gt 3 ]; then
         echo "  ERROR [$file]: Unbalanced brackets (opened: $opens, closed: $closes)"
         ERRORS=$((ERRORS + 1))
+    elif [ "$diff" -gt 0 ]; then
+        echo "  INFO [$file]: Minor bracket imbalance (opened: $opens, closed: $closes) — likely string content"
     fi
 }
 

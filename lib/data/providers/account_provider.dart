@@ -91,11 +91,6 @@ class AccountNotifier extends StateNotifier<AccountState> {
     state = state.copyWith(currentPlayer: player);
   }
 
-  void switchToPlayer1() => switchAccount(TestAccounts.player1);
-  void switchToPlayer2() => switchAccount(TestAccounts.player2);
-  void switchToGodAccount() => switchAccount(TestAccounts.godAccount);
-  void switchToNewPlayer() => switchAccount(TestAccounts.newPlayer);
-
   /// Add coins to current account.
   ///
   /// When [applyBoost] is true (default), the pilot license coin boost
@@ -351,11 +346,6 @@ final currentLevelProvider = Provider<int>((ref) {
 /// Convenience provider for current coins
 final currentCoinsProvider = Provider<int>((ref) {
   return ref.watch(currentPlayerProvider).coins;
-});
-
-/// Convenience provider for purchased region IDs
-final purchasedRegionIdsProvider = Provider<Set<String>>((ref) {
-  return ref.watch(accountProvider).unlockedRegions;
 });
 
 /// Convenience provider for avatar config

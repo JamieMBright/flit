@@ -182,37 +182,3 @@ class GameSession {
     );
   }
 }
-
-/// Result of a completed game session
-class GameResult {
-  const GameResult({
-    required this.targetCountry,
-    required this.clueType,
-    required this.elapsed,
-    required this.score,
-    required this.flightPath,
-  });
-
-  final String targetCountry;
-  final ClueType clueType;
-  final Duration elapsed;
-  final int score;
-  final List<Vector2> flightPath;
-
-  factory GameResult.fromSession(GameSession session) {
-    return GameResult(
-      targetCountry: session.targetCountry.code,
-      clueType: session.clue.type,
-      elapsed: session.elapsed,
-      score: session.score,
-      flightPath: session.flightPath,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        'targetCountry': targetCountry,
-        'clueType': clueType.name,
-        'elapsedMs': elapsed.inMilliseconds,
-        'score': score,
-      };
-}

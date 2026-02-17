@@ -296,11 +296,6 @@ class ErrorService {
     }
   }
 
-  /// Serialize the current queue to a JSON-encoded list string.
-  String toJsonList() {
-    return jsonEncode(_queue.map((e) => e.toJson()).toList());
-  }
-
   // ---------------------------------------------------------------------------
   // Flushing (send queued errors to the backend)
   // ---------------------------------------------------------------------------

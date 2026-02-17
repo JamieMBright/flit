@@ -49,13 +49,4 @@ abstract class TestAccounts {
 
   /// All test accounts
   static List<Player> get all => [player1, player2, godAccount, newPlayer];
-
-  /// Get account by ID
-  static Player? getById(String id) {
-    try {
-      return all.firstWhere((p) => p.id == id);
-    } catch (_) {
-      return null;
-    }
-  }
 }
