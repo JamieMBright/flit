@@ -12,7 +12,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Flit">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/Icon-apple-touch-180.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/Icon-192.png">
 
   <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json">
@@ -258,13 +259,17 @@
     // Check whether an error message is a known non-fatal shader/renderer
     // issue. These are handled gracefully in Dart with fallback rendering,
     // so the JS handler should NOT freeze the UI for them.
-    function isShaderError(msg) {
+    function isNonFatalError(msg) {
       return msg && (
         msg.indexOf('FragmentProgram') >= 0 ||
         msg.indexOf('Unsupported operation') >= 0 ||
         msg.indexOf('HTML renderer') >= 0 ||
         msg.indexOf('not supported for the') >= 0 ||
-        msg.indexOf('shader') >= 0 && msg.indexOf('failed') >= 0
+        msg.indexOf('shader') >= 0 && msg.indexOf('failed') >= 0 ||
+        msg.indexOf('Invalid SVG') >= 0 ||
+        msg.indexOf('invalid svg') >= 0 ||
+        msg.indexOf('SVG data') >= 0 ||
+        msg.indexOf('SvgParser') >= 0
       );
     }
 
@@ -273,7 +278,7 @@
       var msg = (e.message || '') + '\n' + (e.filename || '') + ':' + (e.lineno || '');
 
       // Shader/renderer errors are recovered in Dart — log but don't freeze.
-      if (isShaderError(msg)) {
+      if (isNonFatalError(msg)) {
         console.warn('[FLIT] Non-fatal shader error caught at JS level:', msg);
         if (window._flitLogNonFatal) window._flitLogNonFatal('[JS] ' + msg);
         e.preventDefault();
@@ -299,7 +304,7 @@
       }
 
       // Shader/renderer errors are recovered in Dart — log but don't freeze.
-      if (isShaderError(msg)) {
+      if (isNonFatalError(msg)) {
         console.warn('[FLIT] Non-fatal shader error caught at JS level:', msg);
         if (window._flitLogNonFatal) window._flitLogNonFatal('[JS Async] ' + msg);
         e.preventDefault();
