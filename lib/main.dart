@@ -19,6 +19,17 @@ final _log = GameLog.instance;
 /// Periodic flush interval for error telemetry.
 const _flushInterval = Duration(seconds: 60);
 
+/// Returns `true` for errors that should be logged but NOT crash the app.
+/// SVG parsing failures (from flutter_svg / DiceBear / flag package) are
+/// non-fatal — the affected widget shows a fallback, the game continues.
+bool _isNonFatalError(Object error) {
+  final msg = error.toString();
+  return msg.contains('Invalid SVG') ||
+      msg.contains('invalid svg') ||
+      msg.contains('SVG data') ||
+      msg.contains('SvgParser');
+}
+
 /// Global error message holder. When non-null, [ErrorWidget.builder] and
 /// [FlitApp] both render a frozen error screen instead of the normal UI.
 String? _fatalError;
@@ -107,6 +118,7 @@ void main() {
 
   // Capture Flutter framework errors (widget build failures, etc.)
   FlutterError.onError = (details) {
+    final isNonFatal = _isNonFatalError(details.exception);
     FlutterError.presentError(details);
     _log.error(
       'flutter',
@@ -114,6 +126,15 @@ void main() {
       error: details.exception,
       stackTrace: details.stack,
     );
+    if (isNonFatal) {
+      // SVG/parsing errors: log as warning, don't crash the app.
+      errorService.reportWarning(
+        details.exception,
+        details.stack,
+        context: {'source': 'FlutterError.onError', 'nonFatal': 'true'},
+      );
+      return;
+    }
     // Mark as CRITICAL to trigger immediate flush (iOS PWA may reload before
     // the 60-second periodic timer fires).
     errorService.reportCritical(
@@ -130,6 +151,15 @@ void main() {
   // Capture async / platform errors that escape the framework.
   PlatformDispatcher.instance.onError = (error, stack) {
     _log.error('platform', '$error', error: error, stackTrace: stack);
+    if (_isNonFatalError(error)) {
+      // SVG/parsing errors: log as warning, don't freeze the screen.
+      errorService.reportWarning(
+        error,
+        stack,
+        context: {'source': 'PlatformDispatcher.onError', 'nonFatal': 'true'},
+      );
+      return true;
+    }
     // Mark as CRITICAL to trigger immediate flush (iOS PWA may reload before
     // the 60-second periodic timer fires).
     errorService.reportCritical(
@@ -152,6 +182,15 @@ void main() {
     },
     (error, stack) {
       _log.error('zone', '$error', error: error, stackTrace: stack);
+      if (_isNonFatalError(error)) {
+        // SVG/parsing errors: log as warning, don't freeze the screen.
+        errorService.reportWarning(
+          error,
+          stack,
+          context: {'source': 'runZonedGuarded', 'nonFatal': 'true'},
+        );
+        return;
+      }
       // Mark as CRITICAL to trigger immediate flush (iOS PWA may reload before
       // the 60-second periodic timer fires).
       errorService.reportCritical(
