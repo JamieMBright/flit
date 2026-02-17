@@ -150,29 +150,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           const SizedBox(height: 32),
 
-          // Create account (primary CTA)
+          // Continue as guest (primary CTA — account creation coming soon)
           _AuthButton(
-            label: 'CREATE ACCOUNT',
+            label: 'PLAY AS GUEST',
             isPrimary: true,
             icon: Icons.flight_takeoff,
-            onTap: () => setState(() => _mode = _AuthMode.createAccount),
+            onTap: _continueAsGuest,
           ),
           const SizedBox(height: 12),
 
-          // Sign up with email
+          // Create account (coming soon)
+          _AuthButton(
+            label: 'CREATE ACCOUNT',
+            icon: Icons.person_add_outlined,
+            isDisabled: true,
+            onTap: () {},
+          ),
+          const SizedBox(height: 12),
+
+          // Sign up with email (coming soon)
           _AuthButton(
             label: 'SIGN UP WITH EMAIL',
             icon: Icons.email_outlined,
-            onTap: () => setState(() => _mode = _AuthMode.emailSignup),
-          ),
-          const SizedBox(height: 12),
-
-          // Continue as guest
-          _AuthButton(
-            label: 'PLAY AS GUEST',
-            icon: Icons.person_outline,
-            isSubtle: true,
-            onTap: _continueAsGuest,
+            isDisabled: true,
+            onTap: () {},
           ),
 
           const SizedBox(height: 24),
@@ -565,6 +566,7 @@ class _AuthButton extends StatelessWidget {
     this.icon,
     this.isPrimary = false,
     this.isSubtle = false,
+    this.isDisabled = false,
   });
 
   final String label;
@@ -572,55 +574,83 @@ class _AuthButton extends StatelessWidget {
   final IconData? icon;
   final bool isPrimary;
   final bool isSubtle;
+  final bool isDisabled;
 
   @override
-  Widget build(BuildContext context) => Material(
-        color: isPrimary
+  Widget build(BuildContext context) {
+    final effectiveColor = isDisabled
+        ? FlitColors.cardBackground.withOpacity(0.5)
+        : isPrimary
             ? FlitColors.accent
             : isSubtle
                 ? Colors.transparent
-                : FlitColors.cardBackground.withOpacity(0.8),
+                : FlitColors.cardBackground.withOpacity(0.8);
+    final textColor = isDisabled
+        ? FlitColors.textMuted
+        : isSubtle
+            ? FlitColors.textSecondary
+            : FlitColors.textPrimary;
+
+    return Material(
+      color: effectiveColor,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: isDisabled ? null : onTap,
         borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border: isSubtle
-                  ? Border.all(color: FlitColors.cardBorder.withOpacity(0.4))
-                  : isPrimary
-                      ? null
-                      : Border.all(color: FlitColors.cardBorder),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (icon != null) ...[
-                  Icon(
-                    icon,
-                    color: isSubtle
-                        ? FlitColors.textSecondary
-                        : FlitColors.textPrimary,
-                    size: 20,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: isSubtle
+                ? Border.all(color: FlitColors.cardBorder.withOpacity(0.4))
+                : isPrimary && !isDisabled
+                    ? null
+                    : Border.all(
+                        color: FlitColors.cardBorder.withOpacity(
+                          isDisabled ? 0.2 : 1.0,
+                        ),
+                      ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, color: textColor, size: 20),
+                const SizedBox(width: 10),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              if (isDisabled) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: FlitColors.textMuted.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  const SizedBox(width: 10),
-                ],
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: isSubtle
-                        ? FlitColors.textSecondary
-                        : FlitColors.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
+                  child: const Text(
+                    'SOON',
+                    style: TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
               ],
-            ),
+            ],
           ),
         ),
-      );
+      ),
+    );
+  }
 }
