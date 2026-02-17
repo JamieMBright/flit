@@ -1,6 +1,7 @@
 /// Auto-generated from DiceBear adventurer style (MIT license).
 /// Source: https://github.com/dicebear/dicebear
 /// Hair color placeholder: {{HAIR_COLOR}} — replaced at runtime.
+library;
 
 const Map<String, String> adventurerHair = {
   'short16':

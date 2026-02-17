@@ -65,7 +65,7 @@ class AvatarCompositor {
       ..write('shape-rendering="auto">')
       ..write(base);
 
-    void _addLayer(String svg) {
+    void addLayer(String svg) {
       if (svg.isNotEmpty) {
         buf
           ..write('<g transform="translate(-161 -83)">')
@@ -74,13 +74,13 @@ class AvatarCompositor {
       }
     }
 
-    _addLayer(eyes);
-    _addLayer(eyebrows);
-    _addLayer(mouth);
-    _addLayer(features);
-    _addLayer(glasses);
-    _addLayer(hair);
-    _addLayer(earrings);
+    addLayer(eyes);
+    addLayer(eyebrows);
+    addLayer(mouth);
+    addLayer(features);
+    addLayer(glasses);
+    addLayer(hair);
+    addLayer(earrings);
 
     buf.write('</svg>');
     return buf.toString();

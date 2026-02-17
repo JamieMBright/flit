@@ -1,5 +1,6 @@
 /// Auto-generated from DiceBear adventurer style (MIT license).
 /// Source: https://github.com/dicebear/dicebear
+library;
 
 const Map<String, String> adventurerMouth = {
   'variant30':
