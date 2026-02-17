@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../core/app_version.dart';
 import '../../core/theme/flit_colors.dart';
 import '../daily/daily_challenge_screen.dart';
 import '../debug/debug_screen.dart';
@@ -60,6 +61,17 @@ class _HomeScreenState extends State<HomeScreen>
                     const Spacer(flex: 2),
                     _buildMenuButtons(context),
                     const Spacer(flex: 1),
+                    // Version number
+                    const Text(
+                      appVersion,
+                      style: TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
                   ],
                 ),
               ),
@@ -312,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 }
 
-// ─── Animated map background ──────────────────────────────────────────────
+// ─── Animated globe background ────────────────────────────────────────────
 
 class _AnimatedMapBackground extends StatelessWidget {
   const _AnimatedMapBackground({required this.animation});
@@ -324,14 +336,14 @@ class _AnimatedMapBackground extends StatelessWidget {
         animation: animation,
         builder: (context, child) => SizedBox.expand(
           child: CustomPaint(
-            painter: _MapBackgroundPainter(animation.value),
+            painter: _GlobeBackgroundPainter(animation.value),
           ),
         ),
       );
 }
 
-class _MapBackgroundPainter extends CustomPainter {
-  _MapBackgroundPainter(this.t);
+class _GlobeBackgroundPainter extends CustomPainter {
+  _GlobeBackgroundPainter(this.t);
 
   final double t;
 
@@ -339,244 +351,344 @@ class _MapBackgroundPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty || !size.isFinite) return;
 
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final w = size.width;
+    final h = size.height;
+    final rect = Rect.fromLTWH(0, 0, w, h);
 
-    // Ocean gradient — richer, with more depth
-    final oceanGradient = Paint()
+    // ── Deep space background ──
+    final spacePaint = Paint()
       ..shader = const RadialGradient(
-        center: Alignment(0.0, -0.2),
-        radius: 1.2,
+        center: Alignment(0.0, -0.3),
+        radius: 1.4,
         colors: [
-          FlitColors.ocean,
-          FlitColors.oceanDeep,
-          Color(0xFF0F2530),
+          Color(0xFF0D1F2D),
+          FlitColors.space,
+          Color(0xFF050D14),
         ],
-        stops: [0.0, 0.6, 1.0],
+        stops: [0.0, 0.5, 1.0],
       ).createShader(rect);
-    canvas.drawRect(rect, oceanGradient);
+    canvas.drawRect(rect, spacePaint);
 
-    // Stars / dots scattered across the background
-    final starPaint = Paint()..color = FlitColors.textPrimary;
+    // ── Starfield — varied sizes and brightness ──
+    final starPaint = Paint();
     final rng = Random(42);
-    for (var i = 0; i < 40; i++) {
-      final x = rng.nextDouble() * size.width;
-      final y = rng.nextDouble() * size.height;
-      // Subtle twinkle based on animation
-      final twinkle = 0.03 + 0.04 * sin(t * 2 * pi + i * 0.7);
-      starPaint.color = FlitColors.textPrimary.withOpacity(twinkle);
-      canvas.drawCircle(Offset(x, y), 1.0 + rng.nextDouble() * 0.5, starPaint);
+    for (var i = 0; i < 80; i++) {
+      final x = rng.nextDouble() * w;
+      final y = rng.nextDouble() * h;
+      final brightness = 0.02 + 0.06 * sin(t * 2 * pi + i * 0.9);
+      final radius = 0.4 + rng.nextDouble() * 1.0;
+      starPaint.color = FlitColors.textPrimary.withOpacity(brightness);
+      canvas.drawCircle(Offset(x, y), radius, starPaint);
+    }
+    // A few brighter stars
+    for (var i = 0; i < 8; i++) {
+      final x = rng.nextDouble() * w;
+      final y = rng.nextDouble() * h;
+      final brightness = 0.10 + 0.12 * sin(t * 2 * pi * 0.7 + i * 2.1);
+      starPaint.color = FlitColors.textPrimary.withOpacity(brightness);
+      canvas.drawCircle(Offset(x, y), 1.5, starPaint);
     }
 
-    // Latitude / longitude grid (curved to suggest a globe projection)
+    // ── Globe — a large circle in the upper-center ──
+    final globeCx = w * 0.5;
+    final globeCy = h * 0.32;
+    final globeR = w * 0.42;
+    final globeCenter = Offset(globeCx, globeCy);
+
+    // Atmospheric glow around globe (outer ring)
+    final atmosphereGlow = Paint()
+      ..color = FlitColors.atmosphereGlow.withOpacity(0.06)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28);
+    canvas.drawCircle(globeCenter, globeR + 20, atmosphereGlow);
+
+    // Globe ocean fill
+    final globeOcean = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(-0.3, -0.4),
+        radius: 1.0,
+        colors: [
+          FlitColors.ocean.withOpacity(0.5),
+          FlitColors.oceanDeep.withOpacity(0.4),
+          const Color(0xFF0A1A28).withOpacity(0.35),
+        ],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromCircle(center: globeCenter, radius: globeR));
+    canvas.drawCircle(globeCenter, globeR, globeOcean);
+
+    // Lat/lon grid ON the globe (clipped)
+    canvas.save();
+    canvas.clipPath(Path()
+      ..addOval(Rect.fromCircle(center: globeCenter, radius: globeR)));
+
     final gridPaint = Paint()
-      ..color = FlitColors.gridLine
-      ..strokeWidth = 0.5
+      ..color = FlitColors.gridLine.withOpacity(0.7)
+      ..strokeWidth = 0.4
       ..style = PaintingStyle.stroke;
 
-    const gridCount = 10;
-    for (var i = 1; i < gridCount; i++) {
-      final y = size.height * i / gridCount;
-      // Slightly curved horizontal lines
-      final path = Path()
-        ..moveTo(0, y)
-        ..quadraticBezierTo(size.width / 2, y - 6 + 12 * (i / gridCount),
-            size.width, y);
-      canvas.drawPath(path, gridPaint);
-
-      final x = size.width * i / gridCount;
-      final vPath = Path()
-        ..moveTo(x, 0)
-        ..quadraticBezierTo(
-            x - 4 + 8 * (i / gridCount), size.height / 2, x, size.height);
-      canvas.drawPath(vPath, gridPaint);
+    // Latitude lines (horizontal ellipses that flatten toward poles)
+    for (var i = 1; i < 8; i++) {
+      final frac = i / 8.0;
+      final ly = globeCy - globeR + globeR * 2 * frac;
+      final distFromCenter = (frac - 0.5).abs();
+      final halfWidth = globeR * sqrt(1 - 4 * distFromCenter * distFromCenter)
+          .clamp(0.0, 1.0);
+      if (halfWidth > 0) {
+        canvas.drawLine(
+          Offset(globeCx - halfWidth, ly),
+          Offset(globeCx + halfWidth, ly),
+          gridPaint,
+        );
+      }
+    }
+    // Longitude lines (vertical arcs)
+    for (var i = 1; i < 8; i++) {
+      final frac = i / 8.0;
+      final lx = globeCx - globeR + globeR * 2 * frac;
+      final distFromCenter = (frac - 0.5).abs();
+      final halfHeight = globeR * sqrt(1 - 4 * distFromCenter * distFromCenter)
+          .clamp(0.0, 1.0);
+      if (halfHeight > 0) {
+        final path = Path()
+          ..moveTo(lx, globeCy - halfHeight)
+          ..quadraticBezierTo(
+            lx + (frac - 0.5) * globeR * 0.3,
+            globeCy,
+            lx,
+            globeCy + halfHeight,
+          );
+        canvas.drawPath(path, gridPaint);
+      }
     }
 
-    // Continent silhouettes — more recognisable shapes with terrain layers
-    final landPaint = Paint()..color = FlitColors.landMass.withOpacity(0.18);
-    final terrainPaint = Paint()..color = FlitColors.landMass.withOpacity(0.10);
+    // Continent silhouettes on the globe
+    final landPaint = Paint()..color = FlitColors.landMass.withOpacity(0.22);
     final coastPaint = Paint()
-      ..color = FlitColors.coastline.withOpacity(0.25)
+      ..color = FlitColors.coastline.withOpacity(0.30)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-    final coastGlowPaint = Paint()
-      ..color = FlitColors.oceanHighlight.withOpacity(0.08)
+      ..strokeWidth = 1.0;
+    final coastGlow = Paint()
+      ..color = FlitColors.oceanHighlight.withOpacity(0.10)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.0
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      ..strokeWidth = 3.5
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
 
-    // Europe + Mediterranean
+    void drawContinent(Path path) {
+      canvas.drawPath(path, coastGlow);
+      canvas.drawPath(path, landPaint);
+      canvas.drawPath(path, coastPaint);
+    }
+
+    // Europe (relative to globe center)
     final europe = Path()
-      ..moveTo(size.width * 0.47, size.height * 0.12)
-      ..cubicTo(size.width * 0.50, size.height * 0.10, size.width * 0.55,
-          size.height * 0.11, size.width * 0.56, size.height * 0.14)
-      ..cubicTo(size.width * 0.57, size.height * 0.18, size.width * 0.54,
-          size.height * 0.20, size.width * 0.52, size.height * 0.22)
-      ..quadraticBezierTo(size.width * 0.55, size.height * 0.24,
-          size.width * 0.53, size.height * 0.27)
-      ..quadraticBezierTo(size.width * 0.50, size.height * 0.28,
-          size.width * 0.48, size.height * 0.26)
-      ..quadraticBezierTo(size.width * 0.45, size.height * 0.22,
-          size.width * 0.44, size.height * 0.17)
+      ..moveTo(globeCx + globeR * 0.00, globeCy - globeR * 0.42)
+      ..cubicTo(
+          globeCx + globeR * 0.08, globeCy - globeR * 0.48,
+          globeCx + globeR * 0.18, globeCy - globeR * 0.44,
+          globeCx + globeR * 0.20, globeCy - globeR * 0.36)
+      ..cubicTo(
+          globeCx + globeR * 0.22, globeCy - globeR * 0.28,
+          globeCx + globeR * 0.16, globeCy - globeR * 0.22,
+          globeCx + globeR * 0.10, globeCy - globeR * 0.18)
+      ..quadraticBezierTo(
+          globeCx + globeR * 0.05, globeCy - globeR * 0.24,
+          globeCx - globeR * 0.02, globeCy - globeR * 0.30)
       ..close();
-    canvas.drawPath(europe, coastGlowPaint);
-    canvas.drawPath(europe, landPaint);
-    canvas.drawPath(europe, coastPaint);
+    drawContinent(europe);
 
     // Africa
     final africa = Path()
-      ..moveTo(size.width * 0.47, size.height * 0.30)
-      ..cubicTo(size.width * 0.52, size.height * 0.28, size.width * 0.55,
-          size.height * 0.32, size.width * 0.54, size.height * 0.38)
-      ..cubicTo(size.width * 0.56, size.height * 0.44, size.width * 0.54,
-          size.height * 0.52, size.width * 0.51, size.height * 0.58)
-      ..quadraticBezierTo(size.width * 0.49, size.height * 0.62,
-          size.width * 0.47, size.height * 0.58)
-      ..cubicTo(size.width * 0.44, size.height * 0.52, size.width * 0.43,
-          size.height * 0.44, size.width * 0.44, size.height * 0.36)
+      ..moveTo(globeCx + globeR * 0.02, globeCy - globeR * 0.14)
+      ..cubicTo(
+          globeCx + globeR * 0.10, globeCy - globeR * 0.18,
+          globeCx + globeR * 0.18, globeCy - globeR * 0.08,
+          globeCx + globeR * 0.16, globeCy + globeR * 0.08)
+      ..cubicTo(
+          globeCx + globeR * 0.14, globeCy + globeR * 0.22,
+          globeCx + globeR * 0.06, globeCy + globeR * 0.32,
+          globeCx - globeR * 0.02, globeCy + globeR * 0.24)
+      ..cubicTo(
+          globeCx - globeR * 0.06, globeCy + globeR * 0.14,
+          globeCx - globeR * 0.04, globeCy - globeR * 0.02,
+          globeCx + globeR * 0.02, globeCy - globeR * 0.14)
       ..close();
-    canvas.drawPath(africa, coastGlowPaint);
-    canvas.drawPath(africa, landPaint);
-    canvas.drawPath(africa, terrainPaint);
-    canvas.drawPath(africa, coastPaint);
+    drawContinent(africa);
 
-    // North America
-    final northAmerica = Path()
-      ..moveTo(size.width * 0.15, size.height * 0.12)
-      ..cubicTo(size.width * 0.22, size.height * 0.08, size.width * 0.30,
-          size.height * 0.10, size.width * 0.32, size.height * 0.14)
-      ..cubicTo(size.width * 0.33, size.height * 0.18, size.width * 0.30,
-          size.height * 0.24, size.width * 0.28, size.height * 0.28)
-      ..quadraticBezierTo(size.width * 0.27, size.height * 0.32,
-          size.width * 0.24, size.height * 0.34)
-      ..quadraticBezierTo(size.width * 0.22, size.height * 0.30,
-          size.width * 0.20, size.height * 0.28)
-      ..cubicTo(size.width * 0.16, size.height * 0.24, size.width * 0.13,
-          size.height * 0.20, size.width * 0.13, size.height * 0.16)
+    // North America (left side of globe)
+    final nAmerica = Path()
+      ..moveTo(globeCx - globeR * 0.50, globeCy - globeR * 0.38)
+      ..cubicTo(
+          globeCx - globeR * 0.40, globeCy - globeR * 0.48,
+          globeCx - globeR * 0.24, globeCy - globeR * 0.44,
+          globeCx - globeR * 0.18, globeCy - globeR * 0.34)
+      ..cubicTo(
+          globeCx - globeR * 0.14, globeCy - globeR * 0.24,
+          globeCx - globeR * 0.20, globeCy - globeR * 0.12,
+          globeCx - globeR * 0.28, globeCy - globeR * 0.06)
+      ..quadraticBezierTo(
+          globeCx - globeR * 0.36, globeCy - globeR * 0.10,
+          globeCx - globeR * 0.44, globeCy - globeR * 0.18)
+      ..cubicTo(
+          globeCx - globeR * 0.52, globeCy - globeR * 0.24,
+          globeCx - globeR * 0.54, globeCy - globeR * 0.32,
+          globeCx - globeR * 0.50, globeCy - globeR * 0.38)
       ..close();
-    canvas.drawPath(northAmerica, coastGlowPaint);
-    canvas.drawPath(northAmerica, landPaint);
-    canvas.drawPath(northAmerica, coastPaint);
+    drawContinent(nAmerica);
 
     // South America
-    final southAmerica = Path()
-      ..moveTo(size.width * 0.26, size.height * 0.38)
-      ..cubicTo(size.width * 0.29, size.height * 0.36, size.width * 0.30,
-          size.height * 0.40, size.width * 0.29, size.height * 0.48)
-      ..cubicTo(size.width * 0.28, size.height * 0.56, size.width * 0.26,
-          size.height * 0.64, size.width * 0.23, size.height * 0.70)
-      ..quadraticBezierTo(size.width * 0.21, size.height * 0.68,
-          size.width * 0.21, size.height * 0.62)
-      ..cubicTo(size.width * 0.20, size.height * 0.54, size.width * 0.22,
-          size.height * 0.46, size.width * 0.24, size.height * 0.40)
+    final sAmerica = Path()
+      ..moveTo(globeCx - globeR * 0.22, globeCy + globeR * 0.02)
+      ..cubicTo(
+          globeCx - globeR * 0.16, globeCy - globeR * 0.04,
+          globeCx - globeR * 0.10, globeCy + globeR * 0.04,
+          globeCx - globeR * 0.12, globeCy + globeR * 0.18)
+      ..cubicTo(
+          globeCx - globeR * 0.14, globeCy + globeR * 0.32,
+          globeCx - globeR * 0.20, globeCy + globeR * 0.44,
+          globeCx - globeR * 0.28, globeCy + globeR * 0.48)
+      ..quadraticBezierTo(
+          globeCx - globeR * 0.30, globeCy + globeR * 0.38,
+          globeCx - globeR * 0.26, globeCy + globeR * 0.18)
       ..close();
-    canvas.drawPath(southAmerica, coastGlowPaint);
-    canvas.drawPath(southAmerica, landPaint);
-    canvas.drawPath(southAmerica, terrainPaint);
-    canvas.drawPath(southAmerica, coastPaint);
+    drawContinent(sAmerica);
 
-    // Asia
+    // Asia (right side of globe)
     final asia = Path()
-      ..moveTo(size.width * 0.58, size.height * 0.10)
-      ..cubicTo(size.width * 0.65, size.height * 0.08, size.width * 0.76,
-          size.height * 0.10, size.width * 0.82, size.height * 0.16)
-      ..cubicTo(size.width * 0.86, size.height * 0.20, size.width * 0.85,
-          size.height * 0.28, size.width * 0.80, size.height * 0.34)
-      ..cubicTo(size.width * 0.76, size.height * 0.38, size.width * 0.68,
-          size.height * 0.40, size.width * 0.62, size.height * 0.36)
-      ..cubicTo(size.width * 0.58, size.height * 0.30, size.width * 0.56,
-          size.height * 0.22, size.width * 0.56, size.height * 0.15)
+      ..moveTo(globeCx + globeR * 0.22, globeCy - globeR * 0.46)
+      ..cubicTo(
+          globeCx + globeR * 0.36, globeCy - globeR * 0.50,
+          globeCx + globeR * 0.52, globeCy - globeR * 0.42,
+          globeCx + globeR * 0.56, globeCy - globeR * 0.28)
+      ..cubicTo(
+          globeCx + globeR * 0.58, globeCy - globeR * 0.16,
+          globeCx + globeR * 0.50, globeCy - globeR * 0.04,
+          globeCx + globeR * 0.36, globeCy - globeR * 0.08)
+      ..cubicTo(
+          globeCx + globeR * 0.26, globeCy - globeR * 0.14,
+          globeCx + globeR * 0.22, globeCy - globeR * 0.28,
+          globeCx + globeR * 0.22, globeCy - globeR * 0.46)
       ..close();
-    canvas.drawPath(asia, coastGlowPaint);
-    canvas.drawPath(asia, landPaint);
-    canvas.drawPath(asia, terrainPaint);
-    canvas.drawPath(asia, coastPaint);
+    drawContinent(asia);
 
-    // Australia
+    // Australia (lower-right of globe)
     final australia = Path()
-      ..moveTo(size.width * 0.74, size.height * 0.52)
-      ..cubicTo(size.width * 0.78, size.height * 0.50, size.width * 0.84,
-          size.height * 0.52, size.width * 0.86, size.height * 0.57)
-      ..cubicTo(size.width * 0.87, size.height * 0.62, size.width * 0.84,
-          size.height * 0.68, size.width * 0.80, size.height * 0.70)
-      ..cubicTo(size.width * 0.76, size.height * 0.69, size.width * 0.73,
-          size.height * 0.64, size.width * 0.73, size.height * 0.58)
+      ..moveTo(globeCx + globeR * 0.38, globeCy + globeR * 0.18)
+      ..cubicTo(
+          globeCx + globeR * 0.46, globeCy + globeR * 0.14,
+          globeCx + globeR * 0.56, globeCy + globeR * 0.20,
+          globeCx + globeR * 0.54, globeCy + globeR * 0.32)
+      ..cubicTo(
+          globeCx + globeR * 0.52, globeCy + globeR * 0.40,
+          globeCx + globeR * 0.44, globeCy + globeR * 0.42,
+          globeCx + globeR * 0.38, globeCy + globeR * 0.36)
+      ..cubicTo(
+          globeCx + globeR * 0.34, globeCy + globeR * 0.30,
+          globeCx + globeR * 0.34, globeCy + globeR * 0.22,
+          globeCx + globeR * 0.38, globeCy + globeR * 0.18)
       ..close();
-    canvas.drawPath(australia, coastGlowPaint);
-    canvas.drawPath(australia, landPaint);
-    canvas.drawPath(australia, coastPaint);
+    drawContinent(australia);
 
-    // City light dots on continents (animated twinkle)
-    final cityLightPaint = Paint();
-    const cityPositions = [
+    // City lights (golden dots twinkling on continents)
+    final cityPaint = Paint();
+    const cities = [
       // Europe
-      [0.50, 0.18], [0.52, 0.20], [0.48, 0.16],
+      [0.06, -0.32], [0.10, -0.28], [0.14, -0.34],
       // Africa
-      [0.49, 0.36], [0.51, 0.42], [0.48, 0.48],
-      // North America
-      [0.22, 0.18], [0.26, 0.22], [0.28, 0.26],
-      // South America
-      [0.26, 0.48], [0.24, 0.56],
+      [0.06, 0.00], [0.10, 0.12], [0.02, 0.18],
+      // N. America
+      [-0.30, -0.30], [-0.24, -0.22], [-0.36, -0.26],
+      // S. America
+      [-0.16, 0.14], [-0.22, 0.30],
       // Asia
-      [0.68, 0.20], [0.74, 0.24], [0.78, 0.28], [0.64, 0.32],
+      [0.36, -0.36], [0.44, -0.24], [0.50, -0.16], [0.30, -0.20],
       // Australia
-      [0.80, 0.62], [0.78, 0.58],
+      [0.46, 0.28], [0.42, 0.34],
     ];
-    for (var i = 0; i < cityPositions.length; i++) {
-      final pos = cityPositions[i];
-      final x = size.width * pos[0];
-      final y = size.height * pos[1];
-      final twinkle = 0.15 + 0.2 * sin(t * 2 * pi * 1.5 + i * 1.3);
-      cityLightPaint.color = FlitColors.gold.withOpacity(twinkle);
-      canvas.drawCircle(Offset(x, y), 1.5, cityLightPaint);
+    for (var i = 0; i < cities.length; i++) {
+      final cx = globeCx + globeR * cities[i][0];
+      final cy = globeCy + globeR * cities[i][1];
+      final twinkle = 0.12 + 0.22 * sin(t * 2 * pi * 1.5 + i * 1.4);
+      cityPaint.color = FlitColors.gold.withOpacity(twinkle);
+      canvas.drawCircle(Offset(cx, cy), 1.5, cityPaint);
     }
 
-    // Animated dashed flight path (arc across the screen)
-    _drawFlightPath(canvas, size);
+    canvas.restore(); // End globe clip
 
-    // Compass rose in bottom corner
+    // ── Atmospheric rim highlight ──
+    // Bright edge on the sunlit side (upper-left)
+    final rimPaint = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(-0.2, -0.3),
+        radius: 1.0,
+        colors: [
+          Colors.transparent,
+          Colors.transparent,
+          FlitColors.atmosphereGlow.withOpacity(0.12),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.88, 0.96, 1.0],
+      ).createShader(
+          Rect.fromCircle(center: globeCenter, radius: globeR + 2));
+    canvas.drawCircle(globeCenter, globeR + 2, rimPaint);
+
+    // Globe edge (subtle ring)
+    final edgePaint = Paint()
+      ..color = FlitColors.oceanHighlight.withOpacity(0.10)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    canvas.drawCircle(globeCenter, globeR, edgePaint);
+
+    // ── Animated flight arc across the globe ──
+    _drawFlightArc(canvas, size, globeCenter, globeR);
+
+    // ── Compass rose in bottom corner ──
     _drawCompassRose(canvas, size);
 
-    // Overlay gradient for text readability
+    // ── Overlay gradient for text readability ──
     final overlayGradient = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          FlitColors.backgroundDark.withOpacity(0.5),
-          FlitColors.backgroundDark.withOpacity(0.1),
-          FlitColors.backgroundDark.withOpacity(0.7),
+          FlitColors.space.withOpacity(0.4),
+          Colors.transparent,
+          FlitColors.space.withOpacity(0.85),
         ],
-        stops: const [0.0, 0.3, 1.0],
+        stops: const [0.0, 0.25, 1.0],
       ).createShader(rect);
     canvas.drawRect(rect, overlayGradient);
   }
 
-  void _drawFlightPath(Canvas canvas, Size size) {
-    // Dashed arc flight path that slowly animates
+  void _drawFlightArc(
+      Canvas canvas, Size size, Offset globeCenter, double globeR) {
+    // Flight path arcs from one continent to another
     final pathPaint = Paint()
-      ..color = FlitColors.accent.withOpacity(0.25)
-      ..strokeWidth = 2
+      ..color = FlitColors.accent.withOpacity(0.20)
+      ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
+    // Arc from N. America to Europe
     final path = Path()
-      ..moveTo(size.width * 0.08, size.height * 0.65)
+      ..moveTo(
+        globeCenter.dx - globeR * 0.30,
+        globeCenter.dy - globeR * 0.26,
+      )
       ..cubicTo(
-        size.width * 0.25,
-        size.height * 0.20,
-        size.width * 0.65,
-        size.height * 0.15,
-        size.width * 0.88,
-        size.height * 0.40,
+        globeCenter.dx - globeR * 0.10,
+        globeCenter.dy - globeR * 0.60,
+        globeCenter.dx + globeR * 0.10,
+        globeCenter.dy - globeR * 0.58,
+        globeCenter.dx + globeR * 0.12,
+        globeCenter.dy - globeR * 0.30,
       );
 
     // Draw dashed path
     final pathMetrics = path.computeMetrics();
     for (final metric in pathMetrics) {
       final totalLength = metric.length;
-      const dashLen = 8.0;
-      const gapLen = 6.0;
-      var distance = (t * totalLength * 0.3) % (dashLen + gapLen);
+      const dashLen = 6.0;
+      const gapLen = 5.0;
+      var distance = (t * totalLength * 0.4) % (dashLen + gapLen);
       while (distance < totalLength) {
         final start = distance;
         final end = (distance + dashLen).clamp(0.0, totalLength);
@@ -584,73 +696,110 @@ class _MapBackgroundPainter extends CustomPainter {
         canvas.drawPath(extracted, pathPaint);
         distance += dashLen + gapLen;
       }
-    }
 
-    // Animated plane dot at the path position
-    final planePos = t % 1.0;
-    for (final metric in pathMetrics) {
+      // Animated plane dot
+      final planePos = t % 1.0;
       final tangent = metric.getTangentForOffset(metric.length * planePos);
       if (tangent != null) {
-        final planePaint = Paint()..color = FlitColors.accent.withOpacity(0.7);
-        canvas.drawCircle(tangent.position, 4, planePaint);
-        // Subtle contrail behind
-        final contrailPaint = Paint()
-          ..color = FlitColors.textPrimary.withOpacity(0.15);
-        final contrailOffset = metric.length * planePos - 20;
-        if (contrailOffset > 0) {
-          final ct =
-              metric.getTangentForOffset(contrailOffset.clamp(0, metric.length));
-          if (ct != null) {
-            canvas.drawLine(ct.position, tangent.position, contrailPaint);
-          }
-        }
+        // Glow behind plane
+        final glowPaint = Paint()
+          ..color = FlitColors.accent.withOpacity(0.15)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+        canvas.drawCircle(tangent.position, 6, glowPaint);
+
+        // Plane dot
+        final planePaint = Paint()..color = FlitColors.accent.withOpacity(0.8);
+        canvas.drawCircle(tangent.position, 3, planePaint);
+
+        // Contrail
+        final trailLen = metric.length * 0.08;
+        final trailStart =
+            (metric.length * planePos - trailLen).clamp(0.0, metric.length);
+        final trail =
+            metric.extractPath(trailStart, metric.length * planePos);
+        final trailPaint = Paint()
+          ..color = FlitColors.contrail.withOpacity(0.12)
+          ..strokeWidth = 1.5
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round;
+        canvas.drawPath(trail, trailPaint);
+      }
+    }
+
+    // Second fainter arc: Europe to Asia
+    final path2 = Path()
+      ..moveTo(
+        globeCenter.dx + globeR * 0.14,
+        globeCenter.dy - globeR * 0.28,
+      )
+      ..cubicTo(
+        globeCenter.dx + globeR * 0.24,
+        globeCenter.dy - globeR * 0.50,
+        globeCenter.dx + globeR * 0.44,
+        globeCenter.dy - globeR * 0.48,
+        globeCenter.dx + globeR * 0.46,
+        globeCenter.dy - globeR * 0.22,
+      );
+
+    final path2Paint = Paint()
+      ..color = FlitColors.gold.withOpacity(0.10)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    for (final metric in path2.computeMetrics()) {
+      final totalLength = metric.length;
+      const dashLen = 5.0;
+      const gapLen = 4.0;
+      var distance = (t * totalLength * 0.25 + totalLength * 0.5) %
+          (dashLen + gapLen);
+      while (distance < totalLength) {
+        final start = distance;
+        final end = (distance + dashLen).clamp(0.0, totalLength);
+        canvas.drawPath(metric.extractPath(start, end), path2Paint);
+        distance += dashLen + gapLen;
       }
     }
   }
 
   void _drawCompassRose(Canvas canvas, Size size) {
     final cx = size.width * 0.88;
-    final cy = size.height * 0.82;
-    const r = 18.0;
+    final cy = size.height * 0.86;
+    const r = 16.0;
     final paint = Paint()
-      ..color = FlitColors.gold.withOpacity(0.15)
+      ..color = FlitColors.gold.withOpacity(0.12)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
+      ..strokeWidth = 0.8;
 
-    // Outer circle
     canvas.drawCircle(Offset(cx, cy), r, paint);
 
-    // Cardinal direction lines
     final linePaint = Paint()
-      ..color = FlitColors.gold.withOpacity(0.2)
-      ..strokeWidth = 1
+      ..color = FlitColors.gold.withOpacity(0.15)
+      ..strokeWidth = 0.8
       ..strokeCap = StrokeCap.round;
 
-    // N-S
     canvas.drawLine(Offset(cx, cy - r), Offset(cx, cy + r), linePaint);
-    // E-W
     canvas.drawLine(Offset(cx - r, cy), Offset(cx + r, cy), linePaint);
-    // Diagonals
-    const d = r * 0.6;
+    const d = r * 0.55;
     canvas.drawLine(
         Offset(cx - d, cy - d), Offset(cx + d, cy + d), linePaint);
     canvas.drawLine(
         Offset(cx + d, cy - d), Offset(cx - d, cy + d), linePaint);
 
-    // North arrow tip (brighter)
+    // North arrow
     final northPaint = Paint()
-      ..color = FlitColors.accent.withOpacity(0.3)
+      ..color = FlitColors.accent.withOpacity(0.25)
       ..style = PaintingStyle.fill;
     final northArrow = Path()
-      ..moveTo(cx, cy - r - 2)
-      ..lineTo(cx - 3, cy - r + 5)
-      ..lineTo(cx + 3, cy - r + 5)
+      ..moveTo(cx, cy - r - 1)
+      ..lineTo(cx - 2.5, cy - r + 4)
+      ..lineTo(cx + 2.5, cy - r + 4)
       ..close();
     canvas.drawPath(northArrow, northPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _MapBackgroundPainter oldDelegate) =>
+  bool shouldRepaint(covariant _GlobeBackgroundPainter oldDelegate) =>
       oldDelegate.t != t;
 }
 

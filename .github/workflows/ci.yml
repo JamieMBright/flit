@@ -6,9 +6,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
+  pull-requests: read
 
 concurrency:
   group: 'ci-deploy'
@@ -189,3 +190,62 @@ jobs:
           else
             echo "Site is live and returning 200 OK."
           fi
+
+  # ── Update App Version (v1.<PR_count>) ──
+  update-version:
+    name: Update Version
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    # Only run on push to main (not workflow_dispatch) and skip version-bump commits
+    if: github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip ci]')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Count merged PRs and update version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_COUNT=$(gh pr list --state merged --base main --limit 9999 --json number --jq 'length')
+          echo "Merged PR count: ${PR_COUNT}"
+
+          CURRENT_VERSION="v1.${PR_COUNT}"
+          echo "New version: ${CURRENT_VERSION}"
+
+          # Update the Dart version file
+          cat > lib/core/app_version.dart << DART_EOF
+          /// App version string displayed on the home screen.
+          ///
+          /// Format: \`v1.<merged_PR_count>\`
+          ///
+          /// This file is auto-updated by CI on every merge to main.
+          /// See \`.github/workflows/ci.yml\` → "Update app version" step.
+          /// Do not edit manually — your changes will be overwritten.
+          const String appVersion = '${CURRENT_VERSION}';
+          DART_EOF
+
+          # Remove leading whitespace from heredoc indentation
+          sed -i 's/^          //' lib/core/app_version.dart
+
+          # Update version in pubspec.yaml (keep build number as PR count)
+          sed -i "s/^version: .*/version: 1.0.${PR_COUNT}+${PR_COUNT}/" pubspec.yaml
+
+          # Update version in error_service.dart
+          sed -i "s/static const String appVersion = '.*'/static const String appVersion = '${CURRENT_VERSION}'/" lib/core/services/error_service.dart
+
+          # Update version in index.html JS error handler
+          sed -i "s/appVersion: '.*'/appVersion: '${CURRENT_VERSION}'/" web/index.html
+
+          echo "Updated version to ${CURRENT_VERSION}"
+
+      - name: Commit and push version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/core/app_version.dart pubspec.yaml lib/core/services/error_service.dart web/index.html
+          # Only commit if there are changes
+          git diff --cached --quiet || {
+            git commit -m "chore: bump version to $(grep "const String appVersion" lib/core/app_version.dart | grep -oP "v1\.\d+") [skip ci]"
+            git push origin main
+          }
