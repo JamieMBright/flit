@@ -43,33 +43,8 @@ class AvatarWidget extends StatelessWidget {
             height: size,
             fit: BoxFit.cover,
             placeholderBuilder: (_) => _AvatarPlaceholder(size: size),
-            errorBuilder: (_, __, ___) => _AvatarFallback(size: size),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Fallback shown when the SVG avatar fails to load or parse.
-class _AvatarFallback extends StatelessWidget {
-  const _AvatarFallback({required this.size});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        color: FlitColors.backgroundMid,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        Icons.person_outline_rounded,
-        size: size * 0.5,
-        color: FlitColors.accent,
       ),
     );
   }

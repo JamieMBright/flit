@@ -559,7 +559,7 @@ class _MapBackgroundPainter extends CustomPainter {
     // E-W
     canvas.drawLine(Offset(cx - r, cy), Offset(cx + r, cy), linePaint);
     // Diagonals
-    final d = r * 0.6;
+    const d = r * 0.6;
     canvas.drawLine(
         Offset(cx - d, cy - d), Offset(cx + d, cy + d), linePaint);
     canvas.drawLine(
