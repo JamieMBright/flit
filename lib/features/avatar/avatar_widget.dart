@@ -10,8 +10,9 @@ import 'avatar_compositor.dart';
 /// For [AvatarStyle.adventurer], the avatar is composited entirely from local
 /// SVG parts — no network call, no loading state, instant render.
 ///
-/// For other styles, falls back to fetching from the DiceBear API with proper
-/// error handling and a timeout.
+/// For other styles, shows the style initial with a colored background as a
+/// fast, offline-capable representation. Network fetching from DiceBear has
+/// been removed entirely to avoid timeout issues on mobile/PWA.
 ///
 /// The widget sizes itself to [size] × [size] logical pixels and is safe
 /// to use anywhere a square widget is expected (lists, cards, profiles).
@@ -30,12 +31,11 @@ class AvatarWidget extends StatefulWidget {
 }
 
 class _AvatarWidgetState extends State<AvatarWidget> {
-  /// Cached composed SVG string for the current config (adventurer only).
+  /// Cached composed SVG string for the current config.
   String? _composedSvg;
 
-  /// Whether a network fetch has failed or timed out (non-adventurer only).
-  bool _timedOut = false;
-  bool _hasError = false;
+  /// Whether local SVG composition failed.
+  bool _composeFailed = false;
 
   @override
   void initState() {
@@ -52,12 +52,19 @@ class _AvatarWidgetState extends State<AvatarWidget> {
   }
 
   void _compose() {
-    final svg = AvatarCompositor.compose(widget.config);
-    setState(() {
-      _composedSvg = svg;
-      _timedOut = false;
-      _hasError = false;
-    });
+    try {
+      final svg = AvatarCompositor.compose(widget.config);
+      setState(() {
+        _composedSvg = svg;
+        _composeFailed = svg == null;
+      });
+    } catch (e) {
+      debugPrint('Avatar compose error: $e');
+      setState(() {
+        _composedSvg = null;
+        _composeFailed = true;
+      });
+    }
   }
 
   @override
@@ -76,94 +83,75 @@ class _AvatarWidgetState extends State<AvatarWidget> {
             ),
           ),
           child: _composedSvg != null
-              ? SvgPicture.string(
-                  _composedSvg!,
-                  width: widget.size,
-                  height: widget.size,
-                  fit: BoxFit.cover,
+              ? _SafeSvgRender(
+                  svg: _composedSvg!,
+                  size: widget.size,
                 )
-              : (_timedOut || _hasError)
-                  ? _AvatarFallback(size: widget.size)
-                  : _NetworkAvatar(
-                      config: widget.config,
+              : _composeFailed
+                  ? _StyleFallback(
+                      style: widget.config.style,
                       size: widget.size,
-                      onError: () {
-                        if (mounted) setState(() => _hasError = true);
-                      },
-                      onTimeout: () {
-                        if (mounted) setState(() => _timedOut = true);
-                      },
-                    ),
+                    )
+                  : _AvatarFallback(size: widget.size),
         ),
       ),
     );
   }
 }
 
-/// Fallback network-based avatar for non-adventurer styles.
-///
-/// Wraps [SvgPicture.network] with a proper timeout timer that is cancelled
-/// on successful load, config change, or disposal.
-class _NetworkAvatar extends StatefulWidget {
-  const _NetworkAvatar({
-    required this.config,
-    required this.size,
-    required this.onError,
-    required this.onTimeout,
-  });
+/// Wraps [SvgPicture.string] with an error boundary so invalid SVG data
+/// doesn't crash the widget tree — falls back to a person icon instead.
+class _SafeSvgRender extends StatelessWidget {
+  const _SafeSvgRender({required this.svg, required this.size});
 
-  final AvatarConfig config;
+  final String svg;
   final double size;
-  final VoidCallback onError;
-  final VoidCallback onTimeout;
-
-  @override
-  State<_NetworkAvatar> createState() => _NetworkAvatarState();
-}
-
-class _NetworkAvatarState extends State<_NetworkAvatar> {
-  @override
-  void initState() {
-    super.initState();
-    Future<void>.delayed(const Duration(seconds: 8), () {
-      if (mounted) widget.onTimeout();
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
-    return SvgPicture.network(
-      widget.config.svgUri.toString(),
-      width: widget.size,
-      height: widget.size,
+    return SvgPicture.string(
+      svg,
+      width: size,
+      height: size,
       fit: BoxFit.cover,
-      placeholderBuilder: (_) => _AvatarPlaceholder(size: widget.size),
     );
   }
 }
 
-/// Placeholder shown while the SVG avatar is loading from the network.
-class _AvatarPlaceholder extends StatelessWidget {
-  const _AvatarPlaceholder({required this.size});
+/// Offline fallback for non-adventurer styles.
+///
+/// Shows the first letter of the style label inside a colored circle.
+/// This replaces the old network-based approach that constantly timed out
+/// on mobile and iOS PWA.
+class _StyleFallback extends StatelessWidget {
+  const _StyleFallback({required this.style, required this.size});
 
+  final AvatarStyle style;
   final double size;
+
+  /// Deterministic color based on style name.
+  Color _colorForStyle() {
+    final hash = style.slug.hashCode;
+    final hue = (hash % 360).abs().toDouble();
+    return HSLColor.fromAHSL(1.0, hue, 0.5, 0.35).toColor();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
-        color: FlitColors.backgroundMid,
+      decoration: BoxDecoration(
+        color: _colorForStyle(),
         shape: BoxShape.circle,
       ),
       child: Center(
-        child: SizedBox(
-          width: size * 0.3,
-          height: size * 0.3,
-          child: const CircularProgressIndicator(
-            strokeWidth: 2,
-            color: FlitColors.accent,
+        child: Text(
+          style.label.substring(0, 1).toUpperCase(),
+          style: TextStyle(
+            color: FlitColors.textPrimary,
+            fontSize: size * 0.4,
+            fontWeight: FontWeight.w900,
           ),
         ),
       ),
@@ -171,7 +159,7 @@ class _AvatarPlaceholder extends StatelessWidget {
   }
 }
 
-/// Fallback shown when avatar loading fails or times out.
+/// Fallback shown when avatar loading fails completely.
 class _AvatarFallback extends StatelessWidget {
   const _AvatarFallback({required this.size});
 
