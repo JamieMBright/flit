@@ -297,8 +297,7 @@ class AvatarCompositor {
 
     final face =
         _pick(bigearsFace, sh, 1).replaceAll('{{SKIN_COLOR}}', skinHex);
-    final ear =
-        _pick(bigearsEar, sh, 2).replaceAll('{{SKIN_COLOR}}', skinHex);
+    final ear = _pick(bigearsEar, sh, 2).replaceAll('{{SKIN_COLOR}}', skinHex);
     final sideburn = _pick(
       bigearsSideburn,
       sh,
@@ -684,9 +683,7 @@ class AvatarCompositor {
     final eyesKeys =
         thumbsEyes.keys.where((k) => k.endsWith(widthSuffix)).toList();
     final eyesSvg = eyesKeys.isNotEmpty
-        ? (thumbsEyes[
-                    eyesKeys[
-                        (config.eyes.index % eyesKeys.length).abs()]] ??
+        ? (thumbsEyes[eyesKeys[(config.eyes.index % eyesKeys.length).abs()]] ??
                 '')
             .replaceAll('{{EYES_COLOR}}', eyeColor)
         : '';
