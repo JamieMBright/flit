@@ -718,16 +718,16 @@ class _MissionSection extends StatelessWidget {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _BodyText(
+          _BodyText(
             'Each round drops you over a mystery country. A set of clues '
             'trickles in, each one narrowing down the answer. Your job: '
             'identify the country before the clues run out.',
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           // Clue card illustration
-          const _ClueCardIllustration(),
-          const SizedBox(height: 16),
-          const _BodyText(
+          _ClueCardIllustration(),
+          SizedBox(height: 16),
+          _BodyText(
             'Clues range from geographic (hemisphere, coastline, climate) '
             'to cultural (language, flag colours, famous landmarks). '
             'The first clue is always vague — the last is almost a giveaway. '
@@ -891,47 +891,47 @@ class _ScoringSection extends StatelessWidget {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _BodyText(
+          _BodyText(
             'Speed and accuracy are rewarded. Every second in the air costs '
             'you points. Every extra clue you reveal shaves off your potential '
             'score. Guess wrong and face a distance penalty.',
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           // Step indicators
-          const _ScoringStep(
+          _ScoringStep(
             step: 1,
             color: FlitColors.success,
             label: 'Correct Answer',
             detail: '+1000 base points',
             icon: Icons.check_rounded,
           ),
-          const SizedBox(height: 8),
-          const _ScoringStep(
+          SizedBox(height: 8),
+          _ScoringStep(
             step: 2,
             color: FlitColors.gold,
             label: 'Speed Bonus',
             detail: 'Up to +500 pts for fast guesses',
             icon: Icons.bolt_rounded,
           ),
-          const SizedBox(height: 8),
-          const _ScoringStep(
+          SizedBox(height: 8),
+          _ScoringStep(
             step: 3,
             color: FlitColors.oceanHighlight,
             label: 'Clue Penalty',
             detail: '-100 pts per clue revealed after the first',
             icon: Icons.remove_circle_outline_rounded,
           ),
-          const SizedBox(height: 8),
-          const _ScoringStep(
+          SizedBox(height: 8),
+          _ScoringStep(
             step: 4,
             color: FlitColors.accent,
             label: 'Distance Penalty',
             detail: 'Wrong guess? Penalty scales to distance',
             icon: Icons.social_distance_rounded,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           // Score bar illustration
-          const _ScoreBar(),
+          _ScoreBar(),
         ],
       ),
     );
@@ -1023,7 +1023,7 @@ class _ScoreBar extends StatelessWidget {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'SCORE BREAKDOWN',
             style: TextStyle(
               color: FlitColors.textMuted,
@@ -1032,31 +1032,31 @@ class _ScoreBar extends StatelessWidget {
               letterSpacing: 1.5,
             ),
           ),
-          const SizedBox(height: 10),
-          const _ScoreBarRow(
+          SizedBox(height: 10),
+          _ScoreBarRow(
             label: 'Base',
             value: 1000,
             max: 1500,
             color: FlitColors.success,
           ),
-          const SizedBox(height: 6),
-          const _ScoreBarRow(
+          SizedBox(height: 6),
+          _ScoreBarRow(
             label: 'Speed',
             value: 380,
             max: 500,
             color: FlitColors.gold,
           ),
-          const SizedBox(height: 6),
-          const _ScoreBarRow(
+          SizedBox(height: 6),
+          _ScoreBarRow(
             label: 'Clues',
             value: -200,
             max: 500,
             color: FlitColors.accent,
           ),
-          const SizedBox(height: 10),
-          const Divider(color: FlitColors.cardBorder, height: 1),
-          const SizedBox(height: 8),
-          const Row(
+          SizedBox(height: 10),
+          Divider(color: FlitColors.cardBorder, height: 1),
+          SizedBox(height: 8),
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
@@ -1317,33 +1317,33 @@ class _ControlsSection extends StatelessWidget {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _BodyText(
+          _BodyText(
             'Flit is designed for touchscreens but also works with mouse '
             'and trackpad.',
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           // Controls diagram
-          const _ControlsDiagram(),
-          const SizedBox(height: 16),
-          const _ControlRow(
+          _ControlsDiagram(),
+          SizedBox(height: 16),
+          _ControlRow(
             gesture: 'L/R turn buttons',
             icon: Icons.swap_horiz_rounded,
             effect: 'Steer the plane left or right',
           ),
-          const SizedBox(height: 8),
-          const _ControlRow(
+          SizedBox(height: 8),
+          _ControlRow(
             gesture: 'Altitude toggle',
             icon: Icons.height_rounded,
             effect: 'Switch between high and low altitude',
           ),
-          const SizedBox(height: 8),
-          const _ControlRow(
+          SizedBox(height: 8),
+          _ControlRow(
             gesture: 'Single tap',
             icon: Icons.ads_click_rounded,
             effect: 'Set a navigation waypoint on the globe',
           ),
-          const SizedBox(height: 8),
-          const _ControlRow(
+          SizedBox(height: 8),
+          _ControlRow(
             gesture: 'Speed selector',
             icon: Icons.speed_rounded,
             effect: 'Choose slow, medium, or fast flight',

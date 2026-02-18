@@ -33,7 +33,7 @@ void main() {
 
   group('Clue Class - Basic Instantiation', () {
     test('Clue can be instantiated with flag type', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.flag,
         targetCountryCode: 'US',
         displayData: {'flagEmoji': '🇺🇸'},
@@ -45,7 +45,7 @@ void main() {
     });
 
     test('Clue can be instantiated with outline type', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.outline,
         targetCountryCode: 'FR',
         displayData: {'polygons': []},
@@ -56,7 +56,7 @@ void main() {
     });
 
     test('Clue can be instantiated with borders type', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.borders,
         targetCountryCode: 'CA',
         displayData: {
@@ -69,7 +69,7 @@ void main() {
     });
 
     test('Clue can be instantiated with capital type', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.capital,
         targetCountryCode: 'UK',
         displayData: {'capitalName': 'London'},
@@ -80,7 +80,7 @@ void main() {
     });
 
     test('Clue can be instantiated with stats type', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.stats,
         targetCountryCode: 'DE',
         displayData: {'population': '83M', 'continent': 'Europe'},
@@ -91,7 +91,7 @@ void main() {
     });
 
     test('Clue can be instantiated with sportsTeam type', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.sportsTeam,
         targetCountryCode: 'TX',
         displayData: {'team': 'Dallas Cowboys'},
@@ -102,7 +102,7 @@ void main() {
     });
 
     test('Clue can be instantiated with leader type', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.leader,
         targetCountryCode: 'CA',
         displayData: {'leader': 'Premier: John Horgan'},
@@ -113,7 +113,7 @@ void main() {
     });
 
     test('Clue can be instantiated with nickname type', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.nickname,
         targetCountryCode: 'TX',
         displayData: {'nickname': 'The Lone Star State'},
@@ -124,7 +124,7 @@ void main() {
     });
 
     test('Clue can be instantiated with landmark type', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.landmark,
         targetCountryCode: 'CA',
         displayData: {'landmark': 'Niagara Falls'},
@@ -135,7 +135,7 @@ void main() {
     });
 
     test('Clue can be instantiated with flagDescription type', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.flagDescription,
         targetCountryCode: 'US',
         displayData: {'flagDesc': 'Red, white, and blue stripes'},
@@ -151,7 +151,7 @@ void main() {
 
   group('Clue.displayText - Non-empty text for all types', () {
     test('flag displayText is non-empty', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.flag,
         targetCountryCode: 'US',
         displayData: {'flagEmoji': '🇺🇸'},
@@ -162,7 +162,7 @@ void main() {
     });
 
     test('outline displayText is non-empty', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.outline,
         targetCountryCode: 'FR',
         displayData: {'polygons': []},
@@ -173,7 +173,7 @@ void main() {
     });
 
     test('borders displayText is non-empty', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.borders,
         targetCountryCode: 'US',
         displayData: {
@@ -188,7 +188,7 @@ void main() {
     });
 
     test('capital displayText is non-empty', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.capital,
         targetCountryCode: 'UK',
         displayData: {'capitalName': 'London'},
@@ -199,7 +199,7 @@ void main() {
     });
 
     test('stats displayText is non-empty', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.stats,
         targetCountryCode: 'DE',
         displayData: {
@@ -216,7 +216,7 @@ void main() {
     });
 
     test('sportsTeam displayText is non-empty', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.sportsTeam,
         targetCountryCode: 'TX',
         displayData: {'team': 'Dallas Cowboys'},
@@ -227,7 +227,7 @@ void main() {
     });
 
     test('leader displayText is non-empty', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.leader,
         targetCountryCode: 'CA',
         displayData: {'leader': 'Premier: John Horgan'},
@@ -238,7 +238,7 @@ void main() {
     });
 
     test('nickname displayText is non-empty', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.nickname,
         targetCountryCode: 'TX',
         displayData: {'nickname': 'The Lone Star State'},
@@ -249,7 +249,7 @@ void main() {
     });
 
     test('landmark displayText is non-empty', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.landmark,
         targetCountryCode: 'CA',
         displayData: {'landmark': 'Niagara Falls'},
@@ -260,7 +260,7 @@ void main() {
     });
 
     test('flagDescription displayText is non-empty', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.flagDescription,
         targetCountryCode: 'US',
         displayData: {'flagDesc': 'Red, white, and blue stripes'},
@@ -317,7 +317,7 @@ void main() {
     });
 
     test('displayData can be empty map', () {
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.flag,
         targetCountryCode: 'FR',
         displayData: {},
@@ -328,7 +328,7 @@ void main() {
 
     test('targetCountryCode is stored correctly', () {
       const countryCode = 'JP';
-      const clue = const Clue(
+      const clue = Clue(
         type: ClueType.capital,
         targetCountryCode: countryCode,
         displayData: {'capitalName': 'Tokyo'},
