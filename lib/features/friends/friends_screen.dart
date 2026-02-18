@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/models/avatar_config.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/friend.dart';
 import '../../data/providers/account_provider.dart';
+import '../avatar/avatar_widget.dart';
 import '../play/play_screen.dart';
 
 /// Friends list screen with add friend and H2H records.
@@ -24,6 +26,12 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       username: 'SpeedyPilot',
       displayName: 'Speedy Pilot',
       isOnline: true,
+      avatarConfig: AvatarConfig(
+        eyes: AvatarEyes.variant05,
+        hair: AvatarHair.short03,
+        hairColor: AvatarHairColor.auburn,
+        skinColor: AvatarSkinColor.light,
+      ),
     ),
     Friend(
       id: '2',
@@ -32,12 +40,28 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       displayName: 'Geo Master',
       isOnline: false,
       lastSeen: DateTime.now().subtract(const Duration(hours: 2)),
+      avatarConfig: const AvatarConfig(
+        eyes: AvatarEyes.variant12,
+        mouth: AvatarMouth.variant08,
+        hair: AvatarHair.long04,
+        hairColor: AvatarHairColor.black,
+        skinColor: AvatarSkinColor.medium,
+        glasses: AvatarGlasses.variant02,
+      ),
     ),
     const Friend(
       id: '3',
       playerId: 'p3',
       username: 'WorldFlyer',
       isOnline: true,
+      avatarConfig: AvatarConfig(
+        eyes: AvatarEyes.variant18,
+        mouth: AvatarMouth.variant03,
+        hair: AvatarHair.short10,
+        hairColor: AvatarHairColor.blonde,
+        skinColor: AvatarSkinColor.mediumLight,
+        feature: AvatarFeature.freckles,
+      ),
     ),
   ];
 
@@ -301,24 +325,17 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               ),
               const SizedBox(height: 20),
               // Avatar
-              Container(
-                width: 64,
-                height: 64,
-                decoration: const BoxDecoration(
-                  color: FlitColors.accent,
-                  shape: BoxShape.circle,
+              if (friend.avatarConfig != null)
+                AvatarWidget(
+                  config: friend.avatarConfig!,
+                  size: 64,
+                )
+              else
+                AvatarFromUrl(
+                  avatarUrl: friend.avatarUrl,
+                  name: friend.name,
+                  size: 64,
                 ),
-                child: Center(
-                  child: Text(
-                    friend.name[0].toUpperCase(),
-                    style: const TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
               const SizedBox(height: 12),
               Text(
                 friend.name,
@@ -786,24 +803,17 @@ class _FriendTile extends StatelessWidget {
                 // Avatar
                 Stack(
                   children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: const BoxDecoration(
-                        color: FlitColors.accent,
-                        shape: BoxShape.circle,
+                    if (friend.avatarConfig != null)
+                      AvatarWidget(
+                        config: friend.avatarConfig!,
+                        size: 48,
+                      )
+                    else
+                      AvatarFromUrl(
+                        avatarUrl: friend.avatarUrl,
+                        name: friend.name,
+                        size: 48,
                       ),
-                      child: Center(
-                        child: Text(
-                          friend.name[0].toUpperCase(),
-                          style: const TextStyle(
-                            color: FlitColors.textPrimary,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
                     if (friend.isOnline)
                       Positioned(
                         right: 0,

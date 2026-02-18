@@ -1,3 +1,5 @@
+import 'avatar_config.dart';
+
 /// Friendship status between two players.
 enum FriendshipStatus {
   pending,
@@ -13,6 +15,7 @@ class Friend {
     required this.username,
     this.displayName,
     this.avatarUrl,
+    this.avatarConfig,
     this.status = FriendshipStatus.accepted,
     this.isOnline = false,
     this.lastSeen,
@@ -23,6 +26,7 @@ class Friend {
   final String username;
   final String? displayName;
   final String? avatarUrl;
+  final AvatarConfig? avatarConfig;
   final FriendshipStatus status;
   final bool isOnline;
   final DateTime? lastSeen;
@@ -35,6 +39,7 @@ class Friend {
         'username': username,
         'display_name': displayName,
         'avatar_url': avatarUrl,
+        if (avatarConfig != null) 'avatar_config': avatarConfig!.toJson(),
         'status': status.name,
         'is_online': isOnline,
         'last_seen': lastSeen?.toIso8601String(),
@@ -46,6 +51,10 @@ class Friend {
         username: json['username'] as String,
         displayName: json['display_name'] as String?,
         avatarUrl: json['avatar_url'] as String?,
+        avatarConfig: json['avatar_config'] != null
+            ? AvatarConfig.fromJson(
+                json['avatar_config'] as Map<String, dynamic>)
+            : null,
         status: FriendshipStatus.values.firstWhere(
           (s) => s.name == json['status'],
           orElse: () => FriendshipStatus.pending,
