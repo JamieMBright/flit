@@ -230,9 +230,9 @@ class AvatarCompositor {
     void addLayer(String svg) {
       if (svg.isNotEmpty) {
         buf
-            ..write('<g transform="translate(-161 -83)">')
-            ..write(svg)
-            ..write('</g>');
+          ..write('<g transform="translate(-161 -83)">')
+          ..write(svg)
+          ..write('</g>');
       }
     }
 
