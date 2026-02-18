@@ -60,16 +60,15 @@ List<_AvatarCategory> _buildCategories() {
       label: 'Style',
       icon: Icons.style,
       configKey: 'style',
-      parts:
-          AvatarStyle.values
-              .map(
-                (s) => _AvatarPart(
-                  id: 'style_${s.name}',
-                  label: s.label,
-                  price: AvatarConfig.stylePrice(s),
-                ),
-              )
-              .toList(),
+      parts: AvatarStyle.values
+          .map(
+            (s) => _AvatarPart(
+              id: 'style_${s.name}',
+              label: s.label,
+              price: AvatarConfig.stylePrice(s),
+            ),
+          )
+          .toList(),
     ),
 
     // -- Eyes (26 variants) --
@@ -77,16 +76,15 @@ List<_AvatarCategory> _buildCategories() {
       label: 'Eyes',
       icon: Icons.visibility,
       configKey: 'eyes',
-      parts:
-          AvatarEyes.values
-              .map(
-                (e) => _AvatarPart(
-                  id: 'eyes_${e.name}',
-                  label: e.name.replaceAll('variant', '#'),
-                  price: AvatarConfig.eyesPrice(e),
-                ),
-              )
-              .toList(),
+      parts: AvatarEyes.values
+          .map(
+            (e) => _AvatarPart(
+              id: 'eyes_${e.name}',
+              label: e.name.replaceAll('variant', '#'),
+              price: AvatarConfig.eyesPrice(e),
+            ),
+          )
+          .toList(),
     ),
 
     // -- Eyebrows (15 variants) --
@@ -94,16 +92,15 @@ List<_AvatarCategory> _buildCategories() {
       label: 'Brows',
       icon: Icons.remove,
       configKey: 'eyebrows',
-      parts:
-          AvatarEyebrows.values
-              .map(
-                (e) => _AvatarPart(
-                  id: 'eyebrows_${e.name}',
-                  label: e.name.replaceAll('variant', '#'),
-                  price: AvatarConfig.eyebrowsPrice(e),
-                ),
-              )
-              .toList(),
+      parts: AvatarEyebrows.values
+          .map(
+            (e) => _AvatarPart(
+              id: 'eyebrows_${e.name}',
+              label: e.name.replaceAll('variant', '#'),
+              price: AvatarConfig.eyebrowsPrice(e),
+            ),
+          )
+          .toList(),
     ),
 
     // -- Mouth (30 variants) --
@@ -111,16 +108,15 @@ List<_AvatarCategory> _buildCategories() {
       label: 'Mouth',
       icon: Icons.mood,
       configKey: 'mouth',
-      parts:
-          AvatarMouth.values
-              .map(
-                (e) => _AvatarPart(
-                  id: 'mouth_${e.name}',
-                  label: e.name.replaceAll('variant', '#'),
-                  price: AvatarConfig.mouthPrice(e),
-                ),
-              )
-              .toList(),
+      parts: AvatarMouth.values
+          .map(
+            (e) => _AvatarPart(
+              id: 'mouth_${e.name}',
+              label: e.name.replaceAll('variant', '#'),
+              price: AvatarConfig.mouthPrice(e),
+            ),
+          )
+          .toList(),
     ),
 
     // -- Hair (46 variants) --
@@ -128,16 +124,15 @@ List<_AvatarCategory> _buildCategories() {
       label: 'Hair',
       icon: Icons.content_cut,
       configKey: 'hair',
-      parts:
-          AvatarHair.values
-              .map(
-                (e) => _AvatarPart(
-                  id: 'hair_${e.name}',
-                  label: e.label,
-                  price: AvatarConfig.hairPrice(e),
-                ),
-              )
-              .toList(),
+      parts: AvatarHair.values
+          .map(
+            (e) => _AvatarPart(
+              id: 'hair_${e.name}',
+              label: e.label,
+              price: AvatarConfig.hairPrice(e),
+            ),
+          )
+          .toList(),
     ),
 
     // -- Hair Color (14 colors) --
@@ -145,17 +140,16 @@ List<_AvatarCategory> _buildCategories() {
       label: 'Hair Color',
       icon: Icons.color_lens,
       configKey: 'hairColor',
-      parts:
-          AvatarHairColor.values
-              .map(
-                (c) => _AvatarPart(
-                  id: 'hairColor_${c.name}',
-                  label: c.label,
-                  price: AvatarConfig.hairColorPrice(c),
-                  colorHex: c.hex,
-                ),
-              )
-              .toList(),
+      parts: AvatarHairColor.values
+          .map(
+            (c) => _AvatarPart(
+              id: 'hairColor_${c.name}',
+              label: c.label,
+              price: AvatarConfig.hairColorPrice(c),
+              colorHex: c.hex,
+            ),
+          )
+          .toList(),
     ),
 
     // -- Skin Color (4 tones) --
@@ -163,17 +157,16 @@ List<_AvatarCategory> _buildCategories() {
       label: 'Skin',
       icon: Icons.palette,
       configKey: 'skinColor',
-      parts:
-          AvatarSkinColor.values
-              .map(
-                (c) => _AvatarPart(
-                  id: 'skinColor_${c.name}',
-                  label: c.label,
-                  price: 0,
-                  colorHex: c.hex,
-                ),
-              )
-              .toList(),
+      parts: AvatarSkinColor.values
+          .map(
+            (c) => _AvatarPart(
+              id: 'skinColor_${c.name}',
+              label: c.label,
+              price: 0,
+              colorHex: c.hex,
+            ),
+          )
+          .toList(),
     ),
 
     // -- Glasses (6 options incl. none) --
@@ -181,19 +174,17 @@ List<_AvatarCategory> _buildCategories() {
       label: 'Glasses',
       icon: Icons.remove_red_eye,
       configKey: 'glasses',
-      parts:
-          AvatarGlasses.values
-              .map(
-                (g) => _AvatarPart(
-                  id: 'glasses_${g.name}',
-                  label:
-                      g == AvatarGlasses.none
-                          ? 'None'
-                          : g.name.replaceAll('variant', '#'),
-                  price: AvatarConfig.glassesPrice(g),
-                ),
-              )
-              .toList(),
+      parts: AvatarGlasses.values
+          .map(
+            (g) => _AvatarPart(
+              id: 'glasses_${g.name}',
+              label: g == AvatarGlasses.none
+                  ? 'None'
+                  : g.name.replaceAll('variant', '#'),
+              price: AvatarConfig.glassesPrice(g),
+            ),
+          )
+          .toList(),
     ),
 
     // -- Earrings (7 options incl. none) --
@@ -201,19 +192,17 @@ List<_AvatarCategory> _buildCategories() {
       label: 'Earrings',
       icon: Icons.radio_button_unchecked,
       configKey: 'earrings',
-      parts:
-          AvatarEarrings.values
-              .map(
-                (e) => _AvatarPart(
-                  id: 'earrings_${e.name}',
-                  label:
-                      e == AvatarEarrings.none
-                          ? 'None'
-                          : e.name.replaceAll('variant', '#'),
-                  price: AvatarConfig.earringsPrice(e),
-                ),
-              )
-              .toList(),
+      parts: AvatarEarrings.values
+          .map(
+            (e) => _AvatarPart(
+              id: 'earrings_${e.name}',
+              label: e == AvatarEarrings.none
+                  ? 'None'
+                  : e.name.replaceAll('variant', '#'),
+              price: AvatarConfig.earringsPrice(e),
+            ),
+          )
+          .toList(),
     ),
 
     // -- Features (5 options incl. none) --
@@ -221,16 +210,15 @@ List<_AvatarCategory> _buildCategories() {
       label: 'Features',
       icon: Icons.auto_awesome,
       configKey: 'feature',
-      parts:
-          AvatarFeature.values
-              .map(
-                (f) => _AvatarPart(
-                  id: 'feature_${f.name}',
-                  label: f.label,
-                  price: 0,
-                ),
-              )
-              .toList(),
+      parts: AvatarFeature.values
+          .map(
+            (f) => _AvatarPart(
+              id: 'feature_${f.name}',
+              label: f.label,
+              price: 0,
+            ),
+          )
+          .toList(),
     ),
   ];
 }
@@ -250,35 +238,35 @@ AvatarConfig _previewConfig(
   final suffix = partId.substring(partId.indexOf('_') + 1);
   return switch (categoryKey) {
     'style' => base.copyWith(
-      style: AvatarStyle.values.firstWhere((v) => v.name == suffix),
-    ),
+        style: AvatarStyle.values.firstWhere((v) => v.name == suffix),
+      ),
     'eyes' => base.copyWith(
-      eyes: AvatarEyes.values.firstWhere((v) => v.name == suffix),
-    ),
+        eyes: AvatarEyes.values.firstWhere((v) => v.name == suffix),
+      ),
     'eyebrows' => base.copyWith(
-      eyebrows: AvatarEyebrows.values.firstWhere((v) => v.name == suffix),
-    ),
+        eyebrows: AvatarEyebrows.values.firstWhere((v) => v.name == suffix),
+      ),
     'mouth' => base.copyWith(
-      mouth: AvatarMouth.values.firstWhere((v) => v.name == suffix),
-    ),
+        mouth: AvatarMouth.values.firstWhere((v) => v.name == suffix),
+      ),
     'hair' => base.copyWith(
-      hair: AvatarHair.values.firstWhere((v) => v.name == suffix),
-    ),
+        hair: AvatarHair.values.firstWhere((v) => v.name == suffix),
+      ),
     'hairColor' => base.copyWith(
-      hairColor: AvatarHairColor.values.firstWhere((v) => v.name == suffix),
-    ),
+        hairColor: AvatarHairColor.values.firstWhere((v) => v.name == suffix),
+      ),
     'skinColor' => base.copyWith(
-      skinColor: AvatarSkinColor.values.firstWhere((v) => v.name == suffix),
-    ),
+        skinColor: AvatarSkinColor.values.firstWhere((v) => v.name == suffix),
+      ),
     'glasses' => base.copyWith(
-      glasses: AvatarGlasses.values.firstWhere((v) => v.name == suffix),
-    ),
+        glasses: AvatarGlasses.values.firstWhere((v) => v.name == suffix),
+      ),
     'earrings' => base.copyWith(
-      earrings: AvatarEarrings.values.firstWhere((v) => v.name == suffix),
-    ),
+        earrings: AvatarEarrings.values.firstWhere((v) => v.name == suffix),
+      ),
     'feature' => base.copyWith(
-      feature: AvatarFeature.values.firstWhere((v) => v.name == suffix),
-    ),
+        feature: AvatarFeature.values.firstWhere((v) => v.name == suffix),
+      ),
     _ => base,
   };
 }
@@ -416,186 +404,180 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
 
     showDialog<void>(
       context: context,
-      builder:
-          (dialogContext) => AlertDialog(
-            backgroundColor: FlitColors.cardBackground,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: FlitColors.cardBorder),
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: FlitColors.cardBorder),
+        ),
+        title: Text(
+          'Unlock ${part.label}?',
+          style: const TextStyle(color: FlitColors.textPrimary),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Avatar preview showing what this option looks like
+            Container(
+              width: 100,
+              height: 100,
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundLight,
+                shape: BoxShape.circle,
+                border: Border.all(color: FlitColors.accent, width: 2),
+              ),
+              child: AvatarWidget(config: preview, size: 100),
             ),
-            title: Text(
-              'Unlock ${part.label}?',
-              style: const TextStyle(color: FlitColors.textPrimary),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Avatar preview showing what this option looks like
-                Container(
-                  width: 100,
-                  height: 100,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: FlitColors.backgroundLight,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: FlitColors.accent, width: 2),
-                  ),
-                  child: AvatarWidget(config: preview, size: 100),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: FlitColors.backgroundMid,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.monetization_on,
-                            color:
-                                canAfford
-                                    ? FlitColors.warning
-                                    : FlitColors.error,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${part.price} coins',
-                            style: TextStyle(
-                              color:
-                                  canAfford
-                                      ? FlitColors.textSecondary
-                                      : FlitColors.error,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                      Icon(
+                        Icons.monetization_on,
+                        color:
+                            canAfford ? FlitColors.warning : FlitColors.error,
+                        size: 16,
                       ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.info_outline,
-                            color: FlitColors.textMuted,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text.rich(
-                              TextSpan(
-                                children: [
-                                  const TextSpan(
-                                    text: 'Play games to earn coins or ',
-                                    style: TextStyle(
-                                      color: FlitColors.textMuted,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                  WidgetSpan(
-                                    alignment: PlaceholderAlignment.baseline,
-                                    baseline: TextBaseline.alphabetic,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        Navigator.of(dialogContext).pop();
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute<void>(
-                                            builder:
-                                                (_) => const ShopScreen(
-                                                  initialTabIndex: 2,
-                                                ),
-                                          ),
-                                        );
-                                      },
-                                      child: const Text(
-                                        'buy',
-                                        style: TextStyle(
-                                          color: FlitColors.accent,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          decoration: TextDecoration.underline,
-                                          decorationColor: FlitColors.accent,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 6),
+                      Text(
+                        '${part.price} coins',
+                        style: TextStyle(
+                          color: canAfford
+                              ? FlitColors.textSecondary
+                              : FlitColors.error,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
-                ),
-                if (!canAfford) ...[
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(dialogContext).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const ShopScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'Not enough coins - tap to visit shop',
-                      style: TextStyle(
-                        color: FlitColors.error,
-                        fontSize: 13,
-                        decoration: TextDecoration.underline,
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        color: FlitColors.textMuted,
+                        size: 16,
                       ),
-                    ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              const TextSpan(
+                                text: 'Play games to earn coins or ',
+                                style: TextStyle(
+                                  color: FlitColors.textMuted,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.baseline,
+                                baseline: TextBaseline.alphabetic,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(dialogContext).pop();
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => const ShopScreen(
+                                          initialTabIndex: 2,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text(
+                                    'buy',
+                                    style: TextStyle(
+                                      color: FlitColors.accent,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: FlitColors.accent,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(color: FlitColors.textMuted),
-                ),
               ),
-              ElevatedButton(
-                onPressed:
-                    canAfford
-                        ? () {
-                          Navigator.of(dialogContext).pop();
-                          ref
-                              .read(accountProvider.notifier)
-                              .purchaseAvatarPart(part.id, part.price);
-                          _selectPart(categoryKey, part.id);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Unlocked ${part.label}!'),
-                              backgroundColor: FlitColors.success,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          );
-                        }
-                        : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FlitColors.accent,
-                  foregroundColor: FlitColors.textPrimary,
-                  disabledBackgroundColor: FlitColors.textMuted.withOpacity(
-                    0.3,
-                  ),
-                  disabledForegroundColor: FlitColors.textMuted,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+            ),
+            if (!canAfford) ...[
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(dialogContext).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ShopScreen(),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Not enough coins - tap to visit shop',
+                  style: TextStyle(
+                    color: FlitColors.error,
+                    fontSize: 13,
+                    decoration: TextDecoration.underline,
                   ),
                 ),
-                child: const Text('Buy'),
               ),
             ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: FlitColors.textMuted),
+            ),
           ),
+          ElevatedButton(
+            onPressed: canAfford
+                ? () {
+                    Navigator.of(dialogContext).pop();
+                    ref
+                        .read(accountProvider.notifier)
+                        .purchaseAvatarPart(part.id, part.price);
+                    _selectPart(categoryKey, part.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Unlocked ${part.label}!'),
+                        backgroundColor: FlitColors.success,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    );
+                  }
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FlitColors.accent,
+              foregroundColor: FlitColors.textPrimary,
+              disabledBackgroundColor: FlitColors.textMuted.withOpacity(
+                0.3,
+              ),
+              disabledForegroundColor: FlitColors.textMuted,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Buy'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -630,12 +612,11 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
         actions: [
           // Coin balance pill
           GestureDetector(
-            onTap:
-                () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const ShopScreen(initialTabIndex: 2),
-                  ),
-                ),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const ShopScreen(initialTabIndex: 2),
+              ),
+            ),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               margin: const EdgeInsets.only(right: 16),
@@ -719,32 +700,32 @@ class _AvatarPreviewSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.symmetric(vertical: 24),
-    decoration: const BoxDecoration(
-      color: FlitColors.backgroundMid,
-      border: Border(bottom: BorderSide(color: FlitColors.cardBorder)),
-    ),
-    child: Center(
-      child: Container(
-        width: 160,
-        height: 160,
-        decoration: BoxDecoration(
-          color: FlitColors.backgroundLight,
-          shape: BoxShape.circle,
-          border: Border.all(color: FlitColors.accent, width: 3),
-          boxShadow: const [
-            BoxShadow(
-              color: FlitColors.shadow,
-              blurRadius: 16,
-              offset: Offset(0, 4),
-            ),
-          ],
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: const BoxDecoration(
+          color: FlitColors.backgroundMid,
+          border: Border(bottom: BorderSide(color: FlitColors.cardBorder)),
         ),
-        child: AvatarWidget(config: config, size: 160),
-      ),
-    ),
-  );
+        child: Center(
+          child: Container(
+            width: 160,
+            height: 160,
+            decoration: BoxDecoration(
+              color: FlitColors.backgroundLight,
+              shape: BoxShape.circle,
+              border: Border.all(color: FlitColors.accent, width: 3),
+              boxShadow: const [
+                BoxShadow(
+                  color: FlitColors.shadow,
+                  blurRadius: 16,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: AvatarWidget(config: config, size: 160),
+          ),
+        ),
+      );
 }
 
 // =============================================================================
@@ -764,64 +745,66 @@ class _CategoryTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    height: 56,
-    color: FlitColors.backgroundDark,
-    child: ListView.builder(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      itemCount: categories.length,
-      itemBuilder: (context, index) {
-        final cat = categories[index];
-        final isSelected = index == selectedIndex;
+        height: 56,
+        color: FlitColors.backgroundDark,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            final cat = categories[index];
+            final isSelected = index == selectedIndex;
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: GestureDetector(
-            onTap: () => onSelected(index),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color:
-                    isSelected
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: GestureDetector(
+                onTap: () => onSelected(index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
                         ? FlitColors.accent.withOpacity(0.2)
                         : FlitColors.cardBackground,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected ? FlitColors.accent : FlitColors.cardBorder,
-                  width: isSelected ? 1.5 : 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    cat.icon,
-                    size: 16,
-                    color:
-                        isSelected ? FlitColors.accent : FlitColors.textMuted,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    cat.label,
-                    style: TextStyle(
-                      color:
-                          isSelected
-                              ? FlitColors.accent
-                              : FlitColors.textSecondary,
-                      fontSize: 13,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected
+                          ? FlitColors.accent
+                          : FlitColors.cardBorder,
+                      width: isSelected ? 1.5 : 1,
                     ),
                   ),
-                ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        cat.icon,
+                        size: 16,
+                        color: isSelected
+                            ? FlitColors.accent
+                            : FlitColors.textMuted,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        cat.label,
+                        style: TextStyle(
+                          color: isSelected
+                              ? FlitColors.accent
+                              : FlitColors.textSecondary,
+                          fontSize: 13,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-        );
-      },
-    ),
-  );
+            );
+          },
+        ),
+      );
 }
 
 // =============================================================================
@@ -847,36 +830,36 @@ class _PartsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GridView.builder(
-    padding: const EdgeInsets.all(16),
-    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 4,
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      childAspectRatio: 0.85,
-    ),
-    itemCount: category.parts.length,
-    itemBuilder: (context, index) {
-      final part = category.parts[index];
-      final isSelected = selectedPartId == part.id;
-      final isOwned = part.isFree || ownedParts.contains(part.id);
-      final canAfford = coins >= part.price;
-      final isLocked = !isOwned && !part.isFree;
-
-      return _PartCard(
-        part: part,
-        previewConfig: _previewConfig(
-          currentConfig,
-          category.configKey,
-          part.id,
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 0.85,
         ),
-        isSelected: isSelected,
-        isOwned: isOwned,
-        isLocked: isLocked,
-        canAfford: canAfford,
-        onTap: () => onPartTapped(part),
+        itemCount: category.parts.length,
+        itemBuilder: (context, index) {
+          final part = category.parts[index];
+          final isSelected = selectedPartId == part.id;
+          final isOwned = part.isFree || ownedParts.contains(part.id);
+          final canAfford = coins >= part.price;
+          final isLocked = !isOwned && !part.isFree;
+
+          return _PartCard(
+            part: part,
+            previewConfig: _previewConfig(
+              currentConfig,
+              category.configKey,
+              part.id,
+            ),
+            isSelected: isSelected,
+            isOwned: isOwned,
+            isLocked: isLocked,
+            canAfford: canAfford,
+            onTap: () => onPartTapped(part),
+          );
+        },
       );
-    },
-  );
 }
 
 // =============================================================================
@@ -904,143 +887,143 @@ class _PartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      decoration: BoxDecoration(
-        color:
-            isSelected
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            color: isSelected
                 ? FlitColors.accent.withOpacity(0.1)
                 : FlitColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isSelected ? FlitColors.accent : FlitColors.cardBorder,
-          width: isSelected ? 2 : 1,
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Main content
-          Padding(
-            padding: const EdgeInsets.all(6),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Visual preview area
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: FlitColors.backgroundMid,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child:
-                          part.isColorSwatch
-                              ? _ColorSwatch(hex: part.colorHex!)
-                              : LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final previewSize = constraints.maxWidth
-                                      .clamp(32.0, 56.0);
-                                  return AvatarWidget(
-                                    config: previewConfig,
-                                    size: previewSize,
-                                  );
-                                },
-                              ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-
-                // Price label
-                if (part.isFree)
-                  const Text(
-                    'FREE',
-                    style: TextStyle(
-                      color: FlitColors.success,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  )
-                else if (isOwned)
-                  const Text(
-                    'OWNED',
-                    style: TextStyle(
-                      color: FlitColors.textSecondary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  )
-                else
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.monetization_on,
-                        size: 11,
-                        color:
-                            canAfford ? FlitColors.warning : FlitColors.error,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${part.price}',
-                        style: TextStyle(
-                          color:
-                              canAfford ? FlitColors.warning : FlitColors.error,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? FlitColors.accent : FlitColors.cardBorder,
+              width: isSelected ? 2 : 1,
             ),
           ),
+          child: Stack(
+            children: [
+              // Main content
+              Padding(
+                padding: const EdgeInsets.all(6),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Visual preview area
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: FlitColors.backgroundMid,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: part.isColorSwatch
+                              ? _ColorSwatch(hex: part.colorHex!)
+                              : LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final previewSize =
+                                        constraints.maxWidth.clamp(32.0, 56.0);
+                                    return AvatarWidget(
+                                      config: previewConfig,
+                                      size: previewSize,
+                                    );
+                                  },
+                                ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
 
-          // Selected check badge
-          if (isSelected)
-            Positioned(
-              top: 4,
-              right: 4,
-              child: Container(
-                width: 18,
-                height: 18,
-                decoration: const BoxDecoration(
-                  color: FlitColors.accent,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check,
-                  size: 12,
-                  color: FlitColors.textPrimary,
+                    // Price label
+                    if (part.isFree)
+                      const Text(
+                        'FREE',
+                        style: TextStyle(
+                          color: FlitColors.success,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      )
+                    else if (isOwned)
+                      const Text(
+                        'OWNED',
+                        style: TextStyle(
+                          color: FlitColors.textSecondary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      )
+                    else
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.monetization_on,
+                            size: 11,
+                            color: canAfford
+                                ? FlitColors.warning
+                                : FlitColors.error,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${part.price}',
+                            style: TextStyle(
+                              color: canAfford
+                                  ? FlitColors.warning
+                                  : FlitColors.error,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
               ),
-            ),
 
-          // Lock overlay for unaffordable paid items
-          if (isLocked && !canAfford)
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: FlitColors.backgroundDark.withOpacity(0.55),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.lock,
-                    color: FlitColors.textMuted,
-                    size: 24,
+              // Selected check badge
+              if (isSelected)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: const BoxDecoration(
+                      color: FlitColors.accent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      size: 12,
+                      color: FlitColors.textPrimary,
+                    ),
                   ),
                 ),
-              ),
-            ),
-        ],
-      ),
-    ),
-  );
+
+              // Lock overlay for unaffordable paid items
+              if (isLocked && !canAfford)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: FlitColors.backgroundDark.withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.lock,
+                        color: FlitColors.textMuted,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
 }
 
 // =============================================================================
@@ -1080,59 +1063,59 @@ class _SaveBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    decoration: const BoxDecoration(
-      color: FlitColors.backgroundMid,
-      border: Border(top: BorderSide(color: FlitColors.cardBorder)),
-    ),
-    child: SafeArea(
-      top: false,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Coin balance display
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: const BoxDecoration(
+          color: FlitColors.backgroundMid,
+          border: Border(top: BorderSide(color: FlitColors.cardBorder)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.monetization_on,
-                color: FlitColors.warning,
-                size: 16,
+              // Coin balance display
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.monetization_on,
+                    color: FlitColors.warning,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$coins coins remaining',
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 4),
-              Text(
-                '$coins coins remaining',
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 13,
+              const SizedBox(height: 10),
+              // Save button
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: onSave,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FlitColors.accent,
+                    foregroundColor: FlitColors.textPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  child: const Text('SAVE'),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          // Save button
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: onSave,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: FlitColors.accent,
-                foregroundColor: FlitColors.textPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
-                ),
-              ),
-              child: const Text('SAVE'),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }

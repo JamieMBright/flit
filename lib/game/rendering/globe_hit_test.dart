@@ -45,7 +45,7 @@ class GlobeHitTest {
     final ndcX = (screenPoint.dx - 0.5 * screenSize.width) / screenSize.height;
     final ndcY =
         -((screenPoint.dy - 0.5 * screenSize.height) / screenSize.height) +
-        tiltDown;
+            tiltDown;
 
     // -- Step 2: NDC -> ray direction --
     // Use the camera's FOV to determine the view-plane distance.
@@ -176,8 +176,7 @@ class GlobeHitTest {
       final xj = polygon[j].dx;
 
       // Check if the ray crosses this edge.
-      final crossesEdge =
-          ((yi > lat) != (yj > lat)) &&
+      final crossesEdge = ((yi > lat) != (yj > lat)) &&
           (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
 
       if (crossesEdge) {
@@ -204,8 +203,7 @@ class GlobeHitTest {
       final yj = polygon[j].y;
       final xj = polygon[j].x;
 
-      final crossesEdge =
-          ((yi > lat) != (yj > lat)) &&
+      final crossesEdge = ((yi > lat) != (yj > lat)) &&
           (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
 
       if (crossesEdge) {
@@ -234,8 +232,7 @@ class GlobeHitTest {
     final dLat = (lat2 - lat1) * deg2rad;
     final dLng = (lng2 - lng1) * deg2rad;
 
-    final h =
-        sin(dLat / 2) * sin(dLat / 2) +
+    final h = sin(dLat / 2) * sin(dLat / 2) +
         cos(lat1r) * cos(lat2r) * sin(dLng / 2) * sin(dLng / 2);
     final c = 2 * atan2(sqrt(h), sqrt(1 - h));
     return c * rad2deg;

@@ -43,155 +43,156 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: Stack(
-      fit: StackFit.expand,
-      children: [
-        // Animated map background
-        _AnimatedMapBackground(animation: _animController),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Animated map background
+            _AnimatedMapBackground(animation: _animController),
 
-        // Menu overlay
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Column(
-              children: [
-                const Spacer(flex: 3),
-                // Title block with paper plane accent
-                _buildTitle(),
-                const Spacer(flex: 2),
-                _buildMenuButtons(context),
-                const Spacer(flex: 1),
-                // Version number
-                const Text(
-                  appVersion,
-                  style: TextStyle(
-                    color: FlitColors.textMuted,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 1,
-                  ),
+            // Menu overlay
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: Column(
+                  children: [
+                    const Spacer(flex: 3),
+                    // Title block with paper plane accent
+                    _buildTitle(),
+                    const Spacer(flex: 2),
+                    _buildMenuButtons(context),
+                    const Spacer(flex: 1),
+                    // Version number
+                    const Text(
+                      appVersion,
+                      style: TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                 ),
-                const SizedBox(height: 4),
-              ],
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _buildTitle() => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      // Paper plane above title
-      Transform.rotate(
-        angle: -0.3,
-        child: const Icon(Icons.flight, color: FlitColors.accent, size: 32),
-      ),
-      const SizedBox(height: 8),
-      const Text(
-        'FLIT',
-        style: TextStyle(
-          color: FlitColors.textPrimary,
-          fontSize: 56,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 14,
-          shadows: [
-            Shadow(
-              color: Color(0x60000000),
-              blurRadius: 12,
-              offset: Offset(0, 4),
+              ),
             ),
           ],
         ),
-      ),
-      const SizedBox(height: 6),
-      // Tagline with decorative dashes
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      );
+
+  Widget _buildTitle() => Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 24,
-            height: 1,
-            color: FlitColors.gold.withOpacity(0.4),
+          // Paper plane above title
+          Transform.rotate(
+            angle: -0.3,
+            child: const Icon(Icons.flight, color: FlitColors.accent, size: 32),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(height: 8),
           const Text(
-            'A GEOGRAPHICAL ADVENTURE',
+            'FLIT',
             style: TextStyle(
-              color: FlitColors.gold,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 3,
+              color: FlitColors.textPrimary,
+              fontSize: 56,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 14,
+              shadows: [
+                Shadow(
+                  color: Color(0x60000000),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 10),
-          Container(
-            width: 24,
-            height: 1,
-            color: FlitColors.gold.withOpacity(0.4),
+          const SizedBox(height: 6),
+          // Tagline with decorative dashes
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 24,
+                height: 1,
+                color: FlitColors.gold.withOpacity(0.4),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'A GEOGRAPHICAL ADVENTURE',
+                style: TextStyle(
+                  color: FlitColors.gold,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 3,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                width: 24,
+                height: 1,
+                color: FlitColors.gold.withOpacity(0.4),
+              ),
+            ],
           ),
         ],
-      ),
-    ],
-  );
+      );
 
   Widget _buildMenuButtons(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      // Primary PLAY button with glow
-      _PlayButton(onTap: () => _showGameModes(context)),
-      const SizedBox(height: 10),
-      // Secondary buttons in a 2x2 grid for variety
-      Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: _MenuTile(
-              label: 'Leaderboard',
-              icon: Icons.leaderboard_rounded,
-              onTap: () => _navigateSafely(context, const LeaderboardScreen()),
-            ),
+          // Primary PLAY button with glow
+          _PlayButton(onTap: () => _showGameModes(context)),
+          const SizedBox(height: 10),
+          // Secondary buttons in a 2x2 grid for variety
+          Row(
+            children: [
+              Expanded(
+                child: _MenuTile(
+                  label: 'Leaderboard',
+                  icon: Icons.leaderboard_rounded,
+                  onTap: () =>
+                      _navigateSafely(context, const LeaderboardScreen()),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _MenuTile(
+                  label: 'Profile',
+                  icon: Icons.person_rounded,
+                  onTap: () => _navigateSafely(context, const ProfileScreen()),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _MenuTile(
-              label: 'Profile',
-              icon: Icons.person_rounded,
-              onTap: () => _navigateSafely(context, const ProfileScreen()),
-            ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _MenuTile(
+                  label: 'Shop',
+                  icon: Icons.storefront_rounded,
+                  onTap: () => _navigateSafely(context, const ShopScreen()),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _MenuTile(
+                  label: 'How to Play',
+                  icon: Icons.menu_book_rounded,
+                  onTap: () =>
+                      _navigateSafely(context, const GameplayGuideScreen()),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _MenuButton(
+            label: 'Debug',
+            icon: Icons.bug_report_rounded,
+            onTap: () => _navigateSafely(context, const DebugScreen()),
           ),
         ],
-      ),
-      const SizedBox(height: 10),
-      Row(
-        children: [
-          Expanded(
-            child: _MenuTile(
-              label: 'Shop',
-              icon: Icons.storefront_rounded,
-              onTap: () => _navigateSafely(context, const ShopScreen()),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _MenuTile(
-              label: 'How to Play',
-              icon: Icons.menu_book_rounded,
-              onTap:
-                  () => _navigateSafely(context, const GameplayGuideScreen()),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 10),
-      _MenuButton(
-        label: 'Debug',
-        icon: Icons.bug_report_rounded,
-        onTap: () => _navigateSafely(context, const DebugScreen()),
-      ),
-    ],
-  );
+      );
 
   /// Safely navigate to a new screen with error handling.
   Future<void> _navigateSafely(BuildContext context, Widget destination) async {
@@ -234,64 +235,59 @@ class _HomeScreenState extends State<HomeScreen>
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder:
-          (ctx) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'CHOOSE YOUR FLIGHT',
-                  style: TextStyle(
-                    color: FlitColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _GameModeCard(
-                  title: 'Free Flight',
-                  subtitle: 'Explore the world at your own pace',
-                  icon: Icons.flight_takeoff,
-                  onTap:
-                      () => _closeSheetAndNavigate(
-                        ctx,
-                        const RegionSelectScreen(),
-                      ),
-                ),
-                const SizedBox(height: 10),
-                _GameModeCard(
-                  title: 'Training Sortie',
-                  subtitle: 'Practice without rank pressure',
-                  icon: Icons.school_rounded,
-                  onTap:
-                      () => _closeSheetAndNavigate(ctx, const PracticeScreen()),
-                ),
-                const SizedBox(height: 10),
-                _GameModeCard(
-                  title: 'Daily Scramble',
-                  subtitle: "Today's challenge — compete for glory",
-                  icon: Icons.today_rounded,
-                  isHighlighted: true,
-                  onTap:
-                      () => _closeSheetAndNavigate(
-                        ctx,
-                        const DailyChallengeScreen(),
-                      ),
-                ),
-                const SizedBox(height: 10),
-                _GameModeCard(
-                  title: 'Dogfight',
-                  subtitle: 'Challenge your friends head-to-head',
-                  icon: Icons.people_rounded,
-                  onTap:
-                      () => _closeSheetAndNavigate(ctx, const FriendsScreen()),
-                ),
-                const SizedBox(height: 16),
-              ],
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'CHOOSE YOUR FLIGHT',
+              style: TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2,
+              ),
             ),
-          ),
+            const SizedBox(height: 20),
+            _GameModeCard(
+              title: 'Free Flight',
+              subtitle: 'Explore the world at your own pace',
+              icon: Icons.flight_takeoff,
+              onTap: () => _closeSheetAndNavigate(
+                ctx,
+                const RegionSelectScreen(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            _GameModeCard(
+              title: 'Training Sortie',
+              subtitle: 'Practice without rank pressure',
+              icon: Icons.school_rounded,
+              onTap: () => _closeSheetAndNavigate(ctx, const PracticeScreen()),
+            ),
+            const SizedBox(height: 10),
+            _GameModeCard(
+              title: 'Daily Scramble',
+              subtitle: "Today's challenge — compete for glory",
+              icon: Icons.today_rounded,
+              isHighlighted: true,
+              onTap: () => _closeSheetAndNavigate(
+                ctx,
+                const DailyChallengeScreen(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            _GameModeCard(
+              title: 'Dogfight',
+              subtitle: 'Challenge your friends head-to-head',
+              icon: Icons.people_rounded,
+              onTap: () => _closeSheetAndNavigate(ctx, const FriendsScreen()),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -305,12 +301,11 @@ class _AnimatedMapBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-    animation: animation,
-    builder:
-        (context, child) => SizedBox.expand(
+        animation: animation,
+        builder: (context, child) => SizedBox.expand(
           child: CustomPaint(painter: _GlobeBackgroundPainter(animation.value)),
         ),
-  );
+      );
 }
 
 class _GlobeBackgroundPainter extends CustomPainter {
@@ -327,14 +322,13 @@ class _GlobeBackgroundPainter extends CustomPainter {
     final rect = Rect.fromLTWH(0, 0, w, h);
 
     // ── Deep space background ──
-    final spacePaint =
-        Paint()
-          ..shader = const RadialGradient(
-            center: Alignment(0.0, -0.3),
-            radius: 1.4,
-            colors: [Color(0xFF0D1F2D), FlitColors.space, Color(0xFF050D14)],
-            stops: [0.0, 0.5, 1.0],
-          ).createShader(rect);
+    final spacePaint = Paint()
+      ..shader = const RadialGradient(
+        center: Alignment(0.0, -0.3),
+        radius: 1.4,
+        colors: [Color(0xFF0D1F2D), FlitColors.space, Color(0xFF050D14)],
+        stops: [0.0, 0.5, 1.0],
+      ).createShader(rect);
     canvas.drawRect(rect, spacePaint);
 
     // ── Starfield — varied sizes and brightness ──
@@ -364,25 +358,23 @@ class _GlobeBackgroundPainter extends CustomPainter {
     final globeCenter = Offset(globeCx, globeCy);
 
     // Atmospheric glow around globe (outer ring)
-    final atmosphereGlow =
-        Paint()
-          ..color = FlitColors.atmosphereGlow.withOpacity(0.06)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28);
+    final atmosphereGlow = Paint()
+      ..color = FlitColors.atmosphereGlow.withOpacity(0.06)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28);
     canvas.drawCircle(globeCenter, globeR + 20, atmosphereGlow);
 
     // Globe ocean fill
-    final globeOcean =
-        Paint()
-          ..shader = RadialGradient(
-            center: const Alignment(-0.3, -0.4),
-            radius: 1.0,
-            colors: [
-              FlitColors.ocean.withOpacity(0.5),
-              FlitColors.oceanDeep.withOpacity(0.4),
-              const Color(0xFF0A1A28).withOpacity(0.35),
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ).createShader(Rect.fromCircle(center: globeCenter, radius: globeR));
+    final globeOcean = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(-0.3, -0.4),
+        radius: 1.0,
+        colors: [
+          FlitColors.ocean.withOpacity(0.5),
+          FlitColors.oceanDeep.withOpacity(0.4),
+          const Color(0xFF0A1A28).withOpacity(0.35),
+        ],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromCircle(center: globeCenter, radius: globeR));
     canvas.drawCircle(globeCenter, globeR, globeOcean);
 
     // Lat/lon grid ON the globe (clipped)
@@ -391,19 +383,17 @@ class _GlobeBackgroundPainter extends CustomPainter {
       Path()..addOval(Rect.fromCircle(center: globeCenter, radius: globeR)),
     );
 
-    final gridPaint =
-        Paint()
-          ..color = FlitColors.gridLine.withOpacity(0.7)
-          ..strokeWidth = 0.4
-          ..style = PaintingStyle.stroke;
+    final gridPaint = Paint()
+      ..color = FlitColors.gridLine.withOpacity(0.7)
+      ..strokeWidth = 0.4
+      ..style = PaintingStyle.stroke;
 
     // Latitude lines (horizontal ellipses that flatten toward poles)
     for (var i = 1; i < 8; i++) {
       final frac = i / 8.0;
       final ly = globeCy - globeR + globeR * 2 * frac;
       final distFromCenter = (frac - 0.5).abs();
-      final halfWidth =
-          globeR *
+      final halfWidth = globeR *
           sqrt(1 - 4 * distFromCenter * distFromCenter).clamp(0.0, 1.0);
       if (halfWidth > 0) {
         canvas.drawLine(
@@ -418,36 +408,32 @@ class _GlobeBackgroundPainter extends CustomPainter {
       final frac = i / 8.0;
       final lx = globeCx - globeR + globeR * 2 * frac;
       final distFromCenter = (frac - 0.5).abs();
-      final halfHeight =
-          globeR *
+      final halfHeight = globeR *
           sqrt(1 - 4 * distFromCenter * distFromCenter).clamp(0.0, 1.0);
       if (halfHeight > 0) {
-        final path =
-            Path()
-              ..moveTo(lx, globeCy - halfHeight)
-              ..quadraticBezierTo(
-                lx + (frac - 0.5) * globeR * 0.3,
-                globeCy,
-                lx,
-                globeCy + halfHeight,
-              );
+        final path = Path()
+          ..moveTo(lx, globeCy - halfHeight)
+          ..quadraticBezierTo(
+            lx + (frac - 0.5) * globeR * 0.3,
+            globeCy,
+            lx,
+            globeCy + halfHeight,
+          );
         canvas.drawPath(path, gridPaint);
       }
     }
 
     // Continent silhouettes on the globe
     final landPaint = Paint()..color = FlitColors.landMass.withOpacity(0.22);
-    final coastPaint =
-        Paint()
-          ..color = FlitColors.coastline.withOpacity(0.30)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.0;
-    final coastGlow =
-        Paint()
-          ..color = FlitColors.oceanHighlight.withOpacity(0.10)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3.5
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+    final coastPaint = Paint()
+      ..color = FlitColors.coastline.withOpacity(0.30)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    final coastGlow = Paint()
+      ..color = FlitColors.oceanHighlight.withOpacity(0.10)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.5
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
 
     void drawContinent(Path path) {
       canvas.drawPath(path, coastGlow);
@@ -456,191 +442,185 @@ class _GlobeBackgroundPainter extends CustomPainter {
     }
 
     // Europe (relative to globe center)
-    final europe =
-        Path()
-          ..moveTo(globeCx + globeR * 0.00, globeCy - globeR * 0.42)
-          ..cubicTo(
-            globeCx + globeR * 0.08,
-            globeCy - globeR * 0.48,
-            globeCx + globeR * 0.18,
-            globeCy - globeR * 0.44,
-            globeCx + globeR * 0.20,
-            globeCy - globeR * 0.36,
-          )
-          ..cubicTo(
-            globeCx + globeR * 0.22,
-            globeCy - globeR * 0.28,
-            globeCx + globeR * 0.16,
-            globeCy - globeR * 0.22,
-            globeCx + globeR * 0.10,
-            globeCy - globeR * 0.18,
-          )
-          ..quadraticBezierTo(
-            globeCx + globeR * 0.05,
-            globeCy - globeR * 0.24,
-            globeCx - globeR * 0.02,
-            globeCy - globeR * 0.30,
-          )
-          ..close();
+    final europe = Path()
+      ..moveTo(globeCx + globeR * 0.00, globeCy - globeR * 0.42)
+      ..cubicTo(
+        globeCx + globeR * 0.08,
+        globeCy - globeR * 0.48,
+        globeCx + globeR * 0.18,
+        globeCy - globeR * 0.44,
+        globeCx + globeR * 0.20,
+        globeCy - globeR * 0.36,
+      )
+      ..cubicTo(
+        globeCx + globeR * 0.22,
+        globeCy - globeR * 0.28,
+        globeCx + globeR * 0.16,
+        globeCy - globeR * 0.22,
+        globeCx + globeR * 0.10,
+        globeCy - globeR * 0.18,
+      )
+      ..quadraticBezierTo(
+        globeCx + globeR * 0.05,
+        globeCy - globeR * 0.24,
+        globeCx - globeR * 0.02,
+        globeCy - globeR * 0.30,
+      )
+      ..close();
     drawContinent(europe);
 
     // Africa
-    final africa =
-        Path()
-          ..moveTo(globeCx + globeR * 0.02, globeCy - globeR * 0.14)
-          ..cubicTo(
-            globeCx + globeR * 0.10,
-            globeCy - globeR * 0.18,
-            globeCx + globeR * 0.18,
-            globeCy - globeR * 0.08,
-            globeCx + globeR * 0.16,
-            globeCy + globeR * 0.08,
-          )
-          ..cubicTo(
-            globeCx + globeR * 0.14,
-            globeCy + globeR * 0.22,
-            globeCx + globeR * 0.06,
-            globeCy + globeR * 0.32,
-            globeCx - globeR * 0.02,
-            globeCy + globeR * 0.24,
-          )
-          ..cubicTo(
-            globeCx - globeR * 0.06,
-            globeCy + globeR * 0.14,
-            globeCx - globeR * 0.04,
-            globeCy - globeR * 0.02,
-            globeCx + globeR * 0.02,
-            globeCy - globeR * 0.14,
-          )
-          ..close();
+    final africa = Path()
+      ..moveTo(globeCx + globeR * 0.02, globeCy - globeR * 0.14)
+      ..cubicTo(
+        globeCx + globeR * 0.10,
+        globeCy - globeR * 0.18,
+        globeCx + globeR * 0.18,
+        globeCy - globeR * 0.08,
+        globeCx + globeR * 0.16,
+        globeCy + globeR * 0.08,
+      )
+      ..cubicTo(
+        globeCx + globeR * 0.14,
+        globeCy + globeR * 0.22,
+        globeCx + globeR * 0.06,
+        globeCy + globeR * 0.32,
+        globeCx - globeR * 0.02,
+        globeCy + globeR * 0.24,
+      )
+      ..cubicTo(
+        globeCx - globeR * 0.06,
+        globeCy + globeR * 0.14,
+        globeCx - globeR * 0.04,
+        globeCy - globeR * 0.02,
+        globeCx + globeR * 0.02,
+        globeCy - globeR * 0.14,
+      )
+      ..close();
     drawContinent(africa);
 
     // North America (left side of globe)
-    final nAmerica =
-        Path()
-          ..moveTo(globeCx - globeR * 0.50, globeCy - globeR * 0.38)
-          ..cubicTo(
-            globeCx - globeR * 0.40,
-            globeCy - globeR * 0.48,
-            globeCx - globeR * 0.24,
-            globeCy - globeR * 0.44,
-            globeCx - globeR * 0.18,
-            globeCy - globeR * 0.34,
-          )
-          ..cubicTo(
-            globeCx - globeR * 0.14,
-            globeCy - globeR * 0.24,
-            globeCx - globeR * 0.20,
-            globeCy - globeR * 0.12,
-            globeCx - globeR * 0.28,
-            globeCy - globeR * 0.06,
-          )
-          ..quadraticBezierTo(
-            globeCx - globeR * 0.36,
-            globeCy - globeR * 0.10,
-            globeCx - globeR * 0.44,
-            globeCy - globeR * 0.18,
-          )
-          ..cubicTo(
-            globeCx - globeR * 0.52,
-            globeCy - globeR * 0.24,
-            globeCx - globeR * 0.54,
-            globeCy - globeR * 0.32,
-            globeCx - globeR * 0.50,
-            globeCy - globeR * 0.38,
-          )
-          ..close();
+    final nAmerica = Path()
+      ..moveTo(globeCx - globeR * 0.50, globeCy - globeR * 0.38)
+      ..cubicTo(
+        globeCx - globeR * 0.40,
+        globeCy - globeR * 0.48,
+        globeCx - globeR * 0.24,
+        globeCy - globeR * 0.44,
+        globeCx - globeR * 0.18,
+        globeCy - globeR * 0.34,
+      )
+      ..cubicTo(
+        globeCx - globeR * 0.14,
+        globeCy - globeR * 0.24,
+        globeCx - globeR * 0.20,
+        globeCy - globeR * 0.12,
+        globeCx - globeR * 0.28,
+        globeCy - globeR * 0.06,
+      )
+      ..quadraticBezierTo(
+        globeCx - globeR * 0.36,
+        globeCy - globeR * 0.10,
+        globeCx - globeR * 0.44,
+        globeCy - globeR * 0.18,
+      )
+      ..cubicTo(
+        globeCx - globeR * 0.52,
+        globeCy - globeR * 0.24,
+        globeCx - globeR * 0.54,
+        globeCy - globeR * 0.32,
+        globeCx - globeR * 0.50,
+        globeCy - globeR * 0.38,
+      )
+      ..close();
     drawContinent(nAmerica);
 
     // South America
-    final sAmerica =
-        Path()
-          ..moveTo(globeCx - globeR * 0.22, globeCy + globeR * 0.02)
-          ..cubicTo(
-            globeCx - globeR * 0.16,
-            globeCy - globeR * 0.04,
-            globeCx - globeR * 0.10,
-            globeCy + globeR * 0.04,
-            globeCx - globeR * 0.12,
-            globeCy + globeR * 0.18,
-          )
-          ..cubicTo(
-            globeCx - globeR * 0.14,
-            globeCy + globeR * 0.32,
-            globeCx - globeR * 0.20,
-            globeCy + globeR * 0.44,
-            globeCx - globeR * 0.28,
-            globeCy + globeR * 0.48,
-          )
-          ..quadraticBezierTo(
-            globeCx - globeR * 0.30,
-            globeCy + globeR * 0.38,
-            globeCx - globeR * 0.26,
-            globeCy + globeR * 0.18,
-          )
-          ..close();
+    final sAmerica = Path()
+      ..moveTo(globeCx - globeR * 0.22, globeCy + globeR * 0.02)
+      ..cubicTo(
+        globeCx - globeR * 0.16,
+        globeCy - globeR * 0.04,
+        globeCx - globeR * 0.10,
+        globeCy + globeR * 0.04,
+        globeCx - globeR * 0.12,
+        globeCy + globeR * 0.18,
+      )
+      ..cubicTo(
+        globeCx - globeR * 0.14,
+        globeCy + globeR * 0.32,
+        globeCx - globeR * 0.20,
+        globeCy + globeR * 0.44,
+        globeCx - globeR * 0.28,
+        globeCy + globeR * 0.48,
+      )
+      ..quadraticBezierTo(
+        globeCx - globeR * 0.30,
+        globeCy + globeR * 0.38,
+        globeCx - globeR * 0.26,
+        globeCy + globeR * 0.18,
+      )
+      ..close();
     drawContinent(sAmerica);
 
     // Asia (right side of globe)
-    final asia =
-        Path()
-          ..moveTo(globeCx + globeR * 0.22, globeCy - globeR * 0.46)
-          ..cubicTo(
-            globeCx + globeR * 0.36,
-            globeCy - globeR * 0.50,
-            globeCx + globeR * 0.52,
-            globeCy - globeR * 0.42,
-            globeCx + globeR * 0.56,
-            globeCy - globeR * 0.28,
-          )
-          ..cubicTo(
-            globeCx + globeR * 0.58,
-            globeCy - globeR * 0.16,
-            globeCx + globeR * 0.50,
-            globeCy - globeR * 0.04,
-            globeCx + globeR * 0.36,
-            globeCy - globeR * 0.08,
-          )
-          ..cubicTo(
-            globeCx + globeR * 0.26,
-            globeCy - globeR * 0.14,
-            globeCx + globeR * 0.22,
-            globeCy - globeR * 0.28,
-            globeCx + globeR * 0.22,
-            globeCy - globeR * 0.46,
-          )
-          ..close();
+    final asia = Path()
+      ..moveTo(globeCx + globeR * 0.22, globeCy - globeR * 0.46)
+      ..cubicTo(
+        globeCx + globeR * 0.36,
+        globeCy - globeR * 0.50,
+        globeCx + globeR * 0.52,
+        globeCy - globeR * 0.42,
+        globeCx + globeR * 0.56,
+        globeCy - globeR * 0.28,
+      )
+      ..cubicTo(
+        globeCx + globeR * 0.58,
+        globeCy - globeR * 0.16,
+        globeCx + globeR * 0.50,
+        globeCy - globeR * 0.04,
+        globeCx + globeR * 0.36,
+        globeCy - globeR * 0.08,
+      )
+      ..cubicTo(
+        globeCx + globeR * 0.26,
+        globeCy - globeR * 0.14,
+        globeCx + globeR * 0.22,
+        globeCy - globeR * 0.28,
+        globeCx + globeR * 0.22,
+        globeCy - globeR * 0.46,
+      )
+      ..close();
     drawContinent(asia);
 
     // Australia (lower-right of globe)
-    final australia =
-        Path()
-          ..moveTo(globeCx + globeR * 0.38, globeCy + globeR * 0.18)
-          ..cubicTo(
-            globeCx + globeR * 0.46,
-            globeCy + globeR * 0.14,
-            globeCx + globeR * 0.56,
-            globeCy + globeR * 0.20,
-            globeCx + globeR * 0.54,
-            globeCy + globeR * 0.32,
-          )
-          ..cubicTo(
-            globeCx + globeR * 0.52,
-            globeCy + globeR * 0.40,
-            globeCx + globeR * 0.44,
-            globeCy + globeR * 0.42,
-            globeCx + globeR * 0.38,
-            globeCy + globeR * 0.36,
-          )
-          ..cubicTo(
-            globeCx + globeR * 0.34,
-            globeCy + globeR * 0.30,
-            globeCx + globeR * 0.34,
-            globeCy + globeR * 0.22,
-            globeCx + globeR * 0.38,
-            globeCy + globeR * 0.18,
-          )
-          ..close();
+    final australia = Path()
+      ..moveTo(globeCx + globeR * 0.38, globeCy + globeR * 0.18)
+      ..cubicTo(
+        globeCx + globeR * 0.46,
+        globeCy + globeR * 0.14,
+        globeCx + globeR * 0.56,
+        globeCy + globeR * 0.20,
+        globeCx + globeR * 0.54,
+        globeCy + globeR * 0.32,
+      )
+      ..cubicTo(
+        globeCx + globeR * 0.52,
+        globeCy + globeR * 0.40,
+        globeCx + globeR * 0.44,
+        globeCy + globeR * 0.42,
+        globeCx + globeR * 0.38,
+        globeCy + globeR * 0.36,
+      )
+      ..cubicTo(
+        globeCx + globeR * 0.34,
+        globeCy + globeR * 0.30,
+        globeCx + globeR * 0.34,
+        globeCy + globeR * 0.22,
+        globeCx + globeR * 0.38,
+        globeCy + globeR * 0.18,
+      )
+      ..close();
     drawContinent(australia);
 
     // City lights (golden dots twinkling on continents)
@@ -671,29 +651,27 @@ class _GlobeBackgroundPainter extends CustomPainter {
 
     // ── Atmospheric rim highlight ──
     // Bright edge on the sunlit side (upper-left)
-    final rimPaint =
-        Paint()
-          ..shader = RadialGradient(
-            center: const Alignment(-0.2, -0.3),
-            radius: 1.0,
-            colors: [
-              Colors.transparent,
-              Colors.transparent,
-              FlitColors.atmosphereGlow.withOpacity(0.12),
-              Colors.transparent,
-            ],
-            stops: const [0.0, 0.88, 0.96, 1.0],
-          ).createShader(
-            Rect.fromCircle(center: globeCenter, radius: globeR + 2),
-          );
+    final rimPaint = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(-0.2, -0.3),
+        radius: 1.0,
+        colors: [
+          Colors.transparent,
+          Colors.transparent,
+          FlitColors.atmosphereGlow.withOpacity(0.12),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.88, 0.96, 1.0],
+      ).createShader(
+        Rect.fromCircle(center: globeCenter, radius: globeR + 2),
+      );
     canvas.drawCircle(globeCenter, globeR + 2, rimPaint);
 
     // Globe edge (subtle ring)
-    final edgePaint =
-        Paint()
-          ..color = FlitColors.oceanHighlight.withOpacity(0.10)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2;
+    final edgePaint = Paint()
+      ..color = FlitColors.oceanHighlight.withOpacity(0.10)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
     canvas.drawCircle(globeCenter, globeR, edgePaint);
 
     // ── Animated flight arc across the globe ──
@@ -703,18 +681,17 @@ class _GlobeBackgroundPainter extends CustomPainter {
     _drawCompassRose(canvas, size);
 
     // ── Overlay gradient for text readability ──
-    final overlayGradient =
-        Paint()
-          ..shader = LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              FlitColors.space.withOpacity(0.4),
-              Colors.transparent,
-              FlitColors.space.withOpacity(0.85),
-            ],
-            stops: const [0.0, 0.25, 1.0],
-          ).createShader(rect);
+    final overlayGradient = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          FlitColors.space.withOpacity(0.4),
+          Colors.transparent,
+          FlitColors.space.withOpacity(0.85),
+        ],
+        stops: const [0.0, 0.25, 1.0],
+      ).createShader(rect);
     canvas.drawRect(rect, overlayGradient);
   }
 
@@ -725,28 +702,26 @@ class _GlobeBackgroundPainter extends CustomPainter {
     double globeR,
   ) {
     // Flight path arcs from one continent to another
-    final pathPaint =
-        Paint()
-          ..color = FlitColors.accent.withOpacity(0.20)
-          ..strokeWidth = 1.5
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round;
+    final pathPaint = Paint()
+      ..color = FlitColors.accent.withOpacity(0.20)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
 
     // Arc from N. America to Europe
-    final path =
-        Path()
-          ..moveTo(
-            globeCenter.dx - globeR * 0.30,
-            globeCenter.dy - globeR * 0.26,
-          )
-          ..cubicTo(
-            globeCenter.dx - globeR * 0.10,
-            globeCenter.dy - globeR * 0.60,
-            globeCenter.dx + globeR * 0.10,
-            globeCenter.dy - globeR * 0.58,
-            globeCenter.dx + globeR * 0.12,
-            globeCenter.dy - globeR * 0.30,
-          );
+    final path = Path()
+      ..moveTo(
+        globeCenter.dx - globeR * 0.30,
+        globeCenter.dy - globeR * 0.26,
+      )
+      ..cubicTo(
+        globeCenter.dx - globeR * 0.10,
+        globeCenter.dy - globeR * 0.60,
+        globeCenter.dx + globeR * 0.10,
+        globeCenter.dy - globeR * 0.58,
+        globeCenter.dx + globeR * 0.12,
+        globeCenter.dy - globeR * 0.30,
+      );
 
     // Draw dashed path
     final pathMetrics = path.computeMetrics();
@@ -768,10 +743,9 @@ class _GlobeBackgroundPainter extends CustomPainter {
       final tangent = metric.getTangentForOffset(metric.length * planePos);
       if (tangent != null) {
         // Glow behind plane
-        final glowPaint =
-            Paint()
-              ..color = FlitColors.accent.withOpacity(0.15)
-              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+        final glowPaint = Paint()
+          ..color = FlitColors.accent.withOpacity(0.15)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
         canvas.drawCircle(tangent.position, 6, glowPaint);
 
         // Plane dot
@@ -785,38 +759,35 @@ class _GlobeBackgroundPainter extends CustomPainter {
           metric.length,
         );
         final trail = metric.extractPath(trailStart, metric.length * planePos);
-        final trailPaint =
-            Paint()
-              ..color = FlitColors.contrail.withOpacity(0.12)
-              ..strokeWidth = 1.5
-              ..style = PaintingStyle.stroke
-              ..strokeCap = StrokeCap.round;
+        final trailPaint = Paint()
+          ..color = FlitColors.contrail.withOpacity(0.12)
+          ..strokeWidth = 1.5
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round;
         canvas.drawPath(trail, trailPaint);
       }
     }
 
     // Second fainter arc: Europe to Asia
-    final path2 =
-        Path()
-          ..moveTo(
-            globeCenter.dx + globeR * 0.14,
-            globeCenter.dy - globeR * 0.28,
-          )
-          ..cubicTo(
-            globeCenter.dx + globeR * 0.24,
-            globeCenter.dy - globeR * 0.50,
-            globeCenter.dx + globeR * 0.44,
-            globeCenter.dy - globeR * 0.48,
-            globeCenter.dx + globeR * 0.46,
-            globeCenter.dy - globeR * 0.22,
-          );
+    final path2 = Path()
+      ..moveTo(
+        globeCenter.dx + globeR * 0.14,
+        globeCenter.dy - globeR * 0.28,
+      )
+      ..cubicTo(
+        globeCenter.dx + globeR * 0.24,
+        globeCenter.dy - globeR * 0.50,
+        globeCenter.dx + globeR * 0.44,
+        globeCenter.dy - globeR * 0.48,
+        globeCenter.dx + globeR * 0.46,
+        globeCenter.dy - globeR * 0.22,
+      );
 
-    final path2Paint =
-        Paint()
-          ..color = FlitColors.gold.withOpacity(0.10)
-          ..strokeWidth = 1.0
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round;
+    final path2Paint = Paint()
+      ..color = FlitColors.gold.withOpacity(0.10)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
 
     for (final metric in path2.computeMetrics()) {
       final totalLength = metric.length;
@@ -837,19 +808,17 @@ class _GlobeBackgroundPainter extends CustomPainter {
     final cx = size.width * 0.88;
     final cy = size.height * 0.86;
     const r = 16.0;
-    final paint =
-        Paint()
-          ..color = FlitColors.gold.withOpacity(0.12)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.8;
+    final paint = Paint()
+      ..color = FlitColors.gold.withOpacity(0.12)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
 
     canvas.drawCircle(Offset(cx, cy), r, paint);
 
-    final linePaint =
-        Paint()
-          ..color = FlitColors.gold.withOpacity(0.15)
-          ..strokeWidth = 0.8
-          ..strokeCap = StrokeCap.round;
+    final linePaint = Paint()
+      ..color = FlitColors.gold.withOpacity(0.15)
+      ..strokeWidth = 0.8
+      ..strokeCap = StrokeCap.round;
 
     canvas.drawLine(Offset(cx, cy - r), Offset(cx, cy + r), linePaint);
     canvas.drawLine(Offset(cx - r, cy), Offset(cx + r, cy), linePaint);
@@ -858,16 +827,14 @@ class _GlobeBackgroundPainter extends CustomPainter {
     canvas.drawLine(Offset(cx + d, cy - d), Offset(cx - d, cy + d), linePaint);
 
     // North arrow
-    final northPaint =
-        Paint()
-          ..color = FlitColors.accent.withOpacity(0.25)
-          ..style = PaintingStyle.fill;
-    final northArrow =
-        Path()
-          ..moveTo(cx, cy - r - 1)
-          ..lineTo(cx - 2.5, cy - r + 4)
-          ..lineTo(cx + 2.5, cy - r + 4)
-          ..close();
+    final northPaint = Paint()
+      ..color = FlitColors.accent.withOpacity(0.25)
+      ..style = PaintingStyle.fill;
+    final northArrow = Path()
+      ..moveTo(cx, cy - r - 1)
+      ..lineTo(cx - 2.5, cy - r + 4)
+      ..lineTo(cx + 2.5, cy - r + 4)
+      ..close();
     canvas.drawPath(northArrow, northPaint);
   }
 
@@ -886,48 +853,48 @@ class _PlayButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          color: FlitColors.accent.withOpacity(0.25),
-          blurRadius: 16,
-          spreadRadius: 1,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: FlitColors.accent.withOpacity(0.25),
+              blurRadius: 16,
+              spreadRadius: 1,
+            ),
+          ],
         ),
-      ],
-    ),
-    child: Material(
-      color: FlitColors.accent,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.play_arrow_rounded,
-                color: FlitColors.textPrimary,
-                size: 28,
+        child: Material(
+          color: FlitColors.accent,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.play_arrow_rounded,
+                    color: FlitColors.textPrimary,
+                    size: 28,
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    'PLAY',
+                    style: TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 3,
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(width: 10),
-              Text(
-                'PLAY',
-                style: TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 3,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 /// Square-ish tile for secondary menu items (2x2 grid).
@@ -944,39 +911,39 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: FlitColors.cardBackground.withOpacity(0.85),
-    borderRadius: BorderRadius.circular(10),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-        decoration: BoxDecoration(
+        color: FlitColors.cardBackground.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: FlitColors.cardBorder.withOpacity(0.5)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: FlitColors.textSecondary, size: 20),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                label.toUpperCase(),
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: FlitColors.cardBorder.withOpacity(0.5)),
             ),
-          ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: FlitColors.textSecondary, size: 20),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label.toUpperCase(),
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 /// Full-width menu button for lower-priority items.
@@ -993,36 +960,36 @@ class _MenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: FlitColors.cardBackground.withOpacity(0.6),
-    borderRadius: BorderRadius.circular(8),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-        decoration: BoxDecoration(
+        color: FlitColors.cardBackground.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: FlitColors.cardBorder.withOpacity(0.3)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: FlitColors.textMuted, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              label.toUpperCase(),
-              style: const TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1,
-              ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: FlitColors.cardBorder.withOpacity(0.3)),
             ),
-          ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: FlitColors.textMuted, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  label.toUpperCase(),
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 class _GameModeCard extends StatelessWidget {
@@ -1042,72 +1009,70 @@ class _GameModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color:
-        isHighlighted
+        color: isHighlighted
             ? FlitColors.accent.withOpacity(0.15)
             : FlitColors.backgroundMid,
-    borderRadius: BorderRadius.circular(12),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color:
-                isHighlighted
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isHighlighted
                     ? FlitColors.accent.withOpacity(0.5)
                     : FlitColors.cardBorder,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color:
-                    isHighlighted
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isHighlighted
                         ? FlitColors.accent.withOpacity(0.2)
                         : FlitColors.backgroundDark.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                color:
-                    isHighlighted ? FlitColors.accent : FlitColors.textPrimary,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      color: FlitColors.textSecondary,
-                      fontSize: 12,
-                    ),
+                  child: Icon(
+                    icon,
+                    color: isHighlighted
+                        ? FlitColors.accent
+                        : FlitColors.textPrimary,
+                    size: 24,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: FlitColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: FlitColors.textMuted),
+              ],
             ),
-            const Icon(Icons.chevron_right, color: FlitColors.textMuted),
-          ],
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }

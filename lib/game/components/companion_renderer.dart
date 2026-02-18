@@ -112,21 +112,19 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     );
 
     // Left wing.
-    final leftWing =
-        Path()
-          ..moveTo(-size * 0.3, 0)
-          ..lineTo(-size * 0.8, flapOffset - size * 0.4)
-          ..lineTo(-size * 0.1, -size * 0.1)
-          ..close();
+    final leftWing = Path()
+      ..moveTo(-size * 0.3, 0)
+      ..lineTo(-size * 0.8, flapOffset - size * 0.4)
+      ..lineTo(-size * 0.1, -size * 0.1)
+      ..close();
     canvas.drawPath(leftWing, wingPaint);
 
     // Right wing.
-    final rightWing =
-        Path()
-          ..moveTo(size * 0.3, 0)
-          ..lineTo(size * 0.8, flapOffset - size * 0.4)
-          ..lineTo(size * 0.1, -size * 0.1)
-          ..close();
+    final rightWing = Path()
+      ..moveTo(size * 0.3, 0)
+      ..lineTo(size * 0.8, flapOffset - size * 0.4)
+      ..lineTo(size * 0.1, -size * 0.1)
+      ..close();
     canvas.drawPath(rightWing, wingPaint);
 
     // Beak.
@@ -163,35 +161,32 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     );
 
     // Left wing (bat-like).
-    final leftWing =
-        Path()
-          ..moveTo(-5, 0)
-          ..lineTo(-14, flapOffset - 8)
-          ..lineTo(-10, flapOffset - 3)
-          ..lineTo(-7, flapOffset - 7)
-          ..lineTo(-3, -1)
-          ..close();
+    final leftWing = Path()
+      ..moveTo(-5, 0)
+      ..lineTo(-14, flapOffset - 8)
+      ..lineTo(-10, flapOffset - 3)
+      ..lineTo(-7, flapOffset - 7)
+      ..lineTo(-3, -1)
+      ..close();
     canvas.drawPath(leftWing, wingPaint);
 
     // Right wing.
-    final rightWing =
-        Path()
-          ..moveTo(5, 0)
-          ..lineTo(14, flapOffset - 8)
-          ..lineTo(10, flapOffset - 3)
-          ..lineTo(7, flapOffset - 7)
-          ..lineTo(3, -1)
-          ..close();
+    final rightWing = Path()
+      ..moveTo(5, 0)
+      ..lineTo(14, flapOffset - 8)
+      ..lineTo(10, flapOffset - 3)
+      ..lineTo(7, flapOffset - 7)
+      ..lineTo(3, -1)
+      ..close();
     canvas.drawPath(rightWing, wingPaint);
 
     // Tail.
-    final tail =
-        Path()
-          ..moveTo(0, 4)
-          ..lineTo(-2, 12)
-          ..lineTo(0, 10)
-          ..lineTo(2, 12)
-          ..close();
+    final tail = Path()
+      ..moveTo(0, 4)
+      ..lineTo(-2, 12)
+      ..lineTo(0, 10)
+      ..lineTo(2, 12)
+      ..close();
     canvas.drawPath(tail, bodyPaint);
 
     // Eyes.

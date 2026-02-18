@@ -157,19 +157,18 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   void _renderAtmosphereRing(Canvas canvas, Offset center, double radius) {
     if (_altitudeFraction < 0.05) return; // Not visible at low altitude.
     final glowWidth = radius * 0.08;
-    final glowPaint =
-        Paint()
-          ..shader = RadialGradient(
-            colors: [
-              const Color(0x00668FCC), // transparent inside
-              Color.fromRGBO(100, 160, 230, 0.25 * _altitudeFraction),
-              Color.fromRGBO(140, 190, 255, 0.15 * _altitudeFraction),
-              const Color(0x00000000), // transparent outside
-            ],
-            stops: const [0.88, 0.94, 0.98, 1.0],
-          ).createShader(
-            Rect.fromCircle(center: center, radius: radius + glowWidth),
-          );
+    final glowPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0x00668FCC), // transparent inside
+          Color.fromRGBO(100, 160, 230, 0.25 * _altitudeFraction),
+          Color.fromRGBO(140, 190, 255, 0.15 * _altitudeFraction),
+          const Color(0x00000000), // transparent outside
+        ],
+        stops: const [0.88, 0.94, 0.98, 1.0],
+      ).createShader(
+        Rect.fromCircle(center: center, radius: radius + glowWidth),
+      );
     canvas.drawCircle(center, radius + glowWidth, glowPaint);
   }
 
@@ -180,32 +179,29 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     Offset center,
     double radius,
   ) {
-    final oceanPaint =
-        Paint()
-          ..shader = const RadialGradient(
-            colors: [
-              FlitColors.oceanShallow,
-              FlitColors.ocean,
-              FlitColors.oceanDeep,
-            ],
-            stops: [0.0, 0.5, 1.0],
-          ).createShader(Rect.fromCircle(center: center, radius: radius));
+    final oceanPaint = Paint()
+      ..shader = const RadialGradient(
+        colors: [
+          FlitColors.oceanShallow,
+          FlitColors.ocean,
+          FlitColors.oceanDeep,
+        ],
+        stops: [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
 
     canvas.drawCircle(center, radius, oceanPaint);
   }
 
   void _renderGrid(Canvas canvas, Vector2 screenSize, double globeRadius) {
-    final gridPaint =
-        Paint()
-          ..color = FlitColors.gridLine
-          ..strokeWidth = 0.5
-          ..style = PaintingStyle.stroke;
+    final gridPaint = Paint()
+      ..color = FlitColors.gridLine
+      ..strokeWidth = 0.5
+      ..style = PaintingStyle.stroke;
 
-    final majorGridPaint =
-        Paint()
-          ..color = FlitColors.gridLine.withOpacity(0.15)
-          ..strokeWidth = 1.0
-          ..style = PaintingStyle.stroke;
+    final majorGridPaint = Paint()
+      ..color = FlitColors.gridLine.withOpacity(0.15)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
 
     const gridSpacing = 30.0;
     const segments = 60;
@@ -300,10 +296,9 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     canvas.drawPath(
       path,
       Paint()
-        ..color =
-            _isHighAltitude
-                ? FlitColors.border.withOpacity(0.6)
-                : FlitColors.border
+        ..color = _isHighAltitude
+            ? FlitColors.border.withOpacity(0.6)
+            : FlitColors.border
         ..style = PaintingStyle.stroke
         ..strokeWidth = _isHighAltitude ? 0.8 : 1.5,
     );
@@ -314,12 +309,11 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     Vector2 screenSize,
     double globeRadius,
   ) {
-    final coastPaint =
-        Paint()
-          ..color = FlitColors.oceanShallow.withOpacity(0.2)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = _isHighAltitude ? 2.0 : 4.0
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+    final coastPaint = Paint()
+      ..color = FlitColors.oceanShallow.withOpacity(0.2)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _isHighAltitude ? 2.0 : 4.0
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
 
     for (final country in CountryData.countries) {
       final path = _createCountryPath(country, screenSize, globeRadius);
@@ -362,11 +356,10 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   void _renderCities(Canvas canvas, Vector2 screenSize, double globeRadius) {
     final cityDotPaint = Paint()..color = FlitColors.city;
     final capitalDotPaint = Paint()..color = FlitColors.cityCapital;
-    final cityOutlinePaint =
-        Paint()
-          ..color = FlitColors.shadow
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.5;
+    final cityOutlinePaint = Paint()
+      ..color = FlitColors.shadow
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.5;
 
     for (final city in CountryData.majorCities) {
       final projected = _project(
@@ -387,10 +380,9 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
         text: TextSpan(
           text: city.name,
           style: TextStyle(
-            color:
-                city.isCapital
-                    ? FlitColors.textPrimary
-                    : FlitColors.textSecondary,
+            color: city.isCapital
+                ? FlitColors.textPrimary
+                : FlitColors.textSecondary,
             fontSize: city.isCapital ? 10 : 8,
             fontWeight: city.isCapital ? FontWeight.w600 : FontWeight.w400,
           ),
@@ -528,8 +520,7 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
         1.0,
       ),
     );
-    final lng =
-        lng0 +
+    final lng = lng0 +
         atan2(
           dx / scale * sin(c),
           rho * cos(lat0) * cos(c) - dy / scale * sin(lat0) * sin(c),

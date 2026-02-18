@@ -183,8 +183,7 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
 
         // Check if this is a shader-related error (non-fatal with fallback)
         final errorStr = e.toString();
-        final isShaderError =
-            errorStr.contains('shader') ||
+        final isShaderError = errorStr.contains('shader') ||
             errorStr.contains('Unsupported operation') ||
             errorStr.contains('not supported') ||
             errorStr.contains('HTML renderer') ||

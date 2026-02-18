@@ -66,40 +66,38 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: FlitColors.backgroundDark,
-    appBar: AppBar(
-      backgroundColor: FlitColors.backgroundMid,
-      title: const Text('Leaderboard'),
-      centerTitle: true,
-    ),
-    body: Column(
-      children: [
-        // Period selector
-        _PeriodSelector(
-          selected: _selectedPeriod,
-          onChanged: (period) {
-            setState(() {
-              _selectedPeriod = period;
-            });
-          },
+        backgroundColor: FlitColors.backgroundDark,
+        appBar: AppBar(
+          backgroundColor: FlitColors.backgroundMid,
+          title: const Text('Leaderboard'),
+          centerTitle: true,
         ),
-        const Divider(color: FlitColors.cardBorder, height: 1),
-        // Leaderboard list
-        Expanded(
-          child:
-              _entries.isEmpty
+        body: Column(
+          children: [
+            // Period selector
+            _PeriodSelector(
+              selected: _selectedPeriod,
+              onChanged: (period) {
+                setState(() {
+                  _selectedPeriod = period;
+                });
+              },
+            ),
+            const Divider(color: FlitColors.cardBorder, height: 1),
+            // Leaderboard list
+            Expanded(
+              child: _entries.isEmpty
                   ? const _EmptyState()
                   : ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: _entries.length,
-                    itemBuilder:
-                        (context, index) =>
-                            _LeaderboardRow(entry: _entries[index]),
-                  ),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: _entries.length,
+                      itemBuilder: (context, index) =>
+                          _LeaderboardRow(entry: _entries[index]),
+                    ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 }
 
 class _PeriodSelector extends StatelessWidget {
@@ -110,13 +108,12 @@ class _PeriodSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    height: 48,
-    color: FlitColors.backgroundMid,
-    child: ListView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      children:
-          LeaderboardPeriod.values
+        height: 48,
+        color: FlitColors.backgroundMid,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          children: LeaderboardPeriod.values
               .map(
                 (period) => Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -127,10 +124,9 @@ class _PeriodSelector extends StatelessWidget {
                     selectedColor: FlitColors.accent,
                     backgroundColor: FlitColors.cardBackground,
                     labelStyle: TextStyle(
-                      color:
-                          period == selected
-                              ? FlitColors.textPrimary
-                              : FlitColors.textSecondary,
+                      color: period == selected
+                          ? FlitColors.textPrimary
+                          : FlitColors.textSecondary,
                       fontSize: 12,
                     ),
                     side: BorderSide.none,
@@ -141,8 +137,8 @@ class _PeriodSelector extends StatelessWidget {
                 ),
               )
               .toList(),
-    ),
-  );
+        ),
+      );
 }
 
 class _LeaderboardRow extends StatelessWidget {
@@ -258,25 +254,25 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.leaderboard_outlined,
-          size: 64,
-          color: FlitColors.textMuted.withOpacity(0.5),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.leaderboard_outlined,
+              size: 64,
+              color: FlitColors.textMuted.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'No scores yet',
+              style: TextStyle(color: FlitColors.textSecondary, fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Be the first to set a record!',
+              style: TextStyle(color: FlitColors.textMuted, fontSize: 14),
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
-        const Text(
-          'No scores yet',
-          style: TextStyle(color: FlitColors.textSecondary, fontSize: 18),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Be the first to set a record!',
-          style: TextStyle(color: FlitColors.textMuted, fontSize: 14),
-        ),
-      ],
-    ),
-  );
+      );
 }

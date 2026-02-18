@@ -81,16 +81,14 @@ class ContrailRenderer extends Component with HasGameRef<FlitGame> {
       final opacity = (opacityA + opacityB) * 0.5;
       final t = 1.0 - opacity; // 0 = fresh (primary), 1 = old (secondary)
       final baseColor = primaryColor ?? FlitColors.contrail;
-      final trailColor =
-          secondaryColor != null
-              ? Color.lerp(baseColor, secondaryColor!, t)!
-              : baseColor;
-      final paint =
-          Paint()
-            ..color = trailColor.withOpacity(opacity * 0.7)
-            ..strokeWidth = 1.2 + opacity * 0.8
-            ..strokeCap = StrokeCap.round
-            ..style = PaintingStyle.stroke;
+      final trailColor = secondaryColor != null
+          ? Color.lerp(baseColor, secondaryColor!, t)!
+          : baseColor;
+      final paint = Paint()
+        ..color = trailColor.withOpacity(opacity * 0.7)
+        ..strokeWidth = 1.2 + opacity * 0.8
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
 
       canvas.drawLine(
         Offset(screenA.x, screenA.y),
