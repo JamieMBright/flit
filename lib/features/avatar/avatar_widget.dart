@@ -17,11 +17,7 @@ final Map<String, String> _svgCache = {};
 /// The widget sizes itself to [size] x [size] logical pixels and is safe
 /// to use anywhere a square widget is expected (lists, cards, profiles).
 class AvatarWidget extends StatelessWidget {
-  const AvatarWidget({
-    super.key,
-    required this.config,
-    this.size = 96,
-  });
+  const AvatarWidget({super.key, required this.config, this.size = 96});
 
   final AvatarConfig config;
   final double size;
@@ -43,14 +39,15 @@ class AvatarWidget extends StatelessWidget {
               width: size * 0.02,
             ),
           ),
-          child: svg != null
-              ? SvgPicture.string(
-                  svg,
-                  width: size,
-                  height: size,
-                  fit: BoxFit.cover,
-                )
-              : _AvatarFallback(size: size),
+          child:
+              svg != null
+                  ? SvgPicture.string(
+                    svg,
+                    width: size,
+                    height: size,
+                    fit: BoxFit.cover,
+                  )
+                  : _AvatarFallback(size: size),
         ),
       ),
     );
@@ -92,11 +89,7 @@ class AvatarFromUrl extends StatelessWidget {
     }
 
     // Otherwise use stateful widget to load from URL.
-    return _AvatarFromUrlStateful(
-      avatarUrl: avatarUrl,
-      name: name,
-      size: size,
-    );
+    return _AvatarFromUrlStateful(avatarUrl: avatarUrl, name: name, size: size);
   }
 }
 
@@ -209,10 +202,7 @@ class _AvatarFromUrlState extends State<_AvatarFromUrlStateful> {
         child: Container(
           width: widget.size,
           height: widget.size,
-          decoration: BoxDecoration(
-            color: bgColor,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
           child: Center(
             child: Text(
               fallbackLetter,

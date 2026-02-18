@@ -495,13 +495,11 @@ class ProfanityFilter {
   // ---------------------------------------------------------------------------
   // Pre-compiled state (built lazily on first access)
   // ---------------------------------------------------------------------------
-  late final Set<String> _whitelistLower = _whitelist
-      .map((w) => w.toLowerCase())
-      .toSet();
+  late final Set<String> _whitelistLower =
+      _whitelist.map((w) => w.toLowerCase()).toSet();
 
-  late final Set<String> _impersonationLower = _impersonationTerms
-      .map((t) => t.toLowerCase())
-      .toSet();
+  late final Set<String> _impersonationLower =
+      _impersonationTerms.map((t) => t.toLowerCase()).toSet();
 
   /// Profanity entries split into two buckets:
   ///  1. Single-word terms  -> matched with word-boundary regex
@@ -519,21 +517,25 @@ class ProfanityFilter {
         // separators between words.
         final parts = lower.split(RegExp(r'\s+'));
         final pattern = parts.map(RegExp.escape).join(r'[\s_\-\.]*');
-        entries.add(_ProfanityEntry(
-          term: lower,
-          pattern: RegExp(pattern, caseSensitive: false),
-          isMultiWord: true,
-        ));
+        entries.add(
+          _ProfanityEntry(
+            term: lower,
+            pattern: RegExp(pattern, caseSensitive: false),
+            isMultiWord: true,
+          ),
+        );
       } else {
         // Single word: use word-boundary markers.
-        entries.add(_ProfanityEntry(
-          term: lower,
-          pattern: RegExp(
-            r'(?<![a-zA-Z])' + RegExp.escape(lower) + r'(?![a-zA-Z])',
-            caseSensitive: false,
+        entries.add(
+          _ProfanityEntry(
+            term: lower,
+            pattern: RegExp(
+              r'(?<![a-zA-Z])' + RegExp.escape(lower) + r'(?![a-zA-Z])',
+              caseSensitive: false,
+            ),
+            isMultiWord: false,
           ),
-          isMultiWord: false,
-        ));
+        );
       }
     }
 
@@ -719,9 +721,7 @@ class ProfanityFilter {
     }
 
     // Impersonation check - compare against normalised (no separators) form.
-    final stripped = username
-        .toLowerCase()
-        .replaceAll(RegExp(r'[_\-\.]'), '');
+    final stripped = username.toLowerCase().replaceAll(RegExp(r'[_\-\.]'), '');
     final normalised = _normaliseLeet(stripped);
 
     for (final term in _impersonationLower) {

@@ -139,28 +139,19 @@ abstract class RegionCameraPresets {
   /// Camera bounds are defined as a rectangular region centered on the
   /// preset's center point, extended by [CameraPreset.maxBoundsLat] and
   /// [CameraPreset.maxBoundsLng] in each direction.
-  static bool isWithinBounds(
-    double lat,
-    double lng,
-    GameRegion region,
-  ) {
+  static bool isWithinBounds(double lat, double lng, GameRegion region) {
     final preset = getPreset(region);
 
     final latDelta = (lat - preset.centerLat).abs();
     final lngDelta = _lngDelta(lng, preset.centerLng);
 
-    return latDelta <= preset.maxBoundsLat &&
-        lngDelta <= preset.maxBoundsLng;
+    return latDelta <= preset.maxBoundsLat && lngDelta <= preset.maxBoundsLng;
   }
 
   /// Clamps a lat/lng position to be within the camera bounds for [region].
   ///
   /// Returns a list of [lat, lng] clamped to the region's bounds.
-  static List<double> clampToBounds(
-    double lat,
-    double lng,
-    GameRegion region,
-  ) {
+  static List<double> clampToBounds(double lat, double lng, GameRegion region) {
     final preset = getPreset(region);
 
     final clampedLat = lat.clamp(

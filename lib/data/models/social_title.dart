@@ -50,27 +50,27 @@ class SocialTitle {
   final CosmeticRarity rarity;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'category': category.name,
-        'threshold': threshold,
-        'description': description,
-        'rarity': rarity.name,
-      };
+    'id': id,
+    'name': name,
+    'category': category.name,
+    'threshold': threshold,
+    'description': description,
+    'rarity': rarity.name,
+  };
 
   factory SocialTitle.fromJson(Map<String, dynamic> json) => SocialTitle(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        category: TitleCategory.values.firstWhere(
-          (c) => c.name == json['category'],
-        ),
-        threshold: json['threshold'] as int,
-        description: json['description'] as String,
-        rarity: CosmeticRarity.values.firstWhere(
-          (r) => r.name == json['rarity'],
-          orElse: () => CosmeticRarity.common,
-        ),
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    category: TitleCategory.values.firstWhere(
+      (c) => c.name == json['category'],
+    ),
+    threshold: json['threshold'] as int,
+    description: json['description'] as String,
+    rarity: CosmeticRarity.values.firstWhere(
+      (r) => r.name == json['rarity'],
+      orElse: () => CosmeticRarity.common,
+    ),
+  );
 }
 
 /// Lightweight progress snapshot used by [PlayerTitles.earnedTitles] to
@@ -116,15 +116,15 @@ class PlayerClueProgress {
   final int bestStreak;
 
   Map<String, dynamic> toJson() => {
-        'flags_correct': flagsCorrect,
-        'capitals_correct': capitalsCorrect,
-        'outlines_correct': outlinesCorrect,
-        'borders_correct': bordersCorrect,
-        'stats_correct': statsCorrect,
-        'total_games_played': totalGamesPlayed,
-        'best_time_seconds': bestTimeSeconds,
-        'best_streak': bestStreak,
-      };
+    'flags_correct': flagsCorrect,
+    'capitals_correct': capitalsCorrect,
+    'outlines_correct': outlinesCorrect,
+    'borders_correct': bordersCorrect,
+    'stats_correct': statsCorrect,
+    'total_games_played': totalGamesPlayed,
+    'best_time_seconds': bestTimeSeconds,
+    'best_streak': bestStreak,
+  };
 
   factory PlayerClueProgress.fromJson(Map<String, dynamic> json) =>
       PlayerClueProgress(
@@ -145,9 +145,7 @@ class PlayerClueProgress {
 /// show on their profile and in friend lists. It must reference a title that
 /// appears in the earned set, or be `null` if no title is selected.
 class PlayerTitles {
-  const PlayerTitles({
-    this.activeTitleId,
-  });
+  const PlayerTitles({this.activeTitleId});
 
   /// The [SocialTitle.id] currently displayed on the player's profile.
   /// `null` means no title is shown.
@@ -199,23 +197,16 @@ class PlayerTitles {
     return earnedTitles(progress).any((t) => t.id == activeTitleId);
   }
 
-  PlayerTitles copyWith({
-    String? activeTitleId,
-  }) =>
-      PlayerTitles(
-        activeTitleId: activeTitleId ?? this.activeTitleId,
-      );
+  PlayerTitles copyWith({String? activeTitleId}) =>
+      PlayerTitles(activeTitleId: activeTitleId ?? this.activeTitleId);
 
   /// Creates a copy with no active title.
   PlayerTitles clearActiveTitle() => const PlayerTitles(activeTitleId: null);
 
-  Map<String, dynamic> toJson() => {
-        'active_title_id': activeTitleId,
-      };
+  Map<String, dynamic> toJson() => {'active_title_id': activeTitleId};
 
-  factory PlayerTitles.fromJson(Map<String, dynamic> json) => PlayerTitles(
-        activeTitleId: json['active_title_id'] as String?,
-      );
+  factory PlayerTitles.fromJson(Map<String, dynamic> json) =>
+      PlayerTitles(activeTitleId: json['active_title_id'] as String?);
 }
 
 /// Master catalog of every earnable social title in the game.
@@ -622,15 +613,15 @@ abstract class SocialTitleCatalog {
 
   /// Every title available in the game, across all categories.
   static List<SocialTitle> get all => [
-        ..._flag,
-        ..._capital,
-        ..._outline,
-        ..._borders,
-        ..._stats,
-        ..._general,
-        ..._speed,
-        ..._streak,
-      ];
+    ..._flag,
+    ..._capital,
+    ..._outline,
+    ..._borders,
+    ..._stats,
+    ..._general,
+    ..._speed,
+    ..._streak,
+  ];
 
   /// All titles belonging to [category].
   static List<SocialTitle> forCategory(TitleCategory category) =>

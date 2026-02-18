@@ -77,8 +77,7 @@ void main() {
             children: [
               const Row(
                 children: [
-                  Icon(Icons.error_outline,
-                      color: Color(0xFFFF4444), size: 28),
+                  Icon(Icons.error_outline, color: Color(0xFFFF4444), size: 28),
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -174,11 +173,7 @@ void main() {
   // Wrap in runZonedGuarded to catch any remaining async errors.
   runZonedGuarded(
     () {
-      runApp(
-        const ProviderScope(
-          child: FlitApp(),
-        ),
-      );
+      runApp(const ProviderScope(child: FlitApp()));
     },
     (error, stack) {
       _log.error('zone', '$error', error: error, stackTrace: stack);

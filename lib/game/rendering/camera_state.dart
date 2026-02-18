@@ -117,19 +117,24 @@ class CameraState {
   }) {
     final targetLatRad = planeLatDeg * pi / 180.0;
     final targetLngRad = planeLngDeg * pi / 180.0;
-    
+
     // Use continuous altitude if provided, otherwise binary high/low
     final double targetDistance;
     if (altitudeFraction != null) {
       // Interpolate between low and high altitude distances
-      targetDistance = lowAltitudeDistance +
+      targetDistance =
+          lowAltitudeDistance +
           altitudeFraction * (highAltitudeDistance - lowAltitudeDistance);
     } else {
       targetDistance =
           isHighAltitude ? highAltitudeDistance : lowAltitudeDistance;
     }
-    
-    final targetFov = _lerpDouble(fovNarrow, fovWide, speedFraction.clamp(0, 1));
+
+    final targetFov = _lerpDouble(
+      fovNarrow,
+      fovWide,
+      speedFraction.clamp(0, 1),
+    );
 
     if (_firstUpdate) {
       // Snap to target on first frame - no interpolation.
@@ -145,8 +150,11 @@ class CameraState {
       final altFactor = 1.0 - exp(-_altitudeEaseRate * dt);
       final fovFactor = 1.0 - exp(-_fovEaseRate * dt);
 
-      _currentDistance =
-          _lerpDouble(_currentDistance, targetDistance, altFactor);
+      _currentDistance = _lerpDouble(
+        _currentDistance,
+        targetDistance,
+        altFactor,
+      );
       _currentFov = _lerpDouble(_currentFov, targetFov, fovFactor);
 
       // For lat/lng, use the same ease-out interpolation.
@@ -155,7 +163,11 @@ class CameraState {
       _currentLngRad = _lerpAngle(_currentLngRad, targetLngRad, altFactor);
 
       // Smooth heading interpolation (shortest path).
-      _currentHeadingRad = _lerpAngle(_currentHeadingRad, headingRad, altFactor);
+      _currentHeadingRad = _lerpAngle(
+        _currentHeadingRad,
+        headingRad,
+        altFactor,
+      );
     }
 
     // Convert spherical coordinates to cartesian.

@@ -98,18 +98,14 @@ void main() {
       service.reportCritical('critical', StackTrace.current);
 
       expect(service.pendingErrors, hasLength(3));
-      expect(
-          service.pendingErrors[0].severity, equals(ErrorSeverity.warning));
+      expect(service.pendingErrors[0].severity, equals(ErrorSeverity.warning));
       expect(service.pendingErrors[1].severity, equals(ErrorSeverity.error));
-      expect(
-          service.pendingErrors[2].severity, equals(ErrorSeverity.critical));
+      expect(service.pendingErrors[2].severity, equals(ErrorSeverity.critical));
     });
 
     test('severity levels have correct ordering', () {
-      expect(
-          ErrorSeverity.warning.index, lessThan(ErrorSeverity.error.index));
-      expect(
-          ErrorSeverity.error.index, lessThan(ErrorSeverity.critical.index));
+      expect(ErrorSeverity.warning.index, lessThan(ErrorSeverity.error.index));
+      expect(ErrorSeverity.error.index, lessThan(ErrorSeverity.critical.index));
     });
   });
 
@@ -280,10 +276,7 @@ void main() {
 
     test('flush returns false when endpoint not configured', () async {
       final service = ErrorService.instance;
-      service.initialize(
-        apiEndpoint: '',
-        apiKey: '',
-      );
+      service.initialize(apiEndpoint: '', apiKey: '');
 
       service.reportError('No endpoint', StackTrace.current);
 

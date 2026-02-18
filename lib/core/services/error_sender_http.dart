@@ -22,9 +22,5 @@ Future<bool> errorSenderHttp({
   required String jsonBody,
 }) async {
   // Delegates to platform-specific implementation
-  return errorSenderHttpImpl(
-    url: url,
-    apiKey: apiKey,
-    jsonBody: jsonBody,
-  );
+  return errorSenderHttpImpl(url: url, apiKey: apiKey, jsonBody: jsonBody);
 }

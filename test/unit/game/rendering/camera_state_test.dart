@@ -17,16 +17,31 @@ void main() {
     test('all regions have valid presets', () {
       for (final region in GameRegion.values) {
         final preset = RegionCameraPresets.getPreset(region);
-        expect(preset.centerLat, inInclusiveRange(-90.0, 90.0),
-            reason: '${region.name} lat out of range');
-        expect(preset.centerLng, inInclusiveRange(-180.0, 180.0),
-            reason: '${region.name} lng out of range');
-        expect(preset.altitudeDistance, greaterThan(0.0),
-            reason: '${region.name} altitude must be positive');
-        expect(preset.maxBoundsLat, greaterThan(0.0),
-            reason: '${region.name} lat bounds must be positive');
-        expect(preset.maxBoundsLng, greaterThan(0.0),
-            reason: '${region.name} lng bounds must be positive');
+        expect(
+          preset.centerLat,
+          inInclusiveRange(-90.0, 90.0),
+          reason: '${region.name} lat out of range',
+        );
+        expect(
+          preset.centerLng,
+          inInclusiveRange(-180.0, 180.0),
+          reason: '${region.name} lng out of range',
+        );
+        expect(
+          preset.altitudeDistance,
+          greaterThan(0.0),
+          reason: '${region.name} altitude must be positive',
+        );
+        expect(
+          preset.maxBoundsLat,
+          greaterThan(0.0),
+          reason: '${region.name} lat bounds must be positive',
+        );
+        expect(
+          preset.maxBoundsLng,
+          greaterThan(0.0),
+          reason: '${region.name} lng bounds must be positive',
+        );
       }
     });
 
@@ -37,20 +52,28 @@ void main() {
         if (region == GameRegion.world) continue;
         final regionAlt =
             RegionCameraPresets.getPreset(region).altitudeDistance;
-        expect(worldAlt, greaterThan(regionAlt),
-            reason: 'World should be higher than ${region.name}');
+        expect(
+          worldAlt,
+          greaterThan(regionAlt),
+          reason: 'World should be higher than ${region.name}',
+        );
       }
     });
 
     test('regional presets have FOV overrides', () {
       for (final region in GameRegion.values) {
         if (region == GameRegion.world) {
-          expect(RegionCameraPresets.getPreset(region).fovOverride, isNull,
-              reason: 'World should not have FOV override');
+          expect(
+            RegionCameraPresets.getPreset(region).fovOverride,
+            isNull,
+            reason: 'World should not have FOV override',
+          );
         } else {
           expect(
-              RegionCameraPresets.getPreset(region).fovOverride, isNotNull,
-              reason: '${region.name} should have FOV override');
+            RegionCameraPresets.getPreset(region).fovOverride,
+            isNotNull,
+            reason: '${region.name} should have FOV override',
+          );
         }
       }
     });
@@ -78,7 +101,10 @@ void main() {
         final preset = RegionCameraPresets.getPreset(region);
         expect(
           RegionCameraPresets.isWithinBounds(
-              preset.centerLat, preset.centerLng, region),
+            preset.centerLat,
+            preset.centerLng,
+            region,
+          ),
           isTrue,
           reason: '${region.name} center should be within its own bounds',
         );
@@ -115,11 +141,16 @@ void main() {
 
     test('clampToBounds clamps correctly', () {
       // A position far north of Ireland should be clamped
-      final clamped =
-          RegionCameraPresets.clampToBounds(70.0, -7.5, GameRegion.ireland);
+      final clamped = RegionCameraPresets.clampToBounds(
+        70.0,
+        -7.5,
+        GameRegion.ireland,
+      );
       final preset = RegionCameraPresets.getPreset(GameRegion.ireland);
-      expect(clamped[0],
-          closeTo(preset.centerLat + preset.maxBoundsLat, 0.001));
+      expect(
+        clamped[0],
+        closeTo(preset.centerLat + preset.maxBoundsLat, 0.001),
+      );
       expect(clamped[1], closeTo(-7.5, 0.001));
     });
   });
@@ -189,8 +220,11 @@ void main() {
         final z = cos(latRad) * sin(lngRad);
 
         final length = sqrt(x * x + y * y + z * z);
-        expect(length, closeTo(1.0, 1e-10),
-            reason: 'Point ($lat, $lng) should be on unit sphere');
+        expect(
+          length,
+          closeTo(1.0, 1e-10),
+          reason: 'Point ($lat, $lng) should be on unit sphere',
+        );
       }
     });
 
@@ -216,18 +250,24 @@ void main() {
         final y = sin(latRad);
         final z = cos(latRad) * sin(lngRad);
 
-        expect(x.isNaN, isFalse,
-            reason: 'x is NaN for lat=$lat, lng=$lng');
-        expect(y.isNaN, isFalse,
-            reason: 'y is NaN for lat=$lat, lng=$lng');
-        expect(z.isNaN, isFalse,
-            reason: 'z is NaN for lat=$lat, lng=$lng');
-        expect(x.isInfinite, isFalse,
-            reason: 'x is infinite for lat=$lat, lng=$lng');
-        expect(y.isInfinite, isFalse,
-            reason: 'y is infinite for lat=$lat, lng=$lng');
-        expect(z.isInfinite, isFalse,
-            reason: 'z is infinite for lat=$lat, lng=$lng');
+        expect(x.isNaN, isFalse, reason: 'x is NaN for lat=$lat, lng=$lng');
+        expect(y.isNaN, isFalse, reason: 'y is NaN for lat=$lat, lng=$lng');
+        expect(z.isNaN, isFalse, reason: 'z is NaN for lat=$lat, lng=$lng');
+        expect(
+          x.isInfinite,
+          isFalse,
+          reason: 'x is infinite for lat=$lat, lng=$lng',
+        );
+        expect(
+          y.isInfinite,
+          isFalse,
+          reason: 'y is infinite for lat=$lat, lng=$lng',
+        );
+        expect(
+          z.isInfinite,
+          isFalse,
+          reason: 'z is infinite for lat=$lat, lng=$lng',
+        );
       }
     });
   });
@@ -238,10 +278,16 @@ void main() {
       for (final region in GameRegion.values) {
         final preset = RegionCameraPresets.getPreset(region);
         if (preset.fovOverride != null) {
-          expect(preset.fovOverride!, lessThan(defaultFov),
-              reason: '${region.name} FOV should be narrower than default');
-          expect(preset.fovOverride!, greaterThan(20.0),
-              reason: '${region.name} FOV should not be too narrow');
+          expect(
+            preset.fovOverride!,
+            lessThan(defaultFov),
+            reason: '${region.name} FOV should be narrower than default',
+          );
+          expect(
+            preset.fovOverride!,
+            greaterThan(20.0),
+            reason: '${region.name} FOV should not be too narrow',
+          );
         }
       }
     });

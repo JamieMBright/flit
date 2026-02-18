@@ -179,9 +179,8 @@ void main() {
     });
 
     test('province distribution is correct', () {
-      final provinces = IrelandClues.data.values
-          .map((c) => c.province)
-          .toList();
+      final provinces =
+          IrelandClues.data.values.map((c) => c.province).toList();
 
       final leinsterCount = provinces.where((p) => p == 'Leinster').length;
       final munsterCount = provinces.where((p) => p == 'Munster').length;
@@ -209,10 +208,7 @@ void main() {
     test('all counties have non-empty country', () {
       for (final countyData in UkClues.data.values) {
         expect(countyData.country, isNotEmpty);
-        expect(
-          countyData.country,
-          isIn(['England', 'Scotland', 'Wales']),
-        );
+        expect(countyData.country, isIn(['England', 'Scotland', 'Wales']));
       }
     });
 
@@ -241,9 +237,7 @@ void main() {
     });
 
     test('country distribution is reasonable', () {
-      final countries = UkClues.data.values
-          .map((c) => c.country)
-          .toList();
+      final countries = UkClues.data.values.map((c) => c.country).toList();
 
       final englandCount = countries.where((c) => c == 'England').length;
       final scotlandCount = countries.where((c) => c == 'Scotland').length;
@@ -276,12 +270,15 @@ void main() {
       }
     });
 
-    test('all provinces have non-empty sportsTeams list or empty for territories', () {
-      for (final provinceData in CanadaClues.data.values) {
-        // sportsTeams can be empty for territories (NT, YT, NU)
-        expect(provinceData.sportsTeams, isNotNull);
-      }
-    });
+    test(
+      'all provinces have non-empty sportsTeams list or empty for territories',
+      () {
+        for (final provinceData in CanadaClues.data.values) {
+          // sportsTeams can be empty for territories (NT, YT, NU)
+          expect(provinceData.sportsTeams, isNotNull);
+        }
+      },
+    );
 
     test('all provinces have non-empty premier', () {
       for (final provinceData in CanadaClues.data.values) {
@@ -295,16 +292,33 @@ void main() {
       }
     });
 
-    test('provinces have non-empty motto, territories can have empty motto', () {
-      final provinceKeys = {'ON', 'QC', 'BC', 'AB', 'MB', 'SK', 'NS', 'NB', 'NL', 'PE'};
-      for (final entry in CanadaClues.data.entries) {
-        if (provinceKeys.contains(entry.key)) {
-          expect(entry.value.motto, isNotEmpty,
-              reason: '${entry.key} province should have non-empty motto');
+    test(
+      'provinces have non-empty motto, territories can have empty motto',
+      () {
+        final provinceKeys = {
+          'ON',
+          'QC',
+          'BC',
+          'AB',
+          'MB',
+          'SK',
+          'NS',
+          'NB',
+          'NL',
+          'PE',
+        };
+        for (final entry in CanadaClues.data.entries) {
+          if (provinceKeys.contains(entry.key)) {
+            expect(
+              entry.value.motto,
+              isNotEmpty,
+              reason: '${entry.key} province should have non-empty motto',
+            );
+          }
+          // Territories may have empty mottos
         }
-        // Territories may have empty mottos
-      }
-    });
+      },
+    );
 
     test('all provinces have non-empty famousLandmark', () {
       for (final provinceData in CanadaClues.data.values) {
@@ -327,8 +341,11 @@ void main() {
       };
 
       for (final province in provinces) {
-        expect(CanadaClues.data.containsKey(province), isTrue,
-            reason: 'Province $province should be in data');
+        expect(
+          CanadaClues.data.containsKey(province),
+          isTrue,
+          reason: 'Province $province should be in data',
+        );
       }
     });
 
@@ -340,8 +357,11 @@ void main() {
       };
 
       for (final territory in territories) {
-        expect(CanadaClues.data.containsKey(territory), isTrue,
-            reason: 'Territory $territory should be in data');
+        expect(
+          CanadaClues.data.containsKey(territory),
+          isTrue,
+          reason: 'Territory $territory should be in data',
+        );
       }
     });
 

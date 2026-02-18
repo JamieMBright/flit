@@ -79,13 +79,7 @@ extension LeaderboardTypeExtension on LeaderboardType {
 }
 
 /// The time window a leaderboard covers.
-enum LeaderboardTimeframe {
-  today,
-  thisWeek,
-  thisMonth,
-  thisYear,
-  allTime,
-}
+enum LeaderboardTimeframe { today, thisWeek, thisMonth, thisYear, allTime }
 
 extension LeaderboardTimeframeExtension on LeaderboardTimeframe {
   String get displayName {
@@ -200,40 +194,39 @@ class LeaderboardEntry {
     String? countryCode,
     int? streak,
     DateTime? timestamp,
-  }) =>
-      LeaderboardEntry(
-        playerId: playerId ?? this.playerId,
-        username: username ?? this.username,
-        score: score ?? this.score,
-        bestTime: bestTime ?? this.bestTime,
-        rank: rank ?? this.rank,
-        gamesPlayed: gamesPlayed ?? this.gamesPlayed,
-        isLicensed: isLicensed ?? this.isLicensed,
-        displayTitle: displayTitle ?? this.displayTitle,
-        level: level ?? this.level,
-        avatarUrl: avatarUrl ?? this.avatarUrl,
-        countryCode: countryCode ?? this.countryCode,
-        streak: streak ?? this.streak,
-        timestamp: timestamp ?? this.timestamp,
-      );
+  }) => LeaderboardEntry(
+    playerId: playerId ?? this.playerId,
+    username: username ?? this.username,
+    score: score ?? this.score,
+    bestTime: bestTime ?? this.bestTime,
+    rank: rank ?? this.rank,
+    gamesPlayed: gamesPlayed ?? this.gamesPlayed,
+    isLicensed: isLicensed ?? this.isLicensed,
+    displayTitle: displayTitle ?? this.displayTitle,
+    level: level ?? this.level,
+    avatarUrl: avatarUrl ?? this.avatarUrl,
+    countryCode: countryCode ?? this.countryCode,
+    streak: streak ?? this.streak,
+    timestamp: timestamp ?? this.timestamp,
+  );
 
   // ── Serialisation ────────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-        'player_id': playerId,
-        'username': username,
-        'score': score,
-        'best_time_ms': bestTime.inMilliseconds,
-        'rank': rank,
-        'games_played': gamesPlayed,
-        'is_licensed': isLicensed,
-        'display_title': displayTitle,
-        'level': level,
-        'avatar_url': avatarUrl,
-        'country_code': countryCode,
-        'streak': streak,
-        'timestamp': timestamp?.toIso8601String(),
-      };
+    'player_id': playerId,
+    'username': username,
+    'score': score,
+    'best_time_ms': bestTime.inMilliseconds,
+    'rank': rank,
+    'games_played': gamesPlayed,
+    'is_licensed': isLicensed,
+    'display_title': displayTitle,
+    'level': level,
+    'avatar_url': avatarUrl,
+    'country_code': countryCode,
+    'streak': streak,
+    'timestamp': timestamp?.toIso8601String(),
+  };
 
   factory LeaderboardEntry.fromJson(Map<String, dynamic> json) =>
       LeaderboardEntry(
@@ -249,9 +242,10 @@ class LeaderboardEntry {
         avatarUrl: json['avatar_url'] as String?,
         countryCode: json['country_code'] as String?,
         streak: json['streak'] as int? ?? 0,
-        timestamp: json['timestamp'] != null
-            ? DateTime.parse(json['timestamp'] as String)
-            : null,
+        timestamp:
+            json['timestamp'] != null
+                ? DateTime.parse(json['timestamp'] as String)
+                : null,
       );
 }
 
@@ -299,15 +293,15 @@ class LeaderboardReward {
   // ── Serialisation ────────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'year': year,
-        'board_type': boardType.name,
-        'min_rank': minRank,
-        'max_rank': maxRank,
-        'cosmetic_id': cosmeticId,
-        'cosmetic_name': cosmeticName,
-        'description': description,
-      };
+    'id': id,
+    'year': year,
+    'board_type': boardType.name,
+    'min_rank': minRank,
+    'max_rank': maxRank,
+    'cosmetic_id': cosmeticId,
+    'cosmetic_name': cosmeticName,
+    'description': description,
+  };
 
   factory LeaderboardReward.fromJson(Map<String, dynamic> json) =>
       LeaderboardReward(
@@ -426,40 +420,39 @@ class PlayerClueStats {
     int? challengesSent,
     int? challengesWon,
     int? cosmeticsOwned,
-  }) =>
-      PlayerClueStats(
-        flagsCorrect: flagsCorrect ?? this.flagsCorrect,
-        outlinesCorrect: outlinesCorrect ?? this.outlinesCorrect,
-        bordersCorrect: bordersCorrect ?? this.bordersCorrect,
-        capitalsCorrect: capitalsCorrect ?? this.capitalsCorrect,
-        statsCorrect: statsCorrect ?? this.statsCorrect,
-        bestTime: bestTime ?? this.bestTime,
-        gamesPlayed: gamesPlayed ?? this.gamesPlayed,
-        gamesWon: gamesWon ?? this.gamesWon,
-        coinsEarned: coinsEarned ?? this.coinsEarned,
-        coinsSpent: coinsSpent ?? this.coinsSpent,
-        challengesSent: challengesSent ?? this.challengesSent,
-        challengesWon: challengesWon ?? this.challengesWon,
-        cosmeticsOwned: cosmeticsOwned ?? this.cosmeticsOwned,
-      );
+  }) => PlayerClueStats(
+    flagsCorrect: flagsCorrect ?? this.flagsCorrect,
+    outlinesCorrect: outlinesCorrect ?? this.outlinesCorrect,
+    bordersCorrect: bordersCorrect ?? this.bordersCorrect,
+    capitalsCorrect: capitalsCorrect ?? this.capitalsCorrect,
+    statsCorrect: statsCorrect ?? this.statsCorrect,
+    bestTime: bestTime ?? this.bestTime,
+    gamesPlayed: gamesPlayed ?? this.gamesPlayed,
+    gamesWon: gamesWon ?? this.gamesWon,
+    coinsEarned: coinsEarned ?? this.coinsEarned,
+    coinsSpent: coinsSpent ?? this.coinsSpent,
+    challengesSent: challengesSent ?? this.challengesSent,
+    challengesWon: challengesWon ?? this.challengesWon,
+    cosmeticsOwned: cosmeticsOwned ?? this.cosmeticsOwned,
+  );
 
   // ── Serialisation ─────────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-        'flags_correct': flagsCorrect,
-        'outlines_correct': outlinesCorrect,
-        'borders_correct': bordersCorrect,
-        'capitals_correct': capitalsCorrect,
-        'stats_correct': statsCorrect,
-        'best_time_ms': bestTime?.inMilliseconds,
-        'games_played': gamesPlayed,
-        'games_won': gamesWon,
-        'coins_earned': coinsEarned,
-        'coins_spent': coinsSpent,
-        'challenges_sent': challengesSent,
-        'challenges_won': challengesWon,
-        'cosmetics_owned': cosmeticsOwned,
-      };
+    'flags_correct': flagsCorrect,
+    'outlines_correct': outlinesCorrect,
+    'borders_correct': bordersCorrect,
+    'capitals_correct': capitalsCorrect,
+    'stats_correct': statsCorrect,
+    'best_time_ms': bestTime?.inMilliseconds,
+    'games_played': gamesPlayed,
+    'games_won': gamesWon,
+    'coins_earned': coinsEarned,
+    'coins_spent': coinsSpent,
+    'challenges_sent': challengesSent,
+    'challenges_won': challengesWon,
+    'cosmetics_owned': cosmeticsOwned,
+  };
 
   factory PlayerClueStats.fromJson(Map<String, dynamic> json) =>
       PlayerClueStats(
@@ -468,9 +461,10 @@ class PlayerClueStats {
         bordersCorrect: json['borders_correct'] as int? ?? 0,
         capitalsCorrect: json['capitals_correct'] as int? ?? 0,
         statsCorrect: json['stats_correct'] as int? ?? 0,
-        bestTime: json['best_time_ms'] != null
-            ? Duration(milliseconds: json['best_time_ms'] as int)
-            : null,
+        bestTime:
+            json['best_time_ms'] != null
+                ? Duration(milliseconds: json['best_time_ms'] as int)
+                : null,
         gamesPlayed: json['games_played'] as int? ?? 0,
         gamesWon: json['games_won'] as int? ?? 0,
         coinsEarned: json['coins_earned'] as int? ?? 0,
@@ -545,58 +539,57 @@ class Leaderboard {
     int? seasonYear,
     int? totalEntries,
     List<LeaderboardReward>? rewards,
-  }) =>
-      Leaderboard(
-        type: type ?? this.type,
-        timeframe: timeframe ?? this.timeframe,
-        entries: entries ?? this.entries,
-        currentPlayerEntry: currentPlayerEntry ?? this.currentPlayerEntry,
-        lastUpdated: lastUpdated ?? this.lastUpdated,
-        regionId: regionId ?? this.regionId,
-        seasonYear: seasonYear ?? this.seasonYear,
-        totalEntries: totalEntries ?? this.totalEntries,
-        rewards: rewards ?? this.rewards,
-      );
+  }) => Leaderboard(
+    type: type ?? this.type,
+    timeframe: timeframe ?? this.timeframe,
+    entries: entries ?? this.entries,
+    currentPlayerEntry: currentPlayerEntry ?? this.currentPlayerEntry,
+    lastUpdated: lastUpdated ?? this.lastUpdated,
+    regionId: regionId ?? this.regionId,
+    seasonYear: seasonYear ?? this.seasonYear,
+    totalEntries: totalEntries ?? this.totalEntries,
+    rewards: rewards ?? this.rewards,
+  );
 
   // ── Serialisation ────────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-        'type': type.name,
-        'timeframe': timeframe.name,
-        'entries': entries.map((e) => e.toJson()).toList(),
-        'current_player_entry': currentPlayerEntry?.toJson(),
-        'last_updated': lastUpdated.toIso8601String(),
-        'region_id': regionId,
-        'season_year': seasonYear,
-        'total_entries': totalEntries,
-        'rewards': rewards.map((r) => r.toJson()).toList(),
-      };
+    'type': type.name,
+    'timeframe': timeframe.name,
+    'entries': entries.map((e) => e.toJson()).toList(),
+    'current_player_entry': currentPlayerEntry?.toJson(),
+    'last_updated': lastUpdated.toIso8601String(),
+    'region_id': regionId,
+    'season_year': seasonYear,
+    'total_entries': totalEntries,
+    'rewards': rewards.map((r) => r.toJson()).toList(),
+  };
 
   factory Leaderboard.fromJson(Map<String, dynamic> json) => Leaderboard(
-        type: LeaderboardType.values.firstWhere(
-          (t) => t.name == json['type'],
-        ),
-        timeframe: LeaderboardTimeframe.values.firstWhere(
-          (t) => t.name == json['timeframe'],
-        ),
-        entries: (json['entries'] as List)
+    type: LeaderboardType.values.firstWhere((t) => t.name == json['type']),
+    timeframe: LeaderboardTimeframe.values.firstWhere(
+      (t) => t.name == json['timeframe'],
+    ),
+    entries:
+        (json['entries'] as List)
             .map((e) => LeaderboardEntry.fromJson(e as Map<String, dynamic>))
             .toList(),
-        currentPlayerEntry: json['current_player_entry'] != null
+    currentPlayerEntry:
+        json['current_player_entry'] != null
             ? LeaderboardEntry.fromJson(
-                json['current_player_entry'] as Map<String, dynamic>,
-              )
+              json['current_player_entry'] as Map<String, dynamic>,
+            )
             : null,
-        lastUpdated: DateTime.parse(json['last_updated'] as String),
-        regionId: json['region_id'] as String?,
-        seasonYear: json['season_year'] as int?,
-        totalEntries: json['total_entries'] as int?,
-        rewards: (json['rewards'] as List?)
-                ?.map((r) =>
-                    LeaderboardReward.fromJson(r as Map<String, dynamic>))
-                .toList() ??
-            const [],
-      );
+    lastUpdated: DateTime.parse(json['last_updated'] as String),
+    regionId: json['region_id'] as String?,
+    seasonYear: json['season_year'] as int?,
+    totalEntries: json['total_entries'] as int?,
+    rewards:
+        (json['rewards'] as List?)
+            ?.map((r) => LeaderboardReward.fromJson(r as Map<String, dynamic>))
+            .toList() ??
+        const [],
+  );
 
   // ── Placeholder data ─────────────────────────────────────────────────
 
@@ -677,7 +670,6 @@ class Leaderboard {
 
   /// 50 entries for the global board.
   static List<LeaderboardEntry> _buildGlobalEntries() {
-
     // Creative usernames -- geography, aviation and exploration themed.
     const topNames = <_PlaceholderPlayer>[
       _PlaceholderPlayer('MercatorMaven', 'Master Vexillologist', 22),
@@ -825,7 +817,8 @@ class Leaderboard {
       final rank = i + 1;
 
       // Tighter spread for daily boards.
-      final int rawScore = baseScore - (rank - 1) * 210 + (rank.isEven ? 25 : -15);
+      final int rawScore =
+          baseScore - (rank - 1) * 210 + (rank.isEven ? 25 : -15);
 
       // Daily times are faster (single challenge).
       final timeMs = 45000 + (rank * 2100) + (rank.isOdd ? 310 : -180);
@@ -976,7 +969,8 @@ class Leaderboard {
       final player = players[i];
       final rank = i + 1;
 
-      final int rawScore = baseScore - (rank - 1) * 280 + (rank.isEven ? 45 : -30);
+      final int rawScore =
+          baseScore - (rank - 1) * 280 + (rank.isEven ? 45 : -30);
       final timeMs = 68000 + (rank * 2000) + (rank.isOdd ? 350 : -200);
       final gamesPlayed = (300 - rank * 10).clamp(15, 300);
 
@@ -1023,7 +1017,8 @@ class Leaderboard {
       final player = players[i];
       final rank = i + 1;
 
-      final int rawScore = baseScore - (rank - 1) * 350 + (rank.isEven ? 60 : -40);
+      final int rawScore =
+          baseScore - (rank - 1) * 350 + (rank.isEven ? 60 : -40);
       final timeMs = 80000 + (rank * 2500) + (rank.isOdd ? 400 : -250);
       final gamesPlayed = (200 - rank * 10).clamp(5, 200);
 

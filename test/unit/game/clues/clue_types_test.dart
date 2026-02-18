@@ -59,7 +59,9 @@ void main() {
       const clue = const Clue(
         type: ClueType.borders,
         targetCountryCode: 'CA',
-        displayData: {'neighbors': ['United States']},
+        displayData: {
+          'neighbors': ['United States'],
+        },
       );
 
       expect(clue.type, equals(ClueType.borders));
@@ -81,10 +83,7 @@ void main() {
       const clue = const Clue(
         type: ClueType.stats,
         targetCountryCode: 'DE',
-        displayData: {
-          'population': '83M',
-          'continent': 'Europe',
-        },
+        displayData: {'population': '83M', 'continent': 'Europe'},
       );
 
       expect(clue.type, equals(ClueType.stats));
@@ -143,7 +142,10 @@ void main() {
       );
 
       expect(clue.type, equals(ClueType.flagDescription));
-      expect(clue.displayData['flagDesc'], equals('Red, white, and blue stripes'));
+      expect(
+        clue.displayData['flagDesc'],
+        equals('Red, white, and blue stripes'),
+      );
     });
   });
 
@@ -174,7 +176,9 @@ void main() {
       const clue = const Clue(
         type: ClueType.borders,
         targetCountryCode: 'US',
-        displayData: {'neighbors': ['Canada', 'Mexico']},
+        displayData: {
+          'neighbors': ['Canada', 'Mexico'],
+        },
       );
 
       expect(clue.displayText, isNotEmpty);
@@ -283,7 +287,10 @@ void main() {
 
       expect(usClue.displayData['flagEmoji'], isNotEmpty);
       expect(ukClue.displayData['flagEmoji'], isNotEmpty);
-      expect(usClue.displayData['flagEmoji'], isNot(equals(ukClue.displayData['flagEmoji'])));
+      expect(
+        usClue.displayData['flagEmoji'],
+        isNot(equals(ukClue.displayData['flagEmoji'])),
+      );
     });
   });
 

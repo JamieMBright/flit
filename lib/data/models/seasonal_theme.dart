@@ -67,8 +67,7 @@ class SeasonalTheme {
     SeasonalTheme(
       event: SeasonalEvent.halloween,
       vehicleName: "Witch's Broom",
-      vehicleDescription:
-          'A creaky broomstick trailing wisps of purple smoke.',
+      vehicleDescription: 'A creaky broomstick trailing wisps of purple smoke.',
       startMonth: 10,
       startDay: 24,
       endMonth: 10,
@@ -183,30 +182,27 @@ class SeasonalTheme {
   // ── Serialisation ───────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-        'event': event.name,
-        'vehicle_name': vehicleName,
-        'vehicle_description': vehicleDescription,
-        'start_month': startMonth,
-        'start_day': startDay,
-        'end_month': endMonth,
-        'end_day': endDay,
-        'accent_color': accentColor,
-        'vehicle_color_scheme': vehicleColorScheme,
-      };
+    'event': event.name,
+    'vehicle_name': vehicleName,
+    'vehicle_description': vehicleDescription,
+    'start_month': startMonth,
+    'start_day': startDay,
+    'end_month': endMonth,
+    'end_day': endDay,
+    'accent_color': accentColor,
+    'vehicle_color_scheme': vehicleColorScheme,
+  };
 
   factory SeasonalTheme.fromJson(Map<String, dynamic> json) => SeasonalTheme(
-        event: SeasonalEvent.values.firstWhere(
-          (e) => e.name == json['event'],
-        ),
-        vehicleName: json['vehicle_name'] as String,
-        vehicleDescription: json['vehicle_description'] as String,
-        startMonth: json['start_month'] as int,
-        startDay: json['start_day'] as int,
-        endMonth: json['end_month'] as int,
-        endDay: json['end_day'] as int,
-        accentColor: json['accent_color'] as int,
-        vehicleColorScheme:
-            (json['vehicle_color_scheme'] as Map<String, dynamic>)
-                .map((key, value) => MapEntry(key, value as int)),
-      );
+    event: SeasonalEvent.values.firstWhere((e) => e.name == json['event']),
+    vehicleName: json['vehicle_name'] as String,
+    vehicleDescription: json['vehicle_description'] as String,
+    startMonth: json['start_month'] as int,
+    startDay: json['start_day'] as int,
+    endMonth: json['end_month'] as int,
+    endDay: json['end_day'] as int,
+    accentColor: json['accent_color'] as int,
+    vehicleColorScheme: (json['vehicle_color_scheme'] as Map<String, dynamic>)
+        .map((key, value) => MapEntry(key, value as int)),
+  );
 }

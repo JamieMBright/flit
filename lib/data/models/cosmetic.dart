@@ -10,12 +10,7 @@ enum CosmeticType {
 }
 
 /// Rarity tier for cosmetic items.
-enum CosmeticRarity {
-  common,
-  rare,
-  epic,
-  legendary,
-}
+enum CosmeticRarity { common, rare, epic, legendary }
 
 /// A purchasable cosmetic item.
 class Cosmetic {
@@ -69,76 +64,70 @@ class Cosmetic {
   /// 1.0 = baseline. Range: 0.6 (gas guzzler) to 1.4 (economical).
   final double fuelEfficiency;
 
-  Cosmetic copyWith({
-    bool? isOwned,
-    bool? isEquipped,
-  }) =>
-      Cosmetic(
-        id: id,
-        name: name,
-        type: type,
-        price: price,
-        rarity: rarity,
-        isPremium: isPremium,
-        realMoneyPrice: realMoneyPrice,
-        colorScheme: colorScheme,
-        description: description,
-        previewAsset: previewAsset,
-        isOwned: isOwned ?? this.isOwned,
-        isEquipped: isEquipped ?? this.isEquipped,
-        requiredLevel: requiredLevel,
-        wingSpan: wingSpan,
-        handling: handling,
-        speed: speed,
-        fuelEfficiency: fuelEfficiency,
-      );
+  Cosmetic copyWith({bool? isOwned, bool? isEquipped}) => Cosmetic(
+    id: id,
+    name: name,
+    type: type,
+    price: price,
+    rarity: rarity,
+    isPremium: isPremium,
+    realMoneyPrice: realMoneyPrice,
+    colorScheme: colorScheme,
+    description: description,
+    previewAsset: previewAsset,
+    isOwned: isOwned ?? this.isOwned,
+    isEquipped: isEquipped ?? this.isEquipped,
+    requiredLevel: requiredLevel,
+    wingSpan: wingSpan,
+    handling: handling,
+    speed: speed,
+    fuelEfficiency: fuelEfficiency,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'type': type.name,
-        'price': price,
-        'rarity': rarity.name,
-        'is_premium': isPremium,
-        'real_money_price': realMoneyPrice,
-        'color_scheme': colorScheme,
-        'description': description,
-        'preview_asset': previewAsset,
-        'is_owned': isOwned,
-        'is_equipped': isEquipped,
-        'required_level': requiredLevel,
-        'wing_span': wingSpan,
-        'handling': handling,
-        'speed': speed,
-        'fuel_efficiency': fuelEfficiency,
-      };
+    'id': id,
+    'name': name,
+    'type': type.name,
+    'price': price,
+    'rarity': rarity.name,
+    'is_premium': isPremium,
+    'real_money_price': realMoneyPrice,
+    'color_scheme': colorScheme,
+    'description': description,
+    'preview_asset': previewAsset,
+    'is_owned': isOwned,
+    'is_equipped': isEquipped,
+    'required_level': requiredLevel,
+    'wing_span': wingSpan,
+    'handling': handling,
+    'speed': speed,
+    'fuel_efficiency': fuelEfficiency,
+  };
 
   factory Cosmetic.fromJson(Map<String, dynamic> json) => Cosmetic(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        type: CosmeticType.values.firstWhere(
-          (t) => t.name == json['type'],
-        ),
-        price: json['price'] as int,
-        rarity: CosmeticRarity.values.firstWhere(
-          (r) => r.name == json['rarity'],
-          orElse: () => CosmeticRarity.common,
-        ),
-        isPremium: json['is_premium'] as bool? ?? false,
-        realMoneyPrice: (json['real_money_price'] as num?)?.toDouble(),
-        colorScheme: (json['color_scheme'] as Map<String, dynamic>?)?.map(
-          (k, v) => MapEntry(k, v as int),
-        ),
-        description: json['description'] as String?,
-        previewAsset: json['preview_asset'] as String?,
-        isOwned: json['is_owned'] as bool? ?? false,
-        isEquipped: json['is_equipped'] as bool? ?? false,
-        requiredLevel: json['required_level'] as int?,
-        wingSpan: (json['wing_span'] as num?)?.toDouble(),
-        handling: (json['handling'] as num?)?.toDouble() ?? 1.0,
-        speed: (json['speed'] as num?)?.toDouble() ?? 1.0,
-        fuelEfficiency: (json['fuel_efficiency'] as num?)?.toDouble() ?? 1.0,
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    type: CosmeticType.values.firstWhere((t) => t.name == json['type']),
+    price: json['price'] as int,
+    rarity: CosmeticRarity.values.firstWhere(
+      (r) => r.name == json['rarity'],
+      orElse: () => CosmeticRarity.common,
+    ),
+    isPremium: json['is_premium'] as bool? ?? false,
+    realMoneyPrice: (json['real_money_price'] as num?)?.toDouble(),
+    colorScheme: (json['color_scheme'] as Map<String, dynamic>?)?.map(
+      (k, v) => MapEntry(k, v as int),
+    ),
+    description: json['description'] as String?,
+    previewAsset: json['preview_asset'] as String?,
+    isOwned: json['is_owned'] as bool? ?? false,
+    isEquipped: json['is_equipped'] as bool? ?? false,
+    requiredLevel: json['required_level'] as int?,
+    wingSpan: (json['wing_span'] as num?)?.toDouble(),
+    handling: (json['handling'] as num?)?.toDouble() ?? 1.0,
+    speed: (json['speed'] as num?)?.toDouble() ?? 1.0,
+    fuelEfficiency: (json['fuel_efficiency'] as num?)?.toDouble() ?? 1.0,
+  );
 }
 
 /// Catalog of all available cosmetics.
@@ -233,7 +222,8 @@ abstract class CosmeticCatalog {
       type: CosmeticType.plane,
       price: 750,
       rarity: CosmeticRarity.common,
-      description: 'Float pontoons for water landings. Perfect for the Caribbean.',
+      description:
+          'Float pontoons for water landings. Perfect for the Caribbean.',
       colorScheme: {
         'primary': 0xFFF0E68C,
         'secondary': 0xFF2E8B57,
@@ -270,7 +260,8 @@ abstract class CosmeticCatalog {
       type: CosmeticType.plane,
       price: 1800,
       rarity: CosmeticRarity.rare,
-      description: 'The most feared ace of WWI. Triple the wings, triple the style.',
+      description:
+          'The most feared ace of WWI. Triple the wings, triple the style.',
       colorScheme: {
         'primary': 0xFFCC3333,
         'secondary': 0xFF8B0000,
@@ -288,7 +279,8 @@ abstract class CosmeticCatalog {
       price: 1800,
       rarity: CosmeticRarity.rare,
       requiredLevel: 5,
-      description: 'Blazing speed. Turns like a bus. Drinks fuel for breakfast.',
+      description:
+          'Blazing speed. Turns like a bus. Drinks fuel for breakfast.',
       colorScheme: {
         'primary': 0xFFCC3333,
         'secondary': 0xFFF5F5F5,
@@ -522,10 +514,7 @@ abstract class CosmeticCatalog {
       price: 0,
       rarity: CosmeticRarity.common,
       description: 'Classic water vapour contrails.',
-      colorScheme: {
-        'primary': 0xFFF0E8DC,
-        'secondary': 0xFFFFFFFF,
-      },
+      colorScheme: {'primary': 0xFFF0E8DC, 'secondary': 0xFFFFFFFF},
       isOwned: true,
       isEquipped: true,
     ),
@@ -536,10 +525,7 @@ abstract class CosmeticCatalog {
       price: 750,
       rarity: CosmeticRarity.common,
       description: 'Leave a colorful streak!',
-      colorScheme: {
-        'primary': 0xFFFF0000,
-        'secondary': 0xFF00FF00,
-      },
+      colorScheme: {'primary': 0xFFFF0000, 'secondary': 0xFF00FF00},
     ),
     Cosmetic(
       id: 'contrail_fire',
@@ -548,10 +534,7 @@ abstract class CosmeticCatalog {
       price: 650,
       rarity: CosmeticRarity.common,
       description: 'Blazing hot contrails.',
-      colorScheme: {
-        'primary': 0xFFFF4500,
-        'secondary': 0xFFFFD700,
-      },
+      colorScheme: {'primary': 0xFFFF4500, 'secondary': 0xFFFFD700},
     ),
 
     // --- Rare ---
@@ -563,10 +546,7 @@ abstract class CosmeticCatalog {
       rarity: CosmeticRarity.rare,
       description: 'Glittering magical dust.',
       requiredLevel: 3,
-      colorScheme: {
-        'primary': 0xFFFFD700,
-        'secondary': 0xFFFFF8DC,
-      },
+      colorScheme: {'primary': 0xFFFFD700, 'secondary': 0xFFFFF8DC},
     ),
     Cosmetic(
       id: 'contrail_neon',
@@ -576,10 +556,7 @@ abstract class CosmeticCatalog {
       rarity: CosmeticRarity.rare,
       description: 'Bright neon colors.',
       requiredLevel: 7,
-      colorScheme: {
-        'primary': 0xFF00FF7F,
-        'secondary': 0xFF00CED1,
-      },
+      colorScheme: {'primary': 0xFF00FF7F, 'secondary': 0xFF00CED1},
     ),
 
     // --- Epic / Premium ---
@@ -591,10 +568,7 @@ abstract class CosmeticCatalog {
       rarity: CosmeticRarity.epic,
       isPremium: true,
       description: 'A trail of golden particles in your wake.',
-      colorScheme: {
-        'primary': 0xFFD4A944,
-        'secondary': 0xFFF0D060,
-      },
+      colorScheme: {'primary': 0xFFD4A944, 'secondary': 0xFFF0D060},
     ),
 
     // --- Legendary / Premium ---
@@ -606,10 +580,7 @@ abstract class CosmeticCatalog {
       rarity: CosmeticRarity.legendary,
       isPremium: true,
       description: 'The northern lights follow you across the sky.',
-      colorScheme: {
-        'primary': 0xFF00FF7F,
-        'secondary': 0xFF9B30FF,
-      },
+      colorScheme: {'primary': 0xFF00FF7F, 'secondary': 0xFF9B30FF},
     ),
     Cosmetic(
       id: 'contrail_chemtrails',
@@ -618,11 +589,9 @@ abstract class CosmeticCatalog {
       price: 50000,
       rarity: CosmeticRarity.legendary,
       isPremium: true,
-      description: 'Toxic green poison gas contrails. For the conspiracy-minded pilot.',
-      colorScheme: {
-        'primary': 0xFF00FF00,
-        'secondary': 0xFF7FFF00,
-      },
+      description:
+          'Toxic green poison gas contrails. For the conspiracy-minded pilot.',
+      colorScheme: {'primary': 0xFF00FF00, 'secondary': 0xFF7FFF00},
     ),
   ];
 

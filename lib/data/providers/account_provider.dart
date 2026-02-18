@@ -18,8 +18,8 @@ class AccountState {
     this.equippedPlaneId = 'plane_default',
     this.equippedContrailId = 'contrail_default',
     this.lastFreeRerollDate,
-  })  : avatar = avatar ?? const AvatarConfig(),
-        license = license ?? PilotLicense.random();
+  }) : avatar = avatar ?? const AvatarConfig(),
+       license = license ?? PilotLicense.random();
 
   final Player currentPlayer;
   final bool isDebugMode;
@@ -65,26 +65,22 @@ class AccountState {
     String? equippedPlaneId,
     String? equippedContrailId,
     String? lastFreeRerollDate,
-  }) =>
-      AccountState(
-        currentPlayer: currentPlayer ?? this.currentPlayer,
-        isDebugMode: isDebugMode ?? this.isDebugMode,
-        unlockedRegions: unlockedRegions ?? this.unlockedRegions,
-        avatar: avatar ?? this.avatar,
-        license: license ?? this.license,
-        ownedAvatarParts: ownedAvatarParts ?? this.ownedAvatarParts,
-        equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
-        equippedContrailId: equippedContrailId ?? this.equippedContrailId,
-        lastFreeRerollDate: lastFreeRerollDate ?? this.lastFreeRerollDate,
-      );
+  }) => AccountState(
+    currentPlayer: currentPlayer ?? this.currentPlayer,
+    isDebugMode: isDebugMode ?? this.isDebugMode,
+    unlockedRegions: unlockedRegions ?? this.unlockedRegions,
+    avatar: avatar ?? this.avatar,
+    license: license ?? this.license,
+    ownedAvatarParts: ownedAvatarParts ?? this.ownedAvatarParts,
+    equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
+    equippedContrailId: equippedContrailId ?? this.equippedContrailId,
+    lastFreeRerollDate: lastFreeRerollDate ?? this.lastFreeRerollDate,
+  );
 }
 
 /// Account state notifier.
 class AccountNotifier extends StateNotifier<AccountState> {
-  AccountNotifier()
-      : super(AccountState(
-          currentPlayer: TestAccounts.player1,
-        ));
+  AccountNotifier() : super(AccountState(currentPlayer: TestAccounts.player1));
 
   /// Switch to a different test account
   void switchAccount(Player player) {
@@ -149,10 +145,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     }
 
     state = state.copyWith(
-      currentPlayer: player.copyWith(
-        xp: newXp,
-        level: newLevel,
-      ),
+      currentPlayer: player.copyWith(xp: newXp, level: newLevel),
     );
   }
 
@@ -179,8 +172,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
   void addFlightTime(Duration time) {
     state = state.copyWith(
       currentPlayer: state.currentPlayer.copyWith(
-        totalFlightTime:
-            state.currentPlayer.totalFlightTime + time,
+        totalFlightTime: state.currentPlayer.totalFlightTime + time,
       ),
     );
   }
@@ -263,9 +255,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       (c) => c.name == companionName,
       orElse: () => AvatarCompanion.none,
     );
-    state = state.copyWith(
-      avatar: state.avatar.copyWith(companion: companion),
-    );
+    state = state.copyWith(avatar: state.avatar.copyWith(companion: companion));
   }
 
   // --- Pilot License ---
@@ -279,7 +269,10 @@ class AccountNotifier extends StateNotifier<AccountState> {
   ///
   /// The avatar's [luckBonus] is automatically applied — rarer avatars
   /// grant advantage rolls for better licence stats.
-  bool rerollLicense({Set<String> lockedStats = const {}, bool lockType = false}) {
+  bool rerollLicense({
+    Set<String> lockedStats = const {},
+    bool lockType = false,
+  }) {
     // Calculate cost
     var cost = PilotLicense.rerollAllCost;
     if (lockedStats.length == 1) cost = PilotLicense.lockOneCost;
@@ -328,8 +321,9 @@ class AccountNotifier extends StateNotifier<AccountState> {
 }
 
 /// Account provider
-final accountProvider =
-    StateNotifierProvider<AccountNotifier, AccountState>((ref) {
+final accountProvider = StateNotifierProvider<AccountNotifier, AccountState>((
+  ref,
+) {
   return AccountNotifier();
 });
 

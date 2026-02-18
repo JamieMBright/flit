@@ -20,9 +20,7 @@ Future<bool> errorSenderHttpImpl({
 }) async {
   try {
     // Build headers map
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-    };
+    final headers = <String, String>{'Content-Type': 'application/json'};
     if (apiKey.isNotEmpty) {
       headers['X-API-Key'] = apiKey;
     }
@@ -31,7 +29,7 @@ Future<bool> errorSenderHttpImpl({
     // fetch() with keepalive can still be unreliable on iOS Safari
     final xhr = html.HttpRequest();
     xhr.open('POST', url);
-    
+
     // Set headers
     headers.forEach((key, value) {
       xhr.setRequestHeader(key, value);
@@ -39,18 +37,18 @@ Future<bool> errorSenderHttpImpl({
 
     // Create a completer for the async operation
     final completer = Completer<bool>();
-    
+
     // Set up response handlers
     xhr.onLoad.listen((_) {
       final status = xhr.status ?? 0;
       completer.complete(status >= 200 && status < 300);
     });
-    
+
     xhr.onError.listen((_) {
       // Try Beacon API as fallback
       completer.complete(_sendViaBeacon(url, jsonBody));
     });
-    
+
     xhr.onTimeout.listen((_) {
       // Try Beacon API as fallback
       completer.complete(_sendViaBeacon(url, jsonBody));

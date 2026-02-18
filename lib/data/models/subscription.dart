@@ -132,14 +132,16 @@ class Subscription {
         (t) => t.name == json['tier'],
         orElse: () => SubscriptionTier.free,
       ),
-      expiresAt: json['expiresAt'] != null
-          ? DateTime.parse(json['expiresAt'] as String)
-          : null,
+      expiresAt:
+          json['expiresAt'] != null
+              ? DateTime.parse(json['expiresAt'] as String)
+              : null,
       isGifted: json['isGifted'] as bool? ?? false,
       giftedBy: json['giftedBy'] as String?,
-      purchasedAt: json['purchasedAt'] != null
-          ? DateTime.parse(json['purchasedAt'] as String)
-          : null,
+      purchasedAt:
+          json['purchasedAt'] != null
+              ? DateTime.parse(json['purchasedAt'] as String)
+              : null,
     );
   }
 
@@ -159,7 +161,8 @@ class Subscription {
           purchasedAt == other.purchasedAt;
 
   @override
-  int get hashCode => Object.hash(tier, expiresAt, isGifted, giftedBy, purchasedAt);
+  int get hashCode =>
+      Object.hash(tier, expiresAt, isGifted, giftedBy, purchasedAt);
 
   @override
   String toString() {

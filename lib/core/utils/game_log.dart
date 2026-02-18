@@ -33,11 +33,11 @@ class LogEntry {
   }
 
   String get levelTag => switch (level) {
-        LogLevel.debug => 'DBG',
-        LogLevel.info => 'INF',
-        LogLevel.warning => 'WRN',
-        LogLevel.error => 'ERR',
-      };
+    LogLevel.debug => 'DBG',
+    LogLevel.info => 'INF',
+    LogLevel.warning => 'WRN',
+    LogLevel.error => 'ERR',
+  };
 
   @override
   String toString() {
@@ -134,29 +134,64 @@ class GameLog {
 
   /// Log a debug-level event.
   void debug(String category, String message, {Map<String, dynamic>? data}) {
-    _add(LogEntry(level: LogLevel.debug, category: category, message: message, data: data));
+    _add(
+      LogEntry(
+        level: LogLevel.debug,
+        category: category,
+        message: message,
+        data: data,
+      ),
+    );
   }
 
   /// Log an info-level event.
   void info(String category, String message, {Map<String, dynamic>? data}) {
-    _add(LogEntry(level: LogLevel.info, category: category, message: message, data: data));
+    _add(
+      LogEntry(
+        level: LogLevel.info,
+        category: category,
+        message: message,
+        data: data,
+      ),
+    );
   }
 
   /// Log a warning.
-  void warning(String category, String message, {Map<String, dynamic>? data, Object? error}) {
-    _add(LogEntry(level: LogLevel.warning, category: category, message: message, data: data, error: error));
+  void warning(
+    String category,
+    String message, {
+    Map<String, dynamic>? data,
+    Object? error,
+  }) {
+    _add(
+      LogEntry(
+        level: LogLevel.warning,
+        category: category,
+        message: message,
+        data: data,
+        error: error,
+      ),
+    );
   }
 
   /// Log an error with optional stack trace.
-  void error(String category, String message, {Object? error, StackTrace? stackTrace, Map<String, dynamic>? data}) {
-    _add(LogEntry(
-      level: LogLevel.error,
-      category: category,
-      message: message,
-      data: data,
-      error: error,
-      stackTrace: stackTrace,
-    ));
+  void error(
+    String category,
+    String message, {
+    Object? error,
+    StackTrace? stackTrace,
+    Map<String, dynamic>? data,
+  }) {
+    _add(
+      LogEntry(
+        level: LogLevel.error,
+        category: category,
+        message: message,
+        data: data,
+        error: error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   /// Clear all entries.
@@ -167,7 +202,9 @@ class GameLog {
     final buf = StringBuffer();
     buf.writeln('=== Flit Game Log ===');
     buf.writeln('Exported: ${DateTime.now().toIso8601String()}');
-    buf.writeln('Entries: ${_entries.length}  Errors: $errorCount  Warnings: $warningCount');
+    buf.writeln(
+      'Entries: ${_entries.length}  Errors: $errorCount  Warnings: $warningCount',
+    );
     buf.writeln('');
     for (final entry in _entries) {
       buf.writeln(entry);

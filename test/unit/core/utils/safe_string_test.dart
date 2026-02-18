@@ -39,10 +39,7 @@ void main() {
     });
 
     test('truncates to maxLength', () {
-      expect(
-        SafeString.sanitizeUsername('a' * 30, maxLength: 20),
-        'a' * 20,
-      );
+      expect(SafeString.sanitizeUsername('a' * 30, maxLength: 20), 'a' * 20);
     });
   });
 

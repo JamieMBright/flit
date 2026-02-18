@@ -31,8 +31,7 @@ class GameSession {
   bool get isCompleted => _completed;
 
   /// Time taken to complete (or current elapsed time)
-  Duration get elapsed =>
-      (endTime ?? DateTime.now()).difference(startTime);
+  Duration get elapsed => (endTime ?? DateTime.now()).difference(startTime);
 
   /// Score based on time (lower is better)
   int get score {
@@ -84,10 +83,7 @@ class GameSession {
       sumX += point.x;
       sumY += point.y;
     }
-    return Vector2(
-      sumX / pts.length,
-      sumY / pts.length,
-    );
+    return Vector2(sumX / pts.length, sumY / pts.length);
   }
 
   /// Get the target name for display
@@ -138,8 +134,10 @@ class GameSession {
 
       // Generate start position within region bounds
       final bounds = region.bounds;
-      final startLng = bounds[0] + random.nextDouble() * (bounds[2] - bounds[0]);
-      final startLat = bounds[1] + random.nextDouble() * (bounds[3] - bounds[1]);
+      final startLng =
+          bounds[0] + random.nextDouble() * (bounds[2] - bounds[0]);
+      final startLat =
+          bounds[1] + random.nextDouble() * (bounds[3] - bounds[1]);
 
       // Create a placeholder country shape from the regional area
       final country = CountryShape(

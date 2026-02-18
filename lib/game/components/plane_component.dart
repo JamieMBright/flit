@@ -20,10 +20,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     this.colorScheme,
     this.wingSpan = 26.0,
     this.equippedPlaneId = 'plane_default',
-  }) : super(
-          size: Vector2(60, 60),
-          anchor: Anchor.center,
-        );
+  }) : super(size: Vector2(60, 60), anchor: Anchor.center);
 
   final void Function(bool isHigh) onAltitudeChanged;
 
@@ -100,7 +97,6 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// At low altitude, interval is scaled down so particles stay dense.
   static const double _contrailIntervalBase = 0.02;
 
-
   /// World position set by FlitGame each frame (lng, lat degrees).
   Vector2 worldPos = Vector2.zero();
 
@@ -150,7 +146,8 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     _currentBank += (targetBank - _currentBank) * min(1.0, dt * bankRate);
 
     // Smooth altitude transition using continuous altitude
-    _altitudeTransition += (_continuousAltitude - _altitudeTransition) * min(1.0, dt * 3);
+    _altitudeTransition +=
+        (_continuousAltitude - _altitudeTransition) * min(1.0, dt * 3);
 
     // Spin propeller
     _propAngle += dt * 20;
@@ -179,7 +176,13 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     if (_spawnOpacity < 1.0) {
       canvas.saveLayer(
         Rect.fromLTWH(0, 0, size.x, size.y),
-        Paint()..color = Color.fromARGB((_spawnOpacity * 255).round(), 255, 255, 255),
+        Paint()
+          ..color = Color.fromARGB(
+            (_spawnOpacity * 255).round(),
+            255,
+            255,
+            255,
+          ),
       );
     }
     canvas.translate(size.x / 2, size.y / 2);
@@ -224,9 +227,10 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   }
 
   void _renderPlaneShadow(Canvas canvas, double offset, double bankCos) {
-    final shadowPaint = Paint()
-      ..color = FlitColors.planeShadow
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    final shadowPaint =
+        Paint()
+          ..color = FlitColors.planeShadow
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
 
     canvas.save();
     canvas.translate(offset, offset);
@@ -266,8 +270,9 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
 
     // Scale spawn rate with zoom: at low altitude (zoomed in), spawn
     // particles more frequently so the trail stays dense on screen.
-    final zoomRatio =
-        (gameRef.cameraDistance / CameraState.highAltitudeDistance).clamp(0.4, 1.0);
+    final zoomRatio = (gameRef.cameraDistance /
+            CameraState.highAltitudeDistance)
+        .clamp(0.4, 1.0);
     final interval = _contrailIntervalBase * zoomRatio;
 
     _contrailTimer += dt;
@@ -308,7 +313,8 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     // Altitude-dependent scale: at low altitude (zoomed in) the plane's pixel
     // size doesn't change but covers more world degrees, so contrails need a
     // tighter scale. At high altitude (zoomed out), slightly wider.
-    final altScale = 0.42 + _altitudeTransition * 0.35; // 0.42 low → 0.77 high (smooth)
+    final altScale =
+        0.42 + _altitudeTransition * 0.35; // 0.42 low → 0.77 high (smooth)
     final wingSpanDegrees = (dynamicWingSpan * altScale) * pixelsToDegrees;
 
     final lat0 = worldPos.y * _deg2rad;
@@ -337,7 +343,8 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         (sinLat0 * cos(wingDist) + cosLat0 * sin(wingDist) * cos(bearing))
             .clamp(-1.0, 1.0),
       );
-      final lngW = lng0 +
+      final lngW =
+          lng0 +
           atan2(
             sin(bearing) * sin(wingDist) * cosLat0,
             cos(wingDist) - sinLat0 * sin(latW),
@@ -350,18 +357,21 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         (sinLatW * cos(aftDist) + cosLatW * sin(aftDist) * cos(aftBearing))
             .clamp(-1.0, 1.0),
       );
-      final lngF = lngW +
+      final lngF =
+          lngW +
           atan2(
             sin(aftBearing) * sin(aftDist) * cosLatW,
             cos(aftDist) - sinLatW * sin(latF),
           );
 
-      contrails.add(ContrailParticle(
-        worldPosition: Vector2(lngF * _rad2deg, latF * _rad2deg),
-        size: 0.6 + Random().nextDouble() * 0.4,
-        isLeft: isLeft,
-        maxLife: 6.0,
-      ));
+      contrails.add(
+        ContrailParticle(
+          worldPosition: Vector2(lngF * _rad2deg, latF * _rad2deg),
+          size: 0.6 + Random().nextDouble() * 0.4,
+          isLeft: isLeft,
+          maxLife: 6.0,
+        ),
+      );
       isLeft = false;
     }
   }

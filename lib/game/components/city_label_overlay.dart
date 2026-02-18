@@ -28,10 +28,27 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
 
   /// Major world capitals to show at high altitude (largest by population).
   static const Set<String> _majorCapitals = {
-    'Washington D.C.', 'Ottawa', 'Mexico City', 'Brasília', 'Buenos Aires',
-    'London', 'Paris', 'Berlin', 'Madrid', 'Rome', 'Moscow',
-    'Tokyo', 'Beijing', 'New Delhi', 'Seoul', 'Jakarta', 'Bangkok',
-    'Cairo', 'Nairobi', 'Pretoria', 'Canberra',
+    'Washington D.C.',
+    'Ottawa',
+    'Mexico City',
+    'Brasília',
+    'Buenos Aires',
+    'London',
+    'Paris',
+    'Berlin',
+    'Madrid',
+    'Rome',
+    'Moscow',
+    'Tokyo',
+    'Beijing',
+    'New Delhi',
+    'Seoul',
+    'Jakarta',
+    'Bangkok',
+    'Cairo',
+    'Nairobi',
+    'Pretoria',
+    'Canberra',
   };
 
   @override
@@ -58,34 +75,33 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
       // Calculate opacity based on altitude (0.6 = transparent, 0.0 = opaque)
       final opacity = (1.0 - continuousAlt / 0.6).clamp(0.0, 1.0);
 
-      final cityDotPaint = Paint()..color = FlitColors.city.withOpacity(opacity);
-      final capitalDotPaint = Paint()..color = FlitColors.cityCapital.withOpacity(opacity);
+      final cityDotPaint =
+          Paint()..color = FlitColors.city.withOpacity(opacity);
+      final capitalDotPaint =
+          Paint()..color = FlitColors.cityCapital.withOpacity(opacity);
 
       // On web (especially Safari), avoid stroke paint which can be expensive.
       // Use solid dots only.
-      final cityOutlinePaint = kIsWeb
-          ? null
-          : (Paint()
-            ..color = FlitColors.shadow.withOpacity(opacity)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 0.5);
+      final cityOutlinePaint =
+          kIsWeb
+              ? null
+              : (Paint()
+                ..color = FlitColors.shadow.withOpacity(opacity)
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 0.5);
 
       // Calculate screen center for distance-based culling
       final centerX = gameRef.size.x / 2;
       final centerY = gameRef.size.y / 2;
 
       // Pre-compute city screen positions and distances
-      final visibleCities = <({
-        double distance,
-        Offset screenPos,
-        dynamic city,
-      })>[];
+      final visibleCities =
+          <({double distance, Offset screenPos, dynamic city})>[];
 
       for (final city in CountryData.majorCities) {
         try {
           // Validate city location before projection
-          if (!city.location.x.isFinite ||
-              !city.location.y.isFinite) {
+          if (!city.location.x.isFinite || !city.location.y.isFinite) {
             continue;
           }
 
@@ -105,12 +121,12 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
           final dx = screenPos.x - centerX;
           final dy = screenPos.y - centerY;
           final distanceSquared = dx * dx + dy * dy;
-          
+
           // Check for valid distance before sqrt
           if (!distanceSquared.isFinite || distanceSquared < 0) {
             continue;
           }
-          
+
           final distance = math.sqrt(distanceSquared);
 
           visibleCities.add((
@@ -154,19 +170,24 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
               text: TextSpan(
                 text: city.name,
                 style: TextStyle(
-                  color: city.isCapital
-                      ? FlitColors.textPrimary
-                      : FlitColors.textSecondary,
+                  color:
+                      city.isCapital
+                          ? FlitColors.textPrimary
+                          : FlitColors.textSecondary,
                   fontSize: city.isCapital ? 10 : 8,
-                  fontWeight: city.isCapital ? FontWeight.w600 : FontWeight.w400,
+                  fontWeight:
+                      city.isCapital ? FontWeight.w600 : FontWeight.w400,
                   // Avoid shadows on web - they're expensive in Safari
-                  shadows: kIsWeb ? null : const [
-                    Shadow(
-                      offset: Offset(1, 1),
-                      blurRadius: 2,
-                      color: Color(0x40000000),
-                    ),
-                  ],
+                  shadows:
+                      kIsWeb
+                          ? null
+                          : const [
+                            Shadow(
+                              offset: Offset(1, 1),
+                              blurRadius: 2,
+                              color: Color(0x40000000),
+                            ),
+                          ],
                 ),
               ),
               textDirection: TextDirection.ltr,
@@ -190,15 +211,17 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
       // If city overlay crashes entirely, send to error telemetry.
       // Use ErrorService directly to ensure iOS Safari crashes are captured.
       final log = GameLog.instance;
-      log.error('city_overlay', 'City rendering failed', 
-        error: e, 
+      log.error(
+        'city_overlay',
+        'City rendering failed',
+        error: e,
         stackTrace: st,
         data: {
           'altitude': gameRef.plane.continuousAltitude.toStringAsFixed(2),
           'platform': kIsWeb ? 'web' : 'native',
         },
       );
-      
+
       // Report as critical for iOS to ensure immediate flush before potential reload.
       ErrorService.instance.reportCritical(
         e,
@@ -209,7 +232,7 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
           'isWeb': kIsWeb.toString(),
         },
       );
-      
+
       // Also try the game's error handler if available.
       try {
         gameRef.onError?.call(e, st);
@@ -223,14 +246,18 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
   void _renderHighAltCapitals(Canvas canvas, double altitude) {
     try {
       // Fade in from altitude 0.95 down to 0.6 (fully visible at 0.6-0.85)
-      final opacity = altitude > 0.95
-          ? (1.0 - altitude) / 0.05
-          : altitude < 0.6
+      final opacity =
+          altitude > 0.95
+              ? (1.0 - altitude) / 0.05
+              : altitude < 0.6
               ? 1.0
               : 0.7;
 
-      final dotPaint = Paint()
-        ..color = FlitColors.cityCapital.withOpacity(opacity.clamp(0.0, 1.0));
+      final dotPaint =
+          Paint()
+            ..color = FlitColors.cityCapital.withOpacity(
+              opacity.clamp(0.0, 1.0),
+            );
 
       final centerX = gameRef.size.x / 2;
       final centerY = gameRef.size.y / 2;
@@ -242,8 +269,7 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
 
         try {
           // Validate city location
-          if (!city.location.x.isFinite ||
-              !city.location.y.isFinite) {
+          if (!city.location.x.isFinite || !city.location.y.isFinite) {
             continue;
           }
 
@@ -260,11 +286,11 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
           final dx = screenPos.x - centerX;
           final dy = screenPos.y - centerY;
           final distanceSquared = dx * dx + dy * dy;
-          
+
           if (!distanceSquared.isFinite || distanceSquared < 0) {
             continue;
           }
-          
+
           visible.add((
             distance: math.sqrt(distanceSquared),
             screenPos: Offset(screenPos.x, screenPos.y),
@@ -292,22 +318,26 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
                   color: FlitColors.textPrimary,
                   fontSize: 7,
                   fontWeight: FontWeight.w500,
-                  shadows: kIsWeb
-                      ? null
-                      : [
-                          Shadow(
-                            offset: Offset(1, 1),
-                            blurRadius: 2,
-                            color: Color(0x60000000),
-                          ),
-                        ],
+                  shadows:
+                      kIsWeb
+                          ? null
+                          : [
+                            Shadow(
+                              offset: Offset(1, 1),
+                              blurRadius: 2,
+                              color: Color(0x60000000),
+                            ),
+                          ],
                 ),
               ),
               textDirection: TextDirection.ltr,
             )..layout();
             _textCache[cacheKey] = tp;
           }
-          tp.paint(canvas, Offset(entry.screenPos.dx + 5, entry.screenPos.dy - tp.height / 2));
+          tp.paint(
+            canvas,
+            Offset(entry.screenPos.dx + 5, entry.screenPos.dy - tp.height / 2),
+          );
         } catch (_) {
           continue;
         }
@@ -315,7 +345,9 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
     } catch (e, st) {
       // Silently fail high-alt labels but report to telemetry for debugging.
       final log = GameLog.instance;
-      log.error('city_overlay', 'High altitude city rendering failed',
+      log.error(
+        'city_overlay',
+        'High altitude city rendering failed',
         error: e,
         stackTrace: st,
         data: {'altitude': altitude.toStringAsFixed(2)},

@@ -13,28 +13,19 @@ void main() {
   group('LandingDetector.checkLanding', () {
     test('same position at low altitude is a landing', () {
       final pos = Vector2(10.0, 50.0);
-      expect(
-        detector.checkLanding(pos, pos, isLowAltitude: true),
-        isTrue,
-      );
+      expect(detector.checkLanding(pos, pos, isLowAltitude: true), isTrue);
     });
 
     test('same position at high altitude is NOT a landing', () {
       final pos = Vector2(10.0, 50.0);
-      expect(
-        detector.checkLanding(pos, pos, isLowAltitude: false),
-        isFalse,
-      );
+      expect(detector.checkLanding(pos, pos, isLowAltitude: false), isFalse);
     });
 
     test('within threshold at low altitude is a landing', () {
       // 5 degrees apart, threshold is 8
       final plane = Vector2(0.0, 0.0);
       final target = Vector2(5.0, 0.0);
-      expect(
-        detector.checkLanding(plane, target, isLowAltitude: true),
-        isTrue,
-      );
+      expect(detector.checkLanding(plane, target, isLowAltitude: true), isTrue);
     });
 
     test('beyond threshold is NOT a landing', () {
@@ -51,10 +42,7 @@ void main() {
       // Place target exactly 8 degrees away along equator
       final plane = Vector2(0.0, 0.0);
       final target = Vector2(8.0, 0.0);
-      expect(
-        detector.checkLanding(plane, target, isLowAltitude: true),
-        isTrue,
-      );
+      expect(detector.checkLanding(plane, target, isLowAltitude: true), isTrue);
     });
   });
 
@@ -116,20 +104,14 @@ void main() {
   group('LandingDetector.greatCircleDistanceDeg', () {
     test('same point has zero distance', () {
       final a = Vector2(10.0, 45.0);
-      expect(
-        LandingDetector.greatCircleDistanceDeg(a, a),
-        closeTo(0.0, 1e-10),
-      );
+      expect(LandingDetector.greatCircleDistanceDeg(a, a), closeTo(0.0, 1e-10));
     });
 
     test('equator distance is correct for known values', () {
       // Points on equator: 90 degrees apart in longitude = 90 degrees GC distance
       final a = Vector2(0.0, 0.0);
       final b = Vector2(90.0, 0.0);
-      expect(
-        LandingDetector.greatCircleDistanceDeg(a, b),
-        closeTo(90.0, 0.01),
-      );
+      expect(LandingDetector.greatCircleDistanceDeg(a, b), closeTo(90.0, 0.01));
     });
 
     test('antipodal points are 180 degrees apart', () {
@@ -214,10 +196,7 @@ void main() {
       final target = Vector2(5.0, 0.0);
 
       // 5 degrees > 2 degree threshold
-      expect(
-        custom.checkLanding(plane, target, isLowAltitude: true),
-        isFalse,
-      );
+      expect(custom.checkLanding(plane, target, isLowAltitude: true), isFalse);
 
       // 1 degree < 2 degree threshold
       final closeTarget = Vector2(1.0, 0.0);

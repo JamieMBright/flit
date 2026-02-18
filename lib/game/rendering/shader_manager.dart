@@ -45,7 +45,7 @@ class ShaderManager {
   ui.Image? _heightmapTexture;
   ui.Image? _shoreDistTexture;
   ui.Image? _cityLightsTexture;
-  
+
   // Fallback 1x1 textures for missing optional samplers.
   // Each fallback uses a value that produces sensible shader output:
   //   - Black (0): for city lights (no lights when missing)
@@ -95,19 +95,21 @@ class ShaderManager {
       _whiteTexture = await _createSolidTexture(255, 255, 255);
       _log.debug('shader', 'Created fallback textures (black, gray, white)');
     } catch (e, st) {
-      _log.error('shader', 'Failed to create fallback texture',
-          error: e, stackTrace: st);
+      _log.error(
+        'shader',
+        'Failed to create fallback texture',
+        error: e,
+        stackTrace: st,
+      );
       // If we can't even create a 1x1 texture, something is very wrong.
       ErrorService.instance.reportCritical(
         e,
         st,
-        context: {
-          'source': 'ShaderManager',
-          'action': 'createFallbackTexture',
-        },
+        context: {'source': 'ShaderManager', 'action': 'createFallbackTexture'},
       );
       WebErrorBridge.show(
-          'Critical rendering error.\n\nThe game cannot initialize graphics.');
+        'Critical rendering error.\n\nThe game cannot initialize graphics.',
+      );
       _loading = false;
       return;
     }
@@ -117,19 +119,27 @@ class ShaderManager {
       _program = await ui.FragmentProgram.fromAsset('shaders/globe.frag');
       _log.info('shader', 'Fragment program loaded');
     } catch (e, st) {
-      _log.error('shader', 'Failed to load fragment shader',
-          error: e, stackTrace: st);
-      
+      _log.error(
+        'shader',
+        'Failed to load fragment shader',
+        error: e,
+        stackTrace: st,
+      );
+
       // Check if this is an "unsupported operation" error (e.g., HTML renderer on web)
       final errorStr = e.toString();
-      final isUnsupportedError = errorStr.contains('Unsupported operation') || 
-                                  errorStr.contains('not supported') ||
-                                  errorStr.contains('HTML renderer');
-      
+      final isUnsupportedError =
+          errorStr.contains('Unsupported operation') ||
+          errorStr.contains('not supported') ||
+          errorStr.contains('HTML renderer');
+
       if (isUnsupportedError) {
         // This is expected on web with HTML renderer — report as warning but don't block
-        _log.info('shader', 'FragmentProgram not supported (HTML renderer). Using fallback rendering.');
-        
+        _log.info(
+          'shader',
+          'FragmentProgram not supported (HTML renderer). Using fallback rendering.',
+        );
+
         // Report to telemetry as warning (non-blocking)
         ErrorService.instance.reportWarning(
           e,
@@ -142,10 +152,11 @@ class ShaderManager {
             'fallbackMode': 'canvas',
           },
         );
-        
+
         // Log to JS console but don't block gameplay
         WebErrorBridge.logNonFatal(
-            'Shader configuration failed: $e\n\nThe app will use fallback rendering.');
+          'Shader configuration failed: $e\n\nThe app will use fallback rendering.',
+        );
       } else {
         // Unexpected shader error — report as critical
         ErrorService.instance.reportCritical(
@@ -159,9 +170,10 @@ class ShaderManager {
         );
         // Show error to user via JS overlay (critical for iOS PWA).
         WebErrorBridge.show(
-            'Shader loading failed:\n$e\n\nThe game will fall back to Canvas rendering.');
+          'Shader loading failed:\n$e\n\nThe game will fall back to Canvas rendering.',
+        );
       }
-      
+
       _loading = false;
       return;
     }
@@ -173,16 +185,42 @@ class ShaderManager {
     final textureResults = await Future.wait<Map<String, dynamic>>([
       _loadImage('assets/textures/blue_marble.png')
           .then((img) => <String, dynamic>{'name': 'satellite', 'image': img})
-          .catchError((e, st) => <String, dynamic>{'name': 'satellite', 'error': e, 'stack': st}),
+          .catchError(
+            (e, st) => <String, dynamic>{
+              'name': 'satellite',
+              'error': e,
+              'stack': st,
+            },
+          ),
       _loadImage('assets/textures/heightmap.png')
           .then((img) => <String, dynamic>{'name': 'heightmap', 'image': img})
-          .catchError((e, st) => <String, dynamic>{'name': 'heightmap', 'error': e, 'stack': st}),
+          .catchError(
+            (e, st) => <String, dynamic>{
+              'name': 'heightmap',
+              'error': e,
+              'stack': st,
+            },
+          ),
       _loadImage('assets/textures/shore_distance.png')
-          .then((img) => <String, dynamic>{'name': 'shore_distance', 'image': img})
-          .catchError((e, st) => <String, dynamic>{'name': 'shore_distance', 'error': e, 'stack': st}),
+          .then(
+            (img) => <String, dynamic>{'name': 'shore_distance', 'image': img},
+          )
+          .catchError(
+            (e, st) => <String, dynamic>{
+              'name': 'shore_distance',
+              'error': e,
+              'stack': st,
+            },
+          ),
       _loadImage('assets/textures/city_lights.png')
           .then((img) => <String, dynamic>{'name': 'city_lights', 'image': img})
-          .catchError((e, st) => <String, dynamic>{'name': 'city_lights', 'error': e, 'stack': st}),
+          .catchError(
+            (e, st) => <String, dynamic>{
+              'name': 'city_lights',
+              'error': e,
+              'stack': st,
+            },
+          ),
     ]);
 
     // Process results and report errors for missing textures.
@@ -195,37 +233,56 @@ class ShaderManager {
         switch (name) {
           case 'satellite':
             _satelliteTexture = image;
-            _log.info('shader', 'Loaded texture: $name (${image.width}x${image.height})');
+            _log.info(
+              'shader',
+              'Loaded texture: $name (${image.width}x${image.height})',
+            );
             break;
           case 'heightmap':
             _heightmapTexture = image;
-            _log.info('shader', 'Loaded texture: $name (${image.width}x${image.height})');
+            _log.info(
+              'shader',
+              'Loaded texture: $name (${image.width}x${image.height})',
+            );
             break;
           case 'shore_distance':
             _shoreDistTexture = image;
-            _log.info('shader', 'Loaded texture: $name (${image.width}x${image.height})');
+            _log.info(
+              'shader',
+              'Loaded texture: $name (${image.width}x${image.height})',
+            );
             break;
           case 'city_lights':
             _cityLightsTexture = image;
-            _log.info('shader', 'Loaded texture: $name (${image.width}x${image.height})');
+            _log.info(
+              'shader',
+              'Loaded texture: $name (${image.width}x${image.height})',
+            );
             break;
         }
       } else {
         final error = result['error'];
         final stack = result['stack'];
-        
+
         // Extract more details from the error for better debugging
         final errorStr = error.toString();
-        final assetPath = name == 'satellite' ? 'assets/textures/blue_marble.png'
-            : name == 'heightmap' ? 'assets/textures/heightmap.png'
-            : name == 'shore_distance' ? 'assets/textures/shore_distance.png'
-            : 'assets/textures/city_lights.png';
-        
+        final assetPath =
+            name == 'satellite'
+                ? 'assets/textures/blue_marble.png'
+                : name == 'heightmap'
+                ? 'assets/textures/heightmap.png'
+                : name == 'shore_distance'
+                ? 'assets/textures/shore_distance.png'
+                : 'assets/textures/city_lights.png';
+
         // Log the error (all textures are now treated as optional)
-        _log.error('shader', 
-            'Failed to load texture: $name from $assetPath (will use black fallback)',
-            error: error, stackTrace: stack);
-        
+        _log.error(
+          'shader',
+          'Failed to load texture: $name from $assetPath (will use black fallback)',
+          error: error,
+          stackTrace: stack,
+        );
+
         // Report to telemetry with enhanced context
         final context = <String, String>{
           'source': 'ShaderManager',
@@ -233,13 +290,18 @@ class ShaderManager {
           'texture': name,
           'assetPath': assetPath,
           'gracefulDegradation': 'true',
-          'errorType': errorStr.contains('404') ? 'not_found'
-              : errorStr.contains('network') ? 'network_failure'
-              : errorStr.contains('decode') ? 'decode_failure'
-              : errorStr.contains('quota') ? 'storage_quota'
-              : 'unknown',
+          'errorType':
+              errorStr.contains('404')
+                  ? 'not_found'
+                  : errorStr.contains('network')
+                  ? 'network_failure'
+                  : errorStr.contains('decode')
+                  ? 'decode_failure'
+                  : errorStr.contains('quota')
+                  ? 'storage_quota'
+                  : 'unknown',
         };
-        
+
         // Report as error (not critical) so it gets logged but doesn't halt execution
         ErrorService.instance.reportError(
           'Texture failed to load: $name\n'
@@ -254,12 +316,13 @@ class ShaderManager {
     }
 
     // Log summary of loaded textures.
-    final loadedCount = [
-      _satelliteTexture,
-      _heightmapTexture,
-      _shoreDistTexture,
-      _cityLightsTexture,
-    ].where((t) => t != null).length;
+    final loadedCount =
+        [
+          _satelliteTexture,
+          _heightmapTexture,
+          _shoreDistTexture,
+          _cityLightsTexture,
+        ].where((t) => t != null).length;
     _log.info('shader', 'Textures loaded: $loadedCount/4');
 
     // Only mark as initialized if we have at least the satellite texture.
@@ -270,9 +333,12 @@ class ShaderManager {
       _log.info('shader', 'ShaderManager.initialize() complete');
     } else {
       _initialized = false;
-      _log.warning('shader', 'ShaderManager.initialize() failed: satellite texture missing. Falling back to Canvas renderer.');
+      _log.warning(
+        'shader',
+        'ShaderManager.initialize() failed: satellite texture missing. Falling back to Canvas renderer.',
+      );
     }
-    
+
     _loading = false;
   }
 
@@ -357,19 +423,25 @@ class ShaderManager {
 
       return s;
     } catch (e, st) {
-      _log.error('shader', 'Failed to configure shader', error: e, stackTrace: st);
-      
+      _log.error(
+        'shader',
+        'Failed to configure shader',
+        error: e,
+        stackTrace: st,
+      );
+
       // Report once to avoid spam — configureShader() is called every frame.
       // This catches errors that might not be caught by render() try-catch.
       if (!_configErrorReported) {
         _configErrorReported = true;
-        
+
         // Check if this is a known non-fatal error
         final errorStr = e.toString();
-        final isUnsupportedError = errorStr.contains('Unsupported operation') || 
-                                    errorStr.contains('not supported') ||
-                                    errorStr.contains('HTML renderer');
-        
+        final isUnsupportedError =
+            errorStr.contains('Unsupported operation') ||
+            errorStr.contains('not supported') ||
+            errorStr.contains('HTML renderer');
+
         if (isUnsupportedError) {
           // Report as warning (non-blocking)
           ErrorService.instance.reportWarning(
@@ -384,22 +456,21 @@ class ShaderManager {
           );
           // Log to JS console but don't block gameplay
           WebErrorBridge.logNonFatal(
-              'Shader configuration failed: $e\n\nThe app will use fallback rendering.');
+            'Shader configuration failed: $e\n\nThe app will use fallback rendering.',
+          );
         } else {
           // Unexpected error — report as critical
           ErrorService.instance.reportCritical(
             e,
             st,
-            context: {
-              'source': 'ShaderManager',
-              'action': 'configureShader',
-            },
+            context: {'source': 'ShaderManager', 'action': 'configureShader'},
           );
           WebErrorBridge.show(
-              'Shader configuration failed: $e\n\nThe app will use fallback rendering.');
+            'Shader configuration failed: $e\n\nThe app will use fallback rendering.',
+          );
         }
       }
-      
+
       return null;
     }
   }
@@ -412,34 +483,37 @@ class ShaderManager {
       final data = await rootBundle.load(assetPath);
       final sizeBytes = data.lengthInBytes;
       _log.debug('shader', 'Texture loaded: $assetPath ($sizeBytes bytes)');
-      
-      final codec = await ui.instantiateImageCodec(
-        data.buffer.asUint8List(),
-      );
+
+      final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
       final frame = await codec.getNextFrame();
       final image = frame.image;
-      
-      _log.debug('shader', 
-          'Texture decoded: $assetPath (${image.width}x${image.height})');
-      
+
+      _log.debug(
+        'shader',
+        'Texture decoded: $assetPath (${image.width}x${image.height})',
+      );
+
       return image;
     } catch (e, st) {
       // Add detailed error context for better debugging
-      _log.error('shader', 
-          'Failed to load/decode texture: $assetPath', 
-          error: e, 
-          stackTrace: st);
-      
+      _log.error(
+        'shader',
+        'Failed to load/decode texture: $assetPath',
+        error: e,
+        stackTrace: st,
+      );
+
       // Re-throw with enhanced context for caller to handle
       throw Exception(
-          'Texture load failed: $assetPath\n'
-          'Error: $e\n'
-          'This may be due to:\n'
-          '- Missing asset file in pubspec.yaml\n'
-          '- Network failure (web platform)\n'
-          '- Corrupted image file\n'
-          '- Unsupported image format\n'
-          '- iOS Safari storage quota exceeded');
+        'Texture load failed: $assetPath\n'
+        'Error: $e\n'
+        'This may be due to:\n'
+        '- Missing asset file in pubspec.yaml\n'
+        '- Network failure (web platform)\n'
+        '- Corrupted image file\n'
+        '- Unsupported image format\n'
+        '- iOS Safari storage quota exceeded',
+      );
     }
   }
 

@@ -68,7 +68,8 @@ class _AltitudeSliderState extends State<AltitudeSlider> {
         onTapDown: (details) {
           // Allow tapping anywhere on the track to jump to that altitude
           final localY = details.localPosition.dy;
-          final newValue = 1.0 - (localY - _trackPaddingVertical) / trackHeight; // Inverted
+          final newValue =
+              1.0 - (localY - _trackPaddingVertical) / trackHeight; // Inverted
           widget.onAltitudeChanged(newValue.clamp(0.0, 1.0));
         },
         child: Container(
@@ -132,22 +133,21 @@ class _AltitudeSliderState extends State<AltitudeSlider> {
                 curve: Curves.easeOut,
                 left: 4,
                 right: 4,
-                bottom: _trackPaddingVertical + 
-                    trackHeight * (1.0 - currentAltitude) - 
+                bottom:
+                    _trackPaddingVertical +
+                    trackHeight * (1.0 - currentAltitude) -
                     _thumbHalfHeight,
                 child: Container(
                   height: _thumbHeight,
                   decoration: BoxDecoration(
                     color: _getAltitudeColor(currentAltitude),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: FlitColors.cardBorder,
-                      width: 2,
-                    ),
+                    border: Border.all(color: FlitColors.cardBorder, width: 2),
                     boxShadow: [
                       BoxShadow(
-                        color: _getAltitudeColor(currentAltitude)
-                            .withOpacity(0.4),
+                        color: _getAltitudeColor(
+                          currentAltitude,
+                        ).withOpacity(0.4),
                         blurRadius: 8,
                         spreadRadius: 2,
                       ),

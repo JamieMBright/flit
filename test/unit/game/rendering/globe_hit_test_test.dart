@@ -34,10 +34,16 @@ void main() {
 
       expect(result, isNotNull);
       // Due to tiltDown in the shader (0.35), the screen center is offset from camera lat/lng
-      expect(result!.dx.abs(), lessThan(10.0),
-          reason: 'Longitude should be reasonably close to 0');
-      expect(result.dy.abs(), lessThan(10.0),
-          reason: 'Latitude should be reasonably close to 0');
+      expect(
+        result!.dx.abs(),
+        lessThan(10.0),
+        reason: 'Longitude should be reasonably close to 0',
+      );
+      expect(
+        result.dy.abs(),
+        lessThan(10.0),
+        reason: 'Latitude should be reasonably close to 0',
+      );
     });
 
     test('screen center maps to non-zero lat/lng when camera is offset', () {
@@ -58,10 +64,16 @@ void main() {
       final result = hitTest.screenToLatLng(center, screenSize, camera);
 
       expect(result, isNotNull);
-      expect((result!.dx - 45.0).abs(), lessThan(10.0),
-          reason: 'Longitude should be near 45');
-      expect((result.dy - 30.0).abs(), lessThan(10.0),
-          reason: 'Latitude should be near 30');
+      expect(
+        (result!.dx - 45.0).abs(),
+        lessThan(10.0),
+        reason: 'Longitude should be near 45',
+      );
+      expect(
+        (result.dy - 30.0).abs(),
+        lessThan(10.0),
+        reason: 'Latitude should be near 30',
+      );
     });
 
     test('points far off screen return null (miss globe)', () {
@@ -95,29 +107,31 @@ void main() {
       expect(result, isNull);
     });
 
-    test('lat/lng round-trip: project then unproject yields similar coords',
-        () {
-      camera.update(
-        10.0,
-        planeLatDeg: 0.0,
-        planeLngDeg: 0.0,
-        isHighAltitude: true,
-      );
-      camera.update(
-        10.0,
-        planeLatDeg: 0.0,
-        planeLngDeg: 0.0,
-        isHighAltitude: true,
-      );
+    test(
+      'lat/lng round-trip: project then unproject yields similar coords',
+      () {
+        camera.update(
+          10.0,
+          planeLatDeg: 0.0,
+          planeLngDeg: 0.0,
+          isHighAltitude: true,
+        );
+        camera.update(
+          10.0,
+          planeLatDeg: 0.0,
+          planeLngDeg: 0.0,
+          isHighAltitude: true,
+        );
 
-      final center = Offset(screenSize.width / 2, screenSize.height / 2);
-      final result = hitTest.screenToLatLng(center, screenSize, camera);
+        final center = Offset(screenSize.width / 2, screenSize.height / 2);
+        final result = hitTest.screenToLatLng(center, screenSize, camera);
 
-      expect(result, isNotNull);
-      // Due to tiltDown in the shader, expect some offset from (0, 0)
-      expect(result!.dx.abs(), lessThan(10.0));
-      expect(result.dy.abs(), lessThan(10.0));
-    });
+        expect(result, isNotNull);
+        // Due to tiltDown in the shader, expect some offset from (0, 0)
+        expect(result!.dx.abs(), lessThan(10.0));
+        expect(result.dy.abs(), lessThan(10.0));
+      },
+    );
 
     test('result lat is within valid range [-90, 90]', () {
       camera.update(
@@ -199,10 +213,7 @@ void main() {
         const Offset(0, 10),
       ];
 
-      expect(
-        () => hitTest.isPointInPolygon(0, 5, polygon),
-        returnsNormally,
-      );
+      expect(() => hitTest.isPointInPolygon(0, 5, polygon), returnsNormally);
     });
 
     test('point inside a triangle returns true', () {

@@ -11,19 +11,13 @@ Future<bool> errorSenderHttpImpl({
   required String jsonBody,
 }) async {
   try {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-    };
+    final headers = <String, String>{'Content-Type': 'application/json'};
     if (apiKey.isNotEmpty) {
       headers['X-API-Key'] = apiKey;
     }
     // Add timeout to prevent hanging on slow networks
     final response = await http
-        .post(
-          Uri.parse(url),
-          headers: headers,
-          body: jsonBody,
-        )
+        .post(Uri.parse(url), headers: headers, body: jsonBody)
         .timeout(
           const Duration(seconds: 10),
           onTimeout: () {

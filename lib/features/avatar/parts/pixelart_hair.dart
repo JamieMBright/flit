@@ -42,11 +42,9 @@ const Map<String, String> pixelartHair = {
       '<g fill="{{HAIR_COLOR}}"><path d="M2 3h2v3H2zM12 3h2v3h-2z"/></g>',
   'short19':
       '<g fill="{{HAIR_COLOR}}"><path d="M4 2h8v1H4zM3 3h3v1H3zM10 3h3v1h-3zM8 3h1v1H8z"/></g>',
-  'short20':
-      '<path d="M6 2h4v1H6zM7 3h2v1H7z" fill="{{HAIR_COLOR}}"/>',
+  'short20': '<path d="M6 2h4v1H6zM7 3h2v1H7z" fill="{{HAIR_COLOR}}"/>',
   'short21': '<path fill="{{HAIR_COLOR}}" d="M7 1h2v2H7z"/>',
-  'short22':
-      '<path d="M4 2h8v1h1v2h-2V4H5v1H3V3h1V2Z" fill="{{HAIR_COLOR}}"/>',
+  'short22': '<path d="M4 2h8v1h1v2h-2V4H5v1H3V3h1V2Z" fill="{{HAIR_COLOR}}"/>',
   'short23': '<path fill="{{HAIR_COLOR}}" d="M6 2h4v1H6z"/>',
   'short24':
       '<path d="M11 2H5v1h1v1h4V3h1V2ZM3 3h1v2H3V3ZM13 3h-1v2h1V3Z" fill="{{HAIR_COLOR}}"/>',
