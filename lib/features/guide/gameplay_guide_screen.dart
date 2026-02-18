@@ -715,7 +715,7 @@ class _MissionSection extends StatelessWidget {
       icon: Icons.location_searching_rounded,
       iconColor: FlitColors.accent,
       title: 'Your Mission',
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _BodyText(
@@ -888,7 +888,7 @@ class _ScoringSection extends StatelessWidget {
       icon: Icons.military_tech_rounded,
       iconColor: FlitColors.gold,
       title: 'Scoring',
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _BodyText(
@@ -1314,7 +1314,7 @@ class _ControlsSection extends StatelessWidget {
       icon: Icons.gamepad_rounded,
       iconColor: FlitColors.landMassHighlight,
       title: 'Controls',
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _BodyText(
