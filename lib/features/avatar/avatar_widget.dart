@@ -46,9 +46,6 @@ class _AvatarWidgetState extends State<AvatarWidget> {
   /// Whether local SVG composition failed and network fetch is needed.
   bool _composeFailed = false;
 
-  /// Whether the network SVG has been fetched (or failed).
-  bool _networkFetched = false;
-
   /// Whether a network fetch is currently in progress.
   bool _fetching = false;
 
@@ -70,7 +67,6 @@ class _AvatarWidgetState extends State<AvatarWidget> {
   void _resolve() {
     // Reset state.
     _composeFailed = false;
-    _networkFetched = false;
     _fetching = false;
 
     // 1. Try local composition (adventurer style).
@@ -93,7 +89,6 @@ class _AvatarWidgetState extends State<AvatarWidget> {
     if (cached != null) {
       setState(() {
         _composedSvg = cached;
-        _networkFetched = true;
       });
       return;
     }
@@ -120,20 +115,10 @@ class _AvatarWidgetState extends State<AvatarWidget> {
         _svgCache[cacheKey] = response.body;
         setState(() {
           _composedSvg = response.body;
-          _networkFetched = true;
-        });
-      } else {
-        setState(() {
-          _networkFetched = true; // Mark as attempted; show fallback.
         });
       }
     } catch (e) {
       debugPrint('Avatar network fetch error: $e');
-      if (mounted) {
-        setState(() {
-          _networkFetched = true; // Show fallback on error.
-        });
-      }
     } finally {
       _fetching = false;
     }
@@ -198,7 +183,6 @@ class AvatarFromUrl extends StatefulWidget {
 
 class _AvatarFromUrlState extends State<AvatarFromUrl> {
   String? _svg;
-  bool _attempted = false;
 
   @override
   void initState() {
@@ -217,7 +201,6 @@ class _AvatarFromUrlState extends State<AvatarFromUrl> {
   Future<void> _load() async {
     final url = widget.avatarUrl;
     if (url == null || url.isEmpty) {
-      setState(() => _attempted = true);
       return;
     }
 
@@ -226,7 +209,6 @@ class _AvatarFromUrlState extends State<AvatarFromUrl> {
     if (cached != null) {
       setState(() {
         _svg = cached;
-        _attempted = true;
       });
       return;
     }
@@ -243,13 +225,10 @@ class _AvatarFromUrlState extends State<AvatarFromUrl> {
         _svgCache[url] = response.body;
         setState(() {
           _svg = response.body;
-          _attempted = true;
         });
-      } else {
-        setState(() => _attempted = true);
       }
     } catch (_) {
-      if (mounted) setState(() => _attempted = true);
+      // Silently fail and show fallback
     }
   }
 
