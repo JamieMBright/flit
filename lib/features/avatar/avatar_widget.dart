@@ -1,31 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:http/http.dart' as http;
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/avatar_config.dart';
 import 'avatar_compositor.dart';
 
-/// In-memory SVG cache keyed by DiceBear URL.
+/// Renders a DiceBear avatar as an SVG — fully offline.
 ///
-/// Survives widget rebuilds and screen navigation so repeated renders are
-/// instant. Entries are never evicted because the set of unique avatar
-/// configurations a single player sees in one session is small.
-final Map<String, String> _svgCache = {};
-
-/// Renders a DiceBear avatar as an SVG.
+/// All 10 styles are composited from local SVG parts stored as compile-time
+/// Dart constants. No network calls, no loading state, instant render.
 ///
-/// For [AvatarStyle.adventurer], the avatar is composited entirely from local
-/// SVG parts — no network call, no loading state, instant render.
-///
-/// For other styles, the widget fetches the SVG from the DiceBear API on
-/// first render, caches it in memory, and shows the style initial as a
-/// placeholder while loading. Subsequent renders (including across screen
-/// navigations) hit the in-memory cache and are instant.
-///
-/// The widget sizes itself to [size] × [size] logical pixels and is safe
+/// The widget sizes itself to [size] x [size] logical pixels and is safe
 /// to use anywhere a square widget is expected (lists, cards, profiles).
-class AvatarWidget extends StatefulWidget {
+class AvatarWidget extends StatelessWidget {
   const AvatarWidget({
     super.key,
     required this.config,
@@ -126,9 +113,11 @@ class _AvatarWidgetState extends State<AvatarWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final svg = AvatarCompositor.compose(config);
+
     return SizedBox(
-      width: widget.size,
-      height: widget.size,
+      width: size,
+      height: size,
       child: ClipOval(
         child: Container(
           decoration: BoxDecoration(
@@ -136,20 +125,17 @@ class _AvatarWidgetState extends State<AvatarWidget> {
             shape: BoxShape.circle,
             border: Border.all(
               color: FlitColors.cardBorder,
-              width: widget.size * 0.02,
+              width: size * 0.02,
             ),
           ),
-          child: _composedSvg != null
-              ? _SafeSvgRender(
-                  svg: _composedSvg!,
-                  size: widget.size,
+          child: svg != null
+              ? SvgPicture.string(
+                  svg,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
                 )
-              : _composeFailed
-                  ? _StyleFallback(
-                      style: widget.config.style,
-                      size: widget.size,
-                    )
-                  : _AvatarFallback(size: widget.size),
+              : _AvatarFallback(size: size),
         ),
       ),
     );
@@ -158,25 +144,36 @@ class _AvatarWidgetState extends State<AvatarWidget> {
 
 /// Renders an avatar from a DiceBear SVG URL string.
 ///
-/// Use this for models that only carry an [avatarUrl] (e.g. [Friend],
-/// [LeaderboardEntry]) instead of a full [AvatarConfig]. Fetches the SVG
-/// once, caches in memory, and shows a [name]-initial placeholder meanwhile.
-class AvatarFromUrl extends StatefulWidget {
+/// For models that only carry an [avatarUrl] (e.g. [Friend],
+/// [LeaderboardEntry]) instead of a full [AvatarConfig].
+///
+/// When an [avatarConfig] is provided, composes offline and ignores the URL.
+/// Otherwise shows a [name]-initial placeholder (no network fetch).
+class AvatarFromUrl extends StatelessWidget {
   const AvatarFromUrl({
     super.key,
     required this.avatarUrl,
     required this.name,
+    this.avatarConfig,
     this.size = 48,
   });
 
-  /// DiceBear SVG URL (or any SVG URL).
+  /// DiceBear SVG URL (unused when [avatarConfig] is provided).
   final String? avatarUrl;
 
   /// Display name used for the initial-letter fallback.
   final String name;
 
+  /// Optional config for fully offline composition.
+  final AvatarConfig? avatarConfig;
+
   final double size;
 
+  @override
+  Widget build(BuildContext context) {
+    // If we have a config, compose offline.
+    if (avatarConfig != null) {
+      return AvatarWidget(config: avatarConfig!, size: size);
   @override
   State<AvatarFromUrl> createState() => _AvatarFromUrlState();
 }
@@ -230,113 +227,34 @@ class _AvatarFromUrlState extends State<AvatarFromUrl> {
     } catch (_) {
       // Silently fail and show fallback
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
+    // Fallback: show initial letter.
     final fallbackLetter =
-        widget.name.isNotEmpty ? widget.name[0].toUpperCase() : '?';
-    final hash = widget.name.hashCode;
+        name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final hash = name.hashCode;
     final hue = (hash % 360).abs().toDouble();
     final bgColor = HSLColor.fromAHSL(1.0, hue, 0.5, 0.35).toColor();
 
     return SizedBox(
-      width: widget.size,
-      height: widget.size,
+      width: size,
+      height: size,
       child: ClipOval(
-        child: _svg != null
-            ? Container(
-                decoration: BoxDecoration(
-                  color: FlitColors.backgroundMid,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: FlitColors.cardBorder,
-                    width: widget.size * 0.02,
-                  ),
-                ),
-                child: SvgPicture.string(
-                  _svg!,
-                  width: widget.size,
-                  height: widget.size,
-                  fit: BoxFit.cover,
-                ),
-              )
-            : Container(
-                width: widget.size,
-                height: widget.size,
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    fallbackLetter,
-                    style: TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: widget.size * 0.4,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: bgColor,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              fallbackLetter,
+              style: TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: size * 0.4,
+                fontWeight: FontWeight.w900,
               ),
-      ),
-    );
-  }
-}
-
-/// Wraps [SvgPicture.string] with an error boundary so invalid SVG data
-/// doesn't crash the widget tree — falls back to a person icon instead.
-class _SafeSvgRender extends StatelessWidget {
-  const _SafeSvgRender({required this.svg, required this.size});
-
-  final String svg;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return SvgPicture.string(
-      svg,
-      width: size,
-      height: size,
-      fit: BoxFit.cover,
-    );
-  }
-}
-
-/// Offline fallback for non-adventurer styles.
-///
-/// Shows the first letter of the style label inside a colored circle.
-/// Used as a placeholder while the DiceBear API SVG is being fetched,
-/// or as a final fallback when the fetch fails.
-class _StyleFallback extends StatelessWidget {
-  const _StyleFallback({required this.style, required this.size});
-
-  final AvatarStyle style;
-  final double size;
-
-  /// Deterministic color based on style name.
-  Color _colorForStyle() {
-    final hash = style.slug.hashCode;
-    final hue = (hash % 360).abs().toDouble();
-    return HSLColor.fromAHSL(1.0, hue, 0.5, 0.35).toColor();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: _colorForStyle(),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Text(
-          style.label.substring(0, 1).toUpperCase(),
-          style: TextStyle(
-            color: FlitColors.textPrimary,
-            fontSize: size * 0.4,
-            fontWeight: FontWeight.w900,
+            ),
           ),
         ),
       ),
@@ -344,7 +262,7 @@ class _StyleFallback extends StatelessWidget {
   }
 }
 
-/// Fallback shown when avatar loading fails completely.
+/// Fallback shown when avatar composition fails.
 class _AvatarFallback extends StatelessWidget {
   const _AvatarFallback({required this.size});
 
