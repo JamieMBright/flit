@@ -62,8 +62,14 @@ import 'parts/micah_shirt.dart';
 
 // Notionists parts
 import 'parts/notionists_base.dart';
+import 'parts/notionists_beard.dart';
+import 'parts/notionists_body.dart';
 import 'parts/notionists_brows.dart';
 import 'parts/notionists_eyes.dart';
+import 'parts/notionists_gesture.dart';
+import 'parts/notionists_glasses.dart';
+import 'parts/notionists_hair.dart';
+import 'parts/notionists_lips.dart';
 import 'parts/notionists_nose.dart';
 
 // Open Peeps parts
@@ -527,20 +533,32 @@ class AvatarCompositor {
     final h = _hash(config);
 
     final base = _pick(notionistsBase, h, 1);
-    final nose = _pick(notionistsNose, h, 2);
-    final brows = _pick(notionistsBrows, h, 3);
-    final eyes = _pick(notionistsEyes, h, 4);
+    final body = _pick(notionistsBody, h, 2);
+    final hair = _pick(notionistsHair, h, 3);
+    final lips = _pick(notionistsLips, h, 4);
+    final beard = _pick(notionistsBeard, h, 5);
+    final nose = _pick(notionistsNose, h, 6);
+    final eyes = _pick(notionistsEyes, h, 7);
+    final glasses = _pick(notionistsGlasses, h, 8);
+    final brows = _pick(notionistsBrows, h, 9);
+    final gesture = _pick(notionistsGesture, h, 10);
 
     final buf = StringBuffer()
       ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
       ..write('viewBox="0 0 1744 1744" fill="none" ')
       ..write('shape-rendering="auto">');
 
-    // Layer order based on available parts.
-    if (base.isNotEmpty) buf.write(_g(base, 'translate(560 300)'));
-    if (nose.isNotEmpty) buf.write(_g(nose, 'translate(740 730)'));
-    if (brows.isNotEmpty) buf.write(_g(brows, 'translate(580 540)'));
-    if (eyes.isNotEmpty) buf.write(_g(eyes, 'translate(580 600)'));
+    // Layer order from DiceBear notionists index.ts.
+    if (base.isNotEmpty) buf.write(_g(base, 'translate(531 487)'));
+    if (body.isNotEmpty) buf.write(_g(body, 'translate(178 1057)'));
+    if (hair.isNotEmpty) buf.write(_g(hair, 'translate(266 207)'));
+    if (lips.isNotEmpty) buf.write(_g(lips, 'translate(791 871)'));
+    if (beard.isNotEmpty) buf.write(_g(beard, 'translate(653 805)'));
+    if (nose.isNotEmpty) buf.write(_g(nose, 'translate(901 668)'));
+    if (eyes.isNotEmpty) buf.write(_g(eyes, 'translate(610 680)'));
+    if (glasses.isNotEmpty) buf.write(_g(glasses, 'translate(610 680)'));
+    if (brows.isNotEmpty) buf.write(_g(brows, 'translate(774 657)'));
+    if (gesture.isNotEmpty) buf.write(_g(gesture, 'translate(0 559)'));
 
     buf.write('</svg>');
     return buf.toString();
