@@ -213,10 +213,9 @@ class Clue {
 
     if (area.population != null && area.population! > 0) {
       final pop = area.population!;
-      final popString =
-          pop >= 1000000
-              ? '${(pop / 1000000).toStringAsFixed(1)}M'
-              : pop >= 1000
+      final popString = pop >= 1000000
+          ? '${(pop / 1000000).toStringAsFixed(1)}M'
+          : pop >= 1000
               ? '${(pop / 1000).toStringAsFixed(0)}K'
               : pop.toString();
       availableClues.add(

@@ -64,182 +64,175 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     showDialog<void>(
       context: context,
-      builder:
-          (dialogContext) => StatefulBuilder(
-            builder:
-                (dialogContext, setDialogState) => AlertDialog(
-                  backgroundColor: FlitColors.cardBackground,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: const BorderSide(color: FlitColors.cardBorder),
-                  ),
-                  title: const Text(
-                    'Edit Profile',
-                    style: TextStyle(color: FlitColors.textPrimary),
-                  ),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: displayNameController,
-                        style: const TextStyle(color: FlitColors.textPrimary),
-                        decoration: InputDecoration(
-                          labelText: 'Display Name',
-                          labelStyle: const TextStyle(
-                            color: FlitColors.textSecondary,
-                          ),
-                          errorText: displayNameError,
-                          errorStyle: const TextStyle(color: FlitColors.error),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: FlitColors.cardBorder,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: FlitColors.accent,
-                            ),
-                          ),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: FlitColors.error,
-                            ),
-                          ),
-                          focusedErrorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: FlitColors.error,
-                            ),
-                          ),
-                        ),
-                        onChanged: (_) {
-                          if (displayNameError != null) {
-                            setDialogState(() => displayNameError = null);
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: usernameController,
-                        style: const TextStyle(color: FlitColors.textPrimary),
-                        decoration: InputDecoration(
-                          labelText: 'Username',
-                          labelStyle: const TextStyle(
-                            color: FlitColors.textSecondary,
-                          ),
-                          prefixText: '@',
-                          prefixStyle: const TextStyle(
-                            color: FlitColors.textMuted,
-                          ),
-                          errorText: usernameError,
-                          errorStyle: const TextStyle(color: FlitColors.error),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: FlitColors.cardBorder,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: FlitColors.accent,
-                            ),
-                          ),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: FlitColors.error,
-                            ),
-                          ),
-                          focusedErrorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: FlitColors.error,
-                            ),
-                          ),
-                        ),
-                        onChanged: (_) {
-                          if (usernameError != null) {
-                            setDialogState(() => usernameError = null);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(color: FlitColors.textSecondary),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        final filter = ProfanityFilter.instance;
-                        final displayName = displayNameController.text.trim();
-                        final username = usernameController.text.trim();
-                        var hasError = false;
-
-                        // Validate display name for profanity.
-                        if (displayName.isNotEmpty &&
-                            filter.containsProfanity(displayName)) {
-                          setDialogState(() {
-                            displayNameError =
-                                'Inappropriate language detected';
-                          });
-                          hasError = true;
-                        }
-
-                        // Validate username for profanity and format.
-                        if (username.isNotEmpty &&
-                            filter.isInappropriateUsername(username)) {
-                          setDialogState(() {
-                            usernameError =
-                                'Username contains inappropriate content or '
-                                'invalid characters';
-                          });
-                          hasError = true;
-                        }
-
-                        if (hasError) return;
-
-                        // Update player via AccountProvider
-                        ref
-                            .read(accountProvider.notifier)
-                            .switchAccount(
-                              currentPlayer.copyWith(
-                                displayName:
-                                    displayName.isEmpty ? null : displayName,
-                                username:
-                                    username.isEmpty
-                                        ? currentPlayer.username
-                                        : username,
-                              ),
-                            );
-                        Navigator.of(dialogContext).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Profile updated'),
-                            backgroundColor: FlitColors.success,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Save',
-                        style: TextStyle(color: FlitColors.accent),
-                      ),
-                    ),
-                  ],
-                ),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          backgroundColor: FlitColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: FlitColors.cardBorder),
           ),
+          title: const Text(
+            'Edit Profile',
+            style: TextStyle(color: FlitColors.textPrimary),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: displayNameController,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'Display Name',
+                  labelStyle: const TextStyle(
+                    color: FlitColors.textSecondary,
+                  ),
+                  errorText: displayNameError,
+                  errorStyle: const TextStyle(color: FlitColors.error),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: FlitColors.cardBorder,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: FlitColors.accent,
+                    ),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: FlitColors.error,
+                    ),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: FlitColors.error,
+                    ),
+                  ),
+                ),
+                onChanged: (_) {
+                  if (displayNameError != null) {
+                    setDialogState(() => displayNameError = null);
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: usernameController,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'Username',
+                  labelStyle: const TextStyle(
+                    color: FlitColors.textSecondary,
+                  ),
+                  prefixText: '@',
+                  prefixStyle: const TextStyle(
+                    color: FlitColors.textMuted,
+                  ),
+                  errorText: usernameError,
+                  errorStyle: const TextStyle(color: FlitColors.error),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: FlitColors.cardBorder,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: FlitColors.accent,
+                    ),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: FlitColors.error,
+                    ),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: FlitColors.error,
+                    ),
+                  ),
+                ),
+                onChanged: (_) {
+                  if (usernameError != null) {
+                    setDialogState(() => usernameError = null);
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: FlitColors.textSecondary),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                final filter = ProfanityFilter.instance;
+                final displayName = displayNameController.text.trim();
+                final username = usernameController.text.trim();
+                var hasError = false;
+
+                // Validate display name for profanity.
+                if (displayName.isNotEmpty &&
+                    filter.containsProfanity(displayName)) {
+                  setDialogState(() {
+                    displayNameError = 'Inappropriate language detected';
+                  });
+                  hasError = true;
+                }
+
+                // Validate username for profanity and format.
+                if (username.isNotEmpty &&
+                    filter.isInappropriateUsername(username)) {
+                  setDialogState(() {
+                    usernameError =
+                        'Username contains inappropriate content or '
+                        'invalid characters';
+                  });
+                  hasError = true;
+                }
+
+                if (hasError) return;
+
+                // Update player via AccountProvider
+                ref.read(accountProvider.notifier).switchAccount(
+                      currentPlayer.copyWith(
+                        displayName: displayName.isEmpty ? null : displayName,
+                        username: username.isEmpty
+                            ? currentPlayer.username
+                            : username,
+                      ),
+                    );
+                Navigator.of(dialogContext).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Profile updated'),
+                    backgroundColor: FlitColors.success,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                );
+              },
+              child: const Text(
+                'Save',
+                style: TextStyle(color: FlitColors.accent),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -252,41 +245,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _signOut() {
     showDialog<void>(
       context: context,
-      builder:
-          (dialogContext) => AlertDialog(
-            backgroundColor: FlitColors.cardBackground,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: FlitColors.cardBorder),
-            ),
-            title: const Text(
-              'Sign Out',
-              style: TextStyle(color: FlitColors.textPrimary),
-            ),
-            content: const Text(
-              'Are you sure you want to sign out?',
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: FlitColors.cardBorder),
+        ),
+        title: const Text(
+          'Sign Out',
+          style: TextStyle(color: FlitColors.textPrimary),
+        ),
+        content: const Text(
+          'Are you sure you want to sign out?',
+          style: TextStyle(color: FlitColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text(
+              'Cancel',
               style: TextStyle(color: FlitColors.textSecondary),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(color: FlitColors.textSecondary),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
-                child: const Text(
-                  'Sign Out',
-                  style: TextStyle(color: FlitColors.error),
-                ),
-              ),
-            ],
           ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+            child: const Text(
+              'Sign Out',
+              style: TextStyle(color: FlitColors.error),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -329,12 +321,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: _QuickLinkButton(
                     icon: Icons.face,
                     label: 'Avatar',
-                    onTap:
-                        () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const AvatarEditorScreen(),
-                          ),
-                        ),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const AvatarEditorScreen(),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -342,12 +333,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: _QuickLinkButton(
                     icon: Icons.badge,
                     label: 'License',
-                    onTap:
-                        () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const LicenseScreen(),
-                          ),
-                        ),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const LicenseScreen(),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -374,27 +364,28 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    children: [
-      // Avatar
-      AvatarWidget(config: avatarConfig, size: 100),
-      const SizedBox(height: 16),
-      // Name
-      Text(
-        player.name,
-        style: const TextStyle(
-          color: FlitColors.textPrimary,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      const SizedBox(height: 4),
-      // Username
-      Text(
-        '@${player.username}',
-        style: const TextStyle(color: FlitColors.textSecondary, fontSize: 14),
-      ),
-    ],
-  );
+        children: [
+          // Avatar
+          AvatarWidget(config: avatarConfig, size: 100),
+          const SizedBox(height: 16),
+          // Name
+          Text(
+            player.name,
+            style: const TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Username
+          Text(
+            '@${player.username}',
+            style:
+                const TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+          ),
+        ],
+      );
 }
 
 class _LevelProgress extends StatelessWidget {
@@ -404,37 +395,46 @@ class _LevelProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.cardBorder),
-    ),
-    child: Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
+        ),
+        child: Column(
           children: [
             Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(
-                  _aviationRank(player.level).icon,
-                  color: FlitColors.gold,
-                  size: 20,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _aviationRank(player.level).icon,
+                      color: FlitColors.gold,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _aviationRank(player.level).title,
+                      style: const TextStyle(
+                        color: FlitColors.gold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Lv.${player.level}',
+                      style: const TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 6),
                 Text(
-                  _aviationRank(player.level).title,
-                  style: const TextStyle(
-                    color: FlitColors.gold,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Lv.${player.level}',
+                  '${player.xp} / ${player.xpForNextLevel} XP',
                   style: const TextStyle(
                     color: FlitColors.textSecondary,
                     fontSize: 14,
@@ -442,28 +442,20 @@ class _LevelProgress extends StatelessWidget {
                 ),
               ],
             ),
-            Text(
-              '${player.xp} / ${player.xpForNextLevel} XP',
-              style: const TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 14,
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: player.levelProgress,
+                backgroundColor: FlitColors.backgroundMid,
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(FlitColors.accent),
+                minHeight: 8,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: player.levelProgress,
-            backgroundColor: FlitColors.backgroundMid,
-            valueColor: const AlwaysStoppedAnimation<Color>(FlitColors.accent),
-            minHeight: 8,
-          ),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 class _StatsGrid extends StatelessWidget {
@@ -562,32 +554,32 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.cardBorder),
-    ),
-    child: Column(
-      children: [
-        Icon(icon, color: iconColor, size: 28),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            color: FlitColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+        child: Column(
+          children: [
+            Icon(icon, color: iconColor, size: 28),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 }
 
 class _ProfileActions extends StatelessWidget {
@@ -603,28 +595,28 @@ class _ProfileActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      _ActionButton(
-        icon: Icons.edit,
-        label: 'Edit Profile',
-        onTap: onEditProfile,
-      ),
-      const SizedBox(height: 12),
-      _ActionButton(
-        icon: Icons.history,
-        label: 'Game History',
-        onTap: onGameHistory,
-      ),
-      const SizedBox(height: 12),
-      _ActionButton(
-        icon: Icons.logout,
-        label: 'Sign Out',
-        isDestructive: true,
-        onTap: onSignOut,
-      ),
-    ],
-  );
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _ActionButton(
+            icon: Icons.edit,
+            label: 'Edit Profile',
+            onTap: onEditProfile,
+          ),
+          const SizedBox(height: 12),
+          _ActionButton(
+            icon: Icons.history,
+            label: 'Game History',
+            onTap: onGameHistory,
+          ),
+          const SizedBox(height: 12),
+          _ActionButton(
+            icon: Icons.logout,
+            label: 'Sign Out',
+            isDestructive: true,
+            onTap: onSignOut,
+          ),
+        ],
+      );
 }
 
 class _ActionButton extends StatelessWidget {
@@ -642,40 +634,42 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: FlitColors.cardBackground,
-    borderRadius: BorderRadius.circular(12),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.cardBorder),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color:
-                  isDestructive ? FlitColors.error : FlitColors.textSecondary,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: FlitColors.cardBorder),
             ),
-            const SizedBox(width: 16),
-            Text(
-              label,
-              style: TextStyle(
-                color:
-                    isDestructive ? FlitColors.error : FlitColors.textPrimary,
-                fontSize: 16,
-              ),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  color: isDestructive
+                      ? FlitColors.error
+                      : FlitColors.textSecondary,
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isDestructive
+                        ? FlitColors.error
+                        : FlitColors.textPrimary,
+                    fontSize: 16,
+                  ),
+                ),
+                const Spacer(),
+                const Icon(Icons.chevron_right, color: FlitColors.textMuted),
+              ],
             ),
-            const Spacer(),
-            const Icon(Icons.chevron_right, color: FlitColors.textMuted),
-          ],
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 class _QuickLinkButton extends StatelessWidget {
@@ -691,34 +685,34 @@ class _QuickLinkButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: FlitColors.cardBackground,
-    borderRadius: BorderRadius.circular(12),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.cardBorder),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: FlitColors.accent, size: 28),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: FlitColors.cardBorder),
             ),
-          ],
+            child: Column(
+              children: [
+                Icon(icon, color: FlitColors.accent, size: 28),
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -822,86 +816,88 @@ class _GameHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: FlitColors.backgroundDark,
-    appBar: AppBar(
-      backgroundColor: FlitColors.backgroundMid,
-      title: const Text('Game History'),
-      centerTitle: true,
-    ),
-    body: ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: _entries.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final entry = _entries[index];
-        return Container(
+        backgroundColor: FlitColors.backgroundDark,
+        appBar: AppBar(
+          backgroundColor: FlitColors.backgroundMid,
+          title: const Text('Game History'),
+          centerTitle: true,
+        ),
+        body: ListView.separated(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: FlitColors.cardBackground,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: FlitColors.cardBorder),
-          ),
-          child: Row(
-            children: [
-              // Region icon
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: FlitColors.backgroundLight,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Center(
-                  child: Icon(Icons.public, color: FlitColors.accent, size: 24),
-                ),
+          itemCount: _entries.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final entry = _entries[index];
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: FlitColors.cardBackground,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: FlitColors.cardBorder),
               ),
-              const SizedBox(width: 14),
-              // Region and time
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      entry.region,
-                      style: const TextStyle(
-                        color: FlitColors.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${_formatDuration(entry.duration)}  •  ${_formatDate(entry.date)}',
-                      style: const TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Score
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              child: Row(
                 children: [
-                  Text(
-                    entry.score.toString(),
-                    style: const TextStyle(
-                      color: FlitColors.gold,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  // Region icon
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: FlitColors.backgroundLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.public,
+                          color: FlitColors.accent, size: 24),
                     ),
                   ),
-                  const Text(
-                    'pts',
-                    style: TextStyle(color: FlitColors.textMuted, fontSize: 12),
+                  const SizedBox(width: 14),
+                  // Region and time
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          entry.region,
+                          style: const TextStyle(
+                            color: FlitColors.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_formatDuration(entry.duration)}  •  ${_formatDate(entry.date)}',
+                          style: const TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Score
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        entry.score.toString(),
+                        style: const TextStyle(
+                          color: FlitColors.gold,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        'pts',
+                        style: TextStyle(
+                            color: FlitColors.textMuted, fontSize: 12),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        );
-      },
-    ),
-  );
+            );
+          },
+        ),
+      );
 }

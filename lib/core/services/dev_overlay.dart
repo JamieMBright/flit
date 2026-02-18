@@ -104,10 +104,9 @@ class _DevOverlayState extends State<DevOverlay> {
     final warningCount =
         errors.where((e) => e.severity == ErrorSeverity.warning).length;
 
-    final badgeColor =
-        criticalCount > 0
-            ? const Color(0xFFFF1744)
-            : errorCount > 0
+    final badgeColor = criticalCount > 0
+        ? const Color(0xFFFF1744)
+        : errorCount > 0
             ? const Color(0xFFFF6D00)
             : const Color(0xFFFFD600);
 
@@ -205,12 +204,10 @@ class _DevOverlayState extends State<DevOverlay> {
                 shrinkWrap: true,
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 itemCount: visibleErrors.length,
-                separatorBuilder:
-                    (_, __) =>
-                        const Divider(color: Color(0xFF333333), height: 1),
-                itemBuilder:
-                    (context, index) =>
-                        _buildErrorTile(visibleErrors[index], index),
+                separatorBuilder: (_, __) =>
+                    const Divider(color: Color(0xFF333333), height: 1),
+                itemBuilder: (context, index) =>
+                    _buildErrorTile(visibleErrors[index], index),
               ),
             ),
         ],
@@ -242,11 +239,10 @@ class _DevOverlayState extends State<DevOverlay> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
-              onTap:
-                  () => setState(() {
-                    _minimized = true;
-                    _expandedIndex = null;
-                  }),
+              onTap: () => setState(() {
+                _minimized = true;
+                _expandedIndex = null;
+              }),
               child: const Padding(
                 padding: EdgeInsets.all(4),
                 child: Icon(Icons.close, color: Color(0xFF9E9E9E), size: 18),
@@ -263,10 +259,9 @@ class _DevOverlayState extends State<DevOverlay> {
     final severityColor = _severityColor(error.severity);
 
     return GestureDetector(
-      onTap:
-          () => setState(() {
-            _expandedIndex = isExpanded ? null : index;
-          }),
+      onTap: () => setState(() {
+        _expandedIndex = isExpanded ? null : index;
+      }),
       onLongPress: () => _copyErrorToClipboard(error),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),

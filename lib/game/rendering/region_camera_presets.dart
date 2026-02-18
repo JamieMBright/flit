@@ -35,8 +35,7 @@ class CameraPreset {
   final double? fovOverride;
 
   @override
-  String toString() =>
-      'CameraPreset(lat: $centerLat, lng: $centerLng, '
+  String toString() => 'CameraPreset(lat: $centerLat, lng: $centerLng, '
       'alt: $altitudeDistance, bounds: +/-$maxBoundsLat/$maxBoundsLng'
       '${fovOverride != null ? ', fov: $fovOverride' : ''})';
 }

@@ -257,25 +257,23 @@ class _WelcomeGlobePainter extends CustomPainter {
     final radius = size.width / 2 - 2;
 
     // Space background
-    final spacePaint =
-        Paint()
-          ..shader = RadialGradient(
-            colors: [FlitColors.ocean.withOpacity(0.4), FlitColors.space],
-          ).createShader(Rect.fromCircle(center: center, radius: radius));
+    final spacePaint = Paint()
+      ..shader = RadialGradient(
+        colors: [FlitColors.ocean.withOpacity(0.4), FlitColors.space],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
     canvas.drawCircle(center, radius, spacePaint);
 
     // Globe gradient
-    final globePaint =
-        Paint()
-          ..shader = const RadialGradient(
-            center: Alignment(-0.3, -0.3),
-            colors: [
-              FlitColors.oceanHighlight,
-              FlitColors.ocean,
-              FlitColors.oceanDeep,
-            ],
-            stops: [0.0, 0.55, 1.0],
-          ).createShader(Rect.fromCircle(center: center, radius: radius));
+    final globePaint = Paint()
+      ..shader = const RadialGradient(
+        center: Alignment(-0.3, -0.3),
+        colors: [
+          FlitColors.oceanHighlight,
+          FlitColors.ocean,
+          FlitColors.oceanDeep,
+        ],
+        stops: [0.0, 0.55, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
     canvas.drawCircle(center, radius, globePaint);
 
     // Land masses (simple blobs)
@@ -306,11 +304,10 @@ class _WelcomeGlobePainter extends CustomPainter {
     );
 
     // Grid lines (latitude)
-    final gridPaint =
-        Paint()
-          ..color = FlitColors.gridLine.withOpacity(0.5)
-          ..strokeWidth = 0.6
-          ..style = PaintingStyle.stroke;
+    final gridPaint = Paint()
+      ..color = FlitColors.gridLine.withOpacity(0.5)
+      ..strokeWidth = 0.6
+      ..style = PaintingStyle.stroke;
 
     for (int i = 1; i <= 2; i++) {
       final y = center.dy - (radius * 0.5 * i) / 2;
@@ -332,17 +329,16 @@ class _WelcomeGlobePainter extends CustomPainter {
     }
 
     // Rim glow
-    final rimPaint =
-        Paint()
-          ..shader = RadialGradient(
-            colors: [
-              Colors.transparent,
-              FlitColors.atmosphereGlow.withOpacity(0.3),
-            ],
-            stops: const [0.75, 1.0],
-          ).createShader(Rect.fromCircle(center: center, radius: radius + 4))
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 6;
+    final rimPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          Colors.transparent,
+          FlitColors.atmosphereGlow.withOpacity(0.3),
+        ],
+        stops: const [0.75, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: radius + 4))
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6;
     canvas.drawCircle(center, radius + 2, rimPaint);
 
     // Clip to circle for plane
@@ -352,14 +348,13 @@ class _WelcomeGlobePainter extends CustomPainter {
     // Paper plane icon path (simplified triangle silhouette)
     final planePaint = Paint()..color = FlitColors.planeBody;
     final planeCenter = center + const Offset(14, -16);
-    final planePath =
-        Path()
-          ..moveTo(planeCenter.dx, planeCenter.dy - 6)
-          ..lineTo(planeCenter.dx + 10, planeCenter.dy + 1)
-          ..lineTo(planeCenter.dx + 2, planeCenter.dy + 2)
-          ..lineTo(planeCenter.dx - 2, planeCenter.dy + 6)
-          ..lineTo(planeCenter.dx - 1, planeCenter.dy + 1)
-          ..close();
+    final planePath = Path()
+      ..moveTo(planeCenter.dx, planeCenter.dy - 6)
+      ..lineTo(planeCenter.dx + 10, planeCenter.dy + 1)
+      ..lineTo(planeCenter.dx + 2, planeCenter.dy + 2)
+      ..lineTo(planeCenter.dx - 2, planeCenter.dy + 6)
+      ..lineTo(planeCenter.dx - 1, planeCenter.dy + 1)
+      ..close();
     canvas.drawPath(planePath, planePaint);
 
     // Contrail dots
@@ -445,38 +440,35 @@ class _GlobeIllustrationPainter extends CustomPainter {
     final radius = math.min(size.width, size.height) / 2 - 4;
 
     // Space ring
-    final bgPaint =
-        Paint()
-          ..color = FlitColors.space.withOpacity(0.8)
-          ..style = PaintingStyle.fill;
+    final bgPaint = Paint()
+      ..color = FlitColors.space.withOpacity(0.8)
+      ..style = PaintingStyle.fill;
     canvas.drawCircle(center, radius + 8, bgPaint);
 
     // Ocean fill
-    final oceanPaint =
-        Paint()
-          ..shader = const RadialGradient(
-            center: Alignment(-0.25, -0.35),
-            colors: [
-              FlitColors.oceanShallow,
-              FlitColors.ocean,
-              FlitColors.oceanDeep,
-            ],
-            stops: [0.0, 0.5, 1.0],
-          ).createShader(Rect.fromCircle(center: center, radius: radius));
+    final oceanPaint = Paint()
+      ..shader = const RadialGradient(
+        center: Alignment(-0.25, -0.35),
+        colors: [
+          FlitColors.oceanShallow,
+          FlitColors.ocean,
+          FlitColors.oceanDeep,
+        ],
+        stops: [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
     canvas.drawCircle(center, radius, oceanPaint);
 
     // Clip to circle
     canvas.save();
-    final clipPath =
-        Path()..addOval(Rect.fromCircle(center: center, radius: radius));
+    final clipPath = Path()
+      ..addOval(Rect.fromCircle(center: center, radius: radius));
     canvas.clipPath(clipPath);
 
     // Latitude lines
-    final latPaint =
-        Paint()
-          ..color = const Color(0x20F0E8DC)
-          ..strokeWidth = 0.8
-          ..style = PaintingStyle.stroke;
+    final latPaint = Paint()
+      ..color = const Color(0x20F0E8DC)
+      ..strokeWidth = 0.8
+      ..style = PaintingStyle.stroke;
 
     for (final frac in [-0.65, -0.35, 0.0, 0.35, 0.65]) {
       final y = center.dy + frac * radius;
@@ -492,11 +484,10 @@ class _GlobeIllustrationPainter extends CustomPainter {
     }
 
     // Longitude lines (vertical arcs via path)
-    final lonPaint =
-        Paint()
-          ..color = const Color(0x18F0E8DC)
-          ..strokeWidth = 0.8
-          ..style = PaintingStyle.stroke;
+    final lonPaint = Paint()
+      ..color = const Color(0x18F0E8DC)
+      ..strokeWidth = 0.8
+      ..style = PaintingStyle.stroke;
 
     for (int i = 0; i < 6; i++) {
       final angle = (i / 6) * math.pi;
@@ -513,8 +504,8 @@ class _GlobeIllustrationPainter extends CustomPainter {
 
     // Land masses — stylised blobs
     final landPaint = Paint()..color = FlitColors.landMass.withOpacity(0.8);
-    final landHighPaint =
-        Paint()..color = FlitColors.landMassHighlight.withOpacity(0.5);
+    final landHighPaint = Paint()
+      ..color = FlitColors.landMassHighlight.withOpacity(0.5);
 
     // Americas
     _drawLandBlob(
@@ -571,28 +562,26 @@ class _GlobeIllustrationPainter extends CustomPainter {
     canvas.restore();
 
     // Atmosphere rim
-    final rimPaint =
-        Paint()
-          ..shader = RadialGradient(
-            colors: [
-              Colors.transparent,
-              FlitColors.atmosphereGlow.withOpacity(0.45),
-              FlitColors.atmosphereGlow.withOpacity(0.0),
-            ],
-            stops: const [0.7, 0.88, 1.0],
-          ).createShader(Rect.fromCircle(center: center, radius: radius + 10))
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 10;
+    final rimPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          Colors.transparent,
+          FlitColors.atmosphereGlow.withOpacity(0.45),
+          FlitColors.atmosphereGlow.withOpacity(0.0),
+        ],
+        stops: const [0.7, 0.88, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: radius + 10))
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10;
     canvas.drawCircle(center, radius + 2, rimPaint);
 
     // Specular highlight
-    final specPaint =
-        Paint()
-          ..shader = RadialGradient(
-            center: const Alignment(-0.5, -0.5),
-            colors: [Colors.white.withOpacity(0.18), Colors.transparent],
-            stops: const [0.0, 0.6],
-          ).createShader(Rect.fromCircle(center: center, radius: radius));
+    final specPaint = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(-0.5, -0.5),
+        colors: [Colors.white.withOpacity(0.18), Colors.transparent],
+        stops: const [0.0, 0.6],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
     canvas.drawCircle(center, radius, specPaint);
 
     // Labels
@@ -605,11 +594,10 @@ class _GlobeIllustrationPainter extends CustomPainter {
     _drawLabel(canvas, 'ALT', center + Offset(radius + 28, 0), labelStyle);
 
     // Arrow hints
-    final arrowPaint =
-        Paint()
-          ..color = FlitColors.textMuted.withOpacity(0.4)
-          ..strokeWidth = 1.2
-          ..style = PaintingStyle.stroke;
+    final arrowPaint = Paint()
+      ..color = FlitColors.textMuted.withOpacity(0.4)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
     // Left arrow
     canvas.drawLine(
       center + Offset(-radius - 2, 0),
@@ -849,10 +837,9 @@ class _ClueRow extends StatelessWidget {
           width: 20,
           height: 20,
           decoration: BoxDecoration(
-            color:
-                revealed
-                    ? FlitColors.accent.withOpacity(0.2)
-                    : FlitColors.cardBorder.withOpacity(0.3),
+            color: revealed
+                ? FlitColors.accent.withOpacity(0.2)
+                : FlitColors.cardBorder.withOpacity(0.3),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Center(
@@ -1182,8 +1169,7 @@ class _GameModesSection extends StatelessWidget {
       iconColor: FlitColors.success,
       name: 'Training Sortie',
       tagline: 'Learn the ropes.',
-      description:
-          'Guided missions with hints and slower pacing. Perfect for '
+      description: 'Guided missions with hints and slower pacing. Perfect for '
           'building your geographic knowledge before going competitive.',
     ),
     _GameModeData(
@@ -1213,17 +1199,16 @@ class _GameModesSection extends StatelessWidget {
       iconColor: FlitColors.accent,
       title: 'Game Modes',
       child: Column(
-        children:
-            _modes
-                .map(
-                  (mode) => Padding(
-                    padding: EdgeInsets.only(
-                      bottom: mode == _modes.last ? 0 : 12,
-                    ),
-                    child: _GameModeCard(data: mode),
-                  ),
-                )
-                .toList(),
+        children: _modes
+            .map(
+              (mode) => Padding(
+                padding: EdgeInsets.only(
+                  bottom: mode == _modes.last ? 0 : 12,
+                ),
+                child: _GameModeCard(data: mode),
+              ),
+            )
+            .toList(),
       ),
     );
   }
@@ -1414,11 +1399,10 @@ class _ControlsDiagramPainter extends CustomPainter {
     final zone2cx = third * 1.5;
     _drawGestureCircle(canvas, Offset(zone2cx, cy - 8), 18, FlitColors.gold);
     // Up/down arrow
-    final altPaint =
-        Paint()
-          ..color = FlitColors.gold.withOpacity(0.7)
-          ..strokeWidth = 1.5
-          ..style = PaintingStyle.stroke;
+    final altPaint = Paint()
+      ..color = FlitColors.gold.withOpacity(0.7)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
     canvas.drawLine(
       Offset(zone2cx, cy - 20),
       Offset(zone2cx, cy + 4),
@@ -1430,11 +1414,10 @@ class _ControlsDiagramPainter extends CustomPainter {
     final zone3cx = third * 2.5;
     _drawGestureCircle(canvas, Offset(zone3cx, cy - 8), 18, FlitColors.accent);
     // Ripple rings
-    final ripplePaint =
-        Paint()
-          ..color = FlitColors.accent.withOpacity(0.3)
-          ..strokeWidth = 1.2
-          ..style = PaintingStyle.stroke;
+    final ripplePaint = Paint()
+      ..color = FlitColors.accent.withOpacity(0.3)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
     canvas.drawCircle(Offset(zone3cx, cy - 8), 26, ripplePaint);
     canvas.drawCircle(
       Offset(zone3cx, cy - 8),
@@ -1444,10 +1427,9 @@ class _ControlsDiagramPainter extends CustomPainter {
     _drawLabel(canvas, 'TAP', Offset(zone3cx, cy + 22), FlitColors.textMuted);
 
     // Dividers
-    final divPaint =
-        Paint()
-          ..color = FlitColors.cardBorder.withOpacity(0.5)
-          ..strokeWidth = 0.5;
+    final divPaint = Paint()
+      ..color = FlitColors.cardBorder.withOpacity(0.5)
+      ..strokeWidth = 0.5;
     canvas.drawLine(
       Offset(third, 12),
       Offset(third, size.height - 12),
@@ -1463,20 +1445,18 @@ class _ControlsDiagramPainter extends CustomPainter {
   void _drawGestureCircle(Canvas canvas, Offset center, double r, Color color) {
     final paint = Paint()..color = color.withOpacity(0.25);
     canvas.drawCircle(center, r, paint);
-    final borderPaint =
-        Paint()
-          ..color = color.withOpacity(0.6)
-          ..strokeWidth = 1.5
-          ..style = PaintingStyle.stroke;
+    final borderPaint = Paint()
+      ..color = color.withOpacity(0.6)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
     canvas.drawCircle(center, r, borderPaint);
   }
 
   void _drawArrow(Canvas canvas, Offset from, Offset to, Color color) {
-    final paint =
-        Paint()
-          ..color = color.withOpacity(0.7)
-          ..strokeWidth = 1.5
-          ..style = PaintingStyle.stroke;
+    final paint = Paint()
+      ..color = color.withOpacity(0.7)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
     canvas.drawLine(from, to, paint);
     // Arrowhead
     final dir = (to - from);
@@ -1484,18 +1464,17 @@ class _ControlsDiagramPainter extends CustomPainter {
     final unit = Offset(dir.dx / len, dir.dy / len);
     final perp = Offset(-unit.dy, unit.dx);
     final arrowPaint = Paint()..color = color.withOpacity(0.7);
-    final arrowPath =
-        Path()
-          ..moveTo(to.dx, to.dy)
-          ..lineTo(
-            to.dx - unit.dx * 6 + perp.dx * 4,
-            to.dy - unit.dy * 6 + perp.dy * 4,
-          )
-          ..lineTo(
-            to.dx - unit.dx * 6 - perp.dx * 4,
-            to.dy - unit.dy * 6 - perp.dy * 4,
-          )
-          ..close();
+    final arrowPath = Path()
+      ..moveTo(to.dx, to.dy)
+      ..lineTo(
+        to.dx - unit.dx * 6 + perp.dx * 4,
+        to.dy - unit.dy * 6 + perp.dy * 4,
+      )
+      ..lineTo(
+        to.dx - unit.dx * 6 - perp.dx * 4,
+        to.dy - unit.dy * 6 - perp.dy * 4,
+      )
+      ..close();
     canvas.drawPath(arrowPath, arrowPaint);
   }
 
@@ -1579,40 +1558,35 @@ class _TipsSection extends StatelessWidget {
       icon: Icons.horizontal_rule_rounded,
       color: FlitColors.oceanHighlight,
       title: 'Use latitude lines',
-      body:
-          'The grid lines on the globe mark parallels. Countries near the '
+      body: 'The grid lines on the globe mark parallels. Countries near the '
           'equator are tropical; those near the poles are arctic or sub-arctic.',
     ),
     _TipData(
       icon: Icons.landscape_rounded,
       color: FlitColors.landMassHighlight,
       title: 'Look for landmarks',
-      body:
-          'Large rivers, desert colours, island chains, and distinctive '
+      body: 'Large rivers, desert colours, island chains, and distinctive '
           'coastlines can identify a country even before you read the clues.',
     ),
     _TipData(
       icon: Icons.read_more_rounded,
       color: FlitColors.gold,
       title: 'Read all visible clues',
-      body:
-          'Don\'t guess on the first clue alone. Even two clues can '
+      body: 'Don\'t guess on the first clue alone. Even two clues can '
           'dramatically narrow down the answer and save you a wrong-guess penalty.',
     ),
     _TipData(
       icon: Icons.bolt_rounded,
       color: FlitColors.accent,
       title: 'Balance speed and accuracy',
-      body:
-          'A wrong guess hurts more than a slow right one. If you\'re '
+      body: 'A wrong guess hurts more than a slow right one. If you\'re '
           'unsure, reveal one more clue rather than gambling on a guess.',
     ),
     _TipData(
       icon: Icons.map_rounded,
       color: FlitColors.atmosphereGlow,
       title: 'Study the globe in Free Flight',
-      body:
-          'Spend time in Free Flight mode exploring regions you find '
+      body: 'Spend time in Free Flight mode exploring regions you find '
           'tricky. Geography is a skill — practice pays off in Daily Scramble.',
     ),
   ];

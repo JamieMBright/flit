@@ -39,15 +39,14 @@ class AvatarWidget extends StatelessWidget {
               width: size * 0.02,
             ),
           ),
-          child:
-              svg != null
-                  ? SvgPicture.string(
-                    svg,
-                    width: size,
-                    height: size,
-                    fit: BoxFit.cover,
-                  )
-                  : _AvatarFallback(size: size),
+          child: svg != null
+              ? SvgPicture.string(
+                  svg,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
+                )
+              : _AvatarFallback(size: size),
         ),
       ),
     );
@@ -143,9 +142,8 @@ class _AvatarFromUrlState extends State<_AvatarFromUrlStateful> {
 
     // Fetch.
     try {
-      final response = await http
-          .get(Uri.parse(url))
-          .timeout(const Duration(seconds: 8));
+      final response =
+          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 8));
 
       if (!mounted) return;
 

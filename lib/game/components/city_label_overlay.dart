@@ -75,20 +75,19 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
       // Calculate opacity based on altitude (0.6 = transparent, 0.0 = opaque)
       final opacity = (1.0 - continuousAlt / 0.6).clamp(0.0, 1.0);
 
-      final cityDotPaint =
-          Paint()..color = FlitColors.city.withOpacity(opacity);
-      final capitalDotPaint =
-          Paint()..color = FlitColors.cityCapital.withOpacity(opacity);
+      final cityDotPaint = Paint()
+        ..color = FlitColors.city.withOpacity(opacity);
+      final capitalDotPaint = Paint()
+        ..color = FlitColors.cityCapital.withOpacity(opacity);
 
       // On web (especially Safari), avoid stroke paint which can be expensive.
       // Use solid dots only.
-      final cityOutlinePaint =
-          kIsWeb
-              ? null
-              : (Paint()
-                ..color = FlitColors.shadow.withOpacity(opacity)
-                ..style = PaintingStyle.stroke
-                ..strokeWidth = 0.5);
+      final cityOutlinePaint = kIsWeb
+          ? null
+          : (Paint()
+            ..color = FlitColors.shadow.withOpacity(opacity)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 0.5);
 
       // Calculate screen center for distance-based culling
       final centerX = gameRef.size.x / 2;
@@ -170,24 +169,22 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
               text: TextSpan(
                 text: city.name,
                 style: TextStyle(
-                  color:
-                      city.isCapital
-                          ? FlitColors.textPrimary
-                          : FlitColors.textSecondary,
+                  color: city.isCapital
+                      ? FlitColors.textPrimary
+                      : FlitColors.textSecondary,
                   fontSize: city.isCapital ? 10 : 8,
                   fontWeight:
                       city.isCapital ? FontWeight.w600 : FontWeight.w400,
                   // Avoid shadows on web - they're expensive in Safari
-                  shadows:
-                      kIsWeb
-                          ? null
-                          : const [
-                            Shadow(
-                              offset: Offset(1, 1),
-                              blurRadius: 2,
-                              color: Color(0x40000000),
-                            ),
-                          ],
+                  shadows: kIsWeb
+                      ? null
+                      : const [
+                          Shadow(
+                            offset: Offset(1, 1),
+                            blurRadius: 2,
+                            color: Color(0x40000000),
+                          ),
+                        ],
                 ),
               ),
               textDirection: TextDirection.ltr,
@@ -246,18 +243,16 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
   void _renderHighAltCapitals(Canvas canvas, double altitude) {
     try {
       // Fade in from altitude 0.95 down to 0.6 (fully visible at 0.6-0.85)
-      final opacity =
-          altitude > 0.95
-              ? (1.0 - altitude) / 0.05
-              : altitude < 0.6
+      final opacity = altitude > 0.95
+          ? (1.0 - altitude) / 0.05
+          : altitude < 0.6
               ? 1.0
               : 0.7;
 
-      final dotPaint =
-          Paint()
-            ..color = FlitColors.cityCapital.withOpacity(
-              opacity.clamp(0.0, 1.0),
-            );
+      final dotPaint = Paint()
+        ..color = FlitColors.cityCapital.withOpacity(
+          opacity.clamp(0.0, 1.0),
+        );
 
       final centerX = gameRef.size.x / 2;
       final centerY = gameRef.size.y / 2;
@@ -318,16 +313,15 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
                   color: FlitColors.textPrimary,
                   fontSize: 7,
                   fontWeight: FontWeight.w500,
-                  shadows:
-                      kIsWeb
-                          ? null
-                          : [
-                            Shadow(
-                              offset: Offset(1, 1),
-                              blurRadius: 2,
-                              color: Color(0x60000000),
-                            ),
-                          ],
+                  shadows: kIsWeb
+                      ? null
+                      : [
+                          Shadow(
+                            offset: Offset(1, 1),
+                            blurRadius: 2,
+                            color: Color(0x60000000),
+                          ),
+                        ],
                 ),
               ),
               textDirection: TextDirection.ltr,

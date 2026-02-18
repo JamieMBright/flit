@@ -227,10 +227,9 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   }
 
   void _renderPlaneShadow(Canvas canvas, double offset, double bankCos) {
-    final shadowPaint =
-        Paint()
-          ..color = FlitColors.planeShadow
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    final shadowPaint = Paint()
+      ..color = FlitColors.planeShadow
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
 
     canvas.save();
     canvas.translate(offset, offset);
@@ -270,9 +269,9 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
 
     // Scale spawn rate with zoom: at low altitude (zoomed in), spawn
     // particles more frequently so the trail stays dense on screen.
-    final zoomRatio = (gameRef.cameraDistance /
-            CameraState.highAltitudeDistance)
-        .clamp(0.4, 1.0);
+    final zoomRatio =
+        (gameRef.cameraDistance / CameraState.highAltitudeDistance)
+            .clamp(0.4, 1.0);
     final interval = _contrailIntervalBase * zoomRatio;
 
     _contrailTimer += dt;
@@ -343,8 +342,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         (sinLat0 * cos(wingDist) + cosLat0 * sin(wingDist) * cos(bearing))
             .clamp(-1.0, 1.0),
       );
-      final lngW =
-          lng0 +
+      final lngW = lng0 +
           atan2(
             sin(bearing) * sin(wingDist) * cosLat0,
             cos(wingDist) - sinLat0 * sin(latW),
@@ -357,8 +355,7 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
         (sinLatW * cos(aftDist) + cosLatW * sin(aftDist) * cos(aftBearing))
             .clamp(-1.0, 1.0),
       );
-      final lngF =
-          lngW +
+      final lngF = lngW +
           atan2(
             sin(aftBearing) * sin(aftDist) * cosLatW,
             cos(aftDist) - sinLatW * sin(latF),

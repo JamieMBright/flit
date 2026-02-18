@@ -70,12 +70,11 @@ typedef ErrorListener = void Function(CapturedError error);
 ///
 /// This is injected externally so ErrorService itself needs no HTTP dependency,
 /// making it safe to import on all platforms (web, iOS, Android).
-typedef ErrorSender =
-    Future<bool> Function({
-      required String url,
-      required String apiKey,
-      required String jsonBody,
-    });
+typedef ErrorSender = Future<bool> Function({
+  required String url,
+  required String apiKey,
+  required String jsonBody,
+});
 
 /// Singleton service that captures, queues, and batches runtime errors
 /// for remote telemetry.
