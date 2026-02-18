@@ -18,15 +18,16 @@ void showSettingsSheet(BuildContext context) {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
-    builder: (context) => DraggableScrollableSheet(
-      initialChildSize: 0.75,
-      minChildSize: 0.4,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (context, scrollController) => _SettingsSheetContent(
-        scrollController: scrollController,
-      ),
-    ),
+    builder:
+        (context) => DraggableScrollableSheet(
+          initialChildSize: 0.75,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          expand: false,
+          builder:
+              (context, scrollController) =>
+                  _SettingsSheetContent(scrollController: scrollController),
+        ),
   );
 }
 
@@ -46,118 +47,118 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
 
   @override
   Widget build(BuildContext context) => ListView(
-        controller: widget.scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        children: [
-          // Title
-          const Center(
-            child: Text(
-              'Settings',
-              style: TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+    controller: widget.scrollController,
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+    children: [
+      // Title
+      const Center(
+        child: Text(
+          'Settings',
+          style: TextStyle(
+            color: FlitColors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
-          const SizedBox(height: 24),
+        ),
+      ),
+      const SizedBox(height: 24),
 
-          // ── Audio ──────────────────────────────────────────
-          const _SectionHeader(title: 'Audio'),
-          _SettingsToggle(
-            label: 'Sound',
-            icon: Icons.volume_up_outlined,
-            value: _soundEnabled,
-            onChanged: (value) {
-              AudioManager.instance.enabled = value;
-              setState(() => _soundEnabled = value);
-            },
-          ),
-          const Divider(color: FlitColors.cardBorder, height: 1),
-          _SettingsToggle(
-            label: 'Notifications',
-            icon: Icons.notifications_outlined,
-            value: _notificationsEnabled,
-            onChanged: (value) => setState(() => _notificationsEnabled = value),
-          ),
-          const Divider(color: FlitColors.cardBorder, height: 1),
-          _SettingsToggle(
-            label: 'Haptic Feedback',
-            icon: Icons.vibration,
-            value: _hapticEnabled,
-            onChanged: (value) => setState(() => _hapticEnabled = value),
-          ),
-          const SizedBox(height: 20),
+      // ── Audio ──────────────────────────────────────────
+      const _SectionHeader(title: 'Audio'),
+      _SettingsToggle(
+        label: 'Sound',
+        icon: Icons.volume_up_outlined,
+        value: _soundEnabled,
+        onChanged: (value) {
+          AudioManager.instance.enabled = value;
+          setState(() => _soundEnabled = value);
+        },
+      ),
+      const Divider(color: FlitColors.cardBorder, height: 1),
+      _SettingsToggle(
+        label: 'Notifications',
+        icon: Icons.notifications_outlined,
+        value: _notificationsEnabled,
+        onChanged: (value) => setState(() => _notificationsEnabled = value),
+      ),
+      const Divider(color: FlitColors.cardBorder, height: 1),
+      _SettingsToggle(
+        label: 'Haptic Feedback',
+        icon: Icons.vibration,
+        value: _hapticEnabled,
+        onChanged: (value) => setState(() => _hapticEnabled = value),
+      ),
+      const SizedBox(height: 20),
 
-          // ── Controls ───────────────────────────────────────
-          const _SectionHeader(title: 'Controls'),
-          _SettingsToggle(
-            label: 'Invert Controls',
-            icon: Icons.swap_horiz,
-            value: GameSettings.instance.invertControls,
-            onChanged: (value) {
-              GameSettings.instance.invertControls = value;
-              setState(() {});
-            },
-          ),
-          const Divider(color: FlitColors.cardBorder, height: 1),
-          _SettingsSlider(
-            label: 'Turn Sensitivity',
-            icon: Icons.speed,
-            value: GameSettings.instance.turnSensitivity,
-            min: 0.2,
-            max: 1.5,
-            valueLabel: GameSettings.instance.sensitivityLabel,
-            onChanged: (value) {
-              GameSettings.instance.turnSensitivity = value;
-              setState(() {});
-            },
-          ),
-          const SizedBox(height: 20),
+      // ── Controls ───────────────────────────────────────
+      const _SectionHeader(title: 'Controls'),
+      _SettingsToggle(
+        label: 'Invert Controls',
+        icon: Icons.swap_horiz,
+        value: GameSettings.instance.invertControls,
+        onChanged: (value) {
+          GameSettings.instance.invertControls = value;
+          setState(() {});
+        },
+      ),
+      const Divider(color: FlitColors.cardBorder, height: 1),
+      _SettingsSlider(
+        label: 'Turn Sensitivity',
+        icon: Icons.speed,
+        value: GameSettings.instance.turnSensitivity,
+        min: 0.2,
+        max: 1.5,
+        valueLabel: GameSettings.instance.sensitivityLabel,
+        onChanged: (value) {
+          GameSettings.instance.turnSensitivity = value;
+          setState(() {});
+        },
+      ),
+      const SizedBox(height: 20),
 
-          // ── Display ────────────────────────────────────────
-          const _SectionHeader(title: 'Display'),
-          _SettingsToggle(
-            label: 'Night / Day Cycle',
-            icon: Icons.nightlight_outlined,
-            value: GameSettings.instance.enableNight,
-            onChanged: (value) {
-              GameSettings.instance.enableNight = value;
-              setState(() {});
-            },
-          ),
-          const Divider(color: FlitColors.cardBorder, height: 1),
-          _SettingsToggle(
-            label: 'English Labels',
-            icon: Icons.translate,
-            value: GameSettings.instance.englishLabels,
-            onChanged: (value) {
-              GameSettings.instance.englishLabels = value;
-              setState(() {});
-            },
-          ),
-          const Divider(color: FlitColors.cardBorder, height: 1),
-          _MapStyleSelector(
-            value: GameSettings.instance.mapStyle,
-            onChanged: (value) {
-              GameSettings.instance.mapStyle = value;
-              setState(() {});
-            },
-          ),
-          const SizedBox(height: 20),
+      // ── Display ────────────────────────────────────────
+      const _SectionHeader(title: 'Display'),
+      _SettingsToggle(
+        label: 'Night / Day Cycle',
+        icon: Icons.nightlight_outlined,
+        value: GameSettings.instance.enableNight,
+        onChanged: (value) {
+          GameSettings.instance.enableNight = value;
+          setState(() {});
+        },
+      ),
+      const Divider(color: FlitColors.cardBorder, height: 1),
+      _SettingsToggle(
+        label: 'English Labels',
+        icon: Icons.translate,
+        value: GameSettings.instance.englishLabels,
+        onChanged: (value) {
+          GameSettings.instance.englishLabels = value;
+          setState(() {});
+        },
+      ),
+      const Divider(color: FlitColors.cardBorder, height: 1),
+      _MapStyleSelector(
+        value: GameSettings.instance.mapStyle,
+        onChanged: (value) {
+          GameSettings.instance.mapStyle = value;
+          setState(() {});
+        },
+      ),
+      const SizedBox(height: 20),
 
-          // ── Gameplay ───────────────────────────────────────
-          const _SectionHeader(title: 'Gameplay'),
-          _DifficultySelector(
-            value: GameSettings.instance.difficulty,
-            onChanged: (value) {
-              GameSettings.instance.difficulty = value;
-              setState(() {});
-            },
-          ),
-          const SizedBox(height: 24),
-        ],
-      );
+      // ── Gameplay ───────────────────────────────────────
+      const _SectionHeader(title: 'Gameplay'),
+      _DifficultySelector(
+        value: GameSettings.instance.difficulty,
+        onChanged: (value) {
+          GameSettings.instance.difficulty = value;
+          setState(() {});
+        },
+      ),
+      const SizedBox(height: 24),
+    ],
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -171,17 +172,17 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(
-          title.toUpperCase(),
-          style: const TextStyle(
-            color: FlitColors.textSecondary,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.5,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      title.toUpperCase(),
+      style: const TextStyle(
+        color: FlitColors.textSecondary,
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.5,
+      ),
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -203,35 +204,39 @@ class _SettingsToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: [
-            Icon(icon,
-                color: onChanged != null
-                    ? FlitColors.textSecondary
-                    : FlitColors.textMuted,
-                size: 22),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: onChanged != null
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Row(
+      children: [
+        Icon(
+          icon,
+          color:
+              onChanged != null
+                  ? FlitColors.textSecondary
+                  : FlitColors.textMuted,
+          size: 22,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              color:
+                  onChanged != null
                       ? FlitColors.textPrimary
                       : FlitColors.textMuted,
-                  fontSize: 16,
-                ),
-              ),
+              fontSize: 16,
             ),
-            Switch.adaptive(
-              value: value,
-              onChanged: onChanged,
-              activeColor: FlitColors.accent,
-              inactiveTrackColor: FlitColors.backgroundMid,
-            ),
-          ],
+          ),
         ),
-      );
+        Switch.adaptive(
+          value: value,
+          onChanged: onChanged,
+          activeColor: FlitColors.accent,
+          inactiveTrackColor: FlitColors.backgroundMid,
+        ),
+      ],
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -259,50 +264,45 @@ class _SettingsSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Icon(icon, color: FlitColors.textSecondary, size: 22),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 16,
-                    ),
-                  ),
+            Icon(icon, color: FlitColors.textSecondary, size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 16,
                 ),
-                Text(
-                  valueLabel,
-                  style: const TextStyle(
-                    color: FlitColors.textSecondary,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            SliderTheme(
-              data: SliderThemeData(
-                activeTrackColor: FlitColors.accent,
-                inactiveTrackColor: FlitColors.backgroundMid,
-                thumbColor: FlitColors.accent,
-                overlayColor: FlitColors.accent.withOpacity(0.15),
-                trackHeight: 4,
               ),
-              child: Slider(
-                value: value,
-                min: min,
-                max: max,
-                onChanged: onChanged,
+            ),
+            Text(
+              valueLabel,
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 14,
               ),
             ),
           ],
         ),
-      );
+        SliderTheme(
+          data: SliderThemeData(
+            activeTrackColor: FlitColors.accent,
+            inactiveTrackColor: FlitColors.backgroundMid,
+            thumbColor: FlitColors.accent,
+            overlayColor: FlitColors.accent.withOpacity(0.15),
+            trackHeight: 4,
+          ),
+          child: Slider(value: value, min: min, max: max, onChanged: onChanged),
+        ),
+      ],
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -310,44 +310,36 @@ class _SettingsSlider extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _DifficultySelector extends StatelessWidget {
-  const _DifficultySelector({
-    required this.value,
-    required this.onChanged,
-  });
+  const _DifficultySelector({required this.value, required this.onChanged});
 
   final GameDifficulty value;
   final ValueChanged<GameDifficulty> onChanged;
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
           children: [
-            const Row(
-              children: [
-                Icon(Icons.tune, color: FlitColors.textSecondary, size: 22),
-                SizedBox(width: 12),
-                Text(
-                  'Difficulty',
-                  style: TextStyle(
-                    color: FlitColors.textPrimary,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
+            Icon(Icons.tune, color: FlitColors.textSecondary, size: 22),
+            SizedBox(width: 12),
             Text(
-              _subtitle(value),
-              style: const TextStyle(
-                color: FlitColors.textMuted,
-                fontSize: 12,
-              ),
+              'Difficulty',
+              style: TextStyle(color: FlitColors.textPrimary, fontSize: 16),
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: GameDifficulty.values.map((d) {
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          _subtitle(value),
+          style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children:
+              GameDifficulty.values.map((d) {
                 final isActive = d == value;
                 return Expanded(
                   child: Padding(
@@ -357,14 +349,16 @@ class _DifficultySelector extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
-                          color: isActive
-                              ? _activeColor(d).withOpacity(0.2)
-                              : FlitColors.backgroundMid,
+                          color:
+                              isActive
+                                  ? _activeColor(d).withOpacity(0.2)
+                                  : FlitColors.backgroundMid,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: isActive
-                                ? _activeColor(d)
-                                : FlitColors.cardBorder,
+                            color:
+                                isActive
+                                    ? _activeColor(d)
+                                    : FlitColors.cardBorder,
                             width: isActive ? 1.5 : 1,
                           ),
                         ),
@@ -372,9 +366,10 @@ class _DifficultySelector extends StatelessWidget {
                           child: Text(
                             _label(d),
                             style: TextStyle(
-                              color: isActive
-                                  ? _activeColor(d)
-                                  : FlitColors.textMuted,
+                              color:
+                                  isActive
+                                      ? _activeColor(d)
+                                      : FlitColors.textMuted,
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.5,
@@ -386,10 +381,10 @@ class _DifficultySelector extends StatelessWidget {
                   ),
                 );
               }).toList(),
-            ),
-          ],
         ),
-      );
+      ],
+    ),
+  );
 
   static String _label(GameDifficulty d) {
     switch (d) {
@@ -430,45 +425,36 @@ class _DifficultySelector extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _MapStyleSelector extends StatelessWidget {
-  const _MapStyleSelector({
-    required this.value,
-    required this.onChanged,
-  });
+  const _MapStyleSelector({required this.value, required this.onChanged});
 
   final MapStyle value;
   final ValueChanged<MapStyle> onChanged;
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
           children: [
-            const Row(
-              children: [
-                Icon(Icons.map_outlined,
-                    color: FlitColors.textSecondary, size: 22),
-                SizedBox(width: 12),
-                Text(
-                  'Map Style',
-                  style: TextStyle(
-                    color: FlitColors.textPrimary,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
+            Icon(Icons.map_outlined, color: FlitColors.textSecondary, size: 22),
+            SizedBox(width: 12),
             Text(
-              _subtitle(value),
-              style: const TextStyle(
-                color: FlitColors.textMuted,
-                fontSize: 12,
-              ),
+              'Map Style',
+              style: TextStyle(color: FlitColors.textPrimary, fontSize: 16),
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: MapStyle.values.map((s) {
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          _subtitle(value),
+          style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children:
+              MapStyle.values.map((s) {
                 final isActive = s == value;
                 return Expanded(
                   child: Padding(
@@ -478,14 +464,16 @@ class _MapStyleSelector extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
-                          color: isActive
-                              ? FlitColors.accent.withOpacity(0.2)
-                              : FlitColors.backgroundMid,
+                          color:
+                              isActive
+                                  ? FlitColors.accent.withOpacity(0.2)
+                                  : FlitColors.backgroundMid,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: isActive
-                                ? FlitColors.accent
-                                : FlitColors.cardBorder,
+                            color:
+                                isActive
+                                    ? FlitColors.accent
+                                    : FlitColors.cardBorder,
                             width: isActive ? 1.5 : 1,
                           ),
                         ),
@@ -495,17 +483,19 @@ class _MapStyleSelector extends StatelessWidget {
                               Icon(
                                 _icon(s),
                                 size: 18,
-                                color: isActive
-                                    ? FlitColors.accent
-                                    : FlitColors.textMuted,
+                                color:
+                                    isActive
+                                        ? FlitColors.accent
+                                        : FlitColors.textMuted,
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 _label(s),
                                 style: TextStyle(
-                                  color: isActive
-                                      ? FlitColors.accent
-                                      : FlitColors.textMuted,
+                                  color:
+                                      isActive
+                                          ? FlitColors.accent
+                                          : FlitColors.textMuted,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.3,
@@ -519,10 +509,10 @@ class _MapStyleSelector extends StatelessWidget {
                   ),
                 );
               }).toList(),
-            ),
-          ],
         ),
-      );
+      ],
+    ),
+  );
 
   static String _label(MapStyle s) {
     switch (s) {

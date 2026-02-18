@@ -64,15 +64,27 @@ class PlaneRenderer {
       case 'plane_jet':
       case 'plane_rocket':
       case 'plane_golden_jet':
-        _renderJetPlane(canvas, bankCos, bankSin, wingSpan, colorScheme,
-            planeId);
+        _renderJetPlane(
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          planeId,
+        );
         break;
       case 'plane_stealth':
         _renderStealthPlane(canvas, bankCos, bankSin, wingSpan, colorScheme);
         break;
       case 'plane_red_baron':
         _renderTriplane(
-            canvas, bankCos, bankSin, wingSpan, colorScheme, propAngle);
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          propAngle,
+        );
         break;
       case 'plane_concorde_classic':
       case 'plane_diamond_concorde':
@@ -80,7 +92,13 @@ class PlaneRenderer {
         break;
       case 'plane_seaplane':
         _renderSeaplane(
-            canvas, bankCos, bankSin, wingSpan, colorScheme, propAngle);
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          propAngle,
+        );
         break;
       case 'plane_bryanair':
       case 'plane_air_force_one':
@@ -91,15 +109,27 @@ class PlaneRenderer {
         break;
       default:
         _renderBiPlane(
-            canvas, bankCos, bankSin, wingSpan, colorScheme, propAngle);
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          propAngle,
+        );
         break;
     }
   }
 
   // ─── Bi-Plane (default, prop, spitfire, lancaster) ──────────────────
 
-  static void _renderBiPlane(Canvas canvas, double bankCos, double bankSin,
-      double wingSpan, Map<String, int>? colorScheme, double propAngle) {
+  static void _renderBiPlane(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+    double propAngle,
+  ) {
     final primary = _primary(colorScheme, 0xFFF5F0E0);
     final secondary = _secondary(colorScheme, 0xFFC0392B);
     final detail = _detail(colorScheme, 0xFF8B4513);
@@ -111,8 +141,8 @@ class PlaneRenderer {
         shade > 0 ? _lighten(detail, shade) : _darken(detail, -shade * 0.4);
     final bodyPaint = Paint()..color = primary;
     final accentPaint = Paint()..color = secondary;
-    final highlightPaint = Paint()
-      ..color = FlitColors.planeHighlight.withOpacity(0.35);
+    final highlightPaint =
+        Paint()..color = FlitColors.planeHighlight.withOpacity(0.35);
     final undersidePaint = Paint()..color = _darken(primary, 0.35);
 
     final dynamicWingSpan = wingSpan * bankCos.abs();
@@ -120,15 +150,17 @@ class PlaneRenderer {
     final bodyShift = bankSin * 1.5;
 
     // --- Propeller (behind everything) ---
-    final propDiscPaint = Paint()
-      ..color = FlitColors.planeBody.withOpacity(0.15)
-      ..style = PaintingStyle.fill;
+    final propDiscPaint =
+        Paint()
+          ..color = FlitColors.planeBody.withOpacity(0.15)
+          ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(bodyShift, -17), 8, propDiscPaint);
 
-    final bladePaint = Paint()
-      ..color = const Color(0xFF666666).withOpacity(0.8)
-      ..strokeWidth = 2.0
-      ..strokeCap = StrokeCap.round;
+    final bladePaint =
+        Paint()
+          ..color = const Color(0xFF666666).withOpacity(0.8)
+          ..strokeWidth = 2.0
+          ..strokeCap = StrokeCap.round;
     const bladeLen = 7.0;
     for (var i = 0; i < 2; i++) {
       final a = propAngle + i * pi;
@@ -143,14 +175,23 @@ class PlaneRenderer {
     final leftSpan =
         dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.5;
     final leftDip = wingDip;
-    final leftWing = Path()
-      ..moveTo(-4, -1 + leftDip * 0.2)
-      ..quadraticBezierTo(
-          -leftSpan * 0.5, 0 + leftDip * 0.5, -leftSpan, 2 + leftDip)
-      ..quadraticBezierTo(
-          -leftSpan - 1, 4 + leftDip, -leftSpan + 2, 5 + leftDip)
-      ..lineTo(-4, 3 + leftDip * 0.2)
-      ..close();
+    final leftWing =
+        Path()
+          ..moveTo(-4, -1 + leftDip * 0.2)
+          ..quadraticBezierTo(
+            -leftSpan * 0.5,
+            0 + leftDip * 0.5,
+            -leftSpan,
+            2 + leftDip,
+          )
+          ..quadraticBezierTo(
+            -leftSpan - 1,
+            4 + leftDip,
+            -leftSpan + 2,
+            5 + leftDip,
+          )
+          ..lineTo(-4, 3 + leftDip * 0.2)
+          ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
     // Left wing highlight
@@ -180,14 +221,23 @@ class PlaneRenderer {
     final rightSpan =
         dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.5;
     final rightDip = -wingDip;
-    final rightWing = Path()
-      ..moveTo(4, -1 + rightDip * 0.2)
-      ..quadraticBezierTo(
-          rightSpan * 0.5, 0 + rightDip * 0.5, rightSpan, 2 + rightDip)
-      ..quadraticBezierTo(
-          rightSpan + 1, 4 + rightDip, rightSpan - 2, 5 + rightDip)
-      ..lineTo(4, 3 + rightDip * 0.2)
-      ..close();
+    final rightWing =
+        Path()
+          ..moveTo(4, -1 + rightDip * 0.2)
+          ..quadraticBezierTo(
+            rightSpan * 0.5,
+            0 + rightDip * 0.5,
+            rightSpan,
+            2 + rightDip,
+          )
+          ..quadraticBezierTo(
+            rightSpan + 1,
+            4 + rightDip,
+            rightSpan - 2,
+            5 + rightDip,
+          )
+          ..lineTo(4, 3 + rightDip * 0.2)
+          ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
     // Right wing highlight
@@ -224,84 +274,85 @@ class PlaneRenderer {
     final bankAbs = bankSin.abs();
     if (bankAbs > 0.15) {
       final undersideWidth = 6.0 * bankAbs;
-      final undersideX =
-          bankSin > 0 ? -undersideWidth / 2 : undersideWidth / 2;
-      final undersidePath = Path()
-        ..moveTo(undersideX - undersideWidth / 2, -12)
-        ..quadraticBezierTo(
-          undersideX - undersideWidth / 2 - 1,
-          0,
-          undersideX - undersideWidth / 2,
-          14,
-        )
-        ..lineTo(undersideX + undersideWidth / 2, 14)
-        ..quadraticBezierTo(
-          undersideX + undersideWidth / 2 + 1,
-          0,
-          undersideX + undersideWidth / 2,
-          -12,
-        )
-        ..close();
+      final undersideX = bankSin > 0 ? -undersideWidth / 2 : undersideWidth / 2;
+      final undersidePath =
+          Path()
+            ..moveTo(undersideX - undersideWidth / 2, -12)
+            ..quadraticBezierTo(
+              undersideX - undersideWidth / 2 - 1,
+              0,
+              undersideX - undersideWidth / 2,
+              14,
+            )
+            ..lineTo(undersideX + undersideWidth / 2, 14)
+            ..quadraticBezierTo(
+              undersideX + undersideWidth / 2 + 1,
+              0,
+              undersideX + undersideWidth / 2,
+              -12,
+            )
+            ..close();
       canvas.drawPath(undersidePath, undersidePaint);
     }
 
     // Tail assembly
     final tailSpan = (wingSpan * 0.38) * bankCos.abs();
-    final tailPath = Path()
-      ..moveTo(-tailSpan, 14 + wingDip * 0.3)
-      ..quadraticBezierTo(-tailSpan - 2, 16, -tailSpan, 18)
-      ..lineTo(tailSpan, 18 - wingDip * 0.3)
-      ..quadraticBezierTo(tailSpan + 2, 16, tailSpan, 14 - wingDip * 0.3)
-      ..close();
+    final tailPath =
+        Path()
+          ..moveTo(-tailSpan, 14 + wingDip * 0.3)
+          ..quadraticBezierTo(-tailSpan - 2, 16, -tailSpan, 18)
+          ..lineTo(tailSpan, 18 - wingDip * 0.3)
+          ..quadraticBezierTo(tailSpan + 2, 16, tailSpan, 14 - wingDip * 0.3)
+          ..close();
     canvas.drawPath(tailPath, Paint()..color = _darken(detail, 0.1));
 
     // Vertical fin
-    final finPath = Path()
-      ..moveTo(bankSin * 2, 11)
-      ..quadraticBezierTo(-4 + bankSin * 3, 15, -2 + bankSin * 2, 18)
-      ..lineTo(2 + bankSin * 2, 18)
-      ..quadraticBezierTo(4 + bankSin * 3, 15, bankSin * 2, 11)
-      ..close();
+    final finPath =
+        Path()
+          ..moveTo(bankSin * 2, 11)
+          ..quadraticBezierTo(-4 + bankSin * 3, 15, -2 + bankSin * 2, 18)
+          ..lineTo(2 + bankSin * 2, 18)
+          ..quadraticBezierTo(4 + bankSin * 3, 15, bankSin * 2, 11)
+          ..close();
     canvas.drawPath(finPath, accentPaint);
 
     // Fuselage
-    final fuselagePath = Path()
-      ..moveTo(bodyShift, -16)
-      ..quadraticBezierTo(5 + bodyShift, -12, 5 + bodyShift, -2)
-      ..quadraticBezierTo(4 + bodyShift, 10, 3 + bodyShift, 16)
-      ..quadraticBezierTo(bodyShift, 18, -3 + bodyShift, 16)
-      ..quadraticBezierTo(-4 + bodyShift, 10, -5 + bodyShift, -2)
-      ..quadraticBezierTo(-5 + bodyShift, -12, bodyShift, -16)
-      ..close();
+    final fuselagePath =
+        Path()
+          ..moveTo(bodyShift, -16)
+          ..quadraticBezierTo(5 + bodyShift, -12, 5 + bodyShift, -2)
+          ..quadraticBezierTo(4 + bodyShift, 10, 3 + bodyShift, 16)
+          ..quadraticBezierTo(bodyShift, 18, -3 + bodyShift, 16)
+          ..quadraticBezierTo(-4 + bodyShift, 10, -5 + bodyShift, -2)
+          ..quadraticBezierTo(-5 + bodyShift, -12, bodyShift, -16)
+          ..close();
     canvas.drawPath(fuselagePath, bodyPaint);
 
     // Fuselage highlight
-    final highlightStreak = Path()
-      ..moveTo(bodyShift - 0.5, -14)
-      ..quadraticBezierTo(2.5 + bodyShift, -8, 2 + bodyShift, 0)
-      ..lineTo(1 + bodyShift, 10)
-      ..lineTo(-1 + bodyShift, 10)
-      ..lineTo(-2 + bodyShift, 0)
-      ..quadraticBezierTo(-2.5 + bodyShift, -8, bodyShift - 0.5, -14)
-      ..close();
+    final highlightStreak =
+        Path()
+          ..moveTo(bodyShift - 0.5, -14)
+          ..quadraticBezierTo(2.5 + bodyShift, -8, 2 + bodyShift, 0)
+          ..lineTo(1 + bodyShift, 10)
+          ..lineTo(-1 + bodyShift, 10)
+          ..lineTo(-2 + bodyShift, 0)
+          ..quadraticBezierTo(-2.5 + bodyShift, -8, bodyShift - 0.5, -14)
+          ..close();
     canvas.drawPath(highlightStreak, highlightPaint);
 
     // Accent stripe
-    final stripe = Path()
-      ..moveTo(-3 + bodyShift, -4)
-      ..lineTo(3 + bodyShift, -4)
-      ..lineTo(3 + bodyShift, 2)
-      ..lineTo(-3 + bodyShift, 2)
-      ..close();
+    final stripe =
+        Path()
+          ..moveTo(-3 + bodyShift, -4)
+          ..lineTo(3 + bodyShift, -4)
+          ..lineTo(3 + bodyShift, 2)
+          ..lineTo(-3 + bodyShift, 2)
+          ..close();
     canvas.drawPath(stripe, accentPaint);
 
     // Cockpit
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(bodyShift, -9),
-        width: 5,
-        height: 6,
-      ),
+      Rect.fromCenter(center: Offset(bodyShift, -9), width: 5, height: 6),
       Paint()..color = const Color(0xFF4A90B8),
     );
     canvas.drawOval(
@@ -327,11 +378,7 @@ class PlaneRenderer {
     canvas.restore(); // End body roll transform
 
     // Wing tip navigation lights
-    canvas.drawCircle(
-      Offset(-leftSpan + 1, 3.5 + leftDip),
-      1.8,
-      accentPaint,
-    );
+    canvas.drawCircle(Offset(-leftSpan + 1, 3.5 + leftDip), 1.8, accentPaint);
     canvas.drawCircle(
       Offset(rightSpan - 1, 3.5 + rightDip),
       1.8,
@@ -341,8 +388,13 @@ class PlaneRenderer {
 
   // ─── Paper Plane ────────────────────────────────────────────────────
 
-  static void _renderPaperPlane(Canvas canvas, double bankCos, double bankSin,
-      double wingSpan, Map<String, int>? colorScheme) {
+  static void _renderPaperPlane(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+  ) {
     final primary = _primary(colorScheme, 0xFFF5F5F5);
     final secondary = _secondary(colorScheme, 0xFFE0E0E0);
     final detail = _detail(colorScheme, 0xFFCCCCCC);
@@ -363,21 +415,23 @@ class PlaneRenderer {
         dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
 
     // --- Left wing (triangular, extends from nose to trailing edge) ---
-    final leftWing = Path()
-      ..moveTo(bodyShift, -18) // nose tip
-      ..lineTo(-leftSpan, 6 + wingDip) // wing tip
-      ..lineTo(-leftSpan + 4, 8 + wingDip) // trailing edge notch
-      ..lineTo(bodyShift, 4) // center trailing edge
-      ..close();
+    final leftWing =
+        Path()
+          ..moveTo(bodyShift, -18) // nose tip
+          ..lineTo(-leftSpan, 6 + wingDip) // wing tip
+          ..lineTo(-leftSpan + 4, 8 + wingDip) // trailing edge notch
+          ..lineTo(bodyShift, 4) // center trailing edge
+          ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
     // --- Right wing ---
-    final rightWing = Path()
-      ..moveTo(bodyShift, -18) // nose tip
-      ..lineTo(rightSpan, 6 - wingDip) // wing tip
-      ..lineTo(rightSpan - 4, 8 - wingDip) // trailing edge notch
-      ..lineTo(bodyShift, 4) // center trailing edge
-      ..close();
+    final rightWing =
+        Path()
+          ..moveTo(bodyShift, -18) // nose tip
+          ..lineTo(rightSpan, 6 - wingDip) // wing tip
+          ..lineTo(rightSpan - 4, 8 - wingDip) // trailing edge notch
+          ..lineTo(bodyShift, 4) // center trailing edge
+          ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
     // --- Center body / keel (the folded ridge) ---
@@ -388,14 +442,15 @@ class PlaneRenderer {
     canvas.translate(-bodyShift, 0);
 
     // Folded keel — the raised center crease of a paper plane
-    final keelPath = Path()
-      ..moveTo(bodyShift, -18) // nose tip
-      ..lineTo(bodyShift + 2.5, -8) // slight body width
-      ..lineTo(bodyShift + 2, 8)
-      ..lineTo(bodyShift, 12) // tail point
-      ..lineTo(bodyShift - 2, 8)
-      ..lineTo(bodyShift - 2.5, -8)
-      ..close();
+    final keelPath =
+        Path()
+          ..moveTo(bodyShift, -18) // nose tip
+          ..lineTo(bodyShift + 2.5, -8) // slight body width
+          ..lineTo(bodyShift + 2, 8)
+          ..lineTo(bodyShift, 12) // tail point
+          ..lineTo(bodyShift - 2, 8)
+          ..lineTo(bodyShift - 2.5, -8)
+          ..close();
     canvas.drawPath(keelPath, Paint()..color = primary);
 
     // Center fold line
@@ -408,32 +463,36 @@ class PlaneRenderer {
     );
 
     // Nose point highlight
-    canvas.drawCircle(
-      Offset(bodyShift, -18),
-      2.0,
-      Paint()..color = secondary,
-    );
+    canvas.drawCircle(Offset(bodyShift, -18), 2.0, Paint()..color = secondary);
 
     // Tail notch (the V-cut at the back of a paper plane)
-    final tailNotch = Path()
-      ..moveTo(bodyShift - 3, 10)
-      ..lineTo(bodyShift, 6) // notch apex
-      ..lineTo(bodyShift + 3, 10)
-      ..close();
+    final tailNotch =
+        Path()
+          ..moveTo(bodyShift - 3, 10)
+          ..lineTo(bodyShift, 6) // notch apex
+          ..lineTo(bodyShift + 3, 10)
+          ..close();
     canvas.drawPath(
-        tailNotch,
-        Paint()
-          ..color = detail
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.8);
+      tailNotch,
+      Paint()
+        ..color = detail
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8,
+    );
 
     canvas.restore(); // End body roll transform
   }
 
   // ─── Jet / Rocket / Golden Jet ──────────────────────────────────────
 
-  static void _renderJetPlane(Canvas canvas, double bankCos, double bankSin,
-      double wingSpan, Map<String, int>? colorScheme, String planeId) {
+  static void _renderJetPlane(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+    String planeId,
+  ) {
     final primary = _primary(colorScheme, 0xFFC0C0C0);
     final secondary = _secondary(colorScheme, 0xFF4A90B8);
     final detail = _detail(colorScheme, 0xFF808080);
@@ -449,24 +508,26 @@ class PlaneRenderer {
     final rightWingColor =
         shade > 0 ? detail : Color.lerp(detail, Colors.black, 0.3)!;
 
-    final leftSpan = dynamicWingSpan * 0.8 * (1.0 - bankSin.abs() * 0.15) +
-        bankSin * 1.0;
-    final leftWing = Path()
-      ..moveTo(-3 + bodyShift, 2)
-      ..lineTo(-leftSpan, 8 + wingDip)
-      ..lineTo(-leftSpan + 4, 10 + wingDip)
-      ..lineTo(-2 + bodyShift, 6)
-      ..close();
+    final leftSpan =
+        dynamicWingSpan * 0.8 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
+    final leftWing =
+        Path()
+          ..moveTo(-3 + bodyShift, 2)
+          ..lineTo(-leftSpan, 8 + wingDip)
+          ..lineTo(-leftSpan + 4, 10 + wingDip)
+          ..lineTo(-2 + bodyShift, 6)
+          ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
-    final rightSpan = dynamicWingSpan * 0.8 * (1.0 - bankSin.abs() * 0.15) -
-        bankSin * 1.0;
-    final rightWing = Path()
-      ..moveTo(3 + bodyShift, 2)
-      ..lineTo(rightSpan, 8 - wingDip)
-      ..lineTo(rightSpan - 4, 10 - wingDip)
-      ..lineTo(2 + bodyShift, 6)
-      ..close();
+    final rightSpan =
+        dynamicWingSpan * 0.8 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
+    final rightWing =
+        Path()
+          ..moveTo(3 + bodyShift, 2)
+          ..lineTo(rightSpan, 8 - wingDip)
+          ..lineTo(rightSpan - 4, 10 - wingDip)
+          ..lineTo(2 + bodyShift, 6)
+          ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
     // --- Body group ---
@@ -477,23 +538,20 @@ class PlaneRenderer {
     canvas.translate(-bodyShift, 0);
 
     // Sleek fuselage
-    final fuselagePath = Path()
-      ..moveTo(bodyShift, -18)
-      ..quadraticBezierTo(3 + bodyShift, -14, 3 + bodyShift, -4)
-      ..quadraticBezierTo(2.5 + bodyShift, 8, 2 + bodyShift, 15)
-      ..lineTo(-2 + bodyShift, 15)
-      ..quadraticBezierTo(-2.5 + bodyShift, 8, -3 + bodyShift, -4)
-      ..quadraticBezierTo(-3 + bodyShift, -14, bodyShift, -18)
-      ..close();
+    final fuselagePath =
+        Path()
+          ..moveTo(bodyShift, -18)
+          ..quadraticBezierTo(3 + bodyShift, -14, 3 + bodyShift, -4)
+          ..quadraticBezierTo(2.5 + bodyShift, 8, 2 + bodyShift, 15)
+          ..lineTo(-2 + bodyShift, 15)
+          ..quadraticBezierTo(-2.5 + bodyShift, 8, -3 + bodyShift, -4)
+          ..quadraticBezierTo(-3 + bodyShift, -14, bodyShift, -18)
+          ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
 
     // Canopy
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(bodyShift, -10),
-        width: 4,
-        height: 7,
-      ),
+      Rect.fromCenter(center: Offset(bodyShift, -10), width: 4, height: 7),
       Paint()..color = const Color(0xFF4A90B8),
     );
 
@@ -506,11 +564,7 @@ class PlaneRenderer {
       );
     } else {
       canvas.drawOval(
-        Rect.fromCenter(
-          center: Offset(bodyShift, 15),
-          width: 4,
-          height: 3,
-        ),
+        Rect.fromCenter(center: Offset(bodyShift, 15), width: 4, height: 3),
         Paint()..color = const Color(0xFF555555),
       );
     }
@@ -528,8 +582,13 @@ class PlaneRenderer {
 
   // ─── Stealth Bomber ─────────────────────────────────────────────────
 
-  static void _renderStealthPlane(Canvas canvas, double bankCos,
-      double bankSin, double wingSpan, Map<String, int>? colorScheme) {
+  static void _renderStealthPlane(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+  ) {
     final primary = _primary(colorScheme, 0xFF2A2A2A);
     final secondary = _secondary(colorScheme, 0xFF1A1A1A);
     final detail = _detail(colorScheme, 0xFF444444);
@@ -544,26 +603,34 @@ class PlaneRenderer {
 
     final leftSpan =
         dynamicWingSpan * 1.2 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.5;
-    final leftWing = Path()
-      ..moveTo(bodyShift, -16)
-      ..quadraticBezierTo(
-          -leftSpan * 0.4, -8 + wingDip * 0.3, -leftSpan, 4 + wingDip)
-      ..lineTo(-leftSpan + 6, 8 + wingDip)
-      ..quadraticBezierTo(
-          -leftSpan * 0.3, 6 + wingDip * 0.5, bodyShift, 10)
-      ..close();
+    final leftWing =
+        Path()
+          ..moveTo(bodyShift, -16)
+          ..quadraticBezierTo(
+            -leftSpan * 0.4,
+            -8 + wingDip * 0.3,
+            -leftSpan,
+            4 + wingDip,
+          )
+          ..lineTo(-leftSpan + 6, 8 + wingDip)
+          ..quadraticBezierTo(-leftSpan * 0.3, 6 + wingDip * 0.5, bodyShift, 10)
+          ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
     final rightSpan =
         dynamicWingSpan * 1.2 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.5;
-    final rightWing = Path()
-      ..moveTo(bodyShift, -16)
-      ..quadraticBezierTo(
-          rightSpan * 0.4, -8 - wingDip * 0.3, rightSpan, 4 - wingDip)
-      ..lineTo(rightSpan - 6, 8 - wingDip)
-      ..quadraticBezierTo(
-          rightSpan * 0.3, 6 - wingDip * 0.5, bodyShift, 10)
-      ..close();
+    final rightWing =
+        Path()
+          ..moveTo(bodyShift, -16)
+          ..quadraticBezierTo(
+            rightSpan * 0.4,
+            -8 - wingDip * 0.3,
+            rightSpan,
+            4 - wingDip,
+          )
+          ..lineTo(rightSpan - 6, 8 - wingDip)
+          ..quadraticBezierTo(rightSpan * 0.3, 6 - wingDip * 0.5, bodyShift, 10)
+          ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
     // --- Body group ---
@@ -574,37 +641,36 @@ class PlaneRenderer {
     canvas.translate(-bodyShift, 0);
 
     // Center body section
-    final centerBody = Path()
-      ..moveTo(bodyShift - 4, -12)
-      ..lineTo(bodyShift - 3, 8)
-      ..lineTo(bodyShift + 3, 8)
-      ..lineTo(bodyShift + 4, -12)
-      ..close();
+    final centerBody =
+        Path()
+          ..moveTo(bodyShift - 4, -12)
+          ..lineTo(bodyShift - 3, 8)
+          ..lineTo(bodyShift + 3, 8)
+          ..lineTo(bodyShift + 4, -12)
+          ..close();
     canvas.drawPath(centerBody, Paint()..color = detail);
 
     // Sawtooth trailing edge
-    final sawtoothPaint = Paint()
-      ..color = secondary
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-    final sawtoothPath = Path()
-      ..moveTo(-leftSpan + 6, 8 + wingDip)
-      ..lineTo(-leftSpan * 0.6, 9 + wingDip * 0.6)
-      ..lineTo(-leftSpan * 0.3, 8 + wingDip * 0.4)
-      ..lineTo(bodyShift - 3, 9)
-      ..lineTo(bodyShift + 3, 9)
-      ..lineTo(rightSpan * 0.3, 8 - wingDip * 0.4)
-      ..lineTo(rightSpan * 0.6, 9 - wingDip * 0.6)
-      ..lineTo(rightSpan - 6, 8 - wingDip);
+    final sawtoothPaint =
+        Paint()
+          ..color = secondary
+          ..strokeWidth = 1.5
+          ..style = PaintingStyle.stroke;
+    final sawtoothPath =
+        Path()
+          ..moveTo(-leftSpan + 6, 8 + wingDip)
+          ..lineTo(-leftSpan * 0.6, 9 + wingDip * 0.6)
+          ..lineTo(-leftSpan * 0.3, 8 + wingDip * 0.4)
+          ..lineTo(bodyShift - 3, 9)
+          ..lineTo(bodyShift + 3, 9)
+          ..lineTo(rightSpan * 0.3, 8 - wingDip * 0.4)
+          ..lineTo(rightSpan * 0.6, 9 - wingDip * 0.6)
+          ..lineTo(rightSpan - 6, 8 - wingDip);
     canvas.drawPath(sawtoothPath, sawtoothPaint);
 
     // Cockpit
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(bodyShift, -8),
-        width: 3,
-        height: 4,
-      ),
+      Rect.fromCenter(center: Offset(bodyShift, -8), width: 3, height: 4),
       Paint()..color = const Color(0xFF333333),
     );
     canvas.restore(); // End body roll transform
@@ -612,8 +678,14 @@ class PlaneRenderer {
 
   // ─── Triplane (Red Baron) ──────────────────────────────────────────
 
-  static void _renderTriplane(Canvas canvas, double bankCos, double bankSin,
-      double wingSpan, Map<String, int>? colorScheme, double propAngle) {
+  static void _renderTriplane(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+    double propAngle,
+  ) {
     final primary = _primary(colorScheme, 0xFFCC3333);
     final secondary = _secondary(colorScheme, 0xFF8B0000);
     final detail = _detail(colorScheme, 0xFF1A1A1A);
@@ -627,14 +699,16 @@ class PlaneRenderer {
         shade < 0 ? detail : Color.lerp(detail, Colors.black, 0.2)!;
 
     // --- Propeller ---
-    final propDiscPaint = Paint()
-      ..color = primary.withOpacity(0.15)
-      ..style = PaintingStyle.fill;
+    final propDiscPaint =
+        Paint()
+          ..color = primary.withOpacity(0.15)
+          ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(bodyShift, -17), 7, propDiscPaint);
-    final bladePaint = Paint()
-      ..color = const Color(0xFF444444).withOpacity(0.8)
-      ..strokeWidth = 1.8
-      ..strokeCap = StrokeCap.round;
+    final bladePaint =
+        Paint()
+          ..color = const Color(0xFF444444).withOpacity(0.8)
+          ..strokeWidth = 1.8
+          ..strokeCap = StrokeCap.round;
     const bladeLen = 6.0;
     for (var i = 0; i < 2; i++) {
       final a = propAngle + i * pi;
@@ -695,40 +769,39 @@ class PlaneRenderer {
     canvas.translate(-bodyShift, 0);
 
     // Tail
-    final tailPath = Path()
-      ..moveTo(-4, 12)
-      ..lineTo(-4, 16)
-      ..lineTo(4, 16)
-      ..lineTo(4, 12)
-      ..close();
+    final tailPath =
+        Path()
+          ..moveTo(-4, 12)
+          ..lineTo(-4, 16)
+          ..lineTo(4, 16)
+          ..lineTo(4, 12)
+          ..close();
     canvas.drawPath(tailPath, Paint()..color = wingColor);
 
     // Fuselage
-    final fuselagePath = Path()
-      ..moveTo(bodyShift, -16)
-      ..quadraticBezierTo(4 + bodyShift, -12, 4 + bodyShift, -2)
-      ..quadraticBezierTo(3 + bodyShift, 10, 2 + bodyShift, 16)
-      ..quadraticBezierTo(bodyShift, 17, -2 + bodyShift, 16)
-      ..quadraticBezierTo(-3 + bodyShift, 10, -4 + bodyShift, -2)
-      ..quadraticBezierTo(-4 + bodyShift, -12, bodyShift, -16)
-      ..close();
+    final fuselagePath =
+        Path()
+          ..moveTo(bodyShift, -16)
+          ..quadraticBezierTo(4 + bodyShift, -12, 4 + bodyShift, -2)
+          ..quadraticBezierTo(3 + bodyShift, 10, 2 + bodyShift, 16)
+          ..quadraticBezierTo(bodyShift, 17, -2 + bodyShift, 16)
+          ..quadraticBezierTo(-3 + bodyShift, 10, -4 + bodyShift, -2)
+          ..quadraticBezierTo(-4 + bodyShift, -12, bodyShift, -16)
+          ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
 
     // Struts
-    final strutPaint = Paint()
-      ..color = detail
-      ..strokeWidth = 1.5;
+    final strutPaint =
+        Paint()
+          ..color = detail
+          ..strokeWidth = 1.5;
     for (var x in [-dynamicWingSpan * 0.5, dynamicWingSpan * 0.5]) {
       canvas.drawLine(Offset(x, -4), Offset(x, 8 + wingDip * 0.5), strutPaint);
     }
 
     // Cockpit
     canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(bodyShift, -8),
-        width: 5,
-        height: 6,
-      ),
+      Rect.fromCenter(center: Offset(bodyShift, -8), width: 5, height: 6),
       Paint()..color = const Color(0xFF654321),
     );
 
@@ -752,8 +825,13 @@ class PlaneRenderer {
 
   // ─── Concorde ──────────────────────────────────────────────────────
 
-  static void _renderConcorde(Canvas canvas, double bankCos, double bankSin,
-      double wingSpan, Map<String, int>? colorScheme) {
+  static void _renderConcorde(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+  ) {
     final primary = _primary(colorScheme, 0xFFF5F5F5);
     final secondary = _secondary(colorScheme, 0xFF1A3A5C);
     final detail = _detail(colorScheme, 0xFFCC3333);
@@ -769,22 +847,24 @@ class PlaneRenderer {
     final rightWingColor =
         shade > 0 ? primary : Color.lerp(primary, Colors.grey, 0.2)!;
 
-    final leftSpan = dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) +
-        bankSin * 1.0;
-    final leftWing = Path()
-      ..moveTo(bodyShift - 2, -16)
-      ..lineTo(-leftSpan, 10 + wingDip)
-      ..lineTo(bodyShift - 2, 14)
-      ..close();
+    final leftSpan =
+        dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
+    final leftWing =
+        Path()
+          ..moveTo(bodyShift - 2, -16)
+          ..lineTo(-leftSpan, 10 + wingDip)
+          ..lineTo(bodyShift - 2, 14)
+          ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
-    final rightSpan = dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) -
-        bankSin * 1.0;
-    final rightWing = Path()
-      ..moveTo(bodyShift + 2, -16)
-      ..lineTo(rightSpan, 10 - wingDip)
-      ..lineTo(bodyShift + 2, 14)
-      ..close();
+    final rightSpan =
+        dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
+    final rightWing =
+        Path()
+          ..moveTo(bodyShift + 2, -16)
+          ..lineTo(rightSpan, 10 - wingDip)
+          ..lineTo(bodyShift + 2, 14)
+          ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
     // --- Body group ---
@@ -795,14 +875,15 @@ class PlaneRenderer {
     canvas.translate(-bodyShift, 0);
 
     // Fuselage
-    final fuselagePath = Path()
-      ..moveTo(bodyShift, -18)
-      ..quadraticBezierTo(3 + bodyShift, -10, 3 + bodyShift, 0)
-      ..lineTo(2 + bodyShift, 14)
-      ..lineTo(-2 + bodyShift, 14)
-      ..lineTo(-3 + bodyShift, 0)
-      ..quadraticBezierTo(-3 + bodyShift, -10, bodyShift, -18)
-      ..close();
+    final fuselagePath =
+        Path()
+          ..moveTo(bodyShift, -18)
+          ..quadraticBezierTo(3 + bodyShift, -10, 3 + bodyShift, 0)
+          ..lineTo(2 + bodyShift, 14)
+          ..lineTo(-2 + bodyShift, 14)
+          ..lineTo(-3 + bodyShift, 0)
+          ..quadraticBezierTo(-3 + bodyShift, -10, bodyShift, -18)
+          ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
 
     // Drooping nose
@@ -859,8 +940,14 @@ class PlaneRenderer {
 
   // ─── Seaplane ──────────────────────────────────────────────────────
 
-  static void _renderSeaplane(Canvas canvas, double bankCos, double bankSin,
-      double wingSpan, Map<String, int>? colorScheme, double propAngle) {
+  static void _renderSeaplane(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+    double propAngle,
+  ) {
     final secondary = _secondary(colorScheme, 0xFF2E8B57);
     final detail = _detail(colorScheme, 0xFFF5F5F5);
 
@@ -893,9 +980,10 @@ class PlaneRenderer {
     );
 
     // Struts connecting pontoons to wings
-    final strutPaint = Paint()
-      ..color = secondary
-      ..strokeWidth = 2.0;
+    final strutPaint =
+        Paint()
+          ..color = secondary
+          ..strokeWidth = 2.0;
     canvas.drawLine(
       Offset(-dynamicWingSpan * 0.5, 4 + wingDip * 0.7),
       Offset(-dynamicWingSpan * 0.5, 8 + wingDip),
@@ -913,8 +1001,13 @@ class PlaneRenderer {
 
   // ─── Airliner (Bryanair, Air Force One) ─────────────────────────────
 
-  static void _renderAirliner(Canvas canvas, double bankCos, double bankSin,
-      double wingSpan, Map<String, int>? colorScheme) {
+  static void _renderAirliner(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+  ) {
     final primary = _primary(colorScheme, 0xFFF5F5F5);
     final secondary = _secondary(colorScheme, 0xFF003580);
     final detail = _detail(colorScheme, 0xFFFFCC00);
@@ -930,28 +1023,46 @@ class PlaneRenderer {
     final rightWingColor =
         shade > 0 ? detail : Color.lerp(detail, Colors.grey, 0.3)!;
 
-    final leftSpan = dynamicWingSpan * 1.1 * (1.0 - bankSin.abs() * 0.15) +
-        bankSin * 1.0;
-    final leftWing = Path()
-      ..moveTo(-6 + bodyShift, 0)
-      ..quadraticBezierTo(
-          -leftSpan * 0.5, 2 + wingDip * 0.5, -leftSpan, 6 + wingDip)
-      ..lineTo(-leftSpan + 5, 8 + wingDip)
-      ..quadraticBezierTo(
-          -leftSpan * 0.4, 5 + wingDip * 0.5, -5 + bodyShift, 2)
-      ..close();
+    final leftSpan =
+        dynamicWingSpan * 1.1 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
+    final leftWing =
+        Path()
+          ..moveTo(-6 + bodyShift, 0)
+          ..quadraticBezierTo(
+            -leftSpan * 0.5,
+            2 + wingDip * 0.5,
+            -leftSpan,
+            6 + wingDip,
+          )
+          ..lineTo(-leftSpan + 5, 8 + wingDip)
+          ..quadraticBezierTo(
+            -leftSpan * 0.4,
+            5 + wingDip * 0.5,
+            -5 + bodyShift,
+            2,
+          )
+          ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
-    final rightSpan = dynamicWingSpan * 1.1 * (1.0 - bankSin.abs() * 0.15) -
-        bankSin * 1.0;
-    final rightWing = Path()
-      ..moveTo(6 + bodyShift, 0)
-      ..quadraticBezierTo(
-          rightSpan * 0.5, 2 - wingDip * 0.5, rightSpan, 6 - wingDip)
-      ..lineTo(rightSpan - 5, 8 - wingDip)
-      ..quadraticBezierTo(
-          rightSpan * 0.4, 5 - wingDip * 0.5, 5 + bodyShift, 2)
-      ..close();
+    final rightSpan =
+        dynamicWingSpan * 1.1 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
+    final rightWing =
+        Path()
+          ..moveTo(6 + bodyShift, 0)
+          ..quadraticBezierTo(
+            rightSpan * 0.5,
+            2 - wingDip * 0.5,
+            rightSpan,
+            6 - wingDip,
+          )
+          ..lineTo(rightSpan - 5, 8 - wingDip)
+          ..quadraticBezierTo(
+            rightSpan * 0.4,
+            5 - wingDip * 0.5,
+            5 + bodyShift,
+            2,
+          )
+          ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
     // --- Body group ---
@@ -962,31 +1073,34 @@ class PlaneRenderer {
     canvas.translate(-bodyShift, 0);
 
     // Tail section
-    final tailPath = Path()
-      ..moveTo(-3, 14)
-      ..lineTo(-2, 16)
-      ..lineTo(2, 16)
-      ..lineTo(3, 14)
-      ..close();
+    final tailPath =
+        Path()
+          ..moveTo(-3, 14)
+          ..lineTo(-2, 16)
+          ..lineTo(2, 16)
+          ..lineTo(3, 14)
+          ..close();
     canvas.drawPath(tailPath, Paint()..color = detail);
 
     // Vertical stabilizer
-    final finPath = Path()
-      ..moveTo(bodyShift, 12)
-      ..quadraticBezierTo(-2 + bodyShift, 14, bodyShift, 17)
-      ..quadraticBezierTo(2 + bodyShift, 14, bodyShift, 12)
-      ..close();
+    final finPath =
+        Path()
+          ..moveTo(bodyShift, 12)
+          ..quadraticBezierTo(-2 + bodyShift, 14, bodyShift, 17)
+          ..quadraticBezierTo(2 + bodyShift, 14, bodyShift, 12)
+          ..close();
     canvas.drawPath(finPath, Paint()..color = secondary);
 
     // Wide fuselage
-    final fuselagePath = Path()
-      ..moveTo(bodyShift, -17)
-      ..quadraticBezierTo(6 + bodyShift, -12, 6 + bodyShift, 0)
-      ..quadraticBezierTo(5 + bodyShift, 10, 3 + bodyShift, 16)
-      ..lineTo(-3 + bodyShift, 16)
-      ..quadraticBezierTo(-5 + bodyShift, 10, -6 + bodyShift, 0)
-      ..quadraticBezierTo(-6 + bodyShift, -12, bodyShift, -17)
-      ..close();
+    final fuselagePath =
+        Path()
+          ..moveTo(bodyShift, -17)
+          ..quadraticBezierTo(6 + bodyShift, -12, 6 + bodyShift, 0)
+          ..quadraticBezierTo(5 + bodyShift, 10, 3 + bodyShift, 16)
+          ..lineTo(-3 + bodyShift, 16)
+          ..quadraticBezierTo(-5 + bodyShift, 10, -6 + bodyShift, 0)
+          ..quadraticBezierTo(-6 + bodyShift, -12, bodyShift, -17)
+          ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
 
     // Cockpit windows
@@ -1044,8 +1158,13 @@ class PlaneRenderer {
 
   // ─── Platinum Eagle ────────────────────────────────────────────────
 
-  static void _renderEagle(Canvas canvas, double bankCos, double bankSin,
-      double wingSpan, Map<String, int>? colorScheme) {
+  static void _renderEagle(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+  ) {
     final primary = _primary(colorScheme, 0xFFD4D4D4);
     final secondary = _secondary(colorScheme, 0xFF6A0DAD);
     final detail = _detail(colorScheme, 0xFFC0C0C0);
@@ -1063,24 +1182,34 @@ class PlaneRenderer {
 
     final leftSpan =
         dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
-    final leftWing = Path()
-      ..moveTo(-4 + bodyShift, -4)
-      ..quadraticBezierTo(
-          -leftSpan * 0.5, -10 + wingDip * 0.3, -leftSpan, 2 + wingDip)
-      ..lineTo(-leftSpan + 6, 6 + wingDip)
-      ..lineTo(-4 + bodyShift, 2)
-      ..close();
+    final leftWing =
+        Path()
+          ..moveTo(-4 + bodyShift, -4)
+          ..quadraticBezierTo(
+            -leftSpan * 0.5,
+            -10 + wingDip * 0.3,
+            -leftSpan,
+            2 + wingDip,
+          )
+          ..lineTo(-leftSpan + 6, 6 + wingDip)
+          ..lineTo(-4 + bodyShift, 2)
+          ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
     final rightSpan =
         dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
-    final rightWing = Path()
-      ..moveTo(4 + bodyShift, -4)
-      ..quadraticBezierTo(
-          rightSpan * 0.5, -10 - wingDip * 0.3, rightSpan, 2 - wingDip)
-      ..lineTo(rightSpan - 6, 6 - wingDip)
-      ..lineTo(4 + bodyShift, 2)
-      ..close();
+    final rightWing =
+        Path()
+          ..moveTo(4 + bodyShift, -4)
+          ..quadraticBezierTo(
+            rightSpan * 0.5,
+            -10 - wingDip * 0.3,
+            rightSpan,
+            2 - wingDip,
+          )
+          ..lineTo(rightSpan - 6, 6 - wingDip)
+          ..lineTo(4 + bodyShift, 2)
+          ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
     // --- Body group ---
@@ -1091,24 +1220,26 @@ class PlaneRenderer {
     canvas.translate(-bodyShift, 0);
 
     // Tail feathers
-    final tailPath = Path()
-      ..moveTo(bodyShift - 4, 10)
-      ..lineTo(bodyShift - 6, 16)
-      ..lineTo(bodyShift, 13)
-      ..lineTo(bodyShift + 6, 16)
-      ..lineTo(bodyShift + 4, 10)
-      ..close();
+    final tailPath =
+        Path()
+          ..moveTo(bodyShift - 4, 10)
+          ..lineTo(bodyShift - 6, 16)
+          ..lineTo(bodyShift, 13)
+          ..lineTo(bodyShift + 6, 16)
+          ..lineTo(bodyShift + 4, 10)
+          ..close();
     canvas.drawPath(tailPath, Paint()..color = secondary);
 
     // Raptor body (tapered)
-    final fuselagePath = Path()
-      ..moveTo(bodyShift, -16) // beak tip
-      ..quadraticBezierTo(4 + bodyShift, -10, 4 + bodyShift, -2)
-      ..quadraticBezierTo(3 + bodyShift, 6, 2 + bodyShift, 12)
-      ..lineTo(-2 + bodyShift, 12)
-      ..quadraticBezierTo(-3 + bodyShift, 6, -4 + bodyShift, -2)
-      ..quadraticBezierTo(-4 + bodyShift, -10, bodyShift, -16)
-      ..close();
+    final fuselagePath =
+        Path()
+          ..moveTo(bodyShift, -16) // beak tip
+          ..quadraticBezierTo(4 + bodyShift, -10, 4 + bodyShift, -2)
+          ..quadraticBezierTo(3 + bodyShift, 6, 2 + bodyShift, 12)
+          ..lineTo(-2 + bodyShift, 12)
+          ..quadraticBezierTo(-3 + bodyShift, 6, -4 + bodyShift, -2)
+          ..quadraticBezierTo(-4 + bodyShift, -10, bodyShift, -16)
+          ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
 
     // Eagle eye

@@ -110,17 +110,17 @@ class AvatarCompositor {
   ///
   /// Returns `null` only if composition fails unexpectedly.
   static String? compose(AvatarConfig config) => switch (config.style) {
-        AvatarStyle.adventurer => _composeAdventurer(config),
-        AvatarStyle.avataaars => _composeAvataaars(config),
-        AvatarStyle.bigEars => _composeBigEars(config),
-        AvatarStyle.lorelei => _composeLorelei(config),
-        AvatarStyle.micah => _composeMicah(config),
-        AvatarStyle.pixelArt => _composePixelArt(config),
-        AvatarStyle.bottts => _composeBottts(config),
-        AvatarStyle.notionists => _composeNotionists(config),
-        AvatarStyle.openPeeps => _composeOpenPeeps(config),
-        AvatarStyle.thumbs => _composeThumbs(config),
-      };
+    AvatarStyle.adventurer => _composeAdventurer(config),
+    AvatarStyle.avataaars => _composeAvataaars(config),
+    AvatarStyle.bigEars => _composeBigEars(config),
+    AvatarStyle.lorelei => _composeLorelei(config),
+    AvatarStyle.micah => _composeMicah(config),
+    AvatarStyle.pixelArt => _composePixelArt(config),
+    AvatarStyle.bottts => _composeBottts(config),
+    AvatarStyle.notionists => _composeNotionists(config),
+    AvatarStyle.openPeeps => _composeOpenPeeps(config),
+    AvatarStyle.thumbs => _composeThumbs(config),
+  };
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -153,17 +153,29 @@ class AvatarCompositor {
     final m = 0.55 - c / 2.0;
     double r, g, b;
     if (h < 60) {
-      r = c; g = x; b = 0;
+      r = c;
+      g = x;
+      b = 0;
     } else if (h < 120) {
-      r = x; g = c; b = 0;
+      r = x;
+      g = c;
+      b = 0;
     } else if (h < 180) {
-      r = 0; g = c; b = x;
+      r = 0;
+      g = c;
+      b = x;
     } else if (h < 240) {
-      r = 0; g = x; b = c;
+      r = 0;
+      g = x;
+      b = c;
     } else if (h < 300) {
-      r = x; g = 0; b = c;
+      r = x;
+      g = 0;
+      b = c;
     } else {
-      r = c; g = 0; b = x;
+      r = c;
+      g = 0;
+      b = x;
     }
     final ri = ((r + m) * 255).round().clamp(0, 255);
     final gi = ((g + m) * 255).round().clamp(0, 255);
@@ -187,28 +199,35 @@ class AvatarCompositor {
     final eyebrows = adventurerEyebrows[config.eyebrows.apiValue] ?? '';
     final mouth = adventurerMouth[config.mouth.apiValue] ?? '';
 
-    final features = config.feature == AvatarFeature.none
-        ? ''
-        : adventurerFeatures[config.feature.name] ?? '';
+    final features =
+        config.feature == AvatarFeature.none
+            ? ''
+            : adventurerFeatures[config.feature.name] ?? '';
 
-    final glasses = config.glasses == AvatarGlasses.none
-        ? ''
-        : adventurerGlasses[config.glasses.apiValue] ?? '';
+    final glasses =
+        config.glasses == AvatarGlasses.none
+            ? ''
+            : adventurerGlasses[config.glasses.apiValue] ?? '';
 
-    final hair = config.hair == AvatarHair.none
-        ? ''
-        : (adventurerHair[config.hair.apiValue] ?? '')
-            .replaceAll('{{HAIR_COLOR}}', hairHex);
+    final hair =
+        config.hair == AvatarHair.none
+            ? ''
+            : (adventurerHair[config.hair.apiValue] ?? '').replaceAll(
+              '{{HAIR_COLOR}}',
+              hairHex,
+            );
 
-    final earrings = config.earrings == AvatarEarrings.none
-        ? ''
-        : adventurerEarrings[config.earrings.apiValue] ?? '';
+    final earrings =
+        config.earrings == AvatarEarrings.none
+            ? ''
+            : adventurerEarrings[config.earrings.apiValue] ?? '';
 
-    final buf = StringBuffer()
-      ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
-      ..write('viewBox="0 0 762 762" fill="none" ')
-      ..write('shape-rendering="auto">')
-      ..write(base);
+    final buf =
+        StringBuffer()
+          ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
+          ..write('viewBox="0 0 762 762" fill="none" ')
+          ..write('shape-rendering="auto">')
+          ..write(base);
 
     void addLayer(String svg) {
       if (svg.isNotEmpty) {
@@ -244,18 +263,19 @@ class AvatarCompositor {
     final eyebrows = _pick(avataaarsEyebrows, h, 4);
     final top = _pick(avataaarsTop, h, 5);
 
-    final buf = StringBuffer()
-      ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
-      ..write('viewBox="0 0 280 280" fill="none" ')
-      ..write('shape-rendering="auto">')
-      ..write('<g transform="translate(8 0)">');
+    final buf =
+        StringBuffer()
+          ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
+          ..write('viewBox="0 0 280 280" fill="none" ')
+          ..write('shape-rendering="auto">')
+          ..write('<g transform="translate(8 0)">');
 
     // Background body shape (circle + shoulders).
     buf.write(
       '<circle cx="132" cy="132" r="120" fill="#e8e3e3"/>'
       '<mask id="a" maskUnits="userSpaceOnUse" x="12" y="12" width="240" height="240">'
       '<circle cx="132" cy="132" r="120" fill="#fff"/></mask>'
-      '<g mask="url(#a)">'
+      '<g mask="url(#a)">',
     );
 
     // Layer order: nose → mouth → eyes → eyebrows → top.
@@ -278,23 +298,28 @@ class AvatarCompositor {
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
 
-    final face = _pick(bigearsFace, h, 1)
-        .replaceAll('{{SKIN_COLOR}}', skinHex);
-    final ear = _pick(bigearsEar, h, 2)
-        .replaceAll('{{SKIN_COLOR}}', skinHex);
-    final sideburn = _pick(bigearsSideburn, h, 3)
-        .replaceAll('{{HAIR_COLOR}}', hairHex);
+    final face = _pick(bigearsFace, h, 1).replaceAll('{{SKIN_COLOR}}', skinHex);
+    final ear = _pick(bigearsEar, h, 2).replaceAll('{{SKIN_COLOR}}', skinHex);
+    final sideburn = _pick(
+      bigearsSideburn,
+      h,
+      3,
+    ).replaceAll('{{HAIR_COLOR}}', hairHex);
     final cheek = _pick(bigearsCheek, h, 4);
     final nose = _pick(bigearsNose, h, 5);
     final mouth = _pick(bigearsMouth, h, 6);
     final eyes = _pick(bigearsEyes, h, 7);
-    final frontHair = _pick(bigearsFrontHair, h, 8)
-        .replaceAll('{{HAIR_COLOR}}', hairHex);
+    final frontHair = _pick(
+      bigearsFrontHair,
+      h,
+      8,
+    ).replaceAll('{{HAIR_COLOR}}', hairHex);
 
-    final buf = StringBuffer()
-      ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
-      ..write('viewBox="0 0 440 440" fill="none" ')
-      ..write('shape-rendering="auto">');
+    final buf =
+        StringBuffer()
+          ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
+          ..write('viewBox="0 0 440 440" fill="none" ')
+          ..write('shape-rendering="auto">');
 
     // Face (centered).
     buf.write(_g(face, 'translate(30 51)'));
@@ -308,8 +333,7 @@ class AvatarCompositor {
     // Left sideburn + right sideburn (mirrored).
     if (sideburn.isNotEmpty) {
       buf.write(_g(sideburn, 'translate(14 160)'));
-      buf.write(
-          '<g transform="translate(375 160) scale(-1 1)">$sideburn</g>');
+      buf.write('<g transform="translate(375 160) scale(-1 1)">$sideburn</g>');
     }
 
     // Cheek, nose, mouth, eyes.
@@ -334,28 +358,30 @@ class AvatarCompositor {
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
 
-    final head = _pick(loreleiHead, h, 1)
-        .replaceAll('{{SKIN_COLOR}}', skinHex);
+    final head = _pick(loreleiHead, h, 1).replaceAll('{{SKIN_COLOR}}', skinHex);
     final freckles = _pick(loreleiFreckles, h, 2);
     final eyebrows = _pick(loreleiEyebrows, h, 3);
     final eyes = _pick(loreleiEyes, h, 4);
     final nose = _pick(loreleiNose, h, 5);
     final mouth = _pick(loreleiMouth, h, 6);
-    final glasses = _pick(loreleiGlasses, h, 7)
-        .replaceAll('{{GLASSES_COLOR}}', '#4a4a4a');
+    final glasses = _pick(
+      loreleiGlasses,
+      h,
+      7,
+    ).replaceAll('{{GLASSES_COLOR}}', '#4a4a4a');
     final earrings = _pick(loreleiEarrings, h, 8);
-    final hair = _pick(loreleiHair, h, 9)
-        .replaceAll('{{HAIR_COLOR}}', hairHex);
+    final hair = _pick(loreleiHair, h, 9).replaceAll('{{HAIR_COLOR}}', hairHex);
     final hairAccessories = _pick(loreleiHairAccessories, h, 10);
     final beard = _pick(loreleiBeard, h, 11)
         .replaceAll('{{BEARD_COLOR}}', hairHex)
         .replaceAll('{{HAIR_COLOR}}', hairHex);
 
-    final buf = StringBuffer()
-      ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
-      ..write('viewBox="0 0 980 980" fill="none" ')
-      ..write('shape-rendering="auto">')
-      ..write('<g transform="translate(10 -60)">');
+    final buf =
+        StringBuffer()
+          ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
+          ..write('viewBox="0 0 980 980" fill="none" ')
+          ..write('shape-rendering="auto">')
+          ..write('<g transform="translate(10 -60)">');
 
     buf.write(head);
     if (freckles.isNotEmpty) buf.write(_g(freckles, 'translate(198 410)'));
@@ -394,25 +420,30 @@ class AvatarCompositor {
         .replaceAll('{{BASE_COLOR}}', skinHex)
         .replaceAll('{{FACIAL_HAIR}}', facialHairRaw);
     final mouth = _pick(micahMouth, h, 2);
-    final eyebrows = _pick(micahEyebrows, h, 3)
-        .replaceAll('{{EYEBROW_COLOR}}', hairHex);
-    final hair = _pick(micahHair, h, 4)
-        .replaceAll('{{HAIR_COLOR}}', hairHex);
+    final eyebrows = _pick(
+      micahEyebrows,
+      h,
+      3,
+    ).replaceAll('{{EYEBROW_COLOR}}', hairHex);
+    final hair = _pick(micahHair, h, 4).replaceAll('{{HAIR_COLOR}}', hairHex);
     final eyes = _pick(micahEyes, h, 5)
         .replaceAll('{{EYES_COLOR}}', eyeColor)
         .replaceAll('{{EYE_SHADOW_COLOR}}', eyeShadow)
         .replaceAll('{{GLASSES}}', glassesRaw);
     final nose = _pick(micahNose, h, 6);
-    final ears = _pick(micahEars, h, 7)
-        .replaceAll('{{EAR_COLOR}}', skinHex);
+    final ears = _pick(micahEars, h, 7).replaceAll('{{EAR_COLOR}}', skinHex);
     final earrings = _pick(micahEarrings, h, 8);
-    final shirt = _pick(micahShirt, h, 9)
-        .replaceAll('{{SHIRT_COLOR}}', shirtColor);
+    final shirt = _pick(
+      micahShirt,
+      h,
+      9,
+    ).replaceAll('{{SHIRT_COLOR}}', shirtColor);
 
-    final buf = StringBuffer()
-      ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
-      ..write('viewBox="0 0 360 360" fill="none" ')
-      ..write('shape-rendering="auto">');
+    final buf =
+        StringBuffer()
+          ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
+          ..write('viewBox="0 0 360 360" fill="none" ')
+          ..write('shape-rendering="auto">');
 
     // Layer order matches DiceBear micah.
     buf.write(_g(base, 'translate(80 23)'));
@@ -422,7 +453,8 @@ class AvatarCompositor {
     if (eyes.isNotEmpty) buf.write(_g(eyes, 'translate(142 119)'));
     if (nose.isNotEmpty) {
       buf.write(
-          '<g transform="rotate(-8 179 167) translate(179 167)">$nose</g>');
+        '<g transform="rotate(-8 179 167) translate(179 167)">$nose</g>',
+      );
     }
     if (ears.isNotEmpty) buf.write(_g(ears, 'translate(84 154)'));
     if (earrings.isNotEmpty) buf.write(_g(earrings, 'translate(84 184)'));
@@ -443,33 +475,54 @@ class AvatarCompositor {
     final eyeColor = _hashColor(h, 33);
     final accColor = _hashColor(h, 55);
 
-    final clothing = _pick(pixelartClothing, h, 1)
-        .replaceAll('{{CLOTHING_COLOR}}', _hashColor(h, 66));
-    final eyes = _pick(pixelartEyes, h, 2)
-        .replaceAll('{{EYES_COLOR}}', eyeColor);
-    final mouth = _pick(pixelartMouth, h, 3)
-        .replaceAll('{{MOUTH_COLOR}}', '#d2691e');
-    final hair = _pick(pixelartHair, h, 4)
-        .replaceAll('{{HAIR_COLOR}}', hairHex);
+    final clothing = _pick(
+      pixelartClothing,
+      h,
+      1,
+    ).replaceAll('{{CLOTHING_COLOR}}', _hashColor(h, 66));
+    final eyes = _pick(
+      pixelartEyes,
+      h,
+      2,
+    ).replaceAll('{{EYES_COLOR}}', eyeColor);
+    final mouth = _pick(
+      pixelartMouth,
+      h,
+      3,
+    ).replaceAll('{{MOUTH_COLOR}}', '#d2691e');
+    final hair = _pick(
+      pixelartHair,
+      h,
+      4,
+    ).replaceAll('{{HAIR_COLOR}}', hairHex);
     final beard = _pick(pixelartBeard, h, 5)
         .replaceAll('{{BEARD_COLOR}}', hairHex)
         .replaceAll('{{HAIR_COLOR}}', hairHex);
-    final glasses = _pick(pixelartGlasses, h, 6)
-        .replaceAll('{{GLASSES_COLOR}}', '#4a4a4a');
-    final hat = _pick(pixelartHat, h, 7)
-        .replaceAll('{{HAT_COLOR}}', _hashColor(h, 44));
-    final accessories = _pick(pixelartAccessories, h, 8)
-        .replaceAll('{{ACCESSORIES_COLOR}}', accColor);
+    final glasses = _pick(
+      pixelartGlasses,
+      h,
+      6,
+    ).replaceAll('{{GLASSES_COLOR}}', '#4a4a4a');
+    final hat = _pick(
+      pixelartHat,
+      h,
+      7,
+    ).replaceAll('{{HAT_COLOR}}', _hashColor(h, 44));
+    final accessories = _pick(
+      pixelartAccessories,
+      h,
+      8,
+    ).replaceAll('{{ACCESSORIES_COLOR}}', accColor);
 
     // Pixel art base is a simple skin-colored head shape.
-    final buf = StringBuffer()
-      ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
-      ..write('viewBox="0 0 16 16" fill="none" ')
-      ..write('shape-rendering="crispEdges">')
-
-      // Skin base.
-      ..write('<path fill="$skinHex" d="M4 3h8v8H4z"/>')
-      ..write('<path fill="$skinHex" d="M3 4h1v7H3zM12 4h1v7h-1z"/>');
+    final buf =
+        StringBuffer()
+          ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
+          ..write('viewBox="0 0 16 16" fill="none" ')
+          ..write('shape-rendering="crispEdges">')
+          // Skin base.
+          ..write('<path fill="$skinHex" d="M4 3h8v8H4z"/>')
+          ..write('<path fill="$skinHex" d="M3 4h1v7H3zM12 4h1v7h-1z"/>');
 
     // Clothing at bottom.
     if (clothing.isNotEmpty) buf.write(clothing);
@@ -509,10 +562,11 @@ class AvatarCompositor {
     final mouth = _pick(botttsMouth, h, 4);
     final eyes = _pick(botttsEyes, h, 5);
 
-    final buf = StringBuffer()
-      ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
-      ..write('viewBox="0 0 180 180" fill="none" ')
-      ..write('shape-rendering="auto">');
+    final buf =
+        StringBuffer()
+          ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
+          ..write('viewBox="0 0 180 180" fill="none" ')
+          ..write('shape-rendering="auto">');
 
     // Layer order: sides → top → face → mouth → eyes.
     if (sides.isNotEmpty) buf.write(_g(sides, 'translate(0 66)'));
@@ -543,10 +597,11 @@ class AvatarCompositor {
     final brows = _pick(notionistsBrows, h, 9);
     final gesture = _pick(notionistsGesture, h, 10);
 
-    final buf = StringBuffer()
-      ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
-      ..write('viewBox="0 0 1744 1744" fill="none" ')
-      ..write('shape-rendering="auto">');
+    final buf =
+        StringBuffer()
+          ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
+          ..write('viewBox="0 0 1744 1744" fill="none" ')
+          ..write('shape-rendering="auto">');
 
     // Layer order from DiceBear notionists index.ts.
     if (base.isNotEmpty) buf.write(_g(base, 'translate(531 487)'));
@@ -582,16 +637,16 @@ class AvatarCompositor {
         '<path d="M325 580c-35 0-68 10-96 30-20 14-36 33-48 55l-2 4v35h346v-35'
         'l-2-4c-12-22-28-41-48-55-28-20-61-30-96-30h-54Z" fill="#b6a18a"/>';
 
-    final buf = StringBuffer()
-      ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
-      ..write('viewBox="0 0 704 704" fill="none" ')
-      ..write('shape-rendering="auto">')
-      ..write(body);
+    final buf =
+        StringBuffer()
+          ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
+          ..write('viewBox="0 0 704 704" fill="none" ')
+          ..write('shape-rendering="auto">')
+          ..write(body);
 
     // Head (contains hair + head shape + outline).
     if (head.isNotEmpty) {
-      buf.write(
-          '<g transform="matrix(0.84 0 0 0.84 88 36)">$head</g>');
+      buf.write('<g transform="matrix(0.84 0 0 0.84 88 36)">$head</g>');
     }
     // Face expression.
     if (face.isNotEmpty) {
@@ -631,33 +686,41 @@ class AvatarCompositor {
     final widthSuffix = widths[widthIdx];
 
     // Pick eyes variant base (variant1-variant9), append width suffix.
-    final eyesKeys = thumbsEyes.keys
-        .where((k) => k.endsWith(widthSuffix))
-        .toList();
-    final eyesSvg = eyesKeys.isNotEmpty
-        ? (thumbsEyes[eyesKeys[(h ~/ 4 % eyesKeys.length).abs()]] ?? '')
-            .replaceAll('{{EYES_COLOR}}', eyeColor)
-        : '';
+    final eyesKeys =
+        thumbsEyes.keys.where((k) => k.endsWith(widthSuffix)).toList();
+    final eyesSvg =
+        eyesKeys.isNotEmpty
+            ? (thumbsEyes[eyesKeys[(h ~/ 4 % eyesKeys.length).abs()]] ?? '')
+                .replaceAll('{{EYES_COLOR}}', eyeColor)
+            : '';
 
-    final mouthSvg = _pick(thumbsMouth, h, 2)
-        .replaceAll('{{MOUTH_COLOR}}', mouthColor);
+    final mouthSvg = _pick(
+      thumbsMouth,
+      h,
+      2,
+    ).replaceAll('{{MOUTH_COLOR}}', mouthColor);
 
     // Face embeds eyes + mouth via placeholders.
-    final faceSvg = _pick(thumbsFace, h, 3)
-        .replaceAll('{{EYES}}', eyesSvg)
-        .replaceAll('{{MOUTH}}', mouthSvg);
+    final faceSvg = _pick(
+      thumbsFace,
+      h,
+      3,
+    ).replaceAll('{{EYES}}', eyesSvg).replaceAll('{{MOUTH}}', mouthSvg);
 
     // Shape embeds face.
-    final shapeSvg = _pick(thumbsShape, h, 4)
-        .replaceAll('{{SHAPE_COLOR}}', shapeColor)
-        .replaceAll('{{FACE}}', faceSvg);
+    final shapeSvg = _pick(
+      thumbsShape,
+      h,
+      4,
+    ).replaceAll('{{SHAPE_COLOR}}', shapeColor).replaceAll('{{FACE}}', faceSvg);
 
-    final buf = StringBuffer()
-      ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
-      ..write('viewBox="0 0 100 100" fill="none" ')
-      ..write('shape-rendering="auto">')
-      ..write(shapeSvg)
-      ..write('</svg>');
+    final buf =
+        StringBuffer()
+          ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
+          ..write('viewBox="0 0 100 100" fill="none" ')
+          ..write('shape-rendering="auto">')
+          ..write(shapeSvg)
+          ..write('</svg>');
     return buf.toString();
   }
 }

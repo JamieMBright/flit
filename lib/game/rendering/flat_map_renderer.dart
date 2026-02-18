@@ -113,12 +113,13 @@ class FlatMapRenderer extends Component with HasGameRef<FlitGame> {
     double screenW,
     double screenH,
   ) {
-    final borderPaint = Paint()
-      ..color = const Color(0xCCFFFFFF)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8
-      ..strokeJoin = StrokeJoin.round
-      ..isAntiAlias = true;
+    final borderPaint =
+        Paint()
+          ..color = const Color(0xCCFFFFFF)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.8
+          ..strokeJoin = StrokeJoin.round
+          ..isAntiAlias = true;
 
     for (final area in areas) {
       if (area.points.length < 3) continue;
@@ -192,7 +193,10 @@ class FlatMapRenderer extends Component with HasGameRef<FlitGame> {
 
       painter.paint(
         canvas,
-        Offset(screenPos.x - painter.width / 2, screenPos.y - painter.height / 2),
+        Offset(
+          screenPos.x - painter.width / 2,
+          screenPos.y - painter.height / 2,
+        ),
       );
     }
   }
@@ -219,15 +223,17 @@ class FlatMapRenderer extends Component with HasGameRef<FlitGame> {
     }
     if (activeArea == null) return;
 
-    final highlightPaint = Paint()
-      ..color = FlitColors.accent.withOpacity(0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5
-      ..strokeJoin = StrokeJoin.round;
+    final highlightPaint =
+        Paint()
+          ..color = FlitColors.accent.withOpacity(0.6)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5
+          ..strokeJoin = StrokeJoin.round;
 
-    final fillPaint = Paint()
-      ..color = FlitColors.accent.withOpacity(0.1)
-      ..style = PaintingStyle.fill;
+    final fillPaint =
+        Paint()
+          ..color = FlitColors.accent.withOpacity(0.1)
+          ..style = PaintingStyle.fill;
 
     final path = ui.Path();
     var started = false;

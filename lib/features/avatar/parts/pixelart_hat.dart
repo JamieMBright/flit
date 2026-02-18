@@ -15,8 +15,7 @@ const Map<String, String> pixelartHat = {
       '<path d="M4 0h8v1h1v1h1v2H2V2h1V1h1V0Z" fill="{{HAT_COLOR}}"/><path fill="#fff" fill-opacity=".3" d="M12 1h1v1h-1zM11 2h1v1h-1zM10 3h1v1h-1zM10 0h1v1h-1zM9 1h1v1H9zM8 2h1v1H8zM7 3h1v1H7z"/>',
   'variant06':
       '<path d="M13 0H3v3H1v1h14V3h-2V0Z" fill="{{HAT_COLOR}}"/><path fill="#fff" fill-opacity=".3" d="M11 1h1v3h-1z"/>',
-  'variant07':
-      '<path d="M12 1H4v1H3v2h12V3h-2V2h-1V1Z" fill="{{HAT_COLOR}}"/>',
+  'variant07': '<path d="M12 1H4v1H3v2h12V3h-2V2h-1V1Z" fill="{{HAT_COLOR}}"/>',
   'variant08':
       '<path d="M4 0h8v1h1v1h1v2H2V2h1V1h1V0Z" fill="{{HAT_COLOR}}"/><path fill="#fff" fill-opacity=".3" d="M12 2v1H9V2z"/>',
   'variant09':

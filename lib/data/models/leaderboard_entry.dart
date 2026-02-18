@@ -21,15 +21,15 @@ class LeaderboardEntry {
   final DateTime? timestamp;
 
   Map<String, dynamic> toJson() => {
-        'rank': rank,
-        'player_id': playerId,
-        'player_name': playerName,
-        'time_ms': time.inMilliseconds,
-        'score': score,
-        'avatar_url': avatarUrl,
-        'country_code': countryCode,
-        'timestamp': timestamp?.toIso8601String(),
-      };
+    'rank': rank,
+    'player_id': playerId,
+    'player_name': playerName,
+    'time_ms': time.inMilliseconds,
+    'score': score,
+    'avatar_url': avatarUrl,
+    'country_code': countryCode,
+    'timestamp': timestamp?.toIso8601String(),
+  };
 
   factory LeaderboardEntry.fromJson(Map<String, dynamic> json) =>
       LeaderboardEntry(
@@ -40,20 +40,15 @@ class LeaderboardEntry {
         score: json['score'] as int,
         avatarUrl: json['avatar_url'] as String?,
         countryCode: json['country_code'] as String?,
-        timestamp: json['timestamp'] != null
-            ? DateTime.parse(json['timestamp'] as String)
-            : null,
+        timestamp:
+            json['timestamp'] != null
+                ? DateTime.parse(json['timestamp'] as String)
+                : null,
       );
 }
 
 /// Time period for leaderboard filtering.
-enum LeaderboardPeriod {
-  daily,
-  weekly,
-  monthly,
-  yearly,
-  allTime,
-}
+enum LeaderboardPeriod { daily, weekly, monthly, yearly, allTime }
 
 extension LeaderboardPeriodExtension on LeaderboardPeriod {
   String get displayName {

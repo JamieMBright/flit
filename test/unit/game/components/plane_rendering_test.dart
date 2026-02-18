@@ -82,9 +82,7 @@ void main() {
     });
 
     test('PlaneComponent defaults to plane_default when not specified', () {
-      final plane = PlaneComponent(
-        onAltitudeChanged: (_) {},
-      );
+      final plane = PlaneComponent(onAltitudeChanged: (_) {});
 
       expect(plane.equippedPlaneId, equals('plane_default'));
     });

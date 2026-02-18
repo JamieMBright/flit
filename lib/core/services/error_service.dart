@@ -70,11 +70,12 @@ typedef ErrorListener = void Function(CapturedError error);
 ///
 /// This is injected externally so ErrorService itself needs no HTTP dependency,
 /// making it safe to import on all platforms (web, iOS, Android).
-typedef ErrorSender = Future<bool> Function({
-  required String url,
-  required String apiKey,
-  required String jsonBody,
-});
+typedef ErrorSender =
+    Future<bool> Function({
+      required String url,
+      required String apiKey,
+      required String jsonBody,
+    });
 
 /// Singleton service that captures, queues, and batches runtime errors
 /// for remote telemetry.
@@ -185,17 +186,16 @@ class ErrorService {
   /// Call once at app startup, after reading environment variables.
   /// If [apiEndpoint] or [apiKey] are empty, errors are still captured
   /// locally but [flush] will be a no-op.
-  void initialize({
-    required String apiEndpoint,
-    required String apiKey,
-  }) {
+  void initialize({required String apiEndpoint, required String apiKey}) {
     _apiEndpoint = apiEndpoint.isNotEmpty ? apiEndpoint : null;
     _apiKey = apiKey.isNotEmpty ? apiKey : null;
-    
+
     if (kDebugMode) {
       debugPrint('[ErrorService] Initialized:');
       debugPrint('[ErrorService]   Endpoint: ${_apiEndpoint ?? "NOT SET"}');
-      debugPrint('[ErrorService]   API Key: ${_apiKey?.isNotEmpty == true ? "SET (${_apiKey!.length} chars)" : "NOT SET"}');
+      debugPrint(
+        '[ErrorService]   API Key: ${_apiKey?.isNotEmpty == true ? "SET (${_apiKey!.length} chars)" : "NOT SET"}',
+      );
       debugPrint('[ErrorService]   Session ID: $_sessionId');
     }
   }
@@ -263,17 +263,19 @@ class ErrorService {
       debugPrint('[ErrorService] reportCritical() called: $error');
       debugPrint('[ErrorService] Context: $context');
     }
-    
+
     reportError(
       error,
       stackTrace,
       severity: ErrorSeverity.critical,
       context: context,
     );
-    
+
     // Fire-and-forget immediate flush — don't await.
     if (kDebugMode) {
-      debugPrint('[ErrorService] Triggering immediate flush for critical error');
+      debugPrint(
+        '[ErrorService] Triggering immediate flush for critical error',
+      );
     }
     flush();
   }
@@ -321,7 +323,9 @@ class ErrorService {
     // Guard: no endpoint or sender configured.
     if (_apiEndpoint == null || _sender == null) {
       if (kDebugMode) {
-        debugPrint('[ErrorService] flush() failed: no endpoint or sender configured');
+        debugPrint(
+          '[ErrorService] flush() failed: no endpoint or sender configured',
+        );
         debugPrint('[ErrorService]   endpoint: $_apiEndpoint');
         debugPrint('[ErrorService]   sender: $_sender');
       }
@@ -337,7 +341,9 @@ class ErrorService {
     }
 
     if (kDebugMode) {
-      debugPrint('[ErrorService] flush() starting: ${_queue.length} errors queued');
+      debugPrint(
+        '[ErrorService] flush() starting: ${_queue.length} errors queued',
+      );
     }
 
     _flushing = true;
@@ -349,7 +355,9 @@ class ErrorService {
       final body = jsonEncode(batch.map((e) => e.toJson()).toList());
 
       if (kDebugMode) {
-        debugPrint('[ErrorService] Sending ${batch.length} errors (${body.length} bytes)');
+        debugPrint(
+          '[ErrorService] Sending ${batch.length} errors (${body.length} bytes)',
+        );
         debugPrint('[ErrorService] Endpoint: $_apiEndpoint');
       }
 
@@ -369,18 +377,24 @@ class ErrorService {
             // Remove only the errors we successfully sent.
             _queue.removeWhere((e) => batch.contains(e));
             if (kDebugMode) {
-              debugPrint('[ErrorService] flush() SUCCESS: ${batch.length} errors sent');
+              debugPrint(
+                '[ErrorService] flush() SUCCESS: ${batch.length} errors sent',
+              );
             }
             return true;
           } else {
             if (kDebugMode) {
-              debugPrint('[ErrorService] flush() returned false on attempt $attempt');
+              debugPrint(
+                '[ErrorService] flush() returned false on attempt $attempt',
+              );
             }
           }
         } catch (e) {
           // Network or serialization error — retry after backoff.
           if (kDebugMode) {
-            debugPrint('[ErrorService] flush() exception on attempt $attempt: $e');
+            debugPrint(
+              '[ErrorService] flush() exception on attempt $attempt: $e',
+            );
           }
         }
 

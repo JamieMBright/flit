@@ -107,9 +107,7 @@ class DailyChallenge {
   /// Build the daily challenge for today (UTC).
   factory DailyChallenge.forToday() {
     final now = DateTime.now().toUtc();
-    return DailyChallenge.forDate(
-      DateTime.utc(now.year, now.month, now.day),
-    );
+    return DailyChallenge.forDate(DateTime.utc(now.year, now.month, now.day));
   }
 
   /// Build the daily challenge for a specific [date].
@@ -136,7 +134,14 @@ class DailyChallenge {
       resolvedClueTypes = theme.enabledClueTypes;
     }
 
-    const regions = ['World', 'Europe', 'Asia', 'Africa', 'Americas', 'Oceania'];
+    const regions = [
+      'World',
+      'Europe',
+      'Asia',
+      'Africa',
+      'Americas',
+      'Oceania',
+    ];
     final mapRegion = regions[rng.nextInt(regions.length)];
 
     return DailyChallenge(
@@ -160,30 +165,27 @@ class DailyChallenge {
   // ── Serialisation ───────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-        'date': date.toIso8601String(),
-        'title': title,
-        'description': description,
-        'enabled_clue_types': enabledClueTypes.toList(),
-        'coin_reward': coinReward,
-        'bonus_coin_reward': bonusCoinReward,
-        'seed': seed,
-        'map_region': mapRegion,
-      };
+    'date': date.toIso8601String(),
+    'title': title,
+    'description': description,
+    'enabled_clue_types': enabledClueTypes.toList(),
+    'coin_reward': coinReward,
+    'bonus_coin_reward': bonusCoinReward,
+    'seed': seed,
+    'map_region': mapRegion,
+  };
 
-  factory DailyChallenge.fromJson(Map<String, dynamic> json) =>
-      DailyChallenge(
-        date: DateTime.parse(json['date'] as String),
-        title: json['title'] as String,
-        description: json['description'] as String,
-        enabledClueTypes:
-            (json['enabled_clue_types'] as List)
-                .map((e) => e as String)
-                .toSet(),
-        coinReward: json['coin_reward'] as int,
-        bonusCoinReward: json['bonus_coin_reward'] as int,
-        seed: json['seed'] as int,
-        mapRegion: json['map_region'] as String? ?? 'World',
-      );
+  factory DailyChallenge.fromJson(Map<String, dynamic> json) => DailyChallenge(
+    date: DateTime.parse(json['date'] as String),
+    title: json['title'] as String,
+    description: json['description'] as String,
+    enabledClueTypes:
+        (json['enabled_clue_types'] as List).map((e) => e as String).toSet(),
+    coinReward: json['coin_reward'] as int,
+    bonusCoinReward: json['bonus_coin_reward'] as int,
+    seed: json['seed'] as int,
+    mapRegion: json['map_region'] as String? ?? 'World',
+  );
 
   // ── Placeholder leaderboard ─────────────────────────────────────────
 
@@ -267,11 +269,11 @@ class DailyLeaderboardEntry {
   final int rank;
 
   Map<String, dynamic> toJson() => {
-        'username': username,
-        'score': score,
-        'time_ms': time.inMilliseconds,
-        'rank': rank,
-      };
+    'username': username,
+    'score': score,
+    'time_ms': time.inMilliseconds,
+    'rank': rank,
+  };
 
   factory DailyLeaderboardEntry.fromJson(Map<String, dynamic> json) =>
       DailyLeaderboardEntry(

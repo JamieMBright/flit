@@ -74,8 +74,7 @@ void main() {
         expect(
           isRegionalFlatMap(region),
           equals(region.isFlatMap),
-          reason:
-              'isRegionalFlatMap should match isFlatMap for ${region.name}',
+          reason: 'isRegionalFlatMap should match isFlatMap for ${region.name}',
         );
       }
     });
@@ -191,8 +190,7 @@ void main() {
         expect(
           area.points.length,
           greaterThanOrEqualTo(3),
-          reason:
-              'County ${area.code} should have at least 3 boundary points',
+          reason: 'County ${area.code} should have at least 3 boundary points',
         );
       }
     });
@@ -268,10 +266,16 @@ void main() {
         final maxLng = bounds[2];
         final maxLat = bounds[3];
 
-        expect(minLng, lessThan(maxLng),
-            reason: 'Region ${region.name} should have minLng < maxLng');
-        expect(minLat, lessThan(maxLat),
-            reason: 'Region ${region.name} should have minLat < maxLat');
+        expect(
+          minLng,
+          lessThan(maxLng),
+          reason: 'Region ${region.name} should have minLng < maxLng',
+        );
+        expect(
+          minLat,
+          lessThan(maxLat),
+          reason: 'Region ${region.name} should have minLat < maxLat',
+        );
       }
     });
 
@@ -334,19 +338,24 @@ void main() {
       final originalWorldPos = GameRegion.ireland.center;
 
       // Convert world to screen
-      final screenPos = renderer.worldToScreen(originalWorldPos, screenW, screenH);
+      final screenPos = renderer.worldToScreen(
+        originalWorldPos,
+        screenW,
+        screenH,
+      );
 
       // Only test if the point was on-screen
       if (screenPos.x != -9999 && screenPos.y != -9999) {
         // Convert screen back to world
-        final reconstructedWorldPos =
-            renderer.screenToWorld(screenPos, screenW, screenH);
+        final reconstructedWorldPos = renderer.screenToWorld(
+          screenPos,
+          screenW,
+          screenH,
+        );
 
         // Should be close to the original (within floating point precision)
-        expect(reconstructedWorldPos.x,
-            closeTo(originalWorldPos.x, 0.1));
-        expect(reconstructedWorldPos.y,
-            closeTo(originalWorldPos.y, 0.1));
+        expect(reconstructedWorldPos.x, closeTo(originalWorldPos.x, 0.1));
+        expect(reconstructedWorldPos.y, closeTo(originalWorldPos.y, 0.1));
       }
     });
 

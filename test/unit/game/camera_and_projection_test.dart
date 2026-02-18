@@ -31,34 +31,46 @@ void main() {
 
     test('camera starts at high altitude distance', () {
       // First update snaps to position (no interpolation).
-      camera.update(0.016,
-          planeLatDeg: 0,
-          planeLngDeg: 0,
-          isHighAltitude: true,
-          headingRad: 0);
+      camera.update(
+        0.016,
+        planeLatDeg: 0,
+        planeLngDeg: 0,
+        isHighAltitude: true,
+        headingRad: 0,
+      );
 
-      expect(camera.currentDistance, closeTo(CameraState.highAltitudeDistance, 1e-6),
-          reason: 'Camera should snap to high altitude on first update');
+      expect(
+        camera.currentDistance,
+        closeTo(CameraState.highAltitudeDistance, 1e-6),
+        reason: 'Camera should snap to high altitude on first update',
+      );
     });
 
     test('camera FOV starts at narrow value (no speed)', () {
-      camera.update(0.016,
-          planeLatDeg: 0,
-          planeLngDeg: 0,
-          isHighAltitude: true,
-          speedFraction: 0.0,
-          headingRad: 0);
+      camera.update(
+        0.016,
+        planeLatDeg: 0,
+        planeLngDeg: 0,
+        isHighAltitude: true,
+        speedFraction: 0.0,
+        headingRad: 0,
+      );
 
-      expect(camera.fov, closeTo(CameraState.fovNarrow, 1e-6),
-          reason: 'FOV should be narrow when speed is zero');
+      expect(
+        camera.fov,
+        closeTo(CameraState.fovNarrow, 1e-6),
+        reason: 'FOV should be narrow when speed is zero',
+      );
     });
 
     test('camera position is along the surface normal at (0, 0)', () {
-      camera.update(0.016,
-          planeLatDeg: 0,
-          planeLngDeg: 0,
-          isHighAltitude: true,
-          headingRad: 0);
+      camera.update(
+        0.016,
+        planeLatDeg: 0,
+        planeLngDeg: 0,
+        isHighAltitude: true,
+        headingRad: 0,
+      );
 
       // At (lat=0, lng=0) on the unit sphere, the surface normal points
       // along +x. Camera should be at (distance, 0, 0).
@@ -70,11 +82,13 @@ void main() {
 
     test('camera position is correct for non-zero lat/lng', () {
       // Position at (lat=45°N, lng=90°E)
-      camera.update(0.016,
-          planeLatDeg: 45,
-          planeLngDeg: 90,
-          isHighAltitude: true,
-          headingRad: 0);
+      camera.update(
+        0.016,
+        planeLatDeg: 45,
+        planeLngDeg: 90,
+        isHighAltitude: true,
+        headingRad: 0,
+      );
 
       const d = CameraState.highAltitudeDistance;
       const latRad = 45 * pi / 180;
@@ -89,49 +103,59 @@ void main() {
     });
 
     test('up vector is unit-length', () {
-      camera.update(0.016,
-          planeLatDeg: 30,
-          planeLngDeg: 45,
-          isHighAltitude: true,
-          headingRad: pi / 4);
+      camera.update(
+        0.016,
+        planeLatDeg: 30,
+        planeLngDeg: 45,
+        isHighAltitude: true,
+        headingRad: pi / 4,
+      );
 
       final len = sqrt(
-          camera.upX * camera.upX +
-          camera.upY * camera.upY +
-          camera.upZ * camera.upZ);
-      expect(len, closeTo(1.0, 1e-6),
-          reason: 'Up vector must be normalized');
+        camera.upX * camera.upX +
+            camera.upY * camera.upY +
+            camera.upZ * camera.upZ,
+      );
+      expect(len, closeTo(1.0, 1e-6), reason: 'Up vector must be normalized');
     });
 
     test('up vector is perpendicular to camera-to-origin direction', () {
-      camera.update(0.016,
-          planeLatDeg: 30,
-          planeLngDeg: 45,
-          isHighAltitude: true,
-          headingRad: pi / 4);
+      camera.update(
+        0.016,
+        planeLatDeg: 30,
+        planeLngDeg: 45,
+        isHighAltitude: true,
+        headingRad: pi / 4,
+      );
 
       // Camera forward = -camPos (looking at origin)
       final fwdLen = sqrt(
-          camera.cameraX * camera.cameraX +
-          camera.cameraY * camera.cameraY +
-          camera.cameraZ * camera.cameraZ);
+        camera.cameraX * camera.cameraX +
+            camera.cameraY * camera.cameraY +
+            camera.cameraZ * camera.cameraZ,
+      );
       final fwdX = -camera.cameraX / fwdLen;
       final fwdY = -camera.cameraY / fwdLen;
       final fwdZ = -camera.cameraZ / fwdLen;
 
       // dot(forward, up) should be ~0 (perpendicular)
       final dot = fwdX * camera.upX + fwdY * camera.upY + fwdZ * camera.upZ;
-      expect(dot, closeTo(0.0, 1e-6),
-          reason: 'Up vector must be perpendicular to forward direction');
+      expect(
+        dot,
+        closeTo(0.0, 1e-6),
+        reason: 'Up vector must be perpendicular to forward direction',
+      );
     });
 
     test('camera does not move when updated with same position repeatedly', () {
       // Simulate Step 1: plane stationary, camera updated every frame.
-      camera.update(0.016,
-          planeLatDeg: 10,
-          planeLngDeg: 20,
-          isHighAltitude: true,
-          headingRad: 0);
+      camera.update(
+        0.016,
+        planeLatDeg: 10,
+        planeLngDeg: 20,
+        isHighAltitude: true,
+        headingRad: 0,
+      );
 
       final x1 = camera.cameraX;
       final y1 = camera.cameraY;
@@ -139,19 +163,30 @@ void main() {
 
       // Multiple frames with same input — should converge, not drift.
       for (var i = 0; i < 60; i++) {
-        camera.update(0.016,
-            planeLatDeg: 10,
-            planeLngDeg: 20,
-            isHighAltitude: true,
-            headingRad: 0);
+        camera.update(
+          0.016,
+          planeLatDeg: 10,
+          planeLngDeg: 20,
+          isHighAltitude: true,
+          headingRad: 0,
+        );
       }
 
-      expect(camera.cameraX, closeTo(x1, 1e-4),
-          reason: 'Camera X should not drift with static input');
-      expect(camera.cameraY, closeTo(y1, 1e-4),
-          reason: 'Camera Y should not drift with static input');
-      expect(camera.cameraZ, closeTo(z1, 1e-4),
-          reason: 'Camera Z should not drift with static input');
+      expect(
+        camera.cameraX,
+        closeTo(x1, 1e-4),
+        reason: 'Camera X should not drift with static input',
+      );
+      expect(
+        camera.cameraY,
+        closeTo(y1, 1e-4),
+        reason: 'Camera Y should not drift with static input',
+      );
+      expect(
+        camera.cameraZ,
+        closeTo(z1, 1e-4),
+        reason: 'Camera Z should not drift with static input',
+      );
     });
   });
 
@@ -169,8 +204,11 @@ void main() {
       final horizonAngleDeg = horizonAngleRad * 180 / pi;
 
       // At d=1.8: arcsin(1/1.8) ≈ 33.75°
-      expect(horizonAngleDeg, closeTo(33.75, 0.5),
-          reason: 'Horizon angle at high altitude should be ~33.75°');
+      expect(
+        horizonAngleDeg,
+        closeTo(33.75, 0.5),
+        reason: 'Horizon angle at high altitude should be ~33.75°',
+      );
     });
 
     test('top of screen ray exceeds horizon angle (curvature visible)', () {
@@ -201,10 +239,16 @@ void main() {
       // of the screen — acceptable for Step 1 since we'll have speed-based
       // FOV widening in later steps. At wide FOV (when moving), the horizon
       // becomes visible at the top.
-      expect(rayAngleDeg, greaterThan(15.0),
-          reason: 'Top-of-screen ray should point well above center');
-      expect(horizonAngleDeg, greaterThan(30.0),
-          reason: 'Horizon should be > 30° from forward at this altitude');
+      expect(
+        rayAngleDeg,
+        greaterThan(15.0),
+        reason: 'Top-of-screen ray should point well above center',
+      );
+      expect(
+        horizonAngleDeg,
+        greaterThan(30.0),
+        reason: 'Horizon should be > 30° from forward at this altitude',
+      );
     });
 
     test('horizon visible at top with wide FOV (speed-adjusted)', () {
@@ -219,10 +263,14 @@ void main() {
       const d = CameraState.highAltitudeDistance;
       final horizonAngleDeg = asin(CameraState.globeRadius / d) * 180 / pi;
 
-      expect(rayAngleDeg, greaterThan(horizonAngleDeg),
-          reason: 'At wide FOV, top of screen must show past the horizon '
-              '(ray ${rayAngleDeg.toStringAsFixed(1)}° > '
-              'horizon ${horizonAngleDeg.toStringAsFixed(1)}°)');
+      expect(
+        rayAngleDeg,
+        greaterThan(horizonAngleDeg),
+        reason:
+            'At wide FOV, top of screen must show past the horizon '
+            '(ray ${rayAngleDeg.toStringAsFixed(1)}° > '
+            'horizon ${horizonAngleDeg.toStringAsFixed(1)}°)',
+      );
     });
 
     test('bottom of screen ray hits globe surface', () {
@@ -238,9 +286,13 @@ void main() {
       const d = CameraState.highAltitudeDistance;
       final horizonAngleDeg = asin(CameraState.globeRadius / d) * 180 / pi;
 
-      expect(rayAngleDeg.abs(), lessThan(horizonAngleDeg),
-          reason: 'Bottom of screen must point at globe surface, '
-              'not past the horizon');
+      expect(
+        rayAngleDeg.abs(),
+        lessThan(horizonAngleDeg),
+        reason:
+            'Bottom of screen must point at globe surface, '
+            'not past the horizon',
+      );
     });
 
     test('screen center ray hits globe surface', () {
@@ -254,11 +306,18 @@ void main() {
       const d = CameraState.highAltitudeDistance;
       final horizonAngleDeg = asin(CameraState.globeRadius / d) * 180 / pi;
 
-      expect(rayAngleDeg, lessThan(horizonAngleDeg),
-          reason: 'Screen center must show globe surface');
-      expect(rayAngleDeg, greaterThan(0),
-          reason: 'Screen center should point above forward direction '
-              '(tilted toward heading)');
+      expect(
+        rayAngleDeg,
+        lessThan(horizonAngleDeg),
+        reason: 'Screen center must show globe surface',
+      );
+      expect(
+        rayAngleDeg,
+        greaterThan(0),
+        reason:
+            'Screen center should point above forward direction '
+            '(tilted toward heading)',
+      );
     });
 
     test('portrait phone sides show globe surface', () {
@@ -274,14 +333,19 @@ void main() {
 
       final scaledX = uvEdgeX * halfFovTan;
       final scaledY = uvEdgeY * halfFovTan;
-      final combinedAngleRad = atan(sqrt(scaledX * scaledX + scaledY * scaledY));
+      final combinedAngleRad = atan(
+        sqrt(scaledX * scaledX + scaledY * scaledY),
+      );
       final combinedAngleDeg = combinedAngleRad * 180 / pi;
 
       const d = CameraState.highAltitudeDistance;
       final horizonAngleDeg = asin(CameraState.globeRadius / d) * 180 / pi;
 
-      expect(combinedAngleDeg, lessThan(horizonAngleDeg),
-          reason: 'Side edges on portrait phone must show globe surface');
+      expect(
+        combinedAngleDeg,
+        lessThan(horizonAngleDeg),
+        reason: 'Side edges on portrait phone must show globe surface',
+      );
     });
   });
 
@@ -292,17 +356,26 @@ void main() {
   group('PlaneComponent - Step 1 perspective', () {
     test('perspectiveScaleY compresses the plane vertically', () {
       // The plane should appear foreshortened from the above-behind camera.
-      expect(PlaneComponent.perspectiveScaleY, greaterThan(0.0),
-          reason: 'Scale must be positive');
-      expect(PlaneComponent.perspectiveScaleY, lessThan(1.0),
-          reason: 'Scale must compress (< 1.0) for perspective effect');
+      expect(
+        PlaneComponent.perspectiveScaleY,
+        greaterThan(0.0),
+        reason: 'Scale must be positive',
+      );
+      expect(
+        PlaneComponent.perspectiveScaleY,
+        lessThan(1.0),
+        reason: 'Scale must compress (< 1.0) for perspective effect',
+      );
     });
 
     test('perspectiveScaleY is in realistic range for ~45° camera angle', () {
       // For a camera at ~45° above the horizontal, the foreshortening
       // factor is cos(45°) ≈ 0.707. We allow some artistic license.
-      expect(PlaneComponent.perspectiveScaleY, inInclusiveRange(0.5, 0.85),
-          reason: 'Scale should be in range for a camera above and behind');
+      expect(
+        PlaneComponent.perspectiveScaleY,
+        inInclusiveRange(0.5, 0.85),
+        reason: 'Scale should be in range for a camera above and behind',
+      );
     });
   });
 
@@ -317,8 +390,11 @@ void main() {
       //   2. flit_game.dart: const tiltDown = 0.35;
       // This test verifies the Dart-side value so any mismatch is caught.
       // The shader value must be checked manually or via a shader parse test.
-      expect(tiltDown, equals(0.35),
-          reason: 'Dart tiltDown must match globe.frag tiltDown (0.35)');
+      expect(
+        tiltDown,
+        equals(0.35),
+        reason: 'Dart tiltDown must match globe.frag tiltDown (0.35)',
+      );
     });
   });
 
@@ -328,24 +404,35 @@ void main() {
 
   group('Globe dimensions', () {
     test('globe radius is 1.0 (unit sphere)', () {
-      expect(CameraState.globeRadius, equals(1.0),
-          reason: 'Globe must be a unit sphere for projection math');
+      expect(
+        CameraState.globeRadius,
+        equals(1.0),
+        reason: 'Globe must be a unit sphere for projection math',
+      );
     });
 
     test('high altitude camera is outside the globe', () {
-      expect(CameraState.highAltitudeDistance, greaterThan(CameraState.globeRadius),
-          reason: 'Camera must be outside the globe');
+      expect(
+        CameraState.highAltitudeDistance,
+        greaterThan(CameraState.globeRadius),
+        reason: 'Camera must be outside the globe',
+      );
     });
 
     test('low altitude camera is outside the globe', () {
-      expect(CameraState.lowAltitudeDistance, greaterThan(CameraState.globeRadius),
-          reason: 'Camera must be outside the globe at low altitude too');
+      expect(
+        CameraState.lowAltitudeDistance,
+        greaterThan(CameraState.globeRadius),
+        reason: 'Camera must be outside the globe at low altitude too',
+      );
     });
 
     test('high altitude is further than low altitude', () {
-      expect(CameraState.highAltitudeDistance,
-          greaterThan(CameraState.lowAltitudeDistance),
-          reason: 'High altitude should be further from the globe surface');
+      expect(
+        CameraState.highAltitudeDistance,
+        greaterThan(CameraState.lowAltitudeDistance),
+        reason: 'High altitude should be further from the globe surface',
+      );
     });
   });
 
@@ -358,21 +445,25 @@ void main() {
       final camera = CameraState();
 
       // First update at one position
-      camera.update(0.016,
-          planeLatDeg: 45,
-          planeLngDeg: 90,
-          isHighAltitude: true,
-          headingRad: pi / 4);
+      camera.update(
+        0.016,
+        planeLatDeg: 45,
+        planeLngDeg: 90,
+        isHighAltitude: true,
+        headingRad: pi / 4,
+      );
 
       // Reset
       camera.reset();
 
       // Next update at a completely different position — should snap, not lerp
-      camera.update(0.016,
-          planeLatDeg: -30,
-          planeLngDeg: -60,
-          isHighAltitude: true,
-          headingRad: 0);
+      camera.update(
+        0.016,
+        planeLatDeg: -30,
+        planeLngDeg: -60,
+        isHighAltitude: true,
+        headingRad: 0,
+      );
 
       const d = CameraState.highAltitudeDistance;
       const latRad = -30 * pi / 180;
@@ -381,8 +472,11 @@ void main() {
       final expectedY = sin(latRad) * d;
       final expectedZ = cos(latRad) * sin(lngRad) * d;
 
-      expect(camera.cameraX, closeTo(expectedX, 1e-6),
-          reason: 'After reset, camera should snap to new position');
+      expect(
+        camera.cameraX,
+        closeTo(expectedX, 1e-6),
+        reason: 'After reset, camera should snap to new position',
+      );
       expect(camera.cameraY, closeTo(expectedY, 1e-6));
       expect(camera.cameraZ, closeTo(expectedZ, 1e-6));
     });
@@ -398,15 +492,21 @@ void main() {
       // We can't import FlitGame directly (it requires Flame) so we
       // test the contract value here.
       const expectedPlaneScreenX = 0.50;
-      expect(expectedPlaneScreenX, equals(0.50),
-          reason: 'Plane must be horizontally centered');
+      expect(
+        expectedPlaneScreenX,
+        equals(0.50),
+        reason: 'Plane must be horizontally centered',
+      );
     });
 
     test('planeScreenY is 20% from the bottom', () {
       // 20% from bottom = 80% from top = 0.80.
       const expectedPlaneScreenY = 0.80;
-      expect(expectedPlaneScreenY, equals(0.80),
-          reason: 'Plane must be 20% from the bottom of the screen');
+      expect(
+        expectedPlaneScreenY,
+        equals(0.80),
+        reason: 'Plane must be 20% from the bottom of the screen',
+      );
     });
   });
 
@@ -419,80 +519,99 @@ void main() {
       final camera = CameraState();
 
       // Start at high altitude
-      camera.update(0.016,
-          planeLatDeg: 0,
-          planeLngDeg: 0,
-          isHighAltitude: true,
-          altitudeFraction: 1.0,
-          headingRad: 0);
+      camera.update(
+        0.016,
+        planeLatDeg: 0,
+        planeLngDeg: 0,
+        isHighAltitude: true,
+        altitudeFraction: 1.0,
+        headingRad: 0,
+      );
 
-      expect(camera.currentDistance,
-          closeTo(CameraState.highAltitudeDistance, 1e-6));
+      expect(
+        camera.currentDistance,
+        closeTo(CameraState.highAltitudeDistance, 1e-6),
+      );
 
       // Switch to low altitude — distance should NOT snap immediately
-      camera.update(0.016,
-          planeLatDeg: 0,
-          planeLngDeg: 0,
-          isHighAltitude: false,
-          altitudeFraction: 0.0,
-          headingRad: 0);
+      camera.update(
+        0.016,
+        planeLatDeg: 0,
+        planeLngDeg: 0,
+        isHighAltitude: false,
+        altitudeFraction: 0.0,
+        headingRad: 0,
+      );
 
       // After one frame at dt=0.016 with easeRate=1.5:
       // factor = 1 - exp(-1.5 * 0.016) = 1 - exp(-0.024) ≈ 0.0237
       // distance moved = (1.8 - 1.35) * 0.0237 ≈ 0.0107
       // So distance ≈ 1.8 - 0.0107 = 1.789 (barely moved)
-      expect(camera.currentDistance,
-          greaterThan(CameraState.lowAltitudeDistance + 0.4),
-          reason: 'Distance should barely change after one frame — '
-              'transition must be gradual');
+      expect(
+        camera.currentDistance,
+        greaterThan(CameraState.lowAltitudeDistance + 0.4),
+        reason:
+            'Distance should barely change after one frame — '
+            'transition must be gradual',
+      );
     });
 
     test('altitude transition converges within 3 seconds', () {
       final camera = CameraState();
 
-      camera.update(0.016,
-          planeLatDeg: 0,
-          planeLngDeg: 0,
-          isHighAltitude: true,
-          altitudeFraction: 1.0,
-          headingRad: 0);
+      camera.update(
+        0.016,
+        planeLatDeg: 0,
+        planeLngDeg: 0,
+        isHighAltitude: true,
+        altitudeFraction: 1.0,
+        headingRad: 0,
+      );
 
       // Switch to low altitude and simulate 3 seconds (~180 frames)
       for (var i = 0; i < 180; i++) {
-        camera.update(0.016,
-            planeLatDeg: 0,
-            planeLngDeg: 0,
-            isHighAltitude: false,
-            altitudeFraction: 0.0,
-            headingRad: 0);
+        camera.update(
+          0.016,
+          planeLatDeg: 0,
+          planeLngDeg: 0,
+          isHighAltitude: false,
+          altitudeFraction: 0.0,
+          headingRad: 0,
+        );
       }
 
       // After 3 seconds, should be very close to the low altitude distance
-      expect(camera.currentDistance,
-          closeTo(CameraState.lowAltitudeDistance, 0.02),
-          reason: 'After 3 seconds, altitude should have converged');
+      expect(
+        camera.currentDistance,
+        closeTo(CameraState.lowAltitudeDistance, 0.02),
+        reason: 'After 3 seconds, altitude should have converged',
+      );
     });
 
     test('altitude transition is at least 50% done after 1 second', () {
       final camera = CameraState();
 
-      camera.update(0.016,
-          planeLatDeg: 0,
-          planeLngDeg: 0,
-          isHighAltitude: true,
-          altitudeFraction: 1.0,
-          headingRad: 0);
+      camera.update(
+        0.016,
+        planeLatDeg: 0,
+        planeLngDeg: 0,
+        isHighAltitude: true,
+        altitudeFraction: 1.0,
+        headingRad: 0,
+      );
 
       final startDist = camera.currentDistance;
 
       // Simulate 1 second (~60 frames) of transitioning to low altitude
       for (var i = 0; i < 60; i++) {
-        camera.update(0.016,
-            planeLatDeg: 0,
-            planeLngDeg: 0,
-            isHighAltitude: false,
-            altitudeFraction: 0.0,
-            headingRad: 0);
+        camera.update(
+          0.016,
+          planeLatDeg: 0,
+          planeLngDeg: 0,
+          isHighAltitude: false,
+          altitudeFraction: 0.0,
+          headingRad: 0,
+        );
       }
 
       final afterDist = camera.currentDistance;
@@ -500,10 +619,16 @@ void main() {
       final actualChange = startDist - afterDist;
       final percentDone = actualChange / totalChange;
 
-      expect(percentDone, greaterThan(0.50),
-          reason: 'At least 50% of altitude transition should complete in 1s');
-      expect(percentDone, lessThan(0.95),
-          reason: 'Transition should not be nearly done after just 1s');
+      expect(
+        percentDone,
+        greaterThan(0.50),
+        reason: 'At least 50% of altitude transition should complete in 1s',
+      );
+      expect(
+        percentDone,
+        lessThan(0.95),
+        reason: 'Transition should not be nearly done after just 1s',
+      );
     });
   });
 
@@ -584,8 +709,12 @@ void main() {
     final northComp = vx * newNx + vy * newNy + vz * newNz;
     final eastComp = vx * newEx + vy * newEy + vz * newEz;
     var newHeading = atan2(eastComp, northComp) - pi / 2;
-    while (newHeading > pi) { newHeading -= 2 * pi; }
-    while (newHeading < -pi) { newHeading += 2 * pi; }
+    while (newHeading > pi) {
+      newHeading -= 2 * pi;
+    }
+    while (newHeading < -pi) {
+      newHeading += 2 * pi;
+    }
 
     return {
       'lat': newLatRad * 180 / pi,
@@ -620,12 +749,24 @@ void main() {
       // After moving 10° north, should be at (10°N, 10°E)
       const stepDeg = 0.1; // 0.1° per step
       const stepRad = stepDeg * pi / 180;
-      final result = simulateNSteps(0, 10, -pi / 2, stepRad, 100); // 100 * 0.1° = 10°
+      final result = simulateNSteps(
+        0,
+        10,
+        -pi / 2,
+        stepRad,
+        100,
+      ); // 100 * 0.1° = 10°
 
-      expect(result['lat'], closeTo(10.0, 0.1),
-          reason: 'Should be at 10°N after traveling 10° north');
-      expect(result['lng'], closeTo(10.0, 0.1),
-          reason: 'Longitude should stay constant when heading due north');
+      expect(
+        result['lat'],
+        closeTo(10.0, 0.1),
+        reason: 'Should be at 10°N after traveling 10° north',
+      );
+      expect(
+        result['lng'],
+        closeTo(10.0, 0.1),
+        reason: 'Longitude should stay constant when heading due north',
+      );
     });
 
     test('no lateral drift over long distance', () {
@@ -634,10 +775,12 @@ void main() {
       const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(0, 0, -pi / 2, stepRad, 1200); // 60°
 
-      expect(result['lat'], closeTo(60.0, 0.2),
-          reason: 'Should be at 60°N');
-      expect(result['lng']!.abs(), lessThan(0.5),
-          reason: 'Longitude must not drift when heading due north');
+      expect(result['lat'], closeTo(60.0, 0.2), reason: 'Should be at 60°N');
+      expect(
+        result['lng']!.abs(),
+        lessThan(0.5),
+        reason: 'Longitude must not drift when heading due north',
+      );
     });
   });
 
@@ -649,10 +792,16 @@ void main() {
       const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(0, 0, 0, stepRad, 300); // 30°
 
-      expect(result['lat']!.abs(), lessThan(0.1),
-          reason: 'Latitude should stay at equator when heading due east');
-      expect(result['lng'], closeTo(30.0, 0.2),
-          reason: 'Should be at 30°E after traveling 30° east');
+      expect(
+        result['lat']!.abs(),
+        lessThan(0.1),
+        reason: 'Latitude should stay at equator when heading due east',
+      );
+      expect(
+        result['lng'],
+        closeTo(30.0, 0.2),
+        reason: 'Should be at 30°E after traveling 30° east',
+      );
     });
   });
 
@@ -666,10 +815,16 @@ void main() {
       // bearing = heading + π/2 = -π/4 + π/2 = π/4 (45° nav bearing = NE)
       final result = simulateNSteps(0, 0, -pi / 4, stepRad, 450); // 45°
 
-      expect(result['lat'], greaterThan(20.0),
-          reason: 'Should have moved significantly north');
-      expect(result['lng'], greaterThan(20.0),
-          reason: 'Should have moved significantly east');
+      expect(
+        result['lat'],
+        greaterThan(20.0),
+        reason: 'Should have moved significantly north',
+      );
+      expect(
+        result['lng'],
+        greaterThan(20.0),
+        reason: 'Should have moved significantly east',
+      );
     });
   });
 
@@ -680,10 +835,12 @@ void main() {
       const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(45, 30, -pi / 2, stepRad, 200); // 20°
 
-      expect(result['lat'], closeTo(65.0, 0.2),
-          reason: 'Should be at 65°N');
-      expect(result['lng'], closeTo(30.0, 0.5),
-          reason: 'Longitude must not drift when heading due north from 45°N');
+      expect(result['lat'], closeTo(65.0, 0.2), reason: 'Should be at 65°N');
+      expect(
+        result['lng'],
+        closeTo(30.0, 0.5),
+        reason: 'Longitude must not drift when heading due north from 45°N',
+      );
     });
   });
 
@@ -702,14 +859,21 @@ void main() {
 
       // After crossing the pole, latitude should be back around 80° but
       // longitude should have flipped ~180°
-      expect(result['lat'], closeTo(80.0, 1.0),
-          reason: 'After crossing the pole and coming back to 80°, '
-              'latitude should be ~80°');
+      expect(
+        result['lat'],
+        closeTo(80.0, 1.0),
+        reason:
+            'After crossing the pole and coming back to 80°, '
+            'latitude should be ~80°',
+      );
       // Longitude should be roughly 10° + 180° = 190° = -170°
       final lngDiff = (result['lng']! - 10.0).abs();
       final lngWrapped = lngDiff > 180 ? 360 - lngDiff : lngDiff;
-      expect(lngWrapped, closeTo(180.0, 5.0),
-          reason: 'Longitude should flip ~180° after crossing the pole');
+      expect(
+        lngWrapped,
+        closeTo(180.0, 5.0),
+        reason: 'Longitude should flip ~180° after crossing the pole',
+      );
     });
 
     test('south pole crossing: fly from -80°S heading south', () {
@@ -718,12 +882,18 @@ void main() {
       const stepRad = stepDeg * pi / 180;
       final result = simulateNSteps(-80, 0, pi / 2, stepRad, 200); // 20°
 
-      expect(result['lat'], closeTo(-80.0, 1.0),
-          reason: 'Should be back at ~80°S after crossing the south pole');
+      expect(
+        result['lat'],
+        closeTo(-80.0, 1.0),
+        reason: 'Should be back at ~80°S after crossing the south pole',
+      );
       final lngDiff = result['lng']!.abs();
       final lngWrapped = lngDiff > 180 ? 360 - lngDiff : lngDiff;
-      expect(lngWrapped, closeTo(180.0, 5.0),
-          reason: 'Longitude should flip ~180° after crossing the south pole');
+      expect(
+        lngWrapped,
+        closeTo(180.0, 5.0),
+        reason: 'Longitude should flip ~180° after crossing the south pole',
+      );
     });
 
     test('flight through north pole is continuous (no NaN or Inf)', () {
@@ -735,19 +905,43 @@ void main() {
       var lng = 0.0;
       var heading = -pi / 2; // due north
 
-      for (var i = 0; i < 40; i++) { // 20° total, well past the pole
+      for (var i = 0; i < 40; i++) {
+        // 20° total, well past the pole
         final result = simulateForwardStep(lat, lng, heading, stepRad);
         lat = result['lat']!;
         lng = result['lng']!;
         heading = result['heading']!;
 
-        expect(lat.isNaN, isFalse, reason: 'Latitude must not be NaN at step $i');
-        expect(lng.isNaN, isFalse, reason: 'Longitude must not be NaN at step $i');
-        expect(heading.isNaN, isFalse, reason: 'Heading must not be NaN at step $i');
-        expect(lat.isInfinite, isFalse, reason: 'Latitude must not be Inf at step $i');
-        expect(lng.isInfinite, isFalse, reason: 'Longitude must not be Inf at step $i');
-        expect(lat, inInclusiveRange(-90.0, 90.0),
-            reason: 'Latitude must be in range at step $i');
+        expect(
+          lat.isNaN,
+          isFalse,
+          reason: 'Latitude must not be NaN at step $i',
+        );
+        expect(
+          lng.isNaN,
+          isFalse,
+          reason: 'Longitude must not be NaN at step $i',
+        );
+        expect(
+          heading.isNaN,
+          isFalse,
+          reason: 'Heading must not be NaN at step $i',
+        );
+        expect(
+          lat.isInfinite,
+          isFalse,
+          reason: 'Latitude must not be Inf at step $i',
+        );
+        expect(
+          lng.isInfinite,
+          isFalse,
+          reason: 'Longitude must not be Inf at step $i',
+        );
+        expect(
+          lat,
+          inInclusiveRange(-90.0, 90.0),
+          reason: 'Latitude must be in range at step $i',
+        );
       }
     });
 
@@ -757,7 +951,13 @@ void main() {
       const stepDeg = 0.5;
       const stepRad = stepDeg * pi / 180;
       // Start very close to the pole heading north
-      final result = simulateNSteps(89.5, 0, -pi / 2, stepRad, 4); // 2° past pole
+      final result = simulateNSteps(
+        89.5,
+        0,
+        -pi / 2,
+        stepRad,
+        4,
+      ); // 2° past pole
 
       // After crossing, heading should be approximately south (+π/2 in math)
       // or equivalently, the bearing should be ~180° (south).
@@ -768,10 +968,14 @@ void main() {
 
       // Should be near π (south) — allow generous tolerance for pole proximity
       final distFromSouth = (normalizedBearing - pi).abs();
-      expect(distFromSouth, lessThan(0.3),
-          reason: 'After crossing the north pole heading north, '
-              'bearing should be approximately south (~180°). '
-              'Got: ${normalizedBearing * 180 / pi}°');
+      expect(
+        distFromSouth,
+        lessThan(0.3),
+        reason:
+            'After crossing the north pole heading north, '
+            'bearing should be approximately south (~180°). '
+            'Got: ${normalizedBearing * 180 / pi}°',
+      );
     });
   });
 
@@ -787,8 +991,11 @@ void main() {
 
       // Heading should still be approximately north (-π/2)
       final headingDiff = (result['heading']! - (-pi / 2)).abs();
-      expect(headingDiff, lessThan(0.01),
-          reason: 'Heading due north should not drift over 1000 steps');
+      expect(
+        headingDiff,
+        lessThan(0.01),
+        reason: 'Heading due north should not drift over 1000 steps',
+      );
     });
 
     test('heading east stays east over 1000 steps', () {
@@ -798,8 +1005,11 @@ void main() {
 
       // Heading should still be approximately east (0)
       final headingDiff = result['heading']!.abs();
-      expect(headingDiff, lessThan(0.01),
-          reason: 'Heading due east on the equator should not drift');
+      expect(
+        headingDiff,
+        lessThan(0.01),
+        reason: 'Heading due east on the equator should not drift',
+      );
     });
 
     test('heading NE from equator: heading changes but stays smooth', () {
@@ -827,9 +1037,13 @@ void main() {
       }
 
       // Each step's heading change should be tiny (< 1° for 0.1° steps)
-      expect(maxJump, lessThan(0.02), // ~1° in radians
-          reason: 'Heading changes must be smooth (no sudden jumps). '
-              'Max jump: ${maxJump * 180 / pi}°');
+      expect(
+        maxJump,
+        lessThan(0.02), // ~1° in radians
+        reason:
+            'Heading changes must be smooth (no sudden jumps). '
+            'Max jump: ${maxJump * 180 / pi}°',
+      );
     });
   });
 
@@ -852,13 +1066,17 @@ void main() {
       final lng2 = result['lng']! * pi / 180;
       final dLat = lat2 - lat1;
       final dLng = lng2 - lng1;
-      final a = sin(dLat / 2) * sin(dLat / 2) +
+      final a =
+          sin(dLat / 2) * sin(dLat / 2) +
           cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
       final c = 2 * atan2(sqrt(a), sqrt(1 - a));
       final distDeg = c * 180 / pi;
 
-      expect(distDeg, closeTo(10.0, 0.1),
-          reason: '100 steps of 0.1° should give ~10° total distance');
+      expect(
+        distDeg,
+        closeTo(10.0, 0.1),
+        reason: '100 steps of 0.1° should give ~10° total distance',
+      );
     });
   });
 }

@@ -2,8 +2,13 @@
 abstract class CanadaClues {
   static const Map<String, ProvinceClueData> data = {
     'ON': ProvinceClueData(
-      flag: 'Red ensign with Ontario shield featuring red cross and maple leaves',
-      sportsTeams: ['Toronto Maple Leafs (NHL)', 'Toronto Raptors (NBA)', 'Toronto Blue Jays (MLB)'],
+      flag:
+          'Red ensign with Ontario shield featuring red cross and maple leaves',
+      sportsTeams: [
+        'Toronto Maple Leafs (NHL)',
+        'Toronto Raptors (NBA)',
+        'Toronto Blue Jays (MLB)',
+      ],
       premier: 'Doug Ford',
       nickname: 'The Heartland Province',
       motto: 'Ut Incepit Fidelis Sic Permanet',
@@ -19,15 +24,24 @@ abstract class CanadaClues {
     ),
     'BC': ProvinceClueData(
       flag: 'Union Jack above setting sun over blue and white wavy stripes',
-      sportsTeams: ['Vancouver Canucks (NHL)', 'Vancouver Whitecaps (MLS)', 'BC Lions (CFL)'],
+      sportsTeams: [
+        'Vancouver Canucks (NHL)',
+        'Vancouver Whitecaps (MLS)',
+        'BC Lions (CFL)',
+      ],
       premier: 'David Eby',
       nickname: 'The Pacific Province',
       motto: 'Splendor sine occasu',
       famousLandmark: 'Stanley Park',
     ),
     'AB': ProvinceClueData(
-      flag: 'Blue field with Alberta shield featuring mountains, prairie, and wheat',
-      sportsTeams: ['Calgary Flames (NHL)', 'Edmonton Oilers (NHL)', 'Calgary Stampeders (CFL)'],
+      flag:
+          'Blue field with Alberta shield featuring mountains, prairie, and wheat',
+      sportsTeams: [
+        'Calgary Flames (NHL)',
+        'Edmonton Oilers (NHL)',
+        'Calgary Stampeders (CFL)',
+      ],
       premier: 'Danielle Smith',
       nickname: 'Wild Rose Country',
       motto: 'Fortis et Liber',
@@ -42,7 +56,8 @@ abstract class CanadaClues {
       famousLandmark: 'The Forks',
     ),
     'SK': ProvinceClueData(
-      flag: 'Green and gold horizontal halves with Saskatchewan shield and western red lily',
+      flag:
+          'Green and gold horizontal halves with Saskatchewan shield and western red lily',
       sportsTeams: ['Saskatchewan Roughriders (CFL)'],
       premier: 'Scott Moe',
       nickname: 'Land of the Living Skies',
@@ -74,7 +89,8 @@ abstract class CanadaClues {
       famousLandmark: 'Signal Hill',
     ),
     'PE': ProvinceClueData(
-      flag: 'Provincial shield with large oak and three saplings, English lion above',
+      flag:
+          'Provincial shield with large oak and three saplings, English lion above',
       sportsTeams: ['Charlottetown Islanders (QMJHL)'],
       premier: 'Dennis King',
       nickname: 'Birthplace of Confederation',
@@ -90,7 +106,8 @@ abstract class CanadaClues {
       famousLandmark: 'Nahanni National Park Reserve',
     ),
     'YT': ProvinceClueData(
-      flag: 'Green, white and blue vertical stripes with territorial coat of arms',
+      flag:
+          'Green, white and blue vertical stripes with territorial coat of arms',
       sportsTeams: <String>[],
       premier: 'Ranj Pillai',
       nickname: 'Canada\'s True North',

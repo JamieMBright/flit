@@ -31,12 +31,14 @@ void main() {
             expect(
               point.x,
               inInclusiveRange(-180.0, 180.0),
-              reason: 'River "${river.name}" has longitude out of range: ${point.x}',
+              reason:
+                  'River "${river.name}" has longitude out of range: ${point.x}',
             );
             expect(
               point.y,
               inInclusiveRange(-90.0, 90.0),
-              reason: 'River "${river.name}" has latitude out of range: ${point.y}',
+              reason:
+                  'River "${river.name}" has latitude out of range: ${point.y}',
             );
           }
         }
@@ -71,12 +73,14 @@ void main() {
           expect(
             lake.center.x,
             inInclusiveRange(-180.0, 180.0),
-            reason: 'Lake "${lake.name}" has longitude out of range: ${lake.center.x}',
+            reason:
+                'Lake "${lake.name}" has longitude out of range: ${lake.center.x}',
           );
           expect(
             lake.center.y,
             inInclusiveRange(-90.0, 90.0),
-            reason: 'Lake "${lake.name}" has latitude out of range: ${lake.center.y}',
+            reason:
+                'Lake "${lake.name}" has latitude out of range: ${lake.center.y}',
           );
         }
       });
@@ -86,7 +90,8 @@ void main() {
           expect(
             lake.radiusDegrees,
             greaterThan(0),
-            reason: 'Lake "${lake.name}" has non-positive radius: ${lake.radiusDegrees}',
+            reason:
+                'Lake "${lake.name}" has non-positive radius: ${lake.radiusDegrees}',
           );
         }
       });
@@ -120,12 +125,14 @@ void main() {
           expect(
             peak.location.x,
             inInclusiveRange(-180.0, 180.0),
-            reason: 'Peak "${peak.name}" has longitude out of range: ${peak.location.x}',
+            reason:
+                'Peak "${peak.name}" has longitude out of range: ${peak.location.x}',
           );
           expect(
             peak.location.y,
             inInclusiveRange(-90.0, 90.0),
-            reason: 'Peak "${peak.name}" has latitude out of range: ${peak.location.y}',
+            reason:
+                'Peak "${peak.name}" has latitude out of range: ${peak.location.y}',
           );
         }
       });
@@ -135,7 +142,8 @@ void main() {
           expect(
             peak.elevationMeters,
             greaterThan(0),
-            reason: 'Peak "${peak.name}" has non-positive elevation: ${peak.elevationMeters}',
+            reason:
+                'Peak "${peak.name}" has non-positive elevation: ${peak.elevationMeters}',
           );
         }
       });
@@ -176,12 +184,14 @@ void main() {
           expect(
             airport.location.x,
             inInclusiveRange(-180.0, 180.0),
-            reason: 'Airport "${airport.name}" (${airport.iataCode}) has longitude out of range: ${airport.location.x}',
+            reason:
+                'Airport "${airport.name}" (${airport.iataCode}) has longitude out of range: ${airport.location.x}',
           );
           expect(
             airport.location.y,
             inInclusiveRange(-90.0, 90.0),
-            reason: 'Airport "${airport.name}" (${airport.iataCode}) has latitude out of range: ${airport.location.y}',
+            reason:
+                'Airport "${airport.name}" (${airport.iataCode}) has latitude out of range: ${airport.location.y}',
           );
         }
       });
@@ -226,12 +236,14 @@ void main() {
           expect(
             volcano.location.x,
             inInclusiveRange(-180.0, 180.0),
-            reason: 'Volcano "${volcano.name}" has longitude out of range: ${volcano.location.x}',
+            reason:
+                'Volcano "${volcano.name}" has longitude out of range: ${volcano.location.x}',
           );
           expect(
             volcano.location.y,
             inInclusiveRange(-90.0, 90.0),
-            reason: 'Volcano "${volcano.name}" has latitude out of range: ${volcano.location.y}',
+            reason:
+                'Volcano "${volcano.name}" has latitude out of range: ${volcano.location.y}',
           );
         }
       });
@@ -271,12 +283,14 @@ void main() {
           expect(
             sea.center.x,
             inInclusiveRange(-180.0, 180.0),
-            reason: 'Sea label "${sea.name}" has longitude out of range: ${sea.center.x}',
+            reason:
+                'Sea label "${sea.name}" has longitude out of range: ${sea.center.x}',
           );
           expect(
             sea.center.y,
             inInclusiveRange(-90.0, 90.0),
-            reason: 'Sea label "${sea.name}" has latitude out of range: ${sea.center.y}',
+            reason:
+                'Sea label "${sea.name}" has latitude out of range: ${sea.center.y}',
           );
         }
       });
@@ -298,33 +312,51 @@ void main() {
         final allNames = <String>{};
 
         for (final river in OsmFeatures.rivers) {
-          expect(allNames.add(river.name), isTrue,
-              reason: 'Name "${river.name}" appears in multiple categories');
+          expect(
+            allNames.add(river.name),
+            isTrue,
+            reason: 'Name "${river.name}" appears in multiple categories',
+          );
         }
 
         for (final lake in OsmFeatures.lakes) {
-          expect(allNames.add(lake.name), isTrue,
-              reason: 'Name "${lake.name}" appears in multiple categories');
+          expect(
+            allNames.add(lake.name),
+            isTrue,
+            reason: 'Name "${lake.name}" appears in multiple categories',
+          );
         }
 
         for (final peak in OsmFeatures.peaks) {
-          expect(allNames.add(peak.name), isTrue,
-              reason: 'Name "${peak.name}" appears in multiple categories');
+          expect(
+            allNames.add(peak.name),
+            isTrue,
+            reason: 'Name "${peak.name}" appears in multiple categories',
+          );
         }
 
         for (final airport in OsmFeatures.airports) {
-          expect(allNames.add(airport.name), isTrue,
-              reason: 'Name "${airport.name}" appears in multiple categories');
+          expect(
+            allNames.add(airport.name),
+            isTrue,
+            reason: 'Name "${airport.name}" appears in multiple categories',
+          );
         }
 
         for (final volcano in OsmFeatures.volcanoes) {
-          expect(allNames.add(volcano.name), isTrue,
-              reason: 'Name "${volcano.name}" appears in multiple categories');
+          expect(
+            allNames.add(volcano.name),
+            isTrue,
+            reason: 'Name "${volcano.name}" appears in multiple categories',
+          );
         }
 
         for (final sea in OsmFeatures.seas) {
-          expect(allNames.add(sea.name), isTrue,
-              reason: 'Name "${sea.name}" appears in multiple categories');
+          expect(
+            allNames.add(sea.name),
+            isTrue,
+            reason: 'Name "${sea.name}" appears in multiple categories',
+          );
         }
       });
     });

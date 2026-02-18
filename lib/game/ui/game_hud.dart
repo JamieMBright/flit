@@ -58,143 +58,135 @@ class GameHud extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Top row: [Exit/Settings] [Clue] [Timer/Compass/Round]
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top row: [Exit/Settings] [Clue] [Timer/Compass/Round]
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              // Left column: Exit and Settings stacked
+              Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Left column: Exit and Settings stacked
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _ExitButton(onTap: onExit),
-                      const SizedBox(height: 6),
-                      _GearButton(onTap: onSettings),
-                    ],
-                  ),
-                  const SizedBox(width: 8),
-                  // Center: Clue display (expanded to fill available space)
-                  if (currentClue != null)
-                    Expanded(
-                      child: _ClueCard(clue: currentClue!),
-                    )
-                  else
-                    const Spacer(),
-                  const SizedBox(width: 8),
-                  // Right column: Timer, Compass, Round indicator
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      _TimerDisplay(elapsed: elapsedTime),
-                      if (heading != null) ...[
-                        const SizedBox(height: 6),
-                        _CompassDisplay(heading: heading!),
-                      ],
-                      if (currentRound != null &&
-                          totalRounds != null &&
-                          totalRounds! > 1) ...[
-                        const SizedBox(height: 6),
-                        _RoundIndicator(
-                          current: currentRound!,
-                          total: totalRounds!,
-                        ),
-                      ],
-                    ],
-                  ),
+                  _ExitButton(onTap: onExit),
+                  const SizedBox(height: 6),
+                  _GearButton(onTap: onSettings),
                 ],
               ),
-              // Revealed country name (shown after tier 2 hint)
-              if (revealedCountry != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: FlitColors.gold.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: FlitColors.gold.withOpacity(0.6),
-                          width: 2,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            '🎯 ',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                          Text(
-                            revealedCountry!,
-                            style: const TextStyle(
-                              color: FlitColors.gold,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              // Country name bar (shown when flying over a country)
-              if (countryName != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Center(
-                    child: _CountryNameBar(
-                      name: countryName!,
-                      flashProgress: countryFlashProgress,
-                    ),
-                  ),
-                ),
-              const Spacer(),
-              // Fuel gauge (shown only when fuel is active)
-              if (fuelLevel != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _FuelGauge(level: fuelLevel!, maxFuel: maxFuel),
-                ),
-              // Bottom row: Speed controls, Altitude indicator, Hint button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              const SizedBox(width: 8),
+              // Center: Clue display (expanded to fill available space)
+              if (currentClue != null)
+                Expanded(child: _ClueCard(clue: currentClue!))
+              else
+                const Spacer(),
+              const SizedBox(width: 8),
+              // Right column: Timer, Compass, Round indicator
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // Hint button
-                  if (hintTier < 4 && onHint != null)
-                    _HintButton(
-                      tier: hintTier,
-                      onTap: onHint,
+                  _TimerDisplay(elapsed: elapsedTime),
+                  if (heading != null) ...[
+                    const SizedBox(height: 6),
+                    _CompassDisplay(heading: heading!),
+                  ],
+                  if (currentRound != null &&
+                      totalRounds != null &&
+                      totalRounds! > 1) ...[
+                    const SizedBox(height: 6),
+                    _RoundIndicator(
+                      current: currentRound!,
+                      total: totalRounds!,
                     ),
-                  // Speed controls
-                  Flexible(
-                    child: _SpeedControls(
-                      current: currentSpeed,
-                      onChanged: onSpeedChanged,
-                    ),
-                  ),
-                  // Altitude indicator
-                  Flexible(
-                    child: _AltitudeIndicator(
-                      isHigh: isHighAltitude,
-                      onToggle: onAltitudeToggle,
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ],
           ),
-        ),
-      );
+          // Revealed country name (shown after tier 2 hint)
+          if (revealedCountry != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: FlitColors.gold.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: FlitColors.gold.withOpacity(0.6),
+                      width: 2,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🎯 ', style: TextStyle(fontSize: 16)),
+                      Text(
+                        revealedCountry!,
+                        style: const TextStyle(
+                          color: FlitColors.gold,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          // Country name bar (shown when flying over a country)
+          if (countryName != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Center(
+                child: _CountryNameBar(
+                  name: countryName!,
+                  flashProgress: countryFlashProgress,
+                ),
+              ),
+            ),
+          const Spacer(),
+          // Fuel gauge (shown only when fuel is active)
+          if (fuelLevel != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _FuelGauge(level: fuelLevel!, maxFuel: maxFuel),
+            ),
+          // Bottom row: Speed controls, Altitude indicator, Hint button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // Hint button
+              if (hintTier < 4 && onHint != null)
+                _HintButton(tier: hintTier, onTap: onHint),
+              // Speed controls
+              Flexible(
+                child: _SpeedControls(
+                  current: currentSpeed,
+                  onChanged: onSpeedChanged,
+                ),
+              ),
+              // Altitude indicator
+              Flexible(
+                child: _AltitudeIndicator(
+                  isHigh: isHighAltitude,
+                  onToggle: onAltitudeToggle,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _ExitButton extends StatelessWidget {
@@ -204,21 +196,17 @@ class _ExitButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: FlitColors.cardBackground.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
-          ),
-          child: const Icon(
-            Icons.close,
-            color: FlitColors.textSecondary,
-            size: 20,
-          ),
-        ),
-      );
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
+      ),
+      child: const Icon(Icons.close, color: FlitColors.textSecondary, size: 20),
+    ),
+  );
 }
 
 class _GearButton extends StatelessWidget {
@@ -228,21 +216,21 @@ class _GearButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: FlitColors.cardBackground.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
-          ),
-          child: const Icon(
-            Icons.settings,
-            color: FlitColors.textSecondary,
-            size: 20,
-          ),
-        ),
-      );
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
+      ),
+      child: const Icon(
+        Icons.settings,
+        color: FlitColors.textSecondary,
+        size: 20,
+      ),
+    ),
+  );
 }
 
 class _ClueCard extends StatelessWidget {
@@ -252,52 +240,56 @@ class _ClueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground.withOpacity(0.85),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: FlitColors.cardBackground.withOpacity(0.85),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Clue type label
+        Text(
+          _clueTypeLabel(clue.type),
+          style: const TextStyle(
+            color: FlitColors.gold,
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.5,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Clue type label
-            Text(
-              _clueTypeLabel(clue.type),
-              style: const TextStyle(
-                color: FlitColors.gold,
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.5,
-              ),
+        const SizedBox(height: 4),
+        // Clue content
+        if (clue.type == ClueType.flag)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: _buildFlagWidget(clue.targetCountryCode),
+          )
+        else if (clue.type == ClueType.outline)
+          _CountryOutline(
+            polygons:
+                clue.displayData['polygons'] as List<List<Vector2>>? ??
+                (clue.displayData['points'] != null
+                    ? [
+                      (clue.displayData['points'] as List<dynamic>)
+                          .cast<Vector2>(),
+                    ]
+                    : <List<Vector2>>[]),
+          )
+        else
+          Text(
+            clue.displayText,
+            style: const TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 13,
+              height: 1.4,
             ),
-            const SizedBox(height: 4),
-            // Clue content
-            if (clue.type == ClueType.flag)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: _buildFlagWidget(clue.targetCountryCode),
-              )
-            else if (clue.type == ClueType.outline)
-              _CountryOutline(
-                polygons: clue.displayData['polygons'] as List<List<Vector2>>? ??
-                    (clue.displayData['points'] != null
-                        ? [(clue.displayData['points'] as List<dynamic>).cast<Vector2>()]
-                        : <List<Vector2>>[]),
-              )
-            else
-              Text(
-                clue.displayText,
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-              ),
-          ],
-        ),
-      );
+          ),
+      ],
+    ),
+  );
 
   /// Builds a flag widget with error handling for unsupported country codes.
   /// Falls back to the flag emoji text if the SVG flag can't be rendered.
@@ -344,9 +336,7 @@ class _ClueCard extends StatelessWidget {
   Widget _flagEmojiFallback(String countryCode) {
     // Convert 2-letter code to regional indicator emoji
     final codeUnits = countryCode.toUpperCase().codeUnits;
-    final emoji = String.fromCharCodes(
-      codeUnits.map((c) => c + 127397),
-    );
+    final emoji = String.fromCharCodes(codeUnits.map((c) => c + 127397));
     return Container(
       height: 56,
       width: 84,
@@ -355,10 +345,7 @@ class _ClueCard extends StatelessWidget {
         color: FlitColors.backgroundMid,
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(
-        emoji,
-        style: const TextStyle(fontSize: 36),
-      ),
+      child: Text(emoji, style: const TextStyle(fontSize: 36)),
     );
   }
 
@@ -432,8 +419,12 @@ class _CompassDisplay extends StatelessWidget {
     var bearingDeg = bearingRad * 180 / math.pi;
 
     // Normalize to [0, 360)
-    while (bearingDeg < 0) { bearingDeg += 360; }
-    while (bearingDeg >= 360) { bearingDeg -= 360; }
+    while (bearingDeg < 0) {
+      bearingDeg += 360;
+    }
+    while (bearingDeg >= 360) {
+      bearingDeg -= 360;
+    }
 
     // Get cardinal direction
     final direction = _getCardinalDirection(bearingDeg);
@@ -450,7 +441,8 @@ class _CompassDisplay extends StatelessWidget {
         children: [
           // Compass icon with rotation
           Transform.rotate(
-            angle: -bearingRad, // Negative because we want North to point up when bearing is 0
+            angle:
+                -bearingRad, // Negative because we want North to point up when bearing is 0
             child: const Icon(
               Icons.navigation,
               color: FlitColors.accent,
@@ -488,40 +480,34 @@ class _CompassDisplay extends StatelessWidget {
 }
 
 class _RoundIndicator extends StatelessWidget {
-  const _RoundIndicator({
-    required this.current,
-    required this.total,
-  });
+  const _RoundIndicator({required this.current, required this.total});
 
   final int current;
   final int total;
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: FlitColors.accent.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.accent.withOpacity(0.5)),
-        ),
-        child: Text(
-          '$current/$total',
-          style: const TextStyle(
-            color: FlitColors.accent,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: FlitColors.accent.withOpacity(0.15),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: FlitColors.accent.withOpacity(0.5)),
+    ),
+    child: Text(
+      '$current/$total',
+      style: const TextStyle(
+        color: FlitColors.accent,
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.5,
+      ),
+    ),
+  );
 }
 
 /// Country name bar with flash animation when entering a new country.
 class _CountryNameBar extends StatelessWidget {
-  const _CountryNameBar({
-    required this.name,
-    required this.flashProgress,
-  });
+  const _CountryNameBar({required this.name, required this.flashProgress});
 
   final String name;
   final double flashProgress;
@@ -540,26 +526,26 @@ class _CountryNameBar extends StatelessWidget {
     return Transform.scale(
       scale: scale,
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 5,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
         decoration: BoxDecoration(
-          color: FlitColors.cardBackground.withOpacity(0.75 + glowOpacity * 0.25),
+          color: FlitColors.cardBackground.withOpacity(
+            0.75 + glowOpacity * 0.25,
+          ),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: FlitColors.accent.withOpacity(borderOpacity),
             width: 1 + (flashProgress * 1.5),
           ),
-          boxShadow: flashProgress > 0
-              ? [
-                  BoxShadow(
-                    color: FlitColors.accent.withOpacity(glowOpacity * 0.8),
-                    blurRadius: 8 + (flashProgress * 12),
-                    spreadRadius: flashProgress * 2,
-                  ),
-                ]
-              : null,
+          boxShadow:
+              flashProgress > 0
+                  ? [
+                    BoxShadow(
+                      color: FlitColors.accent.withOpacity(glowOpacity * 0.8),
+                      blurRadius: 8 + (flashProgress * 12),
+                      spreadRadius: flashProgress * 2,
+                    ),
+                  ]
+                  : null,
         ),
         child: Text(
           name,
@@ -576,71 +562,66 @@ class _CountryNameBar extends StatelessWidget {
 }
 
 class _AltitudeIndicator extends StatelessWidget {
-  const _AltitudeIndicator({
-    required this.isHigh,
-    this.onToggle,
-  });
+  const _AltitudeIndicator({required this.isHigh, this.onToggle});
 
   final bool isHigh;
   final VoidCallback? onToggle;
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onToggle,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: FlitColors.cardBackground.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
+    onTap: onToggle,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isHigh ? FlitColors.accent : FlitColors.success,
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isHigh ? Icons.flight_takeoff : Icons.flight_land,
+            color: isHigh ? FlitColors.accent : FlitColors.success,
+            size: 16,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            isHigh ? 'DESCEND' : 'ASCEND',
+            style: TextStyle(
               color: isHigh ? FlitColors.accent : FlitColors.success,
-              width: 1.5,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.0,
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isHigh ? Icons.flight_takeoff : Icons.flight_land,
-                color: isHigh ? FlitColors.accent : FlitColors.success,
-                size: 16,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                isHigh ? 'DESCEND' : 'ASCEND',
-                style: TextStyle(
-                  color: isHigh ? FlitColors.accent : FlitColors.success,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.0,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }
 
 class _SpeedControls extends StatelessWidget {
-  const _SpeedControls({
-    required this.current,
-    this.onChanged,
-  });
+  const _SpeedControls({required this.current, this.onChanged});
 
   final FlightSpeed current;
   final ValueChanged<FlightSpeed>? onChanged;
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground.withOpacity(0.85),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: FlightSpeed.values.map((speed) {
+    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+    decoration: BoxDecoration(
+      color: FlitColors.cardBackground.withOpacity(0.85),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children:
+          FlightSpeed.values.map((speed) {
             final isActive = speed == current;
             return GestureDetector(
               onTap: () => onChanged?.call(speed),
@@ -650,17 +631,16 @@ class _SpeedControls extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: isActive
-                      ? FlitColors.accent.withOpacity(0.3)
-                      : Colors.transparent,
+                  color:
+                      isActive
+                          ? FlitColors.accent.withOpacity(0.3)
+                          : Colors.transparent,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
                   _speedLabel(speed),
                   style: TextStyle(
-                    color: isActive
-                        ? FlitColors.accent
-                        : FlitColors.textMuted,
+                    color: isActive ? FlitColors.accent : FlitColors.textMuted,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.8,
@@ -669,8 +649,8 @@ class _SpeedControls extends StatelessWidget {
               ),
             );
           }).toList(),
-        ),
-      );
+    ),
+  );
 
   String _speedLabel(FlightSpeed speed) {
     switch (speed) {
@@ -685,10 +665,7 @@ class _SpeedControls extends StatelessWidget {
 }
 
 class _HintButton extends StatelessWidget {
-  const _HintButton({
-    required this.tier,
-    this.onTap,
-  });
+  const _HintButton({required this.tier, this.onTap});
 
   final int tier;
   final VoidCallback? onTap;
@@ -736,10 +713,7 @@ class _HintButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              icon,
-              style: const TextStyle(fontSize: 14),
-            ),
+            Text(icon, style: const TextStyle(fontSize: 14)),
             const SizedBox(width: 6),
             Text(
               label,
@@ -771,9 +745,7 @@ class _CountryOutline extends StatelessWidget {
     return SizedBox(
       height: 80,
       width: double.infinity,
-      child: CustomPaint(
-        painter: _CountryOutlinePainter(polygons),
-      ),
+      child: CustomPaint(painter: _CountryOutlinePainter(polygons)),
     );
   }
 }
@@ -893,11 +865,7 @@ class _FuelGauge extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.local_gas_station,
-            color: barColor,
-            size: 16,
-          ),
+          Icon(Icons.local_gas_station, color: barColor, size: 16),
           const SizedBox(width: 8),
           Expanded(
             child: ClipRRect(

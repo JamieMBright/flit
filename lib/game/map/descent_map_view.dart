@@ -64,10 +64,7 @@ class _DescentMapViewState extends State<DescentMapView> {
   void didUpdateWidget(DescentMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_mapReady) {
-      _mapController.move(
-        LatLng(widget.centerLat, widget.centerLng),
-        _zoom,
-      );
+      _mapController.move(LatLng(widget.centerLat, widget.centerLng), _zoom);
       _mapController.rotate(_rotation);
     }
   }
@@ -105,9 +102,7 @@ class _DescentMapViewState extends State<DescentMapView> {
           // OSM attribution (required by tile usage policy)
           const RichAttributionWidget(
             alignment: AttributionAlignment.bottomLeft,
-            attributions: [
-              TextSourceAttribution('OpenStreetMap contributors'),
-            ],
+            attributions: [TextSourceAttribution('OpenStreetMap contributors')],
           ),
         ],
       ),

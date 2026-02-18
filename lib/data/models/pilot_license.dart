@@ -161,21 +161,24 @@ class PilotLicense {
     int luckBonus = 0,
   }) {
     return PilotLicense(
-      coinBoost: lockedStats.contains('coinBoost')
-          ? current.coinBoost
-          : rollStat(rng: rng, luckBonus: luckBonus),
-      clueBoost: lockedStats.contains('clueBoost')
-          ? current.clueBoost
-          : rollStat(rng: rng, luckBonus: luckBonus),
-      clueChance: lockedStats.contains('clueChance')
-          ? current.clueChance
-          : rollStat(rng: rng, luckBonus: luckBonus),
-      fuelBoost: lockedStats.contains('fuelBoost')
-          ? current.fuelBoost
-          : rollStat(rng: rng, luckBonus: luckBonus),
-      preferredClueType: lockType
-          ? current.preferredClueType
-          : rollClueType(rng),
+      coinBoost:
+          lockedStats.contains('coinBoost')
+              ? current.coinBoost
+              : rollStat(rng: rng, luckBonus: luckBonus),
+      clueBoost:
+          lockedStats.contains('clueBoost')
+              ? current.clueBoost
+              : rollStat(rng: rng, luckBonus: luckBonus),
+      clueChance:
+          lockedStats.contains('clueChance')
+              ? current.clueChance
+              : rollStat(rng: rng, luckBonus: luckBonus),
+      fuelBoost:
+          lockedStats.contains('fuelBoost')
+              ? current.fuelBoost
+              : rollStat(rng: rng, luckBonus: luckBonus),
+      preferredClueType:
+          lockType ? current.preferredClueType : rollClueType(rng),
     );
   }
 
@@ -227,32 +230,31 @@ class PilotLicense {
     int? clueChance,
     int? fuelBoost,
     String? preferredClueType,
-  }) =>
-      PilotLicense(
-        coinBoost: coinBoost ?? this.coinBoost,
-        clueBoost: clueBoost ?? this.clueBoost,
-        clueChance: clueChance ?? this.clueChance,
-        fuelBoost: fuelBoost ?? this.fuelBoost,
-        preferredClueType: preferredClueType ?? this.preferredClueType,
-      );
+  }) => PilotLicense(
+    coinBoost: coinBoost ?? this.coinBoost,
+    clueBoost: clueBoost ?? this.clueBoost,
+    clueChance: clueChance ?? this.clueChance,
+    fuelBoost: fuelBoost ?? this.fuelBoost,
+    preferredClueType: preferredClueType ?? this.preferredClueType,
+  );
 
   // ---------------------------------------------------------------------------
   // Serialisation
   // ---------------------------------------------------------------------------
 
   Map<String, dynamic> toJson() => {
-        'coin_boost': coinBoost,
-        'clue_boost': clueBoost,
-        'clue_chance': clueChance,
-        'fuel_boost': fuelBoost,
-        'preferred_clue_type': preferredClueType,
-      };
+    'coin_boost': coinBoost,
+    'clue_boost': clueBoost,
+    'clue_chance': clueChance,
+    'fuel_boost': fuelBoost,
+    'preferred_clue_type': preferredClueType,
+  };
 
   factory PilotLicense.fromJson(Map<String, dynamic> json) => PilotLicense(
-        coinBoost: json['coin_boost'] as int,
-        clueBoost: json['clue_boost'] as int,
-        clueChance: json['clue_chance'] as int? ?? 1,
-        fuelBoost: json['fuel_boost'] as int,
-        preferredClueType: json['preferred_clue_type'] as String,
-      );
+    coinBoost: json['coin_boost'] as int,
+    clueBoost: json['clue_boost'] as int,
+    clueChance: json['clue_chance'] as int? ?? 1,
+    fuelBoost: json['fuel_boost'] as int,
+    preferredClueType: json['preferred_clue_type'] as String,
+  );
 }

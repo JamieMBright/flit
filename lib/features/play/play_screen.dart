@@ -172,11 +172,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   void initState() {
     super.initState();
     try {
-      _log.info('screen', 'PlayScreen.initState', data: {
-        'region': widget.region.name,
-        'challenge': widget.challengeFriendName,
-        'totalRounds': widget.totalRounds,
-      });
+      _log.info(
+        'screen',
+        'PlayScreen.initState',
+        data: {
+          'region': widget.region.name,
+          'challenge': widget.challengeFriendName,
+          'totalRounds': widget.totalRounds,
+        },
+      );
       _game = FlitGame(
         onGameReady: _onGameReady,
         onAltitudeChanged: _onAltitudeChanged,
@@ -200,19 +204,28 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         if (mounted && !_gameReady && _error == null) {
           _log.error('screen', 'Game ready timeout (20s)');
           setState(() {
-            _error = 'Game engine failed to start.\n\nPlease go back and try '
+            _error =
+                'Game engine failed to start.\n\nPlease go back and try '
                 'again. If the problem persists, restart the app.';
           });
         }
       });
     } catch (e, st) {
-      _log.error('screen', 'PlayScreen.initState FAILED',
-          error: e, stackTrace: st);
-      ErrorService.instance.reportCritical(e, st, context: {
-        'screen': 'PlayScreen',
-        'action': 'initState',
-        'region': widget.region.name,
-      });
+      _log.error(
+        'screen',
+        'PlayScreen.initState FAILED',
+        error: e,
+        stackTrace: st,
+      );
+      ErrorService.instance.reportCritical(
+        e,
+        st,
+        context: {
+          'screen': 'PlayScreen',
+          'action': 'initState',
+          'region': widget.region.name,
+        },
+      );
       WebErrorBridge.show('PlayScreen.initState crash:\n$e\n\n$st');
       // Set error synchronously — first build() will see it and skip _game.
       _error = 'initState crashed.\n\nError: $e\n\nStack:\n$st';
@@ -233,8 +246,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       _game.pauseEngine();
       _game.onRemove();
     } catch (e, st) {
-      _log.error('screen', 'PlayScreen.dispose game cleanup failed',
-          error: e, stackTrace: st);
+      _log.error(
+        'screen',
+        'PlayScreen.dispose game cleanup failed',
+        error: e,
+        stackTrace: st,
+      );
     }
     super.dispose();
   }
@@ -304,36 +321,48 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         }
         if (newClue != null && newClue.type != previousType) {
           _currentClue = newClue;
-          _log.info('hint', 'Tier 1: Clue cycled', data: {
-            'target': _session!.targetName,
-            'newClueType': _currentClue!.type.name,
-          });
+          _log.info(
+            'hint',
+            'Tier 1: Clue cycled',
+            data: {
+              'target': _session!.targetName,
+              'newClueType': _currentClue!.type.name,
+            },
+          );
         } else {
           // Only one clue type available — skip directly to tier 2 (reveal).
           _hintTier = 2;
           _revealedCountry = _session!.targetName;
-          _log.info('hint', 'Tier 1 skipped to Tier 2: only one clue type', data: {
-            'target': _session!.targetName,
-          });
+          _log.info(
+            'hint',
+            'Tier 1 skipped to Tier 2: only one clue type',
+            data: {'target': _session!.targetName},
+          );
         }
       } else if (_hintTier == 2) {
         // Tier 2: Reveal the country name
         _revealedCountry = _session!.targetName;
-        _log.info('hint', 'Tier 2: Country revealed', data: {
-          'country': _revealedCountry,
-        });
+        _log.info(
+          'hint',
+          'Tier 2: Country revealed',
+          data: {'country': _revealedCountry},
+        );
       } else if (_hintTier == 3) {
         // Tier 3: Show wayline to destination
         _game.showHintWayline(_session!.targetPosition);
-        _log.info('hint', 'Tier 3: Wayline shown', data: {
-          'target': _session!.targetName,
-        });
+        _log.info(
+          'hint',
+          'Tier 3: Wayline shown',
+          data: {'target': _session!.targetName},
+        );
       } else if (_hintTier == 4) {
         // Tier 4: Set navigation waypoint to target country (nuclear option)
         _game.setWaymarker(_session!.targetPosition);
-        _log.info('hint', 'Tier 4: Nav waypoint set to target', data: {
-          'target': _session!.targetName,
-        });
+        _log.info(
+          'hint',
+          'Tier 4: Nav waypoint set to target',
+          data: {'target': _session!.targetName},
+        );
       }
     });
   }
@@ -342,7 +371,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   void _startAutoHintTimer() {
     _autoHintTimer?.cancel();
     _autoHintTimer = Timer(const Duration(minutes: 2), () {
-      if (mounted && _session != null && !_session!.isCompleted && _hintTier == 0) {
+      if (mounted &&
+          _session != null &&
+          !_session!.isCompleted &&
+          _hintTier == 0) {
         _log.info('hint', 'Auto-hint triggered after 2 minutes');
         _useHint(); // Trigger tier 1 (clue change)
       }
@@ -377,17 +409,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       _revealedCountry = null;
       _currentClue = _session!.clue;
 
-      _log.info('session', 'Session created', data: {
-        'target': _session!.targetName,
-        'clue': _session!.clue.type.name,
-        'round': _currentRound,
-      });
+      _log.info(
+        'session',
+        'Session created',
+        data: {
+          'target': _session!.targetName,
+          'clue': _session!.clue.type.name,
+          'round': _currentRound,
+        },
+      );
 
       // Show launch intro overlay (black screen while globe positions).
       _launchIntroVisible = true;
       Future<void>.delayed(const Duration(milliseconds: 1200), () {
         if (mounted) {
-          setState(() { _launchIntroVisible = false; });
+          setState(() {
+            _launchIntroVisible = false;
+          });
         }
       });
 
@@ -444,7 +482,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       WebErrorBridge.show('_startNewGame crash:\n$e\n\n$st');
       if (mounted) {
         setState(() {
-          _error = 'Failed to start game session.\n\n'
+          _error =
+              'Failed to start game session.\n\n'
               'Error: $e\n\n'
               'Stack trace:\n${st.toString().split('\n').take(8).join('\n')}';
         });
@@ -459,7 +498,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     // target country's borders. The border check allows high-altitude
     // fly-over to register — the player shouldn't need to descend.
     final nearTarget = _game.isNearTarget(threshold: 25);
-    final inTargetCountry = _game.currentCountryName != null &&
+    final inTargetCountry =
+        _game.currentCountryName != null &&
         _game.currentCountryName == _session!.targetName;
 
     if (nearTarget || inTargetCountry) {
@@ -484,19 +524,25 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
     // Record per-round result for summary.
     if (_session != null) {
-      _roundResults.add(_RoundResult(
-        countryName: _session!.targetName,
-        clueType: _session!.clue.type,
-        elapsed: _elapsed,
-        score: _session!.score,
-      ));
+      _roundResults.add(
+        _RoundResult(
+          countryName: _session!.targetName,
+          clueType: _session!.clue.type,
+          elapsed: _elapsed,
+          score: _session!.score,
+        ),
+      );
     }
 
-    _log.info('session', 'Round $_currentRound complete, advancing', data: {
-      'target': _session?.targetName,
-      'roundScore': _session?.score,
-      'totalScore': _totalScore,
-    });
+    _log.info(
+      'session',
+      'Round $_currentRound complete, advancing',
+      data: {
+        'target': _session?.targetName,
+        'roundScore': _session?.score,
+        'totalScore': _totalScore,
+      },
+    );
 
     setState(() {
       _currentRound++;
@@ -518,11 +564,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         _revealedCountry = null;
         _currentClue = _session!.clue;
 
-        _log.info('session', 'Seamless round advance', data: {
-          'target': _session!.targetName,
-          'clue': _session!.clue.type.name,
-          'round': _currentRound,
-        });
+        _log.info(
+          'session',
+          'Seamless round advance',
+          data: {
+            'target': _session!.targetName,
+            'clue': _session!.clue.type.name,
+            'round': _currentRound,
+          },
+        );
 
         // Continue flying — only change target and clue, no teleport.
         _game.continueWithNewTarget(
@@ -549,8 +599,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         _startAutoHintTimer();
         setState(() {});
       } catch (e, st) {
-        _log.error('session', 'Failed to advance round',
-            error: e, stackTrace: st);
+        _log.error(
+          'session',
+          'Failed to advance round',
+          error: e,
+          stackTrace: st,
+        );
         // Fall back to full restart if seamless advance fails.
         _startNewGame();
       }
@@ -566,29 +620,37 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
     // Record final round result for summary.
     if (_session != null) {
-      _roundResults.add(_RoundResult(
-        countryName: _session!.targetName,
-        clueType: _session!.clue.type,
-        elapsed: _elapsed,
-        score: _session!.score,
-      ));
+      _roundResults.add(
+        _RoundResult(
+          countryName: _session!.targetName,
+          clueType: _session!.clue.type,
+          elapsed: _elapsed,
+          score: _session!.score,
+        ),
+      );
     }
 
-    _log.info('session', 'Landing complete', data: {
-      'target': _session?.targetName,
-      'elapsed': _session?.elapsed.inMilliseconds,
-      'score': _session?.score,
-      'totalScore': _totalScore,
-      'round': _currentRound,
-    });
+    _log.info(
+      'session',
+      'Landing complete',
+      data: {
+        'target': _session?.targetName,
+        'elapsed': _session?.elapsed.inMilliseconds,
+        'score': _session?.score,
+        'totalScore': _totalScore,
+        'round': _currentRound,
+      },
+    );
 
     // Record stats via Riverpod account provider.
-    ref.read(accountProvider.notifier).recordGameCompletion(
-      elapsed: _cumulativeTime,
-      score: _totalScore,
-      roundsCompleted: _currentRound,
-      coinReward: widget.coinReward,
-    );
+    ref
+        .read(accountProvider.notifier)
+        .recordGameCompletion(
+          elapsed: _cumulativeTime,
+          score: _totalScore,
+          roundsCompleted: _currentRound,
+          coinReward: widget.coinReward,
+        );
 
     // Notify completion callback
     widget.onComplete?.call(_totalScore);
@@ -599,39 +661,42 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => _ResultDialog(
-        session: _session!,
-        challengeFriendName: friendName,
-        totalScore: _totalScore,
-        totalRounds: widget.totalRounds,
-        cumulativeTime: _cumulativeTime,
-        coinReward: widget.coinReward,
-        roundResults: _roundResults,
-        onPlayAgain: friendName == null
-            ? () {
-                Navigator.of(dialogContext).pop();
-                setState(() {
-                  _currentRound = 1;
-                  _totalScore = 0;
-                  _cumulativeTime = Duration.zero;
-                });
-                _startNewGame();
-              }
-            : null,
-        onExit: () {
-          try {
-            _game.pauseEngine();
-          } catch (_) {}
-          Navigator.of(dialogContext).pop(); // dismiss result dialog
-          Navigator.of(context).pop(); // dismiss PlayScreen
-        },
-        onSendChallenge: friendName != null
-            ? () {
-                Navigator.of(dialogContext).pop();
-                _showChallengeSentDialog(friendName);
-              }
-            : null,
-      ),
+      builder:
+          (dialogContext) => _ResultDialog(
+            session: _session!,
+            challengeFriendName: friendName,
+            totalScore: _totalScore,
+            totalRounds: widget.totalRounds,
+            cumulativeTime: _cumulativeTime,
+            coinReward: widget.coinReward,
+            roundResults: _roundResults,
+            onPlayAgain:
+                friendName == null
+                    ? () {
+                      Navigator.of(dialogContext).pop();
+                      setState(() {
+                        _currentRound = 1;
+                        _totalScore = 0;
+                        _cumulativeTime = Duration.zero;
+                      });
+                      _startNewGame();
+                    }
+                    : null,
+            onExit: () {
+              try {
+                _game.pauseEngine();
+              } catch (_) {}
+              Navigator.of(dialogContext).pop(); // dismiss result dialog
+              Navigator.of(context).pop(); // dismiss PlayScreen
+            },
+            onSendChallenge:
+                friendName != null
+                    ? () {
+                      Navigator.of(dialogContext).pop();
+                      _showChallengeSentDialog(friendName);
+                    }
+                    : null,
+          ),
     );
   }
 
@@ -639,77 +704,80 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     _log.info('screen', 'Exit requested by user');
     showDialog<void>(
       context: context,
-      builder: (dialogContext) => Dialog(
-        backgroundColor: FlitColors.cardBackground,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.flight,
-                color: FlitColors.textSecondary,
-                size: 36,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Abort Flight?',
-                style: TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Your current progress will be lost.',
-                style: TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      builder:
+          (dialogContext) => Dialog(
+            backgroundColor: FlitColors.cardBackground,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(),
-                    child: const Text(
-                      'KEEP FLYING',
-                      style: TextStyle(color: FlitColors.accent),
+                  const Icon(
+                    Icons.flight,
+                    color: FlitColors.textSecondary,
+                    size: 36,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Abort Flight?',
+                    style: TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      _log.info('screen', 'User confirmed exit');
-                      _timer?.cancel();
-                      try {
-                        _game.pauseEngine();
-                      } catch (_) {}
-                      Navigator.of(dialogContext).pop();
-                      Navigator.of(context).pop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: FlitColors.textMuted,
-                      foregroundColor: FlitColors.textPrimary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Your current progress will be lost.',
+                    style: TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 14,
                     ),
-                    child: const Text('ABORT'),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        child: const Text(
+                          'KEEP FLYING',
+                          style: TextStyle(color: FlitColors.accent),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          _log.info('screen', 'User confirmed exit');
+                          _timer?.cancel();
+                          try {
+                            _game.pauseEngine();
+                          } catch (_) {}
+                          Navigator.of(dialogContext).pop();
+                          Navigator.of(context).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: FlitColors.textMuted,
+                          foregroundColor: FlitColors.textPrimary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('ABORT'),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -717,63 +785,62 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => Dialog(
-        backgroundColor: FlitColors.cardBackground,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.send,
-                color: FlitColors.success,
-                size: 44,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Challenge Sent!',
-                style: TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Waiting for $friendName to play...',
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 16,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  try {
-                    _game.pauseEngine();
-                  } catch (_) {}
-                  Navigator.of(dialogContext).pop(); // dismiss this dialog
-                  Navigator.of(context).pop(); // dismiss PlayScreen
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FlitColors.accent,
-                  foregroundColor: FlitColors.textPrimary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 12,
+      builder:
+          (dialogContext) => Dialog(
+            backgroundColor: FlitColors.cardBackground,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.send, color: FlitColors.success, size: 44),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Challenge Sent!',
+                    style: TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Waiting for $friendName to play...',
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-                child: const Text('OK'),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      try {
+                        _game.pauseEngine();
+                      } catch (_) {}
+                      Navigator.of(dialogContext).pop(); // dismiss this dialog
+                      Navigator.of(context).pop(); // dismiss PlayScreen
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.accent,
+                      foregroundColor: FlitColors.textPrimary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 28,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('OK'),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -782,12 +849,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     try {
       return _buildInner(context);
     } catch (e, st) {
-      _log.error('screen', 'PlayScreen.build() CRASHED',
-          error: e, stackTrace: st);
-      ErrorService.instance.reportCritical(e, st, context: {
-        'screen': 'PlayScreen',
-        'action': 'build',
-      });
+      _log.error(
+        'screen',
+        'PlayScreen.build() CRASHED',
+        error: e,
+        stackTrace: st,
+      );
+      ErrorService.instance.reportCritical(
+        e,
+        st,
+        context: {'screen': 'PlayScreen', 'action': 'build'},
+      );
       return _buildErrorScreen('build() crashed.\n\nError: $e\n\nStack:\n$st');
     }
   }
@@ -805,8 +877,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             children: [
               const Row(
                 children: [
-                  Icon(Icons.error_outline,
-                      color: FlitColors.error, size: 28),
+                  Icon(Icons.error_outline, color: FlitColors.error, size: 28),
                   SizedBox(width: 10),
                   Text(
                     'Game Error',
@@ -883,12 +954,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           // Globe mode — OSM tile map shown during descent transition.
           // Appears when altitude drops below 0.6 and crossfades with the
           // globe shader which fades out between 0.6→0.3.
-          else if (_gameReady && _session != null &&
+          else if (_gameReady &&
+              _session != null &&
               _game.plane.continuousAltitude < 0.6)
             Positioned.fill(
               child: Opacity(
-                opacity: (1.0 - _game.plane.continuousAltitude / 0.6)
-                    .clamp(0.0, 1.0),
+                opacity: (1.0 - _game.plane.continuousAltitude / 0.6).clamp(
+                  0.0,
+                  1.0,
+                ),
                 child: DescentMapView(
                   centerLng: _game.cameraPosition.x,
                   centerLat: _game.cameraPosition.y,
@@ -904,9 +978,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           // shows through, with the plane sprite rendered on top.
           GameWidget(
             game: _game,
-            loadingBuilder: (_) => Container(
-              color: FlitColors.backgroundDark,
-            ),
+            loadingBuilder: (_) => Container(color: FlitColors.backgroundDark),
             errorBuilder: (ctx, err) {
               _log.error('screen', 'GameWidget error', error: err);
               ErrorService.instance.reportCritical(
@@ -1023,9 +1095,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             Container(
               color: FlitColors.backgroundDark,
               child: const Center(
-                child: CircularProgressIndicator(
-                  color: FlitColors.accent,
-                ),
+                child: CircularProgressIndicator(color: FlitColors.accent),
               ),
             ),
         ],
@@ -1059,42 +1129,43 @@ class _TurnButtonState extends State<_TurnButton> {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTapDown: (_) {
-          setState(() => _pressed = true);
-          widget.onPressStart();
-        },
-        onTapUp: (_) {
-          setState(() => _pressed = false);
-          widget.onPressEnd();
-        },
-        onTapCancel: () {
-          setState(() => _pressed = false);
-          widget.onPressEnd();
-        },
-        child: AnimatedOpacity(
-          opacity: _pressed ? 0.9 : 0.45,
-          duration: const Duration(milliseconds: 100),
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: FlitColors.cardBackground.withOpacity(0.7),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: _pressed
+    onTapDown: (_) {
+      setState(() => _pressed = true);
+      widget.onPressStart();
+    },
+    onTapUp: (_) {
+      setState(() => _pressed = false);
+      widget.onPressEnd();
+    },
+    onTapCancel: () {
+      setState(() => _pressed = false);
+      widget.onPressEnd();
+    },
+    child: AnimatedOpacity(
+      opacity: _pressed ? 0.9 : 0.45,
+      duration: const Duration(milliseconds: 100),
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground.withOpacity(0.7),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color:
+                _pressed
                     ? FlitColors.accent.withOpacity(0.8)
                     : FlitColors.cardBorder.withOpacity(0.5),
-                width: 2,
-              ),
-            ),
-            child: Icon(
-              widget.icon,
-              color: _pressed ? FlitColors.accent : FlitColors.textSecondary,
-              size: 28,
-            ),
+            width: 2,
           ),
         ),
-      );
+        child: Icon(
+          widget.icon,
+          color: _pressed ? FlitColors.accent : FlitColors.textSecondary,
+          size: 28,
+        ),
+      ),
+    ),
+  );
 }
 
 /// Per-round result data for the summary screen.
@@ -1328,9 +1399,7 @@ class _ResultDialog extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: FlitColors.gold.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: FlitColors.gold.withOpacity(0.4),
-                    ),
+                    border: Border.all(color: FlitColors.gold.withOpacity(0.4)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

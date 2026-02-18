@@ -407,7 +407,11 @@ abstract class OsmFeatures {
 
   // Major Straits (line segments connecting two points)
   static final List<Strait> straits = [
-    Strait('Strait of Gibraltar', Vector2(-5.606, 35.967), Vector2(-5.345, 36.143)),
+    Strait(
+      'Strait of Gibraltar',
+      Vector2(-5.606, 35.967),
+      Vector2(-5.345, 36.143),
+    ),
     Strait('Strait of Malacca', Vector2(99.5, 6.0), Vector2(100.5, 1.5)),
     Strait('Bosphorus', Vector2(29.005, 41.120), Vector2(29.080, 41.015)),
     Strait('Strait of Hormuz', Vector2(56.0, 26.6), Vector2(56.4, 26.0)),

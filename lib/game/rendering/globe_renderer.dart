@@ -66,8 +66,12 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
       try {
         await ShaderManager.instance.initialize();
       } catch (e, st) {
-        _log.error('globe_renderer', 'ShaderManager initialization failed',
-            error: e, stackTrace: st);
+        _log.error(
+          'globe_renderer',
+          'ShaderManager initialization failed',
+          error: e,
+          stackTrace: st,
+        );
       }
     }
   }
@@ -104,9 +108,9 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
     _sunDirZ = sin(sunAngle);
 
     // Normalize the sun direction vector.
-    final sunLen = sqrt(_sunDirX * _sunDirX +
-        _sunDirY * _sunDirY +
-        _sunDirZ * _sunDirZ);
+    final sunLen = sqrt(
+      _sunDirX * _sunDirX + _sunDirY * _sunDirY + _sunDirZ * _sunDirZ,
+    );
     if (sunLen > 0.0001) {
       _sunDirX /= sunLen;
       _sunDirY /= sunLen;
@@ -152,7 +156,8 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
 
       // Draw full-screen rect with the shader paint.
       // Fade out as altitude drops below 0.6 for smooth globe→map transition.
-      final shaderOpacity = alt >= 0.6 ? 1.0 : ((alt - 0.3) / 0.3).clamp(0.0, 1.0);
+      final shaderOpacity =
+          alt >= 0.6 ? 1.0 : ((alt - 0.3) / 0.3).clamp(0.0, 1.0);
       final paint = Paint()..shader = shader;
       if (shaderOpacity < 1.0) {
         canvas.saveLayer(
@@ -171,19 +176,20 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
       // Catch any shader rendering errors — critical for iOS Safari where
       // shader compilation or uniform setting can fail and crash the app.
       _log.error('globe_renderer', 'Render error', error: e, stackTrace: st);
-      
+
       // Report only once to avoid spam (errors can occur every frame).
       if (!_renderErrorReported) {
         _renderErrorReported = true;
-        
+
         // Check if this is a shader-related error (non-fatal with fallback)
         final errorStr = e.toString();
-        final isShaderError = errorStr.contains('shader') ||
-                              errorStr.contains('Unsupported operation') || 
-                              errorStr.contains('not supported') ||
-                              errorStr.contains('HTML renderer') ||
-                              errorStr.contains('FragmentProgram');
-        
+        final isShaderError =
+            errorStr.contains('shader') ||
+            errorStr.contains('Unsupported operation') ||
+            errorStr.contains('not supported') ||
+            errorStr.contains('HTML renderer') ||
+            errorStr.contains('FragmentProgram');
+
         if (isShaderError) {
           // Report as warning (non-blocking, has fallback rendering)
           ErrorService.instance.reportWarning(
@@ -198,7 +204,9 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
             },
           );
           // Log to console but don't block gameplay
-          WebErrorBridge.logNonFatal('Shader rendering failed: $e\n\nThe app will use fallback rendering.');
+          WebErrorBridge.logNonFatal(
+            'Shader rendering failed: $e\n\nThe app will use fallback rendering.',
+          );
         } else {
           // Unexpected rendering error — report as critical
           ErrorService.instance.reportCritical(
@@ -211,10 +219,12 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
             },
           );
           // Show error to user via JS overlay (brief message, full details in telemetry).
-          WebErrorBridge.show('Shader rendering failed: $e\n\nThe app will use fallback rendering.');
+          WebErrorBridge.show(
+            'Shader rendering failed: $e\n\nThe app will use fallback rendering.',
+          );
         }
       }
-      
+
       // Fallback to solid background to prevent blank screen.
       _renderFallback(canvas, _lastSize);
     }

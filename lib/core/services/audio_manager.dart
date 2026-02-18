@@ -79,8 +79,7 @@ class AudioManager {
   final AudioPlayer _enginePlayer = AudioPlayer();
 
   /// Pool of SFX players (avoid creating per-play).
-  final List<AudioPlayer> _sfxPool =
-      List.generate(4, (_) => AudioPlayer());
+  final List<AudioPlayer> _sfxPool = List.generate(4, (_) => AudioPlayer());
 
   int _sfxPoolIndex = 0;
 
@@ -265,8 +264,7 @@ class AudioManager {
 
   /// Advance to next track (call from onPlayerComplete listener).
   Future<void> nextTrack() async {
-    _currentTrackIndex =
-        (_currentTrackIndex + 1) % _musicTracks.length;
+    _currentTrackIndex = (_currentTrackIndex + 1) % _musicTracks.length;
     await _playMusicTrack();
   }
 
@@ -300,7 +298,8 @@ class AudioManager {
     } catch (e) {
       _log.warning('audio', 'Engine sound failed: $asset', error: e);
       _failedAssets.add(asset);
-      _currentEngine = null; // Prevent updateEngineVolume from firing every frame
+      _currentEngine =
+          null; // Prevent updateEngineVolume from firing every frame
     }
   }
 

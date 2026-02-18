@@ -10,40 +10,40 @@ void main() {
   setUpAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('xyz.luan/audioplayers'),
-      (MethodCall methodCall) async {
-        // Mock all audioplayers method calls
-        switch (methodCall.method) {
-          case 'create':
-            return 'player-id-${DateTime.now().millisecondsSinceEpoch}';
-          case 'setUrl':
-          case 'setVolume':
-          case 'setReleaseMode':
-          case 'resume':
-          case 'pause':
-          case 'stop':
-          case 'release':
-          case 'seek':
-          case 'setPlaybackRate':
-          case 'getDuration':
-          case 'getCurrentPosition':
-          case 'setSourceUrl':
-          case 'setSourceBytes':
-          case 'setSourceAsset':
-            return null;
-          default:
-            return null;
-        }
-      },
-    );
+          const MethodChannel('xyz.luan/audioplayers'),
+          (MethodCall methodCall) async {
+            // Mock all audioplayers method calls
+            switch (methodCall.method) {
+              case 'create':
+                return 'player-id-${DateTime.now().millisecondsSinceEpoch}';
+              case 'setUrl':
+              case 'setVolume':
+              case 'setReleaseMode':
+              case 'resume':
+              case 'pause':
+              case 'stop':
+              case 'release':
+              case 'seek':
+              case 'setPlaybackRate':
+              case 'getDuration':
+              case 'getCurrentPosition':
+              case 'setSourceUrl':
+              case 'setSourceBytes':
+              case 'setSourceAsset':
+                return null;
+              default:
+                return null;
+            }
+          },
+        );
   });
 
   tearDownAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('xyz.luan/audioplayers'),
-      null,
-    );
+          const MethodChannel('xyz.luan/audioplayers'),
+          null,
+        );
   });
 
   group('AudioManager - Singleton', () {
@@ -84,17 +84,11 @@ void main() {
     });
 
     test('Paper Plane maps to wind', () {
-      expect(
-        AudioManager.engineTypeForPlane('plane_paper'),
-        EngineType.wind,
-      );
+      expect(AudioManager.engineTypeForPlane('plane_paper'), EngineType.wind);
     });
 
     test('Prop Plane maps to prop engine', () {
-      expect(
-        AudioManager.engineTypeForPlane('plane_prop'),
-        EngineType.prop,
-      );
+      expect(AudioManager.engineTypeForPlane('plane_prop'), EngineType.prop);
     });
 
     test('Spitfire maps to prop engine', () {
@@ -126,17 +120,11 @@ void main() {
     });
 
     test('Sleek Jet maps to jet engine', () {
-      expect(
-        AudioManager.engineTypeForPlane('plane_jet'),
-        EngineType.jet,
-      );
+      expect(AudioManager.engineTypeForPlane('plane_jet'), EngineType.jet);
     });
 
     test('Bryanair maps to jet engine', () {
-      expect(
-        AudioManager.engineTypeForPlane('plane_bryanair'),
-        EngineType.jet,
-      );
+      expect(AudioManager.engineTypeForPlane('plane_bryanair'), EngineType.jet);
     });
 
     test('Concorde Classic maps to jet engine', () {

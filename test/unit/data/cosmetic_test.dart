@@ -6,7 +6,7 @@ void main() {
   group('Cosmetic', () {
     test('all plane cosmetics have wing spans defined', () {
       const planes = CosmeticCatalog.planes;
-      
+
       for (final plane in planes) {
         expect(
           plane.wingSpan,
@@ -24,7 +24,7 @@ void main() {
     test('wing spans vary across different plane types', () {
       const planes = CosmeticCatalog.planes;
       final wingSpans = planes.map((p) => p.wingSpan).toSet();
-      
+
       // Should have variety - at least 5 different wing spans
       expect(
         wingSpans.length,
@@ -35,14 +35,14 @@ void main() {
 
     test('default plane has baseline wing span', () {
       final defaultPlane = CosmeticCatalog.getById('plane_default');
-      
+
       expect(defaultPlane, isNotNull);
       expect(defaultPlane!.wingSpan, equals(26.0));
     });
 
     test('contrail cosmetics do not require wing spans', () {
       const contrails = CosmeticCatalog.contrails;
-      
+
       // Contrails may or may not have wing spans - just verify they exist
       expect(contrails.isNotEmpty, isTrue);
     });

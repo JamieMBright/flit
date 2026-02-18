@@ -6,7 +6,7 @@ abstract class UsStateClues {
       sportsTeams: [
         'Alabama Crimson Tide (NCAA Football)',
         'Auburn Tigers (NCAA Football)',
-        'Birmingham Barons (Minor League Baseball)'
+        'Birmingham Barons (Minor League Baseball)',
       ],
       senators: ['Katie Britt (R)', 'Tommy Tuberville (R)'],
       nickname: 'The Yellowhammer State',
@@ -16,11 +16,12 @@ abstract class UsStateClues {
       stateFlower: 'Camellia',
     ),
     'AK': StateClueData(
-      flag: 'Blue field with eight gold stars forming the Big Dipper and North Star',
+      flag:
+          'Blue field with eight gold stars forming the Big Dipper and North Star',
       sportsTeams: [
         'Alaska Aces (ECHL Hockey)',
         'Alaska Anchorage Seawolves (NCAA Hockey)',
-        'Alaska Nanooks (NCAA Hockey)'
+        'Alaska Nanooks (NCAA Hockey)',
       ],
       senators: ['Lisa Murkowski (R)', 'Dan Sullivan (R)'],
       nickname: 'The Last Frontier',
@@ -34,7 +35,7 @@ abstract class UsStateClues {
       sportsTeams: [
         'Arizona Cardinals (NFL)',
         'Phoenix Suns (NBA)',
-        'Arizona Diamondbacks (MLB)'
+        'Arizona Diamondbacks (MLB)',
       ],
       senators: ['Mark Kelly (D)', 'Ruben Gallego (D)'],
       nickname: 'The Grand Canyon State',
@@ -44,11 +45,12 @@ abstract class UsStateClues {
       stateFlower: 'Saguaro Cactus Blossom',
     ),
     'AR': StateClueData(
-      flag: 'Red field with white diamond bordered in blue, containing 25 white stars and the word ARKANSAS',
+      flag:
+          'Red field with white diamond bordered in blue, containing 25 white stars and the word ARKANSAS',
       sportsTeams: [
         'Arkansas Razorbacks (NCAA Football)',
         'Arkansas Razorbacks (NCAA Basketball)',
-        'Arkansas Travelers (Minor League Baseball)'
+        'Arkansas Travelers (Minor League Baseball)',
       ],
       senators: ['John Boozman (R)', 'Tom Cotton (R)'],
       nickname: 'The Natural State',
@@ -58,11 +60,12 @@ abstract class UsStateClues {
       stateFlower: 'Apple Blossom',
     ),
     'CA': StateClueData(
-      flag: 'White field with a grizzly bear and red stripe, reading California Republic',
+      flag:
+          'White field with a grizzly bear and red stripe, reading California Republic',
       sportsTeams: [
         'Los Angeles Lakers (NBA)',
         'San Francisco 49ers (NFL)',
-        'Los Angeles Dodgers (MLB)'
+        'Los Angeles Dodgers (MLB)',
       ],
       senators: ['Alex Padilla (D)', 'Adam Schiff (D)'],
       nickname: 'The Golden State',
@@ -72,11 +75,12 @@ abstract class UsStateClues {
       stateFlower: 'California Poppy',
     ),
     'CO': StateClueData(
-      flag: 'Three horizontal stripes of blue, white, and blue with a red letter C containing a golden disk',
+      flag:
+          'Three horizontal stripes of blue, white, and blue with a red letter C containing a golden disk',
       sportsTeams: [
         'Denver Broncos (NFL)',
         'Denver Nuggets (NBA)',
-        'Colorado Rockies (MLB)'
+        'Colorado Rockies (MLB)',
       ],
       senators: ['Michael Bennet (D)', 'John Hickenlooper (D)'],
       nickname: 'The Centennial State',
@@ -86,11 +90,12 @@ abstract class UsStateClues {
       stateFlower: 'Rocky Mountain Columbine',
     ),
     'CT': StateClueData(
-      flag: 'Azure blue field with state coat of arms featuring three grapevines',
+      flag:
+          'Azure blue field with state coat of arms featuring three grapevines',
       sportsTeams: [
         'UConn Huskies (NCAA Basketball)',
         'Hartford Wolf Pack (AHL Hockey)',
-        'Bridgeport Islanders (AHL Hockey)'
+        'Bridgeport Islanders (AHL Hockey)',
       ],
       senators: ['Richard Blumenthal (D)', 'Chris Murphy (D)'],
       nickname: 'The Constitution State',
@@ -100,11 +105,12 @@ abstract class UsStateClues {
       stateFlower: 'Mountain Laurel',
     ),
     'DE': StateClueData(
-      flag: 'Colonial blue field with buff-colored diamond containing the state coat of arms',
+      flag:
+          'Colonial blue field with buff-colored diamond containing the state coat of arms',
       sportsTeams: [
         'Delaware Blue Coats (NBA G League)',
         'Delaware Fightin\' Blue Hens (NCAA Football)',
-        'Wilmington Blue Rocks (Minor League Baseball)'
+        'Wilmington Blue Rocks (Minor League Baseball)',
       ],
       senators: ['Tom Carper (D)', 'Chris Coons (D)'],
       nickname: 'The First State',
@@ -114,11 +120,12 @@ abstract class UsStateClues {
       stateFlower: 'Peach Blossom',
     ),
     'FL': StateClueData(
-      flag: 'White field with red saltire and state seal featuring a Native American woman, sun, and steamboat',
+      flag:
+          'White field with red saltire and state seal featuring a Native American woman, sun, and steamboat',
       sportsTeams: [
         'Miami Dolphins (NFL)',
         'Miami Heat (NBA)',
-        'Tampa Bay Buccaneers (NFL)'
+        'Tampa Bay Buccaneers (NFL)',
       ],
       senators: ['Marco Rubio (R)', 'Rick Scott (R)'],
       nickname: 'The Sunshine State',
@@ -128,11 +135,12 @@ abstract class UsStateClues {
       stateFlower: 'Orange Blossom',
     ),
     'GA': StateClueData(
-      flag: 'Three horizontal stripes with state coat of arms, featuring three pillars representing the legislative, executive, and judicial branches',
+      flag:
+          'Three horizontal stripes with state coat of arms, featuring three pillars representing the legislative, executive, and judicial branches',
       sportsTeams: [
         'Atlanta Falcons (NFL)',
         'Atlanta Hawks (NBA)',
-        'Atlanta Braves (MLB)'
+        'Atlanta Braves (MLB)',
       ],
       senators: ['Jon Ossoff (D)', 'Raphael Warnock (D)'],
       nickname: 'The Peach State',
@@ -142,15 +150,17 @@ abstract class UsStateClues {
       stateFlower: 'Cherokee Rose',
     ),
     'HI': StateClueData(
-      flag: 'Eight horizontal stripes with Union Jack in canton, representing the eight main islands',
+      flag:
+          'Eight horizontal stripes with Union Jack in canton, representing the eight main islands',
       sportsTeams: [
         'Hawaii Rainbow Warriors (NCAA Football)',
         'Hawaii Rainbow Warriors (NCAA Basketball)',
-        'Honolulu Blue Sox (Minor League Baseball)'
+        'Honolulu Blue Sox (Minor League Baseball)',
       ],
       senators: ['Brian Schatz (D)', 'Mazie Hirono (D)'],
       nickname: 'The Aloha State',
-      motto: 'Ua Mau ke Ea o ka Aina i ka Pono (The Life of the Land is Perpetuated in Righteousness)',
+      motto:
+          'Ua Mau ke Ea o ka Aina i ka Pono (The Life of the Land is Perpetuated in Righteousness)',
       famousLandmark: 'Pearl Harbor Memorial',
       stateBird: 'Nene (Hawaiian Goose)',
       stateFlower: 'Yellow Hibiscus',
@@ -160,7 +170,7 @@ abstract class UsStateClues {
       sportsTeams: [
         'Boise State Broncos (NCAA Football)',
         'Idaho Steelheads (ECHL Hockey)',
-        'Idaho Vandals (NCAA Football)'
+        'Idaho Vandals (NCAA Football)',
       ],
       senators: ['Mike Crapo (R)', 'Jim Risch (R)'],
       nickname: 'The Gem State',
@@ -170,11 +180,12 @@ abstract class UsStateClues {
       stateFlower: 'Syringa',
     ),
     'IL': StateClueData(
-      flag: 'White field with state seal featuring a bald eagle holding a shield',
+      flag:
+          'White field with state seal featuring a bald eagle holding a shield',
       sportsTeams: [
         'Chicago Bears (NFL)',
         'Chicago Bulls (NBA)',
-        'Chicago Cubs (MLB)'
+        'Chicago Cubs (MLB)',
       ],
       senators: ['Dick Durbin (D)', 'Tammy Duckworth (D)'],
       nickname: 'The Prairie State',
@@ -188,7 +199,7 @@ abstract class UsStateClues {
       sportsTeams: [
         'Indianapolis Colts (NFL)',
         'Indiana Pacers (NBA)',
-        'Indiana Hoosiers (NCAA Basketball)'
+        'Indiana Hoosiers (NCAA Basketball)',
       ],
       senators: ['Todd Young (R)', 'Jim Banks (R)'],
       nickname: 'The Hoosier State',
@@ -198,11 +209,12 @@ abstract class UsStateClues {
       stateFlower: 'Peony',
     ),
     'IA': StateClueData(
-      flag: 'Three vertical stripes of blue, white, and red with an eagle holding a blue ribbon reading "Our Liberties We Prize and Our Rights We Will Maintain"',
+      flag:
+          'Three vertical stripes of blue, white, and red with an eagle holding a blue ribbon reading "Our Liberties We Prize and Our Rights We Will Maintain"',
       sportsTeams: [
         'Iowa Hawkeyes (NCAA Football)',
         'Iowa State Cyclones (NCAA Football)',
-        'Iowa Cubs (Minor League Baseball)'
+        'Iowa Cubs (Minor League Baseball)',
       ],
       senators: ['Chuck Grassley (R)', 'Joni Ernst (R)'],
       nickname: 'The Hawkeye State',
@@ -216,7 +228,7 @@ abstract class UsStateClues {
       sportsTeams: [
         'Kansas City Chiefs (NFL)',
         'Kansas Jayhawks (NCAA Basketball)',
-        'Kansas State Wildcats (NCAA Football)'
+        'Kansas State Wildcats (NCAA Football)',
       ],
       senators: ['Jerry Moran (R)', 'Roger Marshall (R)'],
       nickname: 'The Sunflower State',
@@ -230,7 +242,7 @@ abstract class UsStateClues {
       sportsTeams: [
         'Kentucky Wildcats (NCAA Basketball)',
         'Louisville Cardinals (NCAA Basketball)',
-        'Kentucky Derby (Horse Racing)'
+        'Kentucky Derby (Horse Racing)',
       ],
       senators: ['Mitch McConnell (R)', 'Rand Paul (R)'],
       nickname: 'The Bluegrass State',
@@ -244,7 +256,7 @@ abstract class UsStateClues {
       sportsTeams: [
         'New Orleans Saints (NFL)',
         'New Orleans Pelicans (NBA)',
-        'LSU Tigers (NCAA Football)'
+        'LSU Tigers (NCAA Football)',
       ],
       senators: ['Bill Cassidy (R)', 'John Kennedy (R)'],
       nickname: 'The Pelican State',
@@ -254,11 +266,12 @@ abstract class UsStateClues {
       stateFlower: 'Magnolia',
     ),
     'ME': StateClueData(
-      flag: 'Blue field with state coat of arms featuring a moose, pine tree, and North Star',
+      flag:
+          'Blue field with state coat of arms featuring a moose, pine tree, and North Star',
       sportsTeams: [
         'Maine Celtics (NBA G League)',
         'Maine Mariners (ECHL Hockey)',
-        'Portland Sea Dogs (Minor League Baseball)'
+        'Portland Sea Dogs (Minor League Baseball)',
       ],
       senators: ['Susan Collins (R)', 'Angus King (I)'],
       nickname: 'The Pine Tree State',
@@ -268,11 +281,12 @@ abstract class UsStateClues {
       stateFlower: 'White Pine Cone and Tassel',
     ),
     'MD': StateClueData(
-      flag: 'Quartered design with Calvert family colors (gold and black) and Crossland family colors (red and white)',
+      flag:
+          'Quartered design with Calvert family colors (gold and black) and Crossland family colors (red and white)',
       sportsTeams: [
         'Baltimore Ravens (NFL)',
         'Baltimore Orioles (MLB)',
-        'Maryland Terrapins (NCAA Basketball)'
+        'Maryland Terrapins (NCAA Basketball)',
       ],
       senators: ['Ben Cardin (D)', 'Chris Van Hollen (D)'],
       nickname: 'The Old Line State',
@@ -282,39 +296,44 @@ abstract class UsStateClues {
       stateFlower: 'Black-eyed Susan',
     ),
     'MA': StateClueData(
-      flag: 'White field with state coat of arms featuring a Native American holding a bow and arrow',
+      flag:
+          'White field with state coat of arms featuring a Native American holding a bow and arrow',
       sportsTeams: [
         'New England Patriots (NFL)',
         'Boston Celtics (NBA)',
-        'Boston Red Sox (MLB)'
+        'Boston Red Sox (MLB)',
       ],
       senators: ['Elizabeth Warren (D)', 'Ed Markey (D)'],
       nickname: 'The Bay State',
-      motto: 'Ense Petit Placidam Sub Libertate Quietem (By the Sword We Seek Peace, but Peace Only Under Liberty)',
+      motto:
+          'Ense Petit Placidam Sub Libertate Quietem (By the Sword We Seek Peace, but Peace Only Under Liberty)',
       famousLandmark: 'Freedom Trail',
       stateBird: 'Black-capped Chickadee',
       stateFlower: 'Mayflower',
     ),
     'MI': StateClueData(
-      flag: 'Blue field with state coat of arms featuring an elk, moose, and eagle',
+      flag:
+          'Blue field with state coat of arms featuring an elk, moose, and eagle',
       sportsTeams: [
         'Detroit Lions (NFL)',
         'Detroit Pistons (NBA)',
-        'Detroit Tigers (MLB)'
+        'Detroit Tigers (MLB)',
       ],
       senators: ['Gary Peters (D)', 'Elissa Slotkin (D)'],
       nickname: 'The Great Lakes State',
-      motto: 'Si Quaeris Peninsulam Amoenam Circumspice (If You Seek a Pleasant Peninsula, Look About You)',
+      motto:
+          'Si Quaeris Peninsulam Amoenam Circumspice (If You Seek a Pleasant Peninsula, Look About You)',
       famousLandmark: 'Mackinac Bridge',
       stateBird: 'American Robin',
       stateFlower: 'Apple Blossom',
     ),
     'MN': StateClueData(
-      flag: 'Blue field with state seal featuring a Native American on horseback, a farmer plowing, and the state motto',
+      flag:
+          'Blue field with state seal featuring a Native American on horseback, a farmer plowing, and the state motto',
       sportsTeams: [
         'Minnesota Vikings (NFL)',
         'Minnesota Timberwolves (NBA)',
-        'Minnesota Twins (MLB)'
+        'Minnesota Twins (MLB)',
       ],
       senators: ['Amy Klobuchar (D)', 'Tina Smith (D)'],
       nickname: 'The North Star State',
@@ -328,7 +347,7 @@ abstract class UsStateClues {
       sportsTeams: [
         'Ole Miss Rebels (NCAA Football)',
         'Mississippi State Bulldogs (NCAA Football)',
-        'Mississippi Braves (Minor League Baseball)'
+        'Mississippi Braves (Minor League Baseball)',
       ],
       senators: ['Roger Wicker (R)', 'Cindy Hyde-Smith (R)'],
       nickname: 'The Magnolia State',
@@ -338,25 +357,28 @@ abstract class UsStateClues {
       stateFlower: 'Magnolia',
     ),
     'MO': StateClueData(
-      flag: 'Three horizontal stripes of red, white, and blue with state seal featuring two grizzly bears',
+      flag:
+          'Three horizontal stripes of red, white, and blue with state seal featuring two grizzly bears',
       sportsTeams: [
         'Kansas City Chiefs (NFL)',
         'St. Louis Cardinals (MLB)',
-        'Kansas City Royals (MLB)'
+        'Kansas City Royals (MLB)',
       ],
       senators: ['Josh Hawley (R)', 'Eric Schmitt (R)'],
       nickname: 'The Show-Me State',
-      motto: 'Salus Populi Suprema Lex Esto (The Welfare of the People Shall Be the Supreme Law)',
+      motto:
+          'Salus Populi Suprema Lex Esto (The Welfare of the People Shall Be the Supreme Law)',
       famousLandmark: 'Gateway Arch',
       stateBird: 'Eastern Bluebird',
       stateFlower: 'White Hawthorn Blossom',
     ),
     'MT': StateClueData(
-      flag: 'Blue field with state seal featuring mountains, the Great Falls of the Missouri River, and mining tools',
+      flag:
+          'Blue field with state seal featuring mountains, the Great Falls of the Missouri River, and mining tools',
       sportsTeams: [
         'Montana Grizzlies (NCAA Football)',
         'Montana State Bobcats (NCAA Football)',
-        'Missoula PaddleHeads (Minor League Baseball)'
+        'Missoula PaddleHeads (Minor League Baseball)',
       ],
       senators: ['Jon Tester (D)', 'Tim Sheehy (R)'],
       nickname: 'The Treasure State',
@@ -366,11 +388,12 @@ abstract class UsStateClues {
       stateFlower: 'Bitterroot',
     ),
     'NE': StateClueData(
-      flag: 'Blue field with state seal featuring a steamboat, train, and blacksmith',
+      flag:
+          'Blue field with state seal featuring a steamboat, train, and blacksmith',
       sportsTeams: [
         'Nebraska Cornhuskers (NCAA Football)',
         'Creighton Bluejays (NCAA Basketball)',
-        'Omaha Storm Chasers (Minor League Baseball)'
+        'Omaha Storm Chasers (Minor League Baseball)',
       ],
       senators: ['Deb Fischer (R)', 'Pete Ricketts (R)'],
       nickname: 'The Cornhusker State',
@@ -380,11 +403,12 @@ abstract class UsStateClues {
       stateFlower: 'Goldenrod',
     ),
     'NV': StateClueData(
-      flag: 'Blue field with silver star and sagebrush sprays, reading "Battle Born"',
+      flag:
+          'Blue field with silver star and sagebrush sprays, reading "Battle Born"',
       sportsTeams: [
         'Las Vegas Raiders (NFL)',
         'Vegas Golden Knights (NHL)',
-        'Las Vegas Aces (WNBA)'
+        'Las Vegas Aces (WNBA)',
       ],
       senators: ['Catherine Cortez Masto (D)', 'Jacky Rosen (D)'],
       nickname: 'The Silver State',
@@ -398,7 +422,7 @@ abstract class UsStateClues {
       sportsTeams: [
         'New Hampshire Fisher Cats (Minor League Baseball)',
         'New Hampshire Wildcats (NCAA Hockey)',
-        'Manchester Monarchs (ECHL Hockey)'
+        'Manchester Monarchs (ECHL Hockey)',
       ],
       senators: ['Jeanne Shaheen (D)', 'Maggie Hassan (D)'],
       nickname: 'The Granite State',
@@ -408,11 +432,12 @@ abstract class UsStateClues {
       stateFlower: 'Purple Lilac',
     ),
     'NJ': StateClueData(
-      flag: 'Buff-colored field with state coat of arms featuring three plows and two goddesses',
+      flag:
+          'Buff-colored field with state coat of arms featuring three plows and two goddesses',
       sportsTeams: [
         'New York Giants (NFL)',
         'New York Jets (NFL)',
-        'New Jersey Devils (NHL)'
+        'New Jersey Devils (NHL)',
       ],
       senators: ['Cory Booker (D)', 'Andy Kim (D)'],
       nickname: 'The Garden State',
@@ -426,7 +451,7 @@ abstract class UsStateClues {
       sportsTeams: [
         'New Mexico Lobos (NCAA Football)',
         'New Mexico State Aggies (NCAA Basketball)',
-        'Albuquerque Isotopes (Minor League Baseball)'
+        'Albuquerque Isotopes (Minor League Baseball)',
       ],
       senators: ['Martin Heinrich (D)', 'Ben Ray Luján (D)'],
       nickname: 'The Land of Enchantment',
@@ -436,11 +461,12 @@ abstract class UsStateClues {
       stateFlower: 'Yucca Flower',
     ),
     'NY': StateClueData(
-      flag: 'Blue field with state coat of arms featuring Liberty and Justice flanking a shield',
+      flag:
+          'Blue field with state coat of arms featuring Liberty and Justice flanking a shield',
       sportsTeams: [
         'New York Giants (NFL)',
         'New York Knicks (NBA)',
-        'New York Yankees (MLB)'
+        'New York Yankees (MLB)',
       ],
       senators: ['Chuck Schumer (D)', 'Kirsten Gillibrand (D)'],
       nickname: 'The Empire State',
@@ -450,11 +476,12 @@ abstract class UsStateClues {
       stateFlower: 'Rose',
     ),
     'NC': StateClueData(
-      flag: 'Blue field with white star, red and white stripes, and dates May 20, 1775 and April 12, 1776',
+      flag:
+          'Blue field with white star, red and white stripes, and dates May 20, 1775 and April 12, 1776',
       sportsTeams: [
         'Carolina Panthers (NFL)',
         'Charlotte Hornets (NBA)',
-        'Duke Blue Devils (NCAA Basketball)'
+        'Duke Blue Devils (NCAA Basketball)',
       ],
       senators: ['Thom Tillis (R)', 'Ted Budd (R)'],
       nickname: 'The Tar Heel State',
@@ -464,11 +491,12 @@ abstract class UsStateClues {
       stateFlower: 'Flowering Dogwood',
     ),
     'ND': StateClueData(
-      flag: 'Blue field with bald eagle holding an olive branch and arrows, with a fan of 13 stars',
+      flag:
+          'Blue field with bald eagle holding an olive branch and arrows, with a fan of 13 stars',
       sportsTeams: [
         'North Dakota Fighting Hawks (NCAA Hockey)',
         'North Dakota State Bison (NCAA Football)',
-        'Fargo-Moorhead RedHawks (Minor League Baseball)'
+        'Fargo-Moorhead RedHawks (Minor League Baseball)',
       ],
       senators: ['John Hoeven (R)', 'Kevin Cramer (R)'],
       nickname: 'The Peace Garden State',
@@ -478,11 +506,12 @@ abstract class UsStateClues {
       stateFlower: 'Wild Prairie Rose',
     ),
     'OH': StateClueData(
-      flag: 'Burgee-shaped flag with red and white stripes and blue triangle containing white circle and red center',
+      flag:
+          'Burgee-shaped flag with red and white stripes and blue triangle containing white circle and red center',
       sportsTeams: [
         'Cleveland Browns (NFL)',
         'Cleveland Cavaliers (NBA)',
-        'Cincinnati Bengals (NFL)'
+        'Cincinnati Bengals (NFL)',
       ],
       senators: ['Sherrod Brown (D)', 'JD Vance (R)'],
       nickname: 'The Buckeye State',
@@ -492,11 +521,12 @@ abstract class UsStateClues {
       stateFlower: 'Scarlet Carnation',
     ),
     'OK': StateClueData(
-      flag: 'Sky blue field with Osage Nation war shield, peace pipe, and olive branch',
+      flag:
+          'Sky blue field with Osage Nation war shield, peace pipe, and olive branch',
       sportsTeams: [
         'Oklahoma City Thunder (NBA)',
         'Oklahoma Sooners (NCAA Football)',
-        'Oklahoma State Cowboys (NCAA Football)'
+        'Oklahoma State Cowboys (NCAA Football)',
       ],
       senators: ['James Lankford (R)', 'Markwayne Mullin (R)'],
       nickname: 'The Sooner State',
@@ -506,11 +536,12 @@ abstract class UsStateClues {
       stateFlower: 'Oklahoma Rose',
     ),
     'OR': StateClueData(
-      flag: 'Navy blue field with state seal featuring mountains, forest, and covered wagon (reverse shows beaver)',
+      flag:
+          'Navy blue field with state seal featuring mountains, forest, and covered wagon (reverse shows beaver)',
       sportsTeams: [
         'Portland Trail Blazers (NBA)',
         'Oregon Ducks (NCAA Football)',
-        'Portland Timbers (MLS Soccer)'
+        'Portland Timbers (MLS Soccer)',
       ],
       senators: ['Ron Wyden (D)', 'Jeff Merkley (D)'],
       nickname: 'The Beaver State',
@@ -520,11 +551,12 @@ abstract class UsStateClues {
       stateFlower: 'Oregon Grape',
     ),
     'PA': StateClueData(
-      flag: 'Blue field with state coat of arms featuring a ship, plow, and wheat sheaves',
+      flag:
+          'Blue field with state coat of arms featuring a ship, plow, and wheat sheaves',
       sportsTeams: [
         'Philadelphia Eagles (NFL)',
         'Pittsburgh Steelers (NFL)',
-        'Philadelphia 76ers (NBA)'
+        'Philadelphia 76ers (NBA)',
       ],
       senators: ['Bob Casey Jr. (D)', 'John Fetterman (D)'],
       nickname: 'The Keystone State',
@@ -534,11 +566,12 @@ abstract class UsStateClues {
       stateFlower: 'Mountain Laurel',
     ),
     'RI': StateClueData(
-      flag: 'White field with gold anchor surrounded by 13 gold stars and blue ribbon reading "HOPE"',
+      flag:
+          'White field with gold anchor surrounded by 13 gold stars and blue ribbon reading "HOPE"',
       sportsTeams: [
         'Providence Bruins (AHL Hockey)',
         'Providence College Friars (NCAA Hockey)',
-        'Rhode Island FC (USL Soccer)'
+        'Rhode Island FC (USL Soccer)',
       ],
       senators: ['Jack Reed (D)', 'Sheldon Whitehouse (D)'],
       nickname: 'The Ocean State',
@@ -552,7 +585,7 @@ abstract class UsStateClues {
       sportsTeams: [
         'Carolina Panthers (NFL)',
         'South Carolina Gamecocks (NCAA Football)',
-        'Clemson Tigers (NCAA Football)'
+        'Clemson Tigers (NCAA Football)',
       ],
       senators: ['Lindsey Graham (R)', 'Tim Scott (R)'],
       nickname: 'The Palmetto State',
@@ -562,11 +595,12 @@ abstract class UsStateClues {
       stateFlower: 'Yellow Jessamine',
     ),
     'SD': StateClueData(
-      flag: 'Sky blue field with state seal featuring mountains, river, and sun',
+      flag:
+          'Sky blue field with state seal featuring mountains, river, and sun',
       sportsTeams: [
         'South Dakota State Jackrabbits (NCAA Football)',
         'South Dakota Coyotes (NCAA Basketball)',
-        'Sioux Falls Canaries (Minor League Baseball)'
+        'Sioux Falls Canaries (Minor League Baseball)',
       ],
       senators: ['John Thune (R)', 'Mike Rounds (R)'],
       nickname: 'The Mount Rushmore State',
@@ -580,7 +614,7 @@ abstract class UsStateClues {
       sportsTeams: [
         'Tennessee Titans (NFL)',
         'Memphis Grizzlies (NBA)',
-        'Nashville Predators (NHL)'
+        'Nashville Predators (NHL)',
       ],
       senators: ['Marsha Blackburn (R)', 'Bill Hagerty (R)'],
       nickname: 'The Volunteer State',
@@ -590,11 +624,12 @@ abstract class UsStateClues {
       stateFlower: 'Iris',
     ),
     'TX': StateClueData(
-      flag: 'Vertical blue stripe with white star, horizontal white and red stripes',
+      flag:
+          'Vertical blue stripe with white star, horizontal white and red stripes',
       sportsTeams: [
         'Dallas Cowboys (NFL)',
         'Houston Texans (NFL)',
-        'San Antonio Spurs (NBA)'
+        'San Antonio Spurs (NBA)',
       ],
       senators: ['John Cornyn (R)', 'Ted Cruz (R)'],
       nickname: 'The Lone Star State',
@@ -604,11 +639,12 @@ abstract class UsStateClues {
       stateFlower: 'Bluebonnet',
     ),
     'UT': StateClueData(
-      flag: 'Blue field with state seal featuring a beehive, sego lilies, and American flags',
+      flag:
+          'Blue field with state seal featuring a beehive, sego lilies, and American flags',
       sportsTeams: [
         'Utah Jazz (NBA)',
         'Real Salt Lake (MLS Soccer)',
-        'Utah Utes (NCAA Football)'
+        'Utah Utes (NCAA Football)',
       ],
       senators: ['Mike Lee (R)', 'John Curtis (R)'],
       nickname: 'The Beehive State',
@@ -618,11 +654,12 @@ abstract class UsStateClues {
       stateFlower: 'Sego Lily',
     ),
     'VT': StateClueData(
-      flag: 'Blue field with state coat of arms featuring pine tree, cow, and wheat sheaves',
+      flag:
+          'Blue field with state coat of arms featuring pine tree, cow, and wheat sheaves',
       sportsTeams: [
         'Vermont Lake Monsters (Minor League Baseball)',
         'Vermont Catamounts (NCAA Hockey)',
-        'Vermont Voltage (USL Soccer)'
+        'Vermont Voltage (USL Soccer)',
       ],
       senators: ['Peter Welch (D)', 'Bernie Sanders (I)'],
       nickname: 'The Green Mountain State',
@@ -632,11 +669,12 @@ abstract class UsStateClues {
       stateFlower: 'Red Clover',
     ),
     'VA': StateClueData(
-      flag: 'Blue field with state seal featuring Virtus standing over fallen tyranny',
+      flag:
+          'Blue field with state seal featuring Virtus standing over fallen tyranny',
       sportsTeams: [
         'Washington Commanders (NFL)',
         'Virginia Cavaliers (NCAA Basketball)',
-        'Virginia Tech Hokies (NCAA Football)'
+        'Virginia Tech Hokies (NCAA Football)',
       ],
       senators: ['Mark Warner (D)', 'Tim Kaine (D)'],
       nickname: 'The Old Dominion',
@@ -650,7 +688,7 @@ abstract class UsStateClues {
       sportsTeams: [
         'Seattle Seahawks (NFL)',
         'Seattle Mariners (MLB)',
-        'Seattle Kraken (NHL)'
+        'Seattle Kraken (NHL)',
       ],
       senators: ['Patty Murray (D)', 'Maria Cantwell (D)'],
       nickname: 'The Evergreen State',
@@ -660,11 +698,12 @@ abstract class UsStateClues {
       stateFlower: 'Coast Rhododendron',
     ),
     'WV': StateClueData(
-      flag: 'White field bordered in blue with state coat of arms featuring a farmer and miner',
+      flag:
+          'White field bordered in blue with state coat of arms featuring a farmer and miner',
       sportsTeams: [
         'West Virginia Mountaineers (NCAA Football)',
         'West Virginia Power (Minor League Baseball)',
-        'West Virginia Black Bears (Minor League Baseball)'
+        'West Virginia Black Bears (Minor League Baseball)',
       ],
       senators: ['Joe Manchin (I)', 'Shelley Moore Capito (R)'],
       nickname: 'The Mountain State',
@@ -674,11 +713,12 @@ abstract class UsStateClues {
       stateFlower: 'Rhododendron',
     ),
     'WI': StateClueData(
-      flag: 'Blue field with state coat of arms featuring a badger, sailor, and miner',
+      flag:
+          'Blue field with state coat of arms featuring a badger, sailor, and miner',
       sportsTeams: [
         'Green Bay Packers (NFL)',
         'Milwaukee Bucks (NBA)',
-        'Milwaukee Brewers (MLB)'
+        'Milwaukee Brewers (MLB)',
       ],
       senators: ['Ron Johnson (R)', 'Tammy Baldwin (D)'],
       nickname: 'The Badger State',
@@ -692,7 +732,7 @@ abstract class UsStateClues {
       sportsTeams: [
         'Wyoming Cowboys (NCAA Football)',
         'Wyoming Cowgirls (NCAA Basketball)',
-        'Casper Spuds (Minor League Baseball)'
+        'Casper Spuds (Minor League Baseball)',
       ],
       senators: ['John Barrasso (R)', 'Cynthia Lummis (R)'],
       nickname: 'The Equality State',

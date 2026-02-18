@@ -15,7 +15,8 @@ class DailyChallengeScreen extends ConsumerStatefulWidget {
   const DailyChallengeScreen({super.key});
 
   @override
-  ConsumerState<DailyChallengeScreen> createState() => _DailyChallengeScreenState();
+  ConsumerState<DailyChallengeScreen> createState() =>
+      _DailyChallengeScreenState();
 }
 
 class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
@@ -32,46 +33,43 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: FlitColors.backgroundDark,
-        appBar: AppBar(
-          backgroundColor: FlitColors.backgroundMid,
-          title: const Text('Daily Challenge'),
-          centerTitle: true,
-        ),
-        body: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                children: [
-                  _ChallengeHeader(challenge: _challenge),
-                  const SizedBox(height: 12),
-                  if (_seasonalTheme != null) ...[
-                    _SeasonalBanner(theme: _seasonalTheme),
-                    const SizedBox(height: 12),
-                  ],
-                  _RewardsSection(challenge: _challenge),
-                  const SizedBox(height: 12),
-                  const _MedalProgressSection(),
-                  const SizedBox(height: 16),
-                  _LeaderboardSection(
-                    entries: DailyChallenge.placeholderLeaderboard,
-                  ),
-                  const SizedBox(height: 16),
-                  const _HallOfFameSection(),
-                  const SizedBox(height: 16),
-                  _InfoFooter(bonusCoinReward: _challenge.bonusCoinReward),
-                  const SizedBox(height: 16),
-                ],
+    backgroundColor: FlitColors.backgroundDark,
+    appBar: AppBar(
+      backgroundColor: FlitColors.backgroundMid,
+      title: const Text('Daily Challenge'),
+      centerTitle: true,
+    ),
+    body: Column(
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            children: [
+              _ChallengeHeader(challenge: _challenge),
+              const SizedBox(height: 12),
+              if (_seasonalTheme != null) ...[
+                _SeasonalBanner(theme: _seasonalTheme),
+                const SizedBox(height: 12),
+              ],
+              _RewardsSection(challenge: _challenge),
+              const SizedBox(height: 12),
+              const _MedalProgressSection(),
+              const SizedBox(height: 16),
+              _LeaderboardSection(
+                entries: DailyChallenge.placeholderLeaderboard,
               ),
-            ),
-            _PlayButton(onPressed: _onPlay),
-          ],
+              const SizedBox(height: 16),
+              const _HallOfFameSection(),
+              const SizedBox(height: 16),
+              _InfoFooter(bonusCoinReward: _challenge.bonusCoinReward),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
-      );
+        _PlayButton(onPressed: _onPlay),
+      ],
+    ),
+  );
 
   void _onPlay() {
     final reward = _challenge.coinReward;
@@ -85,33 +83,36 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
     final contrail = CosmeticCatalog.getById(contrailId);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => PlayScreen(
-          region: GameRegion.world,
-          totalRounds: 5,
-          coinReward: reward,
-          planeColorScheme: plane?.colorScheme,
-          planeWingSpan: plane?.wingSpan,
-          equippedPlaneId: planeId,
-          companionType: companion,
-          fuelBoostMultiplier: fuelBoost,
-          clueBoost: license.clueBoost,
-          clueChance: license.clueChance,
-          preferredClueType: license.preferredClueType,
-          enabledClueTypes: _challenge.enabledClueTypes,
-          enableFuel: true,
-          planeHandling: plane?.handling ?? 1.0,
-          planeSpeed: plane?.speed ?? 1.0,
-          planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
-          contrailPrimaryColor: contrail?.colorScheme?['primary'] != null
-              ? Color(contrail!.colorScheme!['primary']!)
-              : null,
-          contrailSecondaryColor: contrail?.colorScheme?['secondary'] != null
-              ? Color(contrail!.colorScheme!['secondary']!)
-              : null,
-          onComplete: (totalScore) {
-            ref.read(accountProvider.notifier).addCoins(reward);
-          },
-        ),
+        builder:
+            (_) => PlayScreen(
+              region: GameRegion.world,
+              totalRounds: 5,
+              coinReward: reward,
+              planeColorScheme: plane?.colorScheme,
+              planeWingSpan: plane?.wingSpan,
+              equippedPlaneId: planeId,
+              companionType: companion,
+              fuelBoostMultiplier: fuelBoost,
+              clueBoost: license.clueBoost,
+              clueChance: license.clueChance,
+              preferredClueType: license.preferredClueType,
+              enabledClueTypes: _challenge.enabledClueTypes,
+              enableFuel: true,
+              planeHandling: plane?.handling ?? 1.0,
+              planeSpeed: plane?.speed ?? 1.0,
+              planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
+              contrailPrimaryColor:
+                  contrail?.colorScheme?['primary'] != null
+                      ? Color(contrail!.colorScheme!['primary']!)
+                      : null,
+              contrailSecondaryColor:
+                  contrail?.colorScheme?['secondary'] != null
+                      ? Color(contrail!.colorScheme!['secondary']!)
+                      : null,
+              onComplete: (totalScore) {
+                ref.read(accountProvider.notifier).addCoins(reward);
+              },
+            ),
       ),
     );
   }
@@ -274,9 +275,10 @@ class _ChallengeHeader extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: sortedClueTypes
-                .map((type) => _ClueChip(clueType: type))
-                .toList(),
+            children:
+                sortedClueTypes
+                    .map((type) => _ClueChip(clueType: type))
+                    .toList(),
           ),
         ],
       ),
@@ -285,8 +287,18 @@ class _ChallengeHeader extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     const months = [
-      'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-      'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+      'JAN',
+      'FEB',
+      'MAR',
+      'APR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
@@ -299,70 +311,84 @@ class _ClueChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: () => _showClueExplanation(context),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: FlitColors.accent.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: FlitColors.accent.withOpacity(0.4)),
+    onTap: () => _showClueExplanation(context),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: FlitColors.accent.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: FlitColors.accent.withOpacity(0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_clueIcon(clueType), color: FlitColors.accent, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            _clueLabel(clueType),
+            style: const TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(_clueIcon(clueType), color: FlitColors.accent, size: 16),
-              const SizedBox(width: 6),
-              Text(
-                _clueLabel(clueType),
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 
   void _showClueExplanation(BuildContext context) {
     const explanations = {
-      'flag': 'You will see the national flag of a country. Identify which country it belongs to!',
-      'outline': 'The country silhouette/shape is shown. Recognise the outline to identify the country.',
-      'borders': 'You are told which countries border the mystery country. Use your geography knowledge!',
-      'capital': 'The capital city is revealed. Name the country it belongs to.',
-      'stats': 'Population, language, currency and other facts are shown. Deduce the country!',
+      'flag':
+          'You will see the national flag of a country. Identify which country it belongs to!',
+      'outline':
+          'The country silhouette/shape is shown. Recognise the outline to identify the country.',
+      'borders':
+          'You are told which countries border the mystery country. Use your geography knowledge!',
+      'capital':
+          'The capital city is revealed. Name the country it belongs to.',
+      'stats':
+          'Population, language, currency and other facts are shown. Deduce the country!',
     };
 
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: FlitColors.cardBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: FlitColors.cardBorder),
-        ),
-        title: Row(
-          children: [
-            Icon(_clueIcon(clueType), color: FlitColors.accent, size: 24),
-            const SizedBox(width: 10),
-            Text(
-              '${_clueLabel(clueType)} Clue',
-              style: const TextStyle(color: FlitColors.textPrimary),
+      builder:
+          (ctx) => AlertDialog(
+            backgroundColor: FlitColors.cardBackground,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: FlitColors.cardBorder),
             ),
-          ],
-        ),
-        content: Text(
-          explanations[clueType] ?? 'Identify the country using the clue provided.',
-          style: const TextStyle(color: FlitColors.textSecondary, fontSize: 14, height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Got it', style: TextStyle(color: FlitColors.accent)),
+            title: Row(
+              children: [
+                Icon(_clueIcon(clueType), color: FlitColors.accent, size: 24),
+                const SizedBox(width: 10),
+                Text(
+                  '${_clueLabel(clueType)} Clue',
+                  style: const TextStyle(color: FlitColors.textPrimary),
+                ),
+              ],
+            ),
+            content: Text(
+              explanations[clueType] ??
+                  'Identify the country using the clue provided.',
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text(
+                  'Got it',
+                  style: TextStyle(color: FlitColors.accent),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
@@ -486,73 +512,73 @@ class _RewardsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.cardBorder),
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: FlitColors.cardBackground,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: FlitColors.cardBorder),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'REWARDS',
+          style: TextStyle(
+            color: FlitColors.textMuted,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 6),
+        // Player count and winner info
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: FlitColors.backgroundMid,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.people, color: FlitColors.textMuted, size: 14),
+              SizedBox(width: 6),
+              Text(
+                '2,847 players today \u2022 Top 1,000 win prizes',
+                style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
           children: [
-            const Text(
-              'REWARDS',
-              style: TextStyle(
-                color: FlitColors.textMuted,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
+            // Completion reward
+            Expanded(
+              child: _RewardTile(
+                icon: Icons.monetization_on_rounded,
+                iconColor: FlitColors.gold,
+                label: 'Completion',
+                value: '${challenge.coinReward}',
+                valueSuffix: ' coins',
               ),
             ),
-            const SizedBox(height: 6),
-            // Player count and winner info
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: FlitColors.backgroundMid,
-                borderRadius: BorderRadius.circular(6),
+            const SizedBox(width: 12),
+            // Bonus reward for daily leader
+            Expanded(
+              child: _RewardTile(
+                icon: Icons.emoji_events_rounded,
+                iconColor: FlitColors.warning,
+                label: 'Daily Leader',
+                value: '${challenge.bonusCoinReward}',
+                valueSuffix: ' bonus',
               ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.people, color: FlitColors.textMuted, size: 14),
-                  SizedBox(width: 6),
-                  Text(
-                    '2,847 players today \u2022 Top 1,000 win prizes',
-                    style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                // Completion reward
-                Expanded(
-                  child: _RewardTile(
-                    icon: Icons.monetization_on_rounded,
-                    iconColor: FlitColors.gold,
-                    label: 'Completion',
-                    value: '${challenge.coinReward}',
-                    valueSuffix: ' coins',
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Bonus reward for daily leader
-                Expanded(
-                  child: _RewardTile(
-                    icon: Icons.emoji_events_rounded,
-                    iconColor: FlitColors.warning,
-                    label: 'Daily Leader',
-                    value: '${challenge.bonusCoinReward}',
-                    valueSuffix: ' bonus',
-                  ),
-                ),
-              ],
             ),
           ],
         ),
-      );
+      ],
+    ),
+  );
 }
 
 class _RewardTile extends StatelessWidget {
@@ -572,47 +598,44 @@ class _RewardTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: FlitColors.backgroundMid,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: FlitColors.backgroundMid,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Column(
+      children: [
+        Icon(icon, color: iconColor, size: 28),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: iconColor, size: 28),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: FlitColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  valueSuffix,
-                  style: const TextStyle(
-                    color: FlitColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 2),
             Text(
-              label,
+              value,
               style: const TextStyle(
-                color: FlitColors.textMuted,
-                fontSize: 11,
+                color: FlitColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              valueSuffix,
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 12,
               ),
             ),
           ],
         ),
-      );
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
+        ),
+      ],
+    ),
+  );
 }
 
 // =============================================================================
@@ -620,54 +643,46 @@ class _RewardTile extends StatelessWidget {
 // =============================================================================
 
 class _LeaderboardSection extends StatelessWidget {
-  const _LeaderboardSection({
-    required this.entries,
-  });
+  const _LeaderboardSection({required this.entries});
 
   final List<DailyLeaderboardEntry> entries;
 
   @override
   Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.cardBorder),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Section header
-            const Padding(
-              padding: EdgeInsets.fromLTRB(14, 14, 14, 0),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.leaderboard_rounded,
-                    color: FlitColors.gold,
-                    size: 18,
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    'LEADERBOARD',
-                    style: TextStyle(
-                      color: FlitColors.textMuted,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
+    decoration: BoxDecoration(
+      color: FlitColors.cardBackground,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: FlitColors.cardBorder),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section header
+        const Padding(
+          padding: EdgeInsets.fromLTRB(14, 14, 14, 0),
+          child: Row(
+            children: [
+              Icon(Icons.leaderboard_rounded, color: FlitColors.gold, size: 18),
+              SizedBox(width: 6),
+              Text(
+                'LEADERBOARD',
+                style: TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
               ),
-            ),
-            const Divider(color: FlitColors.cardBorder, height: 20),
-            // Leaderboard rows
-            ...entries.map(
-              (entry) => _DailyLeaderboardRow(entry: entry),
-            ),
-            const SizedBox(height: 8),
-          ],
+            ],
+          ),
         ),
-      );
+        const Divider(color: FlitColors.cardBorder, height: 20),
+        // Leaderboard rows
+        ...entries.map((entry) => _DailyLeaderboardRow(entry: entry)),
+        const SizedBox(height: 8),
+      ],
+    ),
+  );
 }
 
 class _DailyLeaderboardRow extends StatelessWidget {
@@ -684,30 +699,31 @@ class _DailyLeaderboardRow extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: entry.rank <= 3
-            ? _rankColor.withOpacity(0.08)
-            : Colors.transparent,
+        color:
+            entry.rank <= 3 ? _rankColor.withOpacity(0.08) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-        border: entry.rank <= 3
-            ? Border.all(color: _rankColor.withOpacity(0.3))
-            : null,
+        border:
+            entry.rank <= 3
+                ? Border.all(color: _rankColor.withOpacity(0.3))
+                : null,
       ),
       child: Row(
         children: [
           // Rank medal or number
           SizedBox(
             width: 32,
-            child: entry.rank <= 3
-                ? _RankMedal(rank: entry.rank)
-                : Text(
-                    '#${entry.rank}',
-                    style: const TextStyle(
-                      color: FlitColors.textMuted,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+            child:
+                entry.rank <= 3
+                    ? _RankMedal(rank: entry.rank)
+                    : Text(
+                      '#${entry.rank}',
+                      style: const TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
           ),
           const SizedBox(width: 10),
           // Username and score
@@ -718,9 +734,10 @@ class _DailyLeaderboardRow extends StatelessWidget {
                 Text(
                   entry.username,
                   style: TextStyle(
-                    color: entry.rank <= 3
-                        ? FlitColors.textPrimary
-                        : FlitColors.textSecondary,
+                    color:
+                        entry.rank <= 3
+                            ? FlitColors.textPrimary
+                            : FlitColors.textSecondary,
                     fontSize: 14,
                     fontWeight:
                         entry.rank <= 3 ? FontWeight.w600 : FontWeight.normal,
@@ -742,9 +759,10 @@ class _DailyLeaderboardRow extends StatelessWidget {
             '${minutes.toString().padLeft(2, '0')}:'
             '${seconds.toString().padLeft(2, '0')}',
             style: TextStyle(
-              color: entry.rank <= 3
-                  ? FlitColors.textPrimary
-                  : FlitColors.textSecondary,
+              color:
+                  entry.rank <= 3
+                      ? FlitColors.textPrimary
+                      : FlitColors.textSecondary,
               fontSize: 15,
               fontWeight: FontWeight.bold,
               fontFamily: 'monospace',
@@ -784,12 +802,7 @@ class _RankMedal extends StatelessWidget {
       height: 28,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            color,
-            color.withOpacity(0.6),
-          ],
-        ),
+        gradient: RadialGradient(colors: [color, color.withOpacity(0.6)]),
         boxShadow: [
           BoxShadow(
             color: color.withOpacity(0.4),
@@ -836,38 +849,38 @@ class _InfoFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: FlitColors.gold.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: FlitColors.gold.withOpacity(0.2)),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: FlitColors.gold.withOpacity(0.08),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: FlitColors.gold.withOpacity(0.2)),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(top: 2),
+          child: Icon(
+            Icons.info_outline_rounded,
+            color: FlitColors.gold,
+            size: 16,
+          ),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(top: 2),
-              child: Icon(
-                Icons.info_outline_rounded,
-                color: FlitColors.gold,
-                size: 16,
-              ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            'Daily leader wins $bonusCoinReward bonus coins! '
+            'Annual champions receive exclusive cosmetics.',
+            style: const TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 12,
+              height: 1.4,
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Daily leader wins $bonusCoinReward bonus coins! '
-                'Annual champions receive exclusive cosmetics.',
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 12,
-                  height: 1.4,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }
 
 // =============================================================================
@@ -879,86 +892,95 @@ class _MedalProgressSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.cardBorder),
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: FlitColors.cardBackground,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: FlitColors.cardBorder),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'DAILY MEDAL',
+          style: TextStyle(
+            color: FlitColors.textMuted,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 10),
+        // Medal display
+        Row(
           children: [
-            const Text(
-              'DAILY MEDAL',
-              style: TextStyle(
-                color: FlitColors.textMuted,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
+            // Current medal icon
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFFCD7F32).withOpacity(0.2),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFFCD7F32).withOpacity(0.5),
+                ),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.military_tech,
+                  color: Color(0xFFCD7F32),
+                  size: 28,
+                ),
               ),
             ),
-            const SizedBox(height: 10),
-            // Medal display
-            Row(
-              children: [
-                // Current medal icon
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFCD7F32).withOpacity(0.2),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFCD7F32).withOpacity(0.5)),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Bronze Medal',
+                    style: TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  child: const Center(
-                    child: Icon(Icons.military_tech, color: Color(0xFFCD7F32), size: 28),
+                  SizedBox(height: 2),
+                  Text(
+                    '0 daily wins \u2022 Win to earn stars!',
+                    style: TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Bronze Medal',
-                        style: TextStyle(
-                          color: FlitColors.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        '0 daily wins \u2022 Win to earn stars!',
-                        style: TextStyle(color: FlitColors.textSecondary, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Star progression
-            const Text(
-              'PROGRESSION: 20 steps (Bronze \u2192 Silver \u2192 Gold \u2192 Platinum)',
-              style: TextStyle(color: FlitColors.textMuted, fontSize: 10),
-            ),
-            const SizedBox(height: 6),
-            // Progress bar
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: const SizedBox(
-                height: 6,
-                child: LinearProgressIndicator(
-                  value: 0,
-                  backgroundColor: FlitColors.backgroundDark,
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFCD7F32)),
-                ),
+                ],
               ),
             ),
           ],
         ),
-      );
+        const SizedBox(height: 12),
+        // Star progression
+        const Text(
+          'PROGRESSION: 20 steps (Bronze \u2192 Silver \u2192 Gold \u2192 Platinum)',
+          style: TextStyle(color: FlitColors.textMuted, fontSize: 10),
+        ),
+        const SizedBox(height: 6),
+        // Progress bar
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: const SizedBox(
+            height: 6,
+            child: LinearProgressIndicator(
+              value: 0,
+              backgroundColor: FlitColors.backgroundDark,
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFCD7F32)),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 // =============================================================================
@@ -970,47 +992,59 @@ class _HallOfFameSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.gold.withOpacity(0.3)),
-        ),
-        child: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: FlitColors.cardBackground,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: FlitColors.gold.withOpacity(0.3)),
+    ),
+    child: const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Icon(Icons.emoji_events, color: FlitColors.gold, size: 18),
-                SizedBox(width: 6),
-                Text(
-                  'HALL OF FAME',
-                  style: TextStyle(
-                    color: FlitColors.gold,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ],
+            Icon(Icons.emoji_events, color: FlitColors.gold, size: 18),
+            SizedBox(width: 6),
+            Text(
+              'HALL OF FAME',
+              style: TextStyle(
+                color: FlitColors.gold,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
             ),
-            SizedBox(height: 12),
-            _HallOfFameRow(date: '5 Feb 2026', winner: 'GlobeTrotter42', medal: 'Platinum'),
-            SizedBox(height: 6),
-            _HallOfFameRow(date: '4 Feb 2026', winner: 'MapMaster', medal: 'Gold'),
-            SizedBox(height: 6),
-            _HallOfFameRow(date: '3 Feb 2026', winner: 'AtlasAce', medal: 'Gold'),
-            SizedBox(height: 6),
-            _HallOfFameRow(date: '2 Feb 2026', winner: 'WanderWiz', medal: 'Silver'),
-            SizedBox(height: 6),
-            _HallOfFameRow(date: '1 Feb 2026', winner: 'GeoPilot', medal: 'Bronze'),
           ],
         ),
-      );
+        SizedBox(height: 12),
+        _HallOfFameRow(
+          date: '5 Feb 2026',
+          winner: 'GlobeTrotter42',
+          medal: 'Platinum',
+        ),
+        SizedBox(height: 6),
+        _HallOfFameRow(date: '4 Feb 2026', winner: 'MapMaster', medal: 'Gold'),
+        SizedBox(height: 6),
+        _HallOfFameRow(date: '3 Feb 2026', winner: 'AtlasAce', medal: 'Gold'),
+        SizedBox(height: 6),
+        _HallOfFameRow(
+          date: '2 Feb 2026',
+          winner: 'WanderWiz',
+          medal: 'Silver',
+        ),
+        SizedBox(height: 6),
+        _HallOfFameRow(date: '1 Feb 2026', winner: 'GeoPilot', medal: 'Bronze'),
+      ],
+    ),
+  );
 }
 
 class _HallOfFameRow extends StatelessWidget {
-  const _HallOfFameRow({required this.date, required this.winner, required this.medal});
+  const _HallOfFameRow({
+    required this.date,
+    required this.winner,
+    required this.medal,
+  });
 
   final String date;
   final String winner;
@@ -1018,37 +1052,45 @@ class _HallOfFameRow extends StatelessWidget {
 
   Color get _medalColor {
     switch (medal) {
-      case 'Platinum': return const Color(0xFFE5E4E2);
-      case 'Gold': return const Color(0xFFFFD700);
-      case 'Silver': return const Color(0xFFC0C0C0);
-      default: return const Color(0xFFCD7F32);
+      case 'Platinum':
+        return const Color(0xFFE5E4E2);
+      case 'Gold':
+        return const Color(0xFFFFD700);
+      case 'Silver':
+        return const Color(0xFFC0C0C0);
+      default:
+        return const Color(0xFFCD7F32);
     }
   }
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: FlitColors.backgroundMid,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.military_tech, color: _medalColor, size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                winner,
-                style: const TextStyle(color: FlitColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
-              ),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    decoration: BoxDecoration(
+      color: FlitColors.backgroundMid,
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      children: [
+        Icon(Icons.military_tech, color: _medalColor, size: 18),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            winner,
+            style: const TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
             ),
-            Text(
-              date,
-              style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
-            ),
-          ],
+          ),
         ),
-      );
+        Text(
+          date,
+          style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
+        ),
+      ],
+    ),
+  );
 }
 
 // =============================================================================
@@ -1062,39 +1104,39 @@ class _PlayButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onPressed,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: FlitColors.accent,
-                foregroundColor: FlitColors.textPrimary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.play_arrow_rounded, size: 24),
-                  SizedBox(width: 8),
-                  Text(
-                    "PLAY TODAY'S CHALLENGE",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
-              ),
+    top: false,
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: FlitColors.accent,
+            foregroundColor: FlitColors.textPrimary,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
+            elevation: 0,
+          ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.play_arrow_rounded, size: 24),
+              SizedBox(width: 8),
+              Text(
+                "PLAY TODAY'S CHALLENGE",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    ),
+  );
 }

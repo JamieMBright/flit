@@ -98,33 +98,39 @@ void main() {
   });
 
   group('ShaderLODManager upgrade', () {
-    test('recording sustained high FPS triggers upgrade from low to medium', () {
-      manager.forceLevel(ShaderLOD.low);
+    test(
+      'recording sustained high FPS triggers upgrade from low to medium',
+      () {
+        manager.forceLevel(ShaderLOD.low);
 
-      const dt60fps = 1.0 / 60.0;
-      // Fill window (60 frames)
-      for (int i = 0; i < 60; i++) {
-        manager.recordFrameTime(dt60fps);
-      }
-      // Hysteresis period (90 frames)
-      for (int i = 0; i < 90; i++) {
-        manager.recordFrameTime(dt60fps);
-      }
+        const dt60fps = 1.0 / 60.0;
+        // Fill window (60 frames)
+        for (int i = 0; i < 60; i++) {
+          manager.recordFrameTime(dt60fps);
+        }
+        // Hysteresis period (90 frames)
+        for (int i = 0; i < 90; i++) {
+          manager.recordFrameTime(dt60fps);
+        }
 
-      expect(manager.currentLOD, equals(ShaderLOD.medium));
-    });
+        expect(manager.currentLOD, equals(ShaderLOD.medium));
+      },
+    );
 
-    test('recording sustained high FPS triggers upgrade from medium to high', () {
-      manager.forceLevel(ShaderLOD.medium);
+    test(
+      'recording sustained high FPS triggers upgrade from medium to high',
+      () {
+        manager.forceLevel(ShaderLOD.medium);
 
-      const dt60fps = 1.0 / 60.0;
-      // Fill window + hysteresis
-      for (int i = 0; i < 60 + 90; i++) {
-        manager.recordFrameTime(dt60fps);
-      }
+        const dt60fps = 1.0 / 60.0;
+        // Fill window + hysteresis
+        for (int i = 0; i < 60 + 90; i++) {
+          manager.recordFrameTime(dt60fps);
+        }
 
-      expect(manager.currentLOD, equals(ShaderLOD.high));
-    });
+        expect(manager.currentLOD, equals(ShaderLOD.high));
+      },
+    );
 
     test('already at high does not crash on further upgrades', () {
       const dt60fps = 1.0 / 60.0;
@@ -239,8 +245,11 @@ void main() {
         manager.forceLevel(level);
         final uniforms = manager.lodUniforms;
         for (final key in requiredKeys) {
-          expect(uniforms.containsKey(key), isTrue,
-              reason: '${level.name} missing key: $key');
+          expect(
+            uniforms.containsKey(key),
+            isTrue,
+            reason: '${level.name} missing key: $key',
+          );
         }
       }
     });

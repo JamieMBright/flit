@@ -41,9 +41,7 @@ class Clue {
     return Clue(
       type: ClueType.flag,
       targetCountryCode: countryCode,
-      displayData: {
-        'flagEmoji': _countryCodeToFlagEmoji(countryCode),
-      },
+      displayData: {'flagEmoji': _countryCodeToFlagEmoji(countryCode)},
     );
   }
 
@@ -53,9 +51,7 @@ class Clue {
     return Clue(
       type: ClueType.outline,
       targetCountryCode: countryCode,
-      displayData: {
-        'polygons': country?.polygons ?? <List<Vector2>>[],
-      },
+      displayData: {'polygons': country?.polygons ?? <List<Vector2>>[]},
     );
   }
 
@@ -64,9 +60,7 @@ class Clue {
     return Clue(
       type: ClueType.borders,
       targetCountryCode: countryCode,
-      displayData: {
-        'neighbors': _getNeighboringCountries(countryCode),
-      },
+      displayData: {'neighbors': _getNeighboringCountries(countryCode)},
     );
   }
 
@@ -77,9 +71,7 @@ class Clue {
     return Clue(
       type: ClueType.capital,
       targetCountryCode: countryCode,
-      displayData: {
-        'capitalName': capital?.name ?? '',
-      },
+      displayData: {'capitalName': capital?.name ?? ''},
     );
   }
 
@@ -110,9 +102,8 @@ class Clue {
     // Determine the pool of clue types to draw from.
     final List<ClueType> typePool;
     if (allowedTypes != null && allowedTypes.isNotEmpty) {
-      typePool = ClueType.values
-          .where((t) => allowedTypes.contains(t.name))
-          .toList();
+      typePool =
+          ClueType.values.where((t) => allowedTypes.contains(t.name)).toList();
     } else {
       typePool = ClueType.values.toList();
     }
@@ -135,7 +126,8 @@ class Clue {
 
     for (var attempt = 0; attempt < maxRetries; attempt++) {
       // Get available types that haven't been tried yet
-      final availableTypes = types.where((t) => !triedTypes.contains(t)).toList();
+      final availableTypes =
+          types.where((t) => !triedTypes.contains(t)).toList();
       if (availableTypes.isEmpty) break;
 
       ClueType randomType;
@@ -196,38 +188,48 @@ class Clue {
     final availableClues = <Clue>[];
 
     // Always available: outline and capital
-    availableClues.add(Clue(
-      type: ClueType.outline,
-      targetCountryCode: area.code,
-      displayData: {'points': area.points, 'areaName': area.name},
-    ));
+    availableClues.add(
+      Clue(
+        type: ClueType.outline,
+        targetCountryCode: area.code,
+        displayData: {'points': area.points, 'areaName': area.name},
+      ),
+    );
 
     if (area.capital != null &&
         area.capital!.isNotEmpty &&
         !area.capital!.toLowerCase().contains('unknown')) {
-      availableClues.add(Clue(
-        type: ClueType.capital,
-        targetCountryCode: area.code,
-        displayData: {'capitalName': area.capital ?? '', 'areaName': area.name},
-      ));
+      availableClues.add(
+        Clue(
+          type: ClueType.capital,
+          targetCountryCode: area.code,
+          displayData: {
+            'capitalName': area.capital ?? '',
+            'areaName': area.name,
+          },
+        ),
+      );
     }
 
     if (area.population != null && area.population! > 0) {
       final pop = area.population!;
-      final popString = pop >= 1000000
-          ? '${(pop / 1000000).toStringAsFixed(1)}M'
-          : pop >= 1000
+      final popString =
+          pop >= 1000000
+              ? '${(pop / 1000000).toStringAsFixed(1)}M'
+              : pop >= 1000
               ? '${(pop / 1000).toStringAsFixed(0)}K'
               : pop.toString();
-      availableClues.add(Clue(
-        type: ClueType.stats,
-        targetCountryCode: area.code,
-        displayData: {
-          'population': popString,
-          'areaName': area.name,
-          if (area.funFact != null) 'funFact': area.funFact,
-        },
-      ));
+      availableClues.add(
+        Clue(
+          type: ClueType.stats,
+          targetCountryCode: area.code,
+          displayData: {
+            'population': popString,
+            'areaName': area.name,
+            if (area.funFact != null) 'funFact': area.funFact,
+          },
+        ),
+      );
     }
 
     // Rich regional clue data from data files
@@ -251,34 +253,44 @@ class Clue {
 
     if (data.sportsTeams.isNotEmpty) {
       final team = data.sportsTeams[Random().nextInt(data.sportsTeams.length)];
-      clues.add(Clue(
-        type: ClueType.sportsTeam,
-        targetCountryCode: code,
-        displayData: {'team': team},
-      ));
+      clues.add(
+        Clue(
+          type: ClueType.sportsTeam,
+          targetCountryCode: code,
+          displayData: {'team': team},
+        ),
+      );
     }
     if (data.senators.isNotEmpty) {
-      clues.add(Clue(
-        type: ClueType.leader,
-        targetCountryCode: code,
-        displayData: {'leader': 'Senator: ${data.senators.join(', ')}'},
-      ));
+      clues.add(
+        Clue(
+          type: ClueType.leader,
+          targetCountryCode: code,
+          displayData: {'leader': 'Senator: ${data.senators.join(', ')}'},
+        ),
+      );
     }
-    clues.add(Clue(
-      type: ClueType.nickname,
-      targetCountryCode: code,
-      displayData: {'nickname': data.nickname},
-    ));
-    clues.add(Clue(
-      type: ClueType.landmark,
-      targetCountryCode: code,
-      displayData: {'landmark': data.famousLandmark},
-    ));
-    clues.add(Clue(
-      type: ClueType.flagDescription,
-      targetCountryCode: code,
-      displayData: {'flagDesc': data.flag},
-    ));
+    clues.add(
+      Clue(
+        type: ClueType.nickname,
+        targetCountryCode: code,
+        displayData: {'nickname': data.nickname},
+      ),
+    );
+    clues.add(
+      Clue(
+        type: ClueType.landmark,
+        targetCountryCode: code,
+        displayData: {'landmark': data.famousLandmark},
+      ),
+    );
+    clues.add(
+      Clue(
+        type: ClueType.flagDescription,
+        targetCountryCode: code,
+        displayData: {'flagDesc': data.flag},
+      ),
+    );
   }
 
   /// Add Ireland county-specific clues.
@@ -286,26 +298,34 @@ class Clue {
     final data = IrelandClues.data[code];
     if (data == null) return;
 
-    clues.add(Clue(
-      type: ClueType.nickname,
-      targetCountryCode: code,
-      displayData: {'nickname': '${data.nickname} (${data.province})'},
-    ));
-    clues.add(Clue(
-      type: ClueType.landmark,
-      targetCountryCode: code,
-      displayData: {'landmark': data.famousLandmark},
-    ));
-    clues.add(Clue(
-      type: ClueType.sportsTeam,
-      targetCountryCode: code,
-      displayData: {'team': 'GAA: ${data.gaaTeam}'},
-    ));
-    clues.add(Clue(
-      type: ClueType.leader,
-      targetCountryCode: code,
-      displayData: {'leader': data.famousPerson},
-    ));
+    clues.add(
+      Clue(
+        type: ClueType.nickname,
+        targetCountryCode: code,
+        displayData: {'nickname': '${data.nickname} (${data.province})'},
+      ),
+    );
+    clues.add(
+      Clue(
+        type: ClueType.landmark,
+        targetCountryCode: code,
+        displayData: {'landmark': data.famousLandmark},
+      ),
+    );
+    clues.add(
+      Clue(
+        type: ClueType.sportsTeam,
+        targetCountryCode: code,
+        displayData: {'team': 'GAA: ${data.gaaTeam}'},
+      ),
+    );
+    clues.add(
+      Clue(
+        type: ClueType.leader,
+        targetCountryCode: code,
+        displayData: {'leader': data.famousPerson},
+      ),
+    );
   }
 
   /// Add UK county-specific clues.
@@ -313,26 +333,34 @@ class Clue {
     final data = UkClues.data[code];
     if (data == null) return;
 
-    clues.add(Clue(
-      type: ClueType.sportsTeam,
-      targetCountryCode: code,
-      displayData: {'team': data.footballTeam},
-    ));
-    clues.add(Clue(
-      type: ClueType.landmark,
-      targetCountryCode: code,
-      displayData: {'landmark': data.famousLandmark},
-    ));
-    clues.add(Clue(
-      type: ClueType.leader,
-      targetCountryCode: code,
-      displayData: {'leader': data.famousPerson},
-    ));
-    clues.add(Clue(
-      type: ClueType.nickname,
-      targetCountryCode: code,
-      displayData: {'nickname': '${data.nickname} (${data.country})'},
-    ));
+    clues.add(
+      Clue(
+        type: ClueType.sportsTeam,
+        targetCountryCode: code,
+        displayData: {'team': data.footballTeam},
+      ),
+    );
+    clues.add(
+      Clue(
+        type: ClueType.landmark,
+        targetCountryCode: code,
+        displayData: {'landmark': data.famousLandmark},
+      ),
+    );
+    clues.add(
+      Clue(
+        type: ClueType.leader,
+        targetCountryCode: code,
+        displayData: {'leader': data.famousPerson},
+      ),
+    );
+    clues.add(
+      Clue(
+        type: ClueType.nickname,
+        targetCountryCode: code,
+        displayData: {'nickname': '${data.nickname} (${data.country})'},
+      ),
+    );
   }
 
   /// Add Canadian province-specific clues.
@@ -342,27 +370,35 @@ class Clue {
 
     if (data.sportsTeams.isNotEmpty) {
       final team = data.sportsTeams[Random().nextInt(data.sportsTeams.length)];
-      clues.add(Clue(
-        type: ClueType.sportsTeam,
-        targetCountryCode: code,
-        displayData: {'team': team},
-      ));
+      clues.add(
+        Clue(
+          type: ClueType.sportsTeam,
+          targetCountryCode: code,
+          displayData: {'team': team},
+        ),
+      );
     }
-    clues.add(Clue(
-      type: ClueType.leader,
-      targetCountryCode: code,
-      displayData: {'leader': 'Premier: ${data.premier}'},
-    ));
-    clues.add(Clue(
-      type: ClueType.nickname,
-      targetCountryCode: code,
-      displayData: {'nickname': data.nickname},
-    ));
-    clues.add(Clue(
-      type: ClueType.landmark,
-      targetCountryCode: code,
-      displayData: {'landmark': data.famousLandmark},
-    ));
+    clues.add(
+      Clue(
+        type: ClueType.leader,
+        targetCountryCode: code,
+        displayData: {'leader': 'Premier: ${data.premier}'},
+      ),
+    );
+    clues.add(
+      Clue(
+        type: ClueType.nickname,
+        targetCountryCode: code,
+        displayData: {'nickname': data.nickname},
+      ),
+    );
+    clues.add(
+      Clue(
+        type: ClueType.landmark,
+        targetCountryCode: code,
+        displayData: {'landmark': data.famousLandmark},
+      ),
+    );
   }
 
   /// Get the display text for this clue
@@ -664,14 +700,7 @@ class Clue {
         'Ethiopia',
         'Eritrea',
       ],
-      'ET': [
-        'Eritrea',
-        'Djibouti',
-        'Somalia',
-        'Kenya',
-        'South Sudan',
-        'Sudan',
-      ],
+      'ET': ['Eritrea', 'Djibouti', 'Somalia', 'Kenya', 'South Sudan', 'Sudan'],
       'KE': ['Tanzania', 'Uganda', 'South Sudan', 'Ethiopia', 'Somalia'],
       'TZ': [
         'Kenya',
@@ -696,13 +725,7 @@ class Clue {
       'NG': ['Benin', 'Niger', 'Chad', 'Cameroon'],
       'GH': ["Côte d'Ivoire", 'Burkina Faso', 'Togo'],
       'CI': ['Liberia', 'Guinea', 'Mali', 'Burkina Faso', 'Ghana'],
-      'SN': [
-        'Mauritania',
-        'Mali',
-        'Guinea',
-        'Guinea-Bissau',
-        'The Gambia',
-      ],
+      'SN': ['Mauritania', 'Mali', 'Guinea', 'Guinea-Bissau', 'The Gambia'],
 
       // ─── Central Africa ───
       'CM': [
@@ -780,14 +803,7 @@ class Clue {
       'SG': ['Malaysia'],
 
       // ─── South Asia ───
-      'IN': [
-        'Pakistan',
-        'China',
-        'Nepal',
-        'Bhutan',
-        'Bangladesh',
-        'Myanmar',
-      ],
+      'IN': ['Pakistan', 'China', 'Nepal', 'Bhutan', 'Bangladesh', 'Myanmar'],
       'PK': ['India', 'China', 'Afghanistan', 'Iran'],
       'BD': ['India', 'Myanmar'],
 
@@ -815,13 +831,7 @@ class Clue {
       'IL': ['Lebanon', 'Syria', 'Jordan', 'Egypt', 'Palestine'],
 
       // ─── Central Asia ───
-      'KZ': [
-        'Russia',
-        'China',
-        'Kyrgyzstan',
-        'Uzbekistan',
-        'Turkmenistan',
-      ],
+      'KZ': ['Russia', 'China', 'Kyrgyzstan', 'Uzbekistan', 'Turkmenistan'],
 
       // ─── Oceania ───
       'AU': <String>[],

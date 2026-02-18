@@ -472,8 +472,8 @@ class FlitGame extends FlameGame
     // Camera forward = normalize(-camPos)
     final fwdLen = sqrt(
       cam.cameraX * cam.cameraX +
-      cam.cameraY * cam.cameraY +
-      cam.cameraZ * cam.cameraZ,
+          cam.cameraY * cam.cameraY +
+          cam.cameraZ * cam.cameraZ,
     );
     if (fwdLen < 1e-8) {
       return Vector2(size.x * 0.5, size.y * 0.5);
@@ -634,10 +634,12 @@ class FlitGame extends FlameGame
       }
 
       // Contrail overlay — renders on top of globe, before the plane.
-      await add(ContrailRenderer(
-        primaryColor: contrailPrimaryColor,
-        secondaryColor: contrailSecondaryColor,
-      ));
+      await add(
+        ContrailRenderer(
+          primaryColor: contrailPrimaryColor,
+          secondaryColor: contrailSecondaryColor,
+        ),
+      );
 
       // Wayline overlay — draws translucent line from plane to waymarker.
       _waylineRenderer = WaylineRenderer();
@@ -662,8 +664,12 @@ class FlitGame extends FlameGame
           try {
             onAltitudeChanged?.call(isHigh);
           } catch (e, st) {
-            _log.error('game', 'onAltitudeChanged callback failed',
-                error: e, stackTrace: st);
+            _log.error(
+              'game',
+              'onAltitudeChanged callback failed',
+              error: e,
+              stackTrace: st,
+            );
           }
         },
         colorScheme: planeColorScheme,
@@ -693,8 +699,12 @@ class FlitGame extends FlameGame
       try {
         onGameReady?.call();
       } catch (e, st) {
-        _log.error('game', 'onGameReady callback failed',
-            error: e, stackTrace: st);
+        _log.error(
+          'game',
+          'onGameReady callback failed',
+          error: e,
+          stackTrace: st,
+        );
         ErrorService.instance.reportCritical(
           e,
           st,
@@ -724,10 +734,11 @@ class FlitGame extends FlameGame
     } catch (e, st) {
       _dead = true;
       _log.error('game', 'GAME LOOP CRASHED', error: e, stackTrace: st);
-      ErrorService.instance.reportCritical(e, st, context: {
-        'source': 'FlitGame',
-        'action': 'update',
-      });
+      ErrorService.instance.reportCritical(
+        e,
+        st,
+        context: {'source': 'FlitGame', 'action': 'update'},
+      );
       // Push to JS overlay for iOS PWA
       WebErrorBridge.show('Game loop crash:\n$e\n\n$st');
       onError?.call(e, st);
@@ -783,10 +794,14 @@ class FlitGame extends FlameGame
             _previousCountryName = _cachedCountryName;
             _cachedCountryName = country.name;
             _countryFlashTimer = _countryFlashDuration;
-            _log.info('game', 'Entered country', data: {
-              'from': _previousCountryName ?? 'ocean',
-              'to': country.name,
-            });
+            _log.info(
+              'game',
+              'Entered country',
+              data: {
+                'from': _previousCountryName ?? 'ocean',
+                'to': country.name,
+              },
+            );
           }
           return;
         }
@@ -849,7 +864,10 @@ class FlitGame extends FlameGame
 
     // --- Decrement country flash timer ---
     if (_countryFlashTimer > 0) {
-      _countryFlashTimer = (_countryFlashTimer - dt).clamp(0.0, _countryFlashDuration);
+      _countryFlashTimer = (_countryFlashTimer - dt).clamp(
+        0.0,
+        _countryFlashDuration,
+      );
     }
 
     // --- Fuel consumption ---
@@ -861,7 +879,11 @@ class FlitGame extends FlameGame
       final isLow = _planeReady && !_plane.isHighAltitude;
       final altitudeFactor = isLow ? 0.25 : 1.0;
       // planeFuelEfficiency > 1 = less burn; divide to invert.
-      final burnRate = _baseFuelBurnRate * _speedMultiplier * altitudeFactor / planeFuelEfficiency;
+      final burnRate =
+          _baseFuelBurnRate *
+          _speedMultiplier *
+          altitudeFactor /
+          planeFuelEfficiency;
       _fuel = (_fuel - burnRate * dt).clamp(0.0, maxFuel);
       if (_fuel <= 0) {
         onFuelEmpty?.call();
@@ -896,8 +918,12 @@ class FlitGame extends FlameGame
       // is the difference between the plane heading and the camera heading.
       // Use shortest-path difference to avoid ±π wrapping jumps.
       var visualDiff = _heading - _cameraHeading;
-      while (visualDiff > pi) { visualDiff -= 2 * pi; }
-      while (visualDiff < -pi) { visualDiff += 2 * pi; }
+      while (visualDiff > pi) {
+        visualDiff -= 2 * pi;
+      }
+      while (visualDiff < -pi) {
+        visualDiff += 2 * pi;
+      }
       _plane.visualHeading = visualDiff;
     }
 
@@ -948,8 +974,12 @@ class FlitGame extends FlameGame
     if (turnDir.abs() > 0.001) {
       final turnRate = _plane.currentTurnRate * planeHandling;
       _heading += turnDir * turnRate * dt;
-      while (_heading > pi) { _heading -= 2 * pi; }
-      while (_heading < -pi) { _heading += 2 * pi; }
+      while (_heading > pi) {
+        _heading -= 2 * pi;
+      }
+      while (_heading < -pi) {
+        _heading += 2 * pi;
+      }
     }
 
     // planeSpeed multiplier makes faster planes cover more ground.
@@ -1032,8 +1062,12 @@ class FlitGame extends FlameGame
     _heading = newBearing - pi / 2;
 
     // Normalize heading to [-π, π]
-    while (_heading > pi) { _heading -= 2 * pi; }
-    while (_heading < -pi) { _heading += 2 * pi; }
+    while (_heading > pi) {
+      _heading -= 2 * pi;
+    }
+    while (_heading < -pi) {
+      _heading += 2 * pi;
+    }
   }
 
   /// Update the chase camera heading and compute the offset camera position.
@@ -1098,9 +1132,13 @@ class FlitGame extends FlameGame
     final cosDist = cos(offsetRad);
 
     final aheadLat = asin(
-      (sinPLat * cosDist + cosPLat * sinDist * cos(camBearing)).clamp(-1.0, 1.0),
+      (sinPLat * cosDist + cosPLat * sinDist * cos(camBearing)).clamp(
+        -1.0,
+        1.0,
+      ),
     );
-    final aheadLng = planeLng +
+    final aheadLng =
+        planeLng +
         atan2(
           sin(camBearing) * sinDist * cosPLat,
           cosDist - sinPLat * sin(aheadLat),
@@ -1116,10 +1154,13 @@ class FlitGame extends FlameGame
     // planeScreenY on screen, creating a natural over-the-shoulder view.
     final behindBearing = camBearing + pi;
     final behindLat = asin(
-      (sinPLat * cosDist + cosPLat * sinDist * cos(behindBearing))
-          .clamp(-1.0, 1.0),
+      (sinPLat * cosDist + cosPLat * sinDist * cos(behindBearing)).clamp(
+        -1.0,
+        1.0,
+      ),
     );
-    final behindLng = planeLng +
+    final behindLng =
+        planeLng +
         atan2(
           sin(behindBearing) * sinDist * cosPLat,
           cosDist - sinPLat * sin(behindLat),
@@ -1202,16 +1243,16 @@ class FlitGame extends FlameGame
       if (_keyTurnDir != 0) {
         _keyTurnHoldTime += rampDt;
       }
-      final holdTime = _buttonTurnDir != 0
-          ? _buttonTurnHoldTime
-          : _keyTurnHoldTime;
+      final holdTime =
+          _buttonTurnDir != 0 ? _buttonTurnHoldTime : _keyTurnHoldTime;
 
       // Progressive curve: starts at 0.08, reaches 1.0 after ~0.6s.
       // Scale ramp speed with turn sensitivity setting (default 0.5 → 1.0x).
       // In descent mode the faster ramp-up + higher base turn rate gives
       // immediate, snappy steering that matches the slower movement.
       final sensitivityScale = GameSettings.instance.turnSensitivity / 0.5;
-      final strength = (0.08 + holdTime * holdTime * 4.5 * sensitivityScale).clamp(0.0, 1.0);
+      final strength = (0.08 + holdTime * holdTime * 4.5 * sensitivityScale)
+          .clamp(0.0, 1.0);
       // When invertControls is false, pass direction through (right = right).
       // When invertControls is true, negate (right input = left turn).
       final invert = GameSettings.instance.invertControls ? -1.0 : 1.0;
@@ -1259,8 +1300,12 @@ class FlitGame extends FlameGame
     final currentBearing = _heading + pi / 2;
 
     var diff = targetBearing - currentBearing;
-    while (diff > pi) { diff -= 2 * pi; }
-    while (diff < -pi) { diff += 2 * pi; }
+    while (diff > pi) {
+      diff -= 2 * pi;
+    }
+    while (diff < -pi) {
+      diff += 2 * pi;
+    }
 
     // Sharp turn strength: narrow proportional zone so the plane commits to
     // the turn quickly and doesn't spiral around the waypoint.
@@ -1322,15 +1367,23 @@ class FlitGame extends FlameGame
     if (latLng != null) {
       _waymarker = latLng;
       _waymarkerAge = 0.0; // Reset ramp-up timer for smooth turn onset
-      _log.info('game', 'Waymarker set', data: {
-        'lng': latLng.x.toStringAsFixed(1),
-        'lat': latLng.y.toStringAsFixed(1),
-      });
+      _log.info(
+        'game',
+        'Waymarker set',
+        data: {
+          'lng': latLng.x.toStringAsFixed(1),
+          'lat': latLng.y.toStringAsFixed(1),
+        },
+      );
     } else {
-      _log.info('game', 'Tap missed globe - no waymarker set', data: {
-        'screenX': info.eventPosition.widget.x.toStringAsFixed(0),
-        'screenY': info.eventPosition.widget.y.toStringAsFixed(0),
-      });
+      _log.info(
+        'game',
+        'Tap missed globe - no waymarker set',
+        data: {
+          'screenX': info.eventPosition.widget.x.toStringAsFixed(0),
+          'screenY': info.eventPosition.widget.y.toStringAsFixed(0),
+        },
+      );
     }
   }
 
@@ -1470,12 +1523,16 @@ class FlitGame extends FlameGame
     required Vector2 targetPosition,
     required String clue,
   }) {
-    _log.info('game', 'startGame', data: {
-      'start':
-          '${startPosition.x.toStringAsFixed(1)},${startPosition.y.toStringAsFixed(1)}',
-      'target':
-          '${targetPosition.x.toStringAsFixed(1)},${targetPosition.y.toStringAsFixed(1)}',
-    });
+    _log.info(
+      'game',
+      'startGame',
+      data: {
+        'start':
+            '${startPosition.x.toStringAsFixed(1)},${startPosition.y.toStringAsFixed(1)}',
+        'target':
+            '${targetPosition.x.toStringAsFixed(1)},${targetPosition.y.toStringAsFixed(1)}',
+      },
+    );
 
     // startPosition is already (lng, lat) degrees — use directly
     _worldPosition = startPosition.clone();
@@ -1515,10 +1572,14 @@ class FlitGame extends FlameGame
     required Vector2 targetPosition,
     required String clue,
   }) {
-    _log.info('game', 'continueWithNewTarget', data: {
-      'target':
-          '${targetPosition.x.toStringAsFixed(1)},${targetPosition.y.toStringAsFixed(1)}',
-    });
+    _log.info(
+      'game',
+      'continueWithNewTarget',
+      data: {
+        'target':
+            '${targetPosition.x.toStringAsFixed(1)},${targetPosition.y.toStringAsFixed(1)}',
+      },
+    );
 
     _targetLocation = targetPosition;
     _currentClue = clue;
@@ -1557,7 +1618,8 @@ class FlitGame extends FlameGame
     final dLat = (b.y - a.y) * _deg2rad;
     final dLng = (b.x - a.x) * _deg2rad;
 
-    final h = sin(dLat / 2) * sin(dLat / 2) +
+    final h =
+        sin(dLat / 2) * sin(dLat / 2) +
         cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
     final c = 2 * atan2(sqrt(h), sqrt(1 - h));
     return c * _rad2deg;
