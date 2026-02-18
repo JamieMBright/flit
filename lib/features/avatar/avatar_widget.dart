@@ -23,6 +23,95 @@ class AvatarWidget extends StatelessWidget {
   final double size;
 
   @override
+  State<AvatarWidget> createState() => _AvatarWidgetState();
+}
+
+class _AvatarWidgetState extends State<AvatarWidget> {
+  /// Cached composed SVG string for the current config.
+  String? _composedSvg;
+
+  /// Whether local SVG composition failed and network fetch is needed.
+  bool _composeFailed = false;
+
+  /// Whether a network fetch is currently in progress.
+  bool _fetching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolve();
+  }
+
+  @override
+  void didUpdateWidget(AvatarWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.config != widget.config) {
+      _resolve();
+    }
+  }
+
+  /// Attempt local composition first; fall back to cached/network SVG.
+  void _resolve() {
+    // Reset state.
+    _composeFailed = false;
+    _fetching = false;
+
+    // 1. Try local composition (adventurer style).
+    try {
+      final svg = AvatarCompositor.compose(widget.config);
+      if (svg != null) {
+        setState(() {
+          _composedSvg = svg;
+        });
+        return;
+      }
+    } catch (e) {
+      debugPrint('Avatar compose error: $e');
+    }
+
+    // 2. Local composition returned null or threw — check memory cache.
+    _composeFailed = true;
+    final cacheKey = widget.config.svgUri.toString();
+    final cached = _svgCache[cacheKey];
+    if (cached != null) {
+      setState(() {
+        _composedSvg = cached;
+      });
+      return;
+    }
+
+    // 3. Not in cache — fetch from DiceBear API.
+    setState(() {
+      _composedSvg = null;
+    });
+    _fetchFromNetwork(cacheKey);
+  }
+
+  Future<void> _fetchFromNetwork(String cacheKey) async {
+    if (_fetching) return;
+    _fetching = true;
+
+    try {
+      final response = await http
+          .get(widget.config.svgUri)
+          .timeout(const Duration(seconds: 8));
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 && response.body.contains('<svg')) {
+        _svgCache[cacheKey] = response.body;
+        setState(() {
+          _composedSvg = response.body;
+        });
+      }
+    } catch (e) {
+      debugPrint('Avatar network fetch error: $e');
+    } finally {
+      _fetching = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final svg = AvatarCompositor.compose(config);
 
@@ -85,6 +174,58 @@ class AvatarFromUrl extends StatelessWidget {
     // If we have a config, compose offline.
     if (avatarConfig != null) {
       return AvatarWidget(config: avatarConfig!, size: size);
+  @override
+  State<AvatarFromUrl> createState() => _AvatarFromUrlState();
+}
+
+class _AvatarFromUrlState extends State<AvatarFromUrl> {
+  String? _svg;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(AvatarFromUrl oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.avatarUrl != widget.avatarUrl) {
+      _load();
+    }
+  }
+
+  Future<void> _load() async {
+    final url = widget.avatarUrl;
+    if (url == null || url.isEmpty) {
+      return;
+    }
+
+    // Check cache.
+    final cached = _svgCache[url];
+    if (cached != null) {
+      setState(() {
+        _svg = cached;
+      });
+      return;
+    }
+
+    // Fetch.
+    try {
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 8));
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 && response.body.contains('<svg')) {
+        _svgCache[url] = response.body;
+        setState(() {
+          _svg = response.body;
+        });
+      }
+    } catch (_) {
+      // Silently fail and show fallback
     }
 
     // Fallback: show initial letter.
