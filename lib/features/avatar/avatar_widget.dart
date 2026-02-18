@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/avatar_config.dart';
 import 'avatar_compositor.dart';
+
+/// In-memory cache for fetched DiceBear SVG strings.
+final Map<String, String> _svgCache = {};
 
 /// Renders a DiceBear avatar as an SVG — fully offline.
 ///
@@ -21,95 +25,6 @@ class AvatarWidget extends StatelessWidget {
 
   final AvatarConfig config;
   final double size;
-
-  @override
-  State<AvatarWidget> createState() => _AvatarWidgetState();
-}
-
-class _AvatarWidgetState extends State<AvatarWidget> {
-  /// Cached composed SVG string for the current config.
-  String? _composedSvg;
-
-  /// Whether local SVG composition failed and network fetch is needed.
-  bool _composeFailed = false;
-
-  /// Whether a network fetch is currently in progress.
-  bool _fetching = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _resolve();
-  }
-
-  @override
-  void didUpdateWidget(AvatarWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.config != widget.config) {
-      _resolve();
-    }
-  }
-
-  /// Attempt local composition first; fall back to cached/network SVG.
-  void _resolve() {
-    // Reset state.
-    _composeFailed = false;
-    _fetching = false;
-
-    // 1. Try local composition (adventurer style).
-    try {
-      final svg = AvatarCompositor.compose(widget.config);
-      if (svg != null) {
-        setState(() {
-          _composedSvg = svg;
-        });
-        return;
-      }
-    } catch (e) {
-      debugPrint('Avatar compose error: $e');
-    }
-
-    // 2. Local composition returned null or threw — check memory cache.
-    _composeFailed = true;
-    final cacheKey = widget.config.svgUri.toString();
-    final cached = _svgCache[cacheKey];
-    if (cached != null) {
-      setState(() {
-        _composedSvg = cached;
-      });
-      return;
-    }
-
-    // 3. Not in cache — fetch from DiceBear API.
-    setState(() {
-      _composedSvg = null;
-    });
-    _fetchFromNetwork(cacheKey);
-  }
-
-  Future<void> _fetchFromNetwork(String cacheKey) async {
-    if (_fetching) return;
-    _fetching = true;
-
-    try {
-      final response = await http
-          .get(widget.config.svgUri)
-          .timeout(const Duration(seconds: 8));
-
-      if (!mounted) return;
-
-      if (response.statusCode == 200 && response.body.contains('<svg')) {
-        _svgCache[cacheKey] = response.body;
-        setState(() {
-          _composedSvg = response.body;
-        });
-      }
-    } catch (e) {
-      debugPrint('Avatar network fetch error: $e');
-    } finally {
-      _fetching = false;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -174,11 +89,34 @@ class AvatarFromUrl extends StatelessWidget {
     // If we have a config, compose offline.
     if (avatarConfig != null) {
       return AvatarWidget(config: avatarConfig!, size: size);
-  @override
-  State<AvatarFromUrl> createState() => _AvatarFromUrlState();
+    }
+
+    // Otherwise use stateful widget to load from URL.
+    return _AvatarFromUrlStateful(
+      avatarUrl: avatarUrl,
+      name: name,
+      size: size,
+    );
+  }
 }
 
-class _AvatarFromUrlState extends State<AvatarFromUrl> {
+/// Internal stateful widget for loading avatars from URLs.
+class _AvatarFromUrlStateful extends StatefulWidget {
+  const _AvatarFromUrlStateful({
+    required this.avatarUrl,
+    required this.name,
+    required this.size,
+  });
+
+  final String? avatarUrl;
+  final String name;
+  final double size;
+
+  @override
+  State<_AvatarFromUrlStateful> createState() => _AvatarFromUrlState();
+}
+
+class _AvatarFromUrlState extends State<_AvatarFromUrlStateful> {
   String? _svg;
 
   @override
@@ -188,7 +126,7 @@ class _AvatarFromUrlState extends State<AvatarFromUrl> {
   }
 
   @override
-  void didUpdateWidget(AvatarFromUrl oldWidget) {
+  void didUpdateWidget(_AvatarFromUrlStateful oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.avatarUrl != widget.avatarUrl) {
       _load();
@@ -227,21 +165,50 @@ class _AvatarFromUrlState extends State<AvatarFromUrl> {
     } catch (_) {
       // Silently fail and show fallback
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // If we have loaded SVG, show it.
+    if (_svg != null) {
+      return SizedBox(
+        width: widget.size,
+        height: widget.size,
+        child: ClipOval(
+          child: Container(
+            decoration: BoxDecoration(
+              color: FlitColors.backgroundMid,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: FlitColors.cardBorder,
+                width: widget.size * 0.02,
+              ),
+            ),
+            child: SvgPicture.string(
+              _svg!,
+              width: widget.size,
+              height: widget.size,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+      );
+    }
 
     // Fallback: show initial letter.
     final fallbackLetter =
-        name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final hash = name.hashCode;
+        widget.name.isNotEmpty ? widget.name[0].toUpperCase() : '?';
+    final hash = widget.name.hashCode;
     final hue = (hash % 360).abs().toDouble();
     final bgColor = HSLColor.fromAHSL(1.0, hue, 0.5, 0.35).toColor();
 
     return SizedBox(
-      width: size,
-      height: size,
+      width: widget.size,
+      height: widget.size,
       child: ClipOval(
         child: Container(
-          width: size,
-          height: size,
+          width: widget.size,
+          height: widget.size,
           decoration: BoxDecoration(
             color: bgColor,
             shape: BoxShape.circle,
@@ -251,7 +218,7 @@ class _AvatarFromUrlState extends State<AvatarFromUrl> {
               fallbackLetter,
               style: TextStyle(
                 color: FlitColors.textPrimary,
-                fontSize: size * 0.4,
+                fontSize: widget.size * 0.4,
                 fontWeight: FontWeight.w900,
               ),
             ),
