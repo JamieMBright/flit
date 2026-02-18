@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/leaderboard_entry.dart';
+import '../avatar/avatar_widget.dart';
 
 /// Leaderboard screen showing top scores.
 class LeaderboardScreen extends StatefulWidget {
@@ -22,6 +23,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       playerName: 'SpeedyPilot',
       time: const Duration(seconds: 12, milliseconds: 340),
       score: 9876,
+      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=SpeedyPilot',
       timestamp: DateTime.now(),
     ),
     LeaderboardEntry(
@@ -30,6 +32,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       playerName: 'GeoMaster',
       time: const Duration(seconds: 14, milliseconds: 120),
       score: 9588,
+      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=GeoMaster',
       timestamp: DateTime.now(),
     ),
     LeaderboardEntry(
@@ -38,6 +41,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       playerName: 'WorldFlyer',
       time: const Duration(seconds: 15, milliseconds: 890),
       score: 9411,
+      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=WorldFlyer',
       timestamp: DateTime.now(),
     ),
     LeaderboardEntry(
@@ -46,6 +50,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       playerName: 'Navigator99',
       time: const Duration(seconds: 18, milliseconds: 450),
       score: 9155,
+      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Navigator99',
       timestamp: DateTime.now(),
     ),
     LeaderboardEntry(
@@ -54,6 +59,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       playerName: 'CloudSurfer',
       time: const Duration(seconds: 21, milliseconds: 230),
       score: 8877,
+      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=CloudSurfer',
       timestamp: DateTime.now(),
     ),
   ];
@@ -173,7 +179,14 @@ class _LeaderboardRow extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
+          // Avatar
+          AvatarFromUrl(
+            avatarUrl: entry.avatarUrl,
+            name: entry.playerName,
+            size: 36,
+          ),
+          const SizedBox(width: 10),
           // Player info
           Expanded(
             child: Column(
