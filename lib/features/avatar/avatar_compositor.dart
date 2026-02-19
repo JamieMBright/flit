@@ -147,6 +147,21 @@ class AvatarCompositor {
     return '<g transform="$transform">$svg</g>';
   }
 
+  /// Darken a hex color string by a given factor (0.0 = black, 1.0 = no change).
+  static String _darkenHex(String hex, double factor) {
+    final clean = hex.replaceFirst('#', '');
+    if (clean.length != 6) return hex;
+    final r = int.tryParse(clean.substring(0, 2), radix: 16) ?? 128;
+    final g = int.tryParse(clean.substring(2, 4), radix: 16) ?? 128;
+    final b = int.tryParse(clean.substring(4, 6), radix: 16) ?? 128;
+    final dr = (r * factor).round().clamp(0, 255);
+    final dg = (g * factor).round().clamp(0, 255);
+    final db = (b * factor).round().clamp(0, 255);
+    return '#${dr.toRadixString(16).padLeft(2, '0')}'
+        '${dg.toRadixString(16).padLeft(2, '0')}'
+        '${db.toRadixString(16).padLeft(2, '0')}';
+  }
+
   /// Generate a deterministic hex color from hash + salt.
   static String _hashColor(int hash, int salt) {
     final h = ((hash + salt * 71) % 360).abs();
@@ -357,10 +372,13 @@ class AvatarCompositor {
 
     final head =
         _pick(loreleiHead, sh, 1).replaceAll('{{SKIN_COLOR}}', skinHex);
-    final freckles = _pick(loreleiFreckles, config.feature.index, 2);
-    final eyebrows = _pick(loreleiEyebrows, config.eyebrows.index, 3);
+    final freckles = _pick(loreleiFreckles, config.feature.index, 2)
+        .replaceAll('{{FRECKLES_COLOR}}', _darkenHex(skinHex, 0.85));
+    final eyebrows = _pick(loreleiEyebrows, config.eyebrows.index, 3)
+        .replaceAll('{{EYEBROWS_COLOR}}', hairHex);
     final eyes = _pick(loreleiEyes, config.eyes.index, 4);
-    final nose = _pick(loreleiNose, sh, 5);
+    final nose = _pick(loreleiNose, sh, 5)
+        .replaceAll('{{NOSE_COLOR}}', _darkenHex(skinHex, 0.9));
     final mouth = _pick(loreleiMouth, config.mouth.index, 6)
         .replaceAll('{{MOUTH_COLOR}}',
             _mouthColors[config.skinColor.index % _mouthColors.length]);
@@ -369,10 +387,12 @@ class AvatarCompositor {
       config.glasses.index,
       7,
     ).replaceAll('{{GLASSES_COLOR}}', '#4a4a4a');
-    final earrings = _pick(loreleiEarrings, config.earrings.index, 8);
+    final earrings = _pick(loreleiEarrings, config.earrings.index, 8)
+        .replaceAll('{{EARRINGS_COLOR}}', '#d4af37');
     final hair = _pick(loreleiHair, config.hair.index, 9)
         .replaceAll('{{HAIR_COLOR}}', hairHex);
-    final hairAccessories = _pick(loreleiHairAccessories, sh, 10);
+    final hairAccessories = _pick(loreleiHairAccessories, sh, 10)
+        .replaceAll('{{HAIRACCESSORIES_COLOR}}', _hashColor(sh, 55));
     final beard = _pick(loreleiBeard, sh, 11)
         .replaceAll('{{BEARD_COLOR}}', hairHex)
         .replaceAll('{{HAIR_COLOR}}', hairHex);
@@ -442,7 +462,8 @@ class AvatarCompositor {
         : _pick(micahGlasses, config.glasses.index, 10)
             .replaceAll('{{GLASSES_COLOR}}', '#4a4a4a');
     // Micah facialHair embeds inside base via {{FACIAL_HAIR}} placeholder.
-    final facialHairRaw = _pick(micahFacialHair, sh, 11);
+    final facialHairRaw = _pick(micahFacialHair, sh, 11)
+        .replaceAll('{{FACIAL_HAIR_COLOR}}', hairHex);
 
     final base = micahBase
         .replaceAll('{{BASE_COLOR}}', skinHex)
@@ -453,7 +474,7 @@ class AvatarCompositor {
       micahEyebrows,
       config.eyebrows.index,
       3,
-    ).replaceAll('{{EYEBROW_COLOR}}', hairHex);
+    ).replaceAll('{{EYEBROWS_COLOR}}', hairHex);
     final hair = _pick(micahHair, config.hair.index, 4)
         .replaceAll('{{HAIR_COLOR}}', hairHex);
     final eyes = _pick(micahEyes, config.eyes.index, 5)
@@ -654,17 +675,23 @@ class AvatarCompositor {
 
   static String? _composeOpenPeeps(AvatarConfig config) {
     final sh = _stableHash(config);
+    final skinHex = '#${config.skinColor.hex}';
+    final contrastHex = _darkenHex(skinHex, 0.8);
+    final clothingColor = _hashColor(sh, 77);
 
-    final head = _pick(openpeepsHead, config.hair.index, 1);
+    final head = _pick(openpeepsHead, config.hair.index, 1)
+        .replaceAll('{{SKIN_COLOR}}', skinHex)
+        .replaceAll('{{HEADCONTRAST_COLOR}}', contrastHex)
+        .replaceAll('{{CLOTHING_COLOR}}', clothingColor);
     final face = _pick(openpeepsFace, config.eyes.index, 2);
     final facialHair = _pick(openpeepsFacialHair, sh, 3);
     final accessories = _pick(openpeepsAccessories, config.glasses.index, 4);
     final mask = _pick(openpeepsMask, sh, 5);
 
     // Open Peeps body base (bust silhouette).
-    const body =
+    final body =
         '<path d="M325 580c-35 0-68 10-96 30-20 14-36 33-48 55l-2 4v35h346v-35'
-        'l-2-4c-12-22-28-41-48-55-28-20-61-30-96-30h-54Z" fill="#b6a18a"/>';
+        'l-2-4c-12-22-28-41-48-55-28-20-61-30-96-30h-54Z" fill="$skinHex"/>';
 
     final buf = StringBuffer()
       ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
