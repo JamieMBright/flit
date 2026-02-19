@@ -89,6 +89,14 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Add swap space
+        run: |
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          echo "Swap enabled: $(swapon --show)"
+
       - name: Verify shader assets
         run: test -f shaders/globe.frag && echo "globe.frag OK"
 
@@ -97,7 +105,7 @@ jobs:
           set -o pipefail
           for attempt in 1 2; do
             echo "Build web attempt ${attempt}/2"
-            if flutter build web --release --dart2js-optimization=O3 --base-href "/flit/" 2>&1 | tee flutter-build.log; then
+            if flutter build web --release --dart2js-optimization=O2 --base-href "/flit/" 2>&1 | tee flutter-build.log; then
               break
             fi
             if [ "$attempt" -eq 2 ]; then
