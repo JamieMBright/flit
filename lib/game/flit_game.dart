@@ -344,6 +344,18 @@ class FlitGame extends FlameGame
   /// Different scales for ascend (globe cruising) vs descend (map exploration).
   /// Ascend base speed is 36 units/s, descend base is 3.6 units/s (10% of high).
   double get _speedMultiplier {
+    if (isFlatMapMode) {
+      // Flat map regional mode: medium speed for exploring a bounded region.
+      // Slightly faster than descent mode since the map is more zoomed out.
+      switch (_flightSpeed) {
+        case FlightSpeed.slow:
+          return 0.4;
+        case FlightSpeed.medium:
+          return 0.8;
+        case FlightSpeed.fast:
+          return 1.5;
+      }
+    }
     if (_planeReady && !_plane.isHighAltitude) {
       // Descend mode: really slow for cruising / exploring the OSM map.
       // Effective speeds: slow ≈ 1.1, medium ≈ 2.2, fast ≈ 3.6 units/s.
@@ -683,8 +695,8 @@ class FlitGame extends FlameGame
         _plane.fuelBoostMultiplier = fuelBoostMultiplier;
       }
 
-      // Start at 0°, 0° facing north
-      _worldPosition = Vector2(0, 0);
+      // Start at region center for flat map modes, or (0°, 0°) for the globe.
+      _worldPosition = isFlatMapMode ? region.center : Vector2(0, 0);
       _heading = -pi / 2; // north
 
       // Start engine sound for equipped plane (fire-and-forget, safe if missing).
@@ -1067,6 +1079,56 @@ class FlitGame extends FlameGame
     while (_heading < -pi) {
       _heading += 2 * pi;
     }
+
+    // In flat-map regional modes, clamp position to region bounds with
+    // bounce-back: reflect heading when hitting a boundary edge.
+    if (isFlatMapMode) {
+      _clampToRegionBounds();
+    }
+  }
+
+  /// Clamp the plane to region bounds, reflecting heading on boundary contact.
+  void _clampToRegionBounds() {
+    final b = region.bounds; // [minLng, minLat, maxLng, maxLat]
+    const margin = 0.5; // small margin in degrees
+    final minLng = b[0] + margin;
+    final maxLng = b[2] - margin;
+    final minLat = b[1] + margin;
+    final maxLat = b[3] - margin;
+
+    var bounced = false;
+
+    if (_worldPosition.x < minLng) {
+      _worldPosition.x = minLng;
+      // Reflect the horizontal component of heading.
+      _heading = pi - _heading;
+      bounced = true;
+    } else if (_worldPosition.x > maxLng) {
+      _worldPosition.x = maxLng;
+      _heading = pi - _heading;
+      bounced = true;
+    }
+
+    if (_worldPosition.y < minLat) {
+      _worldPosition.y = minLat;
+      // Reflect the vertical component of heading.
+      _heading = -_heading;
+      bounced = true;
+    } else if (_worldPosition.y > maxLat) {
+      _worldPosition.y = maxLat;
+      _heading = -_heading;
+      bounced = true;
+    }
+
+    if (bounced) {
+      // Normalize heading to [-π, π] after reflection.
+      while (_heading > pi) {
+        _heading -= 2 * pi;
+      }
+      while (_heading < -pi) {
+        _heading += 2 * pi;
+      }
+    }
   }
 
   /// Update the chase camera heading and compute the offset camera position.
@@ -1345,7 +1407,14 @@ class FlitGame extends FlameGame
     // Convert screen tap to globe lat/lng.
     Vector2? latLng;
 
-    if (_globeRenderer != null) {
+    if (_flatMapRenderer != null) {
+      // Flat map mode: direct equirectangular inverse projection.
+      final screenPoint = Vector2(
+        info.eventPosition.widget.x,
+        info.eventPosition.widget.y,
+      );
+      latLng = _flatMapRenderer!.screenToWorld(screenPoint, size.x, size.y);
+    } else if (_globeRenderer != null) {
       // Shader renderer: ray-cast for an initial guess, then refine
       // iteratively so the waymarker dot appears exactly at the tap point.
       final screenPoint = Offset(
@@ -1467,10 +1536,12 @@ class FlitGame extends FlameGame
     }
 
     // Altitude toggle on key-down only (not hold).
+    // Disabled in flat map mode — regional modes have no altitude concept.
     if (event is RawKeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.space ||
-          event.logicalKey == LogicalKeyboardKey.arrowUp ||
-          event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      if (!isFlatMapMode &&
+          (event.logicalKey == LogicalKeyboardKey.space ||
+           event.logicalKey == LogicalKeyboardKey.arrowUp ||
+           event.logicalKey == LogicalKeyboardKey.arrowDown)) {
         _plane.toggleAltitude();
         AudioManager.instance.playSfx(SfxType.altitudeChange);
       }

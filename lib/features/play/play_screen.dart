@@ -1034,10 +1034,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               isHighAltitude: _isHighAltitude,
               elapsedTime: _elapsed,
               currentClue: _currentClue,
-              onAltitudeToggle: () {
-                _game.plane.toggleAltitude();
-                AudioManager.instance.playSfx(SfxType.altitudeChange);
-              },
+              onAltitudeToggle: _game.isFlatMapMode
+                  ? null
+                  : () {
+                      _game.plane.toggleAltitude();
+                      AudioManager.instance.playSfx(SfxType.altitudeChange);
+                    },
               onExit: _requestExit,
               onSettings: () => showSettingsSheet(context),
               currentSpeed: _game.flightSpeed,
