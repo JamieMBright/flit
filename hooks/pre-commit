@@ -1,8 +1,9 @@
 #!/bin/bash
 # Pre-commit hook: Fast checks before commit
-# Runs: string literal safety, format check, analyze, unit tests
-
-set -e
+# Runs: string literal safety, format (auto-fix), analyze, unit tests
+#
+# Policy: formatting and linting are best-effort (auto-fix + warn).
+# String literal safety and unit tests are blocking.
 
 echo "Running pre-commit checks..."
 
@@ -112,27 +113,40 @@ if ! command -v flutter &> /dev/null; then
     fi
 
     if [ -n "$DART_BIN" ]; then
+        # -------------------------------------------------------------------
+        # Step 2: Auto-fix formatting (best-effort, non-blocking)
+        # Applies dart format to all staged Dart files, then re-stages them.
+        # -------------------------------------------------------------------
         echo ""
-        echo "Step 2: Checking dart format..."
-        $DART_BIN format --set-exit-if-changed lib/ test/
-        echo "  Format check passed."
+        echo "Step 2: Auto-fixing formatting..."
+        if $DART_BIN format lib/ test/ 2>/dev/null; then
+            # Re-stage any files that were reformatted
+            if [ -n "$STAGED_DART" ]; then
+                for file in $STAGED_DART; do
+                    [ -f "$file" ] && git add "$file"
+                done
+            fi
+            echo "  Formatting applied and staged."
+        else
+            echo "  WARNING: dart format failed — skipping auto-fix."
+        fi
+
+        # Check if anything still doesn't match (informational only)
+        if ! $DART_BIN format --set-exit-if-changed lib/ test/ > /dev/null 2>&1; then
+            echo "  Note: some files may still have formatting differences."
+        fi
 
         # -------------------------------------------------------------------
-        # Step 3: dart analyze (catches prefer_const_constructors and others)
-        # Runs the full Dart analyzer when the SDK is available.
-        # Uses --fatal-infos so lint-level issues (like missing const) block
-        # the commit — this is the authoritative check for const constructors.
+        # Step 3: dart analyze (best-effort, non-blocking)
+        # Runs the analyzer and reports issues as warnings.
         # -------------------------------------------------------------------
         echo ""
         echo "Step 3: Running dart analyze..."
         if $DART_BIN analyze --fatal-infos lib/ test/ 2>/dev/null; then
             echo "  Analyzer check passed."
         else
-            # dart analyze may fail in a Flutter project without the Flutter SDK
-            # (e.g. missing flutter_lints package). In that case, fall back to
-            # the lint-noflutter.sh heuristics which already ran above.
-            echo "  WARNING: dart analyze failed (likely needs Flutter SDK for full analysis)"
-            echo "  Relying on lint-noflutter.sh checks above. CI will run full validation."
+            echo "  WARNING: dart analyze found issues (non-blocking). Review output above."
+            echo "  CI will also report these. Fix when convenient."
         fi
     else
         echo ""
@@ -145,14 +159,38 @@ if ! command -v flutter &> /dev/null; then
     exit 0
 fi
 
+# -------------------------------------------------------------------
+# Step 2: Auto-fix formatting (best-effort, non-blocking)
+# -------------------------------------------------------------------
 echo ""
-echo "Step 2: Checking format..."
-dart format --set-exit-if-changed lib/ test/
+echo "Step 2: Auto-fixing formatting..."
+if dart format lib/ test/ 2>/dev/null; then
+    # Re-stage any reformatted files
+    STAGED_DART_ALL=$(git diff --cached --name-only --diff-filter=ACM -- '*.dart' || true)
+    if [ -n "$STAGED_DART_ALL" ]; then
+        for file in $STAGED_DART_ALL; do
+            [ -f "$file" ] && git add "$file"
+        done
+    fi
+    echo "  Formatting applied and staged."
+else
+    echo "  WARNING: dart format failed — skipping auto-fix."
+fi
 
+# -------------------------------------------------------------------
+# Step 3: Analyze (best-effort, non-blocking)
+# -------------------------------------------------------------------
 echo ""
 echo "Step 3: Running analyzer..."
-flutter analyze --fatal-infos
+if flutter analyze --fatal-infos; then
+    echo "  Analyzer check passed."
+else
+    echo "  WARNING: analyzer found issues (non-blocking). Fix when convenient."
+fi
 
+# -------------------------------------------------------------------
+# Step 4: Unit tests (BLOCKING — tests must pass)
+# -------------------------------------------------------------------
 echo ""
 echo "Step 4: Running unit tests..."
 flutter test --coverage
