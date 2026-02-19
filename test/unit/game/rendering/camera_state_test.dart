@@ -46,12 +46,14 @@ void main() {
     });
 
     test('world preset has highest altitude', () {
-      final worldAlt =
-          RegionCameraPresets.getPreset(GameRegion.world).altitudeDistance;
+      final worldAlt = RegionCameraPresets.getPreset(
+        GameRegion.world,
+      ).altitudeDistance;
       for (final region in GameRegion.values) {
         if (region == GameRegion.world) continue;
-        final regionAlt =
-            RegionCameraPresets.getPreset(region).altitudeDistance;
+        final regionAlt = RegionCameraPresets.getPreset(
+          region,
+        ).altitudeDistance;
         expect(
           worldAlt,
           greaterThan(regionAlt),
@@ -80,14 +82,18 @@ void main() {
 
     test('altitude distances are ordered by region scope', () {
       // World > US > Caribbean > UK > Ireland
-      final world =
-          RegionCameraPresets.getPreset(GameRegion.world).altitudeDistance;
-      final us =
-          RegionCameraPresets.getPreset(GameRegion.usStates).altitudeDistance;
-      final uk =
-          RegionCameraPresets.getPreset(GameRegion.ukCounties).altitudeDistance;
-      final ireland =
-          RegionCameraPresets.getPreset(GameRegion.ireland).altitudeDistance;
+      final world = RegionCameraPresets.getPreset(
+        GameRegion.world,
+      ).altitudeDistance;
+      final us = RegionCameraPresets.getPreset(
+        GameRegion.usStates,
+      ).altitudeDistance;
+      final uk = RegionCameraPresets.getPreset(
+        GameRegion.ukCounties,
+      ).altitudeDistance;
+      final ireland = RegionCameraPresets.getPreset(
+        GameRegion.ireland,
+      ).altitudeDistance;
 
       expect(world, greaterThan(us));
       expect(us, greaterThan(uk));

@@ -204,7 +204,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         if (mounted && !_gameReady && _error == null) {
           _log.error('screen', 'Game ready timeout (20s)');
           setState(() {
-            _error = 'Game engine failed to start.\n\nPlease go back and try '
+            _error =
+                'Game engine failed to start.\n\nPlease go back and try '
                 'again. If the problem persists, restart the app.';
           });
         }
@@ -481,7 +482,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       WebErrorBridge.show('_startNewGame crash:\n$e\n\n$st');
       if (mounted) {
         setState(() {
-          _error = 'Failed to start game session.\n\n'
+          _error =
+              'Failed to start game session.\n\n'
               'Error: $e\n\n'
               'Stack trace:\n${st.toString().split('\n').take(8).join('\n')}';
         });
@@ -496,7 +498,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     // target country's borders. The border check allows high-altitude
     // fly-over to register — the player shouldn't need to descend.
     final nearTarget = _game.isNearTarget(threshold: 25);
-    final inTargetCountry = _game.currentCountryName != null &&
+    final inTargetCountry =
+        _game.currentCountryName != null &&
         _game.currentCountryName == _session!.targetName;
 
     if (nearTarget || inTargetCountry) {
@@ -640,7 +643,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     );
 
     // Record stats via Riverpod account provider.
-    ref.read(accountProvider.notifier).recordGameCompletion(
+    ref
+        .read(accountProvider.notifier)
+        .recordGameCompletion(
           elapsed: _cumulativeTime,
           score: _totalScore,
           roundsCompleted: _currentRound,
@@ -698,9 +703,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       context: context,
       builder: (dialogContext) => Dialog(
         backgroundColor: FlitColors.cardBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -723,10 +726,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               const SizedBox(height: 8),
               const Text(
                 'Your current progress will be lost.',
-                style: TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -778,9 +778,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       barrierDismissible: false,
       builder: (dialogContext) => Dialog(
         backgroundColor: FlitColors.cardBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -1122,42 +1120,42 @@ class _TurnButtonState extends State<_TurnButton> {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTapDown: (_) {
-          setState(() => _pressed = true);
-          widget.onPressStart();
-        },
-        onTapUp: (_) {
-          setState(() => _pressed = false);
-          widget.onPressEnd();
-        },
-        onTapCancel: () {
-          setState(() => _pressed = false);
-          widget.onPressEnd();
-        },
-        child: AnimatedOpacity(
-          opacity: _pressed ? 0.9 : 0.45,
-          duration: const Duration(milliseconds: 100),
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: FlitColors.cardBackground.withOpacity(0.7),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: _pressed
-                    ? FlitColors.accent.withOpacity(0.8)
-                    : FlitColors.cardBorder.withOpacity(0.5),
-                width: 2,
-              ),
-            ),
-            child: Icon(
-              widget.icon,
-              color: _pressed ? FlitColors.accent : FlitColors.textSecondary,
-              size: 28,
-            ),
+    onTapDown: (_) {
+      setState(() => _pressed = true);
+      widget.onPressStart();
+    },
+    onTapUp: (_) {
+      setState(() => _pressed = false);
+      widget.onPressEnd();
+    },
+    onTapCancel: () {
+      setState(() => _pressed = false);
+      widget.onPressEnd();
+    },
+    child: AnimatedOpacity(
+      opacity: _pressed ? 0.9 : 0.45,
+      duration: const Duration(milliseconds: 100),
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground.withOpacity(0.7),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: _pressed
+                ? FlitColors.accent.withOpacity(0.8)
+                : FlitColors.cardBorder.withOpacity(0.5),
+            width: 2,
           ),
         ),
-      );
+        child: Icon(
+          widget.icon,
+          color: _pressed ? FlitColors.accent : FlitColors.textSecondary,
+          size: 28,
+        ),
+      ),
+    ),
+  );
 }
 
 /// Per-round result data for the summary screen.

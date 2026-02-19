@@ -50,27 +50,27 @@ class SocialTitle {
   final CosmeticRarity rarity;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'category': category.name,
-        'threshold': threshold,
-        'description': description,
-        'rarity': rarity.name,
-      };
+    'id': id,
+    'name': name,
+    'category': category.name,
+    'threshold': threshold,
+    'description': description,
+    'rarity': rarity.name,
+  };
 
   factory SocialTitle.fromJson(Map<String, dynamic> json) => SocialTitle(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        category: TitleCategory.values.firstWhere(
-          (c) => c.name == json['category'],
-        ),
-        threshold: json['threshold'] as int,
-        description: json['description'] as String,
-        rarity: CosmeticRarity.values.firstWhere(
-          (r) => r.name == json['rarity'],
-          orElse: () => CosmeticRarity.common,
-        ),
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    category: TitleCategory.values.firstWhere(
+      (c) => c.name == json['category'],
+    ),
+    threshold: json['threshold'] as int,
+    description: json['description'] as String,
+    rarity: CosmeticRarity.values.firstWhere(
+      (r) => r.name == json['rarity'],
+      orElse: () => CosmeticRarity.common,
+    ),
+  );
 }
 
 /// Lightweight progress snapshot used by [PlayerTitles.earnedTitles] to
@@ -116,15 +116,15 @@ class PlayerClueProgress {
   final int bestStreak;
 
   Map<String, dynamic> toJson() => {
-        'flags_correct': flagsCorrect,
-        'capitals_correct': capitalsCorrect,
-        'outlines_correct': outlinesCorrect,
-        'borders_correct': bordersCorrect,
-        'stats_correct': statsCorrect,
-        'total_games_played': totalGamesPlayed,
-        'best_time_seconds': bestTimeSeconds,
-        'best_streak': bestStreak,
-      };
+    'flags_correct': flagsCorrect,
+    'capitals_correct': capitalsCorrect,
+    'outlines_correct': outlinesCorrect,
+    'borders_correct': bordersCorrect,
+    'stats_correct': statsCorrect,
+    'total_games_played': totalGamesPlayed,
+    'best_time_seconds': bestTimeSeconds,
+    'best_streak': bestStreak,
+  };
 
   factory PlayerClueProgress.fromJson(Map<String, dynamic> json) =>
       PlayerClueProgress(
@@ -613,15 +613,15 @@ abstract class SocialTitleCatalog {
 
   /// Every title available in the game, across all categories.
   static List<SocialTitle> get all => [
-        ..._flag,
-        ..._capital,
-        ..._outline,
-        ..._borders,
-        ..._stats,
-        ..._general,
-        ..._speed,
-        ..._streak,
-      ];
+    ..._flag,
+    ..._capital,
+    ..._outline,
+    ..._borders,
+    ..._stats,
+    ..._general,
+    ..._speed,
+    ..._streak,
+  ];
 
   /// All titles belonging to [category].
   static List<SocialTitle> forCategory(TitleCategory category) =>

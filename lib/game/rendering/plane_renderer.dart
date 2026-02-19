@@ -135,10 +135,12 @@ class PlaneRenderer {
     final detail = _detail(colorScheme, 0xFF8B4513);
 
     final shade = -bankSin;
-    final leftWingColor =
-        shade < 0 ? _lighten(detail, -shade) : _darken(detail, shade * 0.4);
-    final rightWingColor =
-        shade > 0 ? _lighten(detail, shade) : _darken(detail, -shade * 0.4);
+    final leftWingColor = shade < 0
+        ? _lighten(detail, -shade)
+        : _darken(detail, shade * 0.4);
+    final rightWingColor = shade > 0
+        ? _lighten(detail, shade)
+        : _darken(detail, -shade * 0.4);
     final bodyPaint = Paint()..color = primary;
     final accentPaint = Paint()..color = secondary;
     final highlightPaint = Paint()
@@ -489,10 +491,12 @@ class PlaneRenderer {
     final wingDip = -bankSin * 3.0;
 
     // Swept delta wings
-    final leftWingColor =
-        shade < 0 ? detail : Color.lerp(detail, Colors.black, 0.3)!;
-    final rightWingColor =
-        shade > 0 ? detail : Color.lerp(detail, Colors.black, 0.3)!;
+    final leftWingColor = shade < 0
+        ? detail
+        : Color.lerp(detail, Colors.black, 0.3)!;
+    final rightWingColor = shade > 0
+        ? detail
+        : Color.lerp(detail, Colors.black, 0.3)!;
 
     final leftSpan =
         dynamicWingSpan * 0.8 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
@@ -673,8 +677,9 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 3.0;
 
-    final wingColor =
-        shade < 0 ? detail : Color.lerp(detail, Colors.black, 0.2)!;
+    final wingColor = shade < 0
+        ? detail
+        : Color.lerp(detail, Colors.black, 0.2)!;
 
     // --- Propeller ---
     final propDiscPaint = Paint()
@@ -815,10 +820,12 @@ class PlaneRenderer {
     final wingDip = -bankSin * 2.5;
 
     // Delta wing
-    final leftWingColor =
-        shade < 0 ? primary : Color.lerp(primary, Colors.grey, 0.2)!;
-    final rightWingColor =
-        shade > 0 ? primary : Color.lerp(primary, Colors.grey, 0.2)!;
+    final leftWingColor = shade < 0
+        ? primary
+        : Color.lerp(primary, Colors.grey, 0.2)!;
+    final rightWingColor = shade > 0
+        ? primary
+        : Color.lerp(primary, Colors.grey, 0.2)!;
 
     final leftSpan =
         dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
@@ -987,10 +994,12 @@ class PlaneRenderer {
     final wingDip = -bankSin * 2.0;
 
     // Wide swept wings
-    final leftWingColor =
-        shade < 0 ? detail : Color.lerp(detail, Colors.grey, 0.3)!;
-    final rightWingColor =
-        shade > 0 ? detail : Color.lerp(detail, Colors.grey, 0.3)!;
+    final leftWingColor = shade < 0
+        ? detail
+        : Color.lerp(detail, Colors.grey, 0.3)!;
+    final rightWingColor = shade > 0
+        ? detail
+        : Color.lerp(detail, Colors.grey, 0.3)!;
 
     final leftSpan =
         dynamicWingSpan * 1.1 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
@@ -1003,12 +1012,7 @@ class PlaneRenderer {
         6 + wingDip,
       )
       ..lineTo(-leftSpan + 5, 8 + wingDip)
-      ..quadraticBezierTo(
-        -leftSpan * 0.4,
-        5 + wingDip * 0.5,
-        -5 + bodyShift,
-        2,
-      )
+      ..quadraticBezierTo(-leftSpan * 0.4, 5 + wingDip * 0.5, -5 + bodyShift, 2)
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
@@ -1023,12 +1027,7 @@ class PlaneRenderer {
         6 - wingDip,
       )
       ..lineTo(rightSpan - 5, 8 - wingDip)
-      ..quadraticBezierTo(
-        rightSpan * 0.4,
-        5 - wingDip * 0.5,
-        5 + bodyShift,
-        2,
-      )
+      ..quadraticBezierTo(rightSpan * 0.4, 5 - wingDip * 0.5, 5 + bodyShift, 2)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
@@ -1139,10 +1138,12 @@ class PlaneRenderer {
     final wingDip = -bankSin * 3.0;
 
     // Swept eagle wings
-    final leftWingColor =
-        shade < 0 ? secondary : Color.lerp(secondary, Colors.black, 0.3)!;
-    final rightWingColor =
-        shade > 0 ? secondary : Color.lerp(secondary, Colors.black, 0.3)!;
+    final leftWingColor = shade < 0
+        ? secondary
+        : Color.lerp(secondary, Colors.black, 0.3)!;
+    final rightWingColor = shade > 0
+        ? secondary
+        : Color.lerp(secondary, Colors.black, 0.3)!;
 
     final leftSpan =
         dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;

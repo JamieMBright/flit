@@ -83,32 +83,31 @@ class LiveGroupPlayer {
     int? currentRound,
     Duration? lastAnswerTime,
     bool? isFinished,
-  }) =>
-      LiveGroupPlayer(
-        id: id ?? this.id,
-        username: username ?? this.username,
-        isHost: isHost ?? this.isHost,
-        isSubscriber: isSubscriber ?? this.isSubscriber,
-        score: score ?? this.score,
-        roundsWon: roundsWon ?? this.roundsWon,
-        currentRound: currentRound ?? this.currentRound,
-        lastAnswerTime: lastAnswerTime ?? this.lastAnswerTime,
-        isFinished: isFinished ?? this.isFinished,
-      );
+  }) => LiveGroupPlayer(
+    id: id ?? this.id,
+    username: username ?? this.username,
+    isHost: isHost ?? this.isHost,
+    isSubscriber: isSubscriber ?? this.isSubscriber,
+    score: score ?? this.score,
+    roundsWon: roundsWon ?? this.roundsWon,
+    currentRound: currentRound ?? this.currentRound,
+    lastAnswerTime: lastAnswerTime ?? this.lastAnswerTime,
+    isFinished: isFinished ?? this.isFinished,
+  );
 
   // ── Serialisation ────────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'username': username,
-        'is_host': isHost,
-        'is_subscriber': isSubscriber,
-        'score': score,
-        'rounds_won': roundsWon,
-        'current_round': currentRound,
-        'last_answer_time_ms': lastAnswerTime?.inMilliseconds,
-        'is_finished': isFinished,
-      };
+    'id': id,
+    'username': username,
+    'is_host': isHost,
+    'is_subscriber': isSubscriber,
+    'score': score,
+    'rounds_won': roundsWon,
+    'current_round': currentRound,
+    'last_answer_time_ms': lastAnswerTime?.inMilliseconds,
+    'is_finished': isFinished,
+  };
 
   factory LiveGroupPlayer.fromJson(Map<String, dynamic> json) =>
       LiveGroupPlayer(
@@ -149,12 +148,12 @@ class LiveGroupAnswer {
   // ── Serialisation ────────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-        'player_id': playerId,
-        'answer': answer,
-        'is_correct': isCorrect,
-        'time_taken_ms': timeTaken.inMilliseconds,
-        'points_earned': pointsEarned,
-      };
+    'player_id': playerId,
+    'answer': answer,
+    'is_correct': isCorrect,
+    'time_taken_ms': timeTaken.inMilliseconds,
+    'points_earned': pointsEarned,
+  };
 
   factory LiveGroupAnswer.fromJson(Map<String, dynamic> json) =>
       LiveGroupAnswer(
@@ -207,28 +206,29 @@ class LiveGroupRound {
   // ── Serialisation ────────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-        'round_number': roundNumber,
-        'country_answer': countryAnswer,
-        'answers': answers.map((key, value) => MapEntry(key, value.toJson())),
-        'first_correct_player_id': firstCorrectPlayerId,
-        'fastest_time_ms': fastestTime?.inMilliseconds,
-      };
+    'round_number': roundNumber,
+    'country_answer': countryAnswer,
+    'answers': answers.map((key, value) => MapEntry(key, value.toJson())),
+    'first_correct_player_id': firstCorrectPlayerId,
+    'fastest_time_ms': fastestTime?.inMilliseconds,
+  };
 
   factory LiveGroupRound.fromJson(Map<String, dynamic> json) => LiveGroupRound(
-        roundNumber: json['round_number'] as int,
-        countryAnswer: json['country_answer'] as String,
-        answers: (json['answers'] as Map<String, dynamic>?)?.map(
-              (key, value) => MapEntry(
-                key,
-                LiveGroupAnswer.fromJson(value as Map<String, dynamic>),
-              ),
-            ) ??
-            {},
-        firstCorrectPlayerId: json['first_correct_player_id'] as String?,
-        fastestTime: json['fastest_time_ms'] != null
-            ? Duration(milliseconds: json['fastest_time_ms'] as int)
-            : null,
-      );
+    roundNumber: json['round_number'] as int,
+    countryAnswer: json['country_answer'] as String,
+    answers:
+        (json['answers'] as Map<String, dynamic>?)?.map(
+          (key, value) => MapEntry(
+            key,
+            LiveGroupAnswer.fromJson(value as Map<String, dynamic>),
+          ),
+        ) ??
+        {},
+    firstCorrectPlayerId: json['first_correct_player_id'] as String?,
+    fastestTime: json['fastest_time_ms'] != null
+        ? Duration(milliseconds: json['fastest_time_ms'] as int)
+        : null,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -263,14 +263,14 @@ class LiveLeaderboardEntry {
   // ── Serialisation ────────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-        'player_id': playerId,
-        'username': username,
-        'total_score': totalScore,
-        'rounds_completed': roundsCompleted,
-        'rounds_won': roundsWon,
-        'total_time_ms': totalTime.inMilliseconds,
-        'is_current_player': isCurrentPlayer,
-      };
+    'player_id': playerId,
+    'username': username,
+    'total_score': totalScore,
+    'rounds_completed': roundsCompleted,
+    'rounds_won': roundsWon,
+    'total_time_ms': totalTime.inMilliseconds,
+    'is_current_player': isCurrentPlayer,
+  };
 
   factory LiveLeaderboardEntry.fromJson(Map<String, dynamic> json) =>
       LiveLeaderboardEntry(
@@ -378,24 +378,24 @@ class LiveGroupSession {
   ///
   /// Pass [currentPlayerId] to flag the local player's entry.
   List<LiveLeaderboardEntry> leaderboard({String? currentPlayerId}) {
-    final entries = players.map((p) {
-      return LiveLeaderboardEntry(
-        playerId: p.id,
-        username: p.username,
-        totalScore: p.score,
-        roundsCompleted: p.currentRound,
-        roundsWon: p.roundsWon,
-        totalTime: p.lastAnswerTime ?? Duration.zero,
-        isCurrentPlayer: p.id == currentPlayerId,
-      );
-    }).toList()
-      ..sort((a, b) {
-        // Primary: higher score first.
-        final scoreCmp = b.totalScore.compareTo(a.totalScore);
-        if (scoreCmp != 0) return scoreCmp;
-        // Tiebreaker: faster total time first.
-        return a.totalTime.compareTo(b.totalTime);
-      });
+    final entries =
+        players.map((p) {
+          return LiveLeaderboardEntry(
+            playerId: p.id,
+            username: p.username,
+            totalScore: p.score,
+            roundsCompleted: p.currentRound,
+            roundsWon: p.roundsWon,
+            totalTime: p.lastAnswerTime ?? Duration.zero,
+            isCurrentPlayer: p.id == currentPlayerId,
+          );
+        }).toList()..sort((a, b) {
+          // Primary: higher score first.
+          final scoreCmp = b.totalScore.compareTo(a.totalScore);
+          if (scoreCmp != 0) return scoreCmp;
+          // Tiebreaker: faster total time first.
+          return a.totalTime.compareTo(b.totalTime);
+        });
 
     return entries;
   }
@@ -419,25 +419,24 @@ class LiveGroupSession {
     DateTime? completedAt,
     Duration? timeLimit,
     String? inviteCode,
-  }) =>
-      LiveGroupSession(
-        id: id ?? this.id,
-        hostId: hostId ?? this.hostId,
-        hostUsername: hostUsername ?? this.hostUsername,
-        seed: seed ?? this.seed,
-        status: status ?? this.status,
-        roundMode: roundMode ?? this.roundMode,
-        totalRounds: totalRounds ?? this.totalRounds,
-        currentRound: currentRound ?? this.currentRound,
-        enabledClueTypes: enabledClueTypes ?? this.enabledClueTypes,
-        players: players ?? this.players,
-        rounds: rounds ?? this.rounds,
-        createdAt: createdAt ?? this.createdAt,
-        startedAt: startedAt ?? this.startedAt,
-        completedAt: completedAt ?? this.completedAt,
-        timeLimit: timeLimit ?? this.timeLimit,
-        inviteCode: inviteCode ?? this.inviteCode,
-      );
+  }) => LiveGroupSession(
+    id: id ?? this.id,
+    hostId: hostId ?? this.hostId,
+    hostUsername: hostUsername ?? this.hostUsername,
+    seed: seed ?? this.seed,
+    status: status ?? this.status,
+    roundMode: roundMode ?? this.roundMode,
+    totalRounds: totalRounds ?? this.totalRounds,
+    currentRound: currentRound ?? this.currentRound,
+    enabledClueTypes: enabledClueTypes ?? this.enabledClueTypes,
+    players: players ?? this.players,
+    rounds: rounds ?? this.rounds,
+    createdAt: createdAt ?? this.createdAt,
+    startedAt: startedAt ?? this.startedAt,
+    completedAt: completedAt ?? this.completedAt,
+    timeLimit: timeLimit ?? this.timeLimit,
+    inviteCode: inviteCode ?? this.inviteCode,
+  );
 
   // ── Factory constructors ─────────────────────────────────────────────
 
@@ -447,7 +446,8 @@ class LiveGroupSession {
     required String hostUsername,
   }) {
     final now = DateTime.now().toUtc();
-    final seed = now.year * 100000000 +
+    final seed =
+        now.year * 100000000 +
         now.month * 1000000 +
         now.day * 10000 +
         now.hour * 100 +
@@ -498,65 +498,65 @@ class LiveGroupSession {
   // ── Serialisation ────────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'host_id': hostId,
-        'host_username': hostUsername,
-        'seed': seed,
-        'status': status.name,
-        'round_mode': roundMode.name,
-        'total_rounds': totalRounds,
-        'current_round': currentRound,
-        'enabled_clue_types': enabledClueTypes.toList(),
-        'players': players.map((p) => p.toJson()).toList(),
-        'rounds': rounds.map((r) => r.toJson()).toList(),
-        'created_at': createdAt.toIso8601String(),
-        'started_at': startedAt?.toIso8601String(),
-        'completed_at': completedAt?.toIso8601String(),
-        'time_limit_ms': timeLimit?.inMilliseconds,
-        'invite_code': inviteCode,
-      };
+    'id': id,
+    'host_id': hostId,
+    'host_username': hostUsername,
+    'seed': seed,
+    'status': status.name,
+    'round_mode': roundMode.name,
+    'total_rounds': totalRounds,
+    'current_round': currentRound,
+    'enabled_clue_types': enabledClueTypes.toList(),
+    'players': players.map((p) => p.toJson()).toList(),
+    'rounds': rounds.map((r) => r.toJson()).toList(),
+    'created_at': createdAt.toIso8601String(),
+    'started_at': startedAt?.toIso8601String(),
+    'completed_at': completedAt?.toIso8601String(),
+    'time_limit_ms': timeLimit?.inMilliseconds,
+    'invite_code': inviteCode,
+  };
 
   factory LiveGroupSession.fromJson(
     Map<String, dynamic> json,
-  ) =>
-      LiveGroupSession(
-        id: json['id'] as String,
-        hostId: json['host_id'] as String,
-        hostUsername: json['host_username'] as String,
-        seed: json['seed'] as int,
-        status:
-            LiveGroupStatus.values.firstWhere((s) => s.name == json['status']),
-        roundMode: LiveRoundMode.values.firstWhere(
-          (m) => m.name == json['round_mode'],
-          orElse: () => LiveRoundMode.standard,
-        ),
-        totalRounds: json['total_rounds'] as int? ?? 10,
-        currentRound: json['current_round'] as int? ?? 0,
-        enabledClueTypes: (json['enabled_clue_types'] as List?)
-                ?.map((e) => e as String)
-                .toSet() ??
-            const {'flag', 'outline', 'borders', 'capital', 'stats'},
-        players: (json['players'] as List?)
-                ?.map(
-                    (p) => LiveGroupPlayer.fromJson(p as Map<String, dynamic>))
-                .toList() ??
-            const [],
-        rounds: (json['rounds'] as List?)
-                ?.map((r) => LiveGroupRound.fromJson(r as Map<String, dynamic>))
-                .toList() ??
-            const [],
-        createdAt: DateTime.parse(json['created_at'] as String),
-        startedAt: json['started_at'] != null
-            ? DateTime.parse(json['started_at'] as String)
-            : null,
-        completedAt: json['completed_at'] != null
-            ? DateTime.parse(json['completed_at'] as String)
-            : null,
-        timeLimit: json['time_limit_ms'] != null
-            ? Duration(milliseconds: json['time_limit_ms'] as int)
-            : null,
-        inviteCode: json['invite_code'] as String?,
-      );
+  ) => LiveGroupSession(
+    id: json['id'] as String,
+    hostId: json['host_id'] as String,
+    hostUsername: json['host_username'] as String,
+    seed: json['seed'] as int,
+    status: LiveGroupStatus.values.firstWhere((s) => s.name == json['status']),
+    roundMode: LiveRoundMode.values.firstWhere(
+      (m) => m.name == json['round_mode'],
+      orElse: () => LiveRoundMode.standard,
+    ),
+    totalRounds: json['total_rounds'] as int? ?? 10,
+    currentRound: json['current_round'] as int? ?? 0,
+    enabledClueTypes:
+        (json['enabled_clue_types'] as List?)
+            ?.map((e) => e as String)
+            .toSet() ??
+        const {'flag', 'outline', 'borders', 'capital', 'stats'},
+    players:
+        (json['players'] as List?)
+            ?.map((p) => LiveGroupPlayer.fromJson(p as Map<String, dynamic>))
+            .toList() ??
+        const [],
+    rounds:
+        (json['rounds'] as List?)
+            ?.map((r) => LiveGroupRound.fromJson(r as Map<String, dynamic>))
+            .toList() ??
+        const [],
+    createdAt: DateTime.parse(json['created_at'] as String),
+    startedAt: json['started_at'] != null
+        ? DateTime.parse(json['started_at'] as String)
+        : null,
+    completedAt: json['completed_at'] != null
+        ? DateTime.parse(json['completed_at'] as String)
+        : null,
+    timeLimit: json['time_limit_ms'] != null
+        ? Duration(milliseconds: json['time_limit_ms'] as int)
+        : null,
+    inviteCode: json['invite_code'] as String?,
+  );
 
   // ── Placeholder data for UI development ──────────────────────────────
 

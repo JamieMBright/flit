@@ -164,11 +164,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     canvas.drawPath(tail, wingPaint);
 
     // Head.
-    canvas.drawCircle(
-      Offset(0, -size * 0.3),
-      size * 0.18,
-      bodyPaint,
-    );
+    canvas.drawCircle(Offset(0, -size * 0.3), size * 0.18, bodyPaint);
 
     // Eye.
     canvas.drawCircle(
