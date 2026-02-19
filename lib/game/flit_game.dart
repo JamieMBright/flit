@@ -1540,8 +1540,8 @@ class FlitGame extends FlameGame
     if (event is RawKeyDownEvent) {
       if (!isFlatMapMode &&
           (event.logicalKey == LogicalKeyboardKey.space ||
-           event.logicalKey == LogicalKeyboardKey.arrowUp ||
-           event.logicalKey == LogicalKeyboardKey.arrowDown)) {
+              event.logicalKey == LogicalKeyboardKey.arrowUp ||
+              event.logicalKey == LogicalKeyboardKey.arrowDown)) {
         _plane.toggleAltitude();
         AudioManager.instance.playSfx(SfxType.altitudeChange);
       }
