@@ -453,10 +453,10 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
     final highlightPaint = Paint()
       ..color = FlitColors.accent.withOpacity(
-        (borderOpacity * 0.9).clamp(0.3, 0.9),
+        (borderOpacity * 1.0).clamp(0.4, 1.0),
       )
       ..style = PaintingStyle.stroke
-      ..strokeWidth = continuousAlt >= 0.6 ? 1.5 : 2.5
+      ..strokeWidth = continuousAlt >= 0.6 ? 2.5 : 3.5
       ..strokeJoin = StrokeJoin.round;
 
     // Point budget per polygon (web is tighter)

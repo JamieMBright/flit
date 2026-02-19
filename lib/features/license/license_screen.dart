@@ -455,6 +455,20 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
             Icons.casino,
           ),
         ),
+        const SizedBox(height: 4),
+        // Preferred clue type (not a stat bar — just an info row)
+        _CompactStatBar(
+          label: _license.clueBoostLabel,
+          icon: Icons.lightbulb_outline,
+          value: _license.clueBoost,
+          shimmer: _shimmerController,
+          onTap: () => _showEffectPopup(
+            'Preferred Clue Type',
+            'You have a ${_license.clueBoost}% bonus chance of receiving ${_license.preferredClueType} clues. '
+                'This stacks with your Clue Chance stat.',
+            Icons.lightbulb_outline,
+          ),
+        ),
 
         const Spacer(flex: 1),
 
@@ -502,22 +516,22 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
               ),
             ),
             const SizedBox(height: 16),
-            _rarityTierRow('Bronze', '4-12 total', _bronzeColor),
+            _rarityTierRow('Bronze', '4-25 total', _bronzeColor),
             const SizedBox(height: 6),
-            _rarityTierRow('Silver', '13-22 total', _silverColor),
+            _rarityTierRow('Silver', '26-50 total', _silverColor),
             const SizedBox(height: 6),
-            _rarityTierRow('Gold', '23-32 total', _goldColor),
+            _rarityTierRow('Gold', '51-75 total', _goldColor),
             const SizedBox(height: 6),
-            _rarityTierRow('Diamond', '33-38 total', _diamondColor),
+            _rarityTierRow('Diamond', '76-90 total', _diamondColor),
             const SizedBox(height: 6),
             _rarityTierRow(
               'Perfect',
-              '39-40 total',
+              '91-100 total',
               const Color(0xFFFF0000),
             ),
             const SizedBox(height: 16),
             const Text(
-              'Each stat rolls from 1-10 with weighted odds. High values (9-10) are extremely rare, making a Perfect license nearly impossible.',
+              'Each stat rolls from 1-25 with weighted odds. High values (21-25) are extremely rare, making a Perfect license nearly impossible.',
               style: TextStyle(
                 color: FlitColors.textMuted,
                 fontSize: 12,

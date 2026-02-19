@@ -389,13 +389,13 @@ class _GlobeBackgroundPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     // Latitude lines (horizontal ellipses that flatten toward poles)
-    for (var i = 1; i < 8; i++) {
-      final frac = i / 8.0;
+    for (var i = 1; i < 10; i++) {
+      final frac = i / 10.0;
       final ly = globeCy - globeR + globeR * 2 * frac;
       final distFromCenter = (frac - 0.5).abs();
       final halfWidth = globeR *
           sqrt(1 - 4 * distFromCenter * distFromCenter).clamp(0.0, 1.0);
-      if (halfWidth > 0) {
+      if (halfWidth > 2) {
         canvas.drawLine(
           Offset(globeCx - halfWidth, ly),
           Offset(globeCx + halfWidth, ly),
@@ -403,37 +403,39 @@ class _GlobeBackgroundPainter extends CustomPainter {
         );
       }
     }
-    // Longitude lines (vertical arcs)
-    for (var i = 1; i < 8; i++) {
-      final frac = i / 8.0;
-      final lx = globeCx - globeR + globeR * 2 * frac;
-      final distFromCenter = (frac - 0.5).abs();
-      final halfHeight = globeR *
-          sqrt(1 - 4 * distFromCenter * distFromCenter).clamp(0.0, 1.0);
-      if (halfHeight > 0) {
-        final path = Path()
-          ..moveTo(lx, globeCy - halfHeight)
-          ..quadraticBezierTo(
-            lx + (frac - 0.5) * globeR * 0.3,
-            globeCy,
-            lx,
-            globeCy + halfHeight,
-          );
-        canvas.drawPath(path, gridPaint);
-      }
+    // Longitude lines — converge at north and south poles.
+    // Each line is a half-ellipse arc from pole to pole, bulging outward
+    // by an amount that depends on its angular position around the equator.
+    final northPole = Offset(globeCx, globeCy - globeR);
+    final southPole = Offset(globeCx, globeCy + globeR);
+    for (var i = 1; i < 10; i++) {
+      final frac = i / 10.0;
+      // Maximum x-offset at equator (how far the arc bulges from center).
+      final bulge = globeR * cos(pi * (frac - 0.5));
+      final path = Path()
+        ..moveTo(northPole.dx, northPole.dy)
+        ..cubicTo(
+          globeCx + bulge * 0.55,
+          globeCy - globeR * 0.33,
+          globeCx + bulge * 0.55,
+          globeCy + globeR * 0.33,
+          southPole.dx,
+          southPole.dy,
+        );
+      canvas.drawPath(path, gridPaint);
     }
 
     // Continent silhouettes on the globe
-    final landPaint = Paint()..color = FlitColors.landMass.withOpacity(0.22);
+    final landPaint = Paint()..color = FlitColors.landMass.withOpacity(0.38);
     final coastPaint = Paint()
-      ..color = FlitColors.coastline.withOpacity(0.30)
+      ..color = FlitColors.coastline.withOpacity(0.45)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 1.2;
     final coastGlow = Paint()
-      ..color = FlitColors.oceanHighlight.withOpacity(0.10)
+      ..color = FlitColors.oceanHighlight.withOpacity(0.15)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.5
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+      ..strokeWidth = 4.0
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5);
 
     void drawContinent(Path path) {
       canvas.drawPath(path, coastGlow);

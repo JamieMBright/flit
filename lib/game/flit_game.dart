@@ -1091,8 +1091,8 @@ class FlitGame extends FlameGame
       final turnMag = _plane.turnDirection.abs();
       final isLow = _planeReady && !_plane.isHighAltitude;
       // High altitude: lag up to 80% during turns (cinematic).
-      // Low altitude: lag only up to 30% during turns (responsive).
-      final lagFactor = isLow ? 0.3 : 0.8;
+      // Low altitude: lag up to 50% during turns (smooth but responsive).
+      final lagFactor = isLow ? 0.5 : 0.8;
       final easeRate = _cameraHeadingEaseRate * (1.0 - turnMag * lagFactor);
       final factor = 1.0 - exp(-easeRate * dt);
       _cameraHeading = _lerpAngle(_cameraHeading, _heading, factor);
@@ -1230,10 +1230,11 @@ class FlitGame extends FlameGame
 
     if (dir != 0) {
       // Ramp up hold time and compute progressive strength.
-      // In descent mode, scale ramp rate faster (2×) so the plane
-      // responds immediately despite the lower movement speed.
+      // In descent mode, scale ramp rate slightly faster (1.3×) so the plane
+      // responds despite the lower movement speed, but without making turns
+      // feel too severe or jerky.
       final isLow = _planeReady && !_plane.isHighAltitude;
-      final rampDt = isLow ? dt * 2.0 : dt;
+      final rampDt = isLow ? dt * 1.3 : dt;
       if (_buttonTurnDir != 0) {
         _buttonTurnHoldTime += rampDt;
       }
