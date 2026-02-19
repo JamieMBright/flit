@@ -707,22 +707,37 @@ class _AvatarPreviewSection extends StatelessWidget {
           border: Border(bottom: BorderSide(color: FlitColors.cardBorder)),
         ),
         child: Center(
-          child: Container(
-            width: 160,
-            height: 160,
-            decoration: BoxDecoration(
-              color: FlitColors.backgroundLight,
-              shape: BoxShape.circle,
-              border: Border.all(color: FlitColors.accent, width: 3),
-              boxShadow: const [
-                BoxShadow(
-                  color: FlitColors.shadow,
-                  blurRadius: 16,
-                  offset: Offset(0, 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
+                  color: FlitColors.backgroundLight,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: FlitColors.accent, width: 3),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: FlitColors.shadow,
+                      blurRadius: 16,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: AvatarWidget(config: config, size: 160),
+                child: AvatarWidget(config: config, size: 160),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                config.style.label,
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
           ),
         ),
       );

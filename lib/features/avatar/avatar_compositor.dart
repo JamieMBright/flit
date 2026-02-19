@@ -336,7 +336,7 @@ class AvatarCompositor {
     // Cheek, nose, mouth, eyes.
     if (cheek.isNotEmpty) buf.write(_g(cheek, 'translate(86 188)'));
     if (nose.isNotEmpty) buf.write(_g(nose, 'translate(129 175)'));
-    if (mouth.isNotEmpty) buf.write(_g(mouth, 'translate(115 250)'));
+    if (mouth.isNotEmpty) buf.write(_g(mouth, 'translate(190 250)'));
     if (eyes.isNotEmpty) buf.write(_g(eyes, 'translate(74 131)'));
 
     // Front hair.
@@ -361,7 +361,9 @@ class AvatarCompositor {
     final eyebrows = _pick(loreleiEyebrows, config.eyebrows.index, 3);
     final eyes = _pick(loreleiEyes, config.eyes.index, 4);
     final nose = _pick(loreleiNose, sh, 5);
-    final mouth = _pick(loreleiMouth, config.mouth.index, 6);
+    final mouth = _pick(loreleiMouth, config.mouth.index, 6)
+        .replaceAll('{{MOUTH_COLOR}}',
+            _mouthColors[config.skinColor.index % _mouthColors.length]);
     final glasses = _pick(
       loreleiGlasses,
       config.glasses.index,
@@ -401,23 +403,52 @@ class AvatarCompositor {
   // Micah (360 x 360)
   // ---------------------------------------------------------------------------
 
+  /// Natural eye colors for Micah (and other realistic styles).
+  static const _naturalEyeColors = [
+    '#6B4423', // Brown
+    '#3B6AA0', // Blue
+    '#4A7C59', // Green
+    '#8B6914', // Hazel / Amber
+    '#5C3317', // Dark Brown
+    '#7B9EB0', // Light Blue / Gray
+    '#2E5E4E', // Teal / Dark Green
+  ];
+
+  /// Lip / mouth colors derived from natural skin tones.
+  static const _mouthColors = [
+    '#d29985', // Light lip
+    '#c98276', // Medium lip
+    '#b06a4f', // Tan lip
+    '#a0604a', // Deep lip
+    '#7a3d1a', // Dark lip
+  ];
+
   static String? _composeMicah(AvatarConfig config) {
     final sh = _stableHash(config);
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
-    final eyeColor = _hashColor(sh, 42);
+    // Pick a natural eye color that varies with the eyes selection.
+    final eyeColor =
+        _naturalEyeColors[(sh + config.eyes.index * 3) % _naturalEyeColors.length];
     final shirtColor = _hashColor(sh, 77);
+    // Eye shadow: slightly darker/muted version via hash.
     final eyeShadow = _hashColor(sh, 88);
+    // Mouth color: pick from natural lip palette based on skin tone.
+    final mouthColor = _mouthColors[config.skinColor.index % _mouthColors.length];
 
     // Micah glasses embed inside eyes via {{GLASSES}} placeholder.
-    final glassesRaw = _pick(micahGlasses, config.glasses.index, 10);
+    final glassesRaw = config.glasses == AvatarGlasses.none
+        ? ''
+        : _pick(micahGlasses, config.glasses.index, 10)
+            .replaceAll('{{GLASSES_COLOR}}', '#4a4a4a');
     // Micah facialHair embeds inside base via {{FACIAL_HAIR}} placeholder.
     final facialHairRaw = _pick(micahFacialHair, sh, 11);
 
     final base = micahBase
         .replaceAll('{{BASE_COLOR}}', skinHex)
         .replaceAll('{{FACIAL_HAIR}}', facialHairRaw);
-    final mouth = _pick(micahMouth, config.mouth.index, 2);
+    final mouth = _pick(micahMouth, config.mouth.index, 2)
+        .replaceAll('{{MOUTH_COLOR}}', mouthColor);
     final eyebrows = _pick(
       micahEyebrows,
       config.eyebrows.index,
@@ -431,7 +462,10 @@ class AvatarCompositor {
         .replaceAll('{{GLASSES}}', glassesRaw);
     final nose = _pick(micahNose, sh, 6);
     final ears = _pick(micahEars, sh, 7).replaceAll('{{EAR_COLOR}}', skinHex);
-    final earrings = _pick(micahEarrings, config.earrings.index, 8);
+    final earrings = config.earrings == AvatarEarrings.none
+        ? ''
+        : _pick(micahEarrings, config.earrings.index, 8)
+            .replaceAll('{{EARRING_COLOR}}', '#d4af37');
     final shirt = _pick(
       micahShirt,
       sh,
