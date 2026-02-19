@@ -21,15 +21,15 @@ class LeaderboardEntry {
   final DateTime? timestamp;
 
   Map<String, dynamic> toJson() => {
-        'rank': rank,
-        'player_id': playerId,
-        'player_name': playerName,
-        'time_ms': time.inMilliseconds,
-        'score': score,
-        'avatar_url': avatarUrl,
-        'country_code': countryCode,
-        'timestamp': timestamp?.toIso8601String(),
-      };
+    'rank': rank,
+    'player_id': playerId,
+    'player_name': playerName,
+    'time_ms': time.inMilliseconds,
+    'score': score,
+    'avatar_url': avatarUrl,
+    'country_code': countryCode,
+    'timestamp': timestamp?.toIso8601String(),
+  };
 
   factory LeaderboardEntry.fromJson(Map<String, dynamic> json) =>
       LeaderboardEntry(

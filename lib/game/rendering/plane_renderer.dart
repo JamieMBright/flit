@@ -101,8 +101,10 @@ class PlaneRenderer {
         );
         break;
       case 'plane_bryanair':
-      case 'plane_air_force_one':
         _renderAirliner(canvas, bankCos, bankSin, wingSpan, colorScheme);
+        break;
+      case 'plane_air_force_one':
+        _renderAirForceOne(canvas, bankCos, bankSin, wingSpan, colorScheme);
         break;
       case 'plane_platinum_eagle':
         _renderEagle(canvas, bankCos, bankSin, wingSpan, colorScheme);
@@ -135,10 +137,12 @@ class PlaneRenderer {
     final detail = _detail(colorScheme, 0xFF8B4513);
 
     final shade = -bankSin;
-    final leftWingColor =
-        shade < 0 ? _lighten(detail, -shade) : _darken(detail, shade * 0.4);
-    final rightWingColor =
-        shade > 0 ? _lighten(detail, shade) : _darken(detail, -shade * 0.4);
+    final leftWingColor = shade < 0
+        ? _lighten(detail, -shade)
+        : _darken(detail, shade * 0.4);
+    final rightWingColor = shade > 0
+        ? _lighten(detail, shade)
+        : _darken(detail, -shade * 0.4);
     final bodyPaint = Paint()..color = primary;
     final accentPaint = Paint()..color = secondary;
     final highlightPaint = Paint()
@@ -489,10 +493,12 @@ class PlaneRenderer {
     final wingDip = -bankSin * 3.0;
 
     // Swept delta wings
-    final leftWingColor =
-        shade < 0 ? detail : Color.lerp(detail, Colors.black, 0.3)!;
-    final rightWingColor =
-        shade > 0 ? detail : Color.lerp(detail, Colors.black, 0.3)!;
+    final leftWingColor = shade < 0
+        ? detail
+        : Color.lerp(detail, Colors.black, 0.3)!;
+    final rightWingColor = shade > 0
+        ? detail
+        : Color.lerp(detail, Colors.black, 0.3)!;
 
     final leftSpan =
         dynamicWingSpan * 0.8 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
@@ -673,8 +679,9 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 3.0;
 
-    final wingColor =
-        shade < 0 ? detail : Color.lerp(detail, Colors.black, 0.2)!;
+    final wingColor = shade < 0
+        ? detail
+        : Color.lerp(detail, Colors.black, 0.2)!;
 
     // --- Propeller ---
     final propDiscPaint = Paint()
@@ -815,10 +822,12 @@ class PlaneRenderer {
     final wingDip = -bankSin * 2.5;
 
     // Delta wing
-    final leftWingColor =
-        shade < 0 ? primary : Color.lerp(primary, Colors.grey, 0.2)!;
-    final rightWingColor =
-        shade > 0 ? primary : Color.lerp(primary, Colors.grey, 0.2)!;
+    final leftWingColor = shade < 0
+        ? primary
+        : Color.lerp(primary, Colors.grey, 0.2)!;
+    final rightWingColor = shade > 0
+        ? primary
+        : Color.lerp(primary, Colors.grey, 0.2)!;
 
     final leftSpan =
         dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
@@ -987,10 +996,12 @@ class PlaneRenderer {
     final wingDip = -bankSin * 2.0;
 
     // Wide swept wings
-    final leftWingColor =
-        shade < 0 ? detail : Color.lerp(detail, Colors.grey, 0.3)!;
-    final rightWingColor =
-        shade > 0 ? detail : Color.lerp(detail, Colors.grey, 0.3)!;
+    final leftWingColor = shade < 0
+        ? detail
+        : Color.lerp(detail, Colors.grey, 0.3)!;
+    final rightWingColor = shade > 0
+        ? detail
+        : Color.lerp(detail, Colors.grey, 0.3)!;
 
     final leftSpan =
         dynamicWingSpan * 1.1 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
@@ -1110,6 +1121,229 @@ class PlaneRenderer {
     }
   }
 
+  // ─── Air Force One (Presidential 747) ──────────────────────────────
+
+  static void _renderAirForceOne(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+  ) {
+    final primary = _primary(colorScheme, 0xFFF5F5F5);
+    final secondary = _secondary(colorScheme, 0xFF1A3A5C);
+    final detail = _detail(colorScheme, 0xFFD4A944);
+
+    final shade = -bankSin;
+    final bodyShift = bankSin * 1.0;
+    final dynamicWingSpan = wingSpan * bankCos.abs();
+    final wingDip = -bankSin * 2.0;
+
+    // Swept-back wings — wider and more authoritative than Bryanair
+    final leftWingColor = shade < 0
+        ? primary
+        : Color.lerp(primary, Colors.grey, 0.15)!;
+    final rightWingColor = shade > 0
+        ? primary
+        : Color.lerp(primary, Colors.grey, 0.15)!;
+
+    final leftSpan =
+        dynamicWingSpan * 1.15 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
+    final leftWing = Path()
+      ..moveTo(-5 + bodyShift, -2)
+      ..quadraticBezierTo(
+        -leftSpan * 0.5,
+        0 + wingDip * 0.5,
+        -leftSpan,
+        5 + wingDip,
+      )
+      ..lineTo(-leftSpan + 4, 7 + wingDip)
+      ..quadraticBezierTo(
+        -leftSpan * 0.35,
+        4 + wingDip * 0.5,
+        -4 + bodyShift,
+        1,
+      )
+      ..close();
+    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+
+    final rightSpan =
+        dynamicWingSpan * 1.15 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
+    final rightWing = Path()
+      ..moveTo(5 + bodyShift, -2)
+      ..quadraticBezierTo(
+        rightSpan * 0.5,
+        0 - wingDip * 0.5,
+        rightSpan,
+        5 - wingDip,
+      )
+      ..lineTo(rightSpan - 4, 7 - wingDip)
+      ..quadraticBezierTo(rightSpan * 0.35, 4 - wingDip * 0.5, 4 + bodyShift, 1)
+      ..close();
+    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+
+    // --- Body group ---
+    canvas.save();
+    final rollScale = 0.55 + bankCos.abs() * 0.45;
+    canvas.translate(bodyShift, 0);
+    canvas.scale(rollScale, 1.0);
+    canvas.translate(-bodyShift, 0);
+
+    // Horizontal stabilizer
+    final stabSpan = dynamicWingSpan * 0.35;
+    final stabLeft = Path()
+      ..moveTo(-2 + bodyShift, 15)
+      ..lineTo(-stabSpan + bodyShift, 17 + wingDip * 0.2)
+      ..lineTo(-stabSpan + 3 + bodyShift, 18 + wingDip * 0.2)
+      ..lineTo(-1 + bodyShift, 16)
+      ..close();
+    canvas.drawPath(stabLeft, Paint()..color = primary);
+    final stabRight = Path()
+      ..moveTo(2 + bodyShift, 15)
+      ..lineTo(stabSpan + bodyShift, 17 - wingDip * 0.2)
+      ..lineTo(stabSpan - 3 + bodyShift, 18 - wingDip * 0.2)
+      ..lineTo(1 + bodyShift, 16)
+      ..close();
+    canvas.drawPath(stabRight, Paint()..color = primary);
+
+    // Tall vertical fin — distinctive T-tail
+    final finPath = Path()
+      ..moveTo(bodyShift - 1, 11)
+      ..quadraticBezierTo(bodyShift - 3, 14, bodyShift - 1.5, 19)
+      ..lineTo(bodyShift + 1.5, 19)
+      ..quadraticBezierTo(bodyShift + 3, 14, bodyShift + 1, 11)
+      ..close();
+    canvas.drawPath(finPath, Paint()..color = secondary);
+    // Gold accent on fin
+    canvas.drawLine(
+      Offset(bodyShift, 12),
+      Offset(bodyShift, 18),
+      Paint()
+        ..color = detail
+        ..strokeWidth = 1.2,
+    );
+
+    // Wide presidential fuselage (larger than Bryanair)
+    final fuselagePath = Path()
+      ..moveTo(bodyShift, -19)
+      ..quadraticBezierTo(7 + bodyShift, -14, 7 + bodyShift, 0)
+      ..quadraticBezierTo(6 + bodyShift, 10, 3 + bodyShift, 18)
+      ..lineTo(-3 + bodyShift, 18)
+      ..quadraticBezierTo(-6 + bodyShift, 10, -7 + bodyShift, 0)
+      ..quadraticBezierTo(-7 + bodyShift, -14, bodyShift, -19)
+      ..close();
+    canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Presidential blue belly stripe (the iconic two-tone)
+    final bellyStripe = Path()
+      ..moveTo(bodyShift - 6, -2)
+      ..quadraticBezierTo(bodyShift - 5, 8, bodyShift - 3, 16)
+      ..lineTo(bodyShift + 3, 16)
+      ..quadraticBezierTo(bodyShift + 5, 8, bodyShift + 6, -2)
+      ..close();
+    canvas.drawPath(bellyStripe, Paint()..color = secondary.withOpacity(0.4));
+
+    // Upper blue band (the distinctive Air Force One livery)
+    canvas.drawLine(
+      Offset(bodyShift - 6.5, -4),
+      Offset(bodyShift + 6.5, -4),
+      Paint()
+        ..color = secondary
+        ..strokeWidth = 3.0,
+    );
+    // Gold pinstripe below blue band
+    canvas.drawLine(
+      Offset(bodyShift - 6, -2),
+      Offset(bodyShift + 6, -2),
+      Paint()
+        ..color = detail
+        ..strokeWidth = 0.8,
+    );
+
+    // Cockpit windows — larger, more prominent
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, -13), width: 6, height: 5),
+      Paint()..color = const Color(0xFF6AB0D6),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(bodyShift - 0.5, -14),
+        width: 2.5,
+        height: 2,
+      ),
+      Paint()..color = const Color(0xFF9FD4F0),
+    );
+
+    // Passenger windows (both sides)
+    for (var y in [-10.0, -7.0, -4.0, -1.0, 2.0, 5.0, 8.0]) {
+      canvas.drawCircle(
+        Offset(bodyShift + 3.5, y),
+        0.6,
+        Paint()..color = const Color(0xFF4A90B8),
+      );
+      canvas.drawCircle(
+        Offset(bodyShift - 3.5, y),
+        0.6,
+        Paint()..color = const Color(0xFF4A90B8),
+      );
+    }
+
+    // American flag accent at tail (small red-white-blue stripes)
+    for (var i = 0; i < 3; i++) {
+      final flagY = 13.0 + i * 1.5;
+      final flagColor = i == 1 ? primary : (i == 0 ? secondary : detail);
+      canvas.drawLine(
+        Offset(bodyShift - 2, flagY),
+        Offset(bodyShift + 2, flagY),
+        Paint()
+          ..color = flagColor
+          ..strokeWidth = 1.2,
+      );
+    }
+
+    // Nose cone — rounded, polished
+    canvas.drawCircle(
+      Offset(bodyShift, -19),
+      3.5,
+      Paint()..color = const Color(0xFFBBBBBB),
+    );
+    canvas.drawCircle(Offset(bodyShift, -19), 2.0, Paint()..color = primary);
+
+    canvas.restore(); // End body roll transform
+
+    // Four engines under wings (747 has 4)
+    final enginePaint = Paint()..color = const Color(0xFF999999);
+    final engineNose = Paint()..color = const Color(0xFF777777);
+    for (var x in [-leftSpan * 0.35, -leftSpan * 0.6]) {
+      final ey = 6 + wingDip * 0.5;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(x, ey), width: 4, height: 8),
+          const Radius.circular(2),
+        ),
+        enginePaint,
+      );
+      canvas.drawCircle(Offset(x, ey - 4), 2.0, engineNose);
+    }
+    for (var x in [rightSpan * 0.35, rightSpan * 0.6]) {
+      final ey = 6 - wingDip * 0.5;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(x, ey), width: 4, height: 8),
+          const Radius.circular(2),
+        ),
+        enginePaint,
+      );
+      canvas.drawCircle(Offset(x, ey - 4), 2.0, engineNose);
+    }
+
+    // Navigation lights
+    final navRed = Paint()..color = const Color(0xFFCC3333);
+    final navGreen = Paint()..color = FlitColors.success;
+    canvas.drawCircle(Offset(-leftSpan + 2, 6 + wingDip), 1.5, navRed);
+    canvas.drawCircle(Offset(rightSpan - 2, 6 - wingDip), 1.5, navGreen);
+  }
+
   // ─── Platinum Eagle ────────────────────────────────────────────────
 
   static void _renderEagle(
@@ -1129,10 +1363,12 @@ class PlaneRenderer {
     final wingDip = -bankSin * 3.0;
 
     // Swept eagle wings
-    final leftWingColor =
-        shade < 0 ? secondary : Color.lerp(secondary, Colors.black, 0.3)!;
-    final rightWingColor =
-        shade > 0 ? secondary : Color.lerp(secondary, Colors.black, 0.3)!;
+    final leftWingColor = shade < 0
+        ? secondary
+        : Color.lerp(secondary, Colors.black, 0.3)!;
+    final rightWingColor = shade > 0
+        ? secondary
+        : Color.lerp(secondary, Colors.black, 0.3)!;
 
     final leftSpan =
         dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;

@@ -474,17 +474,17 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(
-          title,
-          style: const TextStyle(
-            color: FlitColors.textMuted,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      title,
+      style: const TextStyle(
+        color: FlitColors.textMuted,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 1,
+      ),
+    ),
+  );
 }
 
 class _AccountCard extends StatelessWidget {
@@ -500,76 +500,76 @@ class _AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: isSelected
-            ? FlitColors.accent.withOpacity(0.2)
-            : FlitColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
+    color: isSelected
+        ? FlitColors.accent.withOpacity(0.2)
+        : FlitColors.cardBackground,
+    borderRadius: BorderRadius.circular(12),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? FlitColors.accent : FlitColors.cardBorder,
-                width: isSelected ? 2 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                // Avatar
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: FlitColors.backgroundMid,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Center(
-                    child: Text(
-                      player.name[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: FlitColors.textPrimary,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        player.name,
-                        style: const TextStyle(
-                          color: FlitColors.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Lv.${player.level} • ${player.coins} coins • ${player.gamesPlayed} games',
-                        style: const TextStyle(
-                          color: FlitColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Selected indicator
-                if (isSelected)
-                  const Icon(Icons.check_circle, color: FlitColors.accent),
-              ],
-            ),
+          border: Border.all(
+            color: isSelected ? FlitColors.accent : FlitColors.cardBorder,
+            width: isSelected ? 2 : 1,
           ),
         ),
-      );
+        child: Row(
+          children: [
+            // Avatar
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Center(
+                child: Text(
+                  player.name[0].toUpperCase(),
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    player.name,
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Lv.${player.level} • ${player.coins} coins • ${player.gamesPlayed} games',
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Selected indicator
+            if (isSelected)
+              const Icon(Icons.check_circle, color: FlitColors.accent),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _ActionChip extends StatelessWidget {
@@ -580,12 +580,12 @@ class _ActionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ActionChip(
-        label: Text(label),
-        onPressed: onTap,
-        backgroundColor: FlitColors.cardBackground,
-        labelStyle: const TextStyle(color: FlitColors.textPrimary),
-        side: const BorderSide(color: FlitColors.cardBorder),
-      );
+    label: Text(label),
+    onPressed: onTap,
+    backgroundColor: FlitColors.cardBackground,
+    labelStyle: const TextStyle(color: FlitColors.textPrimary),
+    side: const BorderSide(color: FlitColors.cardBorder),
+  );
 }
 
 class _AdminGiftCard extends StatelessWidget {
@@ -603,37 +603,37 @@ class _AdminGiftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: FlitColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
+    color: FlitColors.cardBackground,
+    borderRadius: BorderRadius.circular(12),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: FlitColors.cardBorder),
-            ),
-            child: Row(
-              children: [
-                Icon(icon, color: iconColor, size: 24),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const Icon(Icons.chevron_right, color: FlitColors.textMuted),
-              ],
-            ),
-          ),
+          border: Border.all(color: FlitColors.cardBorder),
         ),
-      );
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: FlitColors.textMuted),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 /// Full-screen log viewer with filtering and copy-to-clipboard.
@@ -738,11 +738,11 @@ class _GameLogScreenState extends State<_GameLogScreen> {
   }
 
   Color _levelColor(LogLevel level) => switch (level) {
-        LogLevel.debug => FlitColors.textMuted,
-        LogLevel.info => FlitColors.accent,
-        LogLevel.warning => FlitColors.warning,
-        LogLevel.error => FlitColors.error,
-      };
+    LogLevel.debug => FlitColors.textMuted,
+    LogLevel.info => FlitColors.accent,
+    LogLevel.warning => FlitColors.warning,
+    LogLevel.error => FlitColors.error,
+  };
 }
 
 class _FilterChip extends StatelessWidget {
@@ -760,24 +760,24 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: selected ? color.withOpacity(0.25) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: selected ? color : FlitColors.cardBorder),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selected ? color : FlitColors.textMuted,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: selected ? color.withOpacity(0.25) : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: selected ? color : FlitColors.cardBorder),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: selected ? color : FlitColors.textMuted,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _LogEntryTile extends StatelessWidget {

@@ -270,41 +270,39 @@ class _GoldShopTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _goldPackages.length + 1, // +1 for header
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return const Padding(
-              padding: EdgeInsets.only(bottom: 16),
-              child: Column(
-                children: [
-                  Icon(Icons.monetization_on,
-                      color: FlitColors.warning, size: 48),
-                  SizedBox(height: 8),
-                  Text(
-                    'Buy Gold',
-                    style: TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Get coins to unlock planes and contrails',
-                    style: TextStyle(
-                        color: FlitColors.textSecondary, fontSize: 14),
-                  ),
-                  SizedBox(height: 8),
-                ],
+    padding: const EdgeInsets.all(16),
+    itemCount: _goldPackages.length + 1, // +1 for header
+    itemBuilder: (context, index) {
+      if (index == 0) {
+        return const Padding(
+          padding: EdgeInsets.only(bottom: 16),
+          child: Column(
+            children: [
+              Icon(Icons.monetization_on, color: FlitColors.warning, size: 48),
+              SizedBox(height: 8),
+              Text(
+                'Buy Gold',
+                style: TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            );
-          }
+              SizedBox(height: 4),
+              Text(
+                'Get coins to unlock planes and contrails',
+                style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+              ),
+              SizedBox(height: 8),
+            ],
+          ),
+        );
+      }
 
-          final pkg = _goldPackages[index - 1];
-          return _GoldPackageCard(package: pkg);
-        },
-      );
+      final pkg = _goldPackages[index - 1];
+      return _GoldPackageCard(package: pkg);
+    },
+  );
 }
 
 class _GoldPackageCard extends StatelessWidget {
@@ -314,124 +312,123 @@ class _GoldPackageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: FlitColors.cardBackground,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: package.isBestValue
-                      ? FlitColors.warning
-                      : FlitColors.cardBorder,
-                  width: package.isBestValue ? 2 : 1,
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: FlitColors.cardBackground,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: package.isBestValue
+                  ? FlitColors.warning
+                  : FlitColors.cardBorder,
+              width: package.isBestValue ? 2 : 1,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              // Coin icon stack
+              SizedBox(
+                width: 48,
+                height: 48,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(
+                      Icons.monetization_on,
+                      color: FlitColors.warning.withOpacity(0.3),
+                      size: 48,
+                    ),
+                    const Icon(
+                      Icons.monetization_on,
+                      color: FlitColors.warning,
+                      size: 36,
+                    ),
+                  ],
                 ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
-                children: [
-                  // Coin icon stack
-                  SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Icon(
-                          Icons.monetization_on,
-                          color: FlitColors.warning.withOpacity(0.3),
-                          size: 48,
-                        ),
-                        const Icon(
-                          Icons.monetization_on,
-                          color: FlitColors.warning,
-                          size: 36,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Amount
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${package.coins} Coins',
-                          style: const TextStyle(
-                            color: FlitColors.textPrimary,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '\$${package.price.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            color: FlitColors.textSecondary,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${(package.coins / package.price).toStringAsFixed(0)} coins/\$',
-                          style: const TextStyle(
-                            color: FlitColors.textMuted,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Buy button
-                  ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Coming Soon'),
-                          backgroundColor: FlitColors.backgroundMid,
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: FlitColors.accent.withOpacity(0.4),
-                      foregroundColor: FlitColors.textSecondary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+              const SizedBox(width: 16),
+              // Amount
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${package.coins} Coins',
+                      style: const TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    child: const Text('Coming Soon'),
-                  ),
-                ],
-              ),
-            ),
-            // Best Value badge
-            if (package.isBestValue)
-              Positioned(
-                top: -10,
-                right: 16,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: FlitColors.warning,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'BEST VALUE',
-                    style: TextStyle(
-                      color: FlitColors.backgroundDark,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 2),
+                    Text(
+                      '\$${package.price.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${(package.coins / package.price).toStringAsFixed(0)} coins/\$',
+                      style: const TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-          ],
+              // Buy button
+              ElevatedButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Coming Soon'),
+                      backgroundColor: FlitColors.backgroundMid,
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FlitColors.accent.withOpacity(0.4),
+                  foregroundColor: FlitColors.textSecondary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('Coming Soon'),
+              ),
+            ],
+          ),
         ),
-      );
+        // Best Value badge
+        if (package.isBestValue)
+          Positioned(
+            top: -10,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: FlitColors.warning,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'BEST VALUE',
+                style: TextStyle(
+                  color: FlitColors.backgroundDark,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
 }
 
 // =============================================================================
@@ -728,38 +725,38 @@ class _CosmeticGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.72,
-        ),
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          final item = items[index];
-          final isOwned = ownedIds.contains(item.id);
-          final isEquipped = equippedId == item.id;
-          final canAfford = coins >= item.price;
-          final meetsLevel =
-              item.requiredLevel == null || level >= item.requiredLevel!;
+    padding: const EdgeInsets.all(16),
+    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 2,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 0.72,
+    ),
+    itemCount: items.length,
+    itemBuilder: (context, index) {
+      final item = items[index];
+      final isOwned = ownedIds.contains(item.id);
+      final isEquipped = equippedId == item.id;
+      final canAfford = coins >= item.price;
+      final meetsLevel =
+          item.requiredLevel == null || level >= item.requiredLevel!;
 
-          return _CosmeticCard(
-            item: item,
-            isOwned: isOwned,
-            isEquipped: isEquipped,
-            canAfford: canAfford,
-            meetsLevel: meetsLevel,
-            onTap: () {
-              if (isOwned) {
-                onEquip(item.id);
-              } else if (canAfford && meetsLevel) {
-                _showPurchaseDialog(context, item);
-              }
-            },
-          );
+      return _CosmeticCard(
+        item: item,
+        isOwned: isOwned,
+        isEquipped: isEquipped,
+        canAfford: canAfford,
+        meetsLevel: meetsLevel,
+        onTap: () {
+          if (isOwned) {
+            onEquip(item.id);
+          } else if (canAfford && meetsLevel) {
+            _showPurchaseDialog(context, item);
+          }
         },
       );
+    },
+  );
 
   void _showPurchaseDialog(BuildContext context, Cosmetic item) {
     showDialog<void>(
@@ -927,8 +924,8 @@ class _CosmeticCard extends StatelessWidget {
             color: isEquipped
                 ? FlitColors.success
                 : isLocked
-                    ? FlitColors.textMuted
-                    : FlitColors.cardBorder,
+                ? FlitColors.textMuted
+                : FlitColors.cardBorder,
             width: isEquipped ? 2 : 1,
           ),
         ),
@@ -958,11 +955,11 @@ class _CosmeticCard extends StatelessWidget {
                                 ),
                               )
                             : item.type == CosmeticType.coPilot
-                                ? _CompanionPreview(companionId: item.id)
-                                : _ContrailPreview(
-                                    colorScheme: item.colorScheme,
-                                    isLocked: isLocked,
-                                  ),
+                            ? _CompanionPreview(companionId: item.id)
+                            : _ContrailPreview(
+                                colorScheme: item.colorScheme,
+                                isLocked: isLocked,
+                              ),
                       ),
                     ),
                   ),
@@ -1195,29 +1192,29 @@ class _PriceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Row(
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.monetization_on,
-                size: 14,
-                color: canAfford ? FlitColors.warning : FlitColors.error,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                item.price.toString(),
-                style: TextStyle(
-                  color: canAfford ? FlitColors.warning : FlitColors.error,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          Icon(
+            Icons.monetization_on,
+            size: 14,
+            color: canAfford ? FlitColors.warning : FlitColors.error,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            item.price.toString(),
+            style: TextStyle(
+              color: canAfford ? FlitColors.warning : FlitColors.error,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
-      );
+      ),
+    ],
+  );
 }
 
 // =============================================================================
@@ -1270,8 +1267,7 @@ class _ContrailPainter extends CustomPainter {
         primary,
         secondary,
         t,
-      )!
-          .withOpacity(1.0 - t * 0.7);
+      )!.withOpacity(1.0 - t * 0.7);
       canvas.drawCircle(
         Offset(x, y),
         radius.clamp(1.5, 6.0),
@@ -1326,6 +1322,8 @@ class _CompanionPreviewPainter extends CustomPainter {
     canvas.translate(cx, cy);
 
     switch (companionId) {
+      case 'companion_pidgey':
+        _paintBird(canvas, const Color(0xFFA0785A), 10);
       case 'companion_sparrow':
         _paintBird(canvas, FlitColors.textSecondary, 12);
       case 'companion_eagle':
@@ -1336,6 +1334,8 @@ class _CompanionPreviewPainter extends CustomPainter {
         _paintPhoenix(canvas);
       case 'companion_dragon':
         _paintDragon(canvas);
+      case 'companion_charizard':
+        _paintCharizard(canvas);
     }
 
     canvas.restore();
@@ -1398,17 +1398,22 @@ class _CompanionPreviewPainter extends CustomPainter {
   }
 
   void _paintDragon(Canvas canvas) {
-    const bodyColor = Color(0xFF2E8B57);
+    const bodyColor = Color(0xFFE85D04);
     final bodyPaint = Paint()..color = bodyColor;
-    final wingPaint = Paint()..color = bodyColor.withOpacity(0.6);
+    final wingPaint = Paint()..color = const Color(0xFF1B998B).withOpacity(0.7);
 
     // Body
     canvas.drawOval(
       Rect.fromCenter(center: Offset.zero, width: 24, height: 16),
       bodyPaint,
     );
+    // Pale belly
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(0, 2), width: 14, height: 8),
+      Paint()..color = const Color(0xFFFFCC66),
+    );
 
-    // Bat wings
+    // Teal bat wings
     final leftWing = Path()
       ..moveTo(-6, -4)
       ..quadraticBezierTo(-24, -22, -18, -2)
@@ -1423,18 +1428,153 @@ class _CompanionPreviewPainter extends CustomPainter {
       ..close();
     canvas.drawPath(rightWing, wingPaint);
 
-    // Tail
+    // Tail with flame tip
     final tailPath = Path()
       ..moveTo(0, 8)
       ..quadraticBezierTo(8, 20, 4, 24)
       ..lineTo(-2, 18)
       ..close();
     canvas.drawPath(tailPath, bodyPaint);
+    canvas.drawCircle(
+      const Offset(3, 24),
+      4,
+      Paint()..color = const Color(0xFFFF6600).withOpacity(0.7),
+    );
+
+    // Horns
+    final hornPaint = Paint()..color = const Color(0xFF553300);
+    canvas.drawLine(
+      const Offset(-4, -8),
+      const Offset(-7, -16),
+      hornPaint..strokeWidth = 2.0,
+    );
+    canvas.drawLine(
+      const Offset(4, -8),
+      const Offset(7, -16),
+      hornPaint..strokeWidth = 2.0,
+    );
 
     // Eyes
     final eyePaint = Paint()..color = const Color(0xFFFFDD00);
     canvas.drawCircle(const Offset(-4, -4), 2.5, eyePaint);
     canvas.drawCircle(const Offset(4, -4), 2.5, eyePaint);
+    canvas.drawCircle(
+      const Offset(-4, -4),
+      1.0,
+      Paint()..color = const Color(0xFF000000),
+    );
+    canvas.drawCircle(
+      const Offset(4, -4),
+      1.0,
+      Paint()..color = const Color(0xFF000000),
+    );
+  }
+
+  void _paintCharizard(Canvas canvas) {
+    // Fire aura glow
+    canvas.drawCircle(
+      Offset.zero,
+      28,
+      Paint()
+        ..color = const Color(0xFFFF4400).withOpacity(0.2)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+    );
+
+    const bodyColor = Color(0xFFE85D04);
+    final bodyPaint = Paint()..color = bodyColor;
+    final wingPaint = Paint()..color = const Color(0xFF1B998B).withOpacity(0.8);
+
+    // Larger body
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset.zero, width: 28, height: 18),
+      bodyPaint,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(0, 2), width: 16, height: 10),
+      Paint()..color = const Color(0xFFFFDD88),
+    );
+
+    // Massive teal bat wings
+    final leftWing = Path()
+      ..moveTo(-7, -5)
+      ..lineTo(-20, -24)
+      ..lineTo(-16, -10)
+      ..lineTo(-28, -16)
+      ..lineTo(-22, -4)
+      ..lineTo(-12, -2)
+      ..close();
+    canvas.drawPath(leftWing, wingPaint);
+
+    final rightWing = Path()
+      ..moveTo(7, -5)
+      ..lineTo(20, -24)
+      ..lineTo(16, -10)
+      ..lineTo(28, -16)
+      ..lineTo(22, -4)
+      ..lineTo(12, -2)
+      ..close();
+    canvas.drawPath(rightWing, wingPaint);
+
+    // Thick tail with large flame
+    final tailPath = Path()
+      ..moveTo(0, 9)
+      ..quadraticBezierTo(10, 22, 5, 26)
+      ..lineTo(-2, 20)
+      ..close();
+    canvas.drawPath(tailPath, bodyPaint);
+    // Big flame
+    final flame = Path()
+      ..moveTo(2, 24)
+      ..lineTo(-3, 32)
+      ..lineTo(1, 28)
+      ..lineTo(5, 34)
+      ..lineTo(7, 26)
+      ..close();
+    canvas.drawPath(flame, Paint()..color = const Color(0xFFFF6600));
+    canvas.drawPath(
+      flame,
+      Paint()
+        ..color = const Color(0xFFFFDD00).withOpacity(0.5)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+    );
+
+    // Prominent horns (two pairs)
+    final hornPaint = Paint()
+      ..color = const Color(0xFF553300)
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(const Offset(-5, -9), const Offset(-9, -18), hornPaint);
+    canvas.drawLine(const Offset(5, -9), const Offset(9, -18), hornPaint);
+    canvas.drawLine(
+      const Offset(-3, -10),
+      const Offset(-5, -15),
+      hornPaint..strokeWidth = 1.5,
+    );
+    canvas.drawLine(
+      const Offset(3, -10),
+      const Offset(5, -15),
+      hornPaint..strokeWidth = 1.5,
+    );
+
+    // Fierce eyes
+    canvas.drawCircle(
+      const Offset(-5, -5),
+      3.0,
+      Paint()..color = const Color(0xFFFFDD00),
+    );
+    canvas.drawCircle(
+      const Offset(5, -5),
+      3.0,
+      Paint()..color = const Color(0xFFFFDD00),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(-5, -5), width: 1.5, height: 4.0),
+      Paint()..color = const Color(0xFF000000),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(5, -5), width: 1.5, height: 4.0),
+      Paint()..color = const Color(0xFF000000),
+    );
   }
 
   @override

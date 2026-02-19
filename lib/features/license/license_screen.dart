@@ -284,30 +284,30 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
   }
 
   Widget _buildRollingPlaceholder() => const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 36,
-              height: 36,
-              child: CircularProgressIndicator(
-                strokeWidth: 3,
-                valueColor: AlwaysStoppedAnimation<Color>(FlitColors.gold),
-              ),
-            ),
-            SizedBox(height: 10),
-            Text(
-              'Rerolling...',
-              style: TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ],
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 36,
+          height: 36,
+          child: CircularProgressIndicator(
+            strokeWidth: 3,
+            valueColor: AlwaysStoppedAnimation<Color>(FlitColors.gold),
+          ),
         ),
-      );
+        SizedBox(height: 10),
+        Text(
+          'Rerolling...',
+          style: TextStyle(
+            color: FlitColors.textSecondary,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildLicenseContent(Color rarityColor, bool isPerfect) {
     final player = ref.watch(currentPlayerProvider);
@@ -550,31 +550,31 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
   }
 
   Widget _rarityTierRow(String name, String range, Color color) => Row(
-        children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            name,
-            style: TextStyle(
-              color: color,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            range,
-            style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
-          ),
-        ],
-      );
+    children: [
+      Container(
+        width: 12,
+        height: 12,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(3),
+        ),
+      ),
+      const SizedBox(width: 8),
+      Text(
+        name,
+        style: TextStyle(
+          color: color,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      const SizedBox(width: 8),
+      Text(
+        range,
+        style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+      ),
+    ],
+  );
 
   void _showEffectPopup(String title, String description, IconData icon) {
     showDialog<void>(
@@ -624,93 +624,93 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
   // ---------------------------------------------------------------------------
 
   Widget _buildLockSection(int coins) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.cardBorder),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: FlitColors.cardBackground,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: FlitColors.cardBorder),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Lock Stats',
+          style: TextStyle(
+            color: FlitColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 4),
+        const Text(
+          'Lock stats you want to keep before rerolling.',
+          style: TextStyle(color: FlitColors.textMuted, fontSize: 12),
+        ),
+        const SizedBox(height: 12),
+        _LockRow(
+          label: 'Coin Boost',
+          value: _license.coinBoostLabel,
+          icon: Icons.monetization_on,
+          isLocked: _lockedStats.contains('coinBoost'),
+          cost: _lockCostFor('coinBoost'),
+          onChanged: (locked) => _toggleLock('coinBoost', locked),
+        ),
+        const SizedBox(height: 8),
+        _LockRow(
+          label: 'Fuel Boost',
+          value: _license.fuelBoostLabel,
+          icon: Icons.local_gas_station,
+          isLocked: _lockedStats.contains('fuelBoost'),
+          cost: _lockCostFor('fuelBoost'),
+          onChanged: (locked) => _toggleLock('fuelBoost', locked),
+        ),
+        const SizedBox(height: 8),
+        _LockRow(
+          label: 'Clue Chance',
+          value: _license.clueChanceLabel,
+          icon: Icons.casino,
+          isLocked: _lockedStats.contains('clueChance'),
+          cost: _lockCostFor('clueChance'),
+          onChanged: (locked) => _toggleLock('clueChance', locked),
+        ),
+        const Divider(color: FlitColors.cardBorder, height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'Lock Stats',
+              'Total Reroll Cost',
               style: TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+                color: FlitColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 4),
-            const Text(
-              'Lock stats you want to keep before rerolling.',
-              style: TextStyle(color: FlitColors.textMuted, fontSize: 12),
-            ),
-            const SizedBox(height: 12),
-            _LockRow(
-              label: 'Coin Boost',
-              value: _license.coinBoostLabel,
-              icon: Icons.monetization_on,
-              isLocked: _lockedStats.contains('coinBoost'),
-              cost: _lockCostFor('coinBoost'),
-              onChanged: (locked) => _toggleLock('coinBoost', locked),
-            ),
-            const SizedBox(height: 8),
-            _LockRow(
-              label: 'Fuel Boost',
-              value: _license.fuelBoostLabel,
-              icon: Icons.local_gas_station,
-              isLocked: _lockedStats.contains('fuelBoost'),
-              cost: _lockCostFor('fuelBoost'),
-              onChanged: (locked) => _toggleLock('fuelBoost', locked),
-            ),
-            const SizedBox(height: 8),
-            _LockRow(
-              label: 'Clue Chance',
-              value: _license.clueChanceLabel,
-              icon: Icons.casino,
-              isLocked: _lockedStats.contains('clueChance'),
-              cost: _lockCostFor('clueChance'),
-              onChanged: (locked) => _toggleLock('clueChance', locked),
-            ),
-            const Divider(color: FlitColors.cardBorder, height: 24),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Total Reroll Cost',
-                  style: TextStyle(
-                    color: FlitColors.textSecondary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
+                const Icon(
+                  Icons.monetization_on,
+                  color: FlitColors.warning,
+                  size: 16,
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.monetization_on,
-                      color: FlitColors.warning,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _totalCost.toString(),
-                      style: TextStyle(
-                        color: _canAfford(coins)
-                            ? FlitColors.warning
-                            : FlitColors.error,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 4),
+                Text(
+                  _totalCost.toString(),
+                  style: TextStyle(
+                    color: _canAfford(coins)
+                        ? FlitColors.warning
+                        : FlitColors.error,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
           ],
         ),
-      );
+      ],
+    ),
+  );
 
   int _lockCostFor(String stat) {
     int statValue;
@@ -763,8 +763,9 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              hasFree ? FlitColors.success : FlitColors.backgroundMid,
+          backgroundColor: hasFree
+              ? FlitColors.success
+              : FlitColors.backgroundMid,
           foregroundColor: FlitColors.textPrimary,
           disabledBackgroundColor: FlitColors.backgroundMid,
           disabledForegroundColor: FlitColors.textMuted,
@@ -798,151 +799,151 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
   // ---------------------------------------------------------------------------
 
   Widget _buildRerollButton(int coins) => Column(
-        children: [
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed: _canAfford(coins) && !_isRolling ? _reroll : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _canAfford(coins)
-                    ? FlitColors.accent
-                    : FlitColors.error.withOpacity(0.4),
-                foregroundColor: FlitColors.textPrimary,
-                disabledBackgroundColor: FlitColors.error.withOpacity(0.25),
-                disabledForegroundColor: FlitColors.textMuted,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                elevation: _canAfford(coins) ? 4 : 0,
-              ),
-              child: _isRolling
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          FlitColors.textPrimary,
-                        ),
-                      ),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.casino, size: 22),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'REROLL',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.monetization_on,
-                                size: 14,
-                                color: FlitColors.warning,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                _totalCost.toString(),
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+    children: [
+      SizedBox(
+        width: double.infinity,
+        height: 56,
+        child: ElevatedButton(
+          onPressed: _canAfford(coins) && !_isRolling ? _reroll : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _canAfford(coins)
+                ? FlitColors.accent
+                : FlitColors.error.withOpacity(0.4),
+            foregroundColor: FlitColors.textPrimary,
+            disabledBackgroundColor: FlitColors.error.withOpacity(0.25),
+            disabledForegroundColor: FlitColors.textMuted,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
             ),
+            elevation: _canAfford(coins) ? 4 : 0,
           ),
-          // Avatar luck bonus indicator
-          Builder(
-            builder: (context) {
-              final luck = ref.watch(avatarProvider).luckBonus;
-              final rarity = ref.watch(avatarProvider).rarityTier;
-              if (luck <= 0) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
+          child: _isRolling
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      FlitColors.textPrimary,
+                    ),
+                  ),
+                )
+              : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.auto_awesome,
-                      size: 14,
-                      color: FlitColors.gold,
+                    const Icon(Icons.casino, size: 22),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'REROLL',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2,
+                      ),
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$rarity avatar: +$luck luck',
-                      style: const TextStyle(
-                        color: FlitColors.gold,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.monetization_on,
+                            size: 14,
+                            color: FlitColors.warning,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _totalCost.toString(),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              );
-            },
-          ),
-          if (!_canAfford(coins)) ...[
-            const SizedBox(height: 8),
-            Text.rich(
-              TextSpan(
-                children: [
-                  const TextSpan(
-                    text: 'Not enough coins. Play or ',
-                    style: TextStyle(color: FlitColors.error, fontSize: 12),
+        ),
+      ),
+      // Avatar luck bonus indicator
+      Builder(
+        builder: (context) {
+          final luck = ref.watch(avatarProvider).luckBonus;
+          final rarity = ref.watch(avatarProvider).rarityTier;
+          if (luck <= 0) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.auto_awesome,
+                  size: 14,
+                  color: FlitColors.gold,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '$rarity avatar: +$luck luck',
+                  style: const TextStyle(
+                    color: FlitColors.gold,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
                   ),
-                  WidgetSpan(
-                    alignment: PlaceholderAlignment.baseline,
-                    baseline: TextBaseline.alphabetic,
-                    child: GestureDetector(
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const ShopScreen(initialTabIndex: 2),
-                        ),
-                      ),
-                      child: const Text(
-                        'buy',
-                        style: TextStyle(
-                          color: FlitColors.accent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          decoration: TextDecoration.underline,
-                          decorationColor: FlitColors.accent,
-                        ),
-                      ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+      if (!_canAfford(coins)) ...[
+        const SizedBox(height: 8),
+        Text.rich(
+          TextSpan(
+            children: [
+              const TextSpan(
+                text: 'Not enough coins. Play or ',
+                style: TextStyle(color: FlitColors.error, fontSize: 12),
+              ),
+              WidgetSpan(
+                alignment: PlaceholderAlignment.baseline,
+                baseline: TextBaseline.alphabetic,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ShopScreen(initialTabIndex: 2),
                     ),
                   ),
-                  const TextSpan(
-                    text: ' more coins.',
-                    style: TextStyle(color: FlitColors.error, fontSize: 12),
+                  child: const Text(
+                    'buy',
+                    style: TextStyle(
+                      color: FlitColors.accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.underline,
+                      decorationColor: FlitColors.accent,
+                    ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
-        ],
-      );
+              const TextSpan(
+                text: ' more coins.',
+                style: TextStyle(color: FlitColors.error, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ],
+  );
 }
 
 // =============================================================================
@@ -1105,32 +1106,32 @@ class _CompactStatBar extends StatelessWidget {
   }
 
   Widget _buildSegments(Color color, bool isMax) => LayoutBuilder(
-        builder: (context, constraints) {
-          return Row(
-            children: List.generate(25, (i) {
-              final filled = i < value;
-              final isLastFilled = i == value - 1 && isMax;
-              final baseOpacity = filled ? 1.0 : 0.15;
-              final opacity = isLastFilled
-                  ? 0.7 + 0.3 * math.sin(shimmer.value * 2 * math.pi)
-                  : baseOpacity;
+    builder: (context, constraints) {
+      return Row(
+        children: List.generate(25, (i) {
+          final filled = i < value;
+          final isLastFilled = i == value - 1 && isMax;
+          final baseOpacity = filled ? 1.0 : 0.15;
+          final opacity = isLastFilled
+              ? 0.7 + 0.3 * math.sin(shimmer.value * 2 * math.pi)
+              : baseOpacity;
 
-              return Expanded(
-                child: Container(
-                  margin: EdgeInsets.only(right: i < 24 ? 0.5 : 0),
-                  height: 7,
-                  decoration: BoxDecoration(
-                    color: filled
-                        ? color.withOpacity(opacity)
-                        : FlitColors.backgroundLight.withOpacity(0.4),
-                    borderRadius: BorderRadius.circular(1.5),
-                  ),
-                ),
-              );
-            }),
+          return Expanded(
+            child: Container(
+              margin: EdgeInsets.only(right: i < 24 ? 0.5 : 0),
+              height: 7,
+              decoration: BoxDecoration(
+                color: filled
+                    ? color.withOpacity(opacity)
+                    : FlitColors.backgroundLight.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(1.5),
+              ),
+            ),
           );
-        },
+        }),
       );
+    },
+  );
 }
 
 // =============================================================================
@@ -1156,88 +1157,87 @@ class _LockRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: () => onChanged(!isLocked),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: isLocked
-                ? FlitColors.accent.withOpacity(0.1)
-                : FlitColors.backgroundMid,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isLocked
-                  ? FlitColors.accent.withOpacity(0.4)
-                  : Colors.transparent,
+    onTap: () => onChanged(!isLocked),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isLocked
+            ? FlitColors.accent.withOpacity(0.1)
+            : FlitColors.backgroundMid,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isLocked
+              ? FlitColors.accent.withOpacity(0.4)
+              : Colors.transparent,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              color: isLocked ? FlitColors.accent : Colors.transparent,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: isLocked ? FlitColors.accent : FlitColors.textMuted,
+                width: 1.5,
+              ),
+            ),
+            child: isLocked
+                ? const Icon(
+                    Icons.lock,
+                    size: 14,
+                    color: FlitColors.textPrimary,
+                  )
+                : null,
+          ),
+          const SizedBox(width: 10),
+          Icon(icon, color: FlitColors.textSecondary, size: 16),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: FlitColors.textMuted,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Row(
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  color: isLocked ? FlitColors.accent : Colors.transparent,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: isLocked ? FlitColors.accent : FlitColors.textMuted,
-                    width: 1.5,
-                  ),
-                ),
-                child: isLocked
-                    ? const Icon(
-                        Icons.lock,
-                        size: 14,
-                        color: FlitColors.textPrimary,
-                      )
-                    : null,
+              const Icon(
+                Icons.monetization_on,
+                size: 13,
+                color: FlitColors.warning,
               ),
-              const SizedBox(width: 10),
-              Icon(icon, color: FlitColors.textSecondary, size: 16),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: FlitColors.textPrimary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
+              const SizedBox(width: 3),
+              Text(
+                '+$cost',
+                style: TextStyle(
+                  color: isLocked ? FlitColors.warning : FlitColors.textMuted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.monetization_on,
-                    size: 13,
-                    color: FlitColors.warning,
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    '+$cost',
-                    style: TextStyle(
-                      color:
-                          isLocked ? FlitColors.warning : FlitColors.textMuted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
               ),
             ],
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }

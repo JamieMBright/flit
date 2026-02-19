@@ -94,36 +94,19 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
 
     if (points.length < 2) return;
 
-    // Draw translucent dashed line.
+    // Draw solid unbroken line.
     final paint = Paint()
       ..color = lineColor
       ..strokeWidth = isHint ? 2.5 : 2.0
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
-    var drawn = 0.0;
-    var dashOn = true;
-    final onLen = isHint ? 12.0 : 8.0;
-    final offLen = isHint ? 4.0 : 6.0;
-
-    for (var i = 0; i < points.length - 1; i++) {
-      final a = points[i];
-      final b = points[i + 1];
-      final segLen = (b - a).distance;
-
-      if (dashOn) {
-        canvas.drawLine(a, b, paint);
-      }
-
-      drawn += segLen;
-      if (dashOn && drawn >= onLen) {
-        dashOn = false;
-        drawn = 0;
-      } else if (!dashOn && drawn >= offLen) {
-        dashOn = true;
-        drawn = 0;
-      }
+    final path = Path()..moveTo(points[0].dx, points[0].dy);
+    for (var i = 1; i < points.length; i++) {
+      path.lineTo(points[i].dx, points[i].dy);
     }
+    canvas.drawPath(path, paint);
 
     // Target dot — only draw if the actual target is visible (not occluded
     // by the globe). worldToScreen returns (-1000, -1000) for hidden points.
@@ -156,7 +139,8 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
 
     final dLat = lat2 - lat1;
     final dLng = lng2 - lng1;
-    final h = sin(dLat / 2) * sin(dLat / 2) +
+    final h =
+        sin(dLat / 2) * sin(dLat / 2) +
         cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
     final c = 2 * atan2(sqrt(h), sqrt(1 - h));
 

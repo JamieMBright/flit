@@ -43,156 +43,155 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Animated map background
-            _AnimatedMapBackground(animation: _animController),
+    body: Stack(
+      fit: StackFit.expand,
+      children: [
+        // Animated map background
+        _AnimatedMapBackground(animation: _animController),
 
-            // Menu overlay
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
-                child: Column(
-                  children: [
-                    const Spacer(flex: 3),
-                    // Title block with paper plane accent
-                    _buildTitle(),
-                    const Spacer(flex: 2),
-                    _buildMenuButtons(context),
-                    const Spacer(flex: 1),
-                    // Version number
-                    const Text(
-                      appVersion,
-                      style: TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w400,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
+        // Menu overlay
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Column(
+              children: [
+                const Spacer(flex: 3),
+                // Title block with paper plane accent
+                _buildTitle(),
+                const Spacer(flex: 2),
+                _buildMenuButtons(context),
+                const Spacer(flex: 1),
+                // Version number
+                const Text(
+                  appVersion,
+                  style: TextStyle(
+                    color: FlitColors.textMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 1,
+                  ),
                 ),
-              ),
-            ),
-          ],
-        ),
-      );
-
-  Widget _buildTitle() => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Paper plane above title
-          Transform.rotate(
-            angle: -0.3,
-            child: const Icon(Icons.flight, color: FlitColors.accent, size: 32),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'FLIT',
-            style: TextStyle(
-              color: FlitColors.textPrimary,
-              fontSize: 56,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 14,
-              shadows: [
-                Shadow(
-                  color: Color(0x60000000),
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
+                const SizedBox(height: 4),
               ],
             ),
           ),
-          const SizedBox(height: 6),
-          // Tagline with decorative dashes
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 24,
-                height: 1,
-                color: FlitColors.gold.withOpacity(0.4),
-              ),
-              const SizedBox(width: 10),
-              const Text(
-                'A GEOGRAPHICAL ADVENTURE',
-                style: TextStyle(
-                  color: FlitColors.gold,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 3,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Container(
-                width: 24,
-                height: 1,
-                color: FlitColors.gold.withOpacity(0.4),
-              ),
-            ],
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildTitle() => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      // Paper plane above title
+      Transform.rotate(
+        angle: -0.3,
+        child: const Icon(Icons.flight, color: FlitColors.accent, size: 32),
+      ),
+      const SizedBox(height: 8),
+      const Text(
+        'FLIT',
+        style: TextStyle(
+          color: FlitColors.textPrimary,
+          fontSize: 56,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 14,
+          shadows: const [
+            Shadow(
+              color: Color(0x60000000),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 6),
+      // Tagline with decorative dashes
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 24,
+            height: 1,
+            color: FlitColors.gold.withOpacity(0.4),
+          ),
+          const SizedBox(width: 10),
+          const Text(
+            'A GEOGRAPHICAL ADVENTURE',
+            style: TextStyle(
+              color: FlitColors.gold,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 3,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            width: 24,
+            height: 1,
+            color: FlitColors.gold.withOpacity(0.4),
           ),
         ],
-      );
+      ),
+    ],
+  );
 
   Widget _buildMenuButtons(BuildContext context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      // Primary PLAY button with glow
+      _PlayButton(onTap: () => _showGameModes(context)),
+      const SizedBox(height: 10),
+      // Secondary buttons in a 2x2 grid for variety
+      Row(
         children: [
-          // Primary PLAY button with glow
-          _PlayButton(onTap: () => _showGameModes(context)),
-          const SizedBox(height: 10),
-          // Secondary buttons in a 2x2 grid for variety
-          Row(
-            children: [
-              Expanded(
-                child: _MenuTile(
-                  label: 'Leaderboard',
-                  icon: Icons.leaderboard_rounded,
-                  onTap: () =>
-                      _navigateSafely(context, const LeaderboardScreen()),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _MenuTile(
-                  label: 'Profile',
-                  icon: Icons.person_rounded,
-                  onTap: () => _navigateSafely(context, const ProfileScreen()),
-                ),
-              ),
-            ],
+          Expanded(
+            child: _MenuTile(
+              label: 'Leaderboard',
+              icon: Icons.leaderboard_rounded,
+              onTap: () => _navigateSafely(context, const LeaderboardScreen()),
+            ),
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _MenuTile(
-                  label: 'Shop',
-                  icon: Icons.storefront_rounded,
-                  onTap: () => _navigateSafely(context, const ShopScreen()),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _MenuTile(
-                  label: 'How to Play',
-                  icon: Icons.menu_book_rounded,
-                  onTap: () =>
-                      _navigateSafely(context, const GameplayGuideScreen()),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _MenuButton(
-            label: 'Debug',
-            icon: Icons.bug_report_rounded,
-            onTap: () => _navigateSafely(context, const DebugScreen()),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _MenuTile(
+              label: 'Profile',
+              icon: Icons.person_rounded,
+              onTap: () => _navigateSafely(context, const ProfileScreen()),
+            ),
           ),
         ],
-      );
+      ),
+      const SizedBox(height: 10),
+      Row(
+        children: [
+          Expanded(
+            child: _MenuTile(
+              label: 'Shop',
+              icon: Icons.storefront_rounded,
+              onTap: () => _navigateSafely(context, const ShopScreen()),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _MenuTile(
+              label: 'How to Play',
+              icon: Icons.menu_book_rounded,
+              onTap: () =>
+                  _navigateSafely(context, const GameplayGuideScreen()),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 10),
+      _MenuButton(
+        label: 'Debug',
+        icon: Icons.bug_report_rounded,
+        onTap: () => _navigateSafely(context, const DebugScreen()),
+      ),
+    ],
+  );
 
   /// Safely navigate to a new screen with error handling.
   Future<void> _navigateSafely(BuildContext context, Widget destination) async {
@@ -297,11 +296,11 @@ class _AnimatedMapBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: animation,
-        builder: (context, child) => SizedBox.expand(
-          child: CustomPaint(painter: _GlobeBackgroundPainter(animation.value)),
-        ),
-      );
+    animation: animation,
+    builder: (context, child) => SizedBox.expand(
+      child: CustomPaint(painter: _GlobeBackgroundPainter(animation.value)),
+    ),
+  );
 }
 
 class _GlobeBackgroundPainter extends CustomPainter {
@@ -353,73 +352,75 @@ class _GlobeBackgroundPainter extends CustomPainter {
     final globeR = w * 0.42;
     final globeCenter = Offset(globeCx, globeCy);
 
-    // Atmospheric glow around globe (outer ring)
-    final atmosphereGlow = Paint()
-      ..color = FlitColors.atmosphereGlow.withOpacity(0.06)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28);
-    canvas.drawCircle(globeCenter, globeR + 20, atmosphereGlow);
+    // Drop shadow below globe for 3D depth
+    final dropShadow = Paint()
+      ..color = const Color(0xFF000000).withOpacity(0.15)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(globeCx + 4, globeCy + globeR * 0.95),
+        width: globeR * 1.2,
+        height: globeR * 0.15,
+      ),
+      dropShadow,
+    );
 
-    // Globe ocean fill
+    // Atmospheric glow around globe (soft outer ring)
+    final atmosphereGlow = Paint()
+      ..color = FlitColors.atmosphereGlow.withOpacity(0.08)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 32);
+    canvas.drawCircle(globeCenter, globeR + 24, atmosphereGlow);
+
+    // Secondary warm glow on the lit side
+    final warmGlow = Paint()
+      ..color = const Color(0xFF4488CC).withOpacity(0.04)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 40);
+    canvas.drawCircle(
+      Offset(globeCx - globeR * 0.2, globeCy - globeR * 0.2),
+      globeR * 0.8,
+      warmGlow,
+    );
+
+    // Globe ocean fill — 3D lit sphere with blobular organic feel
     final globeOcean = Paint()
       ..shader = RadialGradient(
-        center: const Alignment(-0.3, -0.4),
-        radius: 1.0,
+        center: const Alignment(-0.35, -0.45),
+        radius: 1.1,
         colors: [
-          FlitColors.ocean.withOpacity(0.5),
-          FlitColors.oceanDeep.withOpacity(0.4),
-          const Color(0xFF0A1A28).withOpacity(0.35),
+          const Color(0xFF1A6B8A).withOpacity(0.65),
+          FlitColors.ocean.withOpacity(0.55),
+          FlitColors.oceanDeep.withOpacity(0.50),
+          const Color(0xFF061520).withOpacity(0.55),
         ],
-        stops: const [0.0, 0.5, 1.0],
+        stops: const [0.0, 0.3, 0.65, 1.0],
       ).createShader(Rect.fromCircle(center: globeCenter, radius: globeR));
     canvas.drawCircle(globeCenter, globeR, globeOcean);
 
-    // Lat/lon grid ON the globe (clipped)
+    // Clip globe contents
     canvas.save();
     canvas.clipPath(
       Path()..addOval(Rect.fromCircle(center: globeCenter, radius: globeR)),
     );
 
-    final gridPaint = Paint()
-      ..color = FlitColors.gridLine.withOpacity(0.7)
-      ..strokeWidth = 0.4
-      ..style = PaintingStyle.stroke;
+    // ── 3D sphere shading — lit from upper-left ──
+    // Dark shadow on lower-right gives depth
+    final sphereShadow = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(0.4, 0.5),
+        radius: 0.9,
+        colors: [Colors.transparent, const Color(0xFF000000).withOpacity(0.25)],
+        stops: const [0.3, 1.0],
+      ).createShader(Rect.fromCircle(center: globeCenter, radius: globeR));
+    canvas.drawCircle(globeCenter, globeR, sphereShadow);
 
-    // Latitude lines (horizontal ellipses that flatten toward poles)
-    for (var i = 1; i < 10; i++) {
-      final frac = i / 10.0;
-      final ly = globeCy - globeR + globeR * 2 * frac;
-      final distFromCenter = (frac - 0.5).abs();
-      final halfWidth = globeR *
-          sqrt(1 - 4 * distFromCenter * distFromCenter).clamp(0.0, 1.0);
-      if (halfWidth > 2) {
-        canvas.drawLine(
-          Offset(globeCx - halfWidth, ly),
-          Offset(globeCx + halfWidth, ly),
-          gridPaint,
-        );
-      }
-    }
-    // Longitude lines — converge at north and south poles.
-    // Each line is a half-ellipse arc from pole to pole, bulging outward
-    // by an amount that depends on its angular position around the equator.
-    final northPole = Offset(globeCx, globeCy - globeR);
-    final southPole = Offset(globeCx, globeCy + globeR);
-    for (var i = 1; i < 10; i++) {
-      final frac = i / 10.0;
-      // Maximum x-offset at equator (how far the arc bulges from center).
-      final bulge = globeR * cos(pi * (frac - 0.5));
-      final path = Path()
-        ..moveTo(northPole.dx, northPole.dy)
-        ..cubicTo(
-          globeCx + bulge * 0.55,
-          globeCy - globeR * 0.33,
-          globeCx + bulge * 0.55,
-          globeCy + globeR * 0.33,
-          southPole.dx,
-          southPole.dy,
-        );
-      canvas.drawPath(path, gridPaint);
-    }
+    // Specular highlight — bright spot upper-left
+    final specular = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(-0.45, -0.5),
+        radius: 0.5,
+        colors: [const Color(0xFF88CCFF).withOpacity(0.18), Colors.transparent],
+      ).createShader(Rect.fromCircle(center: globeCenter, radius: globeR));
+    canvas.drawCircle(globeCenter, globeR, specular);
 
     // Continent silhouettes on the globe
     final landPaint = Paint()..color = FlitColors.landMass.withOpacity(0.38);
@@ -843,48 +844,48 @@ class _PlayButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: FlitColors.accent.withOpacity(0.25),
-              blurRadius: 16,
-              spreadRadius: 1,
-            ),
-          ],
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: FlitColors.accent.withOpacity(0.25),
+          blurRadius: 16,
+          spreadRadius: 1,
         ),
-        child: Material(
-          color: FlitColors.accent,
-          borderRadius: BorderRadius.circular(12),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.play_arrow_rounded,
-                    color: FlitColors.textPrimary,
-                    size: 28,
-                  ),
-                  SizedBox(width: 10),
-                  Text(
-                    'PLAY',
-                    style: TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 3,
-                    ),
-                  ),
-                ],
+      ],
+    ),
+    child: Material(
+      color: FlitColors.accent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.play_arrow_rounded,
+                color: FlitColors.textPrimary,
+                size: 28,
               ),
-            ),
+              SizedBox(width: 10),
+              Text(
+                'PLAY',
+                style: TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 3,
+                ),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 /// Square-ish tile for secondary menu items (2x2 grid).
@@ -901,39 +902,39 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: FlitColors.cardBackground.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          onTap: onTap,
+    color: FlitColors.cardBackground.withOpacity(0.85),
+    borderRadius: BorderRadius.circular(10),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: FlitColors.cardBorder.withOpacity(0.5)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: FlitColors.textSecondary, size: 20),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    label.toUpperCase(),
-                    style: const TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          border: Border.all(color: FlitColors.cardBorder.withOpacity(0.5)),
         ),
-      );
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: FlitColors.textSecondary, size: 20),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label.toUpperCase(),
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 /// Full-width menu button for lower-priority items.
@@ -950,36 +951,36 @@ class _MenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: FlitColors.cardBackground.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: onTap,
+    color: FlitColors.cardBackground.withOpacity(0.6),
+    borderRadius: BorderRadius.circular(8),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: FlitColors.cardBorder.withOpacity(0.3)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: FlitColors.textMuted, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  label.toUpperCase(),
-                  style: const TextStyle(
-                    color: FlitColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          border: Border.all(color: FlitColors.cardBorder.withOpacity(0.3)),
         ),
-      );
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: FlitColors.textMuted, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              label.toUpperCase(),
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _GameModeCard extends StatelessWidget {
@@ -999,70 +1000,70 @@ class _GameModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: isHighlighted
-            ? FlitColors.accent.withOpacity(0.15)
-            : FlitColors.backgroundMid,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
+    color: isHighlighted
+        ? FlitColors.accent.withOpacity(0.15)
+        : FlitColors.backgroundMid,
+    borderRadius: BorderRadius.circular(12),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isHighlighted
-                    ? FlitColors.accent.withOpacity(0.5)
-                    : FlitColors.cardBorder,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: isHighlighted
-                        ? FlitColors.accent.withOpacity(0.2)
-                        : FlitColors.backgroundDark.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: isHighlighted
-                        ? FlitColors.accent
-                        : FlitColors.textPrimary,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: FlitColors.textPrimary,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          color: FlitColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right, color: FlitColors.textMuted),
-              ],
-            ),
+          border: Border.all(
+            color: isHighlighted
+                ? FlitColors.accent.withOpacity(0.5)
+                : FlitColors.cardBorder,
           ),
         ),
-      );
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: isHighlighted
+                    ? FlitColors.accent.withOpacity(0.2)
+                    : FlitColors.backgroundDark.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                color: isHighlighted
+                    ? FlitColors.accent
+                    : FlitColors.textPrimary,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: FlitColors.textMuted),
+          ],
+        ),
+      ),
+    ),
+  );
 }

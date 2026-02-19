@@ -29,6 +29,18 @@ MIN_POLYGON_POINTS = 4
 # while keeping the Dart file under 2MB for CI compilation.
 SIMPLIFY_TOLERANCE = 0.05
 
+# Adaptive simplification: small countries/islands get less aggressive
+# simplification so their outlines remain recognizable (e.g. Comoros, Malta,
+# Barbados). Area thresholds in square degrees (1° ≈ 111 km at equator).
+SMALL_COUNTRY_AREA = 2.0       # < ~24,000 km² → use SMALL_TOLERANCE
+TINY_COUNTRY_AREA = 0.1        # < ~1,200 km²  → use TINY_TOLERANCE
+SMALL_TOLERANCE = 0.01         # ~1.1 km - 5x more detail
+TINY_TOLERANCE = 0.002         # ~0.2 km - 25x more detail for microstates/tiny islands
+
+# Minimum useful points per polygon for outline recognition.
+# Triangles (3 unique + closure = 4) are unrecognizable.
+MIN_USEFUL_POINTS = 8
+
 # Territories to ensure are included, with manual ISO codes for disputed ones
 DISPUTED_TERRITORIES = {
     'Somaliland': 'XS',   # No ISO code; use custom
@@ -166,20 +178,40 @@ ISO_CODE_FIXES = {
 }
 
 
+def _pick_tolerance(geometry):
+    """Choose simplification tolerance based on geometry area.
+
+    Small countries and islands get less aggressive simplification so their
+    outlines remain recognizable as clue shapes (e.g. Comoros, Malta,
+    Barbados, Cyprus). Area is in square degrees before simplification.
+    """
+    try:
+        area = geometry.area  # square degrees (approximate, fine for thresholds)
+    except Exception:
+        return SIMPLIFY_TOLERANCE
+
+    if area < TINY_COUNTRY_AREA:
+        return TINY_TOLERANCE
+    elif area < SMALL_COUNTRY_AREA:
+        return SMALL_TOLERANCE
+    return SIMPLIFY_TOLERANCE
+
+
 def extract_polygons(geometry):
     """Extract list of coordinate rings from a geometry.
 
     Applies Douglas-Peucker simplification to reduce point count while
-    preserving topology. This keeps borders pristine while keeping the
-    Dart file small enough for CI compilation.
+    preserving topology. Uses adaptive tolerance: small countries get finer
+    resolution so their outlines remain recognizable as game clues.
     """
     polygons = []
     if geometry is None:
         return polygons
 
-    # Simplify to reduce point count (preserve topology to avoid self-intersections)
-    if SIMPLIFY_TOLERANCE > 0:
-        geometry = geometry.simplify(SIMPLIFY_TOLERANCE, preserve_topology=True)
+    # Adaptive simplification based on country size
+    tolerance = _pick_tolerance(geometry)
+    if tolerance > 0:
+        geometry = geometry.simplify(tolerance, preserve_topology=True)
 
     if isinstance(geometry, Polygon):
         coords = list(geometry.exterior.coords)
