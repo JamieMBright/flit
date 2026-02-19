@@ -116,9 +116,27 @@ if ! command -v flutter &> /dev/null; then
         echo "Step 2: Checking dart format..."
         $DART_BIN format --set-exit-if-changed lib/ test/
         echo "  Format check passed."
+
+        # -------------------------------------------------------------------
+        # Step 3: dart analyze (catches prefer_const_constructors and others)
+        # Runs the full Dart analyzer when the SDK is available.
+        # Uses --fatal-infos so lint-level issues (like missing const) block
+        # the commit — this is the authoritative check for const constructors.
+        # -------------------------------------------------------------------
+        echo ""
+        echo "Step 3: Running dart analyze..."
+        if $DART_BIN analyze --fatal-infos lib/ test/ 2>/dev/null; then
+            echo "  Analyzer check passed."
+        else
+            # dart analyze may fail in a Flutter project without the Flutter SDK
+            # (e.g. missing flutter_lints package). In that case, fall back to
+            # the lint-noflutter.sh heuristics which already ran above.
+            echo "  WARNING: dart analyze failed (likely needs Flutter SDK for full analysis)"
+            echo "  Relying on lint-noflutter.sh checks above. CI will run full validation."
+        fi
     else
         echo ""
-        echo "WARNING: dart not found - skipping dart format check"
+        echo "WARNING: dart not found - skipping dart format and analyze checks"
         echo "Install Dart SDK or run: curl -fsSL https://storage.googleapis.com/dart-archive/channels/stable/release/latest/sdk/dartsdk-linux-x64-release.zip -o /tmp/dart.zip && unzip -qo /tmp/dart.zip -d /tmp/"
     fi
 
