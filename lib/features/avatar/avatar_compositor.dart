@@ -473,9 +473,8 @@ class AvatarCompositor {
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
     // Pick a natural eye color that varies with the eyes selection.
-    final eyeColor =
-        _naturalEyeColors[(sh + config.eyes.index * 3) %
-            _naturalEyeColors.length];
+    final eyeColor = _naturalEyeColors[
+        (sh + config.eyes.index * 3) % _naturalEyeColors.length];
     final shirtColor = _hashColor(sh, 77);
     // Eye shadow: slightly darker/muted version via hash.
     final eyeShadow = _hashColor(sh, 88);
