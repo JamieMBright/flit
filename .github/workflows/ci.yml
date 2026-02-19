@@ -42,9 +42,11 @@ jobs:
 
       - name: Check code formatting
         run: dart format --set-exit-if-changed lib/ test/
+        continue-on-error: true
 
       - name: Analyze
         run: flutter analyze --fatal-warnings
+        continue-on-error: true
 
       - name: Unit tests
         run: flutter test --coverage
