@@ -39,7 +39,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       final screenH = gameRef.size.y;
 
       // --- Geographic feature overlays ---
-      _renderRivers(canvas, continuousAlt, screenW, screenH);
+      // Rivers removed — low resolution data created visual artifacts.
       _renderLakes(canvas, continuousAlt, screenW, screenH);
       _renderSeaLabels(canvas, continuousAlt, screenW, screenH);
       _renderMountains(canvas, continuousAlt, screenW, screenH);
@@ -76,63 +76,6 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
   }
 
   // -----------------------------------------------------------------------
-  // Rivers — simplified polylines of major world rivers
-  // -----------------------------------------------------------------------
-
-  void _renderRivers(
-    Canvas canvas,
-    double alt,
-    double screenW,
-    double screenH,
-  ) {
-    // Rivers visible at mid-to-high altitude
-    final opacity = (alt * 0.6).clamp(0.0, 0.5);
-    if (opacity < 0.05) return;
-
-    final paint = Paint()
-      ..color = const Color(0xFF4488CC).withOpacity(opacity)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = alt > 0.7 ? 1.0 : 1.5
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final playerPos = gameRef.worldPosition;
-    final visRadius = alt < 0.5 ? 40.0 : 90.0;
-
-    for (final river in OsmFeatures.rivers) {
-      // Quick bounding check — skip rivers far from camera
-      var anyNear = false;
-      for (final pt in river.points) {
-        if ((pt.x - playerPos.x).abs() < visRadius &&
-            (pt.y - playerPos.y).abs() < visRadius) {
-          anyNear = true;
-          break;
-        }
-      }
-      if (!anyNear) continue;
-
-      final path = ui.Path();
-      var started = false;
-
-      for (final pt in river.points) {
-        final screenPos = gameRef.worldToScreenGlobe(pt);
-        if (screenPos.x < -500 || screenPos.y < -500) {
-          started = false;
-          continue;
-        }
-        if (!started) {
-          path.moveTo(screenPos.x, screenPos.y);
-          started = true;
-        } else {
-          path.lineTo(screenPos.x, screenPos.y);
-        }
-      }
-
-      canvas.drawPath(path, paint);
-    }
-  }
-
-  // -----------------------------------------------------------------------
   // Lakes — filled circles at lake centers
   // -----------------------------------------------------------------------
 
@@ -149,14 +92,16 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
     for (final lake in OsmFeatures.lakes) {
       if ((lake.center.x - playerPos.x).abs() > visRadius ||
-          (lake.center.y - playerPos.y).abs() > visRadius) continue;
+          (lake.center.y - playerPos.y).abs() > visRadius)
+        continue;
 
       final screenPos = gameRef.worldToScreenGlobe(lake.center);
       if (screenPos.x < -500 || screenPos.y < -500) continue;
       if (screenPos.x < -50 ||
           screenPos.x > screenW + 50 ||
           screenPos.y < -50 ||
-          screenPos.y > screenH + 50) continue;
+          screenPos.y > screenH + 50)
+        continue;
 
       // Scale radius based on altitude and lake size
       final screenRadius = (lake.radiusDegrees * 8.0 / (alt + 0.3)).clamp(
@@ -193,14 +138,16 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
     for (final sea in OsmFeatures.seas) {
       if ((sea.center.x - playerPos.x).abs() > 90 ||
-          (sea.center.y - playerPos.y).abs() > 90) continue;
+          (sea.center.y - playerPos.y).abs() > 90)
+        continue;
 
       final screenPos = gameRef.worldToScreenGlobe(sea.center);
       if (screenPos.x < -500 || screenPos.y < -500) continue;
       if (screenPos.x < 0 ||
           screenPos.x > screenW ||
           screenPos.y < 0 ||
-          screenPos.y > screenH) continue;
+          screenPos.y > screenH)
+        continue;
 
       final painter = _seaLabelCache.putIfAbsent(sea.name, () {
         final tp = TextPainter(
@@ -267,14 +214,16 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
     for (final peak in OsmFeatures.peaks) {
       if (drawn >= maxPeaks) break;
       if ((peak.location.x - playerPos.x).abs() > visRadius ||
-          (peak.location.y - playerPos.y).abs() > visRadius) continue;
+          (peak.location.y - playerPos.y).abs() > visRadius)
+        continue;
 
       final screenPos = gameRef.worldToScreenGlobe(peak.location);
       if (screenPos.x < -500 || screenPos.y < -500) continue;
       if (screenPos.x < -20 ||
           screenPos.x > screenW + 20 ||
           screenPos.y < -20 ||
-          screenPos.y > screenH + 20) continue;
+          screenPos.y > screenH + 20)
+        continue;
 
       // Small triangle marker
       const size = 4.0;
@@ -312,14 +261,16 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
     for (final volcano in OsmFeatures.volcanoes) {
       if (drawn >= maxVolcanoes) break;
       if ((volcano.location.x - playerPos.x).abs() > visRadius ||
-          (volcano.location.y - playerPos.y).abs() > visRadius) continue;
+          (volcano.location.y - playerPos.y).abs() > visRadius)
+        continue;
 
       final screenPos = gameRef.worldToScreenGlobe(volcano.location);
       if (screenPos.x < -500 || screenPos.y < -500) continue;
       if (screenPos.x < -20 ||
           screenPos.x > screenW + 20 ||
           screenPos.y < -20 ||
-          screenPos.y > screenH + 20) continue;
+          screenPos.y > screenH + 20)
+        continue;
 
       final color = volcano.isActive
           ? const Color(0xFFDD4422).withOpacity(opacity)
@@ -375,14 +326,16 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
     for (final airport in OsmFeatures.airports) {
       if (drawn >= maxAirports) break;
       if ((airport.location.x - playerPos.x).abs() > visRadius ||
-          (airport.location.y - playerPos.y).abs() > visRadius) continue;
+          (airport.location.y - playerPos.y).abs() > visRadius)
+        continue;
 
       final screenPos = gameRef.worldToScreenGlobe(airport.location);
       if (screenPos.x < -500 || screenPos.y < -500) continue;
       if (screenPos.x < 0 ||
           screenPos.x > screenW ||
           screenPos.y < 0 ||
-          screenPos.y > screenH) continue;
+          screenPos.y > screenH)
+        continue;
 
       // Small dot
       canvas.drawCircle(Offset(screenPos.x, screenPos.y), 2.0, dotPaint);

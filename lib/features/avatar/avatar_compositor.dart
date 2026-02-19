@@ -110,17 +110,17 @@ class AvatarCompositor {
   ///
   /// Returns `null` only if composition fails unexpectedly.
   static String? compose(AvatarConfig config) => switch (config.style) {
-        AvatarStyle.adventurer => _composeAdventurer(config),
-        AvatarStyle.avataaars => _composeAvataaars(config),
-        AvatarStyle.bigEars => _composeBigEars(config),
-        AvatarStyle.lorelei => _composeLorelei(config),
-        AvatarStyle.micah => _composeMicah(config),
-        AvatarStyle.pixelArt => _composePixelArt(config),
-        AvatarStyle.bottts => _composeBottts(config),
-        AvatarStyle.notionists => _composeNotionists(config),
-        AvatarStyle.openPeeps => _composeOpenPeeps(config),
-        AvatarStyle.thumbs => _composeThumbs(config),
-      };
+    AvatarStyle.adventurer => _composeAdventurer(config),
+    AvatarStyle.avataaars => _composeAvataaars(config),
+    AvatarStyle.bigEars => _composeBigEars(config),
+    AvatarStyle.lorelei => _composeLorelei(config),
+    AvatarStyle.micah => _composeMicah(config),
+    AvatarStyle.pixelArt => _composePixelArt(config),
+    AvatarStyle.bottts => _composeBottts(config),
+    AvatarStyle.notionists => _composeNotionists(config),
+    AvatarStyle.openPeeps => _composeOpenPeeps(config),
+    AvatarStyle.thumbs => _composeThumbs(config),
+  };
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -321,8 +321,10 @@ class AvatarCompositor {
       sh,
       3,
     ).replaceAll('{{HAIR_COLOR}}', hairHex);
-    final cheek = _pick(bigearsCheek, sh, 4);
-    final nose = _pick(bigearsNose, sh, 5);
+    // Cheek and nose vary with eyebrows and feature selections for more
+    // user-controllable variation instead of being locked to the style hash.
+    final cheek = _pick(bigearsCheek, config.eyebrows.index, 4);
+    final nose = _pick(bigearsNose, config.feature.index, 5);
     final mouth = _pick(bigearsMouth, config.mouth.index, 6);
     final eyes = _pick(bigearsEyes, config.eyes.index, 7);
     final frontHair = _pick(
@@ -339,23 +341,23 @@ class AvatarCompositor {
     // Face (centered).
     buf.write(_g(face, 'translate(30 51)'));
 
-    // Left ear + right ear (mirrored).
+    // Left ear + right ear (mirrored) — centered horizontally on face.
     if (ear.isNotEmpty) {
-      buf.write(_g(ear, 'translate(-20 115)'));
-      buf.write('<g transform="translate(350 115) scale(-1 1)">$ear</g>');
+      buf.write(_g(ear, 'translate(-10 130)'));
+      buf.write('<g transform="translate(340 130) scale(-1 1)">$ear</g>');
     }
 
     // Left sideburn + right sideburn (mirrored).
     if (sideburn.isNotEmpty) {
-      buf.write(_g(sideburn, 'translate(14 160)'));
-      buf.write('<g transform="translate(375 160) scale(-1 1)">$sideburn</g>');
+      buf.write(_g(sideburn, 'translate(20 170)'));
+      buf.write('<g transform="translate(370 170) scale(-1 1)">$sideburn</g>');
     }
 
-    // Cheek, nose, mouth, eyes.
-    if (cheek.isNotEmpty) buf.write(_g(cheek, 'translate(86 188)'));
-    if (nose.isNotEmpty) buf.write(_g(nose, 'translate(129 175)'));
-    if (mouth.isNotEmpty) buf.write(_g(mouth, 'translate(190 250)'));
-    if (eyes.isNotEmpty) buf.write(_g(eyes, 'translate(74 131)'));
+    // Cheek, nose, mouth, eyes — adjusted positioning.
+    if (cheek.isNotEmpty) buf.write(_g(cheek, 'translate(86 218)'));
+    if (nose.isNotEmpty) buf.write(_g(nose, 'translate(129 195)'));
+    if (mouth.isNotEmpty) buf.write(_g(mouth, 'translate(190 280)'));
+    if (eyes.isNotEmpty) buf.write(_g(eyes, 'translate(74 145)'));
 
     // Front hair.
     if (frontHair.isNotEmpty) buf.write(_g(frontHair, 'translate(6 0)'));
@@ -473,8 +475,9 @@ class AvatarCompositor {
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
     // Pick a natural eye color that varies with the eyes selection.
-    final eyeColor = _naturalEyeColors[
-        (sh + config.eyes.index * 3) % _naturalEyeColors.length];
+    final eyeColor =
+        _naturalEyeColors[(sh + config.eyes.index * 3) %
+            _naturalEyeColors.length];
     final shirtColor = _hashColor(sh, 77);
     // Eye shadow: slightly darker/muted version via hash.
     final eyeShadow = _hashColor(sh, 88);
@@ -490,12 +493,16 @@ class AvatarCompositor {
             config.glasses.index,
             10,
           ).replaceAll('{{GLASSES_COLOR}}', '#4a4a4a');
-    // Micah facialHair embeds inside base via {{FACIAL_HAIR}} placeholder.
-    final facialHairRaw = _pick(
-      micahFacialHair,
-      sh,
-      11,
-    ).replaceAll('{{FACIAL_HAIR_COLOR}}', hairHex);
+    // Micah facialHair: controlled by feature selection instead of locked to
+    // style hash. 'none' feature = clean-shaven; other features cycle through
+    // facial hair variants. This gives users control over stubble/beard.
+    final facialHairRaw = config.feature == AvatarFeature.none
+        ? ''
+        : _pick(
+            micahFacialHair,
+            config.feature.index,
+            11,
+          ).replaceAll('{{FACIAL_HAIR_COLOR}}', hairHex);
 
     final base = micahBase
         .replaceAll('{{BASE_COLOR}}', skinHex)
@@ -782,12 +789,13 @@ class AvatarCompositor {
     final widthSuffix = widths[widthIdx];
 
     // Pick eyes variant base (variant1-variant9), append width suffix.
-    final eyesKeys =
-        thumbsEyes.keys.where((k) => k.endsWith(widthSuffix)).toList();
+    final eyesKeys = thumbsEyes.keys
+        .where((k) => k.endsWith(widthSuffix))
+        .toList();
     final eyesSvg = eyesKeys.isNotEmpty
         ? (thumbsEyes[eyesKeys[(config.eyes.index % eyesKeys.length).abs()]] ??
-                '')
-            .replaceAll('{{EYES_COLOR}}', eyeColor)
+                  '')
+              .replaceAll('{{EYES_COLOR}}', eyeColor)
         : '';
 
     final mouthSvg = _pick(

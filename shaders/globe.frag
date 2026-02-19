@@ -599,16 +599,16 @@ void main() {
         // Border width: thicker when close, thinner when far away
         // At low altitude (~0.3): ~1.5 px at texture resolution
         // At high altitude (~3.0): ~0.5 px — subtle hairline
-        float borderWidth = mix(0.10, 0.03, smoothstep(0.3, 3.0, camAlt));
+        float borderWidth = mix(0.14, 0.05, smoothstep(0.3, 3.0, camAlt));
 
         // Anti-aliased border line (smooth falloff at edges)
         float borderLine = 1.0 - smoothstep(0.0, borderWidth, borderDist);
 
-        // Opacity: visible on day side, dimmer at night
-        float borderAlpha = borderLine * 0.5 * (dayFactor * 0.7 + 0.3);
+        // Opacity: stronger for distinctiveness, dimmer at night
+        float borderAlpha = borderLine * 0.75 * (dayFactor * 0.6 + 0.4);
 
-        // Border color: light tone that reads on both land and ocean
-        vec3 borderColor = vec3(0.85, 0.85, 0.80) * (diffuse * 0.4 + 0.6);
+        // Border color: warm off-white that reads clearly on both land and ocean
+        vec3 borderColor = vec3(0.92, 0.90, 0.82) * (diffuse * 0.3 + 0.7);
 
         surfaceColor = mix(surfaceColor, borderColor, borderAlpha);
     }
