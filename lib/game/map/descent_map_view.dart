@@ -21,10 +21,15 @@ class DescentMapView extends StatefulWidget {
     required this.heading,
     required this.altitudeTransition,
     required this.tileUrl,
+    this.trackPlane = false,
   });
 
-  /// Map center in degrees (offset ahead of player so the player
-  /// appears at ~80% screen height, matching the plane sprite).
+  /// Map center in degrees.
+  ///
+  /// When [trackPlane] is false (default), this is the map center directly.
+  /// When [trackPlane] is true, this is the plane's world position; the map
+  /// center is offset ahead along [heading] so the plane appears at ~80%
+  /// screen height, and rotation pivots around the plane.
   final double centerLng;
   final double centerLat;
 
@@ -39,6 +44,11 @@ class DescentMapView extends StatefulWidget {
   /// Tile URL template (e.g. OSM, CARTO Dark, Voyager, OpenTopoMap).
   final String tileUrl;
 
+  /// When true, offset the map center ahead of [centerLng]/[centerLat] along
+  /// [heading] so the plane position appears at ~80% screen height and
+  /// rotation pivots around the plane. Used for descent mode.
+  final bool trackPlane;
+
   @override
   State<DescentMapView> createState() => _DescentMapViewState();
 }
@@ -46,6 +56,7 @@ class DescentMapView extends StatefulWidget {
 class _DescentMapViewState extends State<DescentMapView> {
   final MapController _mapController = MapController();
   bool _mapReady = false;
+  double _widgetHeight = 800.0;
 
   /// Convert altitude transition (0.0–1.0) to flutter_map zoom level.
   /// Low altitude (0.0) → zoom 7 (regional overview)
@@ -60,52 +71,92 @@ class _DescentMapViewState extends State<DescentMapView> {
     return -widget.heading * 180.0 / math.pi;
   }
 
+  /// Compute the effective map center.
+  ///
+  /// When [trackPlane] is true, offsets ahead of the plane position along
+  /// [heading] so the plane appears at ~80% of the widget height (30% below
+  /// the map center). The offset is computed for the 2D Web Mercator
+  /// projection at the current zoom level and latitude.
+  ///
+  /// When the map rotates by -heading, the heading direction becomes
+  /// screen-up, placing the plane (which is behind the center in the heading
+  /// direction) at ~80% screen height. Rotation pivots around the map center,
+  /// keeping the plane visually fixed.
+  LatLng _effectiveCenter() {
+    if (!widget.trackPlane) {
+      return LatLng(widget.centerLat, widget.centerLng);
+    }
+
+    final latRad = widget.centerLat * math.pi / 180.0;
+    final cosLat = math.cos(latRad).abs().clamp(0.01, 1.0);
+
+    // Degrees of latitude per pixel in Web Mercator at current zoom & latitude.
+    final degPerPx = 360.0 * cosLat / (256.0 * math.pow(2, _zoom));
+
+    // Offset ahead by 30% of widget height (center at 50% → plane at 80%).
+    final offsetDeg = 0.30 * _widgetHeight * degPerPx;
+
+    // Move ahead along the heading direction.
+    final dLat = offsetDeg * math.cos(widget.heading);
+    final dLng = offsetDeg * math.sin(widget.heading) / cosLat;
+
+    return LatLng(widget.centerLat + dLat, widget.centerLng + dLng);
+  }
+
   @override
   void didUpdateWidget(DescentMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_mapReady) {
-      _mapController.move(LatLng(widget.centerLat, widget.centerLng), _zoom);
+      _mapController.move(_effectiveCenter(), _zoom);
       _mapController.rotate(_rotation);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: FlutterMap(
-        mapController: _mapController,
-        options: MapOptions(
-          initialCenter: LatLng(widget.centerLat, widget.centerLng),
-          initialZoom: _zoom,
-          initialRotation: _rotation,
-          // Disable all user interaction — game controls the camera
-          interactionOptions: const InteractionOptions(
-            flags: InteractiveFlag.none,
-          ),
-          onMapReady: () {
-            _mapReady = true;
-          },
-        ),
-        children: [
-          // Map tiles (style selected in settings)
-          TileLayer(
-            urlTemplate: widget.tileUrl,
-            userAgentPackageName: 'com.jamiembright.flit',
-            maxZoom: 18,
-            subdomains: const ['a', 'b', 'c'],
-            // On web, the browser cache handles tile storage.
-          ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _widgetHeight = constraints.maxHeight;
+        final center = _effectiveCenter();
+        return IgnorePointer(
+          child: FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: center,
+              initialZoom: _zoom,
+              initialRotation: _rotation,
+              // Disable all user interaction — game controls the camera
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.none,
+              ),
+              onMapReady: () {
+                _mapReady = true;
+              },
+            ),
+            children: [
+              // Map tiles (style selected in settings)
+              TileLayer(
+                urlTemplate: widget.tileUrl,
+                userAgentPackageName: 'com.jamiembright.flit',
+                maxZoom: 18,
+                subdomains: const ['a', 'b', 'c'],
+                // On web, the browser cache handles tile storage.
+              ),
 
-          // No plane marker — the game's existing plane sprite stays visible
-          // on the Canvas overlay at its fixed screen position (50%, 80%).
+              // No plane marker — the game's existing plane sprite stays visible
+              // on the Canvas overlay at its fixed screen position (50%, 80%).
 
-          // OSM attribution (required by tile usage policy)
-          const RichAttributionWidget(
-            alignment: AttributionAlignment.bottomLeft,
-            attributions: [TextSourceAttribution('OpenStreetMap contributors')],
+              // OSM attribution (required by tile usage policy)
+              const RichAttributionWidget(
+                alignment: AttributionAlignment.bottomLeft,
+                attributions: [
+                  TextSourceAttribution('OpenStreetMap contributors'),
+                ],
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
