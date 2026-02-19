@@ -316,10 +316,9 @@ class AudioManager {
   Future<void> updateEngineVolume(double turnAmount) async {
     if (!_enabled || _currentEngine == null) return;
 
-    final volume =
-        (_engineBaseVolume +
-                _engineTurnBoost * turnAmount.abs().clamp(0.0, 1.0))
-            .clamp(0.0, 1.0);
+    final volume = (_engineBaseVolume +
+            _engineTurnBoost * turnAmount.abs().clamp(0.0, 1.0))
+        .clamp(0.0, 1.0);
 
     try {
       await _enginePlayer.setVolume(volume);

@@ -58,135 +58,135 @@ class GameHud extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SafeArea(
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Top row: [Exit/Settings] [Clue] [Timer/Compass/Round]
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Left column: Exit and Settings stacked
-              Column(
-                mainAxisSize: MainAxisSize.min,
+              // Top row: [Exit/Settings] [Clue] [Timer/Compass/Round]
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _ExitButton(onTap: onExit),
-                  const SizedBox(height: 6),
-                  _GearButton(onTap: onSettings),
-                ],
-              ),
-              const SizedBox(width: 8),
-              // Center: Clue display (expanded to fill available space)
-              if (currentClue != null)
-                Expanded(child: _ClueCard(clue: currentClue!))
-              else
-                const Spacer(),
-              const SizedBox(width: 8),
-              // Right column: Timer, Compass, Round indicator
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _TimerDisplay(elapsed: elapsedTime),
-                  if (heading != null) ...[
-                    const SizedBox(height: 6),
-                    _CompassDisplay(heading: heading!),
-                  ],
-                  if (currentRound != null &&
-                      totalRounds != null &&
-                      totalRounds! > 1) ...[
-                    const SizedBox(height: 6),
-                    _RoundIndicator(
-                      current: currentRound!,
-                      total: totalRounds!,
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ),
-          // Revealed country name (shown after tier 2 hint)
-          if (revealedCountry != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: FlitColors.gold.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: FlitColors.gold.withOpacity(0.6),
-                      width: 2,
-                    ),
-                  ),
-                  child: Row(
+                  // Left column: Exit and Settings stacked
+                  Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('🎯 ', style: TextStyle(fontSize: 16)),
-                      Text(
-                        revealedCountry!,
-                        style: const TextStyle(
-                          color: FlitColors.gold,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
+                      _ExitButton(onTap: onExit),
+                      const SizedBox(height: 6),
+                      _GearButton(onTap: onSettings),
                     ],
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  // Center: Clue display (expanded to fill available space)
+                  if (currentClue != null)
+                    Expanded(child: _ClueCard(clue: currentClue!))
+                  else
+                    const Spacer(),
+                  const SizedBox(width: 8),
+                  // Right column: Timer, Compass, Round indicator
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _TimerDisplay(elapsed: elapsedTime),
+                      if (heading != null) ...[
+                        const SizedBox(height: 6),
+                        _CompassDisplay(heading: heading!),
+                      ],
+                      if (currentRound != null &&
+                          totalRounds != null &&
+                          totalRounds! > 1) ...[
+                        const SizedBox(height: 6),
+                        _RoundIndicator(
+                          current: currentRound!,
+                          total: totalRounds!,
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
               ),
-            ),
-          // Country name bar (shown when flying over a country)
-          if (countryName != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Center(
-                child: _CountryNameBar(
-                  name: countryName!,
-                  flashProgress: countryFlashProgress,
+              // Revealed country name (shown after tier 2 hint)
+              if (revealedCountry != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: FlitColors.gold.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: FlitColors.gold.withOpacity(0.6),
+                          width: 2,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('🎯 ', style: TextStyle(fontSize: 16)),
+                          Text(
+                            revealedCountry!,
+                            style: const TextStyle(
+                              color: FlitColors.gold,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          const Spacer(),
-          // Fuel gauge (shown only when fuel is active)
-          if (fuelLevel != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _FuelGauge(level: fuelLevel!, maxFuel: maxFuel),
-            ),
-          // Bottom row: Speed controls, Altitude indicator, Hint button
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              // Hint button
-              if (hintTier < 4 && onHint != null)
-                _HintButton(tier: hintTier, onTap: onHint),
-              // Speed controls
-              Flexible(
-                child: _SpeedControls(
-                  current: currentSpeed,
-                  onChanged: onSpeedChanged,
+              // Country name bar (shown when flying over a country)
+              if (countryName != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Center(
+                    child: _CountryNameBar(
+                      name: countryName!,
+                      flashProgress: countryFlashProgress,
+                    ),
+                  ),
                 ),
-              ),
-              // Altitude indicator
-              Flexible(
-                child: _AltitudeIndicator(
-                  isHigh: isHighAltitude,
-                  onToggle: onAltitudeToggle,
+              const Spacer(),
+              // Fuel gauge (shown only when fuel is active)
+              if (fuelLevel != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _FuelGauge(level: fuelLevel!, maxFuel: maxFuel),
                 ),
+              // Bottom row: Speed controls, Altitude indicator, Hint button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Hint button
+                  if (hintTier < 4 && onHint != null)
+                    _HintButton(tier: hintTier, onTap: onHint),
+                  // Speed controls
+                  Flexible(
+                    child: _SpeedControls(
+                      current: currentSpeed,
+                      onChanged: onSpeedChanged,
+                    ),
+                  ),
+                  // Altitude indicator
+                  Flexible(
+                    child: _AltitudeIndicator(
+                      isHigh: isHighAltitude,
+                      onToggle: onAltitudeToggle,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 class _ExitButton extends StatelessWidget {
@@ -196,17 +196,18 @@ class _ExitButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: FlitColors.cardBackground.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
-      ),
-      child: const Icon(Icons.close, color: FlitColors.textSecondary, size: 20),
-    ),
-  );
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: FlitColors.cardBackground.withOpacity(0.85),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
+          ),
+          child: const Icon(Icons.close,
+              color: FlitColors.textSecondary, size: 20),
+        ),
+      );
 }
 
 class _GearButton extends StatelessWidget {
@@ -216,21 +217,21 @@ class _GearButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: FlitColors.cardBackground.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
-      ),
-      child: const Icon(
-        Icons.settings,
-        color: FlitColors.textSecondary,
-        size: 20,
-      ),
-    ),
-  );
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: FlitColors.cardBackground.withOpacity(0.85),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
+          ),
+          child: const Icon(
+            Icons.settings,
+            color: FlitColors.textSecondary,
+            size: 20,
+          ),
+        ),
+      );
 }
 
 class _ClueCard extends StatelessWidget {
@@ -240,56 +241,56 @@ class _ClueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground.withOpacity(0.85),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Clue type label
-        Text(
-          _clueTypeLabel(clue.type),
-          style: const TextStyle(
-            color: FlitColors.gold,
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.5,
-          ),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
         ),
-        const SizedBox(height: 4),
-        // Clue content
-        if (clue.type == ClueType.flag)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: _buildFlagWidget(clue.targetCountryCode),
-          )
-        else if (clue.type == ClueType.outline)
-          _CountryOutline(
-            polygons:
-                clue.displayData['polygons'] as List<List<Vector2>>? ??
-                (clue.displayData['points'] != null
-                    ? [
-                        (clue.displayData['points'] as List<dynamic>)
-                            .cast<Vector2>(),
-                      ]
-                    : <List<Vector2>>[]),
-          )
-        else
-          Text(
-            clue.displayText,
-            style: const TextStyle(
-              color: FlitColors.textPrimary,
-              fontSize: 13,
-              height: 1.4,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Clue type label
+            Text(
+              _clueTypeLabel(clue.type),
+              style: const TextStyle(
+                color: FlitColors.gold,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.5,
+              ),
             ),
-          ),
-      ],
-    ),
-  );
+            const SizedBox(height: 4),
+            // Clue content
+            if (clue.type == ClueType.flag)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: _buildFlagWidget(clue.targetCountryCode),
+              )
+            else if (clue.type == ClueType.outline)
+              _CountryOutline(
+                polygons:
+                    clue.displayData['polygons'] as List<List<Vector2>>? ??
+                        (clue.displayData['points'] != null
+                            ? [
+                                (clue.displayData['points'] as List<dynamic>)
+                                    .cast<Vector2>(),
+                              ]
+                            : <List<Vector2>>[]),
+              )
+            else
+              Text(
+                clue.displayText,
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+          ],
+        ),
+      );
 
   /// Builds a flag widget with error handling for unsupported country codes.
   /// Falls back to the flag emoji text if the SVG flag can't be rendered.
@@ -487,22 +488,22 @@ class _RoundIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    decoration: BoxDecoration(
-      color: FlitColors.accent.withOpacity(0.15),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.accent.withOpacity(0.5)),
-    ),
-    child: Text(
-      '$current/$total',
-      style: const TextStyle(
-        color: FlitColors.accent,
-        fontSize: 12,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.5,
-      ),
-    ),
-  );
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: FlitColors.accent.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.accent.withOpacity(0.5)),
+        ),
+        child: Text(
+          '$current/$total',
+          style: const TextStyle(
+            color: FlitColors.accent,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+          ),
+        ),
+      );
 }
 
 /// Country name bar with flash animation when entering a new country.
@@ -568,39 +569,39 @@ class _AltitudeIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: onToggle,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: FlitColors.cardBackground.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isHigh ? FlitColors.accent : FlitColors.success,
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isHigh ? Icons.flight_takeoff : Icons.flight_land,
-            color: isHigh ? FlitColors.accent : FlitColors.success,
-            size: 16,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            isHigh ? 'DESCEND' : 'ASCEND',
-            style: TextStyle(
+        onTap: onToggle,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: FlitColors.cardBackground.withOpacity(0.85),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
               color: isHigh ? FlitColors.accent : FlitColors.success,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.0,
+              width: 1.5,
             ),
           ),
-        ],
-      ),
-    ),
-  );
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isHigh ? Icons.flight_takeoff : Icons.flight_land,
+                color: isHigh ? FlitColors.accent : FlitColors.success,
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                isHigh ? 'DESCEND' : 'ASCEND',
+                style: TextStyle(
+                  color: isHigh ? FlitColors.accent : FlitColors.success,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
 class _SpeedControls extends StatelessWidget {
@@ -611,40 +612,41 @@ class _SpeedControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground.withOpacity(0.85),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: FlightSpeed.values.map((speed) {
-        final isActive = speed == current;
-        return GestureDetector(
-          onTap: () => onChanged?.call(speed),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: isActive
-                  ? FlitColors.accent.withOpacity(0.3)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              _speedLabel(speed),
-              style: TextStyle(
-                color: isActive ? FlitColors.accent : FlitColors.textMuted,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: FlitColors.cardBorder.withOpacity(0.6)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: FlightSpeed.values.map((speed) {
+            final isActive = speed == current;
+            return GestureDetector(
+              onTap: () => onChanged?.call(speed),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? FlitColors.accent.withOpacity(0.3)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  _speedLabel(speed),
+                  style: TextStyle(
+                    color: isActive ? FlitColors.accent : FlitColors.textMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                  ),
+                ),
               ),
-            ),
-          ),
-        );
-      }).toList(),
-    ),
-  );
+            );
+          }).toList(),
+        ),
+      );
 
   String _speedLabel(FlightSpeed speed) {
     switch (speed) {

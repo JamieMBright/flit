@@ -54,8 +54,8 @@ class _AltitudeSliderState extends State<AltitudeSlider> {
         onVerticalDragUpdate: (details) {
           setState(() {
             // Convert vertical drag to altitude (inverted: up = higher altitude)
-            final newValue = (_dragValue! - details.delta.dy / sliderHeight)
-                .clamp(0.0, 1.0);
+            final newValue =
+                (_dragValue! - details.delta.dy / sliderHeight).clamp(0.0, 1.0);
             _dragValue = newValue;
             widget.onAltitudeChanged(newValue);
           });
@@ -133,8 +133,7 @@ class _AltitudeSliderState extends State<AltitudeSlider> {
                 curve: Curves.easeOut,
                 left: 4,
                 right: 4,
-                bottom:
-                    _trackPaddingVertical +
+                bottom: _trackPaddingVertical +
                     trackHeight * (1.0 - currentAltitude) -
                     _thumbHalfHeight,
                 child: Container(
