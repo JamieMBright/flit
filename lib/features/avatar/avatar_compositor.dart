@@ -110,17 +110,17 @@ class AvatarCompositor {
   ///
   /// Returns `null` only if composition fails unexpectedly.
   static String? compose(AvatarConfig config) => switch (config.style) {
-    AvatarStyle.adventurer => _composeAdventurer(config),
-    AvatarStyle.avataaars => _composeAvataaars(config),
-    AvatarStyle.bigEars => _composeBigEars(config),
-    AvatarStyle.lorelei => _composeLorelei(config),
-    AvatarStyle.micah => _composeMicah(config),
-    AvatarStyle.pixelArt => _composePixelArt(config),
-    AvatarStyle.bottts => _composeBottts(config),
-    AvatarStyle.notionists => _composeNotionists(config),
-    AvatarStyle.openPeeps => _composeOpenPeeps(config),
-    AvatarStyle.thumbs => _composeThumbs(config),
-  };
+        AvatarStyle.adventurer => _composeAdventurer(config),
+        AvatarStyle.avataaars => _composeAvataaars(config),
+        AvatarStyle.bigEars => _composeBigEars(config),
+        AvatarStyle.lorelei => _composeLorelei(config),
+        AvatarStyle.micah => _composeMicah(config),
+        AvatarStyle.pixelArt => _composePixelArt(config),
+        AvatarStyle.bottts => _composeBottts(config),
+        AvatarStyle.notionists => _composeNotionists(config),
+        AvatarStyle.openPeeps => _composeOpenPeeps(config),
+        AvatarStyle.thumbs => _composeThumbs(config),
+      };
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -475,9 +475,8 @@ class AvatarCompositor {
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
     // Pick a natural eye color that varies with the eyes selection.
-    final eyeColor =
-        _naturalEyeColors[(sh + config.eyes.index * 3) %
-            _naturalEyeColors.length];
+    final eyeColor = _naturalEyeColors[
+        (sh + config.eyes.index * 3) % _naturalEyeColors.length];
     final shirtColor = _hashColor(sh, 77);
     // Eye shadow: slightly darker/muted version via hash.
     final eyeShadow = _hashColor(sh, 88);
@@ -789,13 +788,12 @@ class AvatarCompositor {
     final widthSuffix = widths[widthIdx];
 
     // Pick eyes variant base (variant1-variant9), append width suffix.
-    final eyesKeys = thumbsEyes.keys
-        .where((k) => k.endsWith(widthSuffix))
-        .toList();
+    final eyesKeys =
+        thumbsEyes.keys.where((k) => k.endsWith(widthSuffix)).toList();
     final eyesSvg = eyesKeys.isNotEmpty
         ? (thumbsEyes[eyesKeys[(config.eyes.index % eyesKeys.length).abs()]] ??
-                  '')
-              .replaceAll('{{EYES_COLOR}}', eyeColor)
+                '')
+            .replaceAll('{{EYES_COLOR}}', eyeColor)
         : '';
 
     final mouthSvg = _pick(
