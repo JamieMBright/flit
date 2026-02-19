@@ -1596,10 +1596,10 @@ class FlitGame extends FlameGame
       'game',
       'startGame',
       data: {
-        'start':
-            '${startPosition.x.toStringAsFixed(1)},${startPosition.y.toStringAsFixed(1)}',
-        'target':
-            '${targetPosition.x.toStringAsFixed(1)},${targetPosition.y.toStringAsFixed(1)}',
+        'start': '${startPosition.x.toStringAsFixed(1)},'
+            '${startPosition.y.toStringAsFixed(1)}',
+        'target': '${targetPosition.x.toStringAsFixed(1)},'
+            '${targetPosition.y.toStringAsFixed(1)}',
       },
     );
 
@@ -1645,8 +1645,8 @@ class FlitGame extends FlameGame
       'game',
       'continueWithNewTarget',
       data: {
-        'target':
-            '${targetPosition.x.toStringAsFixed(1)},${targetPosition.y.toStringAsFixed(1)}',
+        'target': '${targetPosition.x.toStringAsFixed(1)},'
+            '${targetPosition.y.toStringAsFixed(1)}',
       },
     );
 
