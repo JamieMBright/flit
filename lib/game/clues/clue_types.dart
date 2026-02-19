@@ -102,8 +102,9 @@ class Clue {
     // Determine the pool of clue types to draw from.
     final List<ClueType> typePool;
     if (allowedTypes != null && allowedTypes.isNotEmpty) {
-      typePool =
-          ClueType.values.where((t) => allowedTypes.contains(t.name)).toList();
+      typePool = ClueType.values
+          .where((t) => allowedTypes.contains(t.name))
+          .toList();
     } else {
       typePool = ClueType.values.toList();
     }
@@ -126,8 +127,9 @@ class Clue {
 
     for (var attempt = 0; attempt < maxRetries; attempt++) {
       // Get available types that haven't been tried yet
-      final availableTypes =
-          types.where((t) => !triedTypes.contains(t)).toList();
+      final availableTypes = types
+          .where((t) => !triedTypes.contains(t))
+          .toList();
       if (availableTypes.isEmpty) break;
 
       ClueType randomType;
@@ -216,8 +218,8 @@ class Clue {
       final popString = pop >= 1000000
           ? '${(pop / 1000000).toStringAsFixed(1)}M'
           : pop >= 1000
-              ? '${(pop / 1000).toStringAsFixed(0)}K'
-              : pop.toString();
+          ? '${(pop / 1000).toStringAsFixed(0)}K'
+          : pop.toString();
       availableClues.add(
         Clue(
           type: ClueType.stats,

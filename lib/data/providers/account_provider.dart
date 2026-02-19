@@ -18,8 +18,8 @@ class AccountState {
     this.equippedPlaneId = 'plane_default',
     this.equippedContrailId = 'contrail_default',
     this.lastFreeRerollDate,
-  })  : avatar = avatar ?? const AvatarConfig(),
-        license = license ?? PilotLicense.random();
+  }) : avatar = avatar ?? const AvatarConfig(),
+       license = license ?? PilotLicense.random();
 
   final Player currentPlayer;
   final bool isDebugMode;
@@ -65,18 +65,17 @@ class AccountState {
     String? equippedPlaneId,
     String? equippedContrailId,
     String? lastFreeRerollDate,
-  }) =>
-      AccountState(
-        currentPlayer: currentPlayer ?? this.currentPlayer,
-        isDebugMode: isDebugMode ?? this.isDebugMode,
-        unlockedRegions: unlockedRegions ?? this.unlockedRegions,
-        avatar: avatar ?? this.avatar,
-        license: license ?? this.license,
-        ownedAvatarParts: ownedAvatarParts ?? this.ownedAvatarParts,
-        equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
-        equippedContrailId: equippedContrailId ?? this.equippedContrailId,
-        lastFreeRerollDate: lastFreeRerollDate ?? this.lastFreeRerollDate,
-      );
+  }) => AccountState(
+    currentPlayer: currentPlayer ?? this.currentPlayer,
+    isDebugMode: isDebugMode ?? this.isDebugMode,
+    unlockedRegions: unlockedRegions ?? this.unlockedRegions,
+    avatar: avatar ?? this.avatar,
+    license: license ?? this.license,
+    ownedAvatarParts: ownedAvatarParts ?? this.ownedAvatarParts,
+    equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
+    equippedContrailId: equippedContrailId ?? this.equippedContrailId,
+    lastFreeRerollDate: lastFreeRerollDate ?? this.lastFreeRerollDate,
+  );
 }
 
 /// Account state notifier.

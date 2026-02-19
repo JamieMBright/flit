@@ -144,6 +144,7 @@ flutter test --coverage
 ```
 
 ### Pre-Commit Checklist
+- [ ] `dart format lib/ test/` produces zero changes (MANDATORY — CI gate)
 - [ ] All unit tests pass
 - [ ] Shader compiles on iOS, Android, AND Web
 - [ ] Security scan clean
@@ -266,12 +267,33 @@ gh workflow run fetch-errors.yml
 
 ## Commit Protocol
 
-1. Run full test suite: `./scripts/test.sh`
-2. Run linting: `./scripts/lint.sh`
-3. Verify shader compiles on 2+ platforms
-4. Verify cross-platform: integration tests for 2+ platforms
-5. Commit with descriptive message
-6. Push only after all checks pass
+1. **Run `dart format` FIRST** — This is mandatory before every commit:
+   ```bash
+   dart format lib/ test/             # If dart is on PATH
+   /tmp/dart-sdk/bin/dart format lib/ test/  # Fallback if installed locally
+   ```
+   CI will reject any commit where `dart format --set-exit-if-changed lib/ test/` fails.
+   Never try to guess formatting by hand — always run the actual `dart format` tool.
+2. Run full test suite: `./scripts/test.sh`
+3. Run linting: `./scripts/lint.sh`
+4. Verify shader compiles on 2+ platforms
+5. Verify cross-platform: integration tests for 2+ platforms
+6. Commit with descriptive message
+7. Push only after all checks pass
+
+### Installing Dart SDK (no-Flutter environments)
+If `dart` is not available, install the SDK:
+```bash
+curl -fsSL https://storage.googleapis.com/dart-archive/channels/stable/release/latest/sdk/dartsdk-linux-x64-release.zip -o /tmp/dart.zip && unzip -qo /tmp/dart.zip -d /tmp/
+export PATH="/tmp/dart-sdk/bin:$PATH"
+```
+
+### Pre-Commit Hook
+The project includes a pre-commit hook that auto-checks `dart format`. Install it:
+```bash
+bash scripts/setup-hooks.sh
+```
+The hook runs `dart format --set-exit-if-changed lib/ test/` even in no-Flutter mode.
 
 ---
 

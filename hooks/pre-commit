@@ -95,12 +95,35 @@ if ! command -v flutter &> /dev/null; then
 
     if [ -f "$LINT_SCRIPT" ]; then
         bash "$LINT_SCRIPT" --staged
-        echo ""
-        echo "Pre-commit checks passed (no-Flutter mode)."
     else
         echo "WARNING: lint-noflutter.sh not found - skipping lint checks"
         echo "CI will run full validation on push"
     fi
+
+    # -------------------------------------------------------------------
+    # dart format check (no-Flutter path)
+    # Tries to find a dart binary even when Flutter isn't installed.
+    # -------------------------------------------------------------------
+    DART_BIN=""
+    if command -v dart &> /dev/null; then
+        DART_BIN="dart"
+    elif [ -x "/tmp/dart-sdk/bin/dart" ]; then
+        DART_BIN="/tmp/dart-sdk/bin/dart"
+    fi
+
+    if [ -n "$DART_BIN" ]; then
+        echo ""
+        echo "Step 2: Checking dart format..."
+        $DART_BIN format --set-exit-if-changed lib/ test/
+        echo "  Format check passed."
+    else
+        echo ""
+        echo "WARNING: dart not found - skipping dart format check"
+        echo "Install Dart SDK or run: curl -fsSL https://storage.googleapis.com/dart-archive/channels/stable/release/latest/sdk/dartsdk-linux-x64-release.zip -o /tmp/dart.zip && unzip -qo /tmp/dart.zip -d /tmp/"
+    fi
+
+    echo ""
+    echo "Pre-commit checks passed (no-Flutter mode)."
     exit 0
 fi
 

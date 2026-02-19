@@ -110,17 +110,17 @@ class AvatarCompositor {
   ///
   /// Returns `null` only if composition fails unexpectedly.
   static String? compose(AvatarConfig config) => switch (config.style) {
-        AvatarStyle.adventurer => _composeAdventurer(config),
-        AvatarStyle.avataaars => _composeAvataaars(config),
-        AvatarStyle.bigEars => _composeBigEars(config),
-        AvatarStyle.lorelei => _composeLorelei(config),
-        AvatarStyle.micah => _composeMicah(config),
-        AvatarStyle.pixelArt => _composePixelArt(config),
-        AvatarStyle.bottts => _composeBottts(config),
-        AvatarStyle.notionists => _composeNotionists(config),
-        AvatarStyle.openPeeps => _composeOpenPeeps(config),
-        AvatarStyle.thumbs => _composeThumbs(config),
-      };
+    AvatarStyle.adventurer => _composeAdventurer(config),
+    AvatarStyle.avataaars => _composeAvataaars(config),
+    AvatarStyle.bigEars => _composeBigEars(config),
+    AvatarStyle.lorelei => _composeLorelei(config),
+    AvatarStyle.micah => _composeMicah(config),
+    AvatarStyle.pixelArt => _composePixelArt(config),
+    AvatarStyle.bottts => _composeBottts(config),
+    AvatarStyle.notionists => _composeNotionists(config),
+    AvatarStyle.openPeeps => _composeOpenPeeps(config),
+    AvatarStyle.thumbs => _composeThumbs(config),
+  };
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -310,8 +310,11 @@ class AvatarCompositor {
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
 
-    final face =
-        _pick(bigearsFace, sh, 1).replaceAll('{{SKIN_COLOR}}', skinHex);
+    final face = _pick(
+      bigearsFace,
+      sh,
+      1,
+    ).replaceAll('{{SKIN_COLOR}}', skinHex);
     final ear = _pick(bigearsEar, sh, 2).replaceAll('{{SKIN_COLOR}}', skinHex);
     final sideburn = _pick(
       bigearsSideburn,
@@ -370,29 +373,51 @@ class AvatarCompositor {
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
 
-    final head =
-        _pick(loreleiHead, sh, 1).replaceAll('{{SKIN_COLOR}}', skinHex);
-    final freckles = _pick(loreleiFreckles, config.feature.index, 2)
-        .replaceAll('{{FRECKLES_COLOR}}', _darkenHex(skinHex, 0.85));
-    final eyebrows = _pick(loreleiEyebrows, config.eyebrows.index, 3)
-        .replaceAll('{{EYEBROWS_COLOR}}', hairHex);
+    final head = _pick(
+      loreleiHead,
+      sh,
+      1,
+    ).replaceAll('{{SKIN_COLOR}}', skinHex);
+    final freckles = _pick(
+      loreleiFreckles,
+      config.feature.index,
+      2,
+    ).replaceAll('{{FRECKLES_COLOR}}', _darkenHex(skinHex, 0.85));
+    final eyebrows = _pick(
+      loreleiEyebrows,
+      config.eyebrows.index,
+      3,
+    ).replaceAll('{{EYEBROWS_COLOR}}', hairHex);
     final eyes = _pick(loreleiEyes, config.eyes.index, 4);
-    final nose = _pick(loreleiNose, sh, 5)
-        .replaceAll('{{NOSE_COLOR}}', _darkenHex(skinHex, 0.9));
-    final mouth = _pick(loreleiMouth, config.mouth.index, 6)
-        .replaceAll('{{MOUTH_COLOR}}',
-            _mouthColors[config.skinColor.index % _mouthColors.length]);
+    final nose = _pick(
+      loreleiNose,
+      sh,
+      5,
+    ).replaceAll('{{NOSE_COLOR}}', _darkenHex(skinHex, 0.9));
+    final mouth = _pick(loreleiMouth, config.mouth.index, 6).replaceAll(
+      '{{MOUTH_COLOR}}',
+      _mouthColors[config.skinColor.index % _mouthColors.length],
+    );
     final glasses = _pick(
       loreleiGlasses,
       config.glasses.index,
       7,
     ).replaceAll('{{GLASSES_COLOR}}', '#4a4a4a');
-    final earrings = _pick(loreleiEarrings, config.earrings.index, 8)
-        .replaceAll('{{EARRINGS_COLOR}}', '#d4af37');
-    final hair = _pick(loreleiHair, config.hair.index, 9)
-        .replaceAll('{{HAIR_COLOR}}', hairHex);
-    final hairAccessories = _pick(loreleiHairAccessories, sh, 10)
-        .replaceAll('{{HAIRACCESSORIES_COLOR}}', _hashColor(sh, 55));
+    final earrings = _pick(
+      loreleiEarrings,
+      config.earrings.index,
+      8,
+    ).replaceAll('{{EARRINGS_COLOR}}', '#d4af37');
+    final hair = _pick(
+      loreleiHair,
+      config.hair.index,
+      9,
+    ).replaceAll('{{HAIR_COLOR}}', hairHex);
+    final hairAccessories = _pick(
+      loreleiHairAccessories,
+      sh,
+      10,
+    ).replaceAll('{{HAIRACCESSORIES_COLOR}}', _hashColor(sh, 55));
     final beard = _pick(loreleiBeard, sh, 11)
         .replaceAll('{{BEARD_COLOR}}', hairHex)
         .replaceAll('{{HAIR_COLOR}}', hairHex);
@@ -460,24 +485,36 @@ class AvatarCompositor {
     // Micah glasses embed inside eyes via {{GLASSES}} placeholder.
     final glassesRaw = config.glasses == AvatarGlasses.none
         ? ''
-        : _pick(micahGlasses, config.glasses.index, 10)
-            .replaceAll('{{GLASSES_COLOR}}', '#4a4a4a');
+        : _pick(
+            micahGlasses,
+            config.glasses.index,
+            10,
+          ).replaceAll('{{GLASSES_COLOR}}', '#4a4a4a');
     // Micah facialHair embeds inside base via {{FACIAL_HAIR}} placeholder.
-    final facialHairRaw = _pick(micahFacialHair, sh, 11)
-        .replaceAll('{{FACIAL_HAIR_COLOR}}', hairHex);
+    final facialHairRaw = _pick(
+      micahFacialHair,
+      sh,
+      11,
+    ).replaceAll('{{FACIAL_HAIR_COLOR}}', hairHex);
 
     final base = micahBase
         .replaceAll('{{BASE_COLOR}}', skinHex)
         .replaceAll('{{FACIAL_HAIR}}', facialHairRaw);
-    final mouth = _pick(micahMouth, config.mouth.index, 2)
-        .replaceAll('{{MOUTH_COLOR}}', mouthColor);
+    final mouth = _pick(
+      micahMouth,
+      config.mouth.index,
+      2,
+    ).replaceAll('{{MOUTH_COLOR}}', mouthColor);
     final eyebrows = _pick(
       micahEyebrows,
       config.eyebrows.index,
       3,
     ).replaceAll('{{EYEBROWS_COLOR}}', hairHex);
-    final hair = _pick(micahHair, config.hair.index, 4)
-        .replaceAll('{{HAIR_COLOR}}', hairHex);
+    final hair = _pick(
+      micahHair,
+      config.hair.index,
+      4,
+    ).replaceAll('{{HAIR_COLOR}}', hairHex);
     final eyes = _pick(micahEyes, config.eyes.index, 5)
         .replaceAll('{{EYES_COLOR}}', eyeColor)
         .replaceAll('{{EYE_SHADOW_COLOR}}', eyeShadow)
@@ -486,8 +523,11 @@ class AvatarCompositor {
     final ears = _pick(micahEars, sh, 7).replaceAll('{{EAR_COLOR}}', skinHex);
     final earrings = config.earrings == AvatarEarrings.none
         ? ''
-        : _pick(micahEarrings, config.earrings.index, 8)
-            .replaceAll('{{EARRING_COLOR}}', '#d4af37');
+        : _pick(
+            micahEarrings,
+            config.earrings.index,
+            8,
+          ).replaceAll('{{EARRING_COLOR}}', '#d4af37');
     final shirt = _pick(
       micahShirt,
       sh,
@@ -742,12 +782,13 @@ class AvatarCompositor {
     final widthSuffix = widths[widthIdx];
 
     // Pick eyes variant base (variant1-variant9), append width suffix.
-    final eyesKeys =
-        thumbsEyes.keys.where((k) => k.endsWith(widthSuffix)).toList();
+    final eyesKeys = thumbsEyes.keys
+        .where((k) => k.endsWith(widthSuffix))
+        .toList();
     final eyesSvg = eyesKeys.isNotEmpty
         ? (thumbsEyes[eyesKeys[(config.eyes.index % eyesKeys.length).abs()]] ??
-                '')
-            .replaceAll('{{EYES_COLOR}}', eyeColor)
+                  '')
+              .replaceAll('{{EYES_COLOR}}', eyeColor)
         : '';
 
     final mouthSvg = _pick(
