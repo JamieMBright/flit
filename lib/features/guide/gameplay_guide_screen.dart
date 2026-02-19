@@ -1348,6 +1348,34 @@ class _ControlsSection extends StatelessWidget {
             icon: Icons.speed_rounded,
             effect: 'Choose slow, medium, or fast flight',
           ),
+          SizedBox(height: 20),
+          _BodyText(
+            'Keyboard shortcuts (desktop & web):',
+          ),
+          SizedBox(height: 12),
+          _ControlRow(
+            gesture: '\u2190 / \u2192  Arrow keys',
+            icon: Icons.keyboard_rounded,
+            effect: 'Steer the plane left or right',
+          ),
+          SizedBox(height: 8),
+          _ControlRow(
+            gesture: '\u2191 / \u2193  Arrow keys',
+            icon: Icons.keyboard_rounded,
+            effect: 'Switch between high and low altitude',
+          ),
+          SizedBox(height: 8),
+          _ControlRow(
+            gesture: 'Space bar',
+            icon: Icons.space_bar_rounded,
+            effect: 'Toggle altitude (same as \u2191/\u2193)',
+          ),
+          SizedBox(height: 8),
+          _ControlRow(
+            gesture: '1 / 2 / 3  keys',
+            icon: Icons.looks_3_rounded,
+            effect: 'Set flight speed: slow, medium, or fast',
+          ),
         ],
       ),
     );

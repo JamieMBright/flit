@@ -20,6 +20,13 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
     super.render(canvas);
     if (gameRef.isInLaunchIntro) return;
 
+    // In globe descent mode the visual display is an OSM tile map whose
+    // Mercator projection doesn't match the globe shader projection used here.
+    // Skip wayline rendering to avoid the dot drifting to a wrong position.
+    // In flat map mode, always render waylines (the equirectangular projection
+    // is consistent between the game canvas and the tile map underneath).
+    if (!gameRef.isFlatMapMode && !gameRef.isHighAltitude) return;
+
     final planePos = gameRef.worldPosition;
     final screenSize = gameRef.size;
     if (screenSize.x < 1 || screenSize.y < 1) return;
@@ -59,9 +66,10 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
     bool isHint = false,
   }) {
     // Build screen points along the great-circle arc.
-    // Start from i=1 (skip the plane origin) — we prepend the nose below.
+    // Include i=0 (plane origin) so the first point uses the same
+    // projection coordinate system as all subsequent wayline points.
     final points = <Offset>[];
-    for (var i = 1; i <= _segments; i++) {
+    for (var i = 0; i <= _segments; i++) {
       final t = i / _segments;
       final interp = _interpolateGreatCircle(planePos, target, t);
       final screen = gameRef.worldToScreenGlobe(interp);
@@ -72,16 +80,17 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
 
     if (points.isEmpty) return;
 
-    // Prepend the plane's nose screen position so the line visually
-    // originates from the front of the aircraft, not the center.
+    // Offset the first point (the plane's globe-projected position) to
+    // the nose of the aircraft. Because we use the projected position as
+    // the base, the offset stays in the same coordinate system as the
+    // rest of the wayline — no gap between coordinate spaces.
     final plane = gameRef.plane;
     final totalRotation = plane.visualHeading + plane.turnDirection * 0.4;
     const noseLength = 13.0; // ~16px nose offset * perspectiveScaleY(0.80)
-    final nosePos = Offset(
-      plane.position.x + sin(totalRotation) * noseLength,
-      plane.position.y - cos(totalRotation) * noseLength,
+    points[0] = Offset(
+      points[0].dx + sin(totalRotation) * noseLength,
+      points[0].dy - cos(totalRotation) * noseLength,
     );
-    points.insert(0, nosePos);
 
     if (points.length < 2) return;
 

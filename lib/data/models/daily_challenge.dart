@@ -55,50 +55,50 @@ class DailyChallenge {
       title: 'All Clues',
       description: 'Every clue type is in play -- use them all!',
       enabledClueTypes: _allClueTypes,
-      coinReward: 50,
+      coinReward: 150,
     ),
     _DailyTheme(
       title: 'Flag Frenzy',
       description: 'Flags and flags alone. Do you know your colours?',
       enabledClueTypes: {'flag'},
-      coinReward: 75,
+      coinReward: 200,
     ),
     _DailyTheme(
       title: 'Capital Sprint',
       description: 'Name the nation from its capital city.',
       enabledClueTypes: {'capital'},
-      coinReward: 75,
+      coinReward: 200,
     ),
     _DailyTheme(
       title: 'Border Patrol',
       description: 'Only neighbouring-country clues today.',
       enabledClueTypes: {'borders'},
-      coinReward: 75,
+      coinReward: 200,
     ),
     _DailyTheme(
       title: 'Stats Master',
       description: 'Population, area, GDP -- crunch the numbers.',
       enabledClueTypes: {'stats'},
-      coinReward: 75,
+      coinReward: 200,
     ),
     _DailyTheme(
       title: 'Outline Challenge',
       description: 'Silhouettes only. Can you spot the shape?',
       enabledClueTypes: {'outline'},
-      coinReward: 75,
+      coinReward: 200,
     ),
     // "Duo Mix" and "Triple Threat" use random subsets picked with the seed.
     _DailyTheme(
       title: 'Duo Mix',
       description: 'Two random clue types -- adapt or lose!',
       enabledClueTypes: {}, // resolved at construction time
-      coinReward: 60,
+      coinReward: 175,
     ),
     _DailyTheme(
       title: 'Triple Threat',
       description: 'Three clue types thrown into the mix.',
       enabledClueTypes: {}, // resolved at construction time
-      coinReward: 55,
+      coinReward: 160,
     ),
   ];
 
