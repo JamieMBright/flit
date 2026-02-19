@@ -64,7 +64,7 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
     for (var i = 1; i <= _segments; i++) {
       final t = i / _segments;
       final interp = _interpolateGreatCircle(planePos, target, t);
-      final screen = gameRef.worldToScreen(interp);
+      final screen = gameRef.worldToScreenGlobe(interp);
       if (screen.x > -500) {
         points.add(Offset(screen.x, screen.y));
       }
@@ -118,7 +118,7 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
 
     // Target dot — only draw if the actual target is visible (not occluded
     // by the globe). worldToScreen returns (-1000, -1000) for hidden points.
-    final targetScreen = gameRef.worldToScreen(target);
+    final targetScreen = gameRef.worldToScreenGlobe(target);
     if (targetScreen.x > -500) {
       final markerPos = Offset(targetScreen.x, targetScreen.y);
       final dotColor = isHint ? FlitColors.textPrimary : FlitColors.accent;
