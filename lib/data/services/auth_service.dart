@@ -42,15 +42,16 @@ class AuthState {
     String? deviceId,
     String? email,
     String? error,
-  }) => AuthState(
-    isAuthenticated: isAuthenticated ?? this.isAuthenticated,
-    isLoading: isLoading ?? this.isLoading,
-    player: player ?? this.player,
-    authMethod: authMethod ?? this.authMethod,
-    deviceId: deviceId ?? this.deviceId,
-    email: email ?? this.email,
-    error: error,
-  );
+  }) =>
+      AuthState(
+        isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+        isLoading: isLoading ?? this.isLoading,
+        player: player ?? this.player,
+        authMethod: authMethod ?? this.authMethod,
+        deviceId: deviceId ?? this.deviceId,
+        email: email ?? this.email,
+        error: error,
+      );
 }
 
 /// Authentication service.
@@ -165,8 +166,7 @@ class AuthService {
       return _state;
     }
 
-    final player =
-        _state.player?.copyWith(
+    final player = _state.player?.copyWith(
           username: username,
           displayName: displayName ?? username,
         ) ??

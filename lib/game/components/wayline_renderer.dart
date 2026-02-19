@@ -156,8 +156,7 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
 
     final dLat = lat2 - lat1;
     final dLng = lng2 - lng1;
-    final h =
-        sin(dLat / 2) * sin(dLat / 2) +
+    final h = sin(dLat / 2) * sin(dLat / 2) +
         cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
     final c = 2 * atan2(sqrt(h), sqrt(1 - h));
 

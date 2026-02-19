@@ -85,9 +85,9 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
       final cityOutlinePaint = kIsWeb
           ? null
           : (Paint()
-              ..color = FlitColors.shadow.withOpacity(opacity)
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 0.5);
+            ..color = FlitColors.shadow.withOpacity(opacity)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 0.5);
 
       // Calculate screen center for distance-based culling
       final centerX = gameRef.size.x / 2;
@@ -173,9 +173,8 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
                       ? FlitColors.textPrimary
                       : FlitColors.textSecondary,
                   fontSize: city.isCapital ? 10 : 8,
-                  fontWeight: city.isCapital
-                      ? FontWeight.w600
-                      : FontWeight.w400,
+                  fontWeight:
+                      city.isCapital ? FontWeight.w600 : FontWeight.w400,
                   // Avoid shadows on web - they're expensive in Safari
                   shadows: kIsWeb
                       ? null
@@ -247,8 +246,8 @@ class CityLabelOverlay extends Component with HasGameRef<FlitGame> {
       final opacity = altitude > 0.95
           ? (1.0 - altitude) / 0.05
           : altitude < 0.6
-          ? 1.0
-          : 0.7;
+              ? 1.0
+              : 0.7;
 
       final dotPaint = Paint()
         ..color = FlitColors.cityCapital.withOpacity(opacity.clamp(0.0, 1.0));
