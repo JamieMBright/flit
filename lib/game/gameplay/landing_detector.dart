@@ -104,8 +104,7 @@ class LandingDetector {
     final dLng = (b.x - a.x) * deg2rad;
 
     // Haversine formula
-    final h =
-        sin(dLat / 2) * sin(dLat / 2) +
+    final h = sin(dLat / 2) * sin(dLat / 2) +
         cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
     final c = 2.0 * atan2(sqrt(h), sqrt(1.0 - h));
 

@@ -45,14 +45,14 @@ class ChallengeRound {
   }
 
   Map<String, dynamic> toJson() => {
-    'round_number': roundNumber,
-    'seed': seed,
-    'clue_type': clueType.name,
-    'start_location': [startLocation.x, startLocation.y],
-    'target_country_code': targetCountryCode,
-    'challenger_time_ms': challengerTime?.inMilliseconds,
-    'challenged_time_ms': challengedTime?.inMilliseconds,
-  };
+        'round_number': roundNumber,
+        'seed': seed,
+        'clue_type': clueType.name,
+        'start_location': [startLocation.x, startLocation.y],
+        'target_country_code': targetCountryCode,
+        'challenger_time_ms': challengerTime?.inMilliseconds,
+        'challenged_time_ms': challengedTime?.inMilliseconds,
+      };
 
   factory ChallengeRound.fromJson(Map<String, dynamic> json) {
     final startLoc = json['start_location'] as List;
@@ -129,38 +129,39 @@ class Challenge {
   String get scoreText => '$challengerWins - $challengedWins';
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'challenger_id': challengerId,
-    'challenger_name': challengerName,
-    'challenged_id': challengedId,
-    'challenged_name': challengedName,
-    'status': status.name,
-    'rounds': rounds.map((r) => r.toJson()).toList(),
-    'winner_id': winnerId,
-    'challenger_coins': challengerCoins,
-    'challenged_coins': challengedCoins,
-    'created_at': createdAt?.toIso8601String(),
-    'completed_at': completedAt?.toIso8601String(),
-  };
+        'id': id,
+        'challenger_id': challengerId,
+        'challenger_name': challengerName,
+        'challenged_id': challengedId,
+        'challenged_name': challengedName,
+        'status': status.name,
+        'rounds': rounds.map((r) => r.toJson()).toList(),
+        'winner_id': winnerId,
+        'challenger_coins': challengerCoins,
+        'challenged_coins': challengedCoins,
+        'created_at': createdAt?.toIso8601String(),
+        'completed_at': completedAt?.toIso8601String(),
+      };
 
   factory Challenge.fromJson(Map<String, dynamic> json) => Challenge(
-    id: json['id'] as String,
-    challengerId: json['challenger_id'] as String,
-    challengerName: json['challenger_name'] as String,
-    challengedId: json['challenged_id'] as String,
-    challengedName: json['challenged_name'] as String,
-    status: ChallengeStatus.values.firstWhere((s) => s.name == json['status']),
-    rounds: (json['rounds'] as List)
-        .map((r) => ChallengeRound.fromJson(r as Map<String, dynamic>))
-        .toList(),
-    winnerId: json['winner_id'] as String?,
-    challengerCoins: json['challenger_coins'] as int? ?? 0,
-    challengedCoins: json['challenged_coins'] as int? ?? 0,
-    createdAt: json['created_at'] != null
-        ? DateTime.parse(json['created_at'] as String)
-        : null,
-    completedAt: json['completed_at'] != null
-        ? DateTime.parse(json['completed_at'] as String)
-        : null,
-  );
+        id: json['id'] as String,
+        challengerId: json['challenger_id'] as String,
+        challengerName: json['challenger_name'] as String,
+        challengedId: json['challenged_id'] as String,
+        challengedName: json['challenged_name'] as String,
+        status:
+            ChallengeStatus.values.firstWhere((s) => s.name == json['status']),
+        rounds: (json['rounds'] as List)
+            .map((r) => ChallengeRound.fromJson(r as Map<String, dynamic>))
+            .toList(),
+        winnerId: json['winner_id'] as String?,
+        challengerCoins: json['challenger_coins'] as int? ?? 0,
+        challengedCoins: json['challenged_coins'] as int? ?? 0,
+        createdAt: json['created_at'] != null
+            ? DateTime.parse(json['created_at'] as String)
+            : null,
+        completedAt: json['completed_at'] != null
+            ? DateTime.parse(json['completed_at'] as String)
+            : null,
+      );
 }

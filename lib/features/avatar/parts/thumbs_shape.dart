@@ -13,5 +13,5 @@ library;
 const Map<String, String> thumbsShape = {
   'default':
       '<path d="M95 53.33C95 29.4 74.85 10 50 10S5 29.4 5 53.33V140h90V53.33Z" fill="{{SHAPE_COLOR}}"/>'
-      '<g transform="translate(29 33)">{{FACE}}</g>',
+          '<g transform="translate(29 33)">{{FACE}}</g>',
 };

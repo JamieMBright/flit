@@ -14,7 +14,7 @@ class CountryShape {
   final String code;
   final String name;
   final List<List<Vector2>>
-  polygons; // Each polygon is a list of [lng, lat] pairs
+      polygons; // Each polygon is a list of [lng, lat] pairs
   final String? capital;
 
   /// Flat list of all points across all polygons (for hit-testing, bounding box, etc.)
