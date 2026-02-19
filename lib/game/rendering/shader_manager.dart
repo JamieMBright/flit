@@ -128,7 +128,8 @@ class ShaderManager {
 
       // Check if this is an "unsupported operation" error (e.g., HTML renderer on web)
       final errorStr = e.toString();
-      final isUnsupportedError = errorStr.contains('Unsupported operation') ||
+      final isUnsupportedError =
+          errorStr.contains('Unsupported operation') ||
           errorStr.contains('not supported') ||
           errorStr.contains('HTML renderer');
 
@@ -268,10 +269,10 @@ class ShaderManager {
         final assetPath = name == 'satellite'
             ? 'assets/textures/blue_marble.png'
             : name == 'heightmap'
-                ? 'assets/textures/heightmap.png'
-                : name == 'shore_distance'
-                    ? 'assets/textures/shore_distance.png'
-                    : 'assets/textures/city_lights.png';
+            ? 'assets/textures/heightmap.png'
+            : name == 'shore_distance'
+            ? 'assets/textures/shore_distance.png'
+            : 'assets/textures/city_lights.png';
 
         // Log the error (all textures are now treated as optional)
         _log.error(
@@ -291,12 +292,12 @@ class ShaderManager {
           'errorType': errorStr.contains('404')
               ? 'not_found'
               : errorStr.contains('network')
-                  ? 'network_failure'
-                  : errorStr.contains('decode')
-                      ? 'decode_failure'
-                      : errorStr.contains('quota')
-                          ? 'storage_quota'
-                          : 'unknown',
+              ? 'network_failure'
+              : errorStr.contains('decode')
+              ? 'decode_failure'
+              : errorStr.contains('quota')
+              ? 'storage_quota'
+              : 'unknown',
         };
 
         // Report as error (not critical) so it gets logged but doesn't halt execution
@@ -433,7 +434,8 @@ class ShaderManager {
 
         // Check if this is a known non-fatal error
         final errorStr = e.toString();
-        final isUnsupportedError = errorStr.contains('Unsupported operation') ||
+        final isUnsupportedError =
+            errorStr.contains('Unsupported operation') ||
             errorStr.contains('not supported') ||
             errorStr.contains('HTML renderer');
 

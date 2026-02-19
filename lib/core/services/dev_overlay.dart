@@ -97,18 +97,21 @@ class _DevOverlayState extends State<DevOverlay> {
 
   Widget _buildMinimized() {
     final errors = ErrorService.instance.displayErrors;
-    final criticalCount =
-        errors.where((e) => e.severity == ErrorSeverity.critical).length;
-    final errorCount =
-        errors.where((e) => e.severity == ErrorSeverity.error).length;
-    final warningCount =
-        errors.where((e) => e.severity == ErrorSeverity.warning).length;
+    final criticalCount = errors
+        .where((e) => e.severity == ErrorSeverity.critical)
+        .length;
+    final errorCount = errors
+        .where((e) => e.severity == ErrorSeverity.error)
+        .length;
+    final warningCount = errors
+        .where((e) => e.severity == ErrorSeverity.warning)
+        .length;
 
     final badgeColor = criticalCount > 0
         ? const Color(0xFFFF1744)
         : errorCount > 0
-            ? const Color(0xFFFF6D00)
-            : const Color(0xFFFFD600);
+        ? const Color(0xFFFF6D00)
+        : const Color(0xFFFFD600);
 
     final total = criticalCount + errorCount + warningCount;
 

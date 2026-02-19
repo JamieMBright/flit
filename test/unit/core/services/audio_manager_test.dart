@@ -10,40 +10,40 @@ void main() {
   setUpAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('xyz.luan/audioplayers'),
-      (MethodCall methodCall) async {
-        // Mock all audioplayers method calls
-        switch (methodCall.method) {
-          case 'create':
-            return 'player-id-${DateTime.now().millisecondsSinceEpoch}';
-          case 'setUrl':
-          case 'setVolume':
-          case 'setReleaseMode':
-          case 'resume':
-          case 'pause':
-          case 'stop':
-          case 'release':
-          case 'seek':
-          case 'setPlaybackRate':
-          case 'getDuration':
-          case 'getCurrentPosition':
-          case 'setSourceUrl':
-          case 'setSourceBytes':
-          case 'setSourceAsset':
-            return null;
-          default:
-            return null;
-        }
-      },
-    );
+          const MethodChannel('xyz.luan/audioplayers'),
+          (MethodCall methodCall) async {
+            // Mock all audioplayers method calls
+            switch (methodCall.method) {
+              case 'create':
+                return 'player-id-${DateTime.now().millisecondsSinceEpoch}';
+              case 'setUrl':
+              case 'setVolume':
+              case 'setReleaseMode':
+              case 'resume':
+              case 'pause':
+              case 'stop':
+              case 'release':
+              case 'seek':
+              case 'setPlaybackRate':
+              case 'getDuration':
+              case 'getCurrentPosition':
+              case 'setSourceUrl':
+              case 'setSourceBytes':
+              case 'setSourceAsset':
+                return null;
+              default:
+                return null;
+            }
+          },
+        );
   });
 
   tearDownAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('xyz.luan/audioplayers'),
-      null,
-    );
+          const MethodChannel('xyz.luan/audioplayers'),
+          null,
+        );
   });
 
   group('AudioManager - Singleton', () {
