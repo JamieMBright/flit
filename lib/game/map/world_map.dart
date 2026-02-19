@@ -158,17 +158,18 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     if (_altitudeFraction < 0.05) return; // Not visible at low altitude.
     final glowWidth = radius * 0.08;
     final glowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color(0x00668FCC), // transparent inside
-          Color.fromRGBO(100, 160, 230, 0.25 * _altitudeFraction),
-          Color.fromRGBO(140, 190, 255, 0.15 * _altitudeFraction),
-          const Color(0x00000000), // transparent outside
-        ],
-        stops: const [0.88, 0.94, 0.98, 1.0],
-      ).createShader(
-        Rect.fromCircle(center: center, radius: radius + glowWidth),
-      );
+      ..shader =
+          RadialGradient(
+            colors: [
+              const Color(0x00668FCC), // transparent inside
+              Color.fromRGBO(100, 160, 230, 0.25 * _altitudeFraction),
+              Color.fromRGBO(140, 190, 255, 0.15 * _altitudeFraction),
+              const Color(0x00000000), // transparent outside
+            ],
+            stops: const [0.88, 0.94, 0.98, 1.0],
+          ).createShader(
+            Rect.fromCircle(center: center, radius: radius + glowWidth),
+          );
     canvas.drawCircle(center, radius + glowWidth, glowPaint);
   }
 
@@ -520,7 +521,8 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
         1.0,
       ),
     );
-    final lng = lng0 +
+    final lng =
+        lng0 +
         atan2(
           dx / scale * sin(c),
           rho * cos(lat0) * cos(c) - dy / scale * sin(lat0) * sin(c),

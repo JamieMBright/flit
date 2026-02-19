@@ -179,8 +179,9 @@ void main() {
     });
 
     test('province distribution is correct', () {
-      final provinces =
-          IrelandClues.data.values.map((c) => c.province).toList();
+      final provinces = IrelandClues.data.values
+          .map((c) => c.province)
+          .toList();
 
       final leinsterCount = provinces.where((p) => p == 'Leinster').length;
       final munsterCount = provinces.where((p) => p == 'Munster').length;

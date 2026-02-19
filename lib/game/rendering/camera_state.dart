@@ -122,11 +122,13 @@ class CameraState {
     final double targetDistance;
     if (altitudeFraction != null) {
       // Interpolate between low and high altitude distances
-      targetDistance = lowAltitudeDistance +
+      targetDistance =
+          lowAltitudeDistance +
           altitudeFraction * (highAltitudeDistance - lowAltitudeDistance);
     } else {
-      targetDistance =
-          isHighAltitude ? highAltitudeDistance : lowAltitudeDistance;
+      targetDistance = isHighAltitude
+          ? highAltitudeDistance
+          : lowAltitudeDistance;
     }
 
     final targetFov = _lerpDouble(

@@ -142,8 +142,9 @@ class _AvatarFromUrlState extends State<_AvatarFromUrlStateful> {
 
     // Fetch.
     try {
-      final response =
-          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 8));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 8));
 
       if (!mounted) return;
 
@@ -187,8 +188,9 @@ class _AvatarFromUrlState extends State<_AvatarFromUrlStateful> {
     }
 
     // Fallback: show initial letter.
-    final fallbackLetter =
-        widget.name.isNotEmpty ? widget.name[0].toUpperCase() : '?';
+    final fallbackLetter = widget.name.isNotEmpty
+        ? widget.name[0].toUpperCase()
+        : '?';
     final hash = widget.name.hashCode;
     final hue = (hash % 360).abs().toDouble();
     final bgColor = HSLColor.fromAHSL(1.0, hue, 0.5, 0.35).toColor();

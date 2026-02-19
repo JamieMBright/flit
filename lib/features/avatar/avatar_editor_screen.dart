@@ -235,35 +235,35 @@ AvatarConfig _previewConfig(
   final suffix = partId.substring(partId.indexOf('_') + 1);
   return switch (categoryKey) {
     'style' => base.copyWith(
-        style: AvatarStyle.values.firstWhere((v) => v.name == suffix),
-      ),
+      style: AvatarStyle.values.firstWhere((v) => v.name == suffix),
+    ),
     'eyes' => base.copyWith(
-        eyes: AvatarEyes.values.firstWhere((v) => v.name == suffix),
-      ),
+      eyes: AvatarEyes.values.firstWhere((v) => v.name == suffix),
+    ),
     'eyebrows' => base.copyWith(
-        eyebrows: AvatarEyebrows.values.firstWhere((v) => v.name == suffix),
-      ),
+      eyebrows: AvatarEyebrows.values.firstWhere((v) => v.name == suffix),
+    ),
     'mouth' => base.copyWith(
-        mouth: AvatarMouth.values.firstWhere((v) => v.name == suffix),
-      ),
+      mouth: AvatarMouth.values.firstWhere((v) => v.name == suffix),
+    ),
     'hair' => base.copyWith(
-        hair: AvatarHair.values.firstWhere((v) => v.name == suffix),
-      ),
+      hair: AvatarHair.values.firstWhere((v) => v.name == suffix),
+    ),
     'hairColor' => base.copyWith(
-        hairColor: AvatarHairColor.values.firstWhere((v) => v.name == suffix),
-      ),
+      hairColor: AvatarHairColor.values.firstWhere((v) => v.name == suffix),
+    ),
     'skinColor' => base.copyWith(
-        skinColor: AvatarSkinColor.values.firstWhere((v) => v.name == suffix),
-      ),
+      skinColor: AvatarSkinColor.values.firstWhere((v) => v.name == suffix),
+    ),
     'glasses' => base.copyWith(
-        glasses: AvatarGlasses.values.firstWhere((v) => v.name == suffix),
-      ),
+      glasses: AvatarGlasses.values.firstWhere((v) => v.name == suffix),
+    ),
     'earrings' => base.copyWith(
-        earrings: AvatarEarrings.values.firstWhere((v) => v.name == suffix),
-      ),
+      earrings: AvatarEarrings.values.firstWhere((v) => v.name == suffix),
+    ),
     'feature' => base.copyWith(
-        feature: AvatarFeature.values.firstWhere((v) => v.name == suffix),
-      ),
+      feature: AvatarFeature.values.firstWhere((v) => v.name == suffix),
+    ),
     _ => base,
   };
 }
@@ -438,8 +438,9 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                     children: [
                       Icon(
                         Icons.monetization_on,
-                        color:
-                            canAfford ? FlitColors.warning : FlitColors.error,
+                        color: canAfford
+                            ? FlitColors.warning
+                            : FlitColors.error,
                         size: 16,
                       ),
                       const SizedBox(width: 6),
@@ -693,47 +694,47 @@ class _AvatarPreviewSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        decoration: const BoxDecoration(
-          color: FlitColors.backgroundMid,
-          border: Border(bottom: BorderSide(color: FlitColors.cardBorder)),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 160,
-                height: 160,
-                decoration: BoxDecoration(
-                  color: FlitColors.backgroundLight,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: FlitColors.accent, width: 3),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: FlitColors.shadow,
-                      blurRadius: 16,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(vertical: 24),
+    decoration: const BoxDecoration(
+      color: FlitColors.backgroundMid,
+      border: Border(bottom: BorderSide(color: FlitColors.cardBorder)),
+    ),
+    child: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 160,
+            height: 160,
+            decoration: BoxDecoration(
+              color: FlitColors.backgroundLight,
+              shape: BoxShape.circle,
+              border: Border.all(color: FlitColors.accent, width: 3),
+              boxShadow: const [
+                BoxShadow(
+                  color: FlitColors.shadow,
+                  blurRadius: 16,
+                  offset: Offset(0, 4),
                 ),
-                child: AvatarWidget(config: config, size: 160),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                config.style.label,
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
+              ],
+            ),
+            child: AvatarWidget(config: config, size: 160),
           ),
-        ),
-      );
+          const SizedBox(height: 8),
+          Text(
+            config.style.label,
+            style: const TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 // =============================================================================
@@ -753,66 +754,64 @@ class _CategoryTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        height: 56,
-        color: FlitColors.backgroundDark,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          itemCount: categories.length,
-          itemBuilder: (context, index) {
-            final cat = categories[index];
-            final isSelected = index == selectedIndex;
+    height: 56,
+    color: FlitColors.backgroundDark,
+    child: ListView.builder(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      itemCount: categories.length,
+      itemBuilder: (context, index) {
+        final cat = categories[index];
+        final isSelected = index == selectedIndex;
 
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: GestureDetector(
-                onTap: () => onSelected(index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? FlitColors.accent.withOpacity(0.2)
-                        : FlitColors.cardBackground,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isSelected
-                          ? FlitColors.accent
-                          : FlitColors.cardBorder,
-                      width: isSelected ? 1.5 : 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        cat.icon,
-                        size: 16,
-                        color: isSelected
-                            ? FlitColors.accent
-                            : FlitColors.textMuted,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        cat.label,
-                        style: TextStyle(
-                          color: isSelected
-                              ? FlitColors.accent
-                              : FlitColors.textSecondary,
-                          fontSize: 13,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    ],
-                  ),
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: GestureDetector(
+            onTap: () => onSelected(index),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? FlitColors.accent.withOpacity(0.2)
+                    : FlitColors.cardBackground,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isSelected ? FlitColors.accent : FlitColors.cardBorder,
+                  width: isSelected ? 1.5 : 1,
                 ),
               ),
-            );
-          },
-        ),
-      );
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    cat.icon,
+                    size: 16,
+                    color: isSelected
+                        ? FlitColors.accent
+                        : FlitColors.textMuted,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    cat.label,
+                    style: TextStyle(
+                      color: isSelected
+                          ? FlitColors.accent
+                          : FlitColors.textSecondary,
+                      fontSize: 13,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
 }
 
 // =============================================================================
@@ -838,36 +837,36 @@ class _PartsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 0.85,
-        ),
-        itemCount: category.parts.length,
-        itemBuilder: (context, index) {
-          final part = category.parts[index];
-          final isSelected = selectedPartId == part.id;
-          final isOwned = part.isFree || ownedParts.contains(part.id);
-          final canAfford = coins >= part.price;
-          final isLocked = !isOwned && !part.isFree;
+    padding: const EdgeInsets.all(16),
+    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 4,
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+      childAspectRatio: 0.85,
+    ),
+    itemCount: category.parts.length,
+    itemBuilder: (context, index) {
+      final part = category.parts[index];
+      final isSelected = selectedPartId == part.id;
+      final isOwned = part.isFree || ownedParts.contains(part.id);
+      final canAfford = coins >= part.price;
+      final isLocked = !isOwned && !part.isFree;
 
-          return _PartCard(
-            part: part,
-            previewConfig: _previewConfig(
-              currentConfig,
-              category.configKey,
-              part.id,
-            ),
-            isSelected: isSelected,
-            isOwned: isOwned,
-            isLocked: isLocked,
-            canAfford: canAfford,
-            onTap: () => onPartTapped(part),
-          );
-        },
+      return _PartCard(
+        part: part,
+        previewConfig: _previewConfig(
+          currentConfig,
+          category.configKey,
+          part.id,
+        ),
+        isSelected: isSelected,
+        isOwned: isOwned,
+        isLocked: isLocked,
+        canAfford: canAfford,
+        onTap: () => onPartTapped(part),
       );
+    },
+  );
 }
 
 // =============================================================================
@@ -895,146 +894,145 @@ class _PartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? FlitColors.accent.withOpacity(0.1)
-                : FlitColors.cardBackground,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? FlitColors.accent : FlitColors.cardBorder,
-              width: isSelected ? 2 : 1,
-            ),
-          ),
-          child: Stack(
-            children: [
-              // Main content
-              Padding(
-                padding: const EdgeInsets.all(6),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Visual preview area
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: FlitColors.backgroundMid,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: part.isColorSwatch
-                              ? _ColorSwatch(hex: part.colorHex!)
-                              : LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    final previewSize =
-                                        constraints.maxWidth.clamp(
-                                      32.0,
-                                      56.0,
-                                    );
-                                    return AvatarWidget(
-                                      config: previewConfig,
-                                      size: previewSize,
-                                    );
-                                  },
-                                ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-
-                    // Price label
-                    if (part.isFree)
-                      const Text(
-                        'FREE',
-                        style: TextStyle(
-                          color: FlitColors.success,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      )
-                    else if (isOwned)
-                      const Text(
-                        'OWNED',
-                        style: TextStyle(
-                          color: FlitColors.textSecondary,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      )
-                    else
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.monetization_on,
-                            size: 11,
-                            color: canAfford
-                                ? FlitColors.warning
-                                : FlitColors.error,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${part.price}',
-                            style: TextStyle(
-                              color: canAfford
-                                  ? FlitColors.warning
-                                  : FlitColors.error,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-
-              // Selected check badge
-              if (isSelected)
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: Container(
-                    width: 18,
-                    height: 18,
-                    decoration: const BoxDecoration(
-                      color: FlitColors.accent,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      size: 12,
-                      color: FlitColors.textPrimary,
-                    ),
-                  ),
-                ),
-
-              // Lock overlay for unaffordable paid items
-              if (isLocked && !canAfford)
-                Positioned.fill(
+    onTap: onTap,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? FlitColors.accent.withOpacity(0.1)
+            : FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected ? FlitColors.accent : FlitColors.cardBorder,
+          width: isSelected ? 2 : 1,
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Main content
+          Padding(
+            padding: const EdgeInsets.all(6),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Visual preview area
+                Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: FlitColors.backgroundDark.withOpacity(0.55),
-                      borderRadius: BorderRadius.circular(12),
+                      color: FlitColors.backgroundMid,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.lock,
-                        color: FlitColors.textMuted,
-                        size: 24,
-                      ),
+                    child: Center(
+                      child: part.isColorSwatch
+                          ? _ColorSwatch(hex: part.colorHex!)
+                          : LayoutBuilder(
+                              builder: (context, constraints) {
+                                final previewSize = constraints.maxWidth.clamp(
+                                  32.0,
+                                  56.0,
+                                );
+                                return AvatarWidget(
+                                  config: previewConfig,
+                                  size: previewSize,
+                                );
+                              },
+                            ),
                     ),
                   ),
                 ),
-            ],
+                const SizedBox(height: 4),
+
+                // Price label
+                if (part.isFree)
+                  const Text(
+                    'FREE',
+                    style: TextStyle(
+                      color: FlitColors.success,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  )
+                else if (isOwned)
+                  const Text(
+                    'OWNED',
+                    style: TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  )
+                else
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.monetization_on,
+                        size: 11,
+                        color: canAfford
+                            ? FlitColors.warning
+                            : FlitColors.error,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${part.price}',
+                        style: TextStyle(
+                          color: canAfford
+                              ? FlitColors.warning
+                              : FlitColors.error,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
           ),
-        ),
-      );
+
+          // Selected check badge
+          if (isSelected)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: const BoxDecoration(
+                  color: FlitColors.accent,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check,
+                  size: 12,
+                  color: FlitColors.textPrimary,
+                ),
+              ),
+            ),
+
+          // Lock overlay for unaffordable paid items
+          if (isLocked && !canAfford)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: FlitColors.backgroundDark.withOpacity(0.55),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.lock,
+                    color: FlitColors.textMuted,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
 }
 
 // =============================================================================
@@ -1074,59 +1072,59 @@ class _SaveBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: const BoxDecoration(
-          color: FlitColors.backgroundMid,
-          border: Border(top: BorderSide(color: FlitColors.cardBorder)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: const BoxDecoration(
+      color: FlitColors.backgroundMid,
+      border: Border(top: BorderSide(color: FlitColors.cardBorder)),
+    ),
+    child: SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Coin balance display
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Coin balance display
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.monetization_on,
-                    color: FlitColors.warning,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '$coins coins remaining',
-                    style: const TextStyle(
-                      color: FlitColors.textSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
+              const Icon(
+                Icons.monetization_on,
+                color: FlitColors.warning,
+                size: 16,
               ),
-              const SizedBox(height: 10),
-              // Save button
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: onSave,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FlitColors.accent,
-                    foregroundColor: FlitColors.textPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    textStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  child: const Text('SAVE'),
+              const SizedBox(width: 4),
+              Text(
+                '$coins coins remaining',
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 13,
                 ),
               ),
             ],
           ),
-        ),
-      );
+          const SizedBox(height: 10),
+          // Save button
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: onSave,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FlitColors.accent,
+                foregroundColor: FlitColors.textPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              child: const Text('SAVE'),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

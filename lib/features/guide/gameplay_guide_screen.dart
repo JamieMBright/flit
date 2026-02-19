@@ -1169,7 +1169,8 @@ class _GameModesSection extends StatelessWidget {
       iconColor: FlitColors.success,
       name: 'Training Sortie',
       tagline: 'Learn the ropes.',
-      description: 'Guided missions with hints and slower pacing. Perfect for '
+      description:
+          'Guided missions with hints and slower pacing. Perfect for '
           'building your geographic knowledge before going competitive.',
     ),
     _GameModeData(
@@ -1582,35 +1583,40 @@ class _TipsSection extends StatelessWidget {
       icon: Icons.horizontal_rule_rounded,
       color: FlitColors.oceanHighlight,
       title: 'Use latitude lines',
-      body: 'The grid lines on the globe mark parallels. Countries near the '
+      body:
+          'The grid lines on the globe mark parallels. Countries near the '
           'equator are tropical; those near the poles are arctic or sub-arctic.',
     ),
     _TipData(
       icon: Icons.landscape_rounded,
       color: FlitColors.landMassHighlight,
       title: 'Look for landmarks',
-      body: 'Large rivers, desert colours, island chains, and distinctive '
+      body:
+          'Large rivers, desert colours, island chains, and distinctive '
           'coastlines can identify a country even before you read the clues.',
     ),
     _TipData(
       icon: Icons.read_more_rounded,
       color: FlitColors.gold,
       title: 'Read all visible clues',
-      body: 'Don\'t guess on the first clue alone. Even two clues can '
+      body:
+          'Don\'t guess on the first clue alone. Even two clues can '
           'dramatically narrow down the answer and save you a wrong-guess penalty.',
     ),
     _TipData(
       icon: Icons.bolt_rounded,
       color: FlitColors.accent,
       title: 'Balance speed and accuracy',
-      body: 'A wrong guess hurts more than a slow right one. If you\'re '
+      body:
+          'A wrong guess hurts more than a slow right one. If you\'re '
           'unsure, reveal one more clue rather than gambling on a guess.',
     ),
     _TipData(
       icon: Icons.map_rounded,
       color: FlitColors.atmosphereGlow,
       title: 'Study the globe in Free Flight',
-      body: 'Spend time in Free Flight mode exploring regions you find '
+      body:
+          'Spend time in Free Flight mode exploring regions you find '
           'tricky. Geography is a skill — practice pays off in Daily Scramble.',
     ),
   ];
