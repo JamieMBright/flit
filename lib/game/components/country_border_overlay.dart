@@ -92,14 +92,16 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
     for (final lake in OsmFeatures.lakes) {
       if ((lake.center.x - playerPos.x).abs() > visRadius ||
-          (lake.center.y - playerPos.y).abs() > visRadius) continue;
+          (lake.center.y - playerPos.y).abs() > visRadius)
+        continue;
 
       final screenPos = gameRef.worldToScreenGlobe(lake.center);
       if (screenPos.x < -500 || screenPos.y < -500) continue;
       if (screenPos.x < -50 ||
           screenPos.x > screenW + 50 ||
           screenPos.y < -50 ||
-          screenPos.y > screenH + 50) continue;
+          screenPos.y > screenH + 50)
+        continue;
 
       // Scale radius based on altitude and lake size
       final screenRadius = (lake.radiusDegrees * 8.0 / (alt + 0.3)).clamp(
@@ -136,14 +138,16 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
     for (final sea in OsmFeatures.seas) {
       if ((sea.center.x - playerPos.x).abs() > 90 ||
-          (sea.center.y - playerPos.y).abs() > 90) continue;
+          (sea.center.y - playerPos.y).abs() > 90)
+        continue;
 
       final screenPos = gameRef.worldToScreenGlobe(sea.center);
       if (screenPos.x < -500 || screenPos.y < -500) continue;
       if (screenPos.x < 0 ||
           screenPos.x > screenW ||
           screenPos.y < 0 ||
-          screenPos.y > screenH) continue;
+          screenPos.y > screenH)
+        continue;
 
       final painter = _seaLabelCache.putIfAbsent(sea.name, () {
         final tp = TextPainter(
@@ -210,14 +214,16 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
     for (final peak in OsmFeatures.peaks) {
       if (drawn >= maxPeaks) break;
       if ((peak.location.x - playerPos.x).abs() > visRadius ||
-          (peak.location.y - playerPos.y).abs() > visRadius) continue;
+          (peak.location.y - playerPos.y).abs() > visRadius)
+        continue;
 
       final screenPos = gameRef.worldToScreenGlobe(peak.location);
       if (screenPos.x < -500 || screenPos.y < -500) continue;
       if (screenPos.x < -20 ||
           screenPos.x > screenW + 20 ||
           screenPos.y < -20 ||
-          screenPos.y > screenH + 20) continue;
+          screenPos.y > screenH + 20)
+        continue;
 
       // Small triangle marker
       const size = 4.0;
@@ -255,14 +261,16 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
     for (final volcano in OsmFeatures.volcanoes) {
       if (drawn >= maxVolcanoes) break;
       if ((volcano.location.x - playerPos.x).abs() > visRadius ||
-          (volcano.location.y - playerPos.y).abs() > visRadius) continue;
+          (volcano.location.y - playerPos.y).abs() > visRadius)
+        continue;
 
       final screenPos = gameRef.worldToScreenGlobe(volcano.location);
       if (screenPos.x < -500 || screenPos.y < -500) continue;
       if (screenPos.x < -20 ||
           screenPos.x > screenW + 20 ||
           screenPos.y < -20 ||
-          screenPos.y > screenH + 20) continue;
+          screenPos.y > screenH + 20)
+        continue;
 
       final color = volcano.isActive
           ? const Color(0xFFDD4422).withOpacity(opacity)
@@ -318,14 +326,16 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
     for (final airport in OsmFeatures.airports) {
       if (drawn >= maxAirports) break;
       if ((airport.location.x - playerPos.x).abs() > visRadius ||
-          (airport.location.y - playerPos.y).abs() > visRadius) continue;
+          (airport.location.y - playerPos.y).abs() > visRadius)
+        continue;
 
       final screenPos = gameRef.worldToScreenGlobe(airport.location);
       if (screenPos.x < -500 || screenPos.y < -500) continue;
       if (screenPos.x < 0 ||
           screenPos.x > screenW ||
           screenPos.y < 0 ||
-          screenPos.y > screenH) continue;
+          screenPos.y > screenH)
+        continue;
 
       // Small dot
       canvas.drawCircle(Offset(screenPos.x, screenPos.y), 2.0, dotPaint);

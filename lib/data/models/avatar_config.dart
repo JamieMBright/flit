@@ -321,20 +321,19 @@ class AvatarConfig {
     AvatarEarrings? earrings,
     AvatarFeature? feature,
     AvatarCompanion? companion,
-  }) =>
-      AvatarConfig(
-        style: style ?? this.style,
-        eyes: eyes ?? this.eyes,
-        eyebrows: eyebrows ?? this.eyebrows,
-        mouth: mouth ?? this.mouth,
-        hair: hair ?? this.hair,
-        hairColor: hairColor ?? this.hairColor,
-        skinColor: skinColor ?? this.skinColor,
-        glasses: glasses ?? this.glasses,
-        earrings: earrings ?? this.earrings,
-        feature: feature ?? this.feature,
-        companion: companion ?? this.companion,
-      );
+  }) => AvatarConfig(
+    style: style ?? this.style,
+    eyes: eyes ?? this.eyes,
+    eyebrows: eyebrows ?? this.eyebrows,
+    mouth: mouth ?? this.mouth,
+    hair: hair ?? this.hair,
+    hairColor: hairColor ?? this.hairColor,
+    skinColor: skinColor ?? this.skinColor,
+    glasses: glasses ?? this.glasses,
+    earrings: earrings ?? this.earrings,
+    feature: feature ?? this.feature,
+    companion: companion ?? this.companion,
+  );
 
   // ---------------------------------------------------------------------------
   // DiceBear URL builder
@@ -356,7 +355,8 @@ class AvatarConfig {
     // control for Adventurer; for other styles DiceBear uses what it
     // recognises, and the seed variation ensures the base shape also changes
     // when features are swapped.
-    params['seed'] = 'flit-${style.slug}-${eyes.name}-${eyebrows.name}-'
+    params['seed'] =
+        'flit-${style.slug}-${eyes.name}-${eyebrows.name}-'
         '${mouth.name}-${hair.name}-${hairColor.name}-${skinColor.name}-'
         '${glasses.name}-${earrings.name}-${feature.name}';
 
@@ -408,17 +408,17 @@ class AvatarConfig {
   /// Coin cost for the given [style].
   /// Adventurer, Avataaars, and Big Ears are free starter styles.
   static int stylePrice(AvatarStyle style) => switch (style) {
-        AvatarStyle.adventurer => 0,
-        AvatarStyle.avataaars => 0,
-        AvatarStyle.bigEars => 0,
-        AvatarStyle.lorelei => 500,
-        AvatarStyle.micah => 500,
-        AvatarStyle.pixelArt => 500,
-        AvatarStyle.bottts => 800,
-        AvatarStyle.notionists => 800,
-        AvatarStyle.openPeeps => 1000,
-        AvatarStyle.thumbs => 1000,
-      };
+    AvatarStyle.adventurer => 0,
+    AvatarStyle.avataaars => 0,
+    AvatarStyle.bigEars => 0,
+    AvatarStyle.lorelei => 500,
+    AvatarStyle.micah => 500,
+    AvatarStyle.pixelArt => 500,
+    AvatarStyle.bottts => 800,
+    AvatarStyle.notionists => 800,
+    AvatarStyle.openPeeps => 1000,
+    AvatarStyle.thumbs => 1000,
+  };
 
   /// Coin cost for the given [eyes] variant.
   /// First 13 variants are free.
@@ -453,37 +453,37 @@ class AvatarConfig {
   /// Coin cost for the given [glasses] variant.
   /// [none] is free.
   static int glassesPrice(AvatarGlasses glasses) => switch (glasses) {
-        AvatarGlasses.none => 0,
-        AvatarGlasses.variant01 => 300,
-        AvatarGlasses.variant02 => 300,
-        AvatarGlasses.variant03 => 500,
-        AvatarGlasses.variant04 => 800,
-        AvatarGlasses.variant05 => 1000,
-      };
+    AvatarGlasses.none => 0,
+    AvatarGlasses.variant01 => 300,
+    AvatarGlasses.variant02 => 300,
+    AvatarGlasses.variant03 => 500,
+    AvatarGlasses.variant04 => 800,
+    AvatarGlasses.variant05 => 1000,
+  };
 
   /// Coin cost for the given [earrings] variant.
   /// [none] is free.
   static int earringsPrice(AvatarEarrings earrings) => switch (earrings) {
-        AvatarEarrings.none => 0,
-        AvatarEarrings.variant01 => 500,
-        AvatarEarrings.variant02 => 500,
-        AvatarEarrings.variant03 => 800,
-        AvatarEarrings.variant04 => 1000,
-        AvatarEarrings.variant05 => 1200,
-        AvatarEarrings.variant06 => 1500,
-      };
+    AvatarEarrings.none => 0,
+    AvatarEarrings.variant01 => 500,
+    AvatarEarrings.variant02 => 500,
+    AvatarEarrings.variant03 => 800,
+    AvatarEarrings.variant04 => 1000,
+    AvatarEarrings.variant05 => 1200,
+    AvatarEarrings.variant06 => 1500,
+  };
 
   /// Coin cost for the given [companion].
   static int companionPrice(AvatarCompanion companion) => switch (companion) {
-        AvatarCompanion.none => 0,
-        AvatarCompanion.pidgey => 500,
-        AvatarCompanion.sparrow => 2000,
-        AvatarCompanion.eagle => 5000,
-        AvatarCompanion.parrot => 8000,
-        AvatarCompanion.phoenix => 15000,
-        AvatarCompanion.dragon => 30000,
-        AvatarCompanion.charizard => 75000,
-      };
+    AvatarCompanion.none => 0,
+    AvatarCompanion.pidgey => 500,
+    AvatarCompanion.sparrow => 2000,
+    AvatarCompanion.eagle => 5000,
+    AvatarCompanion.parrot => 8000,
+    AvatarCompanion.phoenix => 15000,
+    AvatarCompanion.dragon => 30000,
+    AvatarCompanion.charizard => 75000,
+  };
 
   /// Total coin cost of every non-free item in this configuration.
   int get totalCost =>
@@ -529,65 +529,65 @@ class AvatarConfig {
   // ---------------------------------------------------------------------------
 
   Map<String, dynamic> toJson() => {
-        'style': style.name,
-        'eyes': eyes.name,
-        'eyebrows': eyebrows.name,
-        'mouth': mouth.name,
-        'hair': hair.name,
-        'hair_color': hairColor.name,
-        'skin_color': skinColor.name,
-        'glasses': glasses.name,
-        'earrings': earrings.name,
-        'feature': feature.name,
-        'companion': companion.name,
-      };
+    'style': style.name,
+    'eyes': eyes.name,
+    'eyebrows': eyebrows.name,
+    'mouth': mouth.name,
+    'hair': hair.name,
+    'hair_color': hairColor.name,
+    'skin_color': skinColor.name,
+    'glasses': glasses.name,
+    'earrings': earrings.name,
+    'feature': feature.name,
+    'companion': companion.name,
+  };
 
   factory AvatarConfig.fromJson(Map<String, dynamic> json) => AvatarConfig(
-        style: AvatarStyle.values.firstWhere(
-          (v) => v.name == json['style'],
-          orElse: () => AvatarStyle.adventurer,
-        ),
-        eyes: AvatarEyes.values.firstWhere(
-          (v) => v.name == json['eyes'],
-          orElse: () => AvatarEyes.variant01,
-        ),
-        eyebrows: AvatarEyebrows.values.firstWhere(
-          (v) => v.name == json['eyebrows'],
-          orElse: () => AvatarEyebrows.variant01,
-        ),
-        mouth: AvatarMouth.values.firstWhere(
-          (v) => v.name == json['mouth'],
-          orElse: () => AvatarMouth.variant01,
-        ),
-        hair: AvatarHair.values.firstWhere(
-          (v) => v.name == json['hair'],
-          orElse: () => AvatarHair.short01,
-        ),
-        hairColor: AvatarHairColor.values.firstWhere(
-          (v) => v.name == json['hair_color'],
-          orElse: () => AvatarHairColor.brown,
-        ),
-        skinColor: AvatarSkinColor.values.firstWhere(
-          (v) => v.name == json['skin_color'],
-          orElse: () => AvatarSkinColor.mediumLight,
-        ),
-        glasses: AvatarGlasses.values.firstWhere(
-          (v) => v.name == json['glasses'],
-          orElse: () => AvatarGlasses.none,
-        ),
-        earrings: AvatarEarrings.values.firstWhere(
-          (v) => v.name == json['earrings'],
-          orElse: () => AvatarEarrings.none,
-        ),
-        feature: AvatarFeature.values.firstWhere(
-          (v) => v.name == json['feature'],
-          orElse: () => AvatarFeature.none,
-        ),
-        companion: AvatarCompanion.values.firstWhere(
-          (v) => v.name == json['companion'],
-          orElse: () => AvatarCompanion.none,
-        ),
-      );
+    style: AvatarStyle.values.firstWhere(
+      (v) => v.name == json['style'],
+      orElse: () => AvatarStyle.adventurer,
+    ),
+    eyes: AvatarEyes.values.firstWhere(
+      (v) => v.name == json['eyes'],
+      orElse: () => AvatarEyes.variant01,
+    ),
+    eyebrows: AvatarEyebrows.values.firstWhere(
+      (v) => v.name == json['eyebrows'],
+      orElse: () => AvatarEyebrows.variant01,
+    ),
+    mouth: AvatarMouth.values.firstWhere(
+      (v) => v.name == json['mouth'],
+      orElse: () => AvatarMouth.variant01,
+    ),
+    hair: AvatarHair.values.firstWhere(
+      (v) => v.name == json['hair'],
+      orElse: () => AvatarHair.short01,
+    ),
+    hairColor: AvatarHairColor.values.firstWhere(
+      (v) => v.name == json['hair_color'],
+      orElse: () => AvatarHairColor.brown,
+    ),
+    skinColor: AvatarSkinColor.values.firstWhere(
+      (v) => v.name == json['skin_color'],
+      orElse: () => AvatarSkinColor.mediumLight,
+    ),
+    glasses: AvatarGlasses.values.firstWhere(
+      (v) => v.name == json['glasses'],
+      orElse: () => AvatarGlasses.none,
+    ),
+    earrings: AvatarEarrings.values.firstWhere(
+      (v) => v.name == json['earrings'],
+      orElse: () => AvatarEarrings.none,
+    ),
+    feature: AvatarFeature.values.firstWhere(
+      (v) => v.name == json['feature'],
+      orElse: () => AvatarFeature.none,
+    ),
+    companion: AvatarCompanion.values.firstWhere(
+      (v) => v.name == json['companion'],
+      orElse: () => AvatarCompanion.none,
+    ),
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -607,16 +607,16 @@ class AvatarConfig {
 
   @override
   int get hashCode => Object.hash(
-        style,
-        eyes,
-        eyebrows,
-        mouth,
-        hair,
-        hairColor,
-        skinColor,
-        glasses,
-        earrings,
-        feature,
-        companion,
-      );
+    style,
+    eyes,
+    eyebrows,
+    mouth,
+    hair,
+    hairColor,
+    skinColor,
+    glasses,
+    earrings,
+    feature,
+    companion,
+  );
 }

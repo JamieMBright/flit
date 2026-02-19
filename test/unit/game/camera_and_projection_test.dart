@@ -266,7 +266,8 @@ void main() {
       expect(
         rayAngleDeg,
         greaterThan(horizonAngleDeg),
-        reason: 'At wide FOV, top of screen must show past the horizon '
+        reason:
+            'At wide FOV, top of screen must show past the horizon '
             '(ray ${rayAngleDeg.toStringAsFixed(1)}° > '
             'horizon ${horizonAngleDeg.toStringAsFixed(1)}°)',
       );
@@ -288,7 +289,8 @@ void main() {
       expect(
         rayAngleDeg.abs(),
         lessThan(horizonAngleDeg),
-        reason: 'Bottom of screen must point at globe surface, '
+        reason:
+            'Bottom of screen must point at globe surface, '
             'not past the horizon',
       );
     });
@@ -312,7 +314,8 @@ void main() {
       expect(
         rayAngleDeg,
         greaterThan(0),
-        reason: 'Screen center should point above forward direction '
+        reason:
+            'Screen center should point above forward direction '
             '(tilted toward heading)',
       );
     });
@@ -547,7 +550,8 @@ void main() {
       expect(
         camera.currentDistance,
         greaterThan(CameraState.lowAltitudeDistance + 0.4),
-        reason: 'Distance should barely change after one frame — '
+        reason:
+            'Distance should barely change after one frame — '
             'transition must be gradual',
       );
     });
@@ -858,7 +862,8 @@ void main() {
       expect(
         result['lat'],
         closeTo(80.0, 1.0),
-        reason: 'After crossing the pole and coming back to 80°, '
+        reason:
+            'After crossing the pole and coming back to 80°, '
             'latitude should be ~80°',
       );
       // Longitude should be roughly 10° + 180° = 190° = -170°
@@ -966,7 +971,8 @@ void main() {
       expect(
         distFromSouth,
         lessThan(0.3),
-        reason: 'After crossing the north pole heading north, '
+        reason:
+            'After crossing the north pole heading north, '
             'bearing should be approximately south (~180°). '
             'Got: ${normalizedBearing * 180 / pi}°',
       );
@@ -1034,7 +1040,8 @@ void main() {
       expect(
         maxJump,
         lessThan(0.02), // ~1° in radians
-        reason: 'Heading changes must be smooth (no sudden jumps). '
+        reason:
+            'Heading changes must be smooth (no sudden jumps). '
             'Max jump: ${maxJump * 180 / pi}°',
       );
     });
@@ -1059,7 +1066,8 @@ void main() {
       final lng2 = result['lng']! * pi / 180;
       final dLat = lat2 - lat1;
       final dLng = lng2 - lng1;
-      final a = sin(dLat / 2) * sin(dLat / 2) +
+      final a =
+          sin(dLat / 2) * sin(dLat / 2) +
           cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
       final c = 2 * atan2(sqrt(a), sqrt(1 - a));
       final distDeg = c * 180 / pi;

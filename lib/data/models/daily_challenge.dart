@@ -115,7 +115,8 @@ class DailyChallenge {
   /// Only the year, month and day components are used; time is ignored.
   factory DailyChallenge.forDate(DateTime date) {
     final normalisedDate = DateTime.utc(date.year, date.month, date.day);
-    final seed = normalisedDate.year * 10000 +
+    final seed =
+        normalisedDate.year * 10000 +
         normalisedDate.month * 100 +
         normalisedDate.day;
 
@@ -164,28 +165,28 @@ class DailyChallenge {
   // ── Serialisation ───────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-        'date': date.toIso8601String(),
-        'title': title,
-        'description': description,
-        'enabled_clue_types': enabledClueTypes.toList(),
-        'coin_reward': coinReward,
-        'bonus_coin_reward': bonusCoinReward,
-        'seed': seed,
-        'map_region': mapRegion,
-      };
+    'date': date.toIso8601String(),
+    'title': title,
+    'description': description,
+    'enabled_clue_types': enabledClueTypes.toList(),
+    'coin_reward': coinReward,
+    'bonus_coin_reward': bonusCoinReward,
+    'seed': seed,
+    'map_region': mapRegion,
+  };
 
   factory DailyChallenge.fromJson(Map<String, dynamic> json) => DailyChallenge(
-        date: DateTime.parse(json['date'] as String),
-        title: json['title'] as String,
-        description: json['description'] as String,
-        enabledClueTypes: (json['enabled_clue_types'] as List)
-            .map((e) => e as String)
-            .toSet(),
-        coinReward: json['coin_reward'] as int,
-        bonusCoinReward: json['bonus_coin_reward'] as int,
-        seed: json['seed'] as int,
-        mapRegion: json['map_region'] as String? ?? 'World',
-      );
+    date: DateTime.parse(json['date'] as String),
+    title: json['title'] as String,
+    description: json['description'] as String,
+    enabledClueTypes: (json['enabled_clue_types'] as List)
+        .map((e) => e as String)
+        .toSet(),
+    coinReward: json['coin_reward'] as int,
+    bonusCoinReward: json['bonus_coin_reward'] as int,
+    seed: json['seed'] as int,
+    mapRegion: json['map_region'] as String? ?? 'World',
+  );
 
   // ── Placeholder leaderboard ─────────────────────────────────────────
 
@@ -269,11 +270,11 @@ class DailyLeaderboardEntry {
   final int rank;
 
   Map<String, dynamic> toJson() => {
-        'username': username,
-        'score': score,
-        'time_ms': time.inMilliseconds,
-        'rank': rank,
-      };
+    'username': username,
+    'score': score,
+    'time_ms': time.inMilliseconds,
+    'rank': rank,
+  };
 
   factory DailyLeaderboardEntry.fromJson(Map<String, dynamic> json) =>
       DailyLeaderboardEntry(
