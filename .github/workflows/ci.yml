@@ -93,7 +93,19 @@ jobs:
         run: test -f shaders/globe.frag && echo "globe.frag OK"
 
       - name: Build web release
-        run: flutter build web --release --base-href "/flit/"
+        run: |
+          set -o pipefail
+          for attempt in 1 2; do
+            echo "Build web attempt ${attempt}/2"
+            if flutter build web --release --base-href "/flit/" 2>&1 | tee flutter-build.log; then
+              break
+            fi
+            if [ "$attempt" -eq 2 ]; then
+              exit 1
+            fi
+            echo "Retrying web build after transient failure..."
+            sleep 5
+          done
 
       - name: Verify build output
         run: |
