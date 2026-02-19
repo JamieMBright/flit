@@ -127,29 +127,45 @@ check_unused_imports() {
 }
 
 # -----------------------------------------------------------------------
-# Check 3: Common const constructor candidates
-# Catches simple cases where a constructor with all-literal args should
-# be const (e.g., EdgeInsets.all(8), Offset(0, 0), Color(0xFF...)).
+# Check 3: Common const constructor candidates (prefer_const_constructors)
+# Catches cases where a constructor should be const:
+#   - Pure literal args: Offset(0, 0), Color(0xFF...), EdgeInsets.all(8)
+#   - Const-evaluable expressions: Offset(0, -size * 0.3) where size is const
+# This is a heuristic — the real analyzer (flutter analyze --fatal-infos)
+# is the authoritative check. This catches the most common patterns.
 # -----------------------------------------------------------------------
 check_const_constructors() {
     local file="$1"
 
-    # Pattern: non-const EdgeInsets/Offset/Color/Duration/Radius with literal args
+    # Pattern 1: constructors with pure numeric/literal args
     while IFS= read -r match; do
         [ -z "$match" ] && continue
         local line_num=$(echo "$match" | cut -d: -f1)
         local line_text=$(echo "$match" | cut -d: -f2-)
 
-        # Skip if already in a const context:
-        # - Line starts with const
-        # - 'const' appears anywhere on the same line (covers nested const constructors)
-        # - 'const [' or 'const {' on the same line (list/map literals)
-        # This is deliberately permissive to avoid false positives — the real
-        # analyzer handles the nuances of Dart const propagation.
+        # Skip if already in a const context
         if echo "$line_text" | grep -qP '\bconst\b' 2>/dev/null; then continue; fi
 
-        echo "  INFO [$file:$line_num]: Consider adding 'const' to constructor (prefer_const_constructors)"
+        echo "  WARNING [$file:$line_num]: Missing 'const' on constructor with literal args (prefer_const_constructors)"
+        WARNINGS=$((WARNINGS + 1))
     done < <(grep -nP '(?<!\bconst\s)(?<!\bconst\s\s)\b(EdgeInsets\.(all|only|symmetric|fromLTRB)|Offset|Color|Duration|Radius\.(circular|elliptical)|SizedBox)\s*\([0-9., xeE+\-]*\)' "$file" 2>/dev/null || true)
+
+    # Pattern 2: Offset/Size with const-evaluable expressions (e.g., Offset(0, -size * 0.3))
+    # Catches constructors whose args include identifiers and arithmetic that are often
+    # const-evaluable when the variable is declared as 'const'.
+    while IFS= read -r match; do
+        [ -z "$match" ] && continue
+        local line_num=$(echo "$match" | cut -d: -f1)
+        local line_text=$(echo "$match" | cut -d: -f2-)
+
+        # Skip if already const
+        if echo "$line_text" | grep -qP '\bconst\b' 2>/dev/null; then continue; fi
+        # Skip if line also already matched pattern 1 (pure literals)
+        if echo "$line_text" | grep -qP '\b(Offset|Size)\s*\([0-9., xeE+\-]*\)' 2>/dev/null; then continue; fi
+
+        echo "  WARNING [$file:$line_num]: Possible missing 'const' on constructor (prefer_const_constructors)"
+        WARNINGS=$((WARNINGS + 1))
+    done < <(grep -nP '^\s+(Offset|Size)\s*\([0-9a-zA-Z_., *+\-/]+\)\s*,' "$file" 2>/dev/null || true)
 }
 
 # -----------------------------------------------------------------------

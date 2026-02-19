@@ -386,7 +386,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     );
 
     // Head.
-    canvas.drawCircle(Offset(0, -size * 0.3), size * 0.2, bodyPaint);
+    canvas.drawCircle(const Offset(0, -size * 0.3), size * 0.2, bodyPaint);
     // Crown crest.
     final crest = Path()
       ..moveTo(0, -size * 0.5)
@@ -399,12 +399,12 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
 
     // Eyes.
     canvas.drawCircle(
-      Offset(-1.5, -size * 0.32),
+      const Offset(-1.5, -size * 0.32),
       1.5,
       Paint()..color = const Color(0xFFFFFF00),
     );
     canvas.drawCircle(
-      Offset(1.5, -size * 0.32),
+      const Offset(1.5, -size * 0.32),
       1.5,
       Paint()..color = const Color(0xFFFFFF00),
     );
@@ -422,7 +422,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
 
     // Fire breath glow.
     canvas.drawCircle(
-      Offset(0, -size * 0.7),
+      const Offset(0, -size * 0.7),
       size * 0.35,
       Paint()
         ..color = const Color(0xFFFF4400).withOpacity(0.2)
@@ -512,7 +512,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     );
 
     // Head with horns.
-    canvas.drawCircle(Offset(0, -size * 0.35), size * 0.22, bodyPaint);
+    canvas.drawCircle(const Offset(0, -size * 0.35), size * 0.22, bodyPaint);
     // Left horn.
     final leftHorn = Path()
       ..moveTo(-size * 0.12, -size * 0.52)
@@ -530,34 +530,34 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
 
     // Fierce eyes.
     canvas.drawCircle(
-      Offset(-2.5, -size * 0.38),
+      const Offset(-2.5, -size * 0.38),
       2.0,
       Paint()..color = const Color(0xFFFFDD00),
     );
     canvas.drawCircle(
-      Offset(2.5, -size * 0.38),
+      const Offset(2.5, -size * 0.38),
       2.0,
       Paint()..color = const Color(0xFFFFDD00),
     );
     canvas.drawCircle(
-      Offset(-2.5, -size * 0.38),
+      const Offset(-2.5, -size * 0.38),
       0.8,
       Paint()..color = const Color(0xFF000000),
     );
     canvas.drawCircle(
-      Offset(2.5, -size * 0.38),
+      const Offset(2.5, -size * 0.38),
       0.8,
       Paint()..color = const Color(0xFF000000),
     );
 
     // Snout / nostrils.
     canvas.drawCircle(
-      Offset(-1.5, -size * 0.5),
+      const Offset(-1.5, -size * 0.5),
       0.8,
       Paint()..color = const Color(0xFF333333),
     );
     canvas.drawCircle(
-      Offset(1.5, -size * 0.5),
+      const Offset(1.5, -size * 0.5),
       0.8,
       Paint()..color = const Color(0xFF333333),
     );
