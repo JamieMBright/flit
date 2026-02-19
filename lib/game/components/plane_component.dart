@@ -109,6 +109,12 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Propeller spin angle
   double _propAngle = 0;
 
+  /// Effective speed factor for scaling bank animation rate.
+  /// Set by FlitGame each frame. 1.0 = default (medium speed, high altitude).
+  /// Lower values (slow flight) → slower tilt animation.
+  /// Higher values (fast flight) → snappier tilt animation.
+  double effectiveSpeedFactor = 1.0;
+
   /// Fuel boost multiplier from pilot license (solo play only, 1.0 = no boost).
   double fuelBoostMultiplier = 1.0;
 
@@ -141,8 +147,14 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
 
     // Smooth bank angle: fast into turns, slow release for lingering contrail effect.
     // Positive _turnDirection = right turn → positive bank → right visual bank.
+    // Bank animation speed scales with flight speed: slow flight → gradual tilt,
+    // fast flight → snappy tilt. sqrt() gives gentler scaling so very slow speeds
+    // don't feel frozen. Contrail separation naturally follows since it derives
+    // from cos(_currentBank).
     final targetBank = _turnDirection * _maxBankAngle;
-    final bankRate = targetBank.abs() > _currentBank.abs() ? 10.0 : 2.5;
+    final bankSpeedScale = sqrt(effectiveSpeedFactor.clamp(0.1, 3.0));
+    final baseBankRate = targetBank.abs() > _currentBank.abs() ? 10.0 : 2.5;
+    final bankRate = baseBankRate * bankSpeedScale;
     _currentBank += (targetBank - _currentBank) * min(1.0, dt * bankRate);
 
     // Smooth altitude transition using continuous altitude

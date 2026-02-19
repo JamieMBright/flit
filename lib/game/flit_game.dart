@@ -998,6 +998,10 @@ class FlitGame extends FlameGame
     final speed = _plane.currentSpeedContinuous * _speedMultiplier * planeSpeed;
     final angularDist = speed * _speedToAngular * dt; // radians on unit sphere
 
+    // Tell the plane its effective speed factor so bank animation scales with
+    // flight speed (slow flight → gradual tilt, fast flight → snappy tilt).
+    _plane.effectiveSpeedFactor = speed / PlaneComponent.highAltitudeSpeed;
+
     if (angularDist < 1e-12) return; // Avoid division by zero when stationary
 
     // --- Convert current state to 3D ---
