@@ -172,7 +172,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
 
     // Eye.
     canvas.drawCircle(
-      const Offset(0, -size * 0.32),
+      Offset(0, -size * 0.32),
       size * 0.06,
       Paint()..color = const Color(0xFF111111),
     );
