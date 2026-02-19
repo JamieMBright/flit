@@ -202,14 +202,23 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
 
     // Cream chest plumage.
     canvas.drawOval(
-      Rect.fromCenter(center: const Offset(0, 0.5), width: size * 0.55, height: size * 0.3),
+      Rect.fromCenter(
+        center: const Offset(0, 0.5),
+        width: size * 0.55,
+        height: size * 0.3,
+      ),
       creamPaint,
     );
 
     // Broad left wing with layered feathers.
     final leftWing = Path()
       ..moveTo(-size * 0.3, 0)
-      ..quadraticBezierTo(-size * 0.8, flapOffset - size * 0.6, -size * 1.1, flapOffset - size * 0.2)
+      ..quadraticBezierTo(
+        -size * 0.8,
+        flapOffset - size * 0.6,
+        -size * 1.1,
+        flapOffset - size * 0.2,
+      )
       ..lineTo(-size * 0.95, flapOffset - size * 0.05)
       ..lineTo(-size * 0.8, flapOffset - size * 0.15)
       ..lineTo(-size * 0.65, flapOffset)
@@ -220,7 +229,12 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     // Broad right wing.
     final rightWing = Path()
       ..moveTo(size * 0.3, 0)
-      ..quadraticBezierTo(size * 0.8, flapOffset - size * 0.6, size * 1.1, flapOffset - size * 0.2)
+      ..quadraticBezierTo(
+        size * 0.8,
+        flapOffset - size * 0.6,
+        size * 1.1,
+        flapOffset - size * 0.2,
+      )
       ..lineTo(size * 0.95, flapOffset - size * 0.05)
       ..lineTo(size * 0.8, flapOffset - size * 0.15)
       ..lineTo(size * 0.65, flapOffset)
@@ -261,10 +275,26 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     canvas.drawPath(crestGold, Paint()..color = const Color(0xFFFFCC00));
 
     // Sharp eyes.
-    canvas.drawCircle(const Offset(-2, -size * 0.34), 1.8, Paint()..color = const Color(0xFFFF3300));
-    canvas.drawCircle(const Offset(2, -size * 0.34), 1.8, Paint()..color = const Color(0xFFFF3300));
-    canvas.drawCircle(const Offset(-2, -size * 0.34), 0.8, Paint()..color = const Color(0xFF000000));
-    canvas.drawCircle(const Offset(2, -size * 0.34), 0.8, Paint()..color = const Color(0xFF000000));
+    canvas.drawCircle(
+      const Offset(-2, -size * 0.34),
+      1.8,
+      Paint()..color = const Color(0xFFFF3300),
+    );
+    canvas.drawCircle(
+      const Offset(2, -size * 0.34),
+      1.8,
+      Paint()..color = const Color(0xFFFF3300),
+    );
+    canvas.drawCircle(
+      const Offset(-2, -size * 0.34),
+      0.8,
+      Paint()..color = const Color(0xFF000000),
+    );
+    canvas.drawCircle(
+      const Offset(2, -size * 0.34),
+      0.8,
+      Paint()..color = const Color(0xFF000000),
+    );
 
     // Hooked beak.
     final beak = Path()
@@ -280,7 +310,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
   void _renderPhoenix(Canvas canvas, double flapOffset) {
     const size = 13.0;
     final bodyPaint = Paint()..color = const Color(0xFFFF6600);
-    final wingPaint = Paint()..color = const Color(0xFFFF4400).withOpacity(0.85);
+    final wingPaint = Paint()
+      ..color = const Color(0xFFFF4400).withOpacity(0.85);
     final goldPaint = Paint()..color = const Color(0xFFFFDD00);
 
     // Fire glow aura.
@@ -300,14 +331,23 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
 
     // Golden belly shimmer.
     canvas.drawOval(
-      Rect.fromCenter(center: const Offset(0, 0.5), width: size * 0.5, height: size * 0.2),
+      Rect.fromCenter(
+        center: const Offset(0, 0.5),
+        width: size * 0.5,
+        height: size * 0.2,
+      ),
       goldPaint,
     );
 
     // Flame wings.
     final leftWing = Path()
       ..moveTo(-size * 0.3, 0)
-      ..quadraticBezierTo(-size * 0.8, flapOffset - size * 0.55, -size * 1.0, flapOffset - size * 0.2)
+      ..quadraticBezierTo(
+        -size * 0.8,
+        flapOffset - size * 0.55,
+        -size * 1.0,
+        flapOffset - size * 0.2,
+      )
       ..lineTo(-size * 0.85, flapOffset)
       ..lineTo(-size * 0.7, flapOffset - size * 0.1)
       ..lineTo(-size * 0.5, flapOffset + size * 0.1)
@@ -317,7 +357,12 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
 
     final rightWing = Path()
       ..moveTo(size * 0.3, 0)
-      ..quadraticBezierTo(size * 0.8, flapOffset - size * 0.55, size * 1.0, flapOffset - size * 0.2)
+      ..quadraticBezierTo(
+        size * 0.8,
+        flapOffset - size * 0.55,
+        size * 1.0,
+        flapOffset - size * 0.2,
+      )
       ..lineTo(size * 0.85, flapOffset)
       ..lineTo(size * 0.7, flapOffset - size * 0.1)
       ..lineTo(size * 0.5, flapOffset + size * 0.1)
@@ -357,8 +402,16 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     canvas.drawPath(crest, goldPaint);
 
     // Eyes.
-    canvas.drawCircle(Offset(-1.5, -size * 0.32), 1.5, Paint()..color = const Color(0xFFFFFF00));
-    canvas.drawCircle(Offset(1.5, -size * 0.32), 1.5, Paint()..color = const Color(0xFFFFFF00));
+    canvas.drawCircle(
+      Offset(-1.5, -size * 0.32),
+      1.5,
+      Paint()..color = const Color(0xFFFFFF00),
+    );
+    canvas.drawCircle(
+      Offset(1.5, -size * 0.32),
+      1.5,
+      Paint()..color = const Color(0xFFFFFF00),
+    );
   }
 
   /// Dragon — fierce Charizard-inspired fire dragon with massive wings.
@@ -366,8 +419,10 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     const size = 16.0;
     final bodyPaint = Paint()..color = const Color(0xFFE85D04);
     final bellyPaint = Paint()..color = const Color(0xFFFFCC66);
-    final wingPaint = Paint()..color = const Color(0xFF1B998B).withOpacity(0.85);
-    final wingInnerPaint = Paint()..color = const Color(0xFF3DCCC7).withOpacity(0.6);
+    final wingPaint = Paint()
+      ..color = const Color(0xFF1B998B).withOpacity(0.85);
+    final wingInnerPaint = Paint()
+      ..color = const Color(0xFF3DCCC7).withOpacity(0.6);
 
     // Fire breath glow.
     canvas.drawCircle(
@@ -386,7 +441,11 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
 
     // Pale belly scales.
     canvas.drawOval(
-      Rect.fromCenter(center: const Offset(0, 1), width: size * 0.55, height: size * 0.35),
+      Rect.fromCenter(
+        center: const Offset(0, 1),
+        width: size * 0.55,
+        height: size * 0.35,
+      ),
       bellyPaint,
     );
 
@@ -474,13 +533,37 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     canvas.drawPath(rightHorn, Paint()..color = const Color(0xFF553300));
 
     // Fierce eyes.
-    canvas.drawCircle(Offset(-2.5, -size * 0.38), 2.0, Paint()..color = const Color(0xFFFFDD00));
-    canvas.drawCircle(Offset(2.5, -size * 0.38), 2.0, Paint()..color = const Color(0xFFFFDD00));
-    canvas.drawCircle(Offset(-2.5, -size * 0.38), 0.8, Paint()..color = const Color(0xFF000000));
-    canvas.drawCircle(Offset(2.5, -size * 0.38), 0.8, Paint()..color = const Color(0xFF000000));
+    canvas.drawCircle(
+      Offset(-2.5, -size * 0.38),
+      2.0,
+      Paint()..color = const Color(0xFFFFDD00),
+    );
+    canvas.drawCircle(
+      Offset(2.5, -size * 0.38),
+      2.0,
+      Paint()..color = const Color(0xFFFFDD00),
+    );
+    canvas.drawCircle(
+      Offset(-2.5, -size * 0.38),
+      0.8,
+      Paint()..color = const Color(0xFF000000),
+    );
+    canvas.drawCircle(
+      Offset(2.5, -size * 0.38),
+      0.8,
+      Paint()..color = const Color(0xFF000000),
+    );
 
     // Snout / nostrils.
-    canvas.drawCircle(Offset(-1.5, -size * 0.5), 0.8, Paint()..color = const Color(0xFF333333));
-    canvas.drawCircle(Offset(1.5, -size * 0.5), 0.8, Paint()..color = const Color(0xFF333333));
+    canvas.drawCircle(
+      Offset(-1.5, -size * 0.5),
+      0.8,
+      Paint()..color = const Color(0xFF333333),
+    );
+    canvas.drawCircle(
+      Offset(1.5, -size * 0.5),
+      0.8,
+      Paint()..color = const Color(0xFF333333),
+    );
   }
 }
