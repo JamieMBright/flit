@@ -699,6 +699,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
   void _requestExit() {
     _log.info('screen', 'Exit requested by user');
+    final isChallenge = widget.challengeFriendName != null;
+
     showDialog<void>(
       context: context,
       builder: (dialogContext) => Dialog(
@@ -709,24 +711,33 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.flight,
-                color: FlitColors.textSecondary,
+              Icon(
+                isChallenge ? Icons.warning_amber_rounded : Icons.flight,
+                color: isChallenge
+                    ? FlitColors.warning
+                    : FlitColors.textSecondary,
                 size: 36,
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Abort Flight?',
-                style: TextStyle(
+              Text(
+                isChallenge ? 'Abort Challenge?' : 'Abort Flight?',
+                style: const TextStyle(
                   color: FlitColors.textPrimary,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Your current progress will be lost.',
-                style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+              Text(
+                isChallenge
+                    ? 'This will end your attempt and send your current '
+                          'score to ${widget.challengeFriendName}. You only '
+                          'get one shot at each challenge.'
+                    : 'Your current progress will be lost.',
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 14,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -751,7 +762,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                       Navigator.of(context).pop();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: FlitColors.textMuted,
+                      backgroundColor: isChallenge
+                          ? FlitColors.error
+                          : FlitColors.textMuted,
                       foregroundColor: FlitColors.textPrimary,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
@@ -1173,7 +1186,7 @@ class _RoundResult {
   final int score;
 }
 
-class _ResultDialog extends StatelessWidget {
+class _ResultDialog extends ConsumerWidget {
   const _ResultDialog({
     required this.session,
     this.onPlayAgain,
@@ -1230,11 +1243,21 @@ class _ResultDialog extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isChallenge = challengeFriendName != null;
     final isMultiRound = totalRounds > 1;
     final displayTime = isMultiRound ? cumulativeTime : session.elapsed;
     final totalSeconds = displayTime.inMilliseconds / 1000;
+
+    // Calculate gold breakdown for display.
+    final licenseBoostPct = ref.read(accountProvider).license.coinBoost;
+    final playerLevel = ref.read(currentLevelProvider);
+    final levelBoostPct = ((playerLevel - 1) * 0.5).toStringAsFixed(1);
+    final totalEarned = coinReward > 0
+        ? (coinReward * ref.read(accountProvider.notifier).totalGoldMultiplier)
+              .round()
+        : 0;
+    final licenseBonus = totalEarned - coinReward;
 
     return Dialog(
       backgroundColor: FlitColors.cardBackground,
@@ -1384,30 +1407,49 @@ class _ResultDialog extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
-                    vertical: 6,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
                     color: FlitColors.gold.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: FlitColors.gold.withOpacity(0.4)),
                   ),
-                  child: Row(
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.monetization_on,
-                        color: FlitColors.gold,
-                        size: 18,
+                      // Total earned
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.monetization_on,
+                            color: FlitColors.gold,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '+$totalEarned coins',
+                            style: const TextStyle(
+                              color: FlitColors.gold,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '+$coinReward coins',
-                        style: const TextStyle(
-                          color: FlitColors.gold,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                      // Breakdown
+                      if (licenseBonus > 0) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '$coinReward base + $licenseBonus bonus '
+                          '(License +$licenseBoostPct%, Level +$levelBoostPct%)',
+                          style: TextStyle(
+                            color: FlitColors.gold.withOpacity(0.7),
+                            fontSize: 10,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),

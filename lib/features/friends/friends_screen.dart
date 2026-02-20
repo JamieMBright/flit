@@ -144,6 +144,121 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   }
 
   void _challengeFriend(Friend friend) {
+    // Show one-shot warning before starting the challenge.
+    showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.flight_takeoff,
+                color: FlitColors.warning,
+                size: 36,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Challenge ${friend.name}?',
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'You only get one shot at the clues. Make sure '
+                'you have enough time to compete before starting.',
+                style: TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: FlitColors.warning.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: FlitColors.warning.withOpacity(0.3),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: FlitColors.warning,
+                      size: 14,
+                    ),
+                    SizedBox(width: 6),
+                    Text(
+                      '5 rounds \u2022 No retries',
+                      style: TextStyle(
+                        color: FlitColors.warning,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: const Text(
+                      'NOT YET',
+                      style: TextStyle(color: FlitColors.textMuted),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.accent,
+                      foregroundColor: FlitColors.textPrimary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      "LET'S GO",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).then((confirmed) {
+      if (confirmed != true || !mounted) return;
+      _launchChallenge(friend);
+    });
+  }
+
+  void _launchChallenge(Friend friend) {
     final planeId = ref.read(equippedPlaneIdProvider);
     final plane = CosmeticCatalog.getById(planeId);
     final account = ref.read(accountProvider);
@@ -152,7 +267,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     final license = account.license;
     final contrailId = ref.read(accountProvider).equippedContrailId;
     final contrail = CosmeticCatalog.getById(contrailId);
-    // Navigate directly to play screen for round 1
+    // Navigate to play screen for round 1
     Navigator.of(context)
         .push(
           MaterialPageRoute<void>(

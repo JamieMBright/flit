@@ -25,6 +25,8 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
 
   // Licence bonuses always apply — no unlicensed/licensed split.
 
+  bool get _hasDoneToday => ref.watch(accountProvider).hasDoneDailyToday;
+
   @override
   void initState() {
     super.initState();
@@ -66,7 +68,9 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
             ],
           ),
         ),
-        _PlayButton(onPressed: _onPlay),
+        _hasDoneToday
+            ? const _CompletedBanner()
+            : _PlayButton(onPressed: _onPlay),
       ],
     ),
   );
@@ -107,7 +111,10 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
               ? Color(contrail!.colorScheme!['secondary']!)
               : null,
           onComplete: (totalScore) {
-            ref.read(accountProvider.notifier).addCoins(reward);
+            // Note: coinReward is also credited via recordGameCompletion
+            // inside PlayScreen._completeLanding, so we only record the
+            // daily challenge completion here — no extra addCoins call.
+            ref.read(accountProvider.notifier).recordDailyChallengeCompletion();
           },
         ),
       ),
@@ -1128,6 +1135,57 @@ class _PlayButton extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    ),
+  );
+}
+
+// =============================================================================
+// Completed Banner (shown when daily challenge already done today)
+// =============================================================================
+
+class _CompletedBanner extends StatelessWidget {
+  const _CompletedBanner();
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    top: false,
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: FlitColors.success.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.success.withOpacity(0.4)),
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.check_circle, color: FlitColors.success, size: 24),
+                SizedBox(width: 8),
+                Text(
+                  'COMPLETED',
+                  style: TextStyle(
+                    color: FlitColors.success,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 6),
+            Text(
+              'Try again tomorrow!',
+              style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+            ),
+          ],
         ),
       ),
     ),

@@ -84,7 +84,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
     with SingleTickerProviderStateMixin {
   late PilotLicense _license;
   final Set<String> _lockedStats = {};
-  final bool _lockClueType = false;
+  bool _lockClueType = false;
   bool _isRolling = false;
 
   late AnimationController _shimmerController;
@@ -220,6 +220,8 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
             _buildLockSection(coins),
             const SizedBox(height: 24),
             _buildFreeRerollButton(),
+            const SizedBox(height: 12),
+            _buildDailyScrambleRerollButton(),
             const SizedBox(height: 12),
             _buildRerollButton(coins),
             const SizedBox(height: 16),
@@ -419,8 +421,8 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
         ),
         const Spacer(flex: 1),
 
-        // --- Stat bars: coins, fuel, clue chance, clue type ---
-        _CompactStatBar(
+        // --- Stat bars: coins, fuel, clue chance ---
+        _WideStatBar(
           label: _license.coinBoostLabel,
           icon: Icons.monetization_on,
           value: _license.coinBoost,
@@ -431,8 +433,8 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
             Icons.monetization_on,
           ),
         ),
-        const SizedBox(height: 4),
-        _CompactStatBar(
+        const SizedBox(height: 3),
+        _WideStatBar(
           label: _license.fuelBoostLabel,
           icon: Icons.local_gas_station,
           value: _license.fuelBoost,
@@ -443,8 +445,8 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
             Icons.local_gas_station,
           ),
         ),
-        const SizedBox(height: 4),
-        _CompactStatBar(
+        const SizedBox(height: 3),
+        _WideStatBar(
           label: _license.clueChanceLabel,
           icon: Icons.casino,
           value: _license.clueChance,
@@ -455,13 +457,11 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
             Icons.casino,
           ),
         ),
-        const SizedBox(height: 4),
-        // Preferred clue type (not a stat bar — just an info row)
-        _CompactStatBar(
-          label: _license.clueBoostLabel,
-          icon: Icons.lightbulb_outline,
-          value: _license.clueBoost,
-          shimmer: _shimmerController,
+        const SizedBox(height: 3),
+        // Preferred clue type (no bar — just an info row)
+        _ClueTypeRow(
+          preferredType: _license.preferredClueType,
+          clueBoost: _license.clueBoost,
           onTap: () => _showEffectPopup(
             'Preferred Clue Type',
             'You have a ${_license.clueBoost}% bonus chance of receiving ${_license.preferredClueType} clues. '
@@ -673,6 +673,15 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
           cost: _lockCostFor('clueChance'),
           onChanged: (locked) => _toggleLock('clueChance', locked),
         ),
+        const SizedBox(height: 8),
+        _LockRow(
+          label: 'Clue Type',
+          value: _license.clueBoostLabel,
+          icon: Icons.lightbulb_outline,
+          isLocked: _lockClueType,
+          cost: PilotLicense.lockTypeCost,
+          onChanged: (locked) => setState(() => _lockClueType = locked),
+        ),
         const Divider(color: FlitColors.cardBorder, height: 24),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -788,6 +797,57 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
     if (!mounted) return;
 
     final success = ref.read(accountProvider.notifier).useFreeReroll();
+    if (success) {
+      _license = ref.read(licenseProvider);
+    }
+    setState(() => _isRolling = false);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Daily scramble bonus reroll
+  // ---------------------------------------------------------------------------
+
+  Widget _buildDailyScrambleRerollButton() {
+    final hasBonus = ref.watch(accountProvider).hasDailyScrambleReroll;
+    if (!hasBonus) return const SizedBox.shrink();
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton.icon(
+        onPressed: !_isRolling ? _dailyScrambleReroll : null,
+        icon: const Icon(Icons.today_rounded, size: 20),
+        label: const Text(
+          'DAILY SCRAMBLE REROLL',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: FlitColors.accent,
+          foregroundColor: FlitColors.textPrimary,
+          disabledBackgroundColor: FlitColors.backgroundMid,
+          disabledForegroundColor: FlitColors.textMuted,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          elevation: 4,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _dailyScrambleReroll() async {
+    if (_isRolling) return;
+
+    setState(() => _isRolling = true);
+
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+
+    if (!mounted) return;
+
+    final success = ref.read(accountProvider.notifier).useDailyScrambleReroll();
     if (success) {
       _license = ref.read(licenseProvider);
     }
@@ -1035,11 +1095,11 @@ class _RarityBadge extends StatelessWidget {
 }
 
 // =============================================================================
-// Compact stat bar (fits credit card layout)
+// Wide stat bar (stretches across the full license width)
 // =============================================================================
 
-class _CompactStatBar extends StatelessWidget {
-  const _CompactStatBar({
+class _WideStatBar extends StatelessWidget {
+  const _WideStatBar({
     required this.label,
     required this.icon,
     required this.value,
@@ -1060,78 +1120,130 @@ class _CompactStatBar extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: SizedBox(
-        height: 16,
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 12),
-            const SizedBox(width: 3),
-            Flexible(
-              flex: 0,
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w500,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Label row: icon + label + value
+          Row(
+            children: [
+              Icon(icon, color: color, size: 11),
+              const SizedBox(width: 3),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.clip,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.clip,
               ),
-            ),
-            const SizedBox(width: 4),
-            SizedBox(
-              width: 50,
-              child: isMax
-                  ? _AnimBuilder(
-                      animation: shimmer,
-                      builder: (context, _) => _buildSegments(color, isMax),
-                    )
-                  : _buildSegments(color, isMax),
-            ),
-            const SizedBox(width: 3),
-            Text(
-              '$value',
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                color: color,
-                fontSize: 9,
-                fontWeight: FontWeight.bold,
+              Text(
+                '$value/25',
+                style: TextStyle(
+                  color: color,
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          // Full-width segmented bar
+          SizedBox(
+            height: 10,
+            width: double.infinity,
+            child: isMax
+                ? _AnimBuilder(
+                    animation: shimmer,
+                    builder: (context, _) => _buildSegments(color, isMax),
+                  )
+                : _buildSegments(color, isMax),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSegments(Color color, bool isMax) => LayoutBuilder(
-    builder: (context, constraints) {
-      return Row(
-        children: List.generate(25, (i) {
-          final filled = i < value;
-          final isLastFilled = i == value - 1 && isMax;
-          final baseOpacity = filled ? 1.0 : 0.15;
-          final opacity = isLastFilled
-              ? 0.7 + 0.3 * math.sin(shimmer.value * 2 * math.pi)
-              : baseOpacity;
+  Widget _buildSegments(Color color, bool isMax) => Row(
+    children: List.generate(25, (i) {
+      final filled = i < value;
+      final isLastFilled = i == value - 1 && isMax;
+      final baseOpacity = filled ? 1.0 : 0.15;
+      final opacity = isLastFilled
+          ? 0.7 + 0.3 * math.sin(shimmer.value * 2 * math.pi)
+          : baseOpacity;
 
-          return Expanded(
-            child: Container(
-              margin: EdgeInsets.only(right: i < 24 ? 0.5 : 0),
-              height: 7,
-              decoration: BoxDecoration(
-                color: filled
-                    ? color.withOpacity(opacity)
-                    : FlitColors.backgroundLight.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(1.5),
-              ),
-            ),
-          );
-        }),
+      return Expanded(
+        child: Container(
+          margin: EdgeInsets.only(right: i < 24 ? 0.5 : 0),
+          height: 10,
+          decoration: BoxDecoration(
+            color: filled
+                ? color.withOpacity(opacity)
+                : FlitColors.backgroundLight.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
       );
-    },
+    }),
   );
+}
+
+// =============================================================================
+// Clue type info row (no bar — just displays the type and boost %)
+// =============================================================================
+
+class _ClueTypeRow extends StatelessWidget {
+  const _ClueTypeRow({
+    required this.preferredType,
+    required this.clueBoost,
+    this.onTap,
+  });
+
+  final String preferredType;
+  final int clueBoost;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final typeLabel =
+        '${preferredType[0].toUpperCase()}${preferredType.substring(1)}';
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(
+        children: [
+          const Icon(
+            Icons.lightbulb_outline,
+            color: FlitColors.accent,
+            size: 11,
+          ),
+          const SizedBox(width: 3),
+          Text(
+            'Preferred: $typeLabel',
+            style: const TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 9,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            '+$clueBoost% boost',
+            style: const TextStyle(
+              color: FlitColors.accent,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // =============================================================================
