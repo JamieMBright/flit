@@ -17,9 +17,8 @@ abstract final class SupabaseConfig {
 
   /// The URL users are redirected to after clicking the email confirmation
   /// link. Override via `--dart-define=SITE_URL=https://your-app.com`.
-  /// Set to empty string to let Supabase use its dashboard Site URL setting.
   static const String siteUrl = String.fromEnvironment(
     'SITE_URL',
-    defaultValue: '',
+    defaultValue: 'https://flit-olive.vercel.app/confirmed.html',
   );
 }
