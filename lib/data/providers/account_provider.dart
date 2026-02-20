@@ -18,6 +18,7 @@ class AccountState {
     this.equippedPlaneId = 'plane_default',
     this.equippedContrailId = 'contrail_default',
     this.lastFreeRerollDate,
+    this.lastDailyChallengeDate,
   }) : avatar = avatar ?? const AvatarConfig(),
        license = license ?? PilotLicense.random();
 
@@ -46,13 +47,38 @@ class AccountState {
   /// null means the player has never used a free reroll.
   final String? lastFreeRerollDate;
 
+  /// Date of the last daily challenge completion (YYYY-MM-DD string).
+  /// null means the player has never completed a daily challenge.
+  final String? lastDailyChallengeDate;
+
+  static String _todayStr() {
+    final today = DateTime.now();
+    return '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+  }
+
   /// Whether the daily free reroll is available today.
   bool get hasFreeRerollToday {
     if (lastFreeRerollDate == null) return true;
-    final today = DateTime.now();
-    final todayStr =
-        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-    return lastFreeRerollDate != todayStr;
+    return lastFreeRerollDate != _todayStr();
+  }
+
+  /// Whether the player has completed today's daily challenge.
+  /// Returns true whether or not the bonus reroll has been used.
+  bool get hasDoneDailyToday {
+    if (lastDailyChallengeDate == null) return false;
+    final todayStr = _todayStr();
+    return lastDailyChallengeDate == todayStr ||
+        lastDailyChallengeDate == '${todayStr}_used';
+  }
+
+  /// Whether the player has earned a bonus reroll from today's daily scramble
+  /// and hasn't used it yet.
+  bool get hasDailyScrambleReroll {
+    if (lastDailyChallengeDate == null) return false;
+    final todayStr = _todayStr();
+    // Completed today (exact match) — reroll available.
+    // If suffix is '_used', the bonus was already claimed.
+    return lastDailyChallengeDate == todayStr;
   }
 
   AccountState copyWith({
@@ -65,6 +91,7 @@ class AccountState {
     String? equippedPlaneId,
     String? equippedContrailId,
     String? lastFreeRerollDate,
+    String? lastDailyChallengeDate,
   }) => AccountState(
     currentPlayer: currentPlayer ?? this.currentPlayer,
     isDebugMode: isDebugMode ?? this.isDebugMode,
@@ -75,6 +102,8 @@ class AccountState {
     equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
     equippedContrailId: equippedContrailId ?? this.equippedContrailId,
     lastFreeRerollDate: lastFreeRerollDate ?? this.lastFreeRerollDate,
+    lastDailyChallengeDate:
+        lastDailyChallengeDate ?? this.lastDailyChallengeDate,
   );
 }
 
@@ -90,18 +119,21 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// Add coins to current account.
   ///
   /// When [applyBoost] is true (default), the pilot license coin boost
-  /// multiplier is applied to the amount. Pass `false` for store purchases
-  /// or debug grants where the boost should not apply.
-  void addCoins(int amount, {bool applyBoost = true}) {
+  /// multiplier AND level gold multiplier are applied. Pass `false` for
+  /// store purchases or debug grants where boosts should not apply.
+  ///
+  /// Returns the actual amount of coins added (after boosts).
+  int addCoins(int amount, {bool applyBoost = true}) {
     var earned = amount;
     if (applyBoost) {
-      earned = (amount * coinBoostMultiplier).round();
+      earned = (amount * totalGoldMultiplier).round();
     }
     state = state.copyWith(
       currentPlayer: state.currentPlayer.copyWith(
         coins: state.currentPlayer.coins + earned,
       ),
     );
+    return earned;
   }
 
   /// Spend coins from current account.
@@ -299,9 +331,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
   bool useFreeReroll() {
     if (!state.hasFreeRerollToday) return false;
 
-    final today = DateTime.now();
-    final todayStr =
-        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    final todayStr = AccountState._todayStr();
 
     state = state.copyWith(
       license: PilotLicense.reroll(
@@ -313,8 +343,42 @@ class AccountNotifier extends StateNotifier<AccountState> {
     return true;
   }
 
-  /// Get current coin boost multiplier (for applying to earnings).
+  /// Record that the player completed today's daily challenge.
+  void recordDailyChallengeCompletion() {
+    state = state.copyWith(lastDailyChallengeDate: AccountState._todayStr());
+  }
+
+  /// Use the daily-scramble bonus reroll. Returns true if available.
+  ///
+  /// Available only if the player has completed today's daily scramble
+  /// and hasn't already used this bonus reroll. Rerolls ALL stats.
+  bool useDailyScrambleReroll() {
+    if (!state.hasDailyScrambleReroll) return false;
+    // Mark as used by clearing the daily challenge date (prevents reuse).
+    // We use a special suffix to distinguish "completed" from "reroll used".
+    final todayStr = AccountState._todayStr();
+    state = state.copyWith(
+      license: PilotLicense.reroll(
+        state.license,
+        luckBonus: state.avatar.luckBonus,
+      ),
+      lastDailyChallengeDate: '${todayStr}_used',
+    );
+    return true;
+  }
+
+  /// Get current coin boost multiplier from pilot license (for applying to earnings).
   double get coinBoostMultiplier => 1.0 + state.license.coinBoost / 100.0;
+
+  /// Get current level-based gold multiplier.
+  ///
+  /// Each level adds 0.5% bonus, so level 10 = +5%, level 50 = +25%.
+  /// This stacks multiplicatively with the license coin boost.
+  double get levelGoldMultiplier =>
+      1.0 + (state.currentPlayer.level - 1) * 0.005;
+
+  /// Combined total gold multiplier (license + level).
+  double get totalGoldMultiplier => coinBoostMultiplier * levelGoldMultiplier;
 
   /// Get current fuel boost multiplier (for solo play speed).
   double get fuelBoostMultiplier => 1.0 + state.license.fuelBoost / 100.0;
