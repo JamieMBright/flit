@@ -131,6 +131,20 @@ class AuthService {
     }
 
     try {
+      // Check username uniqueness before creating the auth user.
+      final existing = await _client
+          .from('profiles')
+          .select('id')
+          .eq('username', username)
+          .maybeSingle();
+      if (existing != null) {
+        _state = _state.copyWith(
+          isLoading: false,
+          error: 'Username @$username is already taken',
+        );
+        return _state;
+      }
+
       final response = await _client.auth.signUp(
         email: email,
         password: password,
