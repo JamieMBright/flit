@@ -48,8 +48,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (result.isAuthenticated && result.player != null) {
-        ref.read(accountProvider.notifier).switchAccount(result.player!);
-        _navigateToHome();
+        final notifier = ref.read(accountProvider.notifier);
+        notifier.switchAccount(result.player!);
+        await notifier.loadFromSupabase(result.player!.id);
+        if (mounted) _navigateToHome();
       }
     }
   }
@@ -434,8 +436,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (result.needsEmailConfirmation) {
         setState(() => _mode = _AuthMode.confirmEmail);
       } else if (result.isAuthenticated && result.player != null) {
-        ref.read(accountProvider.notifier).switchAccount(result.player!);
-        _navigateToHome();
+        final notifier = ref.read(accountProvider.notifier);
+        notifier.switchAccount(result.player!);
+        await notifier.loadFromSupabase(result.player!.id);
+        if (mounted) _navigateToHome();
       } else if (result.error != null) {
         setState(() => _error = result.error);
       }
@@ -469,8 +473,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (result.isAuthenticated && result.player != null) {
-        ref.read(accountProvider.notifier).switchAccount(result.player!);
-        _navigateToHome();
+        final notifier = ref.read(accountProvider.notifier);
+        notifier.switchAccount(result.player!);
+        await notifier.loadFromSupabase(result.player!.id);
+        if (mounted) _navigateToHome();
       } else if (result.error != null) {
         setState(() => _error = result.error);
       }

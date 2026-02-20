@@ -6,6 +6,7 @@ import '../../data/models/cosmetic.dart';
 import '../../data/models/daily_challenge.dart';
 import '../../data/models/seasonal_theme.dart';
 import '../../data/providers/account_provider.dart';
+import '../../data/services/leaderboard_service.dart';
 import '../../game/map/region.dart';
 import '../play/play_screen.dart';
 
@@ -22,6 +23,10 @@ class DailyChallengeScreen extends ConsumerStatefulWidget {
 class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
   late final DailyChallenge _challenge;
   final SeasonalTheme? _seasonalTheme = SeasonalTheme.current();
+  List<DailyLeaderboardEntry> _leaderboardEntries = [];
+  List<Map<String, dynamic>> _hallOfFame = [];
+  int _dailyPlayerCount = 0;
+  bool _loadingLeaderboard = true;
 
   // Licence bonuses always apply — no unlicensed/licensed split.
 
@@ -31,6 +36,24 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
   void initState() {
     super.initState();
     _challenge = DailyChallenge.forToday();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final service = LeaderboardService.instance;
+    final results = await Future.wait([
+      service.fetchDailyLeaderboard(),
+      service.fetchHallOfFame(),
+      service.fetchDailyPlayerCount(),
+    ]);
+    if (mounted) {
+      setState(() {
+        _leaderboardEntries = results[0] as List<DailyLeaderboardEntry>;
+        _hallOfFame = results[1] as List<Map<String, dynamic>>;
+        _dailyPlayerCount = results[2] as int;
+        _loadingLeaderboard = false;
+      });
+    }
   }
 
   @override
@@ -53,15 +76,25 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
                 _SeasonalBanner(theme: _seasonalTheme),
                 const SizedBox(height: 12),
               ],
-              _RewardsSection(challenge: _challenge),
+              _RewardsSection(
+                challenge: _challenge,
+                playerCount: _dailyPlayerCount,
+              ),
               const SizedBox(height: 12),
               const _MedalProgressSection(),
               const SizedBox(height: 16),
-              _LeaderboardSection(
-                entries: DailyChallenge.placeholderLeaderboard,
-              ),
+              _loadingLeaderboard
+                  ? const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: FlitColors.accent,
+                        ),
+                      ),
+                    )
+                  : _LeaderboardSection(entries: _leaderboardEntries),
               const SizedBox(height: 16),
-              const _HallOfFameSection(),
+              _HallOfFameSection(entries: _hallOfFame),
               const SizedBox(height: 16),
               _InfoFooter(bonusCoinReward: _challenge.bonusCoinReward),
               const SizedBox(height: 16),
@@ -508,9 +541,10 @@ class _SeasonalBanner extends StatelessWidget {
 // =============================================================================
 
 class _RewardsSection extends StatelessWidget {
-  const _RewardsSection({required this.challenge});
+  const _RewardsSection({required this.challenge, this.playerCount = 0});
 
   final DailyChallenge challenge;
+  final int playerCount;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -540,14 +574,17 @@ class _RewardsSection extends StatelessWidget {
             color: FlitColors.backgroundMid,
             borderRadius: BorderRadius.circular(6),
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.people, color: FlitColors.textMuted, size: 14),
-              SizedBox(width: 6),
+              const Icon(Icons.people, color: FlitColors.textMuted, size: 14),
+              const SizedBox(width: 6),
               Text(
-                '2,847 players today \u2022 Top 1,000 win prizes',
-                style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
+                '$playerCount players today \u2022 Top 1,000 win prizes',
+                style: const TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 11,
+                ),
               ),
             ],
           ),
@@ -988,7 +1025,9 @@ class _MedalProgressSection extends StatelessWidget {
 // =============================================================================
 
 class _HallOfFameSection extends StatelessWidget {
-  const _HallOfFameSection();
+  const _HallOfFameSection({required this.entries});
+
+  final List<Map<String, dynamic>> entries;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -998,10 +1037,10 @@ class _HallOfFameSection extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       border: Border.all(color: FlitColors.gold.withOpacity(0.3)),
     ),
-    child: const Column(
+    child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(Icons.emoji_events, color: FlitColors.gold, size: 18),
             SizedBox(width: 6),
@@ -1016,24 +1055,26 @@ class _HallOfFameSection extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: 12),
-        _HallOfFameRow(
-          date: '5 Feb 2026',
-          winner: 'GlobeTrotter42',
-          medal: 'Platinum',
-        ),
-        SizedBox(height: 6),
-        _HallOfFameRow(date: '4 Feb 2026', winner: 'MapMaster', medal: 'Gold'),
-        SizedBox(height: 6),
-        _HallOfFameRow(date: '3 Feb 2026', winner: 'AtlasAce', medal: 'Gold'),
-        SizedBox(height: 6),
-        _HallOfFameRow(
-          date: '2 Feb 2026',
-          winner: 'WanderWiz',
-          medal: 'Silver',
-        ),
-        SizedBox(height: 6),
-        _HallOfFameRow(date: '1 Feb 2026', winner: 'GeoPilot', medal: 'Bronze'),
+        const SizedBox(height: 12),
+        if (entries.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              'No daily winners yet',
+              style: TextStyle(color: FlitColors.textMuted, fontSize: 12),
+            ),
+          )
+        else
+          ...entries.map(
+            (e) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: _HallOfFameRow(
+                date: e['date'] as String,
+                winner: e['winner'] as String,
+                medal: 'Gold',
+              ),
+            ),
+          ),
       ],
     ),
   );

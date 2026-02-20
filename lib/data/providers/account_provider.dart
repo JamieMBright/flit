@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/config/admin_config.dart';
+import '../../core/services/game_settings.dart';
 import '../../game/map/region.dart';
 import '../models/avatar_config.dart';
 import '../models/pilot_license.dart';
 import '../models/player.dart';
+import '../services/user_preferences_service.dart';
 
 /// Current account state.
 class AccountState {
@@ -121,9 +123,74 @@ class AccountNotifier extends StateNotifier<AccountState> {
         ),
       );
 
+  final _prefs = UserPreferencesService.instance;
+
+  /// Load full account state from Supabase and hydrate all providers.
+  ///
+  /// Called after auth completes. Loads profile, settings, avatar, license,
+  /// cosmetics, and daily state in one parallel fetch.
+  Future<void> loadFromSupabase(String userId) async {
+    final snapshot = await _prefs.load(userId);
+    if (snapshot == null) return;
+
+    final player = snapshot.toPlayer();
+
+    state = AccountState(
+      currentPlayer: player,
+      avatar: snapshot.toAvatarConfig(),
+      license: snapshot.toPilotLicense(),
+      unlockedRegions: snapshot.unlockedRegions,
+      ownedAvatarParts: snapshot.ownedAvatarParts,
+      equippedPlaneId: snapshot.equippedPlaneId,
+      equippedContrailId: snapshot.equippedContrailId,
+      lastFreeRerollDate: snapshot.lastFreeRerollDate,
+      lastDailyChallengeDate: snapshot.lastDailyChallengeDate,
+    );
+
+    // Hydrate GameSettings from Supabase data.
+    final gs = GameSettings.instance;
+    gs.turnSensitivity = snapshot.turnSensitivity;
+    gs.invertControls = snapshot.invertControls;
+    gs.enableNight = snapshot.enableNight;
+    gs.englishLabels = snapshot.englishLabels;
+    gs.mapStyle = MapStyle.values.firstWhere(
+      (s) => s.name == snapshot.mapStyle,
+      orElse: () => MapStyle.topo,
+    );
+    gs.difficulty = GameDifficulty.values.firstWhere(
+      (d) => d.name == snapshot.difficulty,
+      orElse: () => GameDifficulty.normal,
+    );
+  }
+
+  /// Flush pending writes (call on sign-out or app pause).
+  Future<void> flushPreferences() => _prefs.flush();
+
+  /// Clear sync state (call on sign-out).
+  void clearPreferences() => _prefs.clear();
+
   /// Set the current player (called after auth completes).
   void switchAccount(Player player) {
     state = state.copyWith(currentPlayer: player);
+  }
+
+  // ── Internal sync helpers ────────────────────────────────────────────
+
+  void _syncProfile() {
+    _prefs.saveProfile(state.currentPlayer);
+  }
+
+  void _syncAccountState() {
+    _prefs.saveAccountState(
+      avatar: state.avatar,
+      license: state.license,
+      unlockedRegions: state.unlockedRegions,
+      ownedAvatarParts: state.ownedAvatarParts,
+      equippedPlaneId: state.equippedPlaneId,
+      equippedContrailId: state.equippedContrailId,
+      lastFreeRerollDate: state.lastFreeRerollDate,
+      lastDailyChallengeDate: state.lastDailyChallengeDate,
+    );
   }
 
   /// Add coins to current account.
@@ -143,6 +210,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
         coins: state.currentPlayer.coins + earned,
       ),
     );
+    _syncProfile();
     return earned;
   }
 
@@ -156,6 +224,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
         coins: state.currentPlayer.coins - amount,
       ),
     );
+    _syncProfile();
     return true;
   }
 
@@ -166,6 +235,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     state = state.copyWith(
       unlockedRegions: {...state.unlockedRegions, region.name},
     );
+    _syncAccountState();
     return true;
   }
 
@@ -189,6 +259,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     state = state.copyWith(
       currentPlayer: player.copyWith(xp: newXp, level: newLevel),
     );
+    _syncProfile();
   }
 
   /// Increment games played
@@ -198,6 +269,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
         gamesPlayed: state.currentPlayer.gamesPlayed + 1,
       ),
     );
+    _syncProfile();
   }
 
   /// Update best time if better (overall).
@@ -207,6 +279,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       state = state.copyWith(
         currentPlayer: state.currentPlayer.copyWith(bestTime: time),
       );
+      _syncProfile();
     }
   }
 
@@ -217,6 +290,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
         totalFlightTime: state.currentPlayer.totalFlightTime + time,
       ),
     );
+    _syncProfile();
   }
 
   /// Increment countries found counter.
@@ -226,6 +300,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
         countriesFound: state.currentPlayer.countriesFound + count,
       ),
     );
+    _syncProfile();
   }
 
   /// Record a completed game session — updates all relevant stats in one call.
@@ -236,6 +311,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     required int score,
     required int roundsCompleted,
     int coinReward = 0,
+    String region = 'world',
   }) {
     incrementGamesPlayed();
     updateBestTime(elapsed);
@@ -249,6 +325,14 @@ class AccountNotifier extends StateNotifier<AccountState> {
     if (coinReward > 0) {
       addCoins(coinReward);
     }
+
+    // Persist individual game result to scores table.
+    _prefs.saveGameResult(
+      score: score,
+      timeMs: elapsed.inMilliseconds,
+      region: region,
+      roundsCompleted: roundsCompleted,
+    );
   }
 
   // --- Avatar ---
@@ -256,6 +340,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// Update the avatar configuration.
   void updateAvatar(AvatarConfig config) {
     state = state.copyWith(avatar: config);
+    _syncAccountState();
   }
 
   /// Purchase an avatar part. Returns true if successful.
@@ -264,6 +349,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     state = state.copyWith(
       ownedAvatarParts: {...state.ownedAvatarParts, partKey},
     );
+    _syncAccountState();
     return true;
   }
 
@@ -277,11 +363,13 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// Equip a plane by ID.
   void equipPlane(String id) {
     state = state.copyWith(equippedPlaneId: id);
+    _syncAccountState();
   }
 
   /// Equip a contrail by ID.
   void equipContrail(String id) {
     state = state.copyWith(equippedContrailId: id);
+    _syncAccountState();
   }
 
   /// Equip a companion by ID (e.g. 'companion_sparrow').
@@ -293,6 +381,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       orElse: () => AvatarCompanion.none,
     );
     state = state.copyWith(avatar: state.avatar.copyWith(companion: companion));
+    _syncAccountState();
   }
 
   // --- Pilot License ---
@@ -300,6 +389,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// Directly set the pilot license (used when LicenseScreen rerolls locally).
   void updateLicense(PilotLicense license) {
     state = state.copyWith(license: license);
+    _syncAccountState();
   }
 
   /// Reroll the pilot license. Returns true if affordable.
@@ -326,6 +416,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
         luckBonus: state.avatar.luckBonus,
       ),
     );
+    _syncAccountState();
     return true;
   }
 
@@ -345,12 +436,14 @@ class AccountNotifier extends StateNotifier<AccountState> {
       ),
       lastFreeRerollDate: todayStr,
     );
+    _syncAccountState();
     return true;
   }
 
   /// Record that the player completed today's daily challenge.
   void recordDailyChallengeCompletion() {
     state = state.copyWith(lastDailyChallengeDate: AccountState._todayStr());
+    _syncAccountState();
   }
 
   /// Use the daily-scramble bonus reroll. Returns true if available.
@@ -369,6 +462,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       ),
       lastDailyChallengeDate: '${todayStr}_used',
     );
+    _syncAccountState();
     return true;
   }
 

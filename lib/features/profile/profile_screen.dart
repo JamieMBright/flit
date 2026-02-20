@@ -10,6 +10,7 @@ import '../../data/providers/account_provider.dart';
 import '../avatar/avatar_editor_screen.dart';
 import '../avatar/avatar_widget.dart';
 import '../license/license_screen.dart';
+import '../../data/services/leaderboard_service.dart';
 
 /// Aviation rank title and icon for player level.
 ({String title, IconData icon}) _aviationRank(int level) {
@@ -248,9 +249,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(dialogContext).pop();
-              Navigator.of(context).popUntil((route) => route.isFirst);
+              // Flush pending preferences before signing out.
+              await ref.read(accountProvider.notifier).flushPreferences();
+              ref.read(accountProvider.notifier).clearPreferences();
+              if (context.mounted) {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              }
             },
             child: const Text(
               'Sign Out',
@@ -711,71 +717,46 @@ class _GameHistoryEntry {
   final DateTime date;
 }
 
-class _GameHistoryScreen extends StatelessWidget {
+class _GameHistoryScreen extends ConsumerStatefulWidget {
   const _GameHistoryScreen();
 
-  static final List<_GameHistoryEntry> _entries = [
-    _GameHistoryEntry(
-      region: 'Western Europe',
-      duration: const Duration(minutes: 2, seconds: 14),
-      score: 920,
-      date: DateTime.now().subtract(const Duration(hours: 3)),
-    ),
-    _GameHistoryEntry(
-      region: 'East Africa',
-      duration: const Duration(minutes: 3, seconds: 45),
-      score: 750,
-      date: DateTime.now().subtract(const Duration(hours: 8)),
-    ),
-    _GameHistoryEntry(
-      region: 'South-East Asia',
-      duration: const Duration(minutes: 1, seconds: 58),
-      score: 1100,
-      date: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-    _GameHistoryEntry(
-      region: 'South America',
-      duration: const Duration(minutes: 4, seconds: 12),
-      score: 640,
-      date: DateTime.now().subtract(const Duration(days: 1, hours: 5)),
-    ),
-    _GameHistoryEntry(
-      region: 'Scandinavia',
-      duration: const Duration(minutes: 2, seconds: 33),
-      score: 880,
-      date: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-    _GameHistoryEntry(
-      region: 'Central Asia',
-      duration: const Duration(minutes: 5, seconds: 1),
-      score: 520,
-      date: DateTime.now().subtract(const Duration(days: 3)),
-    ),
-    _GameHistoryEntry(
-      region: 'Caribbean',
-      duration: const Duration(minutes: 2, seconds: 47),
-      score: 810,
-      date: DateTime.now().subtract(const Duration(days: 4)),
-    ),
-    _GameHistoryEntry(
-      region: 'Oceania',
-      duration: const Duration(minutes: 3, seconds: 19),
-      score: 700,
-      date: DateTime.now().subtract(const Duration(days: 5)),
-    ),
-    _GameHistoryEntry(
-      region: 'Middle East',
-      duration: const Duration(minutes: 2, seconds: 5),
-      score: 960,
-      date: DateTime.now().subtract(const Duration(days: 6)),
-    ),
-    _GameHistoryEntry(
-      region: 'North America',
-      duration: const Duration(minutes: 1, seconds: 42),
-      score: 1200,
-      date: DateTime.now().subtract(const Duration(days: 7)),
-    ),
-  ];
+  @override
+  ConsumerState<_GameHistoryScreen> createState() => _GameHistoryScreenState();
+}
+
+class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
+  List<_GameHistoryEntry> _entries = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    final userId = ref.read(accountProvider).currentPlayer.id;
+    if (userId.isEmpty || userId == 'guest') {
+      setState(() => _loading = false);
+      return;
+    }
+    final data = await LeaderboardService.instance.fetchGameHistory(
+      userId: userId,
+    );
+    if (mounted) {
+      setState(() {
+        _entries = data.map((entry) {
+          return _GameHistoryEntry(
+            region: (entry['region'] as String?) ?? 'World',
+            duration: Duration(milliseconds: entry['time_ms'] as int),
+            score: entry['score'] as int,
+            date: DateTime.parse(entry['created_at'] as String),
+          );
+        }).toList();
+        _loading = false;
+      });
+    }
+  }
 
   String _formatDuration(Duration d) {
     final minutes = d.inMinutes;
@@ -800,80 +781,96 @@ class _GameHistoryScreen extends StatelessWidget {
       title: const Text('Game History'),
       centerTitle: true,
     ),
-    body: ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: _entries.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final entry = _entries[index];
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: FlitColors.cardBackground,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: FlitColors.cardBorder),
-          ),
-          child: Row(
-            children: [
-              // Region icon
-              Container(
-                width: 44,
-                height: 44,
+    body: _loading
+        ? const Center(child: CircularProgressIndicator())
+        : _entries.isEmpty
+        ? const Center(
+            child: Text(
+              'No games played yet',
+              style: TextStyle(color: FlitColors.textMuted, fontSize: 16),
+            ),
+          )
+        : ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: _entries.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final entry = _entries[index];
+              return Container(
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: FlitColors.backgroundLight,
-                  borderRadius: BorderRadius.circular(10),
+                  color: FlitColors.cardBackground,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: FlitColors.cardBorder),
                 ),
-                child: const Center(
-                  child: Icon(Icons.public, color: FlitColors.accent, size: 24),
-                ),
-              ),
-              const SizedBox(width: 14),
-              // Region and time
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Text(
-                      entry.region,
-                      style: const TextStyle(
-                        color: FlitColors.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                    // Region icon
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: FlitColors.backgroundLight,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.public,
+                          color: FlitColors.accent,
+                          size: 24,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${_formatDuration(entry.duration)}  •  ${_formatDate(entry.date)}',
-                      style: const TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 12,
+                    const SizedBox(width: 14),
+                    // Region and time
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            entry.region,
+                            style: const TextStyle(
+                              color: FlitColors.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_formatDuration(entry.duration)}  •  ${_formatDate(entry.date)}',
+                            style: const TextStyle(
+                              color: FlitColors.textMuted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                    // Score
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          entry.score.toString(),
+                          style: const TextStyle(
+                            color: FlitColors.gold,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Text(
+                          'pts',
+                          style: TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ),
-              // Score
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    entry.score.toString(),
-                    style: const TextStyle(
-                      color: FlitColors.gold,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Text(
-                    'pts',
-                    style: TextStyle(color: FlitColors.textMuted, fontSize: 12),
-                  ),
-                ],
-              ),
-            ],
+              );
+            },
           ),
-        );
-      },
-    ),
   );
 }

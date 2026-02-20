@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/leaderboard_entry.dart';
+import '../../data/services/leaderboard_service.dart';
 import '../avatar/avatar_widget.dart';
 
 /// Leaderboard screen showing top scores.
@@ -14,55 +15,27 @@ class LeaderboardScreen extends StatefulWidget {
 
 class _LeaderboardScreenState extends State<LeaderboardScreen> {
   LeaderboardPeriod _selectedPeriod = LeaderboardPeriod.daily;
+  bool _loading = true;
+  List<LeaderboardEntry> _entries = [];
 
-  // Placeholder data - will be replaced with real data from backend
-  final List<LeaderboardEntry> _entries = [
-    LeaderboardEntry(
-      rank: 1,
-      playerId: '1',
-      playerName: 'SpeedyPilot',
-      time: const Duration(seconds: 12, milliseconds: 340),
-      score: 9876,
-      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=SpeedyPilot',
-      timestamp: DateTime.now(),
-    ),
-    LeaderboardEntry(
-      rank: 2,
-      playerId: '2',
-      playerName: 'GeoMaster',
-      time: const Duration(seconds: 14, milliseconds: 120),
-      score: 9588,
-      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=GeoMaster',
-      timestamp: DateTime.now(),
-    ),
-    LeaderboardEntry(
-      rank: 3,
-      playerId: '3',
-      playerName: 'WorldFlyer',
-      time: const Duration(seconds: 15, milliseconds: 890),
-      score: 9411,
-      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=WorldFlyer',
-      timestamp: DateTime.now(),
-    ),
-    LeaderboardEntry(
-      rank: 4,
-      playerId: '4',
-      playerName: 'Navigator99',
-      time: const Duration(seconds: 18, milliseconds: 450),
-      score: 9155,
-      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Navigator99',
-      timestamp: DateTime.now(),
-    ),
-    LeaderboardEntry(
-      rank: 5,
-      playerId: '5',
-      playerName: 'CloudSurfer',
-      time: const Duration(seconds: 21, milliseconds: 230),
-      score: 8877,
-      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=CloudSurfer',
-      timestamp: DateTime.now(),
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadLeaderboard();
+  }
+
+  Future<void> _loadLeaderboard() async {
+    setState(() => _loading = true);
+    final entries = await LeaderboardService.instance.fetchLeaderboard(
+      period: _selectedPeriod,
+    );
+    if (mounted) {
+      setState(() {
+        _entries = entries;
+        _loading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -81,12 +54,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             setState(() {
               _selectedPeriod = period;
             });
+            _loadLeaderboard();
           },
         ),
         const Divider(color: FlitColors.cardBorder, height: 1),
         // Leaderboard list
         Expanded(
-          child: _entries.isEmpty
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _entries.isEmpty
               ? const _EmptyState()
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(vertical: 8),
