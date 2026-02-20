@@ -1,52 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Background circle (dark teal) -->
   <circle cx="256" cy="256" r="256" fill="#1A2A32"/>
-
-  <!-- Globe (cream outline + meridians) — pushed down to make room for plane -->
   <circle cx="256" cy="295" r="155" fill="none" stroke="#F0E8DC" stroke-width="8"/>
-  <!-- Equator -->
   <ellipse cx="256" cy="295" rx="155" ry="28" fill="none" stroke="#F0E8DC" stroke-width="5"/>
-  <!-- Vertical meridian -->
   <ellipse cx="256" cy="295" rx="48" ry="155" fill="none" stroke="#F0E8DC" stroke-width="5"/>
-  <!-- Second vertical meridian -->
   <ellipse cx="256" cy="295" rx="112" ry="155" fill="none" stroke="#F0E8DC" stroke-width="5"/>
-  <!-- Tropic lines -->
   <ellipse cx="256" cy="295" rx="145" ry="80" fill="none" stroke="#F0E8DC" stroke-width="3.5" opacity="0.5"/>
 
-  <!-- Biplane (coral) — large, clear biplane silhouette -->
-  <g transform="translate(250 130) rotate(-8)">
-    <!-- Fuselage — narrow body -->
-    <rect x="-75" y="-8" width="150" height="16" rx="8" fill="#E87A5A"/>
-
-    <!-- Top wing — dramatically wider than fuselage -->
-    <rect x="-100" y="-40" width="200" height="17" rx="6" fill="#E87A5A"/>
-    <!-- Bottom wing -->
-    <rect x="-100" y="23" width="200" height="17" rx="6" fill="#E87A5A"/>
-
-    <!-- Wing struts -->
-    <rect x="-58" y="-38" width="5" height="76" rx="2" fill="#E87A5A"/>
-    <rect x="53" y="-38" width="5" height="76" rx="2" fill="#E87A5A"/>
-
+  <!-- Option A: Top-down view biplane — wings spread wide, fuselage vertical -->
+  <g transform="translate(240 120) rotate(-25)">
+    <!-- Fuselage (thin, long, vertical-ish) -->
+    <rect x="-8" y="-80" width="16" height="160" rx="8" fill="#E87A5A"/>
+    <!-- Top wing pair (wide horizontal) -->
+    <rect x="-105" y="-45" width="210" height="20" rx="6" fill="#E87A5A"/>
+    <!-- Bottom wing pair (slightly smaller, offset back) -->
+    <rect x="-90" y="10" width="180" height="18" rx="6" fill="#E87A5A"/>
+    <!-- Tail horizontal -->
+    <rect x="-50" y="65" width="100" height="14" rx="5" fill="#E87A5A"/>
     <!-- Tail vertical fin -->
-    <polygon points="-75,-8 -75,-38 -55,-8" fill="#E87A5A"/>
-    <!-- Tail horizontal stabilizer -->
-    <rect x="-86" y="-4" width="24" height="8" rx="3" fill="#E87A5A"/>
-
-    <!-- Nose cone -->
-    <ellipse cx="78" cy="0" rx="10" ry="9" fill="#E87A5A"/>
-
+    <rect x="-5" y="55" width="10" height="30" rx="3" fill="#E87A5A"/>
+    <!-- Nose/engine -->
+    <ellipse cx="0" cy="-82" rx="10" ry="8" fill="#E87A5A"/>
     <!-- Propeller -->
-    <ellipse cx="88" cy="0" rx="4" ry="32" fill="#F0E8DC"/>
-    <!-- Propeller hub -->
-    <circle cx="88" cy="0" r="5" fill="#E87A5A"/>
-
-    <!-- Cockpit window -->
-    <rect x="10" y="-5" width="24" height="10" rx="5" fill="#1A2A32" opacity="0.7"/>
+    <rect x="-35" y="-96" width="70" height="7" rx="3" fill="#F0E8DC"/>
+    <circle cx="0" cy="-92" r="6" fill="#E87A5A"/>
+    <!-- Cockpit -->
+    <ellipse cx="0" cy="-20" rx="6" ry="12" fill="#1A2A32" opacity="0.6"/>
   </g>
 
-  <!-- Contrail (cream, fading) -->
   <g opacity="0.4">
-    <path d="M165 163 Q110 185 35 175" fill="none" stroke="#F0E8DC" stroke-width="5" stroke-linecap="round"/>
-    <path d="M165 172 Q105 200 25 198" fill="none" stroke="#F0E8DC" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M310 175 Q360 195 430 185" fill="none" stroke="#F0E8DC" stroke-width="5" stroke-linecap="round"/>
+    <path d="M305 185 Q360 210 440 205" fill="none" stroke="#F0E8DC" stroke-width="3.5" stroke-linecap="round"/>
   </g>
 </svg>
