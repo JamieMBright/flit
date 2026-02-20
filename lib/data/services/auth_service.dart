@@ -87,8 +87,11 @@ class AuthService {
       }
     } on AuthException catch (e) {
       _state = _state.copyWith(isLoading: false, error: e.message);
-    } catch (e) {
-      _state = _state.copyWith(isLoading: false, error: e.toString());
+    } catch (_) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Something went wrong. Please try again.',
+      );
     }
 
     return _state;
@@ -206,8 +209,11 @@ class AuthService {
       }
     } on AuthException catch (e) {
       _state = _state.copyWith(isLoading: false, error: e.message);
-    } catch (e) {
-      _state = _state.copyWith(isLoading: false, error: e.toString());
+    } catch (_) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Something went wrong. Please try again.',
+      );
     }
 
     return _state;
@@ -243,8 +249,11 @@ class AuthService {
       }
     } on AuthException catch (e) {
       _state = _state.copyWith(isLoading: false, error: e.message);
-    } catch (e) {
-      _state = _state.copyWith(isLoading: false, error: e.toString());
+    } catch (_) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Something went wrong. Please try again.',
+      );
     }
 
     return _state;
