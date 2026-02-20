@@ -89,13 +89,18 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Add swap space
+      - name: Increase swap space
         run: |
+          # GitHub runners already have a swapfile; resize it for dart2js
+          sudo swapoff /swapfile || true
+          sudo rm -f /swapfile
           sudo fallocate -l 8G /swapfile
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
           sudo swapon /swapfile
-          echo "Swap enabled: $(swapon --show)"
+          echo "Swap enabled:"
+          swapon --show
+          free -h
 
       - name: Verify shader assets
         run: test -f shaders/globe.frag && echo "globe.frag OK"
