@@ -153,8 +153,9 @@ class AuthService {
         email: email,
         password: password,
         data: {'username': username, 'display_name': displayName ?? username},
-        emailRedirectTo:
-            SupabaseConfig.siteUrl.isNotEmpty ? SupabaseConfig.siteUrl : null,
+        emailRedirectTo: SupabaseConfig.siteUrl.isNotEmpty
+            ? SupabaseConfig.siteUrl
+            : null,
       );
 
       if (response.user != null) {
@@ -289,6 +290,9 @@ class AuthService {
 
   /// Fetch the player profile from Supabase, or build one from user metadata
   /// if the profile row doesn't exist yet.
+  ///
+  /// Reads the full profile including gameplay stats (level, xp, coins, etc.)
+  /// so that progress is restored across sessions.
   Future<Player> _fetchOrCreateProfile(User user) async {
     try {
       final data = await _client
@@ -326,10 +330,18 @@ class AuthService {
           username: username,
           displayName: displayName,
           avatarUrl: data['avatar_url'] as String?,
-          level: 1,
-          xp: 0,
-          coins: 100,
-          gamesPlayed: 0,
+          level: data['level'] as int? ?? 1,
+          xp: data['xp'] as int? ?? 0,
+          coins: data['coins'] as int? ?? 100,
+          gamesPlayed: data['games_played'] as int? ?? 0,
+          bestScore: data['best_score'] as int?,
+          bestTime: data['best_time_ms'] != null
+              ? Duration(milliseconds: data['best_time_ms'] as int)
+              : null,
+          totalFlightTime: data['total_flight_time_ms'] != null
+              ? Duration(milliseconds: data['total_flight_time_ms'] as int)
+              : Duration.zero,
+          countriesFound: data['countries_found'] as int? ?? 0,
           createdAt: data['created_at'] != null
               ? DateTime.tryParse(data['created_at'] as String)
               : null,

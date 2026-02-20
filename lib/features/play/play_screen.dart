@@ -14,6 +14,7 @@ import '../../core/utils/web_error_bridge.dart';
 import '../../core/widgets/settings_sheet.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/providers/account_provider.dart';
+import '../../data/services/challenge_service.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/flit_game.dart';
 import '../../game/map/descent_map_view.dart';
@@ -33,6 +34,7 @@ class PlayScreen extends ConsumerStatefulWidget {
     super.key,
     this.region = GameRegion.world,
     this.challengeFriendName,
+    this.challengeId,
     this.totalRounds = 1,
     this.coinReward = 0,
     this.onComplete,
@@ -58,6 +60,9 @@ class PlayScreen extends ConsumerStatefulWidget {
 
   /// When non-null, the game is played as a challenge round against this friend.
   final String? challengeFriendName;
+
+  /// The Supabase challenge ID (set when playing a real H2H challenge).
+  final String? challengeId;
 
   /// Number of rounds to play back-to-back. 1 = single round.
   /// For Training Sortie this is 10.
@@ -534,6 +539,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       );
     }
 
+    // Submit round result to Supabase for H2H challenges.
+    if (widget.challengeId != null) {
+      ChallengeService.instance.submitRoundResult(
+        challengeId: widget.challengeId!,
+        roundIndex: _currentRound - 1,
+        timeMs: _elapsed.inMilliseconds,
+      );
+    }
+
     _log.info(
       'session',
       'Round $_currentRound complete, advancing',
@@ -628,6 +642,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           score: _session!.score,
         ),
       );
+    }
+
+    // Submit final round result and try to complete the challenge.
+    if (widget.challengeId != null) {
+      ChallengeService.instance
+          .submitRoundResult(
+            challengeId: widget.challengeId!,
+            roundIndex: _currentRound - 1,
+            timeMs: _elapsed.inMilliseconds,
+          )
+          .then((_) =>
+              ChallengeService.instance.tryCompleteChallenge(widget.challengeId!));
     }
 
     _log.info(

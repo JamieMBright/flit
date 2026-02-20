@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../data/services/user_preferences_service.dart';
+
 /// Map tile style for descent mode — different visual themes.
 /// All tile servers are free and open-license (no API key required).
 enum MapStyle {
@@ -30,14 +32,48 @@ enum GameDifficulty {
 
 /// Singleton that holds user-configurable game settings.
 ///
-/// All settings are stored in memory. Persistence (SharedPreferences)
-/// will be added in a future update. The singleton is accessed from
-/// both the settings UI and from the Flame game loop.
+/// Settings are synced to Supabase via [UserPreferencesService] (debounced).
+/// The singleton is accessed from both the settings UI and the Flame game loop.
 class GameSettings extends ChangeNotifier {
-  GameSettings._();
+  GameSettings._() {
+    addListener(_syncToSupabase);
+  }
 
   /// Singleton instance.
   static final GameSettings instance = GameSettings._();
+
+  bool _hydrating = false;
+
+  void _syncToSupabase() {
+    if (_hydrating) return;
+    UserPreferencesService.instance.saveSettings(
+      turnSensitivity: _turnSensitivity,
+      invertControls: _invertControls,
+      enableNight: _enableNight,
+      mapStyle: _mapStyle.name,
+      englishLabels: _englishLabels,
+      difficulty: _difficulty.name,
+    );
+  }
+
+  /// Bulk-set all fields from Supabase snapshot without triggering writes back.
+  void hydrateFrom({
+    required double turnSensitivity,
+    required bool invertControls,
+    required bool enableNight,
+    required bool englishLabels,
+    required MapStyle mapStyle,
+    required GameDifficulty difficulty,
+  }) {
+    _hydrating = true;
+    this.turnSensitivity = turnSensitivity;
+    this.invertControls = invertControls;
+    this.enableNight = enableNight;
+    this.englishLabels = englishLabels;
+    this.mapStyle = mapStyle;
+    this.difficulty = difficulty;
+    _hydrating = false;
+  }
 
   // ─── Controls ───────────────────────────────────────────────────
 

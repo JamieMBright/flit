@@ -9,6 +9,7 @@ class Player {
     this.xp = 0,
     this.coins = 0,
     this.gamesPlayed = 0,
+    this.bestScore,
     this.bestTime,
     this.totalFlightTime = Duration.zero,
     this.countriesFound = 0,
@@ -23,6 +24,9 @@ class Player {
   final int xp;
   final int coins;
   final int gamesPlayed;
+
+  /// Best daily scramble score (points).
+  final int? bestScore;
   final Duration? bestTime;
 
   /// Total cumulative flight time across all sessions.
@@ -51,6 +55,7 @@ class Player {
     int? xp,
     int? coins,
     int? gamesPlayed,
+    int? bestScore,
     Duration? bestTime,
     Duration? totalFlightTime,
     int? countriesFound,
@@ -64,6 +69,7 @@ class Player {
     xp: xp ?? this.xp,
     coins: coins ?? this.coins,
     gamesPlayed: gamesPlayed ?? this.gamesPlayed,
+    bestScore: bestScore ?? this.bestScore,
     bestTime: bestTime ?? this.bestTime,
     totalFlightTime: totalFlightTime ?? this.totalFlightTime,
     countriesFound: countriesFound ?? this.countriesFound,
@@ -79,6 +85,7 @@ class Player {
     'xp': xp,
     'coins': coins,
     'games_played': gamesPlayed,
+    'best_score': bestScore,
     'best_time_ms': bestTime?.inMilliseconds,
     'total_flight_time_ms': totalFlightTime.inMilliseconds,
     'countries_found': countriesFound,
@@ -94,6 +101,7 @@ class Player {
     xp: json['xp'] as int? ?? 0,
     coins: json['coins'] as int? ?? 0,
     gamesPlayed: json['games_played'] as int? ?? 0,
+    bestScore: json['best_score'] as int?,
     bestTime: json['best_time_ms'] != null
         ? Duration(milliseconds: json['best_time_ms'] as int)
         : null,

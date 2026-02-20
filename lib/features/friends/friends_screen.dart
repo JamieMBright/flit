@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
-import '../../data/models/avatar_config.dart';
+import '../../data/models/challenge.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/friend.dart';
 import '../../data/providers/account_provider.dart';
+import '../../data/services/challenge_service.dart';
+import '../../data/services/friends_service.dart';
 import '../avatar/avatar_widget.dart';
 import '../play/play_screen.dart';
 
@@ -18,133 +20,309 @@ class FriendsScreen extends ConsumerStatefulWidget {
 }
 
 class _FriendsScreenState extends ConsumerState<FriendsScreen> {
-  // Placeholder data - will be replaced with real data from backend
-  final List<Friend> _friends = [
-    const Friend(
-      id: '1',
-      playerId: 'p1',
-      username: 'SpeedyPilot',
-      displayName: 'Speedy Pilot',
-      isOnline: true,
-      avatarConfig: AvatarConfig(
-        eyes: AvatarEyes.variant05,
-        hair: AvatarHair.short03,
-        hairColor: AvatarHairColor.auburn,
-        skinColor: AvatarSkinColor.light,
-      ),
-    ),
-    Friend(
-      id: '2',
-      playerId: 'p2',
-      username: 'GeoMaster',
-      displayName: 'Geo Master',
-      isOnline: false,
-      lastSeen: DateTime.now().subtract(const Duration(hours: 2)),
-      avatarConfig: const AvatarConfig(
-        eyes: AvatarEyes.variant12,
-        mouth: AvatarMouth.variant08,
-        hair: AvatarHair.long04,
-        hairColor: AvatarHairColor.black,
-        skinColor: AvatarSkinColor.medium,
-        glasses: AvatarGlasses.variant02,
-      ),
-    ),
-    const Friend(
-      id: '3',
-      playerId: 'p3',
-      username: 'WorldFlyer',
-      isOnline: true,
-      avatarConfig: AvatarConfig(
-        eyes: AvatarEyes.variant18,
-        mouth: AvatarMouth.variant03,
-        hair: AvatarHair.short10,
-        hairColor: AvatarHairColor.blonde,
-        skinColor: AvatarSkinColor.mediumLight,
-        feature: AvatarFeature.freckles,
-      ),
-    ),
-  ];
+  List<Friend> _friends = [];
+  Map<String, HeadToHead> _h2hRecords = {};
+  List<Challenge> _incomingChallenges = [];
+  List<
+      ({
+        int friendshipId,
+        String requesterId,
+        String username,
+        String? displayName,
+        String? avatarUrl,
+      })> _pendingRequests = [];
+  bool _loading = true;
 
-  final Map<String, HeadToHead> _h2hRecords = {
-    'p1': const HeadToHead(
-      friendId: 'p1',
-      friendName: 'Speedy Pilot',
-      wins: 7,
-      losses: 4,
-      totalChallenges: 11,
-    ),
-    'p2': const HeadToHead(
-      friendId: 'p2',
-      friendName: 'Geo Master',
-      wins: 3,
-      losses: 5,
-      totalChallenges: 8,
-    ),
-    'p3': const HeadToHead(
-      friendId: 'p3',
-      friendName: 'World Flyer',
-      wins: 2,
-      losses: 2,
-      totalChallenges: 4,
-    ),
-  };
-
-  // Track pending challenges
+  // Track pending outgoing challenges
   final Set<String> _pendingChallenges = {};
 
   @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _loading = true);
+
+    final results = await Future.wait([
+      FriendsService.instance.fetchFriends(),
+      FriendsService.instance.fetchPendingRequests(),
+      ChallengeService.instance.fetchPendingChallenges(),
+      ChallengeService.instance.fetchSentChallenges(),
+    ]);
+
+    final friends = results[0] as List<Friend>;
+    final pending = results[1]
+        as List<
+            ({
+              int friendshipId,
+              String requesterId,
+              String username,
+              String? displayName,
+              String? avatarUrl,
+            })>;
+    final incoming = results[2] as List<Challenge>;
+    final sent = results[3] as List<Challenge>;
+
+    // Load H2H records for all friends in parallel.
+    final h2hEntries = await Future.wait(
+      friends.map(
+        (f) => FriendsService.instance.fetchH2HRecord(f.playerId, f.name),
+      ),
+    );
+    final h2hMap = <String, HeadToHead>{};
+    for (final h2h in h2hEntries) {
+      h2hMap[h2h.friendId] = h2h;
+    }
+
+    // Mark friends with pending sent challenges.
+    final pendingIds = <String>{};
+    for (final c in sent) {
+      if (c.status == ChallengeStatus.pending ||
+          c.status == ChallengeStatus.inProgress) {
+        pendingIds.add(c.challengedId);
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _friends = friends;
+      _h2hRecords = h2hMap;
+      _pendingRequests = pending;
+      _incomingChallenges = incoming;
+      _pendingChallenges
+        ..clear()
+        ..addAll(pendingIds);
+      _loading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: FlitColors.backgroundDark,
-    appBar: AppBar(
-      backgroundColor: FlitColors.backgroundMid,
-      title: const Text('Friends & Challenges'),
-      centerTitle: true,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.person_add),
-          onPressed: _showAddFriendDialog,
+        backgroundColor: FlitColors.backgroundDark,
+        appBar: AppBar(
+          backgroundColor: FlitColors.backgroundMid,
+          title: const Text('Friends & Challenges'),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _loadData,
+            ),
+            IconButton(
+              icon: const Icon(Icons.person_add),
+              onPressed: _showAddFriendDialog,
+            ),
+          ],
         ),
-      ],
-    ),
-    body: _friends.isEmpty
-        ? const _EmptyState()
-        : ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: _friends.length,
-            itemBuilder: (context, index) {
-              final friend = _friends[index];
-              final h2h = _h2hRecords[friend.playerId];
-              final hasPending = _pendingChallenges.contains(friend.playerId);
-              return _FriendTile(
-                friend: friend,
-                h2h: h2h,
-                hasPendingChallenge: hasPending,
-                onChallenge: () => _challengeFriend(friend),
-                onViewProfile: () => _viewFriendProfile(friend),
-              );
-            },
+        body: _loading
+            ? const Center(
+                child: CircularProgressIndicator(color: FlitColors.accent),
+              )
+            : RefreshIndicator(
+                onRefresh: _loadData,
+                color: FlitColors.accent,
+                child: _buildBody(),
+              ),
+      );
+
+  Widget _buildBody() {
+    if (_friends.isEmpty &&
+        _pendingRequests.isEmpty &&
+        _incomingChallenges.isEmpty) {
+      return const _EmptyState();
+    }
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      children: [
+        // Incoming friend requests
+        if (_pendingRequests.isNotEmpty) ...[
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              'FRIEND REQUESTS',
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
+            ),
           ),
-  );
+          for (final req in _pendingRequests)
+            _FriendRequestTile(
+              username: req.username,
+              displayName: req.displayName,
+              onAccept: () => _acceptRequest(req.friendshipId),
+              onDecline: () => _declineRequest(req.friendshipId),
+            ),
+          const SizedBox(height: 8),
+        ],
+        // Incoming challenges
+        if (_incomingChallenges.isNotEmpty) ...[
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              'INCOMING CHALLENGES',
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          for (final challenge in _incomingChallenges)
+            _IncomingChallengeTile(
+              challenge: challenge,
+              onAccept: () => _acceptChallenge(challenge),
+              onDecline: () => _declineChallenge(challenge),
+            ),
+          const SizedBox(height: 8),
+        ],
+        // Friends list
+        if (_friends.isNotEmpty) ...[
+          if (_pendingRequests.isNotEmpty || _incomingChallenges.isNotEmpty)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                'FRIENDS',
+                style: TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+          for (final friend in _friends)
+            _FriendTile(
+              friend: friend,
+              h2h: _h2hRecords[friend.playerId],
+              hasPendingChallenge:
+                  _pendingChallenges.contains(friend.playerId),
+              onChallenge: () => _challengeFriend(friend),
+              onViewProfile: () => _viewFriendProfile(friend),
+            ),
+        ],
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Friend request actions
+  // ---------------------------------------------------------------------------
+
+  Future<void> _acceptRequest(int friendshipId) async {
+    final ok = await FriendsService.instance.acceptFriendRequest(friendshipId);
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Friend request accepted!'),
+          backgroundColor: FlitColors.success,
+        ),
+      );
+      _loadData();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to accept request'),
+          backgroundColor: FlitColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _declineRequest(int friendshipId) async {
+    final ok =
+        await FriendsService.instance.declineFriendRequest(friendshipId);
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Friend request declined'),
+          backgroundColor: FlitColors.textMuted,
+        ),
+      );
+      _loadData();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Challenge actions
+  // ---------------------------------------------------------------------------
+
+  void _acceptChallenge(Challenge challenge) {
+    _launchChallengeGameplay(challenge.challengerName, challenge.id);
+  }
+
+  Future<void> _declineChallenge(Challenge challenge) async {
+    final ok = await ChallengeService.instance.declineChallenge(challenge.id);
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Challenge declined'),
+          backgroundColor: FlitColors.textMuted,
+        ),
+      );
+      _loadData();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Add friend
+  // ---------------------------------------------------------------------------
 
   void _showAddFriendDialog() {
     showDialog<void>(
       context: context,
       builder: (context) => _AddFriendDialog(
-        onAdd: (username) {
+        onAdd: (username) async {
           Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Friend request sent to @$username'),
-              backgroundColor: FlitColors.success,
-            ),
-          );
+          final user = await FriendsService.instance.searchUser(username);
+          if (!mounted) return;
+          if (user == null) {
+            ScaffoldMessenger.of(this.context).showSnackBar(
+              SnackBar(
+                content: Text('User @$username not found'),
+                backgroundColor: FlitColors.error,
+              ),
+            );
+            return;
+          }
+          final ok = await FriendsService.instance
+              .sendFriendRequest(user['id'] as String);
+          if (!mounted) return;
+          if (ok) {
+            ScaffoldMessenger.of(this.context).showSnackBar(
+              SnackBar(
+                content: Text('Friend request sent to @$username'),
+                backgroundColor: FlitColors.success,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(this.context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Could not send request to @$username (already sent?)',
+                ),
+                backgroundColor: FlitColors.error,
+              ),
+            );
+          }
         },
       ),
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Challenge a friend
+  // ---------------------------------------------------------------------------
+
   void _challengeFriend(Friend friend) {
-    // Show one-shot warning before starting the challenge.
     showDialog<bool>(
       context: context,
       builder: (dialogContext) => Dialog(
@@ -254,11 +432,35 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       ),
     ).then((confirmed) {
       if (confirmed != true || !mounted) return;
-      _launchChallenge(friend);
+      _createAndLaunchChallenge(friend);
     });
   }
 
-  void _launchChallenge(Friend friend) {
+  Future<void> _createAndLaunchChallenge(Friend friend) async {
+    final account = ref.read(accountProvider);
+    final myName = account.displayName ?? account.username ?? 'Player';
+
+    final challengeId = await ChallengeService.instance.createChallenge(
+      challengedId: friend.playerId,
+      challengedName: friend.name,
+      challengerName: myName,
+    );
+
+    if (!mounted) return;
+    if (challengeId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to create challenge'),
+          backgroundColor: FlitColors.error,
+        ),
+      );
+      return;
+    }
+
+    _launchChallengeGameplay(friend.name, challengeId);
+  }
+
+  void _launchChallengeGameplay(String opponentName, String challengeId) {
     final planeId = ref.read(equippedPlaneIdProvider);
     final plane = CosmeticCatalog.getById(planeId);
     final account = ref.read(accountProvider);
@@ -267,13 +469,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     final license = account.license;
     final contrailId = ref.read(accountProvider).equippedContrailId;
     final contrail = CosmeticCatalog.getById(contrailId);
-    // Navigate to play screen for round 1
+
     Navigator.of(context)
         .push(
           MaterialPageRoute<void>(
             builder: (context) => PlayScreen(
-              challengeFriendName: friend.name,
-              totalRounds: 5,
+              challengeFriendName: opponentName,
+              challengeId: challengeId,
+              totalRounds: Challenge.totalRounds,
               planeColorScheme: plane?.colorScheme,
               planeWingSpan: plane?.wingSpan,
               equippedPlaneId: planeId,
@@ -286,34 +489,25 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               planeHandling: plane?.handling ?? 1.0,
               planeSpeed: plane?.speed ?? 1.0,
               planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
-              contrailPrimaryColor: contrail?.colorScheme?['primary'] != null
-                  ? Color(contrail!.colorScheme!['primary']!)
-                  : null,
+              contrailPrimaryColor:
+                  contrail?.colorScheme?['primary'] != null
+                      ? Color(contrail!.colorScheme!['primary']!)
+                      : null,
               contrailSecondaryColor:
                   contrail?.colorScheme?['secondary'] != null
-                  ? Color(contrail!.colorScheme!['secondary']!)
-                  : null,
+                      ? Color(contrail!.colorScheme!['secondary']!)
+                      : null,
             ),
           ),
         )
         .then((_) {
-          // After returning from gameplay, mark challenge as sent
-          if (mounted) {
-            setState(() {
-              _pendingChallenges.add(friend.playerId);
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Challenge sent! Waiting for ${friend.name} to play...',
-                ),
-                backgroundColor: FlitColors.accent,
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
+          if (mounted) _loadData();
         });
   }
+
+  // ---------------------------------------------------------------------------
+  // Send coins
+  // ---------------------------------------------------------------------------
 
   void _showSendCoinsDialog(Friend friend) {
     final controller = TextEditingController();
@@ -379,11 +573,26 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton.icon(
-                    onPressed: () {
+                    onPressed: () async {
                       final amount = int.tryParse(controller.text) ?? 0;
                       final balance = ref.read(currentCoinsProvider);
-                      if (amount >= 10 && amount <= balance) {
-                        Navigator.of(dialogContext).pop();
+                      if (amount < 10) return;
+                      if (amount > balance) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Not enough coins!'),
+                            backgroundColor: FlitColors.error,
+                          ),
+                        );
+                        return;
+                      }
+                      Navigator.of(dialogContext).pop();
+                      final ok = await FriendsService.instance.sendCoins(
+                        recipientId: friend.playerId,
+                        amount: amount,
+                      );
+                      if (!mounted) return;
+                      if (ok) {
                         ref.read(accountProvider.notifier).spendCoins(amount);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -393,10 +602,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                             backgroundColor: FlitColors.success,
                           ),
                         );
-                      } else if (amount > balance) {
+                      } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Not enough coins!'),
+                            content: Text('Failed to send coins'),
                             backgroundColor: FlitColors.error,
                           ),
                         );
@@ -418,8 +627,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Friend profile
+  // ---------------------------------------------------------------------------
+
   void _viewFriendProfile(Friend friend) {
-    // Show friend profile bottom sheet
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: FlitColors.cardBackground,
@@ -433,7 +645,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle bar
               Container(
                 width: 40,
                 height: 4,
@@ -443,7 +654,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Avatar
               if (friend.avatarConfig != null)
                 AvatarWidget(config: friend.avatarConfig!, size: 64)
               else
@@ -469,8 +679,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              // H2H record
-              if (h2h != null)
+              if (h2h != null && h2h.totalChallenges > 0)
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -489,9 +698,21 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                       ),
                     ],
                   ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: FlitColors.backgroundMid,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'No challenges yet \u2014 be the first!',
+                    style:
+                        TextStyle(color: FlitColors.textMuted, fontSize: 13),
+                  ),
                 ),
               const SizedBox(height: 20),
-              // Challenge button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -517,7 +738,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              // Send Coins button
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -548,7 +768,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              // Gift Membership button
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -579,7 +798,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              // Report Username button
               SizedBox(
                 width: double.infinity,
                 child: TextButton.icon(
@@ -641,11 +859,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               const SizedBox(height: 8),
               const Text(
                 'Remove ads, unlock Live Group mode, and more!',
-                style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+                style:
+                    TextStyle(color: FlitColors.textSecondary, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
-              // Gift options
               _GiftOption(
                 label: '1 Month',
                 price: '\$2.99',
@@ -761,7 +979,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
-                                    'Report submitted. Thanks for keeping Flit safe.',
+                                    'Report submitted. Thanks for keeping '
+                                    'Flit safe.',
                                   ),
                                   backgroundColor: FlitColors.success,
                                 ),
@@ -771,8 +990,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: FlitColors.warning,
                         foregroundColor: FlitColors.backgroundDark,
-                        disabledBackgroundColor: FlitColors.textMuted
-                            .withOpacity(0.3),
+                        disabledBackgroundColor:
+                            FlitColors.textMuted.withOpacity(0.3),
                       ),
                       child: const Text('Report'),
                     ),
@@ -785,6 +1004,144 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       ),
     );
   }
+}
+
+// =============================================================================
+// Widgets
+// =============================================================================
+
+class _FriendRequestTile extends StatelessWidget {
+  const _FriendRequestTile({
+    required this.username,
+    this.displayName,
+    required this.onAccept,
+    required this.onDecline,
+  });
+
+  final String username;
+  final String? displayName;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.accent.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.person_add, color: FlitColors.accent, size: 32),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayName ?? username,
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '@$username',
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.check_circle, color: FlitColors.success),
+              onPressed: onAccept,
+            ),
+            IconButton(
+              icon: const Icon(Icons.cancel, color: FlitColors.error),
+              onPressed: onDecline,
+            ),
+          ],
+        ),
+      );
+}
+
+class _IncomingChallengeTile extends StatelessWidget {
+  const _IncomingChallengeTile({
+    required this.challenge,
+    required this.onAccept,
+    required this.onDecline,
+  });
+
+  final Challenge challenge;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.warning.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.flight_takeoff,
+              color: FlitColors.warning,
+              size: 32,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${challenge.challengerName} challenged you!',
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '${Challenge.totalRounds} rounds \u2022 Best of 5',
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ElevatedButton(
+              onPressed: onAccept,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FlitColors.accent,
+                foregroundColor: FlitColors.textPrimary,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Play'),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              icon: const Icon(Icons.close, color: FlitColors.textMuted),
+              onPressed: onDecline,
+            ),
+          ],
+        ),
+      );
 }
 
 class _GiftOption extends StatelessWidget {
@@ -802,73 +1159,73 @@ class _GiftOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(10),
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isBestValue
-            ? FlitColors.accent.withOpacity(0.1)
-            : FlitColors.backgroundMid,
+        onTap: onTap,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isBestValue ? FlitColors.accent : FlitColors.cardBorder,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isBestValue
+                ? FlitColors.accent.withOpacity(0.1)
+                : FlitColors.backgroundMid,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isBestValue ? FlitColors.accent : FlitColors.cardBorder,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: FlitColors.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (isBestValue) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: FlitColors.accent,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'BEST VALUE',
-                          style: TextStyle(
+                    Row(
+                      children: [
+                        Text(
+                          label,
+                          style: const TextStyle(
                             color: FlitColors.textPrimary,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
-                    ],
+                        if (isBestValue) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: FlitColors.accent,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'BEST VALUE',
+                              style: TextStyle(
+                                color: FlitColors.textPrimary,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              Text(
+                price,
+                style: const TextStyle(
+                  color: FlitColors.gold,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-          Text(
-            price,
-            style: const TextStyle(
-              color: FlitColors.gold,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 class _MiniStat extends StatelessWidget {
@@ -880,22 +1237,23 @@ class _MiniStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    children: [
-      Text(
-        value,
-        style: TextStyle(
-          color: color,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      const SizedBox(height: 2),
-      Text(
-        label,
-        style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
-      ),
-    ],
-  );
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style:
+                const TextStyle(color: FlitColors.textMuted, fontSize: 11),
+          ),
+        ],
+      );
 }
 
 class _FriendTile extends StatelessWidget {
@@ -915,126 +1273,122 @@ class _FriendTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.cardBorder),
-    ),
-    child: InkWell(
-      onTap: onViewProfile,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            // Avatar
-            Stack(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
+        ),
+        child: InkWell(
+          onTap: onViewProfile,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
               children: [
-                if (friend.avatarConfig != null)
-                  AvatarWidget(config: friend.avatarConfig!, size: 48)
-                else
-                  AvatarFromUrl(
-                    avatarUrl: friend.avatarUrl,
-                    name: friend.name,
-                    size: 48,
-                  ),
-                if (friend.isOnline)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: FlitColors.success,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: FlitColors.cardBackground,
-                          width: 2,
+                Stack(
+                  children: [
+                    if (friend.avatarConfig != null)
+                      AvatarWidget(config: friend.avatarConfig!, size: 48)
+                    else
+                      AvatarFromUrl(
+                        avatarUrl: friend.avatarUrl,
+                        name: friend.name,
+                        size: 48,
+                      ),
+                    if (friend.isOnline)
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 14,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: FlitColors.success,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: FlitColors.cardBackground,
+                              width: 2,
+                            ),
+                          ),
                         ),
                       ),
+                  ],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        friend.name,
+                        style: const TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (h2h != null && h2h!.totalChallenges > 0)
+                        Text(
+                          'H2H: ${h2h!.record} (${h2h!.leadText})',
+                          style: const TextStyle(
+                            color: FlitColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        )
+                      else
+                        const Text(
+                          'No challenges yet',
+                          style: TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (hasPendingChallenge)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
                     ),
+                    decoration: BoxDecoration(
+                      color: FlitColors.gold.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border:
+                          Border.all(color: FlitColors.gold.withOpacity(0.3)),
+                    ),
+                    child: const Text(
+                      'Waiting...',
+                      style: TextStyle(
+                        color: FlitColors.gold,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                else
+                  ElevatedButton(
+                    onPressed: onChallenge,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.accent,
+                      foregroundColor: FlitColors.textPrimary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Challenge'),
                   ),
               ],
             ),
-            const SizedBox(width: 12),
-            // Name and H2H
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    friend.name,
-                    style: const TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (h2h != null)
-                    Text(
-                      'H2H: ${h2h!.record} (${h2h!.leadText})',
-                      style: const TextStyle(
-                        color: FlitColors.textSecondary,
-                        fontSize: 12,
-                      ),
-                    )
-                  else
-                    Text(
-                      friend.isOnline ? 'Online' : 'Offline',
-                      style: TextStyle(
-                        color: friend.isOnline
-                            ? FlitColors.success
-                            : FlitColors.textMuted,
-                        fontSize: 12,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            // Challenge button or pending status
-            if (hasPendingChallenge)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: FlitColors.gold.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: FlitColors.gold.withOpacity(0.3)),
-                ),
-                child: const Text(
-                  'Waiting...',
-                  style: TextStyle(
-                    color: FlitColors.gold,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              )
-            else
-              ElevatedButton(
-                onPressed: onChallenge,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FlitColors.accent,
-                  foregroundColor: FlitColors.textPrimary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('Challenge'),
-              ),
-          ],
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 class _AddFriendDialog extends StatefulWidget {
@@ -1057,68 +1411,69 @@ class _AddFriendDialogState extends State<_AddFriendDialog> {
 
   @override
   Widget build(BuildContext context) => Dialog(
-    backgroundColor: FlitColors.cardBackground,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'Add Friend',
-            style: TextStyle(
-              color: FlitColors.textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _controller,
-            style: const TextStyle(color: FlitColors.textPrimary),
-            decoration: InputDecoration(
-              hintText: 'Enter username',
-              hintStyle: const TextStyle(color: FlitColors.textMuted),
-              prefixText: '@',
-              prefixStyle: const TextStyle(color: FlitColors.textSecondary),
-              filled: true,
-              fillColor: FlitColors.backgroundMid,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(color: FlitColors.textMuted),
+              const Text(
+                'Add Friend',
+                style: TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: () {
-                  if (_controller.text.isNotEmpty) {
-                    widget.onAdd(_controller.text);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FlitColors.accent,
-                  foregroundColor: FlitColors.textPrimary,
+              const SizedBox(height: 16),
+              TextField(
+                controller: _controller,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                decoration: InputDecoration(
+                  hintText: 'Enter username',
+                  hintStyle: const TextStyle(color: FlitColors.textMuted),
+                  prefixText: '@',
+                  prefixStyle:
+                      const TextStyle(color: FlitColors.textSecondary),
+                  filled: true,
+                  fillColor: FlitColors.backgroundMid,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
-                child: const Text('Send Request'),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: FlitColors.textMuted),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_controller.text.isNotEmpty) {
+                        widget.onAdd(_controller.text);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.accent,
+                      foregroundColor: FlitColors.textPrimary,
+                    ),
+                    child: const Text('Send Request'),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 class _EmptyState extends StatelessWidget {
@@ -1126,25 +1481,26 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.people_outline,
-          size: 64,
-          color: FlitColors.textMuted.withOpacity(0.5),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 64,
+              color: FlitColors.textMuted.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'No friends yet',
+              style:
+                  TextStyle(color: FlitColors.textSecondary, fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Add friends to challenge them!',
+              style: TextStyle(color: FlitColors.textMuted, fontSize: 14),
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
-        const Text(
-          'No friends yet',
-          style: TextStyle(color: FlitColors.textSecondary, fontSize: 18),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Add friends to challenge them!',
-          style: TextStyle(color: FlitColors.textMuted, fontSize: 14),
-        ),
-      ],
-    ),
-  );
+      );
 }

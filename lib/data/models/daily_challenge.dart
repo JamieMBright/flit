@@ -190,69 +190,8 @@ class DailyChallenge {
 
   // ── Placeholder leaderboard ─────────────────────────────────────────
 
-  /// Ten sample leaderboard entries for UI development and testing.
-  static final List<DailyLeaderboardEntry> placeholderLeaderboard = [
-    const DailyLeaderboardEntry(
-      username: 'GlobeTrotter42',
-      score: 9800,
-      time: Duration(minutes: 1, seconds: 12),
-      rank: 1,
-    ),
-    const DailyLeaderboardEntry(
-      username: 'MapMaster',
-      score: 9650,
-      time: Duration(minutes: 1, seconds: 28),
-      rank: 2,
-    ),
-    const DailyLeaderboardEntry(
-      username: 'AtlasAce',
-      score: 9400,
-      time: Duration(minutes: 1, seconds: 45),
-      rank: 3,
-    ),
-    const DailyLeaderboardEntry(
-      username: 'WanderWiz',
-      score: 9100,
-      time: Duration(minutes: 2, seconds: 3),
-      rank: 4,
-    ),
-    const DailyLeaderboardEntry(
-      username: 'GeoPilot',
-      score: 8800,
-      time: Duration(minutes: 2, seconds: 19),
-      rank: 5,
-    ),
-    const DailyLeaderboardEntry(
-      username: 'CompassKid',
-      score: 8500,
-      time: Duration(minutes: 2, seconds: 37),
-      rank: 6,
-    ),
-    const DailyLeaderboardEntry(
-      username: 'BorderRunner',
-      score: 8200,
-      time: Duration(minutes: 2, seconds: 52),
-      rank: 7,
-    ),
-    const DailyLeaderboardEntry(
-      username: 'CapitalCrush',
-      score: 7900,
-      time: Duration(minutes: 3, seconds: 11),
-      rank: 8,
-    ),
-    const DailyLeaderboardEntry(
-      username: 'FlagFinder99',
-      score: 7600,
-      time: Duration(minutes: 3, seconds: 30),
-      rank: 9,
-    ),
-    const DailyLeaderboardEntry(
-      username: 'TerraNova',
-      score: 7300,
-      time: Duration(minutes: 3, seconds: 48),
-      rank: 10,
-    ),
-  ];
+  /// Leaderboard entries fetched from Supabase (initially empty).
+  static const List<DailyLeaderboardEntry> placeholderLeaderboard = [];
 }
 
 /// A single row on the daily-challenge leaderboard.
