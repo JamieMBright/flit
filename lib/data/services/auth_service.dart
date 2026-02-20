@@ -1,16 +1,13 @@
-import 'dart:math';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/player.dart';
 
 /// Authentication method used by the player.
 enum AuthMethod {
-  /// Anonymous device-bound account (auto-created on first launch)
-  device,
-
-  /// Email + password account
+  /// Supabase email + password account
   email,
 
-  /// Guest mode (no persistence, for trying the game)
+  /// Guest mode (local only, no persistence across devices)
   guest,
 }
 
@@ -21,133 +18,99 @@ class AuthState {
     this.isLoading = false,
     this.player,
     this.authMethod = AuthMethod.guest,
-    this.deviceId,
     this.email,
     this.error,
+    this.needsEmailConfirmation = false,
   });
 
   final bool isAuthenticated;
   final bool isLoading;
   final Player? player;
   final AuthMethod authMethod;
-  final String? deviceId;
   final String? email;
   final String? error;
+
+  /// True after sign-up when the user must verify their email before signing in.
+  final bool needsEmailConfirmation;
 
   AuthState copyWith({
     bool? isAuthenticated,
     bool? isLoading,
     Player? player,
     AuthMethod? authMethod,
-    String? deviceId,
     String? email,
     String? error,
+    bool? needsEmailConfirmation,
   }) => AuthState(
     isAuthenticated: isAuthenticated ?? this.isAuthenticated,
     isLoading: isLoading ?? this.isLoading,
     player: player ?? this.player,
     authMethod: authMethod ?? this.authMethod,
-    deviceId: deviceId ?? this.deviceId,
     email: email ?? this.email,
     error: error,
+    needsEmailConfirmation:
+        needsEmailConfirmation ?? this.needsEmailConfirmation,
   );
 }
 
-/// Authentication service.
+/// Supabase-backed authentication service.
 ///
-/// Strategy: Device-bound anonymous accounts with optional email upgrade.
-///
-/// Why this approach:
-/// - **Minimal friction**: Auto-creates account on first launch
-/// - **Anti-multi-account**: Ties to device ID (vendor ID on iOS, Android ID)
-/// - **Low data storage**: Just device ID + optional email
-/// - **Revenue protection**: One free account per device install
-/// - **Upgrade path**: Add email later to recover across devices
-///
-/// For production, this would integrate with:
-/// - Firebase Auth (anonymous + email link) or
-/// - Supabase Auth (anonymous + magic link) or
-/// - Custom backend with device attestation (DeviceCheck on iOS, SafetyNet on Android)
-///
-/// The device attestation APIs prevent emulator abuse and verify real devices.
+/// Strategy: Email + password accounts via Supabase Auth.
+/// Profiles are auto-created by a database trigger on sign-up.
+/// Guest mode remains local-only for trying the game.
 class AuthService {
-  /// Simulated auth state (in production: SharedPreferences + backend)
   AuthState _state = const AuthState();
-  bool _hasExistingAccount = false;
 
   AuthState get state => _state;
 
-  /// Check if there's an existing device-bound account.
-  /// Called on app startup.
+  SupabaseClient get _client => Supabase.instance.client;
+
+  /// Check for an existing Supabase session (auto-restored on app start).
   Future<AuthState> checkExistingAuth() async {
     _state = _state.copyWith(isLoading: true);
 
-    // Simulate checking local storage for existing account
-    await Future<void>.delayed(const Duration(milliseconds: 300));
+    try {
+      final session = _client.auth.currentSession;
+      final user = _client.auth.currentUser;
 
-    if (_hasExistingAccount) {
-      // Found existing device-bound account
+      if (session != null && user != null) {
+        final player = await _fetchOrCreateProfile(user);
+        _state = AuthState(
+          isAuthenticated: true,
+          isLoading: false,
+          player: player,
+          authMethod: AuthMethod.email,
+          email: user.email,
+        );
+      } else {
+        _state = _state.copyWith(isLoading: false);
+      }
+    } on AuthException catch (e) {
+      _state = _state.copyWith(isLoading: false, error: e.message);
+    } catch (_) {
       _state = _state.copyWith(
-        isAuthenticated: true,
         isLoading: false,
-        authMethod: AuthMethod.device,
+        error: 'Something went wrong. Please try again.',
       );
-    } else {
-      _state = _state.copyWith(isLoading: false);
     }
 
     return _state;
   }
 
-  /// Create a new device-bound account.
-  /// This is the primary account creation method.
-  Future<AuthState> createDeviceAccount({
-    required String username,
-    String? displayName,
-  }) async {
-    _state = _state.copyWith(isLoading: true, error: null);
-
-    // Simulate network call
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-
-    // Generate a device-bound player ID
-    final deviceId = _generateDeviceId();
-    final playerId = 'device-$deviceId';
-
-    final player = Player(
-      id: playerId,
-      username: username,
-      displayName: displayName ?? username,
-      level: 1,
-      xp: 0,
-      coins: 100, // Starting bonus
-      gamesPlayed: 0,
-      createdAt: DateTime.now(),
-    );
-
-    _hasExistingAccount = true;
-    _state = AuthState(
-      isAuthenticated: true,
-      isLoading: false,
-      player: player,
-      authMethod: AuthMethod.device,
-      deviceId: deviceId,
-    );
-
-    return _state;
-  }
-
-  /// Sign up with email (upgrade from device account or fresh).
+  /// Sign up with email + password.
+  ///
+  /// Creates a Supabase auth user and updates the auto-created profile
+  /// with the chosen username. Returns a state with
+  /// [needsEmailConfirmation] = true so the UI can show a confirmation message.
   Future<AuthState> signUpWithEmail({
     required String email,
+    required String password,
     required String username,
     String? displayName,
   }) async {
     _state = _state.copyWith(isLoading: true, error: null);
 
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-
-    // Validate email format
+    // Client-side validation
     if (!_isValidEmail(email)) {
       _state = _state.copyWith(
         isLoading: false,
@@ -155,8 +118,6 @@ class AuthService {
       );
       return _state;
     }
-
-    // Validate username
     if (username.length < 3) {
       _state = _state.copyWith(
         isLoading: false,
@@ -164,40 +125,143 @@ class AuthService {
       );
       return _state;
     }
+    if (password.length < 6) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Password must be at least 6 characters',
+      );
+      return _state;
+    }
 
-    final player =
-        _state.player?.copyWith(
-          username: username,
-          displayName: displayName ?? username,
-        ) ??
-        Player(
-          id: 'email-${email.hashCode}',
-          username: username,
-          displayName: displayName ?? username,
-          level: 1,
-          xp: 0,
-          coins: 100,
-          gamesPlayed: 0,
-          createdAt: DateTime.now(),
+    try {
+      // Check username uniqueness before creating the auth user.
+      final existing = await _client
+          .from('profiles')
+          .select('id')
+          .eq('username', username)
+          .maybeSingle();
+      if (existing != null) {
+        _state = _state.copyWith(
+          isLoading: false,
+          error: 'Username @$username is already taken',
         );
+        return _state;
+      }
 
-    _hasExistingAccount = true;
-    _state = AuthState(
-      isAuthenticated: true,
-      isLoading: false,
-      player: player,
-      authMethod: AuthMethod.email,
-      email: email,
-    );
+      final response = await _client.auth.signUp(
+        email: email,
+        password: password,
+        data: {'username': username, 'display_name': displayName ?? username},
+      );
+
+      if (response.user != null) {
+        // Update the profile row (created by trigger) with username.
+        // This may fail if the user hasn't confirmed email yet and RLS
+        // blocks unauthenticated writes — that's fine, we'll update on
+        // first sign-in instead.
+        try {
+          await _client
+              .from('profiles')
+              .update({
+                'username': username,
+                'display_name': displayName ?? username,
+              })
+              .eq('id', response.user!.id);
+        } catch (_) {
+          // Profile update will happen on first sign-in.
+        }
+
+        // If Supabase returned a session, the user is already confirmed
+        // (e.g. confirm-email is disabled or auto-confirmed).
+        if (response.session != null) {
+          final player = Player(
+            id: response.user!.id,
+            username: username,
+            displayName: displayName ?? username,
+            level: 1,
+            xp: 0,
+            coins: 100,
+            gamesPlayed: 0,
+            createdAt: DateTime.now(),
+          );
+          _state = AuthState(
+            isAuthenticated: true,
+            isLoading: false,
+            player: player,
+            authMethod: AuthMethod.email,
+            email: email,
+          );
+        } else {
+          // Email confirmation required.
+          _state = AuthState(
+            isAuthenticated: false,
+            isLoading: false,
+            authMethod: AuthMethod.email,
+            email: email,
+            needsEmailConfirmation: true,
+          );
+        }
+      } else {
+        _state = _state.copyWith(
+          isLoading: false,
+          error: 'Sign-up failed. Please try again.',
+        );
+      }
+    } on AuthException catch (e) {
+      _state = _state.copyWith(isLoading: false, error: e.message);
+    } catch (_) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Something went wrong. Please try again.',
+      );
+    }
 
     return _state;
   }
 
-  /// Continue as guest (limited features, no persistence).
-  Future<AuthState> continueAsGuest() async {
+  /// Sign in with email + password.
+  Future<AuthState> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
     _state = _state.copyWith(isLoading: true, error: null);
 
-    await Future<void>.delayed(const Duration(milliseconds: 200));
+    try {
+      final response = await _client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (response.user != null) {
+        final player = await _fetchOrCreateProfile(response.user!);
+        _state = AuthState(
+          isAuthenticated: true,
+          isLoading: false,
+          player: player,
+          authMethod: AuthMethod.email,
+          email: email,
+        );
+      } else {
+        _state = _state.copyWith(
+          isLoading: false,
+          error: 'Sign-in failed. Please try again.',
+        );
+      }
+    } on AuthException catch (e) {
+      _state = _state.copyWith(isLoading: false, error: e.message);
+    } catch (_) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Something went wrong. Please try again.',
+      );
+    }
+
+    return _state;
+  }
+
+  /// Continue as guest (local only, no Supabase interaction).
+  Future<AuthState> continueAsGuest() async {
+    _state = _state.copyWith(isLoading: true, error: null);
 
     _state = AuthState(
       isAuthenticated: true,
@@ -209,38 +273,85 @@ class AuthService {
     return _state;
   }
 
-  /// Sign out.
+  /// Sign out. Clears the Supabase session.
   Future<AuthState> signOut() async {
-    _hasExistingAccount = false;
+    try {
+      await _client.auth.signOut();
+    } catch (_) {
+      // Ignore sign-out errors (network offline, etc.)
+    }
     _state = const AuthState();
     return _state;
   }
 
-  /// Link email to existing device account (account upgrade).
-  Future<AuthState> linkEmail(String email) async {
-    if (!_isValidEmail(email)) {
-      _state = _state.copyWith(error: 'Please enter a valid email address');
-      return _state;
+  /// Fetch the player profile from Supabase, or build one from user metadata
+  /// if the profile row doesn't exist yet.
+  Future<Player> _fetchOrCreateProfile(User user) async {
+    try {
+      final data = await _client
+          .from('profiles')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (data != null) {
+        // Ensure username is set (may be null if trigger created row
+        // before the profile update succeeded).
+        final username =
+            data['username'] as String? ??
+            user.userMetadata?['username'] as String? ??
+            user.email?.split('@').first ??
+            'Pilot';
+
+        final displayName =
+            data['display_name'] as String? ??
+            user.userMetadata?['display_name'] as String? ??
+            username;
+
+        // Backfill username if it was missing in the DB.
+        if (data['username'] == null) {
+          try {
+            await _client
+                .from('profiles')
+                .update({'username': username, 'display_name': displayName})
+                .eq('id', user.id);
+          } catch (_) {}
+        }
+
+        return Player(
+          id: user.id,
+          username: username,
+          displayName: displayName,
+          avatarUrl: data['avatar_url'] as String?,
+          level: 1,
+          xp: 0,
+          coins: 100,
+          gamesPlayed: 0,
+          createdAt: data['created_at'] != null
+              ? DateTime.tryParse(data['created_at'] as String)
+              : null,
+        );
+      }
+    } catch (_) {
+      // Profile fetch failed — fall back to user metadata.
     }
 
-    _state = _state.copyWith(
-      authMethod: AuthMethod.email,
-      email: email,
-      error: null,
-    );
-    return _state;
-  }
+    // Fallback: build Player from auth user metadata.
+    final username =
+        user.userMetadata?['username'] as String? ??
+        user.email?.split('@').first ??
+        'Pilot';
 
-  String _generateDeviceId() {
-    // In production: use platform-specific device ID
-    // iOS: UIDevice.identifierForVendor (resets on reinstall)
-    // Android: Settings.Secure.ANDROID_ID
-    // Web: fingerprint or localStorage UUID
-    final random = Random.secure();
-    return List.generate(
-      16,
-      (_) => random.nextInt(16).toRadixString(16),
-    ).join();
+    return Player(
+      id: user.id,
+      username: username,
+      displayName: user.userMetadata?['display_name'] as String? ?? username,
+      level: 1,
+      xp: 0,
+      coins: 100,
+      gamesPlayed: 0,
+      createdAt: DateTime.now(),
+    );
   }
 
   bool _isValidEmail(String email) {

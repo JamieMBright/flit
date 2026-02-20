@@ -1,7 +1,7 @@
 name: flit
 description: A geography-based flight game with low-fi aesthetics.
 publish_to: 'none'
-version: 1.0.160+160
+version: 1.0.163+163
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -34,6 +34,9 @@ dependencies:
 
   # SVG rendering for DiceBear avatars (cross-platform: iOS, Android, Web)
   flutter_svg: ^2.0.9
+
+  # Supabase Auth + Database (cross-platform: iOS, Android, Web)
+  supabase_flutter: ^2.3.0
 
 dev_dependencies:
   flutter_test:

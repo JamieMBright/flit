@@ -3,9 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../core/app_version.dart';
+import '../../core/config/admin_config.dart';
 import '../../core/theme/flit_colors.dart';
+import '../admin/admin_screen.dart';
 import '../daily/daily_challenge_screen.dart';
-import '../debug/debug_screen.dart';
 import '../friends/friends_screen.dart';
 import '../guide/gameplay_guide_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
@@ -184,12 +185,14 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ],
       ),
-      const SizedBox(height: 10),
-      _MenuButton(
-        label: 'Debug',
-        icon: Icons.bug_report_rounded,
-        onTap: () => _navigateSafely(context, const DebugScreen()),
-      ),
+      if (AdminConfig.isCurrentUserAdmin) ...[
+        const SizedBox(height: 10),
+        _MenuButton(
+          label: 'Admin',
+          icon: Icons.admin_panel_settings,
+          onTap: () => _navigateSafely(context, const AdminScreen()),
+        ),
+      ],
     ],
   );
 
