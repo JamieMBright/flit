@@ -18,6 +18,7 @@ DO $$ BEGIN
       ADD COLUMN xp INT NOT NULL DEFAULT 0,
       ADD COLUMN coins INT NOT NULL DEFAULT 100,
       ADD COLUMN games_played INT NOT NULL DEFAULT 0,
+      ADD COLUMN best_score INT,
       ADD COLUMN best_time_ms BIGINT,
       ADD COLUMN total_flight_time_ms BIGINT NOT NULL DEFAULT 0,
       ADD COLUMN countries_found INT NOT NULL DEFAULT 0,

@@ -283,6 +283,17 @@ class AccountNotifier extends StateNotifier<AccountState> {
     }
   }
 
+  /// Update best score if higher.
+  void updateBestScore(int score) {
+    final current = state.currentPlayer.bestScore;
+    if (current == null || score > current) {
+      state = state.copyWith(
+        currentPlayer: state.currentPlayer.copyWith(bestScore: score),
+      );
+      _syncProfile();
+    }
+  }
+
   /// Add flight time to the cumulative total.
   void addFlightTime(Duration time) {
     state = state.copyWith(
@@ -314,6 +325,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     String region = 'world',
   }) {
     incrementGamesPlayed();
+    updateBestScore(score);
     updateBestTime(elapsed);
     addFlightTime(elapsed);
     incrementCountriesFound(count: roundsCompleted);

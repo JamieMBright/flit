@@ -447,11 +447,13 @@ class _StatsGrid extends StatelessWidget {
 
   final Player player;
 
-  static String _fmtTime(Duration? d) {
-    if (d == null) return '--';
-    final s = d.inSeconds;
-    final ms = (d.inMilliseconds % 1000) ~/ 10;
-    return '$s.${ms.toString().padLeft(2, '0')}s';
+  static String _fmtBestScore(int? score, Duration? time) {
+    if (score == null && time == null) return '--';
+    final pts = score?.toString() ?? '0';
+    if (time == null) return '$pts pts';
+    final s = time.inSeconds;
+    final ms = (time.inMilliseconds % 1000) ~/ 10;
+    return '$pts pts\n${s}.${ms.toString().padLeft(2, '0')}s';
   }
 
   static String _fmtFlightTime(Duration d) {
@@ -501,10 +503,10 @@ class _StatsGrid extends StatelessWidget {
           children: [
             Expanded(
               child: _StatCard(
-                icon: Icons.timer,
+                icon: Icons.emoji_events,
                 iconColor: FlitColors.gold,
-                value: _fmtTime(player.bestTime),
-                label: 'Best Time',
+                value: _fmtBestScore(player.bestScore, player.bestTime),
+                label: 'Best Score',
               ),
             ),
             const SizedBox(width: 12),

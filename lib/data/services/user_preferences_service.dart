@@ -100,6 +100,7 @@ class UserPreferencesService {
       'xp': player.xp,
       'coins': player.coins,
       'games_played': player.gamesPlayed,
+      'best_score': player.bestScore,
       'best_time_ms': player.bestTime?.inMilliseconds,
       'total_flight_time_ms': player.totalFlightTime.inMilliseconds,
       'countries_found': player.countriesFound,
@@ -285,6 +286,7 @@ class UserPreferencesSnapshot {
       xp: p['xp'] as int? ?? 0,
       coins: p['coins'] as int? ?? 100,
       gamesPlayed: p['games_played'] as int? ?? 0,
+      bestScore: p['best_score'] as int?,
       bestTime: p['best_time_ms'] != null
           ? Duration(milliseconds: p['best_time_ms'] as int)
           : null,

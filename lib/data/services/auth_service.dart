@@ -334,6 +334,7 @@ class AuthService {
           xp: data['xp'] as int? ?? 0,
           coins: data['coins'] as int? ?? 100,
           gamesPlayed: data['games_played'] as int? ?? 0,
+          bestScore: data['best_score'] as int?,
           bestTime: data['best_time_ms'] != null
               ? Duration(milliseconds: data['best_time_ms'] as int)
               : null,
