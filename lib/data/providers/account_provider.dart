@@ -1,16 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/config/admin_config.dart';
 import '../../game/map/region.dart';
 import '../models/avatar_config.dart';
 import '../models/pilot_license.dart';
 import '../models/player.dart';
-import '../services/test_accounts.dart';
 
 /// Current account state.
 class AccountState {
   AccountState({
     required this.currentPlayer,
-    this.isDebugMode = true,
     this.unlockedRegions = const {},
     AvatarConfig? avatar,
     PilotLicense? license,
@@ -23,7 +22,9 @@ class AccountState {
        license = license ?? PilotLicense.random();
 
   final Player currentPlayer;
-  final bool isDebugMode;
+
+  /// Whether the current user is an admin (derived from Supabase auth email).
+  bool get isAdmin => AdminConfig.isCurrentUserAdmin;
 
   /// Set of region IDs that have been unlocked via coin purchase.
   final Set<String> unlockedRegions;
@@ -83,7 +84,6 @@ class AccountState {
 
   AccountState copyWith({
     Player? currentPlayer,
-    bool? isDebugMode,
     Set<String>? unlockedRegions,
     AvatarConfig? avatar,
     PilotLicense? license,
@@ -94,7 +94,6 @@ class AccountState {
     String? lastDailyChallengeDate,
   }) => AccountState(
     currentPlayer: currentPlayer ?? this.currentPlayer,
-    isDebugMode: isDebugMode ?? this.isDebugMode,
     unlockedRegions: unlockedRegions ?? this.unlockedRegions,
     avatar: avatar ?? this.avatar,
     license: license ?? this.license,
@@ -109,9 +108,20 @@ class AccountState {
 
 /// Account state notifier.
 class AccountNotifier extends StateNotifier<AccountState> {
-  AccountNotifier() : super(AccountState(currentPlayer: TestAccounts.player1));
+  AccountNotifier()
+    : super(
+        AccountState(
+          currentPlayer: const Player(
+            id: '',
+            username: '',
+            level: 1,
+            xp: 0,
+            coins: 0,
+          ),
+        ),
+      );
 
-  /// Switch to a different test account
+  /// Set the current player (called after auth completes).
   void switchAccount(Player player) {
     state = state.copyWith(currentPlayer: player);
   }
@@ -239,11 +249,6 @@ class AccountNotifier extends StateNotifier<AccountState> {
     if (coinReward > 0) {
       addCoins(coinReward);
     }
-  }
-
-  /// Toggle debug mode
-  void toggleDebugMode() {
-    state = state.copyWith(isDebugMode: !state.isDebugMode);
   }
 
   // --- Avatar ---

@@ -4,7 +4,9 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/config/supabase_config.dart';
 import 'core/services/audio_manager.dart';
 import 'core/services/dev_overlay.dart';
 import 'core/services/error_sender_http.dart';
@@ -34,8 +36,14 @@ bool _isNonFatalError(Object error) {
 /// [FlitApp] both render a frozen error screen instead of the normal UI.
 String? _fatalError;
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase (auth session auto-restores from local storage).
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
+  );
 
   // Initialize the error telemetry service (V0).
   final errorService = ErrorService.instance;
