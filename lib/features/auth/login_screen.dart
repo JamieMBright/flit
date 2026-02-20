@@ -9,13 +9,10 @@ import '../home/home_screen.dart';
 /// Login/signup screen shown on first launch.
 ///
 /// Authentication strategy:
-/// 1. Primary: Device-bound account (auto-tied to this install)
-/// 2. Optional: Email upgrade for cross-device recovery
-/// 3. Fallback: Guest mode (limited features)
+/// 1. Primary: Email + password via Supabase Auth
+/// 2. Fallback: Guest mode (local only, no cross-device persistence)
 ///
-/// Anti-multi-account: One account per device install.
-/// Revenue protection: Free tier locked to device, can't create
-/// unlimited accounts without new device/reinstall.
+/// No Google Auth — email only, kept simple.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -27,16 +24,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _authService = AuthService();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _displayNameController = TextEditingController();
 
   bool _isLoading = false;
   String? _error;
   _AuthMode _mode = _AuthMode.welcome;
+  bool _obscurePassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkExistingSession();
+  }
+
+  /// Auto-login if there's a valid Supabase session from a previous launch.
+  Future<void> _checkExistingSession() async {
+    setState(() => _isLoading = true);
+
+    final result = await _authService.checkExistingAuth();
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+
+      if (result.isAuthenticated && result.player != null) {
+        ref.read(accountProvider.notifier).switchAccount(result.player!);
+        _navigateToHome();
+      }
+    }
+  }
 
   @override
   void dispose() {
     _usernameController.dispose();
     _emailController.dispose();
+    _passwordController.dispose();
     _displayNameController.dispose();
     super.dispose();
   }
@@ -46,17 +68,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     body: Stack(
       fit: StackFit.expand,
       children: [
-        // Background
         const _AuthBackground(),
-
-        // Content
         SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Column(
               children: [
                 SizedBox(height: MediaQuery.of(context).size.height * 0.12),
-                // Logo
                 const Text(
                   'FLIT',
                   style: TextStyle(
@@ -78,46 +96,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 48),
 
-                // Auth content based on mode
                 if (_mode == _AuthMode.welcome) _buildWelcome(),
-                if (_mode == _AuthMode.createAccount) _buildCreateAccount(),
-                if (_mode == _AuthMode.emailSignup) _buildEmailSignup(),
+                if (_mode == _AuthMode.signUp) _buildSignUp(),
+                if (_mode == _AuthMode.signIn) _buildSignIn(),
+                if (_mode == _AuthMode.confirmEmail) _buildConfirmEmail(),
 
-                // Error display
                 if (_error != null) ...[
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: FlitColors.error.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: FlitColors.error.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: FlitColors.error,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _error!,
-                            style: const TextStyle(
-                              color: FlitColors.error,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _ErrorBanner(message: _error!),
                 ],
 
-                // Loading indicator
                 if (_isLoading) ...[
                   const SizedBox(height: 24),
                   const CircularProgressIndicator(color: FlitColors.accent),
@@ -129,6 +117,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ],
     ),
   );
+
+  // ── Welcome screen ──
 
   Widget _buildWelcome() => Column(
     children: [
@@ -142,41 +132,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
       const SizedBox(height: 8),
       const Text(
-        'Create your account to start exploring the world.',
+        'Create an account or sign in to start exploring.',
         textAlign: TextAlign.center,
         style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
       ),
       const SizedBox(height: 32),
 
-      // Continue as guest (primary CTA — account creation coming soon)
+      _AuthButton(
+        label: 'SIGN UP',
+        isPrimary: true,
+        icon: Icons.person_add_outlined,
+        onTap: () => setState(() {
+          _mode = _AuthMode.signUp;
+          _error = null;
+        }),
+      ),
+      const SizedBox(height: 12),
+
+      _AuthButton(
+        label: 'SIGN IN',
+        icon: Icons.login,
+        onTap: () => setState(() {
+          _mode = _AuthMode.signIn;
+          _error = null;
+        }),
+      ),
+      const SizedBox(height: 12),
+
       _AuthButton(
         label: 'PLAY AS GUEST',
-        isPrimary: true,
         icon: Icons.flight_takeoff,
         onTap: _continueAsGuest,
       ),
-      const SizedBox(height: 12),
-
-      // Create account (coming soon)
-      _AuthButton(
-        label: 'CREATE ACCOUNT',
-        icon: Icons.person_add_outlined,
-        isDisabled: true,
-        onTap: () {},
-      ),
-      const SizedBox(height: 12),
-
-      // Sign up with email (coming soon)
-      _AuthButton(
-        label: 'SIGN UP WITH EMAIL',
-        icon: Icons.email_outlined,
-        isDisabled: true,
-        onTap: () {},
-      ),
 
       const SizedBox(height: 24),
-
-      // Info text
       Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -189,8 +178,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Your account is tied to this device for security. '
-                'Add an email later to recover across devices.',
+                'Your progress is saved to your account. '
+                'Sign in on any device to pick up where you left off.',
                 style: TextStyle(
                   color: FlitColors.textMuted,
                   fontSize: 11,
@@ -204,34 +193,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ],
   );
 
-  Widget _buildCreateAccount() => Column(
+  // ── Sign Up form ──
+
+  Widget _buildSignUp() => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      // Back button
-      Align(
-        alignment: Alignment.centerLeft,
-        child: GestureDetector(
-          onTap: () => setState(() {
-            _mode = _AuthMode.welcome;
-            _error = null;
-          }),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.arrow_back, color: FlitColors.textSecondary, size: 18),
-              SizedBox(width: 4),
-              Text(
-                'Back',
-                style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
-              ),
-            ],
-          ),
-        ),
+      _BackButton(
+        onTap: () => setState(() {
+          _mode = _AuthMode.welcome;
+          _error = null;
+        }),
       ),
       const SizedBox(height: 16),
 
       const Text(
-        'Choose your pilot name',
+        'Create your account',
         style: TextStyle(
           color: FlitColors.textPrimary,
           fontSize: 20,
@@ -240,80 +216,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
       const SizedBox(height: 8),
       const Text(
-        'This is how other pilots will see you.',
+        'Choose a pilot name and set your password.',
         style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
       ),
       const SizedBox(height: 24),
 
-      // Username field
-      _AuthTextField(
-        controller: _usernameController,
-        label: 'Username',
-        hint: 'e.g. SkyPilot42',
-        prefix: '@',
-      ),
-      const SizedBox(height: 12),
-
-      // Display name (optional)
-      _AuthTextField(
-        controller: _displayNameController,
-        label: 'Display Name (optional)',
-        hint: 'Your visible name',
-      ),
-      const SizedBox(height: 24),
-
-      // Create button
-      _AuthButton(
-        label: 'TAKE OFF',
-        isPrimary: true,
-        icon: Icons.flight_takeoff,
-        onTap: _createDeviceAccount,
-      ),
-    ],
-  );
-
-  Widget _buildEmailSignup() => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      // Back button
-      Align(
-        alignment: Alignment.centerLeft,
-        child: GestureDetector(
-          onTap: () => setState(() {
-            _mode = _AuthMode.welcome;
-            _error = null;
-          }),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.arrow_back, color: FlitColors.textSecondary, size: 18),
-              SizedBox(width: 4),
-              Text(
-                'Back',
-                style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-      ),
-      const SizedBox(height: 16),
-
-      const Text(
-        'Sign up with email',
-        style: TextStyle(
-          color: FlitColors.textPrimary,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      const SizedBox(height: 8),
-      const Text(
-        'Recover your account on any device.',
-        style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
-      ),
-      const SizedBox(height: 24),
-
-      // Email field
       _AuthTextField(
         controller: _emailController,
         label: 'Email',
@@ -322,7 +229,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
       const SizedBox(height: 12),
 
-      // Username field
+      _AuthTextField(
+        controller: _passwordController,
+        label: 'Password',
+        hint: 'At least 6 characters',
+        obscureText: _obscurePassword,
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+            color: FlitColors.textMuted,
+            size: 20,
+          ),
+          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+        ),
+      ),
+      const SizedBox(height: 12),
+
       _AuthTextField(
         controller: _usernameController,
         label: 'Username',
@@ -331,7 +253,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
       const SizedBox(height: 12),
 
-      // Display name
       _AuthTextField(
         controller: _displayNameController,
         label: 'Display Name (optional)',
@@ -339,17 +260,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
       const SizedBox(height: 24),
 
-      // Create button
       _AuthButton(
         label: 'CREATE ACCOUNT',
         isPrimary: true,
-        icon: Icons.email_outlined,
-        onTap: _signUpWithEmail,
+        icon: Icons.flight_takeoff,
+        onTap: _signUp,
       ),
 
       const SizedBox(height: 16),
-
-      // Privacy note
       const Text(
         'We only store your email for account recovery. '
         'No spam, no sharing.',
@@ -359,45 +277,136 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ],
   );
 
-  Future<void> _createDeviceAccount() async {
-    final username = _usernameController.text.trim();
-    if (username.length < 3) {
-      setState(() => _error = 'Username must be at least 3 characters');
-      return;
-    }
+  // ── Sign In form ──
 
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+  Widget _buildSignIn() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _BackButton(
+        onTap: () => setState(() {
+          _mode = _AuthMode.welcome;
+          _error = null;
+        }),
+      ),
+      const SizedBox(height: 16),
 
-    final result = await _authService.createDeviceAccount(
-      username: username,
-      displayName: _displayNameController.text.trim().isNotEmpty
-          ? _displayNameController.text.trim()
-          : null,
-    );
+      const Text(
+        'Welcome back',
+        style: TextStyle(
+          color: FlitColors.textPrimary,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      const SizedBox(height: 8),
+      const Text(
+        'Sign in to continue your adventure.',
+        style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+      ),
+      const SizedBox(height: 24),
 
-    if (mounted) {
-      setState(() => _isLoading = false);
+      _AuthTextField(
+        controller: _emailController,
+        label: 'Email',
+        hint: 'pilot@example.com',
+        keyboardType: TextInputType.emailAddress,
+      ),
+      const SizedBox(height: 12),
 
-      if (result.isAuthenticated) {
-        if (result.player != null) {
-          ref.read(accountProvider.notifier).switchAccount(result.player!);
-        }
-        _navigateToHome();
-      } else if (result.error != null) {
-        setState(() => _error = result.error);
-      }
-    }
-  }
+      _AuthTextField(
+        controller: _passwordController,
+        label: 'Password',
+        hint: 'Your password',
+        obscureText: _obscurePassword,
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+            color: FlitColors.textMuted,
+            size: 20,
+          ),
+          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+        ),
+      ),
+      const SizedBox(height: 24),
 
-  Future<void> _signUpWithEmail() async {
+      _AuthButton(
+        label: 'SIGN IN',
+        isPrimary: true,
+        icon: Icons.login,
+        onTap: _signIn,
+      ),
+    ],
+  );
+
+  // ── Email confirmation screen ──
+
+  Widget _buildConfirmEmail() => Column(
+    children: [
+      const Icon(
+        Icons.mark_email_read_outlined,
+        color: FlitColors.gold,
+        size: 64,
+      ),
+      const SizedBox(height: 24),
+      const Text(
+        'Check your email',
+        style: TextStyle(
+          color: FlitColors.textPrimary,
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      const SizedBox(height: 12),
+      Text(
+        'We sent a confirmation link to\n${_emailController.text.trim()}',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: FlitColors.textSecondary,
+          fontSize: 14,
+          height: 1.5,
+        ),
+      ),
+      const SizedBox(height: 8),
+      const Text(
+        'Click the link in your email, then come back and sign in.',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
+      ),
+      const SizedBox(height: 32),
+      _AuthButton(
+        label: 'SIGN IN',
+        isPrimary: true,
+        icon: Icons.login,
+        onTap: () => setState(() {
+          _mode = _AuthMode.signIn;
+          _error = null;
+        }),
+      ),
+      const SizedBox(height: 12),
+      _AuthButton(
+        label: 'BACK TO START',
+        icon: Icons.arrow_back,
+        onTap: () => setState(() {
+          _mode = _AuthMode.welcome;
+          _error = null;
+        }),
+      ),
+    ],
+  );
+
+  // ── Actions ──
+
+  Future<void> _signUp() async {
     final email = _emailController.text.trim();
+    final password = _passwordController.text;
     final username = _usernameController.text.trim();
 
     if (email.isEmpty) {
       setState(() => _error = 'Please enter your email');
+      return;
+    }
+    if (password.length < 6) {
+      setState(() => _error = 'Password must be at least 6 characters');
       return;
     }
     if (username.length < 3) {
@@ -412,6 +421,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     final result = await _authService.signUpWithEmail(
       email: email,
+      password: password,
       username: username,
       displayName: _displayNameController.text.trim().isNotEmpty
           ? _displayNameController.text.trim()
@@ -421,10 +431,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (mounted) {
       setState(() => _isLoading = false);
 
-      if (result.isAuthenticated) {
-        if (result.player != null) {
-          ref.read(accountProvider.notifier).switchAccount(result.player!);
-        }
+      if (result.needsEmailConfirmation) {
+        setState(() => _mode = _AuthMode.confirmEmail);
+      } else if (result.isAuthenticated && result.player != null) {
+        ref.read(accountProvider.notifier).switchAccount(result.player!);
+        _navigateToHome();
+      } else if (result.error != null) {
+        setState(() => _error = result.error);
+      }
+    }
+  }
+
+  Future<void> _signIn() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty) {
+      setState(() => _error = 'Please enter your email');
+      return;
+    }
+    if (password.isEmpty) {
+      setState(() => _error = 'Please enter your password');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await _authService.signInWithEmail(
+      email: email,
+      password: password,
+    );
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+
+      if (result.isAuthenticated && result.player != null) {
+        ref.read(accountProvider.notifier).switchAccount(result.player!);
         _navigateToHome();
       } else if (result.error != null) {
         setState(() => _error = result.error);
@@ -457,7 +502,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
-enum _AuthMode { welcome, createAccount, emailSignup }
+enum _AuthMode { welcome, signUp, signIn, confirmEmail }
+
+// ── Shared widgets ──
 
 class _AuthBackground extends StatelessWidget {
   const _AuthBackground();
@@ -479,6 +526,59 @@ class _AuthBackground extends StatelessWidget {
   );
 }
 
+class _BackButton extends StatelessWidget {
+  const _BackButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.centerLeft,
+    child: GestureDetector(
+      onTap: onTap,
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.arrow_back, color: FlitColors.textSecondary, size: 18),
+          SizedBox(width: 4),
+          Text(
+            'Back',
+            style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: FlitColors.error.withOpacity(0.15),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: FlitColors.error.withOpacity(0.3)),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.error_outline, color: FlitColors.error, size: 18),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            message,
+            style: const TextStyle(color: FlitColors.error, fontSize: 13),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 class _AuthTextField extends StatelessWidget {
   const _AuthTextField({
     required this.controller,
@@ -486,6 +586,8 @@ class _AuthTextField extends StatelessWidget {
     required this.hint,
     this.prefix,
     this.keyboardType,
+    this.obscureText = false,
+    this.suffixIcon,
   });
 
   final TextEditingController controller;
@@ -493,6 +595,8 @@ class _AuthTextField extends StatelessWidget {
   final String hint;
   final String? prefix;
   final TextInputType? keyboardType;
+  final bool obscureText;
+  final Widget? suffixIcon;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -511,6 +615,7 @@ class _AuthTextField extends StatelessWidget {
       TextField(
         controller: controller,
         keyboardType: keyboardType,
+        obscureText: obscureText,
         style: const TextStyle(color: FlitColors.textPrimary, fontSize: 16),
         decoration: InputDecoration(
           hintText: hint,
@@ -520,6 +625,7 @@ class _AuthTextField extends StatelessWidget {
             color: FlitColors.textSecondary,
             fontSize: 16,
           ),
+          suffixIcon: suffixIcon,
           filled: true,
           fillColor: FlitColors.cardBackground,
           contentPadding: const EdgeInsets.symmetric(
@@ -550,82 +656,47 @@ class _AuthButton extends StatelessWidget {
     required this.onTap,
     this.icon,
     this.isPrimary = false,
-    this.isDisabled = false,
   });
 
   final String label;
   final VoidCallback onTap;
   final IconData? icon;
   final bool isPrimary;
-  final bool isDisabled;
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = isDisabled
-        ? FlitColors.cardBackground.withOpacity(0.5)
-        : isPrimary
+    final bgColor = isPrimary
         ? FlitColors.accent
         : FlitColors.cardBackground.withOpacity(0.8);
-    final textColor = isDisabled
-        ? FlitColors.textMuted
-        : FlitColors.textPrimary;
 
     return Material(
-      color: effectiveColor,
+      color: bgColor,
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
-        onTap: isDisabled ? null : onTap,
+        onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            border: isPrimary && !isDisabled
-                ? null
-                : Border.all(
-                    color: FlitColors.cardBorder.withOpacity(
-                      isDisabled ? 0.2 : 1.0,
-                    ),
-                  ),
+            border: isPrimary ? null : Border.all(color: FlitColors.cardBorder),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
-                Icon(icon, color: textColor, size: 20),
+                Icon(icon, color: FlitColors.textPrimary, size: 20),
                 const SizedBox(width: 10),
               ],
               Text(
                 label,
-                style: TextStyle(
-                  color: textColor,
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1.2,
                 ),
               ),
-              if (isDisabled) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: FlitColors.textMuted.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Text(
-                    'SOON',
-                    style: TextStyle(
-                      color: FlitColors.textMuted,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
