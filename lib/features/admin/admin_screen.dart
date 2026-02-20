@@ -32,6 +32,18 @@ class AdminScreen extends ConsumerWidget {
     return data;
   }
 
+  /// Atomically increment a numeric column on a profile row.
+  Future<void> _incrementStat(String userId, String column, int amount) async {
+    await _client.rpc(
+      'admin_increment_stat',
+      params: {
+        'target_user_id': userId,
+        'stat_column': column,
+        'amount': amount,
+      },
+    );
+  }
+
   /// Show a snackbar with [message].
   void _snack(BuildContext context, String message, {bool isError = false}) {
     if (!context.mounted) return;
@@ -86,16 +98,14 @@ class AdminScreen extends ConsumerWidget {
                 return;
               }
 
-              final currentCoins = (user['coins'] as int?) ?? 0;
-              await _client
-                  .from('profiles')
-                  .update({'coins': currentCoins + amount})
-                  .eq('id', user['id']);
+              await _incrementStat(user['id'] as String, 'coins', amount);
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
               _snack(context, 'Gifted $amount gold to @$username');
-            } catch (e) {
-              setDialogState(() => error = 'Failed: $e');
+            } on PostgrestException catch (e) {
+              setDialogState(() => error = 'Failed: ${e.message}');
+            } catch (_) {
+              setDialogState(() => error = 'Something went wrong');
             }
           },
           onCancel: () => Navigator.of(dialogCtx).pop(),
@@ -147,16 +157,14 @@ class AdminScreen extends ConsumerWidget {
                 return;
               }
 
-              final currentLevel = (user['level'] as int?) ?? 1;
-              await _client
-                  .from('profiles')
-                  .update({'level': currentLevel + amount})
-                  .eq('id', user['id']);
+              await _incrementStat(user['id'] as String, 'level', amount);
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
               _snack(context, 'Granted $amount levels to @$username');
-            } catch (e) {
-              setDialogState(() => error = 'Failed: $e');
+            } on PostgrestException catch (e) {
+              setDialogState(() => error = 'Failed: ${e.message}');
+            } catch (_) {
+              setDialogState(() => error = 'Something went wrong');
             }
           },
           onCancel: () => Navigator.of(dialogCtx).pop(),
@@ -208,16 +216,18 @@ class AdminScreen extends ConsumerWidget {
                 return;
               }
 
-              final current = (user['games_played'] as int?) ?? 0;
-              await _client
-                  .from('profiles')
-                  .update({'games_played': current + amount})
-                  .eq('id', user['id']);
+              await _incrementStat(
+                user['id'] as String,
+                'games_played',
+                amount,
+              );
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
               _snack(context, 'Granted $amount flights to @$username');
-            } catch (e) {
-              setDialogState(() => error = 'Failed: $e');
+            } on PostgrestException catch (e) {
+              setDialogState(() => error = 'Failed: ${e.message}');
+            } catch (_) {
+              setDialogState(() => error = 'Something went wrong');
             }
           },
           onCancel: () => Navigator.of(dialogCtx).pop(),
@@ -290,8 +300,8 @@ class AdminScreen extends ConsumerWidget {
               } else {
                 setDialogState(() => error = 'Failed: ${e.message}');
               }
-            } catch (e) {
-              setDialogState(() => error = 'Failed: $e');
+            } catch (_) {
+              setDialogState(() => error = 'Something went wrong');
             }
           },
           onCancel: () => Navigator.of(dialogCtx).pop(),
