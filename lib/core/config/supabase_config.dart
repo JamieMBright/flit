@@ -14,4 +14,11 @@ abstract final class SupabaseConfig {
     'SUPABASE_ANON_KEY',
     defaultValue: 'sb_publishable_AnlV4Gngx7a5z3KwqV7F9w_-4rQYEJs',
   );
+
+  /// The URL users are redirected to after clicking the email confirmation
+  /// link. Override via `--dart-define=SITE_URL=https://your-app.com`.
+  static const String siteUrl = String.fromEnvironment(
+    'SITE_URL',
+    defaultValue: 'https://flit-olive.vercel.app/confirmed.html',
+  );
 }

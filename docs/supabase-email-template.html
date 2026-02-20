@@ -1,0 +1,99 @@
+<!--
+  Supabase Email Confirmation Template for Flit
+
+  Paste this into:
+  Supabase Dashboard → Authentication → Email Templates → Confirm signup
+
+  Variables available:
+    {{ .ConfirmationURL }}  — the verification link
+    {{ .Email }}            — the user's email address
+    {{ .SiteURL }}          — configured site URL
+-->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#030810;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#030810;min-height:100vh;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:linear-gradient(180deg,#0f1a2e 0%,#0a1225 100%);border-radius:16px;border:1px solid #1e293b;overflow:hidden;">
+
+          <!-- Header -->
+          <tr>
+            <td align="center" style="padding:40px 32px 24px;">
+              <div style="font-size:48px;line-height:1;">&#9992;&#65039;</div>
+            </td>
+          </tr>
+
+          <!-- Title -->
+          <tr>
+            <td align="center" style="padding:0 32px 8px;">
+              <h1 style="margin:0;font-size:24px;font-weight:700;color:#e8edf5;">Welcome to Flit!</h1>
+            </td>
+          </tr>
+
+          <!-- Subtitle -->
+          <tr>
+            <td align="center" style="padding:0 32px 32px;">
+              <p style="margin:0;font-size:15px;color:#94a3b8;line-height:1.5;">
+                Verify your email to start your journey around the globe.
+              </p>
+            </td>
+          </tr>
+
+          <!-- CTA Button -->
+          <tr>
+            <td align="center" style="padding:0 32px 32px;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="border-radius:10px;background:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 100%);">
+                    <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:14px 40px;font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.3px;">
+                      Verify Email
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 32px;">
+              <div style="height:1px;background-color:#1e293b;"></div>
+            </td>
+          </tr>
+
+          <!-- Fallback link -->
+          <tr>
+            <td align="center" style="padding:24px 32px 12px;">
+              <p style="margin:0;font-size:12px;color:#475569;line-height:1.5;">
+                Button not working? Copy and paste this link into your browser:
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:0 32px 24px;">
+              <p style="margin:0;font-size:11px;color:#3b82f6;line-height:1.4;word-break:break-all;">
+                {{ .ConfirmationURL }}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding:0 32px 32px;">
+              <p style="margin:0;font-size:11px;color:#334155;line-height:1.5;">
+                If you didn't create a Flit account, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

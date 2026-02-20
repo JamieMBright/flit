@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/config/supabase_config.dart';
 import '../models/player.dart';
 
 /// Authentication method used by the player.
@@ -152,6 +153,8 @@ class AuthService {
         email: email,
         password: password,
         data: {'username': username, 'display_name': displayName ?? username},
+        emailRedirectTo:
+            SupabaseConfig.siteUrl.isNotEmpty ? SupabaseConfig.siteUrl : null,
       );
 
       if (response.user != null) {
