@@ -31,10 +31,13 @@ class ChallengeService {
     try {
       final rng = Random();
       // Generate deterministic seeds for each round.
-      final rounds = List.generate(Challenge.totalRounds, (i) => {
-        'round_number': i + 1,
-        'seed': rng.nextInt(1 << 31),
-      });
+      final rounds = List.generate(
+        Challenge.totalRounds,
+        (i) => <String, dynamic>{
+          'round_number': i + 1,
+          'seed': rng.nextInt(1 << 31),
+        },
+      );
 
       final data = await _client
           .from('challenges')
