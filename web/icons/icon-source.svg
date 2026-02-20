@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background circle (dark teal) -->
+  <circle cx="256" cy="256" r="256" fill="#1A2A32"/>
+
+  <!-- Globe (cream outline + meridians) -->
+  <circle cx="256" cy="276" r="150" fill="none" stroke="#F0E8DC" stroke-width="8"/>
+  <!-- Equator -->
+  <ellipse cx="256" cy="276" rx="150" ry="30" fill="none" stroke="#F0E8DC" stroke-width="5"/>
+  <!-- Vertical meridian -->
+  <ellipse cx="256" cy="276" rx="50" ry="150" fill="none" stroke="#F0E8DC" stroke-width="5"/>
+  <!-- Second vertical meridian -->
+  <ellipse cx="256" cy="276" rx="110" ry="150" fill="none" stroke="#F0E8DC" stroke-width="5"/>
+  <!-- Horizontal tropic lines -->
+  <ellipse cx="256" cy="276" rx="140" ry="80" fill="none" stroke="#F0E8DC" stroke-width="3.5" opacity="0.5"/>
+
+  <!-- Biplane (coral accent color) — positioned flying over globe -->
+  <g transform="translate(256 155) rotate(-12)">
+    <!-- Fuselage -->
+    <rect x="-65" y="-8" width="130" height="16" rx="8" fill="#E87A5A"/>
+    <!-- Top wing -->
+    <rect x="-40" y="-32" width="80" height="14" rx="4" fill="#E87A5A"/>
+    <!-- Bottom wing -->
+    <rect x="-40" y="18" width="80" height="14" rx="4" fill="#E87A5A"/>
+    <!-- Wing struts -->
+    <line x1="-25" y1="-30" x2="-25" y2="30" stroke="#E87A5A" stroke-width="4"/>
+    <line x1="25" y1="-30" x2="25" y2="30" stroke="#E87A5A" stroke-width="4"/>
+    <!-- Tail fin (vertical) -->
+    <polygon points="-65,-8 -65,-28 -50,-8" fill="#E87A5A"/>
+    <!-- Tail fin (horizontal) -->
+    <rect x="-70" y="-4" width="20" height="8" rx="3" fill="#E87A5A"/>
+    <!-- Propeller -->
+    <ellipse cx="68" cy="0" rx="4" ry="22" fill="#F0E8DC"/>
+    <!-- Propeller hub -->
+    <circle cx="68" cy="0" r="5" fill="#E87A5A"/>
+    <!-- Cockpit windshield -->
+    <rect x="10" y="-6" width="18" height="12" rx="4" fill="#1A2A32" opacity="0.7"/>
+  </g>
+
+  <!-- Contrail lines (cream, thin) -->
+  <g opacity="0.5">
+    <path d="M175 185 Q130 200 60 195" fill="none" stroke="#F0E8DC" stroke-width="4" stroke-linecap="round"/>
+    <path d="M175 190 Q125 210 50 210" fill="none" stroke="#F0E8DC" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
