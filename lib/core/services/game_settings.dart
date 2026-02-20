@@ -42,7 +42,10 @@ class GameSettings extends ChangeNotifier {
   /// Singleton instance.
   static final GameSettings instance = GameSettings._();
 
+  bool _hydrating = false;
+
   void _syncToSupabase() {
+    if (_hydrating) return;
     UserPreferencesService.instance.saveSettings(
       turnSensitivity: _turnSensitivity,
       invertControls: _invertControls,
@@ -51,6 +54,25 @@ class GameSettings extends ChangeNotifier {
       englishLabels: _englishLabels,
       difficulty: _difficulty.name,
     );
+  }
+
+  /// Bulk-set all fields from Supabase snapshot without triggering writes back.
+  void hydrateFrom({
+    required double turnSensitivity,
+    required bool invertControls,
+    required bool enableNight,
+    required bool englishLabels,
+    required MapStyle mapStyle,
+    required GameDifficulty difficulty,
+  }) {
+    _hydrating = true;
+    this.turnSensitivity = turnSensitivity;
+    this.invertControls = invertControls;
+    this.enableNight = enableNight;
+    this.englishLabels = englishLabels;
+    this.mapStyle = mapStyle;
+    this.difficulty = difficulty;
+    _hydrating = false;
   }
 
   // ─── Controls ───────────────────────────────────────────────────

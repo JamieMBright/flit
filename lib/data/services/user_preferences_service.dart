@@ -96,6 +96,9 @@ class UserPreferencesService {
     _profileDirty = true;
     _pendingProfile = {
       'id': _userId,
+      'username': player.username,
+      'display_name': player.displayName,
+      'avatar_url': player.avatarUrl,
       'level': player.level,
       'xp': player.xp,
       'coins': player.coins,
@@ -219,14 +222,10 @@ class UserPreferencesService {
 
     if (_profileDirty && _pendingProfile != null) {
       futures.add(
-        _client
-            .from('profiles')
-            .update(_pendingProfile!)
-            .eq('id', _userId!)
-            .then((_) {
-              _profileDirty = false;
-              _pendingProfile = null;
-            }),
+        _client.from('profiles').upsert(_pendingProfile!).then((_) {
+          _profileDirty = false;
+          _pendingProfile = null;
+        }),
       );
     }
 

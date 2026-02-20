@@ -5,7 +5,24 @@
 --   with stat columns via ALTER.
 
 -- ---------------------------------------------------------------------------
--- 1. Extend profiles with gameplay stat columns (if not already present)
+-- 1. Ensure profiles has identity columns (created by auth trigger, but
+--    added idempotently here for safety on fresh deploys)
+-- ---------------------------------------------------------------------------
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'username'
+  ) THEN
+    ALTER TABLE public.profiles
+      ADD COLUMN username TEXT,
+      ADD COLUMN display_name TEXT,
+      ADD COLUMN avatar_url TEXT;
+  END IF;
+END $$;
+
+-- ---------------------------------------------------------------------------
+-- 2. Extend profiles with gameplay stat columns (if not already present)
 -- ---------------------------------------------------------------------------
 
 DO $$ BEGIN

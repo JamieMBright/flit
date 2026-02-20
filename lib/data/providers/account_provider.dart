@@ -147,19 +147,20 @@ class AccountNotifier extends StateNotifier<AccountState> {
       lastDailyChallengeDate: snapshot.lastDailyChallengeDate,
     );
 
-    // Hydrate GameSettings from Supabase data.
-    final gs = GameSettings.instance;
-    gs.turnSensitivity = snapshot.turnSensitivity;
-    gs.invertControls = snapshot.invertControls;
-    gs.enableNight = snapshot.enableNight;
-    gs.englishLabels = snapshot.englishLabels;
-    gs.mapStyle = MapStyle.values.firstWhere(
-      (s) => s.name == snapshot.mapStyle,
-      orElse: () => MapStyle.topo,
-    );
-    gs.difficulty = GameDifficulty.values.firstWhere(
-      (d) => d.name == snapshot.difficulty,
-      orElse: () => GameDifficulty.normal,
+    // Hydrate GameSettings from Supabase data without triggering writes back.
+    GameSettings.instance.hydrateFrom(
+      turnSensitivity: snapshot.turnSensitivity,
+      invertControls: snapshot.invertControls,
+      enableNight: snapshot.enableNight,
+      englishLabels: snapshot.englishLabels,
+      mapStyle: MapStyle.values.firstWhere(
+        (s) => s.name == snapshot.mapStyle,
+        orElse: () => MapStyle.topo,
+      ),
+      difficulty: GameDifficulty.values.firstWhere(
+        (d) => d.name == snapshot.difficulty,
+        orElse: () => GameDifficulty.normal,
+      ),
     );
   }
 
