@@ -338,29 +338,52 @@ class AvatarCompositor {
       ..write('viewBox="0 0 440 440" fill="none" ')
       ..write('shape-rendering="auto">');
 
-    // Face (centered).
-    buf.write(_g(face, 'translate(30 51)'));
+    // Face — DiceBear: translate(81.7 150.7) scale(.71856).
+    buf.write(_g(face, 'translate(81.7 150.7) scale(0.71856)'));
 
-    // Left ear + right ear (mirrored) — centered horizontally on face.
+    // Left ear + right ear (mirrored).
+    // DiceBear: ear-left matrix(-.71856 0 0 .71856 161.5 235.4)
+    //           ear-right translate(280.7 235.4) scale(.71856)
     if (ear.isNotEmpty) {
-      buf.write(_g(ear, 'translate(-10 130)'));
-      buf.write('<g transform="translate(340 130) scale(-1 1)">$ear</g>');
+      buf.write(
+        '<g transform="matrix(-0.71856 0 0 0.71856 161.5 235.4)">$ear</g>',
+      );
+      buf.write(_g(ear, 'translate(280.7 235.4) scale(0.71856)'));
     }
 
     // Left sideburn + right sideburn (mirrored).
+    // DiceBear: sideburn-L matrix(-.52237 0 0 .52237 315.7 244.8)
+    //           sideburn-R matrix(.52237 0 0 .52237 122.9 244.8)
     if (sideburn.isNotEmpty) {
-      buf.write(_g(sideburn, 'translate(20 170)'));
-      buf.write('<g transform="translate(370 170) scale(-1 1)">$sideburn</g>');
+      buf.write(
+        '<g transform="matrix(0.52237 0 0 0.52237 122.9 244.8)">$sideburn</g>',
+      );
+      buf.write(
+        '<g transform="matrix(-0.52237 0 0 0.52237 315.7 244.8)">$sideburn</g>',
+      );
     }
 
-    // Cheek, nose, mouth, eyes — adjusted positioning.
-    if (cheek.isNotEmpty) buf.write(_g(cheek, 'translate(86 218)'));
-    if (nose.isNotEmpty) buf.write(_g(nose, 'translate(129 195)'));
-    if (mouth.isNotEmpty) buf.write(_g(mouth, 'translate(190 280)'));
-    if (eyes.isNotEmpty) buf.write(_g(eyes, 'translate(74 145)'));
+    // Cheek, nose, mouth, eyes — DiceBear positions with scale.
+    if (cheek.isNotEmpty) {
+      buf.write(_g(cheek, 'translate(127.7 288.7) scale(0.71856)'));
+    }
+    if (nose.isNotEmpty) {
+      buf.write(_g(nose, 'translate(193 279.4) scale(0.71856)'));
+    }
+    if (mouth.isNotEmpty) {
+      buf.write(_g(mouth, 'translate(199.5 333.4) scale(0.71856)'));
+    }
+    if (eyes.isNotEmpty) {
+      buf.write(_g(eyes, 'translate(114.8 215.5) scale(0.71856)'));
+    }
 
-    // Front hair.
-    if (frontHair.isNotEmpty) buf.write(_g(frontHair, 'translate(6 0)'));
+    // Front hair — DiceBear: matrix(.71048 0 0 .71048 24 2)
+    // (Separate scale from main features.)
+    if (frontHair.isNotEmpty) {
+      buf.write(
+        '<g transform="matrix(0.71048 0 0 0.71048 24 2)">$frontHair</g>',
+      );
+    }
 
     buf.write('</svg>');
     return buf.toString();
@@ -430,17 +453,19 @@ class AvatarCompositor {
       ..write('shape-rendering="auto">')
       ..write('<g transform="translate(10 -60)">');
 
+    // Lorelei features use full 980x980 canvas coordinates and are designed
+    // to be placed directly inside the head SVG — no additional translate.
     buf.write(head);
-    if (freckles.isNotEmpty) buf.write(_g(freckles, 'translate(198 410)'));
-    if (eyebrows.isNotEmpty) buf.write(_g(eyebrows, 'translate(198 310)'));
-    if (eyes.isNotEmpty) buf.write(_g(eyes, 'translate(198 370)'));
-    if (nose.isNotEmpty) buf.write(_g(nose, 'translate(330 490)'));
-    if (mouth.isNotEmpty) buf.write(_g(mouth, 'translate(270 590)'));
-    if (glasses.isNotEmpty) buf.write(_g(glasses, 'translate(136 330)'));
-    if (earrings.isNotEmpty) buf.write(_g(earrings, 'translate(110 460)'));
+    if (freckles.isNotEmpty) buf.write(freckles);
+    if (eyebrows.isNotEmpty) buf.write(eyebrows);
+    if (eyes.isNotEmpty) buf.write(eyes);
+    if (nose.isNotEmpty) buf.write(nose);
+    if (mouth.isNotEmpty) buf.write(mouth);
+    if (glasses.isNotEmpty) buf.write(glasses);
+    if (earrings.isNotEmpty) buf.write(earrings);
     if (hair.isNotEmpty) buf.write(hair);
     if (hairAccessories.isNotEmpty) buf.write(hairAccessories);
-    if (beard.isNotEmpty) buf.write(_g(beard, 'translate(210 610)'));
+    if (beard.isNotEmpty) buf.write(beard);
 
     buf.write('</g></svg>');
     return buf.toString();
@@ -552,10 +577,9 @@ class AvatarCompositor {
     if (eyebrows.isNotEmpty) buf.write(_g(eyebrows, 'translate(110 102)'));
     if (hair.isNotEmpty) buf.write(_g(hair, 'translate(49 11)'));
     if (eyes.isNotEmpty) buf.write(_g(eyes, 'translate(142 119)'));
+    // DiceBear source: rotate(-8 1149.44 -1186.92).
     if (nose.isNotEmpty) {
-      buf.write(
-        '<g transform="rotate(-8 179 167) translate(179 167)">$nose</g>',
-      );
+      buf.write('<g transform="rotate(-8 1149.44 -1186.92)">$nose</g>');
     }
     if (ears.isNotEmpty) buf.write(_g(ears, 'translate(84 154)'));
     if (earrings.isNotEmpty) buf.write(_g(earrings, 'translate(84 184)'));
