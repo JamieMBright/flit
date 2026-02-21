@@ -278,8 +278,9 @@ gh workflow run fetch-errors.yml
 3. Run linting: `./scripts/lint.sh` (advisory — reports but doesn't block)
 4. Verify shader compiles on 2+ platforms
 5. Verify cross-platform: integration tests for 2+ platforms
-6. Commit with descriptive message
-7. Push after tests pass (formatting/lint warnings are acceptable)
+6. **Update architecture docs if necessary** — If your changes affect the persistence layer, rendering pipeline, data flow, or any architecture described in this file or other docs, update those sections to reflect the new design before committing
+7. Commit with descriptive message
+8. Push after tests pass (formatting/lint warnings are acceptable)
 
 ### Installing Dart SDK (no-Flutter environments)
 If `dart` is not available, install the SDK:
