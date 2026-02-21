@@ -18,6 +18,12 @@
       "maxDuration": 5
     }
   },
+  "crons": [
+    {
+      "path": "/api/health",
+      "schedule": "0 0 */3 * *"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
