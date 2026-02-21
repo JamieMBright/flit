@@ -1447,6 +1447,7 @@ class PlaneRenderer {
     Map<String, int>? colorScheme,
     String planeId,
   ) {
+    final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFFF5F5F5);
     final secondary = _secondary(colorScheme, 0xFF1A3A5C);
     final detail = _detail(colorScheme, 0xFFD4A944);
@@ -1483,6 +1484,8 @@ class PlaneRenderer {
       )
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 1.0);
+    _wingJointAO(canvas, Offset(-5 + bodyShift, 0), radius: 5.5);
 
     final rightSpan =
         dynamicWingSpan * 1.15 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
@@ -1498,6 +1501,8 @@ class PlaneRenderer {
       ..quadraticBezierTo(rightSpan * 0.35, 4 - wingDip * 0.5, 4 + bodyShift, 1)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 1.0);
+    _wingJointAO(canvas, Offset(5 + bodyShift, 0), radius: 5.5);
 
     // --- Body group ---
     canvas.save();
@@ -1515,6 +1520,7 @@ class PlaneRenderer {
       ..lineTo(-1 + bodyShift, 16)
       ..close();
     canvas.drawPath(stabLeft, Paint()..color = primary);
+    _pencilOutline(stabLeft, canvas, primary, strokeWidth: 0.9);
     final stabRight = Path()
       ..moveTo(2 + bodyShift, 15)
       ..lineTo(stabSpan + bodyShift, 17 - wingDip * 0.2)
@@ -1522,6 +1528,7 @@ class PlaneRenderer {
       ..lineTo(1 + bodyShift, 16)
       ..close();
     canvas.drawPath(stabRight, Paint()..color = primary);
+    _pencilOutline(stabRight, canvas, primary, strokeWidth: 0.9);
 
     // Tall vertical fin — distinctive T-tail
     final finPath = Path()
@@ -1531,6 +1538,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(bodyShift + 3, 14, bodyShift + 1, 11)
       ..close();
     canvas.drawPath(finPath, Paint()..color = secondary);
+    _pencilOutline(finPath, canvas, secondary, strokeWidth: 0.9);
     // Gold accent on fin
     canvas.drawLine(
       Offset(bodyShift, 12),
@@ -1550,6 +1558,15 @@ class PlaneRenderer {
       ..quadraticBezierTo(-7 + bodyShift, -14, bodyShift, -19)
       ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Sketch outline on fuselage
+    final fuselageSketchPaint = Paint()
+      ..color = _darken(primary, 0.38).withOpacity(0.45)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.3
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.33);
 
     // Presidential blue belly stripe (the iconic two-tone)
     final bellyStripe = Path()
