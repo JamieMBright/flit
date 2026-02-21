@@ -14,7 +14,9 @@ import '../../core/utils/web_error_bridge.dart';
 import '../../core/widgets/settings_sheet.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/providers/account_provider.dart';
+import '../../data/models/challenge.dart';
 import '../../data/services/challenge_service.dart';
+import '../challenge/challenge_result_screen.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/flit_game.dart';
 import '../../game/map/descent_map_view.dart';
@@ -645,6 +647,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     }
 
     // Submit final round result and try to complete the challenge.
+    // If the challenge is completed (both players done), navigate to the
+    // full ChallengeResultScreen instead of the generic result dialog.
     if (widget.challengeId != null) {
       ChallengeService.instance
           .submitRoundResult(
@@ -653,7 +657,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             timeMs: _elapsed.inMilliseconds,
           )
           .then((_) =>
-              ChallengeService.instance.tryCompleteChallenge(widget.challengeId!));
+              ChallengeService.instance.tryCompleteChallenge(widget.challengeId!))
+          .then((completedChallenge) {
+        if (completedChallenge != null && mounted) {
+          // Challenge is fully complete — fetch the final state and show
+          // the ChallengeResultScreen.
+          ChallengeService.instance
+              .fetchChallenge(widget.challengeId!)
+              .then((finalChallenge) {
+            if (finalChallenge != null && mounted) {
+              _navigateToChallengeResult(finalChallenge);
+            }
+          });
+        }
+      });
     }
 
     _log.info(
@@ -866,6 +883,27 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Navigate to the full ChallengeResultScreen after a H2H challenge
+  /// is completed by both players.
+  void _navigateToChallengeResult(Challenge completedChallenge) {
+    try {
+      _game.pauseEngine();
+    } catch (_) {}
+
+    final account = ref.read(accountProvider);
+    final userId = account.currentPlayer.id;
+    final isChallengerRole = completedChallenge.challengerId == userId;
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ChallengeResultScreen(
+          challenge: completedChallenge,
+          isChallenger: isChallengerRole,
         ),
       ),
     );

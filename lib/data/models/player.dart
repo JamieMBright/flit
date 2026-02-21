@@ -13,6 +13,12 @@ class Player {
     this.bestTime,
     this.totalFlightTime = Duration.zero,
     this.countriesFound = 0,
+    this.flagsCorrect = 0,
+    this.capitalsCorrect = 0,
+    this.outlinesCorrect = 0,
+    this.bordersCorrect = 0,
+    this.statsCorrect = 0,
+    this.bestStreak = 0,
     this.createdAt,
   });
 
@@ -34,6 +40,17 @@ class Player {
 
   /// Total countries successfully found across all sessions.
   final int countriesFound;
+
+  /// Per-clue-type correct answer counts.
+  /// Tracked incrementally as gameplay events fire.
+  final int flagsCorrect;
+  final int capitalsCorrect;
+  final int outlinesCorrect;
+  final int bordersCorrect;
+  final int statsCorrect;
+
+  /// Longest streak of consecutive correct answers ever achieved.
+  final int bestStreak;
 
   final DateTime? createdAt;
 
@@ -59,6 +76,12 @@ class Player {
     Duration? bestTime,
     Duration? totalFlightTime,
     int? countriesFound,
+    int? flagsCorrect,
+    int? capitalsCorrect,
+    int? outlinesCorrect,
+    int? bordersCorrect,
+    int? statsCorrect,
+    int? bestStreak,
     DateTime? createdAt,
   }) => Player(
     id: id ?? this.id,
@@ -73,6 +96,12 @@ class Player {
     bestTime: bestTime ?? this.bestTime,
     totalFlightTime: totalFlightTime ?? this.totalFlightTime,
     countriesFound: countriesFound ?? this.countriesFound,
+    flagsCorrect: flagsCorrect ?? this.flagsCorrect,
+    capitalsCorrect: capitalsCorrect ?? this.capitalsCorrect,
+    outlinesCorrect: outlinesCorrect ?? this.outlinesCorrect,
+    bordersCorrect: bordersCorrect ?? this.bordersCorrect,
+    statsCorrect: statsCorrect ?? this.statsCorrect,
+    bestStreak: bestStreak ?? this.bestStreak,
     createdAt: createdAt ?? this.createdAt,
   );
 
@@ -89,6 +118,12 @@ class Player {
     'best_time_ms': bestTime?.inMilliseconds,
     'total_flight_time_ms': totalFlightTime.inMilliseconds,
     'countries_found': countriesFound,
+    'flags_correct': flagsCorrect,
+    'capitals_correct': capitalsCorrect,
+    'outlines_correct': outlinesCorrect,
+    'borders_correct': bordersCorrect,
+    'stats_correct': statsCorrect,
+    'best_streak': bestStreak,
     'created_at': createdAt?.toIso8601String(),
   };
 
@@ -109,6 +144,12 @@ class Player {
         ? Duration(milliseconds: json['total_flight_time_ms'] as int)
         : Duration.zero,
     countriesFound: json['countries_found'] as int? ?? 0,
+    flagsCorrect: json['flags_correct'] as int? ?? 0,
+    capitalsCorrect: json['capitals_correct'] as int? ?? 0,
+    outlinesCorrect: json['outlines_correct'] as int? ?? 0,
+    bordersCorrect: json['borders_correct'] as int? ?? 0,
+    statsCorrect: json['stats_correct'] as int? ?? 0,
+    bestStreak: json['best_streak'] as int? ?? 0,
     createdAt: json['created_at'] != null
         ? DateTime.parse(json['created_at'] as String)
         : null,

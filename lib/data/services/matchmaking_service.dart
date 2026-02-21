@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/services/error_service.dart';
 import '../models/challenge.dart';
-import 'challenge_service.dart';
 import 'friends_service.dart';
 
 /// Result of a matchmaking attempt.

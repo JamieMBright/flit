@@ -1,3 +1,4 @@
+import 'package:flag/flag.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +15,7 @@ import '../../data/services/account_management_service.dart';
 import '../avatar/avatar_editor_screen.dart';
 import '../avatar/avatar_widget.dart';
 import '../license/license_screen.dart';
+import '../../core/widgets/social_titles_card.dart';
 import '../../data/services/leaderboard_service.dart';
 
 /// Aviation rank title and icon for player level.
@@ -217,6 +219,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showNationalityPicker() {
+    final currentNationality = ref.read(accountProvider).license.nationality;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: FlitColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => _NationalityPickerSheet(
+        currentCode: currentNationality,
+        onSelected: (code) {
+          ref.read(accountProvider.notifier).updateNationality(code);
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Nationality updated'),
+              backgroundColor: FlitColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -462,6 +493,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 24),
+            // Nationality
+            _NationalitySection(
+              nationality: account.license.nationality,
+              onTap: () => _showNationalityPicker(),
+            ),
+            const SizedBox(height: 24),
+            // Social titles
+            const SocialTitlesCard(),
             const SizedBox(height: 24),
             // Actions
             _ProfileActions(
@@ -866,6 +906,463 @@ class _QuickLinkButton extends StatelessWidget {
     ),
   );
 }
+
+// ---------------------------------------------------------------------------
+// Nationality Section
+// ---------------------------------------------------------------------------
+
+class _NationalitySection extends StatelessWidget {
+  const _NationalitySection({
+    required this.nationality,
+    required this.onTap,
+  });
+
+  final String? nationality;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: FlitColors.cardBackground,
+    borderRadius: BorderRadius.circular(12),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
+        ),
+        child: Row(
+          children: [
+            if (nationality != null) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: SizedBox(
+                  width: 32,
+                  height: 22,
+                  child: Flag.fromString(
+                    nationality!,
+                    height: 22,
+                    width: 32,
+                    fit: BoxFit.cover,
+                    borderRadius: 4,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Nationality',
+                      style: TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _NationalityPickerSheet.countryNameForCode(nationality!) ??
+                          nationality!,
+                      style: const TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              const Icon(
+                Icons.flag_outlined,
+                color: FlitColors.textSecondary,
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Set Nationality',
+                  style: TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ],
+            const Icon(Icons.chevron_right, color: FlitColors.textMuted),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Nationality Picker Bottom Sheet
+// ---------------------------------------------------------------------------
+
+class _NationalityPickerSheet extends StatefulWidget {
+  const _NationalityPickerSheet({
+    required this.currentCode,
+    required this.onSelected,
+  });
+
+  final String? currentCode;
+  final void Function(String code) onSelected;
+
+  /// Look up a country name by its ISO alpha-2 code.
+  static String? countryNameForCode(String code) {
+    final upper = code.toUpperCase();
+    for (final entry in _countries) {
+      if (entry.code == upper) return entry.name;
+    }
+    return null;
+  }
+
+  @override
+  State<_NationalityPickerSheet> createState() =>
+      _NationalityPickerSheetState();
+}
+
+class _NationalityPickerSheetState extends State<_NationalityPickerSheet> {
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<_CountryEntry> get _filtered {
+    if (_query.isEmpty) return _countries;
+    final lower = _query.toLowerCase();
+    return _countries
+        .where(
+          (c) =>
+              c.name.toLowerCase().contains(lower) ||
+              c.code.toLowerCase().contains(lower),
+        )
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final maxHeight = MediaQuery.of(context).size.height * 0.7;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: FlitColors.textMuted,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Select Nationality',
+            style: TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Search field
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              controller: _searchController,
+              style: const TextStyle(color: FlitColors.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Search countries...',
+                hintStyle: const TextStyle(color: FlitColors.textMuted),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: FlitColors.textMuted,
+                ),
+                filled: true,
+                fillColor: FlitColors.backgroundDark,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: FlitColors.cardBorder),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: FlitColors.cardBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: FlitColors.accent),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+              ),
+              onChanged: (value) => setState(() => _query = value),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Country list
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              itemCount: _filtered.length,
+              itemBuilder: (context, index) {
+                final country = _filtered[index];
+                final isSelected = country.code == widget.currentCode;
+                return ListTile(
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: SizedBox(
+                      width: 32,
+                      height: 22,
+                      child: Flag.fromString(
+                        country.code,
+                        height: 22,
+                        width: 32,
+                        fit: BoxFit.cover,
+                        borderRadius: 3,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    country.name,
+                    style: TextStyle(
+                      color: isSelected
+                          ? FlitColors.accent
+                          : FlitColors.textPrimary,
+                      fontSize: 14,
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? const Icon(Icons.check, color: FlitColors.accent)
+                      : null,
+                  onTap: () => widget.onSelected(country.code),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Simple country entry for the nationality picker.
+class _CountryEntry {
+  const _CountryEntry(this.code, this.name);
+
+  final String code;
+  final String name;
+}
+
+/// Static list of countries with ISO 3166-1 alpha-2 codes.
+const List<_CountryEntry> _countries = [
+  _CountryEntry('AF', 'Afghanistan'),
+  _CountryEntry('AL', 'Albania'),
+  _CountryEntry('DZ', 'Algeria'),
+  _CountryEntry('AD', 'Andorra'),
+  _CountryEntry('AO', 'Angola'),
+  _CountryEntry('AG', 'Antigua and Barbuda'),
+  _CountryEntry('AR', 'Argentina'),
+  _CountryEntry('AM', 'Armenia'),
+  _CountryEntry('AU', 'Australia'),
+  _CountryEntry('AT', 'Austria'),
+  _CountryEntry('AZ', 'Azerbaijan'),
+  _CountryEntry('BS', 'Bahamas'),
+  _CountryEntry('BH', 'Bahrain'),
+  _CountryEntry('BD', 'Bangladesh'),
+  _CountryEntry('BB', 'Barbados'),
+  _CountryEntry('BY', 'Belarus'),
+  _CountryEntry('BE', 'Belgium'),
+  _CountryEntry('BZ', 'Belize'),
+  _CountryEntry('BJ', 'Benin'),
+  _CountryEntry('BT', 'Bhutan'),
+  _CountryEntry('BO', 'Bolivia'),
+  _CountryEntry('BA', 'Bosnia and Herzegovina'),
+  _CountryEntry('BW', 'Botswana'),
+  _CountryEntry('BR', 'Brazil'),
+  _CountryEntry('BN', 'Brunei'),
+  _CountryEntry('BG', 'Bulgaria'),
+  _CountryEntry('BF', 'Burkina Faso'),
+  _CountryEntry('BI', 'Burundi'),
+  _CountryEntry('CV', 'Cabo Verde'),
+  _CountryEntry('KH', 'Cambodia'),
+  _CountryEntry('CM', 'Cameroon'),
+  _CountryEntry('CA', 'Canada'),
+  _CountryEntry('CF', 'Central African Republic'),
+  _CountryEntry('TD', 'Chad'),
+  _CountryEntry('CL', 'Chile'),
+  _CountryEntry('CN', 'China'),
+  _CountryEntry('CO', 'Colombia'),
+  _CountryEntry('KM', 'Comoros'),
+  _CountryEntry('CG', 'Congo'),
+  _CountryEntry('CD', 'Congo (DRC)'),
+  _CountryEntry('CR', 'Costa Rica'),
+  _CountryEntry('CI', "Cote d'Ivoire"),
+  _CountryEntry('HR', 'Croatia'),
+  _CountryEntry('CU', 'Cuba'),
+  _CountryEntry('CY', 'Cyprus'),
+  _CountryEntry('CZ', 'Czechia'),
+  _CountryEntry('DK', 'Denmark'),
+  _CountryEntry('DJ', 'Djibouti'),
+  _CountryEntry('DM', 'Dominica'),
+  _CountryEntry('DO', 'Dominican Republic'),
+  _CountryEntry('EC', 'Ecuador'),
+  _CountryEntry('EG', 'Egypt'),
+  _CountryEntry('SV', 'El Salvador'),
+  _CountryEntry('GQ', 'Equatorial Guinea'),
+  _CountryEntry('ER', 'Eritrea'),
+  _CountryEntry('EE', 'Estonia'),
+  _CountryEntry('SZ', 'Eswatini'),
+  _CountryEntry('ET', 'Ethiopia'),
+  _CountryEntry('FJ', 'Fiji'),
+  _CountryEntry('FI', 'Finland'),
+  _CountryEntry('FR', 'France'),
+  _CountryEntry('GA', 'Gabon'),
+  _CountryEntry('GM', 'Gambia'),
+  _CountryEntry('GE', 'Georgia'),
+  _CountryEntry('DE', 'Germany'),
+  _CountryEntry('GH', 'Ghana'),
+  _CountryEntry('GR', 'Greece'),
+  _CountryEntry('GD', 'Grenada'),
+  _CountryEntry('GT', 'Guatemala'),
+  _CountryEntry('GN', 'Guinea'),
+  _CountryEntry('GW', 'Guinea-Bissau'),
+  _CountryEntry('GY', 'Guyana'),
+  _CountryEntry('HT', 'Haiti'),
+  _CountryEntry('HN', 'Honduras'),
+  _CountryEntry('HU', 'Hungary'),
+  _CountryEntry('IS', 'Iceland'),
+  _CountryEntry('IN', 'India'),
+  _CountryEntry('ID', 'Indonesia'),
+  _CountryEntry('IR', 'Iran'),
+  _CountryEntry('IQ', 'Iraq'),
+  _CountryEntry('IE', 'Ireland'),
+  _CountryEntry('IL', 'Israel'),
+  _CountryEntry('IT', 'Italy'),
+  _CountryEntry('JM', 'Jamaica'),
+  _CountryEntry('JP', 'Japan'),
+  _CountryEntry('JO', 'Jordan'),
+  _CountryEntry('KZ', 'Kazakhstan'),
+  _CountryEntry('KE', 'Kenya'),
+  _CountryEntry('KI', 'Kiribati'),
+  _CountryEntry('KP', 'North Korea'),
+  _CountryEntry('KR', 'South Korea'),
+  _CountryEntry('KW', 'Kuwait'),
+  _CountryEntry('KG', 'Kyrgyzstan'),
+  _CountryEntry('LA', 'Laos'),
+  _CountryEntry('LV', 'Latvia'),
+  _CountryEntry('LB', 'Lebanon'),
+  _CountryEntry('LS', 'Lesotho'),
+  _CountryEntry('LR', 'Liberia'),
+  _CountryEntry('LY', 'Libya'),
+  _CountryEntry('LI', 'Liechtenstein'),
+  _CountryEntry('LT', 'Lithuania'),
+  _CountryEntry('LU', 'Luxembourg'),
+  _CountryEntry('MG', 'Madagascar'),
+  _CountryEntry('MW', 'Malawi'),
+  _CountryEntry('MY', 'Malaysia'),
+  _CountryEntry('MV', 'Maldives'),
+  _CountryEntry('ML', 'Mali'),
+  _CountryEntry('MT', 'Malta'),
+  _CountryEntry('MH', 'Marshall Islands'),
+  _CountryEntry('MR', 'Mauritania'),
+  _CountryEntry('MU', 'Mauritius'),
+  _CountryEntry('MX', 'Mexico'),
+  _CountryEntry('FM', 'Micronesia'),
+  _CountryEntry('MD', 'Moldova'),
+  _CountryEntry('MC', 'Monaco'),
+  _CountryEntry('MN', 'Mongolia'),
+  _CountryEntry('ME', 'Montenegro'),
+  _CountryEntry('MA', 'Morocco'),
+  _CountryEntry('MZ', 'Mozambique'),
+  _CountryEntry('MM', 'Myanmar'),
+  _CountryEntry('NA', 'Namibia'),
+  _CountryEntry('NR', 'Nauru'),
+  _CountryEntry('NP', 'Nepal'),
+  _CountryEntry('NL', 'Netherlands'),
+  _CountryEntry('NZ', 'New Zealand'),
+  _CountryEntry('NI', 'Nicaragua'),
+  _CountryEntry('NE', 'Niger'),
+  _CountryEntry('NG', 'Nigeria'),
+  _CountryEntry('MK', 'North Macedonia'),
+  _CountryEntry('NO', 'Norway'),
+  _CountryEntry('OM', 'Oman'),
+  _CountryEntry('PK', 'Pakistan'),
+  _CountryEntry('PW', 'Palau'),
+  _CountryEntry('PA', 'Panama'),
+  _CountryEntry('PG', 'Papua New Guinea'),
+  _CountryEntry('PY', 'Paraguay'),
+  _CountryEntry('PE', 'Peru'),
+  _CountryEntry('PH', 'Philippines'),
+  _CountryEntry('PL', 'Poland'),
+  _CountryEntry('PT', 'Portugal'),
+  _CountryEntry('QA', 'Qatar'),
+  _CountryEntry('RO', 'Romania'),
+  _CountryEntry('RU', 'Russia'),
+  _CountryEntry('RW', 'Rwanda'),
+  _CountryEntry('KN', 'Saint Kitts and Nevis'),
+  _CountryEntry('LC', 'Saint Lucia'),
+  _CountryEntry('VC', 'Saint Vincent and the Grenadines'),
+  _CountryEntry('WS', 'Samoa'),
+  _CountryEntry('SM', 'San Marino'),
+  _CountryEntry('ST', 'Sao Tome and Principe'),
+  _CountryEntry('SA', 'Saudi Arabia'),
+  _CountryEntry('SN', 'Senegal'),
+  _CountryEntry('RS', 'Serbia'),
+  _CountryEntry('SC', 'Seychelles'),
+  _CountryEntry('SL', 'Sierra Leone'),
+  _CountryEntry('SG', 'Singapore'),
+  _CountryEntry('SK', 'Slovakia'),
+  _CountryEntry('SI', 'Slovenia'),
+  _CountryEntry('SB', 'Solomon Islands'),
+  _CountryEntry('SO', 'Somalia'),
+  _CountryEntry('ZA', 'South Africa'),
+  _CountryEntry('SS', 'South Sudan'),
+  _CountryEntry('ES', 'Spain'),
+  _CountryEntry('LK', 'Sri Lanka'),
+  _CountryEntry('SD', 'Sudan'),
+  _CountryEntry('SR', 'Suriname'),
+  _CountryEntry('SE', 'Sweden'),
+  _CountryEntry('CH', 'Switzerland'),
+  _CountryEntry('SY', 'Syria'),
+  _CountryEntry('TW', 'Taiwan'),
+  _CountryEntry('TJ', 'Tajikistan'),
+  _CountryEntry('TZ', 'Tanzania'),
+  _CountryEntry('TH', 'Thailand'),
+  _CountryEntry('TL', 'Timor-Leste'),
+  _CountryEntry('TG', 'Togo'),
+  _CountryEntry('TO', 'Tonga'),
+  _CountryEntry('TT', 'Trinidad and Tobago'),
+  _CountryEntry('TN', 'Tunisia'),
+  _CountryEntry('TR', 'Turkey'),
+  _CountryEntry('TM', 'Turkmenistan'),
+  _CountryEntry('TV', 'Tuvalu'),
+  _CountryEntry('UG', 'Uganda'),
+  _CountryEntry('UA', 'Ukraine'),
+  _CountryEntry('AE', 'United Arab Emirates'),
+  _CountryEntry('GB', 'United Kingdom'),
+  _CountryEntry('US', 'United States'),
+  _CountryEntry('UY', 'Uruguay'),
+  _CountryEntry('UZ', 'Uzbekistan'),
+  _CountryEntry('VU', 'Vanuatu'),
+  _CountryEntry('VA', 'Vatican City'),
+  _CountryEntry('VE', 'Venezuela'),
+  _CountryEntry('VN', 'Vietnam'),
+  _CountryEntry('YE', 'Yemen'),
+  _CountryEntry('ZM', 'Zambia'),
+  _CountryEntry('ZW', 'Zimbabwe'),
+];
 
 // ---------------------------------------------------------------------------
 // Export Data dialog

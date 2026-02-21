@@ -6,6 +6,7 @@ import '../../game/map/region.dart';
 import '../models/avatar_config.dart';
 import '../models/pilot_license.dart';
 import '../models/player.dart';
+import '../models/social_title.dart';
 import '../services/user_preferences_service.dart';
 
 /// Current account state.
@@ -18,6 +19,7 @@ class AccountState {
     this.ownedAvatarParts = const {},
     this.equippedPlaneId = 'plane_default',
     this.equippedContrailId = 'contrail_default',
+    this.equippedTitleId,
     this.lastFreeRerollDate,
     this.lastDailyChallengeDate,
   }) : avatar = avatar ?? const AvatarConfig(),
@@ -45,6 +47,10 @@ class AccountState {
 
   /// Currently equipped contrail cosmetic ID.
   final String equippedContrailId;
+
+  /// The [SocialTitle.id] the player has chosen to display on their profile.
+  /// `null` means no title is shown.
+  final String? equippedTitleId;
 
   /// Date of the last free licence reroll (YYYY-MM-DD string).
   /// null means the player has never used a free reroll.
@@ -84,6 +90,13 @@ class AccountState {
     return lastDailyChallengeDate == todayStr;
   }
 
+  /// Convenience: resolves [equippedTitleId] to a [SocialTitle] object.
+  /// Returns `null` when no title is equipped or the ID is unknown.
+  SocialTitle? get equippedTitle {
+    if (equippedTitleId == null) return null;
+    return SocialTitleCatalog.getById(equippedTitleId!);
+  }
+
   AccountState copyWith({
     Player? currentPlayer,
     Set<String>? unlockedRegions,
@@ -92,6 +105,8 @@ class AccountState {
     Set<String>? ownedAvatarParts,
     String? equippedPlaneId,
     String? equippedContrailId,
+    // Use Object? sentinel to allow explicitly passing null to clear the title.
+    Object? equippedTitleId = _sentinel,
     String? lastFreeRerollDate,
     String? lastDailyChallengeDate,
   }) => AccountState(
@@ -102,11 +117,18 @@ class AccountState {
     ownedAvatarParts: ownedAvatarParts ?? this.ownedAvatarParts,
     equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
     equippedContrailId: equippedContrailId ?? this.equippedContrailId,
+    equippedTitleId: equippedTitleId == _sentinel
+        ? this.equippedTitleId
+        : equippedTitleId as String?,
     lastFreeRerollDate: lastFreeRerollDate ?? this.lastFreeRerollDate,
     lastDailyChallengeDate:
         lastDailyChallengeDate ?? this.lastDailyChallengeDate,
   );
 }
+
+// Sentinel used by [AccountState.copyWith] to distinguish "not provided" from
+// an explicit `null` for [equippedTitleId].
+const Object _sentinel = Object();
 
 /// Account state notifier.
 class AccountNotifier extends StateNotifier<AccountState> {
@@ -143,6 +165,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       ownedAvatarParts: snapshot.ownedAvatarParts,
       equippedPlaneId: snapshot.equippedPlaneId,
       equippedContrailId: snapshot.equippedContrailId,
+      equippedTitleId: snapshot.equippedTitleId,
       lastFreeRerollDate: snapshot.lastFreeRerollDate,
       lastDailyChallengeDate: snapshot.lastDailyChallengeDate,
     );
@@ -189,6 +212,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       ownedAvatarParts: state.ownedAvatarParts,
       equippedPlaneId: state.equippedPlaneId,
       equippedContrailId: state.equippedContrailId,
+      equippedTitleId: state.equippedTitleId,
       lastFreeRerollDate: state.lastFreeRerollDate,
       lastDailyChallengeDate: state.lastDailyChallengeDate,
     );
@@ -315,6 +339,40 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _syncProfile();
   }
 
+  /// Record correct answers per clue type.
+  ///
+  /// Call this after each round with the breakdown of clue types the player
+  /// answered correctly this round.
+  void recordClueAnswers({
+    int flags = 0,
+    int capitals = 0,
+    int outlines = 0,
+    int borders = 0,
+    int stats = 0,
+  }) {
+    final p = state.currentPlayer;
+    state = state.copyWith(
+      currentPlayer: p.copyWith(
+        flagsCorrect: p.flagsCorrect + flags,
+        capitalsCorrect: p.capitalsCorrect + capitals,
+        outlinesCorrect: p.outlinesCorrect + outlines,
+        bordersCorrect: p.bordersCorrect + borders,
+        statsCorrect: p.statsCorrect + stats,
+      ),
+    );
+    _syncProfile();
+  }
+
+  /// Update the player's best streak if [streak] is higher than the current.
+  void updateBestStreak(int streak) {
+    if (streak > state.currentPlayer.bestStreak) {
+      state = state.copyWith(
+        currentPlayer: state.currentPlayer.copyWith(bestStreak: streak),
+      );
+      _syncProfile();
+    }
+  }
+
   /// Record a completed game session — updates all relevant stats in one call.
   ///
   /// Licence bonuses always apply (there is no unlicensed flight mode).
@@ -397,11 +455,37 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _syncAccountState();
   }
 
+  /// Equip a social title by [titleId].
+  ///
+  /// Silently does nothing if the title ID is not in the catalog. Call
+  /// [clearEquippedTitle] to remove the active title.
+  void equipTitle(String titleId) {
+    // Guard: only allow equipping real catalog titles.
+    if (SocialTitleCatalog.getById(titleId) == null) return;
+    state = state.copyWith(equippedTitleId: titleId);
+    _syncAccountState();
+  }
+
+  /// Remove the currently displayed title.
+  void clearEquippedTitle() {
+    // Explicit null — use the sentinel-aware copyWith.
+    state = state.copyWith(equippedTitleId: null);
+    _syncAccountState();
+  }
+
   // --- Pilot License ---
 
   /// Directly set the pilot license (used when LicenseScreen rerolls locally).
   void updateLicense(PilotLicense license) {
     state = state.copyWith(license: license);
+    _syncAccountState();
+  }
+
+  /// Update the pilot's nationality (ISO 3166-1 alpha-2 code).
+  void updateNationality(String? nationality) {
+    state = state.copyWith(
+      license: state.license.copyWith(nationality: nationality),
+    );
     _syncAccountState();
   }
 
@@ -531,4 +615,9 @@ final licenseProvider = Provider<PilotLicense>((ref) {
 /// Convenience provider for equipped plane ID
 final equippedPlaneIdProvider = Provider<String>((ref) {
   return ref.watch(accountProvider).equippedPlaneId;
+});
+
+/// Convenience provider for the currently equipped social title (may be null).
+final equippedTitleProvider = Provider<SocialTitle?>((ref) {
+  return ref.watch(accountProvider).equippedTitle;
 });

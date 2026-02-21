@@ -10,6 +10,7 @@ import '../daily/daily_challenge_screen.dart';
 import '../friends/friends_screen.dart';
 import '../guide/gameplay_guide_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
+import '../matchmaking/find_challenger_screen.dart';
 import '../play/practice_screen.dart';
 import '../play/region_select_screen.dart';
 import '../profile/profile_screen.dart';
@@ -281,6 +282,16 @@ class _HomeScreenState extends State<HomeScreen>
               subtitle: 'Challenge your friends head-to-head',
               icon: Icons.people_rounded,
               onTap: () => _closeSheetAndNavigate(ctx, const FriendsScreen()),
+            ),
+            const SizedBox(height: 10),
+            _GameModeCard(
+              title: 'Find a Challenger',
+              subtitle: 'Matchmake against pilots at your level',
+              icon: Icons.radar,
+              onTap: () => _closeSheetAndNavigate(
+                ctx,
+                const FindChallengerScreen(),
+              ),
             ),
             const SizedBox(height: 16),
           ],

@@ -102,6 +102,12 @@ class UserPreferencesService {
       'best_time_ms': player.bestTime?.inMilliseconds,
       'total_flight_time_ms': player.totalFlightTime.inMilliseconds,
       'countries_found': player.countriesFound,
+      'flags_correct': player.flagsCorrect,
+      'capitals_correct': player.capitalsCorrect,
+      'outlines_correct': player.outlinesCorrect,
+      'borders_correct': player.bordersCorrect,
+      'stats_correct': player.statsCorrect,
+      'best_streak': player.bestStreak,
     };
     _scheduleSave();
   }
@@ -136,6 +142,7 @@ class UserPreferencesService {
     required Set<String> ownedAvatarParts,
     required String equippedPlaneId,
     required String equippedContrailId,
+    String? equippedTitleId,
     String? lastFreeRerollDate,
     String? lastDailyChallengeDate,
   }) {
@@ -148,6 +155,7 @@ class UserPreferencesService {
       'owned_avatar_parts': ownedAvatarParts.toList(),
       'equipped_plane_id': equippedPlaneId,
       'equipped_contrail_id': equippedContrailId,
+      'equipped_title_id': equippedTitleId,
       'last_free_reroll_date': lastFreeRerollDate,
       'last_daily_challenge_date': lastDailyChallengeDate,
     };
@@ -343,6 +351,11 @@ class UserPreferencesSnapshot {
   String get equippedContrailId {
     final data = accountState;
     return data?['equipped_contrail_id'] as String? ?? 'contrail_default';
+  }
+
+  String? get equippedTitleId {
+    final data = accountState;
+    return data?['equipped_title_id'] as String?;
   }
 
   String? get lastFreeRerollDate {
