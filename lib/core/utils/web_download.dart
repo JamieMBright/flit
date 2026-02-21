@@ -1,5 +1,4 @@
-import 'web_download_stub.dart'
-    if (dart.library.html) 'web_download_web.dart';
+import 'web_download_stub.dart' if (dart.library.html) 'web_download_web.dart';
 
 /// Cross-platform file download/share helper.
 ///

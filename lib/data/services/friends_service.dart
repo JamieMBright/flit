@@ -119,8 +119,9 @@ class FriendsService {
       return data.map<Friend>((row) {
         // The "friend" is whichever party isn't the current user.
         final isRequester = row['requester_id'] == _userId;
-        final profile = (isRequester ? row['addressee'] : row['requester'])
-            as Map<String, dynamic>;
+        final profile =
+            (isRequester ? row['addressee'] : row['requester'])
+                as Map<String, dynamic>;
         return Friend(
           id: row['id'].toString(),
           playerId: profile['id'] as String,
@@ -137,7 +138,18 @@ class FriendsService {
   }
 
   /// Fetch pending friend requests where the current user is the addressee.
-  Future<List<({int friendshipId, String requesterId, String username, String? displayName, String? avatarUrl})>> fetchPendingRequests() async {
+  Future<
+    List<
+      ({
+        int friendshipId,
+        String requesterId,
+        String username,
+        String? displayName,
+        String? avatarUrl,
+      })
+    >
+  >
+  fetchPendingRequests() async {
     if (_userId == null) return [];
     try {
       final data = await _client

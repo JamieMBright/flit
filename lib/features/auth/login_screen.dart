@@ -696,8 +696,7 @@ class _AuthButton extends StatelessWidget {
 class _PrivacyLink extends StatelessWidget {
   const _PrivacyLink();
 
-  static const String _privacyUrl =
-      'https://flit-olive.vercel.app/privacy';
+  static const String _privacyUrl = 'https://flit-olive.vercel.app/privacy';
 
   void _showPrivacyDialog(BuildContext context) {
     showDialog<void>(
@@ -722,17 +721,11 @@ class _PrivacyLink extends StatelessWidget {
           children: [
             const Text(
               'Read our full privacy policy at:',
-              style: TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: FlitColors.backgroundDark,
                 borderRadius: BorderRadius.circular(6),

@@ -154,5 +154,4 @@ class Player {
         ? DateTime.parse(json['created_at'] as String)
         : null,
   );
-
 }

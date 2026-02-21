@@ -183,10 +183,7 @@ class PlaneRenderer {
     double opacity = 0.18,
   }) {
     final gradient = RadialGradient(
-      colors: [
-        Colors.black.withOpacity(opacity),
-        Colors.transparent,
-      ],
+      colors: [Colors.black.withOpacity(opacity), Colors.transparent],
     );
     final paint = Paint()
       ..shader = gradient.createShader(
@@ -212,7 +209,13 @@ class PlaneRenderer {
     switch (planeId) {
       case 'plane_paper':
         _renderPaperPlane(
-            canvas, bankCos, bankSin, wingSpan, colorScheme, planeId);
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          planeId,
+        );
         break;
       case 'plane_jet':
       case 'plane_rocket':
@@ -228,7 +231,13 @@ class PlaneRenderer {
         break;
       case 'plane_stealth':
         _renderStealthPlane(
-            canvas, bankCos, bankSin, wingSpan, colorScheme, planeId);
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          planeId,
+        );
         break;
       case 'plane_red_baron':
         _renderTriplane(
@@ -244,7 +253,13 @@ class PlaneRenderer {
       case 'plane_concorde_classic':
       case 'plane_diamond_concorde':
         _renderConcorde(
-            canvas, bankCos, bankSin, wingSpan, colorScheme, planeId);
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          planeId,
+        );
         break;
       case 'plane_seaplane':
         _renderSeaplane(
@@ -259,11 +274,23 @@ class PlaneRenderer {
         break;
       case 'plane_bryanair':
         _renderAirliner(
-            canvas, bankCos, bankSin, wingSpan, colorScheme, planeId);
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          planeId,
+        );
         break;
       case 'plane_air_force_one':
         _renderAirForceOne(
-            canvas, bankCos, bankSin, wingSpan, colorScheme, planeId);
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          planeId,
+        );
         break;
       case 'plane_platinum_eagle':
         _renderEagle(canvas, bankCos, bankSin, wingSpan, colorScheme, planeId);
@@ -630,8 +657,13 @@ class PlaneRenderer {
       spacing: 6.0,
       opacity: 0.09,
     );
-    _pencilOutline(leftWing, canvas, leftWingColor,
-        strokeWidth: 1.1, opacity: 0.50);
+    _pencilOutline(
+      leftWing,
+      canvas,
+      leftWingColor,
+      strokeWidth: 1.1,
+      opacity: 0.50,
+    );
 
     // --- Right wing ---
     final rightWing = Path()
@@ -650,8 +682,13 @@ class PlaneRenderer {
       spacing: 6.0,
       opacity: 0.09,
     );
-    _pencilOutline(rightWing, canvas, rightWingColor,
-        strokeWidth: 1.1, opacity: 0.50);
+    _pencilOutline(
+      rightWing,
+      canvas,
+      rightWingColor,
+      strokeWidth: 1.1,
+      opacity: 0.50,
+    );
 
     // --- Center body / keel (the folded ridge) ---
     canvas.save();
@@ -975,8 +1012,11 @@ class PlaneRenderer {
     // --- Three stacked wings ---
     // Top wing (smallest) — draw as path for sketch outline support
     final topSpan = dynamicWingSpan * 0.7;
-    final topWingRect =
-        Rect.fromCenter(center: Offset(0, -6 + wingDip * 0.3), width: topSpan * 2, height: 5);
+    final topWingRect = Rect.fromCenter(
+      center: Offset(0, -6 + wingDip * 0.3),
+      width: topSpan * 2,
+      height: 5,
+    );
     canvas.drawRRect(
       RRect.fromRectAndRadius(topWingRect, const Radius.circular(2)),
       Paint()..color = wingColor,
@@ -985,32 +1025,44 @@ class PlaneRenderer {
     _crossHatch(canvas, topWingRect, wingColor, spacing: 4.0, opacity: 0.11);
     // Pencil outline on top wing
     final topWingPath = Path()
-      ..addRRect(RRect.fromRectAndRadius(topWingRect, const Radius.circular(2)));
+      ..addRRect(
+        RRect.fromRectAndRadius(topWingRect, const Radius.circular(2)),
+      );
     _pencilOutline(topWingPath, canvas, wingColor, strokeWidth: 0.9);
 
     // Middle wing
     final midSpan = dynamicWingSpan * 0.85;
-    final midWingRect =
-        Rect.fromCenter(center: Offset(0, 0 + wingDip * 0.6), width: midSpan * 2, height: 5);
+    final midWingRect = Rect.fromCenter(
+      center: Offset(0, 0 + wingDip * 0.6),
+      width: midSpan * 2,
+      height: 5,
+    );
     canvas.drawRRect(
       RRect.fromRectAndRadius(midWingRect, const Radius.circular(2)),
       Paint()..color = wingColor,
     );
     _crossHatch(canvas, midWingRect, wingColor, spacing: 4.0, opacity: 0.11);
     final midWingPath = Path()
-      ..addRRect(RRect.fromRectAndRadius(midWingRect, const Radius.circular(2)));
+      ..addRRect(
+        RRect.fromRectAndRadius(midWingRect, const Radius.circular(2)),
+      );
     _pencilOutline(midWingPath, canvas, wingColor, strokeWidth: 0.9);
 
     // Bottom wing (largest)
-    final botWingRect =
-        Rect.fromCenter(center: Offset(0, 6 + wingDip), width: dynamicWingSpan * 2, height: 5);
+    final botWingRect = Rect.fromCenter(
+      center: Offset(0, 6 + wingDip),
+      width: dynamicWingSpan * 2,
+      height: 5,
+    );
     canvas.drawRRect(
       RRect.fromRectAndRadius(botWingRect, const Radius.circular(2)),
       Paint()..color = wingColor,
     );
     _crossHatch(canvas, botWingRect, wingColor, spacing: 4.0, opacity: 0.11);
     final botWingPath = Path()
-      ..addRRect(RRect.fromRectAndRadius(botWingRect, const Radius.circular(2)));
+      ..addRRect(
+        RRect.fromRectAndRadius(botWingRect, const Radius.circular(2)),
+      );
     _pencilOutline(botWingPath, canvas, wingColor, strokeWidth: 0.9);
 
     // AO at fuselage-wing junctions
@@ -1247,9 +1299,15 @@ class PlaneRenderer {
     // Pencil outline on pontoon for hand-drawn feel
     final leftPontoonPath = Path()
       ..addRRect(
-          RRect.fromRectAndRadius(leftPontoonRect, const Radius.circular(3)));
-    _pencilOutline(leftPontoonPath, canvas, detail,
-        strokeWidth: 0.9, opacity: 0.45);
+        RRect.fromRectAndRadius(leftPontoonRect, const Radius.circular(3)),
+      );
+    _pencilOutline(
+      leftPontoonPath,
+      canvas,
+      detail,
+      strokeWidth: 0.9,
+      opacity: 0.45,
+    );
 
     final rightPontoonRect = Rect.fromCenter(
       center: Offset(dynamicWingSpan * 0.5, 12 - wingDip),
@@ -1262,9 +1320,15 @@ class PlaneRenderer {
     );
     final rightPontoonPath = Path()
       ..addRRect(
-          RRect.fromRectAndRadius(rightPontoonRect, const Radius.circular(3)));
-    _pencilOutline(rightPontoonPath, canvas, detail,
-        strokeWidth: 0.9, opacity: 0.45);
+        RRect.fromRectAndRadius(rightPontoonRect, const Radius.circular(3)),
+      );
+    _pencilOutline(
+      rightPontoonPath,
+      canvas,
+      detail,
+      strokeWidth: 0.9,
+      opacity: 0.45,
+    );
 
     // Struts connecting pontoons to wings
     final strutPaint = Paint()
@@ -1283,7 +1347,14 @@ class PlaneRenderer {
 
     // Delegate to bi-plane for the main body
     _renderBiPlane(
-        canvas, bankCos, bankSin, wingSpan, colorScheme, propAngle, planeId);
+      canvas,
+      bankCos,
+      bankSin,
+      wingSpan,
+      colorScheme,
+      propAngle,
+      planeId,
+    );
   }
 
   // ─── Airliner (Bryanair, Air Force One) ─────────────────────────────

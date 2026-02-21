@@ -383,18 +383,22 @@ void main() {
       expect(clueTypes, contains(license.preferredClueType));
     });
 
-    test('returns random license when license_data is null in account_state', () {
-      final accountState = Map<String, dynamic>.from(_accountStateWithLicense())
-        ..['license_data'] = null;
-      final snapshot = UserPreferencesSnapshot(
-        profile: _baseProfile(),
-        accountState: accountState,
-      );
-      final license = snapshot.toPilotLicense();
+    test(
+      'returns random license when license_data is null in account_state',
+      () {
+        final accountState = Map<String, dynamic>.from(
+          _accountStateWithLicense(),
+        )..['license_data'] = null;
+        final snapshot = UserPreferencesSnapshot(
+          profile: _baseProfile(),
+          accountState: accountState,
+        );
+        final license = snapshot.toPilotLicense();
 
-      expect(license.coinBoost, inInclusiveRange(1, 25));
-      expect(clueTypes, contains(license.preferredClueType));
-    });
+        expect(license.coinBoost, inInclusiveRange(1, 25));
+        expect(clueTypes, contains(license.preferredClueType));
+      },
+    );
 
     test('returns random license when license_data is empty map', () {
       final accountState = Map<String, dynamic>.from(_accountStateWithLicense())
@@ -458,13 +462,16 @@ void main() {
       expect(snapshot.equippedPlaneId, equals('plane_default'));
     });
 
-    test('equippedContrailId defaults to contrail_default when no account_state', () {
-      final snapshot = UserPreferencesSnapshot(
-        profile: _baseProfile(),
-        accountState: null,
-      );
-      expect(snapshot.equippedContrailId, equals('contrail_default'));
-    });
+    test(
+      'equippedContrailId defaults to contrail_default when no account_state',
+      () {
+        final snapshot = UserPreferencesSnapshot(
+          profile: _baseProfile(),
+          accountState: null,
+        );
+        expect(snapshot.equippedContrailId, equals('contrail_default'));
+      },
+    );
 
     test('equippedPlaneId reads from account_state', () {
       final snapshot = UserPreferencesSnapshot(

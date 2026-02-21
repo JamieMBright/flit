@@ -129,8 +129,8 @@ class PerfMonitor {
   /// Average FPS over the rolling window. Returns 0.0 if no frames recorded.
   double get avgFps {
     if (_frameDurationsUs.isEmpty) return 0.0;
-    final avgUs = _frameDurationsUs.fold(0, (a, b) => a + b) /
-        _frameDurationsUs.length;
+    final avgUs =
+        _frameDurationsUs.fold(0, (a, b) => a + b) / _frameDurationsUs.length;
     return avgUs > 0 ? 1e6 / avgUs : 0.0;
   }
 

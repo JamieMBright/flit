@@ -308,12 +308,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (player.id.isEmpty || player.id == 'guest') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Data export is not available for guest accounts'),
+          content: const Text(
+            'Data export is not available for guest accounts',
+          ),
           backgroundColor: FlitColors.warning,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
       return;
@@ -339,16 +339,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           backgroundColor: FlitColors.warning,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
       return;
     }
 
-    final userEmail =
-        Supabase.instance.client.auth.currentUser?.email ?? '';
+    final userEmail = Supabase.instance.client.auth.currentUser?.email ?? '';
 
     showDialog<void>(
       context: context,
@@ -912,10 +909,7 @@ class _QuickLinkButton extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _NationalitySection extends StatelessWidget {
-  const _NationalitySection({
-    required this.nationality,
-    required this.onTap,
-  });
+  const _NationalitySection({required this.nationality, required this.onTap});
 
   final String? nationality;
   final VoidCallback onTap;
@@ -964,7 +958,9 @@ class _NationalitySection extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      _NationalityPickerSheet.countryNameForCode(nationality!) ??
+                      _NationalityPickerSheet.countryNameForCode(
+                            nationality!,
+                          ) ??
                           nationality!,
                       style: const TextStyle(
                         color: FlitColors.textPrimary,
@@ -975,18 +971,12 @@ class _NationalitySection extends StatelessWidget {
                 ),
               ),
             ] else ...[
-              const Icon(
-                Icons.flag_outlined,
-                color: FlitColors.textSecondary,
-              ),
+              const Icon(Icons.flag_outlined, color: FlitColors.textSecondary),
               const SizedBox(width: 12),
               const Expanded(
                 child: Text(
                   'Set Nationality',
-                  style: TextStyle(
-                    color: FlitColors.textPrimary,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(color: FlitColors.textPrimary, fontSize: 16),
                 ),
               ),
             ],
@@ -1369,10 +1359,7 @@ const List<_CountryEntry> _countries = [
 // ---------------------------------------------------------------------------
 
 class _ExportDataDialog extends StatefulWidget {
-  const _ExportDataDialog({
-    required this.userId,
-    required this.email,
-  });
+  const _ExportDataDialog({required this.userId, required this.email});
 
   final String userId;
   final String? email;
@@ -1426,9 +1413,7 @@ class _ExportDataDialogState extends State<_ExportDataDialog> {
           content: const Text('Download started'),
           backgroundColor: FlitColors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
     } else {
@@ -1440,9 +1425,7 @@ class _ExportDataDialogState extends State<_ExportDataDialog> {
           content: const Text('Data copied to clipboard'),
           backgroundColor: FlitColors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
     }
@@ -1473,45 +1456,42 @@ class _ExportDataDialogState extends State<_ExportDataDialog> {
               ],
             )
           : _error != null
-              ? Text(
-                  _error!,
-                  style: const TextStyle(color: FlitColors.error),
-                )
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Your data is ready to export. This includes your '
-                      'profile, stats, settings, scores history, friends '
-                      'list, and challenge history.',
-                      style: TextStyle(
-                        color: FlitColors.textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      constraints: const BoxConstraints(maxHeight: 200),
-                      decoration: BoxDecoration(
-                        color: FlitColors.backgroundDark,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: FlitColors.cardBorder),
-                      ),
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(12),
-                        child: Text(
-                          _jsonData ?? '',
-                          style: const TextStyle(
-                            color: FlitColors.textMuted,
-                            fontSize: 11,
-                            fontFamily: 'monospace',
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+          ? Text(_error!, style: const TextStyle(color: FlitColors.error))
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Your data is ready to export. This includes your '
+                  'profile, stats, settings, scores history, friends '
+                  'list, and challenge history.',
+                  style: TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 14,
+                  ),
                 ),
+                const SizedBox(height: 12),
+                Container(
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  decoration: BoxDecoration(
+                    color: FlitColors.backgroundDark,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: FlitColors.cardBorder),
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      _jsonData ?? '',
+                      style: const TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 11,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -1567,7 +1547,8 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
   }
 
   void _checkEmail() {
-    final matches = _emailController.text.trim().toLowerCase() ==
+    final matches =
+        _emailController.text.trim().toLowerCase() ==
         widget.userEmail.toLowerCase();
     if (matches != _emailMatches) {
       setState(() => _emailMatches = matches);
@@ -1586,10 +1567,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
         children: [
           Icon(Icons.warning_amber_rounded, color: FlitColors.error, size: 24),
           SizedBox(width: 8),
-          Text(
-            'Delete Account',
-            style: TextStyle(color: FlitColors.error),
-          ),
+          Text('Delete Account', style: TextStyle(color: FlitColors.error)),
         ],
       ),
       content: Column(
@@ -1826,8 +1804,18 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
 
   static String _monthAbbr(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return months[month - 1];
   }

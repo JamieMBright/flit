@@ -211,26 +211,29 @@ void main() {
       expect(state.error, isNotNull);
     });
 
-    test('well-formed email passes validation and proceeds to network phase', () async {
-      // A valid email clears the email validation guard. The call will then
-      // reach the username check. Since username is valid and password is
-      // valid, the Supabase network call would be next — which will throw in
-      // the test environment. AuthService catches all generic exceptions and
-      // maps them to a user-facing "Something went wrong" error, so the state
-      // will have an error but it will NOT be the email validation error.
-      final state = await service.signUpWithEmail(
-        email: 'pilot@example.com',
-        password: 'password123',
-        username: 'validuser',
-      );
+    test(
+      'well-formed email passes validation and proceeds to network phase',
+      () async {
+        // A valid email clears the email validation guard. The call will then
+        // reach the username check. Since username is valid and password is
+        // valid, the Supabase network call would be next — which will throw in
+        // the test environment. AuthService catches all generic exceptions and
+        // maps them to a user-facing "Something went wrong" error, so the state
+        // will have an error but it will NOT be the email validation error.
+        final state = await service.signUpWithEmail(
+          email: 'pilot@example.com',
+          password: 'password123',
+          username: 'validuser',
+        );
 
-      // The email guard did NOT fire — no email-specific error message.
-      expect(
-        state.error,
-        isNot(contains('valid email')),
-        reason: 'A well-formed email should not trigger the email error',
-      );
-    });
+        // The email guard did NOT fire — no email-specific error message.
+        expect(
+          state.error,
+          isNot(contains('valid email')),
+          reason: 'A well-formed email should not trigger the email error',
+        );
+      },
+    );
   });
 
   // -------------------------------------------------------------------------

@@ -185,10 +185,7 @@ class SocialTitlesCard extends ConsumerWidget {
 // ---------------------------------------------------------------------------
 
 class _EquippedTitleBanner extends StatelessWidget {
-  const _EquippedTitleBanner({
-    required this.title,
-    required this.onClear,
-  });
+  const _EquippedTitleBanner({required this.title, required this.onClear});
 
   final SocialTitle title;
   final VoidCallback onClear;
@@ -206,11 +203,7 @@ class _EquippedTitleBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            _rarityIcon(title.rarity),
-            color: rarityColor,
-            size: 18,
-          ),
+          Icon(_rarityIcon(title.rarity), color: rarityColor, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -297,8 +290,7 @@ class _TitleChip extends StatelessWidget {
               style: TextStyle(
                 color: isEquipped ? rarityColor : FlitColors.textSecondary,
                 fontSize: 12,
-                fontWeight:
-                    isEquipped ? FontWeight.bold : FontWeight.normal,
+                fontWeight: isEquipped ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ],
@@ -375,10 +367,7 @@ class _TitleProgressRow extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             '$pct% — ${title.description}',
-            style: const TextStyle(
-              color: FlitColors.textMuted,
-              fontSize: 10,
-            ),
+            style: const TextStyle(color: FlitColors.textMuted, fontSize: 10),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

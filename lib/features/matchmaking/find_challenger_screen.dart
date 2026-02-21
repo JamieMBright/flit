@@ -195,14 +195,13 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
               planeHandling: plane?.handling ?? 1.0,
               planeSpeed: plane?.speed ?? 1.0,
               planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
-              contrailPrimaryColor:
-                  contrail?.colorScheme?['primary'] != null
-                      ? Color(contrail!.colorScheme!['primary']!)
-                      : null,
+              contrailPrimaryColor: contrail?.colorScheme?['primary'] != null
+                  ? Color(contrail!.colorScheme!['primary']!)
+                  : null,
               contrailSecondaryColor:
                   contrail?.colorScheme?['secondary'] != null
-                      ? Color(contrail!.colorScheme!['secondary']!)
-                      : null,
+                  ? Color(contrail!.colorScheme!['secondary']!)
+                  : null,
             ),
           ),
         )
@@ -251,8 +250,7 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
               // Main action area
               Expanded(child: _buildStateContent()),
               // Pool entries
-              if (_poolEntries.isNotEmpty &&
-                  _state != _MatchState.matched) ...[
+              if (_poolEntries.isNotEmpty && _state != _MatchState.matched) ...[
                 const Divider(color: FlitColors.cardBorder, height: 1),
                 _PoolEntriesSection(
                   entries: _poolEntries,
@@ -308,71 +306,71 @@ class _EloCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.cardBorder),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: FlitColors.cardBackground,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: FlitColors.cardBorder),
+    ),
+    child: Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: FlitColors.accent.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.military_tech,
+            color: FlitColors.accent,
+            size: 28,
+          ),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: FlitColors.accent.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.military_tech,
-                color: FlitColors.accent,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'YOUR RATING',
-                    style: TextStyle(
-                      color: FlitColors.textMuted,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$elo ELO',
-                    style: const TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: FlitColors.gold.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Lv. $level',
-                style: const TextStyle(
-                  color: FlitColors.gold,
-                  fontSize: 13,
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'YOUR RATING',
+                style: TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 10,
                   fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 2),
+              Text(
+                '$elo ELO',
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
         ),
-      );
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: FlitColors.gold.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            'Lv. $level',
+            style: const TextStyle(
+              color: FlitColors.gold,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _ReadyContent extends StatelessWidget {
@@ -382,96 +380,92 @@ class _ReadyContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.radar,
-              color: FlitColors.accent,
-              size: 72,
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'FIND A CHALLENGER',
-              style: TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'Submit your challenge to the matchmaking pool. '
-                "We'll find an opponent near your skill level.",
-                style: TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 14,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: FlitColors.backgroundMid,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.public, color: FlitColors.textMuted, size: 16),
-                  SizedBox(width: 6),
-                  Text(
-                    'World mode only',
-                    style: TextStyle(
-                      color: FlitColors.textMuted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: 220,
-              child: ElevatedButton(
-                onPressed: onFindChallenger,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FlitColors.accent,
-                  foregroundColor: FlitColors.textPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 4,
-                  shadowColor: FlitColors.accent.withOpacity(0.4),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.search, size: 22),
-                    SizedBox(width: 10),
-                    Text(
-                      'SEARCH',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.radar, color: FlitColors.accent, size: 72),
+        const SizedBox(height: 20),
+        const Text(
+          'FIND A CHALLENGER',
+          style: TextStyle(
+            color: FlitColors.textPrimary,
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
+          ),
         ),
-      );
+        const SizedBox(height: 12),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'Submit your challenge to the matchmaking pool. '
+            "We'll find an opponent near your skill level.",
+            style: TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 14,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: FlitColors.backgroundMid,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.public, color: FlitColors.textMuted, size: 16),
+              SizedBox(width: 6),
+              Text(
+                'World mode only',
+                style: TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+        SizedBox(
+          width: 220,
+          child: ElevatedButton(
+            onPressed: onFindChallenger,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FlitColors.accent,
+              foregroundColor: FlitColors.textPrimary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 4,
+              shadowColor: FlitColors.accent.withOpacity(0.4),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.search, size: 22),
+                SizedBox(width: 10),
+                Text(
+                  'SEARCH',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _LoadingContent extends StatelessWidget {
@@ -481,21 +475,18 @@ class _LoadingContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(color: FlitColors.accent),
-            const SizedBox(height: 20),
-            Text(
-              message,
-              style: const TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 14,
-              ),
-            ),
-          ],
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const CircularProgressIndicator(color: FlitColors.accent),
+        const SizedBox(height: 20),
+        Text(
+          message,
+          style: const TextStyle(color: FlitColors.textSecondary, fontSize: 14),
         ),
-      );
+      ],
+    ),
+  );
 }
 
 class _SearchingContent extends StatelessWidget {
@@ -505,283 +496,249 @@ class _SearchingContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedBuilder(
-              animation: pulseController,
-              builder: (context, child) => Transform.scale(
-                scale: 1.0 + pulseController.value * 0.15,
-                child: Icon(
-                  Icons.radar,
-                  color: FlitColors.accent.withOpacity(
-                    0.5 + pulseController.value * 0.5,
-                  ),
-                  size: 72,
-                ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        AnimatedBuilder(
+          animation: pulseController,
+          builder: (context, child) => Transform.scale(
+            scale: 1.0 + pulseController.value * 0.15,
+            child: Icon(
+              Icons.radar,
+              color: FlitColors.accent.withOpacity(
+                0.5 + pulseController.value * 0.5,
               ),
+              size: 72,
             ),
-            const SizedBox(height: 20),
-            const Text(
-              'SEARCHING...',
-              style: TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 3,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Looking for a worthy opponent',
-              style: TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 14,
-              ),
-            ),
-          ],
+          ),
         ),
-      );
+        const SizedBox(height: 20),
+        const Text(
+          'SEARCHING...',
+          style: TextStyle(
+            color: FlitColors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 3,
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Looking for a worthy opponent',
+          style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+        ),
+      ],
+    ),
+  );
 }
 
 class _MatchedContent extends StatelessWidget {
-  const _MatchedContent({
-    required this.matchResult,
-    required this.onPlay,
-  });
+  const _MatchedContent({required this.matchResult, required this.onPlay});
 
   final MatchResult matchResult;
   final VoidCallback onPlay;
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.flight_takeoff,
-              color: FlitColors.gold,
-              size: 56,
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.flight_takeoff, color: FlitColors.gold, size: 56),
+        const SizedBox(height: 16),
+        const Text(
+          'OPPONENT FOUND!',
+          style: TextStyle(
+            color: FlitColors.gold,
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: FlitColors.cardBackground,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: FlitColors.gold.withOpacity(0.4)),
+          ),
+          child: Column(
+            children: [
+              const Icon(
+                Icons.person,
+                color: FlitColors.textSecondary,
+                size: 48,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                matchResult.opponentName ?? 'Challenger',
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Ready to dogfight!',
+                style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: FlitColors.warning.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: FlitColors.warning.withOpacity(0.3)),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.info_outline, color: FlitColors.warning, size: 14),
+              SizedBox(width: 6),
+              Text(
+                '5 rounds \u2022 No retries',
+                style: TextStyle(
+                  color: FlitColors.warning,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: 220,
+          child: ElevatedButton(
+            onPressed: onPlay,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FlitColors.accent,
+              foregroundColor: FlitColors.textPrimary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 4,
+              shadowColor: FlitColors.accent.withOpacity(0.4),
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'OPPONENT FOUND!',
+            child: const Text(
+              "LET'S GO!",
               style: TextStyle(
-                color: FlitColors.gold,
-                fontSize: 22,
+                fontSize: 16,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 2,
               ),
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: FlitColors.cardBackground,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: FlitColors.gold.withOpacity(0.4),
-                ),
-              ),
-              child: Column(
-                children: [
-                  const Icon(
-                    Icons.person,
-                    color: FlitColors.textSecondary,
-                    size: 48,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    matchResult.opponentName ?? 'Challenger',
-                    style: const TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Ready to dogfight!',
-                    style: TextStyle(
-                      color: FlitColors.textSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: FlitColors.warning.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: FlitColors.warning.withOpacity(0.3),
-                ),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: FlitColors.warning,
-                    size: 14,
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    '5 rounds \u2022 No retries',
-                    style: TextStyle(
-                      color: FlitColors.warning,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: 220,
-              child: ElevatedButton(
-                onPressed: onPlay,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FlitColors.accent,
-                  foregroundColor: FlitColors.textPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 4,
-                  shadowColor: FlitColors.accent.withOpacity(0.4),
-                ),
-                child: const Text(
-                  "LET'S GO!",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2,
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }
 
 class _WaitingContent extends StatelessWidget {
-  const _WaitingContent({
-    required this.entryCount,
-    required this.onCheckAgain,
-  });
+  const _WaitingContent({required this.entryCount, required this.onCheckAgain});
 
   final int entryCount;
   final VoidCallback onCheckAgain;
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Column(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.hourglass_top,
+          color: FlitColors.gold.withOpacity(0.7),
+          size: 56,
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'IN THE POOL',
+          style: TextStyle(
+            color: FlitColors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            'Your challenge is in the matchmaking pool! '
+            "We'll notify you when an opponent is found.\n\n"
+            'You have $entryCount active '
+            '${entryCount == 1 ? 'submission' : 'submissions'} waiting.',
+            style: const TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 14,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 24),
+        Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.hourglass_top,
-              color: FlitColors.gold.withOpacity(0.7),
-              size: 56,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'IN THE POOL',
-              style: TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                'Your challenge is in the matchmaking pool! '
-                "We'll notify you when an opponent is found.\n\n"
-                'You have $entryCount active '
-                '${entryCount == 1 ? 'submission' : 'submissions'} waiting.',
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 14,
-                  height: 1.5,
+            OutlinedButton.icon(
+              onPressed: onCheckAgain,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('CHECK AGAIN'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: FlitColors.accent,
+                side: const BorderSide(color: FlitColors.accent),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: onCheckAgain,
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('CHECK AGAIN'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: FlitColors.accent,
-                    side: const BorderSide(color: FlitColors.accent),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
+              ),
             ),
           ],
         ),
-      );
+      ],
+    ),
+  );
 }
 
 class _ErrorContent extends StatelessWidget {
-  const _ErrorContent({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorContent({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              color: FlitColors.error,
-              size: 56,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              style: const TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: onRetry,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: FlitColors.accent,
-                foregroundColor: FlitColors.textPrimary,
-              ),
-              child: const Text('TRY AGAIN'),
-            ),
-          ],
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.error_outline, color: FlitColors.error, size: 56),
+        const SizedBox(height: 16),
+        Text(
+          message,
+          style: const TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+          textAlign: TextAlign.center,
         ),
-      );
+        const SizedBox(height: 20),
+        ElevatedButton(
+          onPressed: onRetry,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: FlitColors.accent,
+            foregroundColor: FlitColors.textPrimary,
+          ),
+          child: const Text('TRY AGAIN'),
+        ),
+      ],
+    ),
+  );
 }
 
 class _PoolEntriesSection extends StatelessWidget {
@@ -795,114 +752,114 @@ class _PoolEntriesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
-            child: Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'ACTIVE SUBMISSIONS',
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
+        child: Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'ACTIVE SUBMISSIONS',
+                style: TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: onCheckMatch,
+              child: const Row(
+                children: [
+                  Icon(Icons.refresh, color: FlitColors.accent, size: 14),
+                  SizedBox(width: 4),
+                  Text(
+                    'Check for matches',
                     style: TextStyle(
-                      color: FlitColors.textMuted,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
+                      color: FlitColors.accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-                GestureDetector(
-                  onTap: onCheckMatch,
-                  child: const Row(
-                    children: [
-                      Icon(Icons.refresh, color: FlitColors.accent, size: 14),
-                      SizedBox(width: 4),
-                      Text(
-                        'Check for matches',
-                        style: TextStyle(
-                          color: FlitColors.accent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          SizedBox(
-            height: 80,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: entries.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final entry = entries[index];
-                final createdAt = entry['created_at'] != null
-                    ? DateTime.tryParse(entry['created_at'] as String)
-                    : null;
-                final timeAgo = createdAt != null
-                    ? _formatTimeAgo(DateTime.now().difference(createdAt))
-                    : 'just now';
-                final elo = entry['elo_rating'] as int? ?? 0;
+          ],
+        ),
+      ),
+      SizedBox(
+        height: 80,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: entries.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            final entry = entries[index];
+            final createdAt = entry['created_at'] != null
+                ? DateTime.tryParse(entry['created_at'] as String)
+                : null;
+            final timeAgo = createdAt != null
+                ? _formatTimeAgo(DateTime.now().difference(createdAt))
+                : 'just now';
+            final elo = entry['elo_rating'] as int? ?? 0;
 
-                return Container(
-                  width: 140,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: FlitColors.backgroundMid,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: FlitColors.cardBorder),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
+            return Container(
+              width: 140,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: FlitColors.cardBorder),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.hourglass_empty,
-                            color: FlitColors.gold,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'ELO $elo',
-                            style: const TextStyle(
-                              color: FlitColors.textPrimary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
+                      const Icon(
+                        Icons.hourglass_empty,
+                        color: FlitColors.gold,
+                        size: 14,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(width: 4),
                       Text(
-                        'Submitted $timeAgo',
+                        'ELO $elo',
                         style: const TextStyle(
-                          color: FlitColors.textMuted,
-                          fontSize: 11,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'Waiting for match...',
-                        style: TextStyle(
-                          color: FlitColors.textSecondary,
-                          fontSize: 11,
+                          color: FlitColors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
                   ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 8),
-        ],
-      );
+                  const SizedBox(height: 4),
+                  Text(
+                    'Submitted $timeAgo',
+                    style: const TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Waiting for match...',
+                    style: TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+      const SizedBox(height: 8),
+    ],
+  );
 
   static String _formatTimeAgo(Duration duration) {
     if (duration.inDays > 0) return '${duration.inDays}d ago';

@@ -10,8 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AccountManagementService {
   AccountManagementService._();
 
-  static final AccountManagementService instance =
-      AccountManagementService._();
+  static final AccountManagementService instance = AccountManagementService._();
 
   SupabaseClient get _client => Supabase.instance.client;
 
@@ -31,31 +30,27 @@ class AccountManagementService {
     try {
       // Fetch all data in parallel for speed.
       final results = await Future.wait<dynamic>([
-        (() async =>
-              await _client
-                  .from('profiles')
-                  .select()
-                  .eq('id', userId)
-                  .maybeSingle())(),
-        (() async =>
-              await _client
-                  .from('user_settings')
-                  .select()
-                  .eq('user_id', userId)
-                  .maybeSingle())(),
-        (() async =>
-              await _client
-                  .from('account_state')
-                  .select()
-                  .eq('user_id', userId)
-                  .maybeSingle())(),
-        (() async =>
-              await _client
-                  .from('scores')
-                  .select('score, time_ms, region, rounds_completed, created_at')
-                  .eq('user_id', userId)
-                  .order('created_at', ascending: false)
-                  .limit(500))(),
+        (() async => await _client
+            .from('profiles')
+            .select()
+            .eq('id', userId)
+            .maybeSingle())(),
+        (() async => await _client
+            .from('user_settings')
+            .select()
+            .eq('user_id', userId)
+            .maybeSingle())(),
+        (() async => await _client
+            .from('account_state')
+            .select()
+            .eq('user_id', userId)
+            .maybeSingle())(),
+        (() async => await _client
+            .from('scores')
+            .select('score, time_ms, region, rounds_completed, created_at')
+            .eq('user_id', userId)
+            .order('created_at', ascending: false)
+            .limit(500))(),
         _fetchFriendsList(userId),
         _fetchChallengeHistory(userId),
       ]);
@@ -109,13 +104,15 @@ class AccountManagementService {
               }
             : null,
         'scores_history': scoresData
-            .map((s) => {
-                  'score': s['score'],
-                  'time_ms': s['time_ms'],
-                  'region': s['region'],
-                  'rounds_completed': s['rounds_completed'],
-                  'played_at': s['created_at'],
-                })
+            .map(
+              (s) => {
+                'score': s['score'],
+                'time_ms': s['time_ms'],
+                'region': s['region'],
+                'rounds_completed': s['rounds_completed'],
+                'played_at': s['created_at'],
+              },
+            )
             .toList(),
         'friends': friendsList,
         'challenge_history': challengeHistory,
@@ -176,14 +173,17 @@ class AccountManagementService {
           .limit(100);
 
       return data
-          .map<Map<String, dynamic>>((row) => {
-                'challenger': row['challenger_name'],
-                'challenged': row['challenged_name'],
-                'status': row['status'],
-                'coins_earned': row['challenger_coins'] ?? row['challenged_coins'],
-                'played_at': row['created_at'],
-                'completed_at': row['completed_at'],
-              })
+          .map<Map<String, dynamic>>(
+            (row) => {
+              'challenger': row['challenger_name'],
+              'challenged': row['challenged_name'],
+              'status': row['status'],
+              'coins_earned':
+                  row['challenger_coins'] ?? row['challenged_coins'],
+              'played_at': row['created_at'],
+              'completed_at': row['completed_at'],
+            },
+          )
           .toList();
     } catch (e) {
       debugPrint(
