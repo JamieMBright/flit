@@ -171,6 +171,21 @@ SQL views created (`leaderboard_global`, `leaderboard_daily`, `leaderboard_regio
 - Fix the underlying regional mode issues before ungating
 - Challengerless matchmaking is World-mode only until regional modes work (rule 9 in matchmaking spec)
 
+#### iOS App Icon
+**Status:** White strips visible at top and bottom of the icon.
+**What to do:** Zoom/scale the icon image slightly so it fills the entire icon canvas without white strips.
+
+#### License Stats Persistence
+**Status:** BUG — Stats appear to reset after closing and reopening the browser.
+**What to do:**
+- Investigate race condition between default state initialisation and Supabase load
+- Ensure stats are never overwritten with defaults before the Supabase read completes
+- Critical: players may spend money based on their stats — data integrity is paramount
+
+#### Wayline Origin Offset
+**Status:** FIXED — Wayline now spawns from the rear half (50-80%) of all plane bodies.
+**What was wrong:** Fixed `noseLength=13.0` forward offset didn't account for different plane sprites (e.g. Platinum Eagle). Now uses a consistent tail offset that works for all planes.
+
 #### City Lights Texture
 **Status:** Placeholder `.gitkeep` — actual NASA texture not added.
 **What to do:** Download NASA Earth at Night (Public Domain), resize, add to assets.
