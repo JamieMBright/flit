@@ -22,6 +22,7 @@ class AccountState {
     AvatarConfig? avatar,
     PilotLicense? license,
     this.ownedAvatarParts = const {},
+    this.ownedCosmetics = const {},
     this.equippedPlaneId = 'plane_default',
     this.equippedContrailId = 'contrail_default',
     this.equippedTitleId,
@@ -48,6 +49,9 @@ class AccountState {
 
   /// Set of owned avatar parts (e.g. "hair_mohawk", "hat_crown").
   final Set<String> ownedAvatarParts;
+
+  /// Set of owned shop cosmetics (planes, contrails, companions).
+  final Set<String> ownedCosmetics;
 
   /// Currently equipped plane cosmetic ID.
   final String equippedPlaneId;
@@ -116,6 +120,7 @@ class AccountState {
     AvatarConfig? avatar,
     PilotLicense? license,
     Set<String>? ownedAvatarParts,
+    Set<String>? ownedCosmetics,
     String? equippedPlaneId,
     String? equippedContrailId,
     // Use Object? sentinel to allow explicitly passing null to clear the title.
@@ -130,6 +135,7 @@ class AccountState {
     avatar: avatar ?? this.avatar,
     license: license ?? this.license,
     ownedAvatarParts: ownedAvatarParts ?? this.ownedAvatarParts,
+    ownedCosmetics: ownedCosmetics ?? this.ownedCosmetics,
     equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
     equippedContrailId: equippedContrailId ?? this.equippedContrailId,
     equippedTitleId: equippedTitleId == _sentinel
@@ -200,6 +206,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       license: snapshot.toPilotLicense(),
       unlockedRegions: snapshot.unlockedRegions,
       ownedAvatarParts: snapshot.ownedAvatarParts,
+      ownedCosmetics: snapshot.ownedCosmetics,
       equippedPlaneId: snapshot.equippedPlaneId,
       equippedContrailId: snapshot.equippedContrailId,
       equippedTitleId: snapshot.equippedTitleId,
@@ -289,6 +296,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       license: state.license,
       unlockedRegions: state.unlockedRegions,
       ownedAvatarParts: state.ownedAvatarParts,
+      ownedCosmetics: state.ownedCosmetics,
       equippedPlaneId: state.equippedPlaneId,
       equippedContrailId: state.equippedContrailId,
       equippedTitleId: state.equippedTitleId,
@@ -508,6 +516,37 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// Check if an avatar part is owned.
   bool isAvatarPartOwned(String partKey) {
     return state.ownedAvatarParts.contains(partKey);
+  }
+
+  // --- Shop cosmetics (planes, contrails, companions) ---
+
+  /// Purchase a shop cosmetic. Returns true if successful.
+  bool purchaseCosmetic(String cosmeticId, int cost) {
+    if (!spendCoins(cost)) return false;
+    state = state.copyWith(
+      ownedCosmetics: {...state.ownedCosmetics, cosmeticId},
+    );
+    _syncAccountState();
+    return true;
+  }
+
+  /// Add a cosmetic to owned set without spending coins (e.g. mystery box
+  /// where coins are already deducted separately).
+  void addOwnedCosmetic(String cosmeticId) {
+    state = state.copyWith(
+      ownedCosmetics: {...state.ownedCosmetics, cosmeticId},
+    );
+    _syncAccountState();
+  }
+
+  /// Check if a shop cosmetic is owned (or is a default item).
+  bool isCosmeticOwned(String cosmeticId) {
+    const defaults = {'plane_default', 'contrail_default', 'companion_none'};
+    if (defaults.contains(cosmeticId)) return true;
+    if (cosmeticId == state.equippedPlaneId) return true;
+    if (cosmeticId == state.equippedContrailId) return true;
+    if ('companion_${state.avatar.companion.name}' == cosmeticId) return true;
+    return state.ownedCosmetics.contains(cosmeticId);
   }
 
   // --- Equipped cosmetics ---
@@ -774,4 +813,9 @@ final dailyStreakProvider = Provider<DailyStreak>((ref) {
 /// Convenience provider for the last daily result (may be null).
 final lastDailyResultProvider = Provider<DailyResult?>((ref) {
   return ref.watch(accountProvider).lastDailyResult;
+});
+
+/// Convenience provider for owned shop cosmetics.
+final ownedCosmeticsProvider = Provider<Set<String>>((ref) {
+  return ref.watch(accountProvider).ownedCosmetics;
 });
