@@ -101,6 +101,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 if (_mode == _AuthMode.signUp) _buildSignUp(),
                 if (_mode == _AuthMode.signIn) _buildSignIn(),
                 if (_mode == _AuthMode.confirmEmail) _buildConfirmEmail(),
+                if (_mode == _AuthMode.forgotPassword) _buildForgotPassword(),
+                if (_mode == _AuthMode.resetEmailSent) _buildResetEmailSent(),
 
                 if (_error != null) ...[
                   const SizedBox(height: 16),
@@ -325,7 +327,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
         ),
       ),
-      const SizedBox(height: 24),
+      const SizedBox(height: 8),
+
+      Align(
+        alignment: Alignment.centerRight,
+        child: GestureDetector(
+          onTap: () => setState(() {
+            _mode = _AuthMode.forgotPassword;
+            _error = null;
+          }),
+          child: const Text(
+            'Forgot password?',
+            style: TextStyle(
+              color: FlitColors.accent,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 20),
 
       _AuthButton(
         label: 'SIGN IN',
@@ -392,7 +413,126 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ],
   );
 
+  // ── Forgot password form ──
+
+  Widget _buildForgotPassword() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _BackButton(
+        onTap: () => setState(() {
+          _mode = _AuthMode.signIn;
+          _error = null;
+        }),
+      ),
+      const SizedBox(height: 16),
+
+      const Text(
+        'Reset your password',
+        style: TextStyle(
+          color: FlitColors.textPrimary,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      const SizedBox(height: 8),
+      const Text(
+        "Enter your email and we'll send you a link to reset your password.",
+        style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+      ),
+      const SizedBox(height: 24),
+
+      _AuthTextField(
+        controller: _emailController,
+        label: 'Email',
+        hint: 'pilot@example.com',
+        keyboardType: TextInputType.emailAddress,
+      ),
+      const SizedBox(height: 24),
+
+      _AuthButton(
+        label: 'SEND RESET LINK',
+        isPrimary: true,
+        icon: Icons.email_outlined,
+        onTap: _resetPassword,
+      ),
+    ],
+  );
+
+  // ── Reset email sent confirmation ──
+
+  Widget _buildResetEmailSent() => Column(
+    children: [
+      const Icon(
+        Icons.mark_email_read_outlined,
+        color: FlitColors.gold,
+        size: 64,
+      ),
+      const SizedBox(height: 24),
+      const Text(
+        'Check your email',
+        style: TextStyle(
+          color: FlitColors.textPrimary,
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      const SizedBox(height: 12),
+      Text(
+        'We sent a password reset link to\n${_emailController.text.trim()}',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: FlitColors.textSecondary,
+          fontSize: 14,
+          height: 1.5,
+        ),
+      ),
+      const SizedBox(height: 8),
+      const Text(
+        'Click the link in your email to set a new password, '
+        'then come back and sign in.',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
+      ),
+      const SizedBox(height: 32),
+      _AuthButton(
+        label: 'BACK TO SIGN IN',
+        isPrimary: true,
+        icon: Icons.login,
+        onTap: () => setState(() {
+          _mode = _AuthMode.signIn;
+          _error = null;
+        }),
+      ),
+    ],
+  );
+
   // ── Actions ──
+
+  Future<void> _resetPassword() async {
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty) {
+      setState(() => _error = 'Please enter your email');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await _authService.resetPassword(email: email);
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+
+      if (result.error != null) {
+        setState(() => _error = result.error);
+      } else {
+        setState(() => _mode = _AuthMode.resetEmailSent);
+      }
+    }
+  }
 
   Future<void> _signUp() async {
     final email = _emailController.text.trim();
@@ -486,7 +626,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
-enum _AuthMode { welcome, signUp, signIn, confirmEmail }
+enum _AuthMode {
+  welcome,
+  signUp,
+  signIn,
+  confirmEmail,
+  forgotPassword,
+  resetEmailSent,
+}
 
 // ── Shared widgets ──
 

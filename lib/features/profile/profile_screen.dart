@@ -12,6 +12,7 @@ import '../../data/models/avatar_config.dart';
 import '../../data/models/player.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/account_management_service.dart';
+import '../../data/services/auth_service.dart';
 import '../avatar/avatar_editor_screen.dart';
 import '../avatar/avatar_widget.dart';
 import '../license/license_screen.dart';
@@ -256,6 +257,203 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     Navigator.of(
       context,
     ).push(MaterialPageRoute<void>(builder: (_) => const _GameHistoryScreen()));
+  }
+
+  void _changePassword() {
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    String? error;
+    bool obscureNew = true;
+    bool obscureConfirm = true;
+    bool isLoading = false;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          backgroundColor: FlitColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: FlitColors.cardBorder),
+          ),
+          title: const Text(
+            'Change Password',
+            style: TextStyle(color: FlitColors.textPrimary),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (error != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: FlitColors.error.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: FlitColors.error,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          error!,
+                          style: const TextStyle(
+                            color: FlitColors.error,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              TextField(
+                controller: newPasswordController,
+                obscureText: obscureNew,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'New Password',
+                  labelStyle: const TextStyle(color: FlitColors.textSecondary),
+                  hintText: 'At least 6 characters',
+                  hintStyle: const TextStyle(color: FlitColors.textMuted),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscureNew ? Icons.visibility_off : Icons.visibility,
+                      color: FlitColors.textMuted,
+                      size: 20,
+                    ),
+                    onPressed: () =>
+                        setDialogState(() => obscureNew = !obscureNew),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: FlitColors.cardBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: FlitColors.accent),
+                  ),
+                ),
+                onChanged: (_) {
+                  if (error != null) setDialogState(() => error = null);
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: confirmPasswordController,
+                obscureText: obscureConfirm,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'Confirm Password',
+                  labelStyle: const TextStyle(color: FlitColors.textSecondary),
+                  hintText: 'Re-enter new password',
+                  hintStyle: const TextStyle(color: FlitColors.textMuted),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                      color: FlitColors.textMuted,
+                      size: 20,
+                    ),
+                    onPressed: () =>
+                        setDialogState(() => obscureConfirm = !obscureConfirm),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: FlitColors.cardBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: FlitColors.accent),
+                  ),
+                ),
+                onChanged: (_) {
+                  if (error != null) setDialogState(() => error = null);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () => Navigator.of(dialogContext).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: FlitColors.textSecondary),
+              ),
+            ),
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      final newPwd = newPasswordController.text;
+                      final confirmPwd = confirmPasswordController.text;
+
+                      if (newPwd.length < 6) {
+                        setDialogState(() {
+                          error = 'Password must be at least 6 characters';
+                        });
+                        return;
+                      }
+                      if (newPwd != confirmPwd) {
+                        setDialogState(() {
+                          error = 'Passwords do not match';
+                        });
+                        return;
+                      }
+
+                      setDialogState(() => isLoading = true);
+
+                      final result = await AuthService().changePassword(
+                        newPassword: newPwd,
+                      );
+
+                      if (!dialogContext.mounted) return;
+
+                      if (result.error != null) {
+                        setDialogState(() {
+                          error = result.error;
+                          isLoading = false;
+                        });
+                      } else {
+                        Navigator.of(dialogContext).pop();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Password changed'),
+                              backgroundColor: FlitColors.success,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+              child: isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: FlitColors.accent,
+                      ),
+                    )
+                  : const Text(
+                      'Change Password',
+                      style: TextStyle(color: FlitColors.accent),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _signOut() {
@@ -503,6 +701,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // Actions
             _ProfileActions(
               onEditProfile: _editProfile,
+              onChangePassword: _changePassword,
               onGameHistory: _showGameHistory,
               onExportData: _exportData,
               onDeleteAccount: _deleteAccount,
@@ -744,6 +943,7 @@ class _StatCard extends StatelessWidget {
 class _ProfileActions extends StatelessWidget {
   const _ProfileActions({
     required this.onEditProfile,
+    required this.onChangePassword,
     required this.onGameHistory,
     required this.onExportData,
     required this.onDeleteAccount,
@@ -751,6 +951,7 @@ class _ProfileActions extends StatelessWidget {
   });
 
   final VoidCallback onEditProfile;
+  final VoidCallback onChangePassword;
   final VoidCallback onGameHistory;
   final VoidCallback onExportData;
   final VoidCallback onDeleteAccount;
@@ -764,6 +965,12 @@ class _ProfileActions extends StatelessWidget {
         icon: Icons.edit,
         label: 'Edit Profile',
         onTap: onEditProfile,
+      ),
+      const SizedBox(height: 12),
+      _ActionButton(
+        icon: Icons.lock_outline,
+        label: 'Change Password',
+        onTap: onChangePassword,
       ),
       const SizedBox(height: 12),
       _ActionButton(
