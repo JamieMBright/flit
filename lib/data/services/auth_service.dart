@@ -57,7 +57,7 @@ class AuthState {
 /// Profiles are auto-created by a database trigger on sign-up.
 /// All players must have accounts — no guest mode.
 class AuthService {
-  AuthState _state = const AuthState();
+  AuthState _state = AuthState();
 
   AuthState get state => _state;
 
