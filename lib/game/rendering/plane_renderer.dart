@@ -1085,7 +1085,9 @@ class PlaneRenderer {
     double bankSin,
     double wingSpan,
     Map<String, int>? colorScheme,
+    String planeId,
   ) {
+    final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFFF5F5F5);
     final secondary = _secondary(colorScheme, 0xFF1A3A5C);
     final detail = _detail(colorScheme, 0xFFCC3333);
@@ -1111,6 +1113,8 @@ class PlaneRenderer {
       ..lineTo(bodyShift - 2, 14)
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 1.0);
+    _wingJointAO(canvas, Offset(bodyShift - 2, -2), radius: 5.5);
 
     final rightSpan =
         dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
@@ -1120,6 +1124,8 @@ class PlaneRenderer {
       ..lineTo(bodyShift + 2, 14)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 1.0);
+    _wingJointAO(canvas, Offset(bodyShift + 2, -2), radius: 5.5);
 
     // --- Body group ---
     canvas.save();
@@ -1138,6 +1144,15 @@ class PlaneRenderer {
       ..quadraticBezierTo(-3 + bodyShift, -10, bodyShift, -18)
       ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Sketch outline on fuselage
+    final fuselageSketchPaint = Paint()
+      ..color = _darken(primary, 0.38).withOpacity(0.48)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.30);
 
     // Drooping nose
     canvas.drawLine(
@@ -1200,6 +1215,7 @@ class PlaneRenderer {
     double wingSpan,
     Map<String, int>? colorScheme,
     double propAngle,
+    String planeId,
   ) {
     final secondary = _secondary(colorScheme, 0xFF2E8B57);
     final detail = _detail(colorScheme, 0xFFF5F5F5);
@@ -1209,28 +1225,36 @@ class PlaneRenderer {
 
     // Pontoons (below the plane)
     final pontoonPaint = Paint()..color = detail;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(-dynamicWingSpan * 0.5, 12 + wingDip),
-          width: 6,
-          height: 16,
-        ),
-        const Radius.circular(3),
-      ),
-      pontoonPaint,
+    final leftPontoonRect = Rect.fromCenter(
+      center: Offset(-dynamicWingSpan * 0.5, 12 + wingDip),
+      width: 6,
+      height: 16,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(dynamicWingSpan * 0.5, 12 - wingDip),
-          width: 6,
-          height: 16,
-        ),
-        const Radius.circular(3),
-      ),
+      RRect.fromRectAndRadius(leftPontoonRect, const Radius.circular(3)),
       pontoonPaint,
     );
+    // Pencil outline on pontoon for hand-drawn feel
+    final leftPontoonPath = Path()
+      ..addRRect(
+          RRect.fromRectAndRadius(leftPontoonRect, const Radius.circular(3)));
+    _pencilOutline(leftPontoonPath, canvas, detail,
+        strokeWidth: 0.9, opacity: 0.45);
+
+    final rightPontoonRect = Rect.fromCenter(
+      center: Offset(dynamicWingSpan * 0.5, 12 - wingDip),
+      width: 6,
+      height: 16,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rightPontoonRect, const Radius.circular(3)),
+      pontoonPaint,
+    );
+    final rightPontoonPath = Path()
+      ..addRRect(
+          RRect.fromRectAndRadius(rightPontoonRect, const Radius.circular(3)));
+    _pencilOutline(rightPontoonPath, canvas, detail,
+        strokeWidth: 0.9, opacity: 0.45);
 
     // Struts connecting pontoons to wings
     final strutPaint = Paint()
@@ -1248,7 +1272,8 @@ class PlaneRenderer {
     );
 
     // Delegate to bi-plane for the main body
-    _renderBiPlane(canvas, bankCos, bankSin, wingSpan, colorScheme, propAngle);
+    _renderBiPlane(
+        canvas, bankCos, bankSin, wingSpan, colorScheme, propAngle, planeId);
   }
 
   // ─── Airliner (Bryanair, Air Force One) ─────────────────────────────
