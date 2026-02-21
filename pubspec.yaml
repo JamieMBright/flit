@@ -49,7 +49,7 @@ dev_dependencies:
   flutter_lints: ^3.0.1
 
   # App Icon Generation (cross-platform: iOS, Android, Web)
-  flutter_launcher_icons: ^0.14.3
+  flutter_launcher_icons: ^0.13.1
 
 flutter_launcher_icons:
   android: true
