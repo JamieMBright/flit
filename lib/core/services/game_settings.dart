@@ -55,6 +55,8 @@ class GameSettings extends ChangeNotifier {
       englishLabels: _englishLabels,
       difficulty: _difficulty.name,
       soundEnabled: _soundEnabled,
+      musicVolume: _musicVolume,
+      effectsVolume: _effectsVolume,
       notificationsEnabled: _notificationsEnabled,
       hapticEnabled: _hapticEnabled,
     );
@@ -69,6 +71,8 @@ class GameSettings extends ChangeNotifier {
     required MapStyle mapStyle,
     required GameDifficulty difficulty,
     required bool soundEnabled,
+    required double musicVolume,
+    required double effectsVolume,
     required bool notificationsEnabled,
     required bool hapticEnabled,
   }) {
@@ -80,6 +84,8 @@ class GameSettings extends ChangeNotifier {
     this.mapStyle = mapStyle;
     this.difficulty = difficulty;
     this.soundEnabled = soundEnabled;
+    this.musicVolume = musicVolume;
+    this.effectsVolume = effectsVolume;
     this.notificationsEnabled = notificationsEnabled;
     this.hapticEnabled = hapticEnabled;
     _hydrating = false;
@@ -224,6 +230,36 @@ class GameSettings extends ChangeNotifier {
     AudioManager.instance.enabled = value;
     notifyListeners();
   }
+
+  /// Background music volume (0.0 = silent, 1.0 = full).
+  /// Multiplied with AudioManager's base music level.
+  double _musicVolume = 1.0;
+
+  double get musicVolume => _musicVolume;
+
+  set musicVolume(double value) {
+    _musicVolume = value.clamp(0.0, 1.0);
+    AudioManager.instance.musicVolume = _musicVolume;
+    notifyListeners();
+  }
+
+  /// Human-readable label for the music volume.
+  String get musicVolumeLabel => '${(_musicVolume * 100).round()}%';
+
+  /// Game effects volume (0.0 = silent, 1.0 = full).
+  /// Applies to engine sounds and one-shot SFX.
+  double _effectsVolume = 1.0;
+
+  double get effectsVolume => _effectsVolume;
+
+  set effectsVolume(double value) {
+    _effectsVolume = value.clamp(0.0, 1.0);
+    AudioManager.instance.effectsVolume = _effectsVolume;
+    notifyListeners();
+  }
+
+  /// Human-readable label for the effects volume.
+  String get effectsVolumeLabel => '${(_effectsVolume * 100).round()}%';
 
   /// Whether push notifications are enabled.
   bool _notificationsEnabled = true;

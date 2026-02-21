@@ -81,15 +81,16 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
     if (points.isEmpty) return;
 
     // Offset the first point (the plane's globe-projected position) to
-    // the nose of the aircraft. Because we use the projected position as
-    // the base, the offset stays in the same coordinate system as the
-    // rest of the wayline — no gap between coordinate spaces.
+    // the rear half of the aircraft body (50-80% from nose toward tail).
+    // A positive tailOffset pushes the start point behind the plane center,
+    // which keeps the wayline origin consistently at the plane's aft section
+    // regardless of which plane sprite is equipped.
     final plane = gameRef.plane;
     final totalRotation = plane.visualHeading + plane.turnDirection * 0.4;
-    const noseLength = 13.0; // ~16px nose offset * perspectiveScaleY(0.80)
+    const tailOffset = 5.0; // ~65% down the body (between 50-80%)
     points[0] = Offset(
-      points[0].dx + sin(totalRotation) * noseLength,
-      points[0].dy - cos(totalRotation) * noseLength,
+      points[0].dx - sin(totalRotation) * tailOffset,
+      points[0].dy + cos(totalRotation) * tailOffset,
     );
 
     if (points.length < 2) return;

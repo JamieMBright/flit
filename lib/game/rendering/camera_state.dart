@@ -168,11 +168,7 @@ class CameraState {
     if (_fovOverrideRad != null) {
       targetFov = _fovOverrideRad!;
     } else {
-      targetFov = _lerpDouble(
-        fovNarrow,
-        fovWide,
-        speedFraction.clamp(0, 1),
-      );
+      targetFov = _lerpDouble(fovNarrow, fovWide, speedFraction.clamp(0, 1));
     }
 
     if (_firstUpdate) {
@@ -293,8 +289,9 @@ class CameraState {
     _activeRegion = region;
 
     // Convert optional FOV override from degrees to radians.
-    _fovOverrideRad =
-        preset.fovOverride != null ? preset.fovOverride! * pi / 180.0 : null;
+    _fovOverrideRad = preset.fovOverride != null
+        ? preset.fovOverride! * pi / 180.0
+        : null;
 
     // Snap camera center and altitude to the preset values.
     _currentLatRad = preset.centerLat * pi / 180.0;

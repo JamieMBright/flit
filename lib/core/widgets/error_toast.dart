@@ -45,9 +45,7 @@ abstract final class ErrorToast {
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         backgroundColor: const Color(0xE6CC4444),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         dismissDirection: DismissDirection.horizontal,
       ),

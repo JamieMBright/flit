@@ -71,7 +71,8 @@ class ChallengeResultScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDraw = challenge.winnerId == null;
-    final youWon = !isDraw &&
+    final youWon =
+        !isDraw &&
         ((isChallenger && challenge.winnerId == challenge.challengerId) ||
             (!isChallenger && challenge.winnerId == challenge.challengedId));
     final yourWins = isChallenger
@@ -92,7 +93,8 @@ class ChallengeResultScreen extends ConsumerWidget {
     final equippedPlaneId = account.equippedPlaneId;
     final equippedPlane = CosmeticCatalog.getById(equippedPlaneId);
 
-    final yourInfo = yourPilotInfo ??
+    final yourInfo =
+        yourPilotInfo ??
         PilotInfo(
           name: 'You',
           level: account.currentPlayer.level,
@@ -101,8 +103,7 @@ class ChallengeResultScreen extends ConsumerWidget {
           rankTitle: _rankTitle(account.currentPlayer.level),
         );
 
-    final opponentInfo = opponentPilotInfo ??
-        PilotInfo(name: opponentName);
+    final opponentInfo = opponentPilotInfo ?? PilotInfo(name: opponentName);
 
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
@@ -147,9 +148,11 @@ class ChallengeResultScreen extends ConsumerWidget {
             const SizedBox(height: 24),
             // Actions
             _ResultActions(
-              onRematch: onRematch ?? () {
-                _handleRematch(context, ref);
-              },
+              onRematch:
+                  onRematch ??
+                  () {
+                    _handleRematch(context, ref);
+                  },
               onHome: () =>
                   Navigator.of(context).popUntil((route) => route.isFirst),
               onPlayAgain: onPlayAgain,
@@ -196,34 +199,34 @@ class ChallengeResultScreen extends ConsumerWidget {
           challengerName: myName,
         )
         .then((challengeId) {
-      if (context.mounted) {
-        Navigator.of(context).pop(); // Dismiss loading dialog
-        if (challengeId != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Rematch sent to $opponentName!'),
-              backgroundColor: FlitColors.success,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          );
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Failed to send rematch'),
-              backgroundColor: FlitColors.error,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          );
-        }
-      }
-    });
+          if (context.mounted) {
+            Navigator.of(context).pop(); // Dismiss loading dialog
+            if (challengeId != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Rematch sent to $opponentName!'),
+                  backgroundColor: FlitColors.success,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              );
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Failed to send rematch'),
+                  backgroundColor: FlitColors.error,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              );
+            }
+          }
+        });
   }
 }
 
@@ -249,24 +252,28 @@ class _ResultHeader extends StatelessWidget {
         isDraw
             ? Icons.handshake
             : youWon
-                ? Icons.emoji_events
-                : Icons.sentiment_dissatisfied,
+            ? Icons.emoji_events
+            : Icons.sentiment_dissatisfied,
         size: 64,
         color: isDraw
             ? FlitColors.textSecondary
             : youWon
-                ? FlitColors.warning
-                : FlitColors.textSecondary,
+            ? FlitColors.warning
+            : FlitColors.textSecondary,
       ),
       const SizedBox(height: 16),
       Text(
-        isDraw ? 'DRAW' : youWon ? 'VICTORY!' : 'DEFEAT',
+        isDraw
+            ? 'DRAW'
+            : youWon
+            ? 'VICTORY!'
+            : 'DEFEAT',
         style: TextStyle(
           color: isDraw
               ? FlitColors.textSecondary
               : youWon
-                  ? FlitColors.warning
-                  : FlitColors.textSecondary,
+              ? FlitColors.warning
+              : FlitColors.textSecondary,
           fontSize: 32,
           fontWeight: FontWeight.bold,
           letterSpacing: 2,
@@ -404,19 +411,13 @@ class _PilotCard extends StatelessWidget {
         if (info.rankTitle != null || info.level > 1)
           Text(
             info.rankTitle ?? 'Lv.${info.level}',
-            style: const TextStyle(
-              color: FlitColors.textMuted,
-              fontSize: 11,
-            ),
+            style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
             textAlign: TextAlign.center,
           ),
         if (info.level > 1 && info.rankTitle != null)
           Text(
             'Lv.${info.level}',
-            style: const TextStyle(
-              color: FlitColors.textMuted,
-              fontSize: 10,
-            ),
+            style: const TextStyle(color: FlitColors.textMuted, fontSize: 10),
           ),
         // Plane
         if (info.equippedPlaneName != null) ...[
@@ -425,11 +426,7 @@ class _PilotCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.flight,
-                color: FlitColors.textMuted,
-                size: 12,
-              ),
+              const Icon(Icons.flight, color: FlitColors.textMuted, size: 12),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
@@ -622,8 +619,8 @@ class _RoundRow extends StatelessWidget {
               color: draw
                   ? FlitColors.textMuted
                   : youWon
-                      ? FlitColors.success
-                      : FlitColors.error,
+                  ? FlitColors.success
+                  : FlitColors.error,
               shape: BoxShape.circle,
             ),
             child: Center(

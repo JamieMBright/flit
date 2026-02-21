@@ -163,6 +163,29 @@ Vercel cron pings `/api/health` every 3 days. Health endpoint includes Supabase 
 **Status:** DONE
 SQL views created (`leaderboard_global`, `leaderboard_daily`, `leaderboard_regional`). `LeaderboardService` with fetchGlobal/Daily/Regional/Friends methods. `LeaderboardScreen` wired to real Supabase data with tab system and player rank banner.
 
+#### Regional Game Modes
+**Status:** NOT WORKING — all 5 regional modes (Europe, Asia, Africa, Americas, Oceania) are non-functional.
+**What to do:**
+- Gate regional modes behind a "Coming Soon" overlay for all regular users
+- Admin account should bypass the gate and have access for testing/development
+- Fix the underlying regional mode issues before ungating
+- Challengerless matchmaking is World-mode only until regional modes work (rule 9 in matchmaking spec)
+
+#### iOS App Icon
+**Status:** White strips visible at top and bottom of the icon.
+**What to do:** Zoom/scale the icon image slightly so it fills the entire icon canvas without white strips.
+
+#### License Stats Persistence
+**Status:** BUG — Stats appear to reset after closing and reopening the browser.
+**What to do:**
+- Investigate race condition between default state initialisation and Supabase load
+- Ensure stats are never overwritten with defaults before the Supabase read completes
+- Critical: players may spend money based on their stats — data integrity is paramount
+
+#### Wayline Origin Offset
+**Status:** FIXED — Wayline now spawns from the rear half (50-80%) of all plane bodies.
+**What was wrong:** Fixed `noseLength=13.0` forward offset didn't account for different plane sprites (e.g. Platinum Eagle). Now uses a consistent tail offset that works for all planes.
+
 #### City Lights Texture
 **Status:** Placeholder `.gitkeep` — actual NASA texture not added.
 **What to do:** Download NASA Earth at Night (Public Domain), resize, add to assets.
@@ -262,6 +285,28 @@ Full result screen with pilot cards (name, flag, rank, plane), score display, pe
 - Source or create audio: engine loops (6 types), background music, SFX (6 types)
 - `AudioManager` code is ready — just needs actual audio files
 
+#### Companion Sprites Quality
+**Status:** Poor quality — all 8 companions (pidgey, sparrow, eagle, parrot, phoenix, dragon, charizard) are procedurally drawn with Canvas primitives (ovals, paths, circles).
+**What to do:**
+- Replace procedural Canvas drawing with proper sprite assets or significantly improve the Canvas rendering
+- Current rendering uses simple geometric shapes that lack detail and polish
+- Two rendering paths need updating: in-game (`CompanionRenderer`) and shop preview (`_CompanionPreviewPainter`)
+- Consider: hand-drawn sprite sheets matching the lo-fi plane aesthetic, or SVG assets
+
+#### Plane Sprites Quality
+**Status:** Needs improvement — plane rendering uses basic Canvas drawing.
+**What to do:**
+- Improve the visual quality of plane sprites to match the intended hand-drawn aesthetic
+- Ensure all unlockable plane cosmetics look distinct and polished
+- Both in-game rendering and shop preview need updating
+
+#### Country Borders Visibility
+**Status:** Borders not visible when plane is outside the target country's airspace.
+**What to do:**
+- Country borders should be white and clearly visible at all times during gameplay, not just when inside airspace
+- Helps players navigate and identify countries from a distance
+- May require shader changes (`globe.frag`) or an overlay approach
+
 ### Priority 3 — Monetisation & Future
 
 #### Subscription System
@@ -297,30 +342,30 @@ Full result screen with pilot cards (name, flag, rank, plane), score display, pe
 
 ### Priority 4 — Technical Debt & Polish
 
-#### Input Validation Constraints
-- Add PostgreSQL CHECK constraints on `profiles.username`, `scores.score`, `scores.time_ms`
-- Currently only validated client-side
-
-#### Error Telemetry Privacy
+#### 4a. Error Telemetry Privacy
 - Strip or coarsen `navigator.userAgent` in web error payloads
 - Scrub URL query parameters from `context.url` before sending
 - Verify `logs/runtime-errors.jsonl` is not in a public repo (or move to private storage)
 
-#### Offline Resilience
+#### 4b. Input Validation Constraints
+- Add PostgreSQL CHECK constraints on `profiles.username`, `scores.score`, `scores.time_ms`
+- Currently only validated client-side — server-side constraints prevent bad data from any source
+
+#### 4c. Offline Resilience
 - Queue failed Supabase writes for retry on reconnection
 - Add a persistent local queue (SharedPreferences or SQLite)
 
-#### Performance Profiling
-- Profile shader performance on target devices (iPhone 12, Pixel 6)
-- Measure LOD switching behavior
-- Validate 60fps sustained across all platforms
-- Asset bundle size audit (textures ~5MB uncompressed)
-
-#### Test Coverage
+#### 4d. Test Coverage
 - Add unit tests for Supabase service layer (mock client)
 - Tests for sync debounce logic
 - Tests for offline fallback behavior
 - Current: 15 test files covering core game logic
+
+#### 4e. Performance Profiling
+- Profile shader performance on target devices (iPhone 12, Pixel 6)
+- Measure LOD switching behavior
+- Validate 60fps sustained across all platforms
+- Asset bundle size audit (textures ~5MB uncompressed)
 
 ---
 
@@ -339,6 +384,7 @@ For App Store / Play Store submission:
 - [x] Supabase keep-alive cron active
 - [ ] City lights texture added
 - [ ] Audio assets added (or graceful silence)
+- [ ] Regional game modes gated with "Coming Soon" (admin bypass)
 - [x] All leaderboard features functional (not placeholder data)
 - [x] Error handling tiered (users see toasts/dialogs, not raw errors)
 - [x] Critical errors auto-create GitHub issues

@@ -224,6 +224,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
         orElse: () => GameDifficulty.normal,
       ),
       soundEnabled: snapshot.soundEnabled,
+      musicVolume: snapshot.musicVolume,
+      effectsVolume: snapshot.effectsVolume,
       notificationsEnabled: snapshot.notificationsEnabled,
       hapticEnabled: snapshot.hapticEnabled,
     );

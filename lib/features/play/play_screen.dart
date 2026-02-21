@@ -714,6 +714,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           score: _totalScore,
           roundsCompleted: _currentRound,
           coinReward: widget.coinReward,
+          region: widget.isDailyChallenge ? 'daily' : widget.region.name,
         );
 
     // Notify completion callback

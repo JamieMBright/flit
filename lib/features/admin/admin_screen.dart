@@ -7,6 +7,8 @@ import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/providers/account_provider.dart';
+import '../debug/avatar_preview_screen.dart';
+import '../debug/plane_preview_screen.dart';
 
 /// Admin panel — visible only to the admin email (jamiebright1@gmail.com).
 ///
@@ -503,6 +505,32 @@ class AdminScreen extends ConsumerWidget {
             iconColor: FlitColors.warning,
             label: 'Change Player Username',
             onTap: () => _showChangeUsernameDialog(context),
+          ),
+          const SizedBox(height: 24),
+
+          // Design Preview
+          const _SectionHeader(title: 'Design Preview'),
+          const SizedBox(height: 8),
+          _AdminActionCard(
+            icon: Icons.flight,
+            iconColor: FlitColors.accent,
+            label: 'Plane Preview (all variants)',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const PlanePreviewScreen(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _AdminActionCard(
+            icon: Icons.face,
+            iconColor: FlitColors.oceanHighlight,
+            label: 'Avatar Preview (all styles)',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const AvatarPreviewScreen(),
+              ),
+            ),
           ),
           const SizedBox(height: 24),
 

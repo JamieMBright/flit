@@ -230,14 +230,13 @@ class _FlitAppState extends State<FlitApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Flush queued errors and pending preference writes when the app goes to
+    // background or is about to close. Without this, the 2-second debounce in
+    // UserPreferencesService can lose writes if the user closes the browser
+    // tab before the timer fires.
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
-      // Flush queued errors when the app goes to background or is about to
-      // close.
       ErrorService.instance.flush();
-
-      // Flush any pending user settings/profile writes so nothing is lost
-      // if the OS kills the app before the debounce timer fires.
       UserPreferencesService.instance.flush();
     }
   }

@@ -83,3 +83,6 @@ key.properties
 
 # Supabase local
 .supabase/
+
+# Runtime error logs (written by fetch-errors.yml — must not be committed to public repo)
+logs/

@@ -189,24 +189,21 @@ class MatchmakingService {
 
       // 4. Create a challenge between the two players using the matched seed.
       final rng = Random();
-      final challengeRounds = List.generate(
-        Challenge.totalRounds,
-        (i) {
-          // Use round data from the pool entry if available, otherwise
-          // generate new seeds based on the original seed.
-          if (i < matchedRounds.length) {
-            final poolRound = matchedRounds[i] as Map<String, dynamic>;
-            return <String, dynamic>{
-              'round_number': i + 1,
-              'seed': poolRound['seed'] ?? rng.nextInt(1 << 31),
-            };
-          }
+      final challengeRounds = List.generate(Challenge.totalRounds, (i) {
+        // Use round data from the pool entry if available, otherwise
+        // generate new seeds based on the original seed.
+        if (i < matchedRounds.length) {
+          final poolRound = matchedRounds[i] as Map<String, dynamic>;
           return <String, dynamic>{
             'round_number': i + 1,
-            'seed': (matchedSeed.hashCode + i * 7919) & 0x7FFFFFFF,
+            'seed': poolRound['seed'] ?? rng.nextInt(1 << 31),
           };
-        },
-      );
+        }
+        return <String, dynamic>{
+          'round_number': i + 1,
+          'seed': (matchedSeed.hashCode + i * 7919) & 0x7FFFFFFF,
+        };
+      });
 
       final challengeData = await _client
           .from('challenges')
@@ -226,11 +223,14 @@ class MatchmakingService {
       // 5. Mark both pool entries as matched.
       final now = DateTime.now().toUtc().toIso8601String();
 
-      await _client.from('matchmaking_pool').update({
-        'matched_at': now,
-        'matched_with': _userId,
-        'challenge_id': challengeId,
-      }).eq('id', matchedEntryId);
+      await _client
+          .from('matchmaking_pool')
+          .update({
+            'matched_at': now,
+            'matched_with': _userId,
+            'challenge_id': challengeId,
+          })
+          .eq('id', matchedEntryId);
 
       // 6. Auto-friend both players (fire-and-forget, ignore if already friends).
       _autoFriend(matchedUserId);

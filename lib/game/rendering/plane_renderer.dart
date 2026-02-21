@@ -43,6 +43,155 @@ class PlaneRenderer {
   static Color _detail(Map<String, int>? cs, int fallback) =>
       Color(cs?['detail'] ?? fallback);
 
+  // ─── Sketch / Hand-drawn Helpers ────────────────────────────────────
+
+  /// Returns a seeded [Random] based on [planeId] so wobble offsets are
+  /// deterministic across frames (no per-frame jitter).
+  static Random _sketchRng(String planeId) =>
+      Random(planeId.codeUnits.fold<int>(0, (h, c) => h * 31 + c));
+
+  /// Draws [path] with a subtle random offset on each segment endpoint to
+  /// simulate the slight imprecision of hand-drawn line work.
+  ///
+  /// [wobble] controls the maximum displacement in logical pixels (0.3–0.5 is
+  /// subtle; stay under 0.6 to avoid changing the apparent shape).
+  ///
+  /// Uses [rng] so the same path always produces identical wobble (stable).
+  static void _sketchPath(
+    Path path,
+    Canvas canvas,
+    Paint paint,
+    Random rng, {
+    double wobble = 0.4,
+  }) {
+    final metrics = path.computeMetrics();
+    for (final metric in metrics) {
+      final len = metric.length;
+      if (len < 1) continue;
+
+      // Sample points along the path and add tiny perpendicular jitter.
+      const step = 4.0; // sample every 4px of path length
+      final sketched = Path();
+      bool first = true;
+      for (double t = 0; t <= len; t += step) {
+        final tangent = metric.getTangentForOffset(t.clamp(0, len));
+        if (tangent == null) continue;
+        final pos = tangent.position;
+        final dx = (rng.nextDouble() - 0.5) * 2 * wobble;
+        final dy = (rng.nextDouble() - 0.5) * 2 * wobble;
+        if (first) {
+          sketched.moveTo(pos.dx + dx, pos.dy + dy);
+          first = false;
+        } else {
+          sketched.lineTo(pos.dx + dx, pos.dy + dy);
+        }
+      }
+      canvas.drawPath(sketched, paint);
+    }
+  }
+
+  /// Draws a pencil-sketch outline pass around [path]: a slightly offset,
+  /// slightly darker stroke with [StrokeCap.round] to simulate ink-on-pencil
+  /// hand-drawn lines.
+  ///
+  /// Call this AFTER the fill pass so the outline sits on top.
+  static void _pencilOutline(
+    Path path,
+    Canvas canvas,
+    Color baseColor, {
+    double strokeWidth = 1.1,
+    double offsetX = 0.3,
+    double offsetY = 0.3,
+    double opacity = 0.55,
+  }) {
+    final outlinePaint = Paint()
+      ..color = _darken(baseColor, 0.45).withOpacity(opacity)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    // Primary outline (sits exactly on the path)
+    canvas.drawPath(path, outlinePaint);
+
+    // Offset shadow stroke — creates the "ink bleed" hand-drawn feel
+    final shadowPaint = Paint()
+      ..color = _darken(baseColor, 0.55).withOpacity(opacity * 0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth * 0.7
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    canvas.save();
+    canvas.translate(offsetX, offsetY);
+    canvas.drawPath(path, shadowPaint);
+    canvas.restore();
+  }
+
+  /// Draws light diagonal cross-hatch lines inside [bounds] to simulate
+  /// fabric-covered wing surfaces (biplanes, triplanes, paper planes).
+  ///
+  /// [opacity] should stay in the 0.08–0.12 range — extremely subtle.
+  static void _crossHatch(
+    Canvas canvas,
+    Rect bounds,
+    Color lineColor, {
+    double spacing = 5.0,
+    double opacity = 0.10,
+  }) {
+    // Normalise so left < right, top < bottom (avoid degenerate rects)
+    final normalised = Rect.fromLTRB(
+      bounds.left < bounds.right ? bounds.left : bounds.right,
+      bounds.top < bounds.bottom ? bounds.top : bounds.bottom,
+      bounds.left < bounds.right ? bounds.right : bounds.left,
+      bounds.top < bounds.bottom ? bounds.bottom : bounds.top,
+    );
+
+    if (normalised.width < 1 || normalised.height < 1) return;
+
+    final paint = Paint()
+      ..color = lineColor.withOpacity(opacity)
+      ..strokeWidth = 0.5
+      ..strokeCap = StrokeCap.butt;
+
+    final w = normalised.width;
+    final h = normalised.height;
+    final diag = w + h;
+
+    // Clip to the bounds so lines don't bleed outside
+    canvas.save();
+    canvas.clipRect(normalised);
+
+    // 45° lines going bottom-left to top-right
+    for (double t = -diag; t <= diag; t += spacing) {
+      canvas.drawLine(
+        Offset(normalised.left + t, normalised.bottom),
+        Offset(normalised.left + t + h, normalised.top),
+        paint,
+      );
+    }
+    canvas.restore();
+  }
+
+  /// Draws a soft ambient-occlusion shadow where a wing meets the fuselage.
+  ///
+  /// [center] is the joint point, [radius] controls the AO spread.
+  static void _wingJointAO(
+    Canvas canvas,
+    Offset center, {
+    double radius = 5.0,
+    double opacity = 0.18,
+  }) {
+    final gradient = RadialGradient(
+      colors: [Colors.black.withOpacity(opacity), Colors.transparent],
+    );
+    final paint = Paint()
+      ..shader = gradient.createShader(
+        Rect.fromCircle(center: center, radius: radius),
+      );
+    canvas.drawCircle(center, radius, paint);
+  }
+
   // ─── Dispatch ───────────────────────────────────────────────────────
 
   /// Render the correct plane variant. [propAngle] is only used by planes
@@ -59,7 +208,14 @@ class PlaneRenderer {
   }) {
     switch (planeId) {
       case 'plane_paper':
-        _renderPaperPlane(canvas, bankCos, bankSin, wingSpan, colorScheme);
+        _renderPaperPlane(
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          planeId,
+        );
         break;
       case 'plane_jet':
       case 'plane_rocket':
@@ -74,7 +230,14 @@ class PlaneRenderer {
         );
         break;
       case 'plane_stealth':
-        _renderStealthPlane(canvas, bankCos, bankSin, wingSpan, colorScheme);
+        _renderStealthPlane(
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          planeId,
+        );
         break;
       case 'plane_red_baron':
         _renderTriplane(
@@ -84,11 +247,19 @@ class PlaneRenderer {
           wingSpan,
           colorScheme,
           propAngle,
+          planeId,
         );
         break;
       case 'plane_concorde_classic':
       case 'plane_diamond_concorde':
-        _renderConcorde(canvas, bankCos, bankSin, wingSpan, colorScheme);
+        _renderConcorde(
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          planeId,
+        );
         break;
       case 'plane_seaplane':
         _renderSeaplane(
@@ -98,16 +269,31 @@ class PlaneRenderer {
           wingSpan,
           colorScheme,
           propAngle,
+          planeId,
         );
         break;
-      case 'plane_bryanair':
-        _renderAirliner(canvas, bankCos, bankSin, wingSpan, colorScheme);
+      case 'plane_padraigaer':
+        _renderAirliner(
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          planeId,
+        );
         break;
-      case 'plane_air_force_one':
-        _renderAirForceOne(canvas, bankCos, bankSin, wingSpan, colorScheme);
+      case 'plane_presidential':
+        _renderPresidential(
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          planeId,
+        );
         break;
       case 'plane_platinum_eagle':
-        _renderEagle(canvas, bankCos, bankSin, wingSpan, colorScheme);
+        _renderEagle(canvas, bankCos, bankSin, wingSpan, colorScheme, planeId);
         break;
       default:
         _renderBiPlane(
@@ -117,12 +303,13 @@ class PlaneRenderer {
           wingSpan,
           colorScheme,
           propAngle,
+          planeId,
         );
         break;
     }
   }
 
-  // ─── Bi-Plane (default, prop, spitfire, lancaster) ──────────────────
+  // ─── Bi-Plane (default, prop, warbird, night raider) ────────────────
 
   static void _renderBiPlane(
     Canvas canvas,
@@ -131,7 +318,9 @@ class PlaneRenderer {
     double wingSpan,
     Map<String, int>? colorScheme,
     double propAngle,
+    String planeId,
   ) {
+    final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFFF5F0E0);
     final secondary = _secondary(colorScheme, 0xFFC0392B);
     final detail = _detail(colorScheme, 0xFF8B4513);
@@ -195,6 +384,21 @@ class PlaneRenderer {
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
+    // Left wing cross-hatch (fabric texture)
+    _crossHatch(
+      canvas,
+      Rect.fromLTRB(-leftSpan, -1 + leftDip, -4, 5 + leftDip),
+      leftWingColor,
+      spacing: 4.5,
+      opacity: 0.10,
+    );
+
+    // Left wing pencil outline
+    _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 1.0);
+
+    // Ambient occlusion at left wing root
+    _wingJointAO(canvas, Offset(-4, 1 + leftDip * 0.2), radius: 5.0);
+
     // Left wing highlight
     if (shade <= 0) {
       canvas.drawPath(
@@ -239,6 +443,21 @@ class PlaneRenderer {
       ..lineTo(4, 3 + rightDip * 0.2)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+
+    // Right wing cross-hatch (fabric texture)
+    _crossHatch(
+      canvas,
+      Rect.fromLTRB(4, -1 + rightDip, rightSpan, 5 + rightDip),
+      rightWingColor,
+      spacing: 4.5,
+      opacity: 0.10,
+    );
+
+    // Right wing pencil outline
+    _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 1.0);
+
+    // Ambient occlusion at right wing root
+    _wingJointAO(canvas, Offset(4, 1 + rightDip * 0.2), radius: 5.0);
 
     // Right wing highlight
     if (shade >= 0) {
@@ -303,6 +522,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(tailSpan + 2, 16, tailSpan, 14 - wingDip * 0.3)
       ..close();
     canvas.drawPath(tailPath, Paint()..color = _darken(detail, 0.1));
+    _pencilOutline(tailPath, canvas, _darken(detail, 0.1), strokeWidth: 0.9);
 
     // Vertical fin
     final finPath = Path()
@@ -312,6 +532,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(4 + bankSin * 3, 15, bankSin * 2, 11)
       ..close();
     canvas.drawPath(finPath, accentPaint);
+    _pencilOutline(finPath, canvas, secondary, strokeWidth: 0.9);
 
     // Fuselage
     final fuselagePath = Path()
@@ -323,6 +544,15 @@ class PlaneRenderer {
       ..quadraticBezierTo(-5 + bodyShift, -12, bodyShift, -16)
       ..close();
     canvas.drawPath(fuselagePath, bodyPaint);
+
+    // Sketch outline on fuselage — slightly wobbly hand-drawn feel
+    final sketchOutlinePaint = Paint()
+      ..color = _darken(primary, 0.40).withOpacity(0.50)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    _sketchPath(fuselagePath, canvas, sketchOutlinePaint, rng, wobble: 0.35);
 
     // Fuselage highlight
     final highlightStreak = Path()
@@ -388,7 +618,9 @@ class PlaneRenderer {
     double bankSin,
     double wingSpan,
     Map<String, int>? colorScheme,
+    String planeId,
   ) {
+    final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFFF5F5F5);
     final secondary = _secondary(colorScheme, 0xFFE0E0E0);
     final detail = _detail(colorScheme, 0xFFCCCCCC);
@@ -417,6 +649,22 @@ class PlaneRenderer {
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
+    // Paper wing cross-hatch (fold crease texture)
+    _crossHatch(
+      canvas,
+      Rect.fromLTRB(-leftSpan, -18 + wingDip, bodyShift, 8 + wingDip),
+      detail,
+      spacing: 6.0,
+      opacity: 0.09,
+    );
+    _pencilOutline(
+      leftWing,
+      canvas,
+      leftWingColor,
+      strokeWidth: 1.1,
+      opacity: 0.50,
+    );
+
     // --- Right wing ---
     final rightWing = Path()
       ..moveTo(bodyShift, -18) // nose tip
@@ -425,6 +673,22 @@ class PlaneRenderer {
       ..lineTo(bodyShift, 4) // center trailing edge
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+
+    // Paper wing cross-hatch (fold crease texture)
+    _crossHatch(
+      canvas,
+      Rect.fromLTRB(bodyShift, -18 - wingDip, rightSpan, 8 - wingDip),
+      detail,
+      spacing: 6.0,
+      opacity: 0.09,
+    );
+    _pencilOutline(
+      rightWing,
+      canvas,
+      rightWingColor,
+      strokeWidth: 1.1,
+      opacity: 0.50,
+    );
 
     // --- Center body / keel (the folded ridge) ---
     canvas.save();
@@ -443,6 +707,14 @@ class PlaneRenderer {
       ..lineTo(bodyShift - 2.5, -8)
       ..close();
     canvas.drawPath(keelPath, Paint()..color = primary);
+
+    // Sketch wobble on keel — paper creases are imprecise
+    final keelSketchPaint = Paint()
+      ..color = _darken(detail, 0.30).withOpacity(0.45)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..strokeCap = StrokeCap.round;
+    _sketchPath(keelPath, canvas, keelSketchPaint, rng, wobble: 0.40);
 
     // Center fold line
     canvas.drawLine(
@@ -483,6 +755,7 @@ class PlaneRenderer {
     Map<String, int>? colorScheme,
     String planeId,
   ) {
+    final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFFC0C0C0);
     final secondary = _secondary(colorScheme, 0xFF4A90B8);
     final detail = _detail(colorScheme, 0xFF808080);
@@ -509,6 +782,8 @@ class PlaneRenderer {
       ..lineTo(-2 + bodyShift, 6)
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 0.9);
+    _wingJointAO(canvas, Offset(-3 + bodyShift, 4), radius: 4.0);
 
     final rightSpan =
         dynamicWingSpan * 0.8 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
@@ -519,6 +794,8 @@ class PlaneRenderer {
       ..lineTo(2 + bodyShift, 6)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 0.9);
+    _wingJointAO(canvas, Offset(3 + bodyShift, 4), radius: 4.0);
 
     // --- Body group ---
     canvas.save();
@@ -537,6 +814,15 @@ class PlaneRenderer {
       ..quadraticBezierTo(-3 + bodyShift, -14, bodyShift, -18)
       ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Sketch outline on fuselage
+    final fuselageSketchPaint = Paint()
+      ..color = _darken(primary, 0.40).withOpacity(0.48)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.32);
 
     // Canopy
     canvas.drawOval(
@@ -577,7 +863,9 @@ class PlaneRenderer {
     double bankSin,
     double wingSpan,
     Map<String, int>? colorScheme,
+    String planeId,
   ) {
+    final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFF2A2A2A);
     final secondary = _secondary(colorScheme, 0xFF1A1A1A);
     final detail = _detail(colorScheme, 0xFF444444);
@@ -605,6 +893,15 @@ class PlaneRenderer {
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
+    // Stealth panels catch edges differently — subtle sketch outline
+    final leftSketchPaint = Paint()
+      ..color = const Color(0xFF666666).withOpacity(0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8
+      ..strokeCap = StrokeCap.round;
+    _sketchPath(leftWing, canvas, leftSketchPaint, rng, wobble: 0.30);
+    _wingJointAO(canvas, Offset(bodyShift, -3), radius: 6.0, opacity: 0.22);
+
     final rightSpan =
         dynamicWingSpan * 1.2 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.5;
     final rightWing = Path()
@@ -619,6 +916,13 @@ class PlaneRenderer {
       ..quadraticBezierTo(rightSpan * 0.3, 6 - wingDip * 0.5, bodyShift, 10)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+
+    final rightSketchPaint = Paint()
+      ..color = const Color(0xFF666666).withOpacity(0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8
+      ..strokeCap = StrokeCap.round;
+    _sketchPath(rightWing, canvas, rightSketchPaint, rng, wobble: 0.30);
 
     // --- Body group ---
     canvas.save();
@@ -635,6 +939,7 @@ class PlaneRenderer {
       ..lineTo(bodyShift + 4, -12)
       ..close();
     canvas.drawPath(centerBody, Paint()..color = detail);
+    _pencilOutline(centerBody, canvas, detail, strokeWidth: 0.9, opacity: 0.45);
 
     // Sawtooth trailing edge
     final sawtoothPaint = Paint()
@@ -669,7 +974,9 @@ class PlaneRenderer {
     double wingSpan,
     Map<String, int>? colorScheme,
     double propAngle,
+    String planeId,
   ) {
+    final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFFCC3333);
     final secondary = _secondary(colorScheme, 0xFF8B0000);
     final detail = _detail(colorScheme, 0xFF1A1A1A);
@@ -703,46 +1010,65 @@ class PlaneRenderer {
     }
 
     // --- Three stacked wings ---
-    // Top wing (smallest)
+    // Top wing (smallest) — draw as path for sketch outline support
     final topSpan = dynamicWingSpan * 0.7;
+    final topWingRect = Rect.fromCenter(
+      center: Offset(0, -6 + wingDip * 0.3),
+      width: topSpan * 2,
+      height: 5,
+    );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(0, -6 + wingDip * 0.3),
-          width: topSpan * 2,
-          height: 5,
-        ),
-        const Radius.circular(2),
-      ),
+      RRect.fromRectAndRadius(topWingRect, const Radius.circular(2)),
       Paint()..color = wingColor,
     );
+    // Cross-hatch on top wing fabric
+    _crossHatch(canvas, topWingRect, wingColor, spacing: 4.0, opacity: 0.11);
+    // Pencil outline on top wing
+    final topWingPath = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(topWingRect, const Radius.circular(2)),
+      );
+    _pencilOutline(topWingPath, canvas, wingColor, strokeWidth: 0.9);
 
     // Middle wing
     final midSpan = dynamicWingSpan * 0.85;
+    final midWingRect = Rect.fromCenter(
+      center: Offset(0, 0 + wingDip * 0.6),
+      width: midSpan * 2,
+      height: 5,
+    );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(0, 0 + wingDip * 0.6),
-          width: midSpan * 2,
-          height: 5,
-        ),
-        const Radius.circular(2),
-      ),
+      RRect.fromRectAndRadius(midWingRect, const Radius.circular(2)),
       Paint()..color = wingColor,
     );
+    _crossHatch(canvas, midWingRect, wingColor, spacing: 4.0, opacity: 0.11);
+    final midWingPath = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(midWingRect, const Radius.circular(2)),
+      );
+    _pencilOutline(midWingPath, canvas, wingColor, strokeWidth: 0.9);
 
     // Bottom wing (largest)
+    final botWingRect = Rect.fromCenter(
+      center: Offset(0, 6 + wingDip),
+      width: dynamicWingSpan * 2,
+      height: 5,
+    );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(0, 6 + wingDip),
-          width: dynamicWingSpan * 2,
-          height: 5,
-        ),
-        const Radius.circular(2),
-      ),
+      RRect.fromRectAndRadius(botWingRect, const Radius.circular(2)),
       Paint()..color = wingColor,
     );
+    _crossHatch(canvas, botWingRect, wingColor, spacing: 4.0, opacity: 0.11);
+    final botWingPath = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(botWingRect, const Radius.circular(2)),
+      );
+    _pencilOutline(botWingPath, canvas, wingColor, strokeWidth: 0.9);
+
+    // AO at fuselage-wing junctions
+    _wingJointAO(canvas, Offset(bodyShift, -6 + wingDip * 0.3), radius: 5.0);
+    _wingJointAO(canvas, Offset(bodyShift, wingDip * 0.6), radius: 5.0);
+    _wingJointAO(canvas, Offset(bodyShift, 6 + wingDip), radius: 5.0);
 
     // --- Body group ---
     canvas.save();
@@ -759,6 +1085,7 @@ class PlaneRenderer {
       ..lineTo(4, 12)
       ..close();
     canvas.drawPath(tailPath, Paint()..color = wingColor);
+    _pencilOutline(tailPath, canvas, wingColor, strokeWidth: 0.9);
 
     // Fuselage
     final fuselagePath = Path()
@@ -770,6 +1097,15 @@ class PlaneRenderer {
       ..quadraticBezierTo(-4 + bodyShift, -12, bodyShift, -16)
       ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Sketch outline on fuselage
+    final fuselageSketchPaint = Paint()
+      ..color = _darken(primary, 0.45).withOpacity(0.50)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.38);
 
     // Struts
     final strutPaint = Paint()
@@ -811,7 +1147,9 @@ class PlaneRenderer {
     double bankSin,
     double wingSpan,
     Map<String, int>? colorScheme,
+    String planeId,
   ) {
+    final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFFF5F5F5);
     final secondary = _secondary(colorScheme, 0xFF1A3A5C);
     final detail = _detail(colorScheme, 0xFFCC3333);
@@ -837,6 +1175,8 @@ class PlaneRenderer {
       ..lineTo(bodyShift - 2, 14)
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 1.0);
+    _wingJointAO(canvas, Offset(bodyShift - 2, -2), radius: 5.5);
 
     final rightSpan =
         dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
@@ -846,6 +1186,8 @@ class PlaneRenderer {
       ..lineTo(bodyShift + 2, 14)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 1.0);
+    _wingJointAO(canvas, Offset(bodyShift + 2, -2), radius: 5.5);
 
     // --- Body group ---
     canvas.save();
@@ -864,6 +1206,15 @@ class PlaneRenderer {
       ..quadraticBezierTo(-3 + bodyShift, -10, bodyShift, -18)
       ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Sketch outline on fuselage
+    final fuselageSketchPaint = Paint()
+      ..color = _darken(primary, 0.38).withOpacity(0.48)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.30);
 
     // Drooping nose
     canvas.drawLine(
@@ -926,6 +1277,7 @@ class PlaneRenderer {
     double wingSpan,
     Map<String, int>? colorScheme,
     double propAngle,
+    String planeId,
   ) {
     final secondary = _secondary(colorScheme, 0xFF2E8B57);
     final detail = _detail(colorScheme, 0xFFF5F5F5);
@@ -935,27 +1287,47 @@ class PlaneRenderer {
 
     // Pontoons (below the plane)
     final pontoonPaint = Paint()..color = detail;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(-dynamicWingSpan * 0.5, 12 + wingDip),
-          width: 6,
-          height: 16,
-        ),
-        const Radius.circular(3),
-      ),
-      pontoonPaint,
+    final leftPontoonRect = Rect.fromCenter(
+      center: Offset(-dynamicWingSpan * 0.5, 12 + wingDip),
+      width: 6,
+      height: 16,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(dynamicWingSpan * 0.5, 12 - wingDip),
-          width: 6,
-          height: 16,
-        ),
-        const Radius.circular(3),
-      ),
+      RRect.fromRectAndRadius(leftPontoonRect, const Radius.circular(3)),
       pontoonPaint,
+    );
+    // Pencil outline on pontoon for hand-drawn feel
+    final leftPontoonPath = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(leftPontoonRect, const Radius.circular(3)),
+      );
+    _pencilOutline(
+      leftPontoonPath,
+      canvas,
+      detail,
+      strokeWidth: 0.9,
+      opacity: 0.45,
+    );
+
+    final rightPontoonRect = Rect.fromCenter(
+      center: Offset(dynamicWingSpan * 0.5, 12 - wingDip),
+      width: 6,
+      height: 16,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rightPontoonRect, const Radius.circular(3)),
+      pontoonPaint,
+    );
+    final rightPontoonPath = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(rightPontoonRect, const Radius.circular(3)),
+      );
+    _pencilOutline(
+      rightPontoonPath,
+      canvas,
+      detail,
+      strokeWidth: 0.9,
+      opacity: 0.45,
     );
 
     // Struts connecting pontoons to wings
@@ -974,10 +1346,18 @@ class PlaneRenderer {
     );
 
     // Delegate to bi-plane for the main body
-    _renderBiPlane(canvas, bankCos, bankSin, wingSpan, colorScheme, propAngle);
+    _renderBiPlane(
+      canvas,
+      bankCos,
+      bankSin,
+      wingSpan,
+      colorScheme,
+      propAngle,
+      planeId,
+    );
   }
 
-  // ─── Airliner (Bryanair, Air Force One) ─────────────────────────────
+  // ─── Airliner (Padraigaer, Presidential) ────────────────────────────
 
   static void _renderAirliner(
     Canvas canvas,
@@ -985,10 +1365,12 @@ class PlaneRenderer {
     double bankSin,
     double wingSpan,
     Map<String, int>? colorScheme,
+    String planeId,
   ) {
+    final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFFF5F5F5);
-    final secondary = _secondary(colorScheme, 0xFF003580);
-    final detail = _detail(colorScheme, 0xFFFFCC00);
+    final secondary = _secondary(colorScheme, 0xFF169B62);
+    final detail = _detail(colorScheme, 0xFFFF883E);
 
     final shade = -bankSin;
     final bodyShift = bankSin * 1.0;
@@ -1017,6 +1399,8 @@ class PlaneRenderer {
       ..quadraticBezierTo(-leftSpan * 0.4, 5 + wingDip * 0.5, -5 + bodyShift, 2)
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 1.0);
+    _wingJointAO(canvas, Offset(-6 + bodyShift, 1), radius: 5.0);
 
     final rightSpan =
         dynamicWingSpan * 1.1 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
@@ -1032,6 +1416,8 @@ class PlaneRenderer {
       ..quadraticBezierTo(rightSpan * 0.4, 5 - wingDip * 0.5, 5 + bodyShift, 2)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 1.0);
+    _wingJointAO(canvas, Offset(6 + bodyShift, 1), radius: 5.0);
 
     // --- Body group ---
     canvas.save();
@@ -1048,6 +1434,7 @@ class PlaneRenderer {
       ..lineTo(3, 14)
       ..close();
     canvas.drawPath(tailPath, Paint()..color = detail);
+    _pencilOutline(tailPath, canvas, detail, strokeWidth: 0.9);
 
     // Vertical stabilizer
     final finPath = Path()
@@ -1056,6 +1443,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(2 + bodyShift, 14, bodyShift, 12)
       ..close();
     canvas.drawPath(finPath, Paint()..color = secondary);
+    _pencilOutline(finPath, canvas, secondary, strokeWidth: 0.9);
 
     // Wide fuselage
     final fuselagePath = Path()
@@ -1067,6 +1455,15 @@ class PlaneRenderer {
       ..quadraticBezierTo(-6 + bodyShift, -12, bodyShift, -17)
       ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Sketch outline on fuselage
+    final fuselageSketchPaint = Paint()
+      ..color = _darken(primary, 0.38).withOpacity(0.45)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.33);
 
     // Cockpit windows
     for (var y in [-13.0, -11.0, -9.0, -7.0]) {
@@ -1121,15 +1518,17 @@ class PlaneRenderer {
     }
   }
 
-  // ─── Air Force One (Presidential 747) ──────────────────────────────
+  // ─── Presidential (747-style) ──────────────────────────────────────
 
-  static void _renderAirForceOne(
+  static void _renderPresidential(
     Canvas canvas,
     double bankCos,
     double bankSin,
     double wingSpan,
     Map<String, int>? colorScheme,
+    String planeId,
   ) {
+    final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFFF5F5F5);
     final secondary = _secondary(colorScheme, 0xFF1A3A5C);
     final detail = _detail(colorScheme, 0xFFD4A944);
@@ -1139,7 +1538,7 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 2.0;
 
-    // Swept-back wings — wider and more authoritative than Bryanair
+    // Swept-back wings — wider and more authoritative than Padraigaer
     final leftWingColor = shade < 0
         ? primary
         : Color.lerp(primary, Colors.grey, 0.15)!;
@@ -1166,6 +1565,8 @@ class PlaneRenderer {
       )
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 1.0);
+    _wingJointAO(canvas, Offset(-5 + bodyShift, 0), radius: 5.5);
 
     final rightSpan =
         dynamicWingSpan * 1.15 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
@@ -1181,6 +1582,8 @@ class PlaneRenderer {
       ..quadraticBezierTo(rightSpan * 0.35, 4 - wingDip * 0.5, 4 + bodyShift, 1)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 1.0);
+    _wingJointAO(canvas, Offset(5 + bodyShift, 0), radius: 5.5);
 
     // --- Body group ---
     canvas.save();
@@ -1198,6 +1601,7 @@ class PlaneRenderer {
       ..lineTo(-1 + bodyShift, 16)
       ..close();
     canvas.drawPath(stabLeft, Paint()..color = primary);
+    _pencilOutline(stabLeft, canvas, primary, strokeWidth: 0.9);
     final stabRight = Path()
       ..moveTo(2 + bodyShift, 15)
       ..lineTo(stabSpan + bodyShift, 17 - wingDip * 0.2)
@@ -1205,6 +1609,7 @@ class PlaneRenderer {
       ..lineTo(1 + bodyShift, 16)
       ..close();
     canvas.drawPath(stabRight, Paint()..color = primary);
+    _pencilOutline(stabRight, canvas, primary, strokeWidth: 0.9);
 
     // Tall vertical fin — distinctive T-tail
     final finPath = Path()
@@ -1214,6 +1619,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(bodyShift + 3, 14, bodyShift + 1, 11)
       ..close();
     canvas.drawPath(finPath, Paint()..color = secondary);
+    _pencilOutline(finPath, canvas, secondary, strokeWidth: 0.9);
     // Gold accent on fin
     canvas.drawLine(
       Offset(bodyShift, 12),
@@ -1223,7 +1629,7 @@ class PlaneRenderer {
         ..strokeWidth = 1.2,
     );
 
-    // Wide presidential fuselage (larger than Bryanair)
+    // Wide presidential fuselage (larger than Padraigaer)
     final fuselagePath = Path()
       ..moveTo(bodyShift, -19)
       ..quadraticBezierTo(7 + bodyShift, -14, 7 + bodyShift, 0)
@@ -1234,7 +1640,16 @@ class PlaneRenderer {
       ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
 
-    // Presidential blue belly stripe (the iconic two-tone)
+    // Sketch outline on fuselage
+    final fuselageSketchPaint = Paint()
+      ..color = _darken(primary, 0.38).withOpacity(0.45)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.3
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.33);
+
+    // Blue belly stripe (the iconic two-tone)
     final bellyStripe = Path()
       ..moveTo(bodyShift - 6, -2)
       ..quadraticBezierTo(bodyShift - 5, 8, bodyShift - 3, 16)
@@ -1243,7 +1658,7 @@ class PlaneRenderer {
       ..close();
     canvas.drawPath(bellyStripe, Paint()..color = secondary.withOpacity(0.4));
 
-    // Upper blue band (the distinctive Air Force One livery)
+    // Upper blue band (distinctive presidential livery)
     canvas.drawLine(
       Offset(bodyShift - 6.5, -4),
       Offset(bodyShift + 6.5, -4),
@@ -1288,7 +1703,7 @@ class PlaneRenderer {
       );
     }
 
-    // American flag accent at tail (small red-white-blue stripes)
+    // Flag accent at tail (small tricolour stripes)
     for (var i = 0; i < 3; i++) {
       final flagY = 13.0 + i * 1.5;
       final flagColor = i == 1 ? primary : (i == 0 ? secondary : detail);
@@ -1352,7 +1767,9 @@ class PlaneRenderer {
     double bankSin,
     double wingSpan,
     Map<String, int>? colorScheme,
+    String planeId,
   ) {
+    final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFFD4D4D4);
     final secondary = _secondary(colorScheme, 0xFF6A0DAD);
     final detail = _detail(colorScheme, 0xFFC0C0C0);
@@ -1385,6 +1802,15 @@ class PlaneRenderer {
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
+    // Wing feather sketch lines — eagle wings have a more detailed organic edge
+    final leftWingSketchPaint = Paint()
+      ..color = _darken(leftWingColor, 0.35).withOpacity(0.42)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..strokeCap = StrokeCap.round;
+    _sketchPath(leftWing, canvas, leftWingSketchPaint, rng, wobble: 0.38);
+    _wingJointAO(canvas, Offset(-4 + bodyShift, -1), radius: 5.0);
+
     final rightSpan =
         dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
     final rightWing = Path()
@@ -1399,6 +1825,14 @@ class PlaneRenderer {
       ..lineTo(4 + bodyShift, 2)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+
+    final rightWingSketchPaint = Paint()
+      ..color = _darken(rightWingColor, 0.35).withOpacity(0.42)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..strokeCap = StrokeCap.round;
+    _sketchPath(rightWing, canvas, rightWingSketchPaint, rng, wobble: 0.38);
+    _wingJointAO(canvas, Offset(4 + bodyShift, -1), radius: 5.0);
 
     // --- Body group ---
     canvas.save();
@@ -1416,6 +1850,7 @@ class PlaneRenderer {
       ..lineTo(bodyShift + 4, 10)
       ..close();
     canvas.drawPath(tailPath, Paint()..color = secondary);
+    _pencilOutline(tailPath, canvas, secondary, strokeWidth: 1.0);
 
     // Raptor body (tapered)
     final fuselagePath = Path()
@@ -1427,6 +1862,15 @@ class PlaneRenderer {
       ..quadraticBezierTo(-4 + bodyShift, -10, bodyShift, -16)
       ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Sketch outline on body — feathered, slightly organic
+    final fuselageSketchPaint = Paint()
+      ..color = _darken(primary, 0.40).withOpacity(0.48)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.38);
 
     // Eagle eye
     canvas.drawCircle(

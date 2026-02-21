@@ -91,11 +91,8 @@ void main() {
       expect(AudioManager.engineTypeForPlane('plane_prop'), EngineType.prop);
     });
 
-    test('Spitfire maps to prop engine', () {
-      expect(
-        AudioManager.engineTypeForPlane('plane_spitfire'),
-        EngineType.prop,
-      );
+    test('Warbird maps to prop engine', () {
+      expect(AudioManager.engineTypeForPlane('plane_warbird'), EngineType.prop);
     });
 
     test('Island Hopper maps to prop engine', () {
@@ -105,9 +102,9 @@ void main() {
       );
     });
 
-    test('Lancaster Bomber maps to bomber engine', () {
+    test('Night Raider maps to bomber engine', () {
       expect(
-        AudioManager.engineTypeForPlane('plane_lancaster'),
+        AudioManager.engineTypeForPlane('plane_night_raider'),
         EngineType.bomber,
       );
     });
@@ -123,8 +120,11 @@ void main() {
       expect(AudioManager.engineTypeForPlane('plane_jet'), EngineType.jet);
     });
 
-    test('Bryanair maps to jet engine', () {
-      expect(AudioManager.engineTypeForPlane('plane_bryanair'), EngineType.jet);
+    test('Padraigaer maps to jet engine', () {
+      expect(
+        AudioManager.engineTypeForPlane('plane_padraigaer'),
+        EngineType.jet,
+      );
     });
 
     test('Concorde Classic maps to jet engine', () {
@@ -134,9 +134,9 @@ void main() {
       );
     });
 
-    test('Air Force One maps to jet engine', () {
+    test('Presidential maps to jet engine', () {
       expect(
-        AudioManager.engineTypeForPlane('plane_air_force_one'),
+        AudioManager.engineTypeForPlane('plane_presidential'),
         EngineType.jet,
       );
     });

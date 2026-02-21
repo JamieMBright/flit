@@ -167,16 +167,20 @@ class ChallengeService {
       if (roundIndex < 0 || roundIndex >= rounds.length) return false;
 
       // Set the time for the appropriate player.
-      final timeKey = isChallenger ? 'challenger_time_ms' : 'challenged_time_ms';
+      final timeKey = isChallenger
+          ? 'challenger_time_ms'
+          : 'challenged_time_ms';
       rounds[roundIndex][timeKey] = timeMs;
 
       // If the challenge was pending, move to in_progress.
-      final newStatus = row['status'] == 'pending' ? 'in_progress' : row['status'];
+      final newStatus = row['status'] == 'pending'
+          ? 'in_progress'
+          : row['status'];
 
-      await _client.from('challenges').update({
-        'rounds': rounds,
-        'status': newStatus,
-      }).eq('id', challengeId);
+      await _client
+          .from('challenges')
+          .update({'rounds': rounds, 'status': newStatus})
+          .eq('id', challengeId);
 
       return true;
     } catch (e) {
@@ -206,7 +210,9 @@ class ChallengeService {
       final challenge = _rowToChallenge(row);
 
       // Check if all rounds are complete (both players submitted).
-      final completedRounds = challenge.rounds.where((r) => r.isComplete).length;
+      final completedRounds = challenge.rounds
+          .where((r) => r.isComplete)
+          .length;
       if (completedRounds < Challenge.totalRounds) return null;
 
       // Determine winner.
@@ -230,13 +236,16 @@ class ChallengeService {
         isDraw: winnerId == null,
       );
 
-      await _client.from('challenges').update({
-        'status': 'completed',
-        'winner_id': winnerId,
-        'challenger_coins': challengerCoins,
-        'challenged_coins': challengedCoins,
-        'completed_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', challengeId);
+      await _client
+          .from('challenges')
+          .update({
+            'status': 'completed',
+            'winner_id': winnerId,
+            'challenger_coins': challengerCoins,
+            'challenged_coins': challengedCoins,
+            'completed_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', challengeId);
 
       return challenge;
     } catch (e) {

@@ -110,12 +110,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: _entries.length,
-                  itemBuilder: (context, index) =>
-                      _LeaderboardRow(
-                        entry: _entries[index],
-                        isCurrentPlayer:
-                            _entries[index].playerId == _userId,
-                      ),
+                  itemBuilder: (context, index) => _LeaderboardRow(
+                    entry: _entries[index],
+                    isCurrentPlayer: _entries[index].playerId == _userId,
+                  ),
                 ),
         ),
       ],
@@ -272,10 +270,7 @@ class _PlayerRankBanner extends StatelessWidget {
 
 /// A single leaderboard row with rank, avatar, name, score, and time.
 class _LeaderboardRow extends StatelessWidget {
-  const _LeaderboardRow({
-    required this.entry,
-    this.isCurrentPlayer = false,
-  });
+  const _LeaderboardRow({required this.entry, this.isCurrentPlayer = false});
 
   final LeaderboardEntry entry;
   final bool isCurrentPlayer;
@@ -298,8 +293,8 @@ class _LeaderboardRow extends StatelessWidget {
           color: isCurrentPlayer
               ? FlitColors.accent
               : entry.rank <= 3
-                  ? _rankColor
-                  : FlitColors.cardBorder,
+              ? _rankColor
+              : FlitColors.cardBorder,
         ),
       ),
       child: Row(

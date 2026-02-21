@@ -68,6 +68,36 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
         },
       ),
       const Divider(color: FlitColors.cardBorder, height: 1),
+      _SettingsSlider(
+        label: 'Music Volume',
+        icon: Icons.music_note_outlined,
+        value: GameSettings.instance.musicVolume,
+        min: 0.0,
+        max: 1.0,
+        valueLabel: GameSettings.instance.musicVolumeLabel,
+        onChanged: GameSettings.instance.soundEnabled
+            ? (value) {
+                GameSettings.instance.musicVolume = value;
+                setState(() {});
+              }
+            : null,
+      ),
+      const Divider(color: FlitColors.cardBorder, height: 1),
+      _SettingsSlider(
+        label: 'Effects Volume',
+        icon: Icons.surround_sound_outlined,
+        value: GameSettings.instance.effectsVolume,
+        min: 0.0,
+        max: 1.0,
+        valueLabel: GameSettings.instance.effectsVolumeLabel,
+        onChanged: GameSettings.instance.soundEnabled
+            ? (value) {
+                GameSettings.instance.effectsVolume = value;
+                setState(() {});
+              }
+            : null,
+      ),
+      const Divider(color: FlitColors.cardBorder, height: 1),
       _SettingsToggle(
         label: 'Notifications',
         icon: Icons.notifications_outlined,
@@ -257,49 +287,69 @@ class _SettingsSlider extends StatelessWidget {
   final double min;
   final double max;
   final String valueLabel;
-  final ValueChanged<double> onChanged;
+  final ValueChanged<double>? onChanged;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: FlitColors.textSecondary, size: 22),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 16,
+  Widget build(BuildContext context) {
+    final isEnabled = onChanged != null;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                icon,
+                color: isEnabled
+                    ? FlitColors.textSecondary
+                    : FlitColors.textMuted,
+                size: 22,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: isEnabled
+                        ? FlitColors.textPrimary
+                        : FlitColors.textMuted,
+                    fontSize: 16,
+                  ),
                 ),
               ),
-            ),
-            Text(
-              valueLabel,
-              style: const TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 14,
+              Text(
+                valueLabel,
+                style: TextStyle(
+                  color: isEnabled
+                      ? FlitColors.textSecondary
+                      : FlitColors.textMuted,
+                  fontSize: 14,
+                ),
               ),
-            ),
-          ],
-        ),
-        SliderTheme(
-          data: SliderThemeData(
-            activeTrackColor: FlitColors.accent,
-            inactiveTrackColor: FlitColors.backgroundMid,
-            thumbColor: FlitColors.accent,
-            overlayColor: FlitColors.accent.withOpacity(0.15),
-            trackHeight: 4,
+            ],
           ),
-          child: Slider(value: value, min: min, max: max, onChanged: onChanged),
-        ),
-      ],
-    ),
-  );
+          SliderTheme(
+            data: SliderThemeData(
+              activeTrackColor: isEnabled
+                  ? FlitColors.accent
+                  : FlitColors.textMuted.withOpacity(0.3),
+              inactiveTrackColor: FlitColors.backgroundMid,
+              thumbColor: isEnabled ? FlitColors.accent : FlitColors.textMuted,
+              overlayColor: FlitColors.accent.withOpacity(0.15),
+              trackHeight: 4,
+            ),
+            child: Slider(
+              value: value,
+              min: min,
+              max: max,
+              onChanged: onChanged,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

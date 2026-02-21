@@ -123,6 +123,20 @@ class AuthService {
       );
       return _state;
     }
+    if (username.length > 20) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Username must be 20 characters or fewer',
+      );
+      return _state;
+    }
+    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(username)) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Username may only contain letters, numbers, and underscores',
+      );
+      return _state;
+    }
     if (password.length < 6) {
       _state = _state.copyWith(
         isLoading: false,
@@ -325,6 +339,12 @@ class AuthService {
               ? Duration(milliseconds: data['total_flight_time_ms'] as int)
               : Duration.zero,
           countriesFound: data['countries_found'] as int? ?? 0,
+          flagsCorrect: data['flags_correct'] as int? ?? 0,
+          capitalsCorrect: data['capitals_correct'] as int? ?? 0,
+          outlinesCorrect: data['outlines_correct'] as int? ?? 0,
+          bordersCorrect: data['borders_correct'] as int? ?? 0,
+          statsCorrect: data['stats_correct'] as int? ?? 0,
+          bestStreak: data['best_streak'] as int? ?? 0,
           createdAt: data['created_at'] != null
               ? DateTime.tryParse(data['created_at'] as String)
               : null,

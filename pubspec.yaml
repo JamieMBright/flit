@@ -38,6 +38,9 @@ dependencies:
   # Supabase Auth + Database (cross-platform: iOS, Android, Web)
   supabase_flutter: ^2.3.0
 
+  # Local key-value storage for offline write queue (cross-platform: iOS, Android, Web)
+  shared_preferences: ^2.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
