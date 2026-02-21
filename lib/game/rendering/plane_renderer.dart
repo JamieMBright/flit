@@ -1686,7 +1686,9 @@ class PlaneRenderer {
     double bankSin,
     double wingSpan,
     Map<String, int>? colorScheme,
+    String planeId,
   ) {
+    final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFFD4D4D4);
     final secondary = _secondary(colorScheme, 0xFF6A0DAD);
     final detail = _detail(colorScheme, 0xFFC0C0C0);
@@ -1719,6 +1721,15 @@ class PlaneRenderer {
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
+    // Wing feather sketch lines — eagle wings have a more detailed organic edge
+    final leftWingSketchPaint = Paint()
+      ..color = _darken(leftWingColor, 0.35).withOpacity(0.42)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..strokeCap = StrokeCap.round;
+    _sketchPath(leftWing, canvas, leftWingSketchPaint, rng, wobble: 0.38);
+    _wingJointAO(canvas, Offset(-4 + bodyShift, -1), radius: 5.0);
+
     final rightSpan =
         dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
     final rightWing = Path()
@@ -1733,6 +1744,14 @@ class PlaneRenderer {
       ..lineTo(4 + bodyShift, 2)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+
+    final rightWingSketchPaint = Paint()
+      ..color = _darken(rightWingColor, 0.35).withOpacity(0.42)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..strokeCap = StrokeCap.round;
+    _sketchPath(rightWing, canvas, rightWingSketchPaint, rng, wobble: 0.38);
+    _wingJointAO(canvas, Offset(4 + bodyShift, -1), radius: 5.0);
 
     // --- Body group ---
     canvas.save();
@@ -1750,6 +1769,7 @@ class PlaneRenderer {
       ..lineTo(bodyShift + 4, 10)
       ..close();
     canvas.drawPath(tailPath, Paint()..color = secondary);
+    _pencilOutline(tailPath, canvas, secondary, strokeWidth: 1.0);
 
     // Raptor body (tapered)
     final fuselagePath = Path()
@@ -1761,6 +1781,15 @@ class PlaneRenderer {
       ..quadraticBezierTo(-4 + bodyShift, -10, bodyShift, -16)
       ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Sketch outline on body — feathered, slightly organic
+    final fuselageSketchPaint = Paint()
+      ..color = _darken(primary, 0.40).withOpacity(0.48)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.38);
 
     // Eagle eye
     canvas.drawCircle(
