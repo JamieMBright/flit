@@ -3,17 +3,50 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/leaderboard_entry.dart';
 import '../models/daily_challenge.dart';
+import 'ttl_cache.dart';
 
 /// Service that fetches real leaderboard data from Supabase.
 ///
 /// Queries the `scores` table joined with `profiles` to build ranked lists.
 /// All queries use Supabase's PostgREST API — no raw SQL needed.
+///
+/// High-traffic read paths are backed by an in-memory [TtlCache] so that
+/// rapid screen opens (e.g. tab switching) don't each trigger a DB round-trip.
+/// The cache auto-expires after 30 s for competitive boards (global, daily,
+/// regional) and 60 s for less volatile data (hall of fame, player count).
+/// Call [invalidateCache] after a score insert to force a fresh fetch.
 class LeaderboardService {
   LeaderboardService._();
 
   static final LeaderboardService instance = LeaderboardService._();
 
   SupabaseClient get _client => Supabase.instance.client;
+
+  // Cache: 30 s for competitive leaderboards, 60 s for slower-changing data.
+  final _boardCache = TtlCache<List<LeaderboardEntry>>(
+    const Duration(seconds: 30),
+  );
+  final _dailyBoardCache = TtlCache<List<DailyLeaderboardEntry>>(
+    const Duration(seconds: 30),
+  );
+  final _hallOfFameCache = TtlCache<List<Map<String, dynamic>>>(
+    const Duration(seconds: 60),
+  );
+  final _playerCountCache = TtlCache<int>(const Duration(seconds: 60));
+  final _historyCache = TtlCache<List<Map<String, dynamic>>>(
+    const Duration(seconds: 30),
+  );
+  final _rankCache = TtlCache<LeaderboardEntry?>(const Duration(seconds: 30));
+
+  /// Drop every cached result. Call after the current user submits a score.
+  void invalidateCache() {
+    _boardCache.invalidate();
+    _dailyBoardCache.invalidate();
+    _hallOfFameCache.invalidate();
+    _playerCountCache.invalidate();
+    _historyCache.invalidate();
+    _rankCache.invalidate();
+  }
 
   // ---------------------------------------------------------------------------
   // Main leaderboard (used by LeaderboardScreen)
@@ -85,6 +118,10 @@ class LeaderboardService {
   Future<List<DailyLeaderboardEntry>> fetchDailyLeaderboard({
     int limit = 20,
   }) async {
+    final cacheKey = 'daily_$limit';
+    final cached = _dailyBoardCache.get(cacheKey);
+    if (cached != null) return cached;
+
     try {
       final now = DateTime.now().toUtc();
       final startOfDay = DateTime.utc(now.year, now.month, now.day);
@@ -101,7 +138,7 @@ class LeaderboardService {
           .order('time_ms', ascending: true)
           .limit(limit);
 
-      return List<DailyLeaderboardEntry>.generate(data.length, (i) {
+      final result = List<DailyLeaderboardEntry>.generate(data.length, (i) {
         final row = data[i];
         final profile = row['profiles'] as Map<String, dynamic>?;
         return DailyLeaderboardEntry(
@@ -111,6 +148,9 @@ class LeaderboardService {
           rank: i + 1,
         );
       });
+
+      _dailyBoardCache.set(cacheKey, result);
+      return result;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchDailyLeaderboard failed: $e');
       return [];
@@ -123,6 +163,10 @@ class LeaderboardService {
 
   /// Fetch recent daily winners (top scorer per day for last N days).
   Future<List<Map<String, dynamic>>> fetchHallOfFame({int days = 5}) async {
+    final cacheKey = 'hof_$days';
+    final cached = _hallOfFameCache.get(cacheKey);
+    if (cached != null) return cached;
+
     try {
       // Fetch top score per day for the last N days using a simple approach:
       // get the last N days of daily scores and pick the best per day.
@@ -151,16 +195,21 @@ class LeaderboardService {
         byDate.putIfAbsent(dateKey, () => row);
       }
 
-      return byDate.entries.map((e) {
-          final row = e.value;
-          final profile = row['profiles'] as Map<String, dynamic>?;
-          return {
-            'date': e.key,
-            'winner': profile?['username'] as String? ?? 'Unknown',
-            'score': row['score'] as int? ?? 0,
-          };
-        }).toList()
-        ..sort((a, b) => (b['date'] as String).compareTo(a['date'] as String));
+      final result =
+          byDate.entries.map((e) {
+            final row = e.value;
+            final profile = row['profiles'] as Map<String, dynamic>?;
+            return {
+              'date': e.key,
+              'winner': profile?['username'] as String? ?? 'Unknown',
+              'score': row['score'] as int? ?? 0,
+            };
+          }).toList()..sort(
+            (a, b) => (b['date'] as String).compareTo(a['date'] as String),
+          );
+
+      _hallOfFameCache.set(cacheKey, result);
+      return result;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchHallOfFame failed: $e');
       return [];
@@ -176,6 +225,10 @@ class LeaderboardService {
     required String userId,
     int limit = 20,
   }) async {
+    final cacheKey = 'history_${userId}_$limit';
+    final cached = _historyCache.get(cacheKey);
+    if (cached != null) return cached;
+
     try {
       final data = await _client
           .from('scores')
@@ -183,6 +236,8 @@ class LeaderboardService {
           .eq('user_id', userId)
           .order('created_at', ascending: false)
           .limit(limit);
+
+      _historyCache.set(cacheKey, data);
       return data;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchGameHistory failed: $e');
@@ -196,6 +251,10 @@ class LeaderboardService {
 
   /// Count how many players have submitted a daily score today.
   Future<int> fetchDailyPlayerCount() async {
+    const cacheKey = 'daily_count';
+    final cached = _playerCountCache.get(cacheKey);
+    if (cached != null) return cached;
+
     try {
       final now = DateTime.now().toUtc();
       final startOfDay = DateTime.utc(now.year, now.month, now.day);
@@ -206,7 +265,9 @@ class LeaderboardService {
           .eq('region', 'daily')
           .gte('created_at', startOfDay.toIso8601String());
 
-      return data.length;
+      final count = data.length;
+      _playerCountCache.set(cacheKey, count);
+      return count;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchDailyPlayerCount failed: $e');
       return 0;
@@ -222,6 +283,10 @@ class LeaderboardService {
   /// The view pre-computes rank via `ROW_NUMBER()` ordered by score descending
   /// then time ascending, so results arrive fully ranked.
   Future<List<LeaderboardEntry>> fetchGlobal({int limit = 50}) async {
+    final cacheKey = 'global_$limit';
+    final cached = _boardCache.get(cacheKey);
+    if (cached != null) return cached;
+
     try {
       final data = await _client
           .from('leaderboard_global')
@@ -229,7 +294,9 @@ class LeaderboardService {
           .order('rank', ascending: true)
           .limit(limit);
 
-      return _mapViewEntries(data);
+      final result = _mapViewEntries(data);
+      _boardCache.set(cacheKey, result);
+      return result;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchGlobal failed: $e');
       return [];
@@ -240,6 +307,10 @@ class LeaderboardService {
   ///
   /// Only includes scores created since midnight UTC today.
   Future<List<LeaderboardEntry>> fetchDaily({int limit = 50}) async {
+    final cacheKey = 'daily_view_$limit';
+    final cached = _boardCache.get(cacheKey);
+    if (cached != null) return cached;
+
     try {
       final data = await _client
           .from('leaderboard_daily')
@@ -247,7 +318,9 @@ class LeaderboardService {
           .order('rank', ascending: true)
           .limit(limit);
 
-      return _mapViewEntries(data);
+      final result = _mapViewEntries(data);
+      _boardCache.set(cacheKey, result);
+      return result;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchDaily failed: $e');
       return [];
@@ -263,6 +336,10 @@ class LeaderboardService {
     String region, {
     int limit = 50,
   }) async {
+    final cacheKey = 'regional_${region}_$limit';
+    final cached = _boardCache.get(cacheKey);
+    if (cached != null) return cached;
+
     try {
       final data = await _client
           .from('leaderboard_regional')
@@ -271,7 +348,9 @@ class LeaderboardService {
           .order('rank', ascending: true)
           .limit(limit);
 
-      return _mapViewEntries(data);
+      final result = _mapViewEntries(data);
+      _boardCache.set(cacheKey, result);
+      return result;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchRegional failed: $e');
       return [];
@@ -286,6 +365,10 @@ class LeaderboardService {
     String userId, {
     int limit = 50,
   }) async {
+    final cacheKey = 'friends_${userId}_$limit';
+    final cached = _boardCache.get(cacheKey);
+    if (cached != null) return cached;
+
     try {
       // Step 1: Get the list of accepted friend IDs.
       final friendships = await _client
@@ -311,7 +394,7 @@ class LeaderboardService {
           .limit(limit);
 
       // Step 3: Re-rank within the friends group (view rank is global).
-      return List<LeaderboardEntry>.generate(data.length, (i) {
+      final result = List<LeaderboardEntry>.generate(data.length, (i) {
         final row = data[i];
         return LeaderboardEntry(
           rank: i + 1,
@@ -325,6 +408,9 @@ class LeaderboardService {
               : null,
         );
       });
+
+      _boardCache.set(cacheKey, result);
+      return result;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchFriends failed: $e');
       return [];
@@ -336,6 +422,12 @@ class LeaderboardService {
   /// Returns the [LeaderboardEntry] for the player if found, or `null` if the
   /// player has no scores.
   Future<LeaderboardEntry?> fetchPlayerRank(String userId) async {
+    final cacheKey = 'rank_$userId';
+    // Note: _rankCache stores nullable values, so we check containment via get
+    // returning a sentinel would over-complicate things — just re-fetch on miss.
+    final cached = _rankCache.get(cacheKey);
+    if (cached != null) return cached;
+
     try {
       final data = await _client
           .from('leaderboard_global')
@@ -347,7 +439,7 @@ class LeaderboardService {
 
       if (data == null) return null;
 
-      return LeaderboardEntry(
+      final result = LeaderboardEntry(
         rank: data['rank'] as int? ?? 0,
         playerId: data['user_id'] as String? ?? '',
         playerName: data['username'] as String? ?? 'Unknown',
@@ -358,6 +450,9 @@ class LeaderboardService {
             ? DateTime.tryParse(data['created_at'] as String)
             : null,
       );
+
+      _rankCache.set(cacheKey, result);
+      return result;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchPlayerRank failed: $e');
       return null;
