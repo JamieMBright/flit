@@ -547,6 +547,9 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                         .read(accountProvider.notifier)
                         .purchaseAvatarPart(part.id, part.price);
                     _selectPart(categoryKey, part.id);
+                    // Auto-save avatar config so the purchased part isn't
+                    // lost if the user navigates away without tapping Save.
+                    ref.read(accountProvider.notifier).updateAvatar(_config);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Unlocked ${part.label}!'),

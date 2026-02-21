@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/web_download.dart';
 import '../../core/widgets/settings_sheet.dart';
+import '../../core/widgets/sync_status_indicator.dart';
 import '../../core/utils/profanity_filter.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/models/player.dart';
@@ -641,6 +642,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         title: const Text('Profile'),
         centerTitle: true,
         actions: [
+          const SyncStatusIndicator(),
+          const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: _openSettings,

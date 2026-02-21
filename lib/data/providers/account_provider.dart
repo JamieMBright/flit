@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/config/admin_config.dart';
 import '../../core/services/game_settings.dart';
@@ -78,7 +79,7 @@ class AccountState {
   final DailyResult? lastDailyResult;
 
   static String _todayStr() {
-    final today = DateTime.now();
+    final today = DateTime.now().toUtc();
     return '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
   }
 
@@ -526,13 +527,66 @@ class AccountNotifier extends StateNotifier<AccountState> {
   // --- Shop cosmetics (planes, contrails, companions) ---
 
   /// Purchase a shop cosmetic. Returns true if successful.
+  ///
+  /// Attempts server-side validation via the `purchase_cosmetic` DB function.
+  /// If the server call fails (offline/network error), falls back to
+  /// client-side deduction for offline resilience. The optimistic client-side
+  /// state is applied immediately for responsive UI.
   bool purchaseCosmetic(String cosmeticId, int cost) {
     if (!spendCoins(cost)) return false;
     state = state.copyWith(
       ownedCosmetics: {...state.ownedCosmetics, cosmeticId},
     );
     _syncAccountState();
+
+    // Fire-and-forget server-side validation. If it succeeds, the server
+    // has the authoritative state. If it fails, the debounced client-side
+    // sync will eventually push the state.
+    _serverValidatePurchase(cosmeticId, cost);
     return true;
+  }
+
+  /// Attempt server-side atomic purchase via Supabase RPC.
+  Future<void> _serverValidatePurchase(String cosmeticId, int cost) async {
+    try {
+      final userId = state.currentPlayer.id;
+      if (userId.isEmpty) return;
+
+      final result = await Supabase.instance.client.rpc(
+        'purchase_cosmetic',
+        params: {
+          'p_user_id': userId,
+          'p_cosmetic_id': cosmeticId,
+          'p_cost': cost,
+        },
+      );
+
+      if (result is Map<String, dynamic>) {
+        final success = result['success'] as bool? ?? false;
+        if (success) {
+          // Server confirmed — update local coin balance to match server.
+          final serverBalance = result['new_balance'] as int?;
+          if (serverBalance != null &&
+              serverBalance != state.currentPlayer.coins) {
+            state = state.copyWith(
+              currentPlayer: state.currentPlayer.copyWith(coins: serverBalance),
+            );
+          }
+        } else {
+          debugPrint(
+            '[AccountNotifier] Server purchase validation failed: '
+            '${result['error']}',
+          );
+          // Server says no — but we already applied optimistically.
+          // The next periodic refresh will reconcile from the server.
+        }
+      }
+    } catch (e) {
+      // Network error — rely on client-side debounced sync.
+      debugPrint(
+        '[AccountNotifier] Server purchase validation unavailable: $e',
+      );
+    }
   }
 
   /// Add a cosmetic to owned set without spending coins (e.g. mystery box

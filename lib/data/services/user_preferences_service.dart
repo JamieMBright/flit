@@ -27,8 +27,8 @@ import '../models/player.dart';
 /// avoiding unbounded growth.
 class _PendingWriteQueue {
   static const String _kKey = 'pending_writes';
-  static const int _kMaxEntries = 50;
-  static const int _kMaxRetries = 3;
+  static const int _kMaxEntries = 200;
+  static const int _kMaxRetries = 5;
 
   /// In-memory fallback used when SharedPreferences is unavailable.
   List<Map<String, dynamic>> _memory = [];
@@ -59,6 +59,9 @@ class _PendingWriteQueue {
   // ── Public API ────────────────────────────────────────────────────────────
 
   bool get isEmpty => _loadAll().isEmpty;
+
+  /// Number of entries currently in the offline queue.
+  int get length => _loadAll().length;
 
   /// Add a write to the back of the queue.
   ///
@@ -200,6 +203,12 @@ class UserPreferencesService {
   /// Whether there are any unsaved writes waiting to be flushed.
   bool get hasPendingWrites =>
       _profileDirty || _settingsDirty || _accountStateDirty;
+
+  /// Whether there are failed writes queued for retry (offline queue).
+  bool get hasPendingOfflineWrites => _queueInitialised && !_queue.isEmpty;
+
+  /// Number of entries currently in the offline write queue.
+  int get pendingOfflineCount => _queueInitialised ? _queue.length : 0;
 
   // Cached write payloads — populated by markDirty calls, flushed by _flush.
   Map<String, dynamic>? _pendingProfile;

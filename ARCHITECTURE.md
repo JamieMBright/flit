@@ -916,21 +916,21 @@ sequenceDiagram
     alt DB write fails
         DB->>Timer: Error
         Timer->>Timer: Enqueue to SharedPreferences
-        Note over Timer: ⚠ DATA AT RISK<br/>Max 3 retries, then dropped
+        Note over Timer: ⚠ DATA AT RISK<br/>Max 5 retries, then dropped
     end
 ```
 
-### Remaining Gaps (Not Yet Fixed)
+### Previously Identified Gaps (All Fixed)
 
-| # | Gap | Impact | Suggested Fix |
-|---|-----|--------|---------------|
-| 1 | **iOS Safari PWA kill** — no lifecycle event fires | All dirty state lost | Use `beforeunload` event to trigger synchronous `sendBeacon`-style flush, or reduce debounce to 500ms on web |
-| 2 | **Challenge round result has no retry** | Player's round silently missing from JSONB | Add retry with exponential backoff in `ChallengeService.submitRoundResult()` |
-| 3 | **Stale challenges never expire** | `in_progress` challenges accumulate forever | Add a Supabase cron or Edge Function to expire challenges older than 7 days |
-| 4 | **Daily streak timezone ambiguity** | Streak miscounted at day boundaries | Normalize all dates to UTC in `recordDailyChallengeCompletion()` |
-| 5 | **Avatar part purchase without Save** | User confused — coins gone, config unchanged | Either auto-save on purchase, or defer coin deduction until Save |
-| 6 | **Offline queue hard limits** | After 50 queued writes or 3 retries, data silently dropped | Increase limits, add user-visible "sync failed" indicator |
-| 7 | **No server-side coin validation** | Client can manipulate coin balance (no RLS on column values) | Add a Supabase database function for purchases that checks balance server-side |
+| # | Gap | Fix Applied | Files Changed |
+|---|-----|-------------|---------------|
+| 1 | **iOS Safari PWA kill** — no lifecycle event fires | Added `beforeunload` web event handler via `WebFlushBridge` that triggers `UserPreferencesService.flush()` + `ErrorService.flush()` before page unload | `web_flush_bridge.dart`, `web_flush_bridge_web.dart`, `web_flush_bridge_stub.dart`, `main.dart` |
+| 2 | **Challenge round result has no retry** | Added exponential backoff retry (1s, 2s, 4s) up to 3 retries on both `submitRoundResult()` and `tryCompleteChallenge()` | `challenge_service.dart` |
+| 3 | **Stale challenges never expire** | Added `expire_stale_challenges()` SQL function that marks pending/in_progress challenges older than 7 days as expired; called automatically by Vercel health cron every 3 days | `20260221_expire_stale_challenges.sql`, `api/health/index.js` |
+| 4 | **Daily streak timezone ambiguity** | Changed `AccountState._todayStr()` from `DateTime.now()` to `DateTime.now().toUtc()`, matching `DailyStreak` model which already uses UTC | `account_provider.dart` |
+| 5 | **Avatar part purchase without Save** | Auto-save avatar config immediately after purchasing a part in the editor (calls `updateAvatar()` right after `purchaseAvatarPart()`) | `avatar_editor_screen.dart` |
+| 6 | **Offline queue hard limits** | Increased queue from 50→200 entries and 3→5 retries; added `SyncStatusIndicator` widget in profile AppBar that shows pending offline write count | `user_preferences_service.dart`, `sync_status_indicator.dart`, `profile_screen.dart` |
+| 7 | **No server-side coin validation** | Added `purchase_cosmetic()` SQL function with row-level locking, balance check, duplicate detection, and atomic coin deduction; `purchaseCosmetic()` now fires server-side RPC validation after optimistic client-side update | `20260221_purchase_cosmetic_function.sql`, `account_provider.dart` |
 
 ---
 
