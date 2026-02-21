@@ -150,6 +150,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
               : null,
           isDailyChallenge: true,
           dailyTheme: _challenge.title,
+          dailySeed: _challenge.seed,
           onComplete: (totalScore) {
             ref.read(accountProvider.notifier).recordDailyChallengeCompletion();
           },

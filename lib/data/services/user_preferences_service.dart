@@ -335,6 +335,7 @@ class UserPreferencesService {
     required PilotLicense license,
     required Set<String> unlockedRegions,
     required Set<String> ownedAvatarParts,
+    required Set<String> ownedCosmetics,
     required String equippedPlaneId,
     required String equippedContrailId,
     String? equippedTitleId,
@@ -350,6 +351,7 @@ class UserPreferencesService {
       'license_data': license.toJson(),
       'unlocked_regions': unlockedRegions.toList(),
       'owned_avatar_parts': ownedAvatarParts.toList(),
+      'owned_cosmetics': ownedCosmetics.toList(),
       'equipped_plane_id': equippedPlaneId,
       'equipped_contrail_id': equippedContrailId,
       'equipped_title_id': equippedTitleId,
@@ -667,6 +669,14 @@ class UserPreferencesSnapshot {
     final data = accountState;
     if (data == null) return {};
     final list = data['owned_avatar_parts'];
+    if (list is List) return list.cast<String>().toSet();
+    return {};
+  }
+
+  Set<String> get ownedCosmetics {
+    final data = accountState;
+    if (data == null) return {};
+    final list = data['owned_cosmetics'];
     if (list is List) return list.cast<String>().toSet();
     return {};
   }

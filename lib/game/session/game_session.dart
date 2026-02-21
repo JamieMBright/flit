@@ -157,17 +157,30 @@ class GameSession {
     }
   }
 
-  /// Create a seeded game session (for challenges)
-  factory GameSession.seeded(int seed) {
+  /// Create a seeded game session (for challenges and daily challenges).
+  ///
+  /// Uses a deterministic [Random] so all players with the same seed get the
+  /// same country and start position. Supports the same clue-type filtering
+  /// as [GameSession.random].
+  factory GameSession.seeded(
+    int seed, {
+    String? preferredClueType,
+    int clueBoost = 0,
+    Set<String>? allowedClueTypes,
+  }) {
     final random = Random(seed);
 
     // Pick country based on seed
     final countryIndex = random.nextInt(CountryData.countries.length);
     final country = CountryData.countries[countryIndex];
 
-    // Use Clue.random() to ensure validation and retry logic
-    // This avoids "Unknown" or empty data issues
-    final clue = Clue.random(country.code);
+    // Use Clue.random() with the same filters as random mode
+    final clue = Clue.random(
+      country.code,
+      preferredClueType: preferredClueType,
+      clueBoost: clueBoost,
+      allowedTypes: allowedClueTypes,
+    );
 
     // Generate start position based on seed
     final startLng = (random.nextDouble() * 360) - 180;

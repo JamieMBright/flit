@@ -66,9 +66,16 @@ class AudioManager {
   bool get enabled => _enabled;
 
   set enabled(bool value) {
+    final wasDisabled = !_enabled;
     _enabled = value;
     if (!value) {
       _stopAll();
+    } else if (wasDisabled) {
+      // Re-enabling audio — clear the failed-asset blacklist so tracks that
+      // failed before the web audio context was unlocked get another chance.
+      _failedAssets.clear();
+      // Restart background music if it was previously playing.
+      startMusic();
     }
   }
 

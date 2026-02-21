@@ -23,13 +23,6 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // Track owned and equipped items.
-  // Initialised from account provider in initState so state persists.
-  late final Set<String> _ownedIds;
-  late String _equippedPlane;
-  late String _equippedContrail;
-  late String _equippedCompanion;
-
   @override
   void initState() {
     super.initState();
@@ -38,21 +31,6 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
       vsync: this,
       initialIndex: widget.initialTabIndex.clamp(0, 3),
     );
-
-    // Sync equipped state from account provider.
-    final account = ref.read(accountProvider);
-    _equippedPlane = account.equippedPlaneId;
-    _equippedContrail = account.equippedContrailId;
-    _equippedCompanion = 'companion_${account.avatar.companion.name}';
-    // Always own defaults + currently equipped items.
-    _ownedIds = {
-      'plane_default',
-      'contrail_default',
-      'companion_none',
-      _equippedPlane,
-      _equippedContrail,
-      _equippedCompanion,
-    };
   }
 
   @override
@@ -61,10 +39,29 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
     super.dispose();
   }
 
+  /// Build the set of all cosmetic IDs the player owns (defaults + equipped +
+  /// persisted purchases).
+  Set<String> _buildOwnedIds(AccountState account) {
+    return {
+      'plane_default',
+      'contrail_default',
+      'companion_none',
+      account.equippedPlaneId,
+      account.equippedContrailId,
+      'companion_${account.avatar.companion.name}',
+      ...account.ownedCosmetics,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
-    final coins = ref.watch(currentCoinsProvider);
-    final level = ref.watch(currentLevelProvider);
+    final account = ref.watch(accountProvider);
+    final coins = account.currentPlayer.coins;
+    final level = account.currentPlayer.level;
+    final ownedIds = _buildOwnedIds(account);
+    final equippedPlane = account.equippedPlaneId;
+    final equippedContrail = account.equippedContrailId;
+    final equippedCompanion = 'companion_${account.avatar.companion.name}';
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
       appBar: AppBar(
@@ -130,19 +127,17 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
             children: [
               _MysteryPlaneButton(
                 coins: coins,
-                ownedIds: _ownedIds,
+                ownedIds: ownedIds,
                 onReveal: (Cosmetic plane) {
                   ref.read(accountProvider.notifier).spendCoins(10000);
-                  setState(() {
-                    _ownedIds.add(plane.id);
-                  });
+                  ref.read(accountProvider.notifier).addOwnedCosmetic(plane.id);
                 },
               ),
               Expanded(
                 child: _CosmeticGrid(
                   items: CosmeticCatalog.planes,
-                  ownedIds: _ownedIds,
-                  equippedId: _equippedPlane,
+                  ownedIds: ownedIds,
+                  equippedId: equippedPlane,
                   coins: coins,
                   level: level,
                   onPurchase: _purchaseItem,
@@ -153,8 +148,8 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
           ),
           _CosmeticGrid(
             items: CosmeticCatalog.contrails,
-            ownedIds: _ownedIds,
-            equippedId: _equippedContrail,
+            ownedIds: ownedIds,
+            equippedId: equippedContrail,
             coins: coins,
             level: level,
             onPurchase: _purchaseItem,
@@ -162,8 +157,8 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
           ),
           _CosmeticGrid(
             items: CosmeticCatalog.companions,
-            ownedIds: _ownedIds,
-            equippedId: _equippedCompanion,
+            ownedIds: ownedIds,
+            equippedId: equippedCompanion,
             coins: coins,
             level: level,
             onPurchase: _purchaseItem,
@@ -176,11 +171,10 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
   }
 
   void _purchaseItem(Cosmetic item) {
-    if (ref.read(currentCoinsProvider) >= item.price) {
-      ref.read(accountProvider.notifier).spendCoins(item.price);
-      setState(() {
-        _ownedIds.add(item.id);
-      });
+    final success = ref
+        .read(accountProvider.notifier)
+        .purchaseCosmetic(item.id, item.price);
+    if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Purchased ${item.name}!'),
@@ -191,23 +185,14 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
   }
 
   void _equipPlane(String id) {
-    setState(() {
-      _equippedPlane = id;
-    });
     ref.read(accountProvider.notifier).equipPlane(id);
   }
 
   void _equipContrail(String id) {
-    setState(() {
-      _equippedContrail = id;
-    });
     ref.read(accountProvider.notifier).equipContrail(id);
   }
 
   void _equipCompanion(String id) {
-    setState(() {
-      _equippedCompanion = id;
-    });
     ref.read(accountProvider.notifier).equipCompanion(id);
   }
 }

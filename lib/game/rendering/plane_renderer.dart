@@ -326,12 +326,12 @@ class PlaneRenderer {
     final detail = _detail(colorScheme, 0xFF8B4513);
 
     final shade = -bankSin;
-    final leftWingColor = shade < 0
-        ? _lighten(detail, -shade)
-        : _darken(detail, shade * 0.4);
-    final rightWingColor = shade > 0
+    final leftWingColor = shade > 0
         ? _lighten(detail, shade)
         : _darken(detail, -shade * 0.4);
+    final rightWingColor = shade < 0
+        ? _lighten(detail, -shade)
+        : _darken(detail, shade * 0.4);
     final bodyPaint = Paint()..color = primary;
     final accentPaint = Paint()..color = secondary;
     final highlightPaint = Paint()
@@ -742,8 +742,8 @@ class PlaneRenderer {
 
     // Paper planes are a single folded shape — wings ARE the body.
     // Draw as unified triangular form with fold line, not separate parts.
-    final leftWingColor = shade < 0 ? primary : secondary;
-    final rightWingColor = shade > 0 ? primary : secondary;
+    final leftWingColor = shade > 0 ? primary : secondary;
+    final rightWingColor = shade < 0 ? primary : secondary;
 
     final leftSpan =
         dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
@@ -894,11 +894,11 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 3.0;
 
-    // Swept delta wings
-    final leftWingColor = shade < 0
+    // Swept delta wings — inner (turning) wing darkens, outer stays lit.
+    final leftWingColor = shade > 0
         ? detail
         : Color.lerp(detail, Colors.black, 0.3)!;
-    final rightWingColor = shade > 0
+    final rightWingColor = shade < 0
         ? detail
         : Color.lerp(detail, Colors.black, 0.3)!;
 
@@ -1064,8 +1064,8 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 2.0;
 
-    final leftWingColor = shade < 0 ? primary : secondary;
-    final rightWingColor = shade > 0 ? primary : secondary;
+    final leftWingColor = shade > 0 ? primary : secondary;
+    final rightWingColor = shade < 0 ? primary : secondary;
 
     // B-2 has extreme wingspan-to-length ratio (172 ft span, 69 ft long)
     // Use wider span multiplier for the flying wing silhouette
@@ -1413,11 +1413,11 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 2.5;
 
-    // Delta wing
-    final leftWingColor = shade < 0
+    // Delta wing — inner (turning) wing darkens, outer stays lit.
+    final leftWingColor = shade > 0
         ? primary
         : Color.lerp(primary, Colors.grey, 0.2)!;
-    final rightWingColor = shade > 0
+    final rightWingColor = shade < 0
         ? primary
         : Color.lerp(primary, Colors.grey, 0.2)!;
 
@@ -1686,11 +1686,11 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 2.0;
 
-    // Wide swept wings
-    final leftWingColor = shade < 0
+    // Wide swept wings — inner (turning) wing darkens, outer stays lit.
+    final leftWingColor = shade > 0
         ? detail
         : Color.lerp(detail, Colors.grey, 0.3)!;
-    final rightWingColor = shade > 0
+    final rightWingColor = shade < 0
         ? detail
         : Color.lerp(detail, Colors.grey, 0.3)!;
 
@@ -1885,11 +1885,11 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 2.0;
 
-    // Swept-back wings — wider and more authoritative than Padraigaer
-    final leftWingColor = shade < 0
+    // Swept-back wings — inner (turning) wing darkens, outer stays lit.
+    final leftWingColor = shade > 0
         ? primary
         : Color.lerp(primary, Colors.grey, 0.15)!;
-    final rightWingColor = shade > 0
+    final rightWingColor = shade < 0
         ? primary
         : Color.lerp(primary, Colors.grey, 0.15)!;
 
@@ -2150,11 +2150,11 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 3.0;
 
-    // Swept eagle wings
-    final leftWingColor = shade < 0
+    // Swept eagle wings — inner (turning) wing darkens, outer stays lit.
+    final leftWingColor = shade > 0
         ? secondary
         : Color.lerp(secondary, Colors.black, 0.3)!;
-    final rightWingColor = shade > 0
+    final rightWingColor = shade < 0
         ? secondary
         : Color.lerp(secondary, Colors.black, 0.3)!;
 

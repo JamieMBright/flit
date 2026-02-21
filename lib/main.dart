@@ -234,7 +234,12 @@ class _FlitAppState extends State<FlitApp> with WidgetsBindingObserver {
     // background or is about to close. Without this, the 2-second debounce in
     // UserPreferencesService can lose writes if the user closes the browser
     // tab before the timer fires.
-    if (state == AppLifecycleState.paused ||
+    // On web, `paused` and `detached` rarely fire on tab close. The browser
+    // fires `visibilitychange` (mapped to `hidden`) when the tab is closed or
+    // switched away. Including `hidden` ensures debounced writes flush before
+    // the page is destroyed.
+    if (state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       ErrorService.instance.flush();
       UserPreferencesService.instance.flush();

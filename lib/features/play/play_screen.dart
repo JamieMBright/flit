@@ -60,6 +60,7 @@ class PlayScreen extends ConsumerStatefulWidget {
     this.isDailyChallenge = false,
     this.onDailyComplete,
     this.dailyTheme = '',
+    this.dailySeed,
   });
 
   /// The region to play in.
@@ -136,6 +137,11 @@ class PlayScreen extends ConsumerStatefulWidget {
 
   /// Daily challenge theme title for the share text.
   final String dailyTheme;
+
+  /// Daily challenge seed for deterministic country selection.
+  /// When non-null, `GameSession.seeded()` is used so all players get the
+  /// same countries on the same day.
+  final int? dailySeed;
 
   @override
   ConsumerState<PlayScreen> createState() => _PlayScreenState();
@@ -412,15 +418,32 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     _completeLanding(fuelDepleted: true);
   }
 
+  /// Create a GameSession for the current round, using the daily seed when
+  /// available so all players get the same countries.
+  GameSession _createSession() {
+    if (widget.dailySeed != null) {
+      // Derive a per-round seed from the daily seed so each round is different
+      // but deterministic across all players.
+      final roundSeed = widget.dailySeed! + (_currentRound - 1) * 7919;
+      return GameSession.seeded(
+        roundSeed,
+        allowedClueTypes: widget.enabledClueTypes,
+        preferredClueType: widget.preferredClueType,
+        clueBoost: widget.clueBoost,
+      );
+    }
+    return GameSession.random(
+      region: widget.region,
+      preferredClueType: widget.preferredClueType,
+      clueBoost: widget.clueBoost,
+      allowedClueTypes: widget.enabledClueTypes,
+    );
+  }
+
   void _startNewGame() {
     _log.info('session', 'Starting round $_currentRound/${widget.totalRounds}');
     try {
-      _session = GameSession.random(
-        region: widget.region,
-        preferredClueType: widget.preferredClueType,
-        clueBoost: widget.clueBoost,
-        allowedClueTypes: widget.enabledClueTypes,
-      );
+      _session = _createSession();
       _elapsed = Duration.zero;
       _cumulativeTime = Duration.zero;
       _roundResults.clear();
@@ -585,12 +608,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       if (!mounted) return;
       try {
         // Create new session for the next round
-        _session = GameSession.random(
-          region: widget.region,
-          preferredClueType: widget.preferredClueType,
-          clueBoost: widget.clueBoost,
-          allowedClueTypes: widget.enabledClueTypes,
-        );
+        _session = _createSession();
         _elapsed = Duration.zero;
         _hintTier = 0;
         _revealedCountry = null;
@@ -785,6 +803,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         cumulativeTime: _cumulativeTime,
         coinReward: widget.coinReward,
         roundResults: _roundResults,
+        fuelDepleted: fuelDepleted,
         dailyResult: dailyResultForDialog,
         onShare: dailyResultForDialog != null
             ? () {
@@ -1359,6 +1378,7 @@ class _ResultDialog extends ConsumerWidget {
     this.cumulativeTime = Duration.zero,
     this.coinReward = 0,
     this.roundResults = const [],
+    this.fuelDepleted = false,
     this.dailyResult,
     this.onShare,
   });
@@ -1373,6 +1393,7 @@ class _ResultDialog extends ConsumerWidget {
   final Duration cumulativeTime;
   final int coinReward;
   final List<_RoundResult> roundResults;
+  final bool fuelDepleted;
 
   /// Non-null when this is a daily challenge result.
   final DailyResult? dailyResult;
@@ -1440,17 +1461,19 @@ class _ResultDialog extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.flight_land,
-                color: FlitColors.success,
+              Icon(
+                fuelDepleted ? Icons.local_gas_station : Icons.flight_land,
+                color: fuelDepleted ? FlitColors.warning : FlitColors.success,
                 size: 44,
               ),
               const SizedBox(height: 12),
-              const Text(
-                'LANDED',
+              Text(
+                fuelDepleted ? 'EMERGENCY LANDING' : 'LANDED',
                 style: TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 22,
+                  color: fuelDepleted
+                      ? FlitColors.warning
+                      : FlitColors.textPrimary,
+                  fontSize: fuelDepleted ? 18 : 22,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 3,
                 ),
@@ -1623,12 +1646,32 @@ class _ResultDialog extends ConsumerWidget {
                   ),
                 ),
               ],
-              // Daily challenge emoji row
+              // Daily challenge result circles (painted, not emoji — reliable
+              // across all platforms).
               if (dailyResult != null) ...[
                 const SizedBox(height: 16),
-                Text(
-                  dailyResult!.rounds.map((r) => r.emoji).join(),
-                  style: const TextStyle(fontSize: 28),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: dailyResult!.rounds.map((r) {
+                    final color = !r.completed
+                        ? FlitColors.error
+                        : r.hintsUsed == 0
+                        ? FlitColors.success
+                        : r.hintsUsed <= 2
+                        ? const Color(0xFFFFD700)
+                        : FlitColors.warning;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
                 const SizedBox(height: 4),
                 const Text(
