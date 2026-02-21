@@ -373,10 +373,61 @@ class PlaneRenderer {
       );
     }
 
-    // --- Left wing ---
+    // --- Lower wing (visible peeking out behind/below upper wing) ---
     final leftSpan =
         dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.5;
     final leftDip = wingDip;
+    final lowerLeftSpan = leftSpan * 0.9; // lower wing slightly shorter
+    final lowerLeftWing = Path()
+      ..moveTo(-4, 3 + leftDip * 0.2)
+      ..quadraticBezierTo(
+        -lowerLeftSpan * 0.5,
+        4 + leftDip * 0.5,
+        -lowerLeftSpan,
+        6 + leftDip,
+      )
+      ..quadraticBezierTo(
+        -lowerLeftSpan - 1,
+        8 + leftDip,
+        -lowerLeftSpan + 2,
+        9 + leftDip,
+      )
+      ..lineTo(-4, 7 + leftDip * 0.2)
+      ..close();
+    canvas.drawPath(
+      lowerLeftWing,
+      Paint()..color = _darken(leftWingColor, 0.15),
+    );
+    _crossHatch(
+      canvas,
+      Rect.fromLTRB(-lowerLeftSpan, 3 + leftDip, -4, 9 + leftDip),
+      _darken(leftWingColor, 0.15),
+      spacing: 4.5,
+      opacity: 0.08,
+    );
+    _pencilOutline(
+      lowerLeftWing,
+      canvas,
+      _darken(leftWingColor, 0.15),
+      strokeWidth: 0.8,
+    );
+
+    // Interplane struts (connecting upper and lower wings)
+    final biStrut = Paint()
+      ..color = _darken(detail, 0.2)
+      ..strokeWidth = 1.0;
+    canvas.drawLine(
+      Offset(-leftSpan * 0.4, 1 + leftDip * 0.4),
+      Offset(-lowerLeftSpan * 0.4, 5 + leftDip * 0.4),
+      biStrut,
+    );
+    canvas.drawLine(
+      Offset(-leftSpan * 0.7, 2 + leftDip * 0.7),
+      Offset(-lowerLeftSpan * 0.7, 6 + leftDip * 0.7),
+      biStrut,
+    );
+
+    // --- Upper left wing ---
     final leftWing = Path()
       ..moveTo(-4, -1 + leftDip * 0.2)
       ..quadraticBezierTo(
@@ -433,10 +484,58 @@ class PlaneRenderer {
       );
     }
 
-    // --- Right wing ---
+    // --- Lower right wing (visible behind/below upper) ---
     final rightSpan =
         dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.5;
     final rightDip = -wingDip;
+    final lowerRightSpan = rightSpan * 0.9;
+    final lowerRightWing = Path()
+      ..moveTo(4, 3 + rightDip * 0.2)
+      ..quadraticBezierTo(
+        lowerRightSpan * 0.5,
+        4 + rightDip * 0.5,
+        lowerRightSpan,
+        6 + rightDip,
+      )
+      ..quadraticBezierTo(
+        lowerRightSpan + 1,
+        8 + rightDip,
+        lowerRightSpan - 2,
+        9 + rightDip,
+      )
+      ..lineTo(4, 7 + rightDip * 0.2)
+      ..close();
+    canvas.drawPath(
+      lowerRightWing,
+      Paint()..color = _darken(rightWingColor, 0.15),
+    );
+    _crossHatch(
+      canvas,
+      Rect.fromLTRB(4, 3 + rightDip, lowerRightSpan, 9 + rightDip),
+      _darken(rightWingColor, 0.15),
+      spacing: 4.5,
+      opacity: 0.08,
+    );
+    _pencilOutline(
+      lowerRightWing,
+      canvas,
+      _darken(rightWingColor, 0.15),
+      strokeWidth: 0.8,
+    );
+
+    // Right interplane struts
+    canvas.drawLine(
+      Offset(rightSpan * 0.4, 1 + rightDip * 0.4),
+      Offset(lowerRightSpan * 0.4, 5 + rightDip * 0.4),
+      biStrut,
+    );
+    canvas.drawLine(
+      Offset(rightSpan * 0.7, 2 + rightDip * 0.7),
+      Offset(lowerRightSpan * 0.7, 6 + rightDip * 0.7),
+      biStrut,
+    );
+
+    // --- Upper right wing ---
     final rightWing = Path()
       ..moveTo(4, -1 + rightDip * 0.2)
       ..quadraticBezierTo(
@@ -651,11 +750,14 @@ class PlaneRenderer {
     final rightSpan =
         dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
 
-    // --- Left wing (triangular, extends from nose to trailing edge) ---
+    // --- Left wing (sharp angular paper fold — crisp geometric lines) ---
     final leftWing = Path()
-      ..moveTo(bodyShift, -18) // nose tip
-      ..lineTo(-leftSpan, 6 + wingDip) // wing tip
-      ..lineTo(-leftSpan + 4, 8 + wingDip) // trailing edge notch
+      ..moveTo(bodyShift, -22) // extended sharp nose tip
+      ..lineTo(
+        -leftSpan,
+        4 + wingDip,
+      ) // wing tip (moved forward for dart shape)
+      ..lineTo(-leftSpan + 2, 5 + wingDip) // sharp trailing edge
       ..lineTo(bodyShift, 4) // center trailing edge
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
@@ -663,11 +765,21 @@ class PlaneRenderer {
     // Paper wing cross-hatch (fold crease texture)
     _crossHatch(
       canvas,
-      Rect.fromLTRB(-leftSpan, -18 + wingDip, bodyShift, 8 + wingDip),
+      Rect.fromLTRB(-leftSpan, -22 + wingDip, bodyShift, 5 + wingDip),
       detail,
       spacing: 6.0,
       opacity: 0.09,
     );
+
+    // Sharp fold crease line running from nose to wing tip
+    canvas.drawLine(
+      Offset(bodyShift, -22),
+      Offset(-leftSpan * 0.6, 2 + wingDip * 0.6),
+      Paint()
+        ..color = _darken(detail, 0.1).withOpacity(0.25)
+        ..strokeWidth = 0.6,
+    );
+
     _pencilOutline(
       leftWing,
       canvas,
@@ -678,21 +790,30 @@ class PlaneRenderer {
 
     // --- Right wing ---
     final rightWing = Path()
-      ..moveTo(bodyShift, -18) // nose tip
-      ..lineTo(rightSpan, 6 - wingDip) // wing tip
-      ..lineTo(rightSpan - 4, 8 - wingDip) // trailing edge notch
+      ..moveTo(bodyShift, -22) // sharp nose tip
+      ..lineTo(rightSpan, 4 - wingDip) // wing tip
+      ..lineTo(rightSpan - 2, 5 - wingDip) // sharp trailing edge
       ..lineTo(bodyShift, 4) // center trailing edge
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
-    // Paper wing cross-hatch (fold crease texture)
     _crossHatch(
       canvas,
-      Rect.fromLTRB(bodyShift, -18 - wingDip, rightSpan, 8 - wingDip),
+      Rect.fromLTRB(bodyShift, -22 - wingDip, rightSpan, 5 - wingDip),
       detail,
       spacing: 6.0,
       opacity: 0.09,
     );
+
+    // Right fold crease
+    canvas.drawLine(
+      Offset(bodyShift, -22),
+      Offset(rightSpan * 0.6, 2 - wingDip * 0.6),
+      Paint()
+        ..color = _darken(detail, 0.1).withOpacity(0.25)
+        ..strokeWidth = 0.6,
+    );
+
     _pencilOutline(
       rightWing,
       canvas,
@@ -710,12 +831,12 @@ class PlaneRenderer {
 
     // Folded keel — the raised center crease of a paper plane
     final keelPath = Path()
-      ..moveTo(bodyShift, -18) // nose tip
-      ..lineTo(bodyShift + 2.5, -8) // slight body width
-      ..lineTo(bodyShift + 2, 8)
-      ..lineTo(bodyShift, 12) // tail point
-      ..lineTo(bodyShift - 2, 8)
-      ..lineTo(bodyShift - 2.5, -8)
+      ..moveTo(bodyShift, -22) // extended sharp nose
+      ..lineTo(bodyShift + 2, -10) // narrow keel body
+      ..lineTo(bodyShift + 1.5, 6)
+      ..lineTo(bodyShift, 10) // tail point
+      ..lineTo(bodyShift - 1.5, 6)
+      ..lineTo(bodyShift - 2, -10)
       ..close();
     canvas.drawPath(keelPath, Paint()..color = primary);
 
@@ -725,12 +846,12 @@ class PlaneRenderer {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0
       ..strokeCap = StrokeCap.round;
-    _sketchPath(keelPath, canvas, keelSketchPaint, rng, wobble: 0.40);
+    _sketchPath(keelPath, canvas, keelSketchPaint, rng, wobble: 0.35);
 
-    // Center fold line
+    // Center fold line (sharp crease)
     canvas.drawLine(
-      Offset(bodyShift, -18),
-      Offset(bodyShift, 12),
+      Offset(bodyShift, -22),
+      Offset(bodyShift, 10),
       Paint()
         ..color = detail
         ..strokeWidth = 1.0,
@@ -738,9 +859,9 @@ class PlaneRenderer {
 
     // Tail notch (the V-cut at the back of a paper plane)
     final tailNotch = Path()
-      ..moveTo(bodyShift - 3, 10)
-      ..lineTo(bodyShift, 6) // notch apex
-      ..lineTo(bodyShift + 3, 10)
+      ..moveTo(bodyShift - 2.5, 8)
+      ..lineTo(bodyShift, 4) // notch apex
+      ..lineTo(bodyShift + 2.5, 8)
       ..close();
     canvas.drawPath(
       tailNotch,
@@ -832,6 +953,16 @@ class PlaneRenderer {
     canvas.scale(rollScale, 1.0);
     canvas.translate(-bodyShift, 0);
 
+    // Vertical stabilizer / fin (all jets have one — prominent dorsal fin)
+    final finPath = Path()
+      ..moveTo(bodyShift, 9)
+      ..quadraticBezierTo(bodyShift - 2.5, 12, bodyShift - 1, 16)
+      ..lineTo(bodyShift + 1, 16)
+      ..quadraticBezierTo(bodyShift + 2.5, 12, bodyShift, 9)
+      ..close();
+    canvas.drawPath(finPath, Paint()..color = secondary);
+    _pencilOutline(finPath, canvas, secondary, strokeWidth: 0.8);
+
     // Sleek fuselage
     final fuselagePath = Path()
       ..moveTo(bodyShift, -18)
@@ -852,18 +983,48 @@ class PlaneRenderer {
       ..strokeJoin = StrokeJoin.round;
     _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.32);
 
-    // Canopy
+    // Fighter canopy (bubble canopy for visibility)
     canvas.drawOval(
       Rect.fromCenter(center: Offset(bodyShift, -10), width: 4, height: 7),
       Paint()..color = const Color(0xFF4A90B8),
     );
+    // Canopy frame
+    canvas.drawLine(
+      Offset(bodyShift, -13.5),
+      Offset(bodyShift, -6.5),
+      Paint()
+        ..color = const Color(0xFF888888)
+        ..strokeWidth = 0.5,
+    );
 
     // Jet exhaust
     if (planeId == 'plane_rocket') {
+      // Multi-layer afterburner flame (white core → yellow → orange → red)
+      // Outer red glow
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(bodyShift, 19), width: 8, height: 14),
+        Paint()..color = const Color(0xFFCC2200).withOpacity(0.35),
+      );
+      // Orange flame
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(bodyShift, 18), width: 6, height: 11),
+        Paint()..color = const Color(0xFFFF6600).withOpacity(0.6),
+      );
+      // Yellow inner flame
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(bodyShift, 17), width: 4, height: 8),
+        Paint()..color = const Color(0xFFFFAA00).withOpacity(0.75),
+      );
+      // White-hot core
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(bodyShift, 16), width: 2.5, height: 5),
+        Paint()..color = const Color(0xFFFFEECC).withOpacity(0.9),
+      );
+      // Nozzle
       canvas.drawCircle(
         Offset(bodyShift, 15),
-        3.0,
-        Paint()..color = const Color(0xFFFF6600).withOpacity(0.8),
+        2.5,
+        Paint()..color = const Color(0xFF444444),
       );
     } else {
       canvas.drawOval(
@@ -906,51 +1067,56 @@ class PlaneRenderer {
     final leftWingColor = shade < 0 ? primary : secondary;
     final rightWingColor = shade > 0 ? primary : secondary;
 
+    // B-2 has extreme wingspan-to-length ratio (172 ft span, 69 ft long)
+    // Use wider span multiplier for the flying wing silhouette
     final leftSpan =
-        dynamicWingSpan * 1.2 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.5;
+        dynamicWingSpan * 1.4 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.5;
     final leftWing = Path()
-      ..moveTo(bodyShift, -16)
+      ..moveTo(bodyShift, -12) // shorter nose (flying wing, not conventional)
+      // Smooth, continuous leading edge sweep
       ..quadraticBezierTo(
-        -leftSpan * 0.4,
+        -leftSpan * 0.35,
         -8 + wingDip * 0.3,
         -leftSpan,
-        4 + wingDip,
+        2 + wingDip,
       )
-      ..lineTo(-leftSpan + 6, 8 + wingDip)
-      ..quadraticBezierTo(-leftSpan * 0.3, 6 + wingDip * 0.5, bodyShift, 10)
+      // W-shaped trailing edge — B-2's signature shape
+      ..lineTo(-leftSpan + 4, 5 + wingDip) // outer trailing edge
+      ..lineTo(-leftSpan * 0.5, 3 + wingDip * 0.5) // inner notch of W
+      ..lineTo(bodyShift, 7) // center trailing edge
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
-    // Stealth panels catch edges differently — subtle sketch outline
+    // Stealth panels — subtle radar-absorbing panel lines
     final leftSketchPaint = Paint()
-      ..color = const Color(0xFF666666).withOpacity(0.35)
+      ..color = const Color(0xFF555555).withOpacity(0.30)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8
+      ..strokeWidth = 0.7
       ..strokeCap = StrokeCap.round;
-    _sketchPath(leftWing, canvas, leftSketchPaint, rng, wobble: 0.30);
-    _wingJointAO(canvas, Offset(bodyShift, -3), radius: 6.0, opacity: 0.22);
+    _sketchPath(leftWing, canvas, leftSketchPaint, rng, wobble: 0.25);
 
     final rightSpan =
-        dynamicWingSpan * 1.2 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.5;
+        dynamicWingSpan * 1.4 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.5;
     final rightWing = Path()
-      ..moveTo(bodyShift, -16)
+      ..moveTo(bodyShift, -12)
       ..quadraticBezierTo(
-        rightSpan * 0.4,
+        rightSpan * 0.35,
         -8 - wingDip * 0.3,
         rightSpan,
-        4 - wingDip,
+        2 - wingDip,
       )
-      ..lineTo(rightSpan - 6, 8 - wingDip)
-      ..quadraticBezierTo(rightSpan * 0.3, 6 - wingDip * 0.5, bodyShift, 10)
+      ..lineTo(rightSpan - 4, 5 - wingDip)
+      ..lineTo(rightSpan * 0.5, 3 - wingDip * 0.5)
+      ..lineTo(bodyShift, 7)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
     final rightSketchPaint = Paint()
-      ..color = const Color(0xFF666666).withOpacity(0.35)
+      ..color = const Color(0xFF555555).withOpacity(0.30)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8
+      ..strokeWidth = 0.7
       ..strokeCap = StrokeCap.round;
-    _sketchPath(rightWing, canvas, rightSketchPaint, rng, wobble: 0.30);
+    _sketchPath(rightWing, canvas, rightSketchPaint, rng, wobble: 0.25);
 
     // --- Body group ---
     canvas.save();
@@ -959,36 +1125,41 @@ class PlaneRenderer {
     canvas.scale(rollScale, 1.0);
     canvas.translate(-bodyShift, 0);
 
-    // Center body section
+    // Center body blended into wing — B-2 has no distinct fuselage
     final centerBody = Path()
-      ..moveTo(bodyShift - 4, -12)
-      ..lineTo(bodyShift - 3, 8)
-      ..lineTo(bodyShift + 3, 8)
-      ..lineTo(bodyShift + 4, -12)
+      ..moveTo(bodyShift - 5, -8)
+      ..quadraticBezierTo(bodyShift - 4, 0, bodyShift - 3, 6)
+      ..lineTo(bodyShift + 3, 6)
+      ..quadraticBezierTo(bodyShift + 4, 0, bodyShift + 5, -8)
       ..close();
     canvas.drawPath(centerBody, Paint()..color = detail);
-    _pencilOutline(centerBody, canvas, detail, strokeWidth: 0.9, opacity: 0.45);
+    _pencilOutline(centerBody, canvas, detail, strokeWidth: 0.8, opacity: 0.40);
 
-    // Sawtooth trailing edge
-    final sawtoothPaint = Paint()
-      ..color = secondary
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-    final sawtoothPath = Path()
-      ..moveTo(-leftSpan + 6, 8 + wingDip)
-      ..lineTo(-leftSpan * 0.6, 9 + wingDip * 0.6)
-      ..lineTo(-leftSpan * 0.3, 8 + wingDip * 0.4)
-      ..lineTo(bodyShift - 3, 9)
-      ..lineTo(bodyShift + 3, 9)
-      ..lineTo(rightSpan * 0.3, 8 - wingDip * 0.4)
-      ..lineTo(rightSpan * 0.6, 9 - wingDip * 0.6)
-      ..lineTo(rightSpan - 6, 8 - wingDip);
-    canvas.drawPath(sawtoothPath, sawtoothPaint);
+    // Exhaust slots on trailing edge (flush with wing, not protruding)
+    final exhaustPaint = Paint()
+      ..color = const Color(0xFF222222)
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(bodyShift - 2.5, 6),
+      Offset(bodyShift - 1, 6),
+      exhaustPaint,
+    );
+    canvas.drawLine(
+      Offset(bodyShift + 1, 6),
+      Offset(bodyShift + 2.5, 6),
+      exhaustPaint,
+    );
 
-    // Cockpit
+    // Flush cockpit — B-2 has almost no cockpit bump
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(bodyShift, -8), width: 3, height: 4),
-      Paint()..color = const Color(0xFF333333),
+      Rect.fromCenter(center: Offset(bodyShift, -6), width: 4, height: 2.5),
+      Paint()..color = const Color(0xFF2A2A2A),
+    );
+    // Cockpit glass — very subtle
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, -6), width: 2.5, height: 1.5),
+      Paint()..color = const Color(0xFF3A3A3A),
     );
     canvas.restore(); // End body roll transform
   }
@@ -1047,61 +1218,79 @@ class PlaneRenderer {
       );
     }
 
-    // --- Three stacked wings ---
-    // Top wing (smallest) — draw as path for sketch outline support
-    final topSpan = dynamicWingSpan * 0.7;
+    // --- Three stacked wings (Fokker Dr.I: all EQUAL span, rounded tips) ---
+    // The real Dr.I had equal-span wings — this was its distinctive feature
+    final equalSpan = dynamicWingSpan;
+
+    // Top wing
     final topWingRect = Rect.fromCenter(
       center: Offset(0, -6 + wingDip * 0.3),
-      width: topSpan * 2,
+      width: equalSpan * 2,
       height: 5,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(topWingRect, const Radius.circular(2)),
+      RRect.fromRectAndRadius(topWingRect, const Radius.circular(3)),
       Paint()..color = wingColor,
     );
-    // Cross-hatch on top wing fabric
     _crossHatch(canvas, topWingRect, wingColor, spacing: 4.0, opacity: 0.11);
-    // Pencil outline on top wing
     final topWingPath = Path()
       ..addRRect(
-        RRect.fromRectAndRadius(topWingRect, const Radius.circular(2)),
+        RRect.fromRectAndRadius(topWingRect, const Radius.circular(3)),
       );
     _pencilOutline(topWingPath, canvas, wingColor, strokeWidth: 0.9);
 
-    // Middle wing
-    final midSpan = dynamicWingSpan * 0.85;
+    // Middle wing (same span)
     final midWingRect = Rect.fromCenter(
       center: Offset(0, 0 + wingDip * 0.6),
-      width: midSpan * 2,
+      width: equalSpan * 2,
       height: 5,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(midWingRect, const Radius.circular(2)),
+      RRect.fromRectAndRadius(midWingRect, const Radius.circular(3)),
       Paint()..color = wingColor,
     );
     _crossHatch(canvas, midWingRect, wingColor, spacing: 4.0, opacity: 0.11);
     final midWingPath = Path()
       ..addRRect(
-        RRect.fromRectAndRadius(midWingRect, const Radius.circular(2)),
+        RRect.fromRectAndRadius(midWingRect, const Radius.circular(3)),
       );
     _pencilOutline(midWingPath, canvas, wingColor, strokeWidth: 0.9);
 
-    // Bottom wing (largest)
+    // Bottom wing (same span)
     final botWingRect = Rect.fromCenter(
       center: Offset(0, 6 + wingDip),
-      width: dynamicWingSpan * 2,
+      width: equalSpan * 2,
       height: 5,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(botWingRect, const Radius.circular(2)),
+      RRect.fromRectAndRadius(botWingRect, const Radius.circular(3)),
       Paint()..color = wingColor,
     );
     _crossHatch(canvas, botWingRect, wingColor, spacing: 4.0, opacity: 0.11);
     final botWingPath = Path()
       ..addRRect(
-        RRect.fromRectAndRadius(botWingRect, const Radius.circular(2)),
+        RRect.fromRectAndRadius(botWingRect, const Radius.circular(3)),
       );
     _pencilOutline(botWingPath, canvas, wingColor, strokeWidth: 0.9);
+
+    // Interplane struts — I-struts connecting each wing pair (Dr.I signature)
+    final strutPaintWing = Paint()
+      ..color = detail
+      ..strokeWidth = 1.2;
+    for (final x in [-equalSpan * 0.45, equalSpan * 0.45]) {
+      // Top-to-mid struts
+      canvas.drawLine(
+        Offset(x, -4 + wingDip * 0.3),
+        Offset(x, -1 + wingDip * 0.5),
+        strutPaintWing,
+      );
+      // Mid-to-bottom struts
+      canvas.drawLine(
+        Offset(x, 2 + wingDip * 0.6),
+        Offset(x, 4 + wingDip * 0.8),
+        strutPaintWing,
+      );
+    }
 
     // AO at fuselage-wing junctions
     _wingJointAO(canvas, Offset(bodyShift, -6 + wingDip * 0.3), radius: 5.0);
@@ -1145,21 +1334,48 @@ class PlaneRenderer {
       ..strokeJoin = StrokeJoin.round;
     _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.38);
 
-    // Struts
+    // Inner interplane struts (near fuselage)
     final strutPaint = Paint()
       ..color = detail
       ..strokeWidth = 1.5;
-    for (var x in [-dynamicWingSpan * 0.5, dynamicWingSpan * 0.5]) {
+    for (final x in [-dynamicWingSpan * 0.2, dynamicWingSpan * 0.2]) {
       canvas.drawLine(Offset(x, -4), Offset(x, 8 + wingDip * 0.5), strutPaint);
     }
 
-    // Cockpit
+    // Rotary engine cowling — Le Rhône 9J visible as circular housing
+    canvas.drawCircle(
+      Offset(bodyShift, -16),
+      3.5,
+      Paint()..color = const Color(0xFF555555),
+    );
+    canvas.drawCircle(
+      Offset(bodyShift, -16),
+      2.0,
+      Paint()..color = const Color(0xFF444444),
+    );
+    // Cowling highlight
+    canvas.drawCircle(
+      Offset(bodyShift - 0.5, -16.5),
+      1.0,
+      Paint()..color = const Color(0xFF777777),
+    );
+
+    // Open cockpit (leather-rimmed)
     canvas.drawOval(
       Rect.fromCenter(center: Offset(bodyShift, -8), width: 5, height: 6),
       Paint()..color = const Color(0xFF654321),
     );
+    // Cockpit rim
+    _pencilOutline(
+      Path()..addOval(
+        Rect.fromCenter(center: Offset(bodyShift, -8), width: 5, height: 6),
+      ),
+      canvas,
+      const Color(0xFF654321),
+      strokeWidth: 0.8,
+    );
 
-    // Red Baron cross emblem
+    // Red Baron Iron Cross emblem
     canvas.drawLine(
       Offset(bodyShift - 3, 0),
       Offset(bodyShift + 3, 0),
@@ -1205,27 +1421,54 @@ class PlaneRenderer {
         ? primary
         : Color.lerp(primary, Colors.grey, 0.2)!;
 
+    // Ogival (ogee) delta wings — Concorde's signature double-curve leading edge
     final leftSpan =
         dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
     final leftWing = Path()
-      ..moveTo(bodyShift - 2, -16)
-      ..lineTo(-leftSpan, 10 + wingDip)
+      ..moveTo(bodyShift - 2, -18)
+      // First ogee curve: gentle sweep near root
+      ..quadraticBezierTo(
+        -leftSpan * 0.3,
+        -12 + wingDip * 0.3,
+        -leftSpan * 0.65,
+        -2 + wingDip * 0.6,
+      )
+      // Second ogee curve: sharper sweep toward tip
+      ..quadraticBezierTo(
+        -leftSpan * 0.9,
+        4 + wingDip * 0.8,
+        -leftSpan,
+        10 + wingDip,
+      )
+      ..lineTo(-leftSpan + 3, 12 + wingDip)
       ..lineTo(bodyShift - 2, 14)
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
     _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 1.0);
-    _wingJointAO(canvas, Offset(bodyShift - 2, -2), radius: 5.5);
+    _wingJointAO(canvas, Offset(bodyShift - 2, -4), radius: 5.5);
 
     final rightSpan =
         dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
     final rightWing = Path()
-      ..moveTo(bodyShift + 2, -16)
-      ..lineTo(rightSpan, 10 - wingDip)
+      ..moveTo(bodyShift + 2, -18)
+      ..quadraticBezierTo(
+        rightSpan * 0.3,
+        -12 - wingDip * 0.3,
+        rightSpan * 0.65,
+        -2 - wingDip * 0.6,
+      )
+      ..quadraticBezierTo(
+        rightSpan * 0.9,
+        4 - wingDip * 0.8,
+        rightSpan,
+        10 - wingDip,
+      )
+      ..lineTo(rightSpan - 3, 12 - wingDip)
       ..lineTo(bodyShift + 2, 14)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
     _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 1.0);
-    _wingJointAO(canvas, Offset(bodyShift + 2, -2), radius: 5.5);
+    _wingJointAO(canvas, Offset(bodyShift + 2, -4), radius: 5.5);
 
     // --- Body group ---
     canvas.save();
@@ -1234,14 +1477,14 @@ class PlaneRenderer {
     canvas.scale(rollScale, 1.0);
     canvas.translate(-bodyShift, 0);
 
-    // Fuselage
+    // Long, thin fuselage — Concorde had extreme length-to-width ratio
     final fuselagePath = Path()
-      ..moveTo(bodyShift, -18)
-      ..quadraticBezierTo(3 + bodyShift, -10, 3 + bodyShift, 0)
-      ..lineTo(2 + bodyShift, 14)
-      ..lineTo(-2 + bodyShift, 14)
-      ..lineTo(-3 + bodyShift, 0)
-      ..quadraticBezierTo(-3 + bodyShift, -10, bodyShift, -18)
+      ..moveTo(bodyShift, -20)
+      ..quadraticBezierTo(2.5 + bodyShift, -12, 2.5 + bodyShift, 0)
+      ..lineTo(2 + bodyShift, 16)
+      ..lineTo(-2 + bodyShift, 16)
+      ..lineTo(-2.5 + bodyShift, 0)
+      ..quadraticBezierTo(-2.5 + bodyShift, -12, bodyShift, -20)
       ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
 
@@ -1254,54 +1497,63 @@ class PlaneRenderer {
       ..strokeJoin = StrokeJoin.round;
     _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.30);
 
-    // Drooping nose
+    // Distinctive drooping visor nose — Concorde's iconic feature
+    final droopNose = Path()
+      ..moveTo(bodyShift - 1.5, -20)
+      ..quadraticBezierTo(bodyShift - 0.5, -23, bodyShift, -25)
+      ..quadraticBezierTo(bodyShift + 0.5, -23, bodyShift + 1.5, -20)
+      ..close();
+    canvas.drawPath(droopNose, Paint()..color = secondary);
+    _pencilOutline(droopNose, canvas, secondary, strokeWidth: 0.8);
+
+    // Accent stripe running along fuselage
     canvas.drawLine(
       Offset(bodyShift, -18),
-      Offset(bodyShift, -20),
-      Paint()
-        ..color = secondary
-        ..strokeWidth = 3.0
-        ..strokeCap = StrokeCap.round,
-    );
-
-    // Accent stripe
-    canvas.drawLine(
-      Offset(bodyShift, -16),
-      Offset(bodyShift, 10),
+      Offset(bodyShift, 12),
       Paint()
         ..color = detail
-        ..strokeWidth = 2.0,
+        ..strokeWidth = 1.8,
     );
 
-    // Cockpit windows
-    for (var y in [-12.0, -10.0, -8.0]) {
-      canvas.drawCircle(
-        Offset(bodyShift, y),
-        1.2,
+    // Cockpit windows (narrow visor windows)
+    for (var y in [-16.0, -14.0, -12.0]) {
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(bodyShift, y), width: 2.0, height: 1.2),
         Paint()..color = const Color(0xFF4A90B8),
       );
     }
     canvas.restore(); // End body roll transform
 
-    // Four jet engines
-    for (var x in [-leftSpan * 0.4, -leftSpan * 0.6]) {
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: Offset(x, 8 + wingDip * 0.5),
-          width: 3,
-          height: 4,
+    // Four Olympus engines in two close nacelle pairs (signature Concorde layout)
+    final enginePaint = Paint()..color = const Color(0xFF555555);
+    final intakePaint = Paint()..color = const Color(0xFF444444);
+    for (var x in [-leftSpan * 0.42, -leftSpan * 0.52]) {
+      final ey = 8 + wingDip * 0.5;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(x, ey), width: 3, height: 5),
+          const Radius.circular(1.5),
         ),
-        Paint()..color = const Color(0xFF555555),
+        enginePaint,
+      );
+      // Rectangular intake ramp (Concorde had distinctive box intakes)
+      canvas.drawRect(
+        Rect.fromCenter(center: Offset(x, ey - 2.5), width: 3.5, height: 1.5),
+        intakePaint,
       );
     }
-    for (var x in [rightSpan * 0.4, rightSpan * 0.6]) {
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: Offset(x, 8 - wingDip * 0.5),
-          width: 3,
-          height: 4,
+    for (var x in [rightSpan * 0.42, rightSpan * 0.52]) {
+      final ey = 8 - wingDip * 0.5;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(x, ey), width: 3, height: 5),
+          const Radius.circular(1.5),
         ),
-        Paint()..color = const Color(0xFF555555),
+        enginePaint,
+      );
+      canvas.drawRect(
+        Rect.fromCenter(center: Offset(x, ey - 2.5), width: 3.5, height: 1.5),
+        intakePaint,
       );
     }
   }
@@ -1323,63 +1575,81 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 4.0;
 
-    // Pontoons (below the plane)
+    // Hull-shaped floats with step (real seaplanes have boat-hull shaped pontoons)
     final pontoonPaint = Paint()..color = detail;
-    final leftPontoonRect = Rect.fromCenter(
-      center: Offset(-dynamicWingSpan * 0.5, 12 + wingDip),
-      width: 6,
-      height: 16,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(leftPontoonRect, const Radius.circular(3)),
-      pontoonPaint,
-    );
-    // Pencil outline on pontoon for hand-drawn feel
-    final leftPontoonPath = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(leftPontoonRect, const Radius.circular(3)),
-      );
-    _pencilOutline(
-      leftPontoonPath,
-      canvas,
-      detail,
-      strokeWidth: 0.9,
-      opacity: 0.45,
+    final lx = -dynamicWingSpan * 0.5;
+    final ly = 12 + wingDip;
+
+    // Left float — hull shape with step break for water release
+    final leftFloat = Path()
+      ..moveTo(lx, ly - 9) // bow (pointed nose)
+      ..quadraticBezierTo(lx + 3.5, ly - 7, lx + 3.5, ly - 2) // hull curve
+      ..lineTo(lx + 3, ly) // step break (abrupt change)
+      ..lineTo(lx + 2.5, ly + 6) // aft section (narrower after step)
+      ..quadraticBezierTo(lx, ly + 8, lx - 2.5, ly + 6) // stern
+      ..lineTo(lx - 3, ly) // step on other side
+      ..lineTo(lx - 3.5, ly - 2)
+      ..quadraticBezierTo(lx - 3.5, ly - 7, lx, ly - 9) // back to bow
+      ..close();
+    canvas.drawPath(leftFloat, pontoonPaint);
+    _pencilOutline(leftFloat, canvas, detail, strokeWidth: 0.9, opacity: 0.45);
+    // Step line indicator
+    canvas.drawLine(
+      Offset(lx - 3, ly),
+      Offset(lx + 3, ly),
+      Paint()
+        ..color = _darken(detail, 0.2).withOpacity(0.4)
+        ..strokeWidth = 0.7,
     );
 
-    final rightPontoonRect = Rect.fromCenter(
-      center: Offset(dynamicWingSpan * 0.5, 12 - wingDip),
-      width: 6,
-      height: 16,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(rightPontoonRect, const Radius.circular(3)),
-      pontoonPaint,
-    );
-    final rightPontoonPath = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(rightPontoonRect, const Radius.circular(3)),
-      );
-    _pencilOutline(
-      rightPontoonPath,
-      canvas,
-      detail,
-      strokeWidth: 0.9,
-      opacity: 0.45,
+    final rx = dynamicWingSpan * 0.5;
+    final ry = 12 - wingDip;
+
+    // Right float — mirror of left
+    final rightFloat = Path()
+      ..moveTo(rx, ry - 9)
+      ..quadraticBezierTo(rx + 3.5, ry - 7, rx + 3.5, ry - 2)
+      ..lineTo(rx + 3, ry)
+      ..lineTo(rx + 2.5, ry + 6)
+      ..quadraticBezierTo(rx, ry + 8, rx - 2.5, ry + 6)
+      ..lineTo(rx - 3, ry)
+      ..lineTo(rx - 3.5, ry - 2)
+      ..quadraticBezierTo(rx - 3.5, ry - 7, rx, ry - 9)
+      ..close();
+    canvas.drawPath(rightFloat, pontoonPaint);
+    _pencilOutline(rightFloat, canvas, detail, strokeWidth: 0.9, opacity: 0.45);
+    canvas.drawLine(
+      Offset(rx - 3, ry),
+      Offset(rx + 3, ry),
+      Paint()
+        ..color = _darken(detail, 0.2).withOpacity(0.4)
+        ..strokeWidth = 0.7,
     );
 
-    // Struts connecting pontoons to wings
+    // V-struts connecting floats to fuselage (realistic bracing)
     final strutPaint = Paint()
       ..color = secondary
-      ..strokeWidth = 2.0;
+      ..strokeWidth = 1.5;
+    // Left struts (V-brace pattern)
     canvas.drawLine(
-      Offset(-dynamicWingSpan * 0.5, 4 + wingDip * 0.7),
-      Offset(-dynamicWingSpan * 0.5, 8 + wingDip),
+      Offset(lx + 1, ly - 6),
+      Offset(bodyShift - 3, 2 + wingDip * 0.3),
       strutPaint,
     );
     canvas.drawLine(
-      Offset(dynamicWingSpan * 0.5, 4 - wingDip * 0.7),
-      Offset(dynamicWingSpan * 0.5, 8 - wingDip),
+      Offset(lx - 1, ly - 6),
+      Offset(bodyShift - 4, 6 + wingDip * 0.5),
+      strutPaint,
+    );
+    // Right struts
+    canvas.drawLine(
+      Offset(rx - 1, ry - 6),
+      Offset(bodyShift + 3, 2 - wingDip * 0.3),
+      strutPaint,
+    );
+    canvas.drawLine(
+      Offset(rx + 1, ry - 6),
+      Offset(bodyShift + 4, 6 - wingDip * 0.5),
       strutPaint,
     );
 
@@ -1440,6 +1710,16 @@ class PlaneRenderer {
     _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 1.0);
     _wingJointAO(canvas, Offset(-6 + bodyShift, 1), radius: 5.0);
 
+    // Left winglet (upturned wing tip — modern airliner signature)
+    final leftWinglet = Path()
+      ..moveTo(-leftSpan, 6 + wingDip)
+      ..lineTo(-leftSpan - 1, 4 + wingDip) // winglet curves upward
+      ..lineTo(-leftSpan + 1, 3 + wingDip)
+      ..lineTo(-leftSpan + 1, 6 + wingDip)
+      ..close();
+    canvas.drawPath(leftWinglet, Paint()..color = _lighten(leftWingColor, 0.2));
+    _pencilOutline(leftWinglet, canvas, leftWingColor, strokeWidth: 0.7);
+
     final rightSpan =
         dynamicWingSpan * 1.1 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
     final rightWing = Path()
@@ -1456,6 +1736,19 @@ class PlaneRenderer {
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
     _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 1.0);
     _wingJointAO(canvas, Offset(6 + bodyShift, 1), radius: 5.0);
+
+    // Right winglet
+    final rightWinglet = Path()
+      ..moveTo(rightSpan, 6 - wingDip)
+      ..lineTo(rightSpan + 1, 4 - wingDip)
+      ..lineTo(rightSpan - 1, 3 - wingDip)
+      ..lineTo(rightSpan - 1, 6 - wingDip)
+      ..close();
+    canvas.drawPath(
+      rightWinglet,
+      Paint()..color = _lighten(rightWingColor, 0.2),
+    );
+    _pencilOutline(rightWinglet, canvas, rightWingColor, strokeWidth: 0.7);
 
     // --- Body group ---
     canvas.save();
@@ -1512,27 +1805,33 @@ class PlaneRenderer {
       ..strokeJoin = StrokeJoin.round;
     _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.33);
 
-    // Cockpit windows
-    for (var y in [-13.0, -11.0, -9.0, -7.0]) {
-      canvas.drawCircle(
-        Offset(bodyShift + 2, y),
-        0.8,
-        Paint()..color = const Color(0xFF4A90B8),
-      );
-      canvas.drawCircle(
-        Offset(bodyShift - 2, y),
-        0.8,
-        Paint()..color = const Color(0xFF4A90B8),
-      );
+    // Cockpit windows (flight deck)
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, -13), width: 5, height: 4),
+      Paint()..color = const Color(0xFF4A90B8),
+    );
+
+    // Passenger windows (long row down each side — realistic airliner density)
+    final windowPaint = Paint()..color = const Color(0xFF4A90B8);
+    for (var y = -10.0; y <= 10.0; y += 1.8) {
+      canvas.drawCircle(Offset(bodyShift + 3.5, y), 0.6, windowPaint);
+      canvas.drawCircle(Offset(bodyShift - 3.5, y), 0.6, windowPaint);
     }
 
-    // Airline stripe
+    // Airline livery stripe
     canvas.drawLine(
-      Offset(bodyShift - 4, -8),
-      Offset(bodyShift - 4, 12),
+      Offset(bodyShift - 4.5, -8),
+      Offset(bodyShift - 3.5, 12),
       Paint()
         ..color = secondary
-        ..strokeWidth = 2.5,
+        ..strokeWidth = 2.0,
+    );
+    canvas.drawLine(
+      Offset(bodyShift + 4.5, -8),
+      Offset(bodyShift + 3.5, 12),
+      Paint()
+        ..color = secondary
+        ..strokeWidth = 1.0,
     );
     canvas.restore(); // End body roll transform
 
@@ -1860,26 +2159,47 @@ class PlaneRenderer {
 
     final leftSpan =
         dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
+    // Eagle wing with organic "wrist" bend and scalloped feather trailing edge
     final leftWing = Path()
       ..moveTo(-4 + bodyShift, -4)
+      // Leading edge with wrist bend (eagles angle their wings at the carpus)
       ..quadraticBezierTo(
-        -leftSpan * 0.5,
-        -10 + wingDip * 0.3,
+        -leftSpan * 0.4,
+        -8 + wingDip * 0.3,
+        -leftSpan * 0.7,
+        -2 + wingDip * 0.7,
+      )
+      ..quadraticBezierTo(
+        -leftSpan * 0.9,
+        0 + wingDip * 0.9,
         -leftSpan,
         2 + wingDip,
       )
-      ..lineTo(-leftSpan + 6, 6 + wingDip)
+      // Scalloped trailing edge (individual flight feather tips)
+      ..lineTo(-leftSpan + 2, 5 + wingDip)
+      ..lineTo(-leftSpan + 5, 4 + wingDip * 0.9)
+      ..lineTo(-leftSpan + 7, 6 + wingDip * 0.8)
+      ..lineTo(-leftSpan * 0.6, 5 + wingDip * 0.6)
+      ..lineTo(-leftSpan * 0.45, 6 + wingDip * 0.5)
+      ..lineTo(-leftSpan * 0.3, 4 + wingDip * 0.3)
       ..lineTo(-4 + bodyShift, 2)
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
 
-    // Wing feather sketch lines — eagle wings have a more detailed organic edge
-    final leftWingSketchPaint = Paint()
-      ..color = _darken(leftWingColor, 0.35).withOpacity(0.42)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0
+    // Feather detail lines on wing
+    final featherPaint = Paint()
+      ..color = _darken(leftWingColor, 0.25).withOpacity(0.35)
+      ..strokeWidth = 0.6
       ..strokeCap = StrokeCap.round;
-    _sketchPath(leftWing, canvas, leftWingSketchPaint, rng, wobble: 0.38);
+    for (var i = 0; i < 4; i++) {
+      final t = 0.3 + i * 0.15;
+      canvas.drawLine(
+        Offset(-leftSpan * t, -1 + wingDip * t),
+        Offset(-leftSpan * (t + 0.1), 4 + wingDip * (t + 0.1)),
+        featherPaint,
+      );
+    }
+
     _wingJointAO(canvas, Offset(-4 + bodyShift, -1), radius: 5.0);
 
     final rightSpan =
@@ -1887,22 +2207,38 @@ class PlaneRenderer {
     final rightWing = Path()
       ..moveTo(4 + bodyShift, -4)
       ..quadraticBezierTo(
-        rightSpan * 0.5,
-        -10 - wingDip * 0.3,
+        rightSpan * 0.4,
+        -8 - wingDip * 0.3,
+        rightSpan * 0.7,
+        -2 - wingDip * 0.7,
+      )
+      ..quadraticBezierTo(
+        rightSpan * 0.9,
+        0 - wingDip * 0.9,
         rightSpan,
         2 - wingDip,
       )
-      ..lineTo(rightSpan - 6, 6 - wingDip)
+      // Scalloped trailing edge
+      ..lineTo(rightSpan - 2, 5 - wingDip)
+      ..lineTo(rightSpan - 5, 4 - wingDip * 0.9)
+      ..lineTo(rightSpan - 7, 6 - wingDip * 0.8)
+      ..lineTo(rightSpan * 0.6, 5 - wingDip * 0.6)
+      ..lineTo(rightSpan * 0.45, 6 - wingDip * 0.5)
+      ..lineTo(rightSpan * 0.3, 4 - wingDip * 0.3)
       ..lineTo(4 + bodyShift, 2)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
 
-    final rightWingSketchPaint = Paint()
-      ..color = _darken(rightWingColor, 0.35).withOpacity(0.42)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0
-      ..strokeCap = StrokeCap.round;
-    _sketchPath(rightWing, canvas, rightWingSketchPaint, rng, wobble: 0.38);
+    // Right wing feather details
+    for (var i = 0; i < 4; i++) {
+      final t = 0.3 + i * 0.15;
+      canvas.drawLine(
+        Offset(rightSpan * t, -1 - wingDip * t),
+        Offset(rightSpan * (t + 0.1), 4 - wingDip * (t + 0.1)),
+        featherPaint,
+      );
+    }
+
     _wingJointAO(canvas, Offset(4 + bodyShift, -1), radius: 5.0);
 
     // --- Body group ---
@@ -1912,20 +2248,34 @@ class PlaneRenderer {
     canvas.scale(rollScale, 1.0);
     canvas.translate(-bodyShift, 0);
 
-    // Tail feathers
+    // Fan-shaped tail feathers (spread like a real eagle's tail)
     final tailPath = Path()
-      ..moveTo(bodyShift - 4, 10)
-      ..lineTo(bodyShift - 6, 16)
-      ..lineTo(bodyShift, 13)
-      ..lineTo(bodyShift + 6, 16)
-      ..lineTo(bodyShift + 4, 10)
+      ..moveTo(bodyShift - 3, 10)
+      ..lineTo(bodyShift - 7, 17) // left outer feather
+      ..lineTo(bodyShift - 4, 16) // inner scallop
+      ..lineTo(bodyShift - 2, 18) // inner feather
+      ..lineTo(bodyShift, 15) // center notch
+      ..lineTo(bodyShift + 2, 18) // inner feather
+      ..lineTo(bodyShift + 4, 16) // inner scallop
+      ..lineTo(bodyShift + 7, 17) // right outer feather
+      ..lineTo(bodyShift + 3, 10)
       ..close();
     canvas.drawPath(tailPath, Paint()..color = secondary);
     _pencilOutline(tailPath, canvas, secondary, strokeWidth: 1.0);
+    // Tail feather detail lines
+    for (final dx in [-5.0, -2.0, 0.0, 2.0, 5.0]) {
+      canvas.drawLine(
+        Offset(bodyShift + dx * 0.6, 10),
+        Offset(bodyShift + dx, 17),
+        Paint()
+          ..color = _darken(secondary, 0.2).withOpacity(0.3)
+          ..strokeWidth = 0.5,
+      );
+    }
 
-    // Raptor body (tapered)
+    // Raptor body (tapered, streamlined)
     final fuselagePath = Path()
-      ..moveTo(bodyShift, -16) // beak tip
+      ..moveTo(bodyShift, -16) // beak base
       ..quadraticBezierTo(4 + bodyShift, -10, 4 + bodyShift, -2)
       ..quadraticBezierTo(3 + bodyShift, 6, 2 + bodyShift, 12)
       ..lineTo(-2 + bodyShift, 12)
@@ -1941,26 +2291,41 @@ class PlaneRenderer {
       ..strokeWidth = 1.1
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
-    _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.38);
+    _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.42);
 
-    // Eagle eye
+    // Hooked beak (eagles have a distinctive curved raptor beak)
+    final beakPath = Path()
+      ..moveTo(bodyShift, -16)
+      ..quadraticBezierTo(bodyShift + 1, -18, bodyShift, -20) // beak tip
+      ..quadraticBezierTo(bodyShift - 0.5, -18, bodyShift, -16)
+      ..close();
+    canvas.drawPath(beakPath, Paint()..color = const Color(0xFFDAA520));
+    _pencilOutline(beakPath, canvas, const Color(0xFFDAA520), strokeWidth: 0.7);
+
+    // Eagle eye (fierce, forward-facing)
     canvas.drawCircle(
-      Offset(bodyShift + 1.5, -10),
-      2.0,
-      Paint()..color = secondary,
+      Offset(bodyShift + 1.5, -11),
+      2.2,
+      Paint()..color = const Color(0xFFDAA520), // golden iris
     );
     canvas.drawCircle(
-      Offset(bodyShift + 1.5, -10),
+      Offset(bodyShift + 1.5, -11),
       1.0,
-      Paint()..color = const Color(0xFF1A1A1A),
+      Paint()..color = const Color(0xFF1A1A1A), // pupil
+    );
+    // Eye highlight
+    canvas.drawCircle(
+      Offset(bodyShift + 1.0, -11.5),
+      0.5,
+      Paint()..color = Colors.white.withOpacity(0.6),
     );
 
-    // Shimmer highlights
-    for (var i = 0; i < 3; i++) {
+    // Platinum shimmer highlights along body
+    for (var i = 0; i < 4; i++) {
       canvas.drawCircle(
-        Offset(bodyShift - 2 + i * 3.0, -4 + i * 4.0),
-        1.2,
-        Paint()..color = detail.withOpacity(0.6),
+        Offset(bodyShift - 1.5 + i * 2.0, -4 + i * 3.5),
+        1.0,
+        Paint()..color = detail.withOpacity(0.5),
       );
     }
 
