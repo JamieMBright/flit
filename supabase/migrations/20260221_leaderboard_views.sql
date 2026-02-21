@@ -27,6 +27,7 @@ SELECT s.user_id, p.username, p.level, p.avatar_url,
 FROM scores s
 JOIN profiles p ON s.user_id = p.id
 WHERE s.created_at >= CURRENT_DATE
+  AND s.region = 'daily'
 ORDER BY s.score DESC, s.time_ms ASC;
 
 -- ---------------------------------------------------------------------------
