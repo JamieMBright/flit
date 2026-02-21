@@ -1284,7 +1284,9 @@ class PlaneRenderer {
     double bankSin,
     double wingSpan,
     Map<String, int>? colorScheme,
+    String planeId,
   ) {
+    final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFFF5F5F5);
     final secondary = _secondary(colorScheme, 0xFF003580);
     final detail = _detail(colorScheme, 0xFFFFCC00);
@@ -1316,6 +1318,8 @@ class PlaneRenderer {
       ..quadraticBezierTo(-leftSpan * 0.4, 5 + wingDip * 0.5, -5 + bodyShift, 2)
       ..close();
     canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 1.0);
+    _wingJointAO(canvas, Offset(-6 + bodyShift, 1), radius: 5.0);
 
     final rightSpan =
         dynamicWingSpan * 1.1 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
@@ -1331,6 +1335,8 @@ class PlaneRenderer {
       ..quadraticBezierTo(rightSpan * 0.4, 5 - wingDip * 0.5, 5 + bodyShift, 2)
       ..close();
     canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 1.0);
+    _wingJointAO(canvas, Offset(6 + bodyShift, 1), radius: 5.0);
 
     // --- Body group ---
     canvas.save();
@@ -1347,6 +1353,7 @@ class PlaneRenderer {
       ..lineTo(3, 14)
       ..close();
     canvas.drawPath(tailPath, Paint()..color = detail);
+    _pencilOutline(tailPath, canvas, detail, strokeWidth: 0.9);
 
     // Vertical stabilizer
     final finPath = Path()
@@ -1355,6 +1362,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(2 + bodyShift, 14, bodyShift, 12)
       ..close();
     canvas.drawPath(finPath, Paint()..color = secondary);
+    _pencilOutline(finPath, canvas, secondary, strokeWidth: 0.9);
 
     // Wide fuselage
     final fuselagePath = Path()
@@ -1366,6 +1374,15 @@ class PlaneRenderer {
       ..quadraticBezierTo(-6 + bodyShift, -12, bodyShift, -17)
       ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Sketch outline on fuselage
+    final fuselageSketchPaint = Paint()
+      ..color = _darken(primary, 0.38).withOpacity(0.45)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.33);
 
     // Cockpit windows
     for (var y in [-13.0, -11.0, -9.0, -7.0]) {
@@ -1428,6 +1445,7 @@ class PlaneRenderer {
     double bankSin,
     double wingSpan,
     Map<String, int>? colorScheme,
+    String planeId,
   ) {
     final primary = _primary(colorScheme, 0xFFF5F5F5);
     final secondary = _secondary(colorScheme, 0xFF1A3A5C);
