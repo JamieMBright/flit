@@ -30,24 +30,28 @@ class AccountManagementService {
   }) async {
     try {
       // Fetch all data in parallel for speed.
-      final results = await Future.wait([
-        _client.from('profiles').select().eq('id', userId).maybeSingle(),
-        _client
+      final results = await Future.wait<dynamic>([
+        (() async => await _client
+            .from('profiles')
+            .select()
+            .eq('id', userId)
+            .maybeSingle())(),
+        (() async => await _client
             .from('user_settings')
             .select()
             .eq('user_id', userId)
-            .maybeSingle(),
-        _client
+            .maybeSingle())(),
+        (() async => await _client
             .from('account_state')
             .select()
             .eq('user_id', userId)
-            .maybeSingle(),
-        _client
+            .maybeSingle())(),
+        (() async => await _client
             .from('scores')
             .select('score, time_ms, region, rounds_completed, created_at')
             .eq('user_id', userId)
             .order('created_at', ascending: false)
-            .limit(500),
+            .limit(500))(),
         _fetchFriendsList(userId),
         _fetchChallengeHistory(userId),
       ]);

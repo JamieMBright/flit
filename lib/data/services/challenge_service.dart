@@ -1,8 +1,10 @@
 import 'dart:math';
 
+import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../game/clues/clue_types.dart';
 import '../models/challenge.dart';
 
 /// Service for managing H2H dogfight challenges via Supabase.
@@ -323,11 +325,6 @@ class ChallengeService {
     );
   }
 }
-
-// Sentinel values for round fields not stored in Supabase JSONB.
-// The actual clue type and location are derived from the seed at play time.
-import 'package:flame/components.dart';
-import '../../game/clues/clue_types.dart';
 
 final ClueType _defaultClueType = ClueType.values.first;
 final Vector2 _defaultLocation = Vector2.zero();
