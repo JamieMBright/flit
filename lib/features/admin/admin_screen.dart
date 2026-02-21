@@ -9,6 +9,7 @@ import '../../data/models/cosmetic.dart';
 import '../../data/providers/account_provider.dart';
 import '../debug/avatar_preview_screen.dart';
 import '../debug/plane_preview_screen.dart';
+import 'admin_stats_screen.dart';
 
 /// Admin panel — visible only to the admin email (jamiebright1@gmail.com).
 ///
@@ -434,6 +435,19 @@ class AdminScreen extends ConsumerWidget {
           // Current account info
           const _SectionHeader(title: 'Current Account'),
           _AccountCard(player: state.currentPlayer),
+          const SizedBox(height: 24),
+
+          // Usage Stats
+          const _SectionHeader(title: 'Analytics'),
+          const SizedBox(height: 8),
+          _AdminActionCard(
+            icon: Icons.analytics,
+            iconColor: FlitColors.oceanHighlight,
+            label: 'Usage Stats',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const AdminStatsScreen()),
+            ),
+          ),
           const SizedBox(height: 24),
 
           // Quick self-actions
