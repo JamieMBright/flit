@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/services/user_preferences_service.dart';
 import 'audio_manager.dart';
@@ -42,6 +45,8 @@ class GameSettings extends ChangeNotifier {
 
   /// Singleton instance.
   static final GameSettings instance = GameSettings._();
+
+  static const String _prefsKey = 'game_settings';
 
   bool _hydrating = false;
 
@@ -88,7 +93,81 @@ class GameSettings extends ChangeNotifier {
     this.effectsVolume = effectsVolume;
     this.notificationsEnabled = notificationsEnabled;
     this.hapticEnabled = hapticEnabled;
+    _saveToLocal();
     _hydrating = false;
+  }
+
+  // ─── Local Persistence ──────────────────────────────────────────
+
+  /// Serialises all current settings to SharedPreferences.
+  /// Called after every Supabase hydration so the local cache stays current.
+  Future<void> _saveToLocal() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final data = {
+        'turn_sensitivity': _turnSensitivity,
+        'invert_controls': _invertControls,
+        'enable_night': _enableNight,
+        'map_style': _mapStyle.name,
+        'english_labels': _englishLabels,
+        'difficulty': _difficulty.name,
+        'sound_enabled': _soundEnabled,
+        'music_volume': _musicVolume,
+        'effects_volume': _effectsVolume,
+        'notifications_enabled': _notificationsEnabled,
+        'haptic_enabled': _hapticEnabled,
+      };
+      await prefs.setString(_prefsKey, json.encode(data));
+    } catch (_) {
+      // Best-effort local cache — don't crash on failure
+    }
+  }
+
+  /// Reads settings from SharedPreferences and hydrates the singleton.
+  ///
+  /// Returns `true` if cached settings were found and applied, `false` if no
+  /// cache exists yet (first launch, cleared storage, etc.).
+  ///
+  /// Call this early in `main()` — before `runApp()` — so the user sees their
+  /// real settings immediately, even before Supabase has responded.
+  Future<bool> loadFromLocal() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_prefsKey);
+      if (raw == null) return false;
+      final data = json.decode(raw) as Map<String, dynamic>;
+      _hydrating = true;
+      _turnSensitivity =
+          (data['turn_sensitivity'] as num?)?.toDouble() ?? _turnSensitivity;
+      _invertControls = data['invert_controls'] as bool? ?? _invertControls;
+      _enableNight = data['enable_night'] as bool? ?? _enableNight;
+      final mapStyleName = data['map_style'] as String?;
+      if (mapStyleName != null) {
+        _mapStyle = MapStyle.values.firstWhere(
+          (s) => s.name == mapStyleName,
+          orElse: () => _mapStyle,
+        );
+      }
+      _englishLabels = data['english_labels'] as bool? ?? _englishLabels;
+      final diffName = data['difficulty'] as String?;
+      if (diffName != null) {
+        _difficulty = GameDifficulty.values.firstWhere(
+          (d) => d.name == diffName,
+          orElse: () => _difficulty,
+        );
+      }
+      _soundEnabled = data['sound_enabled'] as bool? ?? _soundEnabled;
+      _musicVolume = (data['music_volume'] as num?)?.toDouble() ?? _musicVolume;
+      _effectsVolume =
+          (data['effects_volume'] as num?)?.toDouble() ?? _effectsVolume;
+      _notificationsEnabled =
+          data['notifications_enabled'] as bool? ?? _notificationsEnabled;
+      _hapticEnabled = data['haptic_enabled'] as bool? ?? _hapticEnabled;
+      _hydrating = false;
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   // ─── Controls ───────────────────────────────────────────────────

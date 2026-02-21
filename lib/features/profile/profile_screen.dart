@@ -1916,6 +1916,15 @@ class _GameHistoryEntry {
   final DateTime date;
   final int roundsCompleted;
 
+  /// Returns a color representing overall performance for this game session.
+  Color get performanceColor {
+    final int perRound = roundsCompleted > 0 ? score ~/ roundsCompleted : score;
+    if (perRound >= 8000) return const Color(0xFF6AAB5C);
+    if (perRound >= 5000) return const Color(0xFFD4A944);
+    if (perRound >= 2000) return const Color(0xFFE87A5A);
+    return const Color(0xFFCC4444);
+  }
+
   /// Generate shareable result text for socials.
   String toShareText() {
     final timeFormatted = _formatShareTime(duration);
@@ -2079,6 +2088,16 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
                       ),
                     ),
                     const SizedBox(width: 14),
+                    // Performance dot
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: entry.performanceColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     // Region and time
                     Expanded(
                       child: Column(

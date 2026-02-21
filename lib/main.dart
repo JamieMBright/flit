@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/config/supabase_config.dart';
 import 'core/services/audio_manager.dart';
+import 'core/services/game_settings.dart';
 import 'core/services/dev_overlay.dart';
 import 'core/services/error_sender_http.dart';
 import 'core/services/error_service.dart';
@@ -41,6 +42,11 @@ String? _fatalError;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load cached settings immediately (before Supabase, which may be slow).
+  // This ensures the user sees their real settings on the first frame even
+  // when the network is unavailable or the Supabase response is delayed.
+  await GameSettings.instance.loadFromLocal();
 
   // Initialize Supabase (auth session auto-restores from local storage).
   await Supabase.initialize(

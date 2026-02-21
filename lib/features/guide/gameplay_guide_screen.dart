@@ -892,42 +892,34 @@ class _ScoringSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _BodyText(
-            'Speed and accuracy are rewarded. Every second in the air costs '
-            'you points. Every extra clue you reveal shaves off your potential '
-            'score. Guess wrong and face a distance penalty.',
+            'Each round starts with 10,000 points. Using hints and burning '
+            'fuel costs you points. Land fast with fuel to spare and no '
+            'hints for the best score.',
           ),
           SizedBox(height: 16),
           // Step indicators
           _ScoringStep(
             step: 1,
             color: FlitColors.success,
-            label: 'Correct Answer',
-            detail: '+1000 base points',
+            label: 'Base Score',
+            detail: '10,000 pts per round',
             icon: Icons.check_rounded,
           ),
           SizedBox(height: 8),
           _ScoringStep(
             step: 2,
             color: FlitColors.gold,
-            label: 'Speed Bonus',
-            detail: 'Up to +500 pts for fast guesses',
-            icon: Icons.bolt_rounded,
+            label: 'Hint Penalty',
+            detail: '-1,000 pts per hint used',
+            icon: Icons.lightbulb_outline_rounded,
           ),
           SizedBox(height: 8),
           _ScoringStep(
             step: 3,
             color: FlitColors.oceanHighlight,
-            label: 'Clue Penalty',
-            detail: '-100 pts per clue revealed after the first',
-            icon: Icons.remove_circle_outline_rounded,
-          ),
-          SizedBox(height: 8),
-          _ScoringStep(
-            step: 4,
-            color: FlitColors.accent,
-            label: 'Distance Penalty',
-            detail: 'Wrong guess? Penalty scales to distance',
-            icon: Icons.social_distance_rounded,
+            label: 'Fuel Penalty',
+            detail: 'Up to -5,000 pts based on fuel burned',
+            icon: Icons.local_gas_station_rounded,
           ),
           SizedBox(height: 16),
           // Score bar illustration
