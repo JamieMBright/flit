@@ -139,24 +139,34 @@ class PlaneRenderer {
     double spacing = 5.0,
     double opacity = 0.10,
   }) {
+    // Normalise so left < right, top < bottom (avoid degenerate rects)
+    final normalised = Rect.fromLTRB(
+      bounds.left < bounds.right ? bounds.left : bounds.right,
+      bounds.top < bounds.bottom ? bounds.top : bounds.bottom,
+      bounds.left < bounds.right ? bounds.right : bounds.left,
+      bounds.top < bounds.bottom ? bounds.bottom : bounds.top,
+    );
+
+    if (normalised.width < 1 || normalised.height < 1) return;
+
     final paint = Paint()
       ..color = lineColor.withOpacity(opacity)
       ..strokeWidth = 0.5
       ..strokeCap = StrokeCap.butt;
 
-    final w = bounds.width;
-    final h = bounds.height;
+    final w = normalised.width;
+    final h = normalised.height;
     final diag = w + h;
 
     // Clip to the bounds so lines don't bleed outside
     canvas.save();
-    canvas.clipRect(bounds);
+    canvas.clipRect(normalised);
 
     // 45° lines going bottom-left to top-right
     for (double t = -diag; t <= diag; t += spacing) {
       canvas.drawLine(
-        Offset(bounds.left + t, bounds.bottom),
-        Offset(bounds.left + t + h, bounds.top),
+        Offset(normalised.left + t, normalised.bottom),
+        Offset(normalised.left + t + h, normalised.top),
         paint,
       );
     }
