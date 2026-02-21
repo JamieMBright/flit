@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   fetch-errors:
@@ -19,52 +20,148 @@ jobs:
           # Fetch full history so we can push cleanly.
           fetch-depth: 0
 
-      - name: Fetch errors from Vercel endpoint
+      - name: Fetch critical errors and create/update GitHub issues
         env:
           VERCEL_ERRORS_API_KEY: ${{ secrets.VERCEL_ERRORS_API_KEY }}
           ERRORS_ENDPOINT: https://flit-olive.vercel.app/api/errors
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
           # Ensure logs directory exists.
           mkdir -p logs
 
-          # Determine the 'since' timestamp from the last fetched error.
-          SINCE=""
-          if [ -s logs/runtime-errors.jsonl ]; then
-            LAST_TS=$(tail -1 logs/runtime-errors.jsonl | jq -r '.timestamp // empty' 2>/dev/null || true)
-            if [ -n "$LAST_TS" ]; then
-              SINCE="&since=${LAST_TS}"
-            fi
-          fi
-
-          # Fetch errors from the API.
+          # ---------------------------------------------------------------
+          # 1. Fetch critical errors from Vercel endpoint
+          # ---------------------------------------------------------------
           RESPONSE=$(curl -sf \
             -H "X-API-Key: ${VERCEL_ERRORS_API_KEY}" \
-            "${ERRORS_ENDPOINT}?limit=500${SINCE}" \
+            "${ERRORS_ENDPOINT}?severity=critical&limit=100" \
           ) || {
             echo "::warning::Failed to fetch errors from endpoint"
             exit 0
           }
 
-          # Extract the errors array and count.
           COUNT=$(echo "$RESPONSE" | jq -r '.count // 0')
-          echo "Fetched ${COUNT} new error(s)"
+          echo "Fetched ${COUNT} critical error(s)"
 
           if [ "$COUNT" -eq 0 ]; then
-            echo "No new errors to append."
+            echo "No critical errors to process."
             exit 0
           fi
 
-          # Append each error as a single JSONL line (newest last).
-          # The API returns newest-first, so we reverse for chronological order.
-          echo "$RESPONSE" | jq -c '.errors | reverse | .[]' >> logs/runtime-errors.jsonl
+          # Extract errors array into a file for processing.
+          echo "$RESPONSE" | jq -c '.errors[]' > /tmp/critical_errors.jsonl
 
-          echo "Appended ${COUNT} error(s) to logs/runtime-errors.jsonl"
+          # ---------------------------------------------------------------
+          # 2. Process each critical error: deduplicate via GitHub Issues
+          # ---------------------------------------------------------------
+          ISSUES_CREATED=0
+          ISSUES_UPDATED=0
 
-      - name: Commit and push if new errors
+          while IFS= read -r error_json; do
+            # Extract fields from the error JSON.
+            ERROR_MSG=$(echo "$error_json" | jq -r '.error // "Unknown error"')
+            PLATFORM=$(echo "$error_json" | jq -r '.platform // "unknown"')
+            STACK_TRACE=$(echo "$error_json" | jq -r '.stackTrace // "No stack trace"')
+            DEVICE_INFO=$(echo "$error_json" | jq -r '.deviceInfo // "unknown"')
+            APP_VERSION=$(echo "$error_json" | jq -r '.appVersion // "unknown"')
+            TIMESTAMP=$(echo "$error_json" | jq -r '.timestamp // "unknown"')
+            SEVERITY=$(echo "$error_json" | jq -r '.severity // "critical"')
+            CONTEXT=$(echo "$error_json" | jq -r '.context // {} | to_entries | map("\(.key): \(.value)") | join(", ")')
+
+            # a. Create a fingerprint: first 100 chars of error + platform.
+            FINGERPRINT_RAW="${ERROR_MSG:0:100}|${PLATFORM}"
+            FINGERPRINT=$(echo -n "$FINGERPRINT_RAW" | md5sum | cut -d' ' -f1)
+
+            # b. Create a search-friendly tag for the issue body.
+            FINGERPRINT_TAG="[fingerprint:${FINGERPRINT}]"
+
+            # c. Search existing open issues for this fingerprint.
+            EXISTING_ISSUE=$(gh issue list \
+              --state open \
+              --label "auto-triage" \
+              --search "${FINGERPRINT_TAG}" \
+              --json number,title \
+              --jq '.[0].number // empty' \
+              2>/dev/null || true)
+
+            if [ -n "$EXISTING_ISSUE" ]; then
+              # d. Duplicate found: add a comment with occurrence + timestamp.
+              COMMENT_BODY="## Recurring Occurrence
+
+**Timestamp:** ${TIMESTAMP}
+**Platform:** ${PLATFORM}
+**Device:** ${DEVICE_INFO}
+**App Version:** ${APP_VERSION}
+**Context:** ${CONTEXT}
+
+\`\`\`
+${ERROR_MSG}
+\`\`\`
+
+_This error has been reported again. Auto-detected by error pipeline._"
+
+              gh issue comment "$EXISTING_ISSUE" --body "$COMMENT_BODY"
+              echo "Updated existing issue #${EXISTING_ISSUE} with new occurrence"
+              ISSUES_UPDATED=$((ISSUES_UPDATED + 1))
+            else
+              # e. New error: create a GitHub issue.
+              ISSUE_TITLE="${ERROR_MSG:0:80}"
+
+              ISSUE_BODY="## Critical Runtime Error
+
+${FINGERPRINT_TAG}
+
+### Error
+\`\`\`
+${ERROR_MSG}
+\`\`\`
+
+### Stack Trace
+\`\`\`
+${STACK_TRACE}
+\`\`\`
+
+### Environment
+| Field | Value |
+|---|---|
+| **Platform** | ${PLATFORM} |
+| **Device** | ${DEVICE_INFO} |
+| **App Version** | ${APP_VERSION} |
+| **Severity** | ${SEVERITY} |
+| **Timestamp** | ${TIMESTAMP} |
+
+### Context
+${CONTEXT:-No additional context}
+
+---
+_Auto-created by error telemetry pipeline._"
+
+              gh issue create \
+                --title "$ISSUE_TITLE" \
+                --body "$ISSUE_BODY" \
+                --label "bug,critical,auto-triage"
+
+              echo "Created new issue: ${ISSUE_TITLE}"
+              ISSUES_CREATED=$((ISSUES_CREATED + 1))
+            fi
+          done < /tmp/critical_errors.jsonl
+
+          echo "Summary: ${ISSUES_CREATED} issues created, ${ISSUES_UPDATED} issues updated"
+
+          # Clean up temp file.
+          rm -f /tmp/critical_errors.jsonl
+
+      - name: Purge logs and commit
         run: |
           set -euo pipefail
+
+          # Ensure logs directory exists.
+          mkdir -p logs
+
+          # Purge logs completely — write empty file.
+          echo -n "" > logs/runtime-errors.jsonl
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -78,5 +175,5 @@ jobs:
           fi
 
           TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
-          git commit -m "chore: fetch runtime errors (${TIMESTAMP})"
+          git commit -m "chore: process critical errors and purge logs (${TIMESTAMP})"
           git push
