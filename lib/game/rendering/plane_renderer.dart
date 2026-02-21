@@ -927,7 +927,9 @@ class PlaneRenderer {
     double wingSpan,
     Map<String, int>? colorScheme,
     double propAngle,
+    String planeId,
   ) {
+    final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFFCC3333);
     final secondary = _secondary(colorScheme, 0xFF8B0000);
     final detail = _detail(colorScheme, 0xFF1A1A1A);
@@ -961,46 +963,50 @@ class PlaneRenderer {
     }
 
     // --- Three stacked wings ---
-    // Top wing (smallest)
+    // Top wing (smallest) — draw as path for sketch outline support
     final topSpan = dynamicWingSpan * 0.7;
+    final topWingRect =
+        Rect.fromCenter(center: Offset(0, -6 + wingDip * 0.3), width: topSpan * 2, height: 5);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(0, -6 + wingDip * 0.3),
-          width: topSpan * 2,
-          height: 5,
-        ),
-        const Radius.circular(2),
-      ),
+      RRect.fromRectAndRadius(topWingRect, const Radius.circular(2)),
       Paint()..color = wingColor,
     );
+    // Cross-hatch on top wing fabric
+    _crossHatch(canvas, topWingRect, wingColor, spacing: 4.0, opacity: 0.11);
+    // Pencil outline on top wing
+    final topWingPath = Path()
+      ..addRRect(RRect.fromRectAndRadius(topWingRect, const Radius.circular(2)));
+    _pencilOutline(topWingPath, canvas, wingColor, strokeWidth: 0.9);
 
     // Middle wing
     final midSpan = dynamicWingSpan * 0.85;
+    final midWingRect =
+        Rect.fromCenter(center: Offset(0, 0 + wingDip * 0.6), width: midSpan * 2, height: 5);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(0, 0 + wingDip * 0.6),
-          width: midSpan * 2,
-          height: 5,
-        ),
-        const Radius.circular(2),
-      ),
+      RRect.fromRectAndRadius(midWingRect, const Radius.circular(2)),
       Paint()..color = wingColor,
     );
+    _crossHatch(canvas, midWingRect, wingColor, spacing: 4.0, opacity: 0.11);
+    final midWingPath = Path()
+      ..addRRect(RRect.fromRectAndRadius(midWingRect, const Radius.circular(2)));
+    _pencilOutline(midWingPath, canvas, wingColor, strokeWidth: 0.9);
 
     // Bottom wing (largest)
+    final botWingRect =
+        Rect.fromCenter(center: Offset(0, 6 + wingDip), width: dynamicWingSpan * 2, height: 5);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(0, 6 + wingDip),
-          width: dynamicWingSpan * 2,
-          height: 5,
-        ),
-        const Radius.circular(2),
-      ),
+      RRect.fromRectAndRadius(botWingRect, const Radius.circular(2)),
       Paint()..color = wingColor,
     );
+    _crossHatch(canvas, botWingRect, wingColor, spacing: 4.0, opacity: 0.11);
+    final botWingPath = Path()
+      ..addRRect(RRect.fromRectAndRadius(botWingRect, const Radius.circular(2)));
+    _pencilOutline(botWingPath, canvas, wingColor, strokeWidth: 0.9);
+
+    // AO at fuselage-wing junctions
+    _wingJointAO(canvas, Offset(bodyShift, -6 + wingDip * 0.3), radius: 5.0);
+    _wingJointAO(canvas, Offset(bodyShift, wingDip * 0.6), radius: 5.0);
+    _wingJointAO(canvas, Offset(bodyShift, 6 + wingDip), radius: 5.0);
 
     // --- Body group ---
     canvas.save();
@@ -1017,6 +1023,7 @@ class PlaneRenderer {
       ..lineTo(4, 12)
       ..close();
     canvas.drawPath(tailPath, Paint()..color = wingColor);
+    _pencilOutline(tailPath, canvas, wingColor, strokeWidth: 0.9);
 
     // Fuselage
     final fuselagePath = Path()
@@ -1028,6 +1035,15 @@ class PlaneRenderer {
       ..quadraticBezierTo(-4 + bodyShift, -12, bodyShift, -16)
       ..close();
     canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Sketch outline on fuselage
+    final fuselageSketchPaint = Paint()
+      ..color = _darken(primary, 0.45).withOpacity(0.50)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.38);
 
     // Struts
     final strutPaint = Paint()
