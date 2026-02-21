@@ -274,6 +274,66 @@ class AuthService {
     return _state;
   }
 
+  /// Send a password reset email via Supabase.
+  ///
+  /// Returns a state with no error if successful, or an error message if
+  /// the email is invalid or the request fails.
+  Future<AuthState> resetPassword({required String email}) async {
+    _state = _state.copyWith(isLoading: true, error: null);
+
+    if (!_isValidEmail(email)) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Please enter a valid email address',
+      );
+      return _state;
+    }
+
+    try {
+      await _client.auth.resetPasswordForEmail(email);
+      _state = _state.copyWith(isLoading: false);
+    } on AuthException catch (e) {
+      _state = _state.copyWith(isLoading: false, error: e.message);
+    } catch (_) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Something went wrong. Please try again.',
+      );
+    }
+
+    return _state;
+  }
+
+  /// Change password for the currently signed-in user.
+  ///
+  /// Requires an active Supabase session. Returns an error state if the
+  /// user is not authenticated or if the update fails.
+  Future<AuthState> changePassword({required String newPassword}) async {
+    _state = _state.copyWith(isLoading: true, error: null);
+
+    if (newPassword.length < 6) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Password must be at least 6 characters',
+      );
+      return _state;
+    }
+
+    try {
+      await _client.auth.updateUser(UserAttributes(password: newPassword));
+      _state = _state.copyWith(isLoading: false);
+    } on AuthException catch (e) {
+      _state = _state.copyWith(isLoading: false, error: e.message);
+    } catch (_) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Something went wrong. Please try again.',
+      );
+    }
+
+    return _state;
+  }
+
   /// Sign out. Clears the Supabase session.
   Future<AuthState> signOut() async {
     try {
