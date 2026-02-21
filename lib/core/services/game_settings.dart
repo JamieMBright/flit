@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../data/services/user_preferences_service.dart';
+import 'audio_manager.dart';
 
 /// Map tile style for descent mode — different visual themes.
 /// All tile servers are free and open-license (no API key required).
@@ -53,6 +54,9 @@ class GameSettings extends ChangeNotifier {
       mapStyle: _mapStyle.name,
       englishLabels: _englishLabels,
       difficulty: _difficulty.name,
+      soundEnabled: _soundEnabled,
+      notificationsEnabled: _notificationsEnabled,
+      hapticEnabled: _hapticEnabled,
     );
   }
 
@@ -64,6 +68,9 @@ class GameSettings extends ChangeNotifier {
     required bool englishLabels,
     required MapStyle mapStyle,
     required GameDifficulty difficulty,
+    required bool soundEnabled,
+    required bool notificationsEnabled,
+    required bool hapticEnabled,
   }) {
     _hydrating = true;
     this.turnSensitivity = turnSensitivity;
@@ -72,6 +79,9 @@ class GameSettings extends ChangeNotifier {
     this.englishLabels = englishLabels;
     this.mapStyle = mapStyle;
     this.difficulty = difficulty;
+    this.soundEnabled = soundEnabled;
+    this.notificationsEnabled = notificationsEnabled;
+    this.hapticEnabled = hapticEnabled;
     _hydrating = false;
   }
 
@@ -199,5 +209,39 @@ class GameSettings extends ChangeNotifier {
       case GameDifficulty.hard:
         return 'Hard';
     }
+  }
+
+  // ─── Audio & Feedback ─────────────────────────────────────────
+
+  /// Whether sound effects and music are enabled.
+  /// Also drives [AudioManager.instance.enabled].
+  bool _soundEnabled = true;
+
+  bool get soundEnabled => _soundEnabled;
+
+  set soundEnabled(bool value) {
+    _soundEnabled = value;
+    AudioManager.instance.enabled = value;
+    notifyListeners();
+  }
+
+  /// Whether push notifications are enabled.
+  bool _notificationsEnabled = true;
+
+  bool get notificationsEnabled => _notificationsEnabled;
+
+  set notificationsEnabled(bool value) {
+    _notificationsEnabled = value;
+    notifyListeners();
+  }
+
+  /// Whether haptic feedback (vibrations) are enabled.
+  bool _hapticEnabled = true;
+
+  bool get hapticEnabled => _hapticEnabled;
+
+  set hapticEnabled(bool value) {
+    _hapticEnabled = value;
+    notifyListeners();
   }
 }

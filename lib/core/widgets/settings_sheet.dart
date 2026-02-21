@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../services/audio_manager.dart';
 import '../services/game_settings.dart';
 import '../theme/flit_colors.dart';
 
@@ -39,10 +38,6 @@ class _SettingsSheetContent extends StatefulWidget {
 }
 
 class _SettingsSheetContentState extends State<_SettingsSheetContent> {
-  bool _notificationsEnabled = true;
-  bool _soundEnabled = AudioManager.instance.enabled;
-  bool _hapticEnabled = true;
-
   @override
   Widget build(BuildContext context) => ListView(
     controller: widget.scrollController,
@@ -66,25 +61,31 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
       _SettingsToggle(
         label: 'Sound',
         icon: Icons.volume_up_outlined,
-        value: _soundEnabled,
+        value: GameSettings.instance.soundEnabled,
         onChanged: (value) {
-          AudioManager.instance.enabled = value;
-          setState(() => _soundEnabled = value);
+          GameSettings.instance.soundEnabled = value;
+          setState(() {});
         },
       ),
       const Divider(color: FlitColors.cardBorder, height: 1),
       _SettingsToggle(
         label: 'Notifications',
         icon: Icons.notifications_outlined,
-        value: _notificationsEnabled,
-        onChanged: (value) => setState(() => _notificationsEnabled = value),
+        value: GameSettings.instance.notificationsEnabled,
+        onChanged: (value) {
+          GameSettings.instance.notificationsEnabled = value;
+          setState(() {});
+        },
       ),
       const Divider(color: FlitColors.cardBorder, height: 1),
       _SettingsToggle(
         label: 'Haptic Feedback',
         icon: Icons.vibration,
-        value: _hapticEnabled,
-        onChanged: (value) => setState(() => _hapticEnabled = value),
+        value: GameSettings.instance.hapticEnabled,
+        onChanged: (value) {
+          GameSettings.instance.hapticEnabled = value;
+          setState(() {});
+        },
       ),
       const SizedBox(height: 20),
 

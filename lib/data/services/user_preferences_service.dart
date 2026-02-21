@@ -34,6 +34,10 @@ class UserPreferencesService {
   bool _settingsDirty = false;
   bool _accountStateDirty = false;
 
+  /// Whether there are any unsaved writes waiting to be flushed.
+  bool get hasPendingWrites =>
+      _profileDirty || _settingsDirty || _accountStateDirty;
+
   // Cached write payloads — populated by markDirty calls, flushed by _flush.
   Map<String, dynamic>? _pendingProfile;
   Map<String, dynamic>? _pendingSettings;
@@ -122,6 +126,9 @@ class UserPreferencesService {
     required String mapStyle,
     required bool englishLabels,
     required String difficulty,
+    required bool soundEnabled,
+    required bool notificationsEnabled,
+    required bool hapticEnabled,
   }) {
     _settingsDirty = true;
     _pendingSettings = {
@@ -132,6 +139,9 @@ class UserPreferencesService {
       'map_style': mapStyle,
       'english_labels': englishLabels,
       'difficulty': difficulty,
+      'sound_enabled': soundEnabled,
+      'notifications_enabled': notificationsEnabled,
+      'haptic_enabled': hapticEnabled,
     };
     _scheduleSave();
   }
@@ -426,5 +436,17 @@ class UserPreferencesSnapshot {
 
   String get difficulty {
     return settings?['difficulty'] as String? ?? 'normal';
+  }
+
+  bool get soundEnabled {
+    return settings?['sound_enabled'] as bool? ?? true;
+  }
+
+  bool get notificationsEnabled {
+    return settings?['notifications_enabled'] as bool? ?? true;
+  }
+
+  bool get hapticEnabled {
+    return settings?['haptic_enabled'] as bool? ?? true;
   }
 }
