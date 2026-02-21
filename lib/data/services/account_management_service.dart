@@ -47,7 +47,8 @@ class AccountManagementService {
             .select('score, time_ms, region, rounds_completed, created_at')
             .eq('user_id', userId)
             .order('created_at', ascending: false)
-            .limit(500),
+            .limit(500)
+            .then((value) => value),
         _fetchFriendsList(userId),
         _fetchChallengeHistory(userId),
       ]);
