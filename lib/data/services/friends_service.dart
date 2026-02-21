@@ -2,10 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/friend.dart';
+import 'ttl_cache.dart';
 
 /// Service for managing friendships via Supabase.
 ///
 /// All methods require an authenticated user.
+/// Read-heavy paths ([fetchFriends], [fetchPendingRequests]) are cached with a
+/// 60-second TTL. Mutations automatically invalidate the cache so the next
+/// read fetches fresh data.
 class FriendsService {
   FriendsService._();
 
@@ -13,6 +17,27 @@ class FriendsService {
 
   SupabaseClient get _client => Supabase.instance.client;
   String? get _userId => _client.auth.currentUser?.id;
+
+  // 60 s TTL — friends list changes infrequently.
+  final _friendsCache = TtlCache<List<Friend>>(const Duration(seconds: 60));
+  final _pendingCache =
+      TtlCache<
+        List<
+          ({
+            int friendshipId,
+            String requesterId,
+            String username,
+            String? displayName,
+            String? avatarUrl,
+          })
+        >
+      >(const Duration(seconds: 60));
+
+  /// Drop cached friends/pending data. Called automatically after mutations.
+  void invalidateCache() {
+    _friendsCache.invalidate();
+    _pendingCache.invalidate();
+  }
 
   // ---------------------------------------------------------------------------
   // Search
@@ -48,6 +73,7 @@ class FriendsService {
         'addressee_id': addresseeId,
         'status': 'pending',
       });
+      invalidateCache();
       return true;
     } catch (e) {
       debugPrint('[FriendsService] sendFriendRequest failed: $e');
@@ -63,6 +89,7 @@ class FriendsService {
           .from('friendships')
           .update({'status': 'accepted'})
           .eq('id', friendshipId);
+      invalidateCache();
       return true;
     } catch (e) {
       debugPrint('[FriendsService] acceptFriendRequest failed: $e');
@@ -78,6 +105,7 @@ class FriendsService {
           .from('friendships')
           .update({'status': 'declined'})
           .eq('id', friendshipId);
+      invalidateCache();
       return true;
     } catch (e) {
       debugPrint('[FriendsService] declineFriendRequest failed: $e');
@@ -90,6 +118,7 @@ class FriendsService {
     if (_userId == null) return false;
     try {
       await _client.from('friendships').delete().eq('id', friendshipId);
+      invalidateCache();
       return true;
     } catch (e) {
       debugPrint('[FriendsService] removeFriend failed: $e');
@@ -104,6 +133,11 @@ class FriendsService {
   /// Fetch all accepted friends with profile data.
   Future<List<Friend>> fetchFriends() async {
     if (_userId == null) return [];
+
+    const cacheKey = 'friends';
+    final cached = _friendsCache.get(cacheKey);
+    if (cached != null) return cached;
+
     try {
       // Fetch friendships where current user is either party and status is accepted.
       final data = await _client
@@ -116,7 +150,7 @@ class FriendsService {
           .eq('status', 'accepted')
           .or('requester_id.eq.$_userId,addressee_id.eq.$_userId');
 
-      return data.map<Friend>((row) {
+      final result = data.map<Friend>((row) {
         // The "friend" is whichever party isn't the current user.
         final isRequester = row['requester_id'] == _userId;
         final profile =
@@ -131,6 +165,9 @@ class FriendsService {
           status: FriendshipStatus.accepted,
         );
       }).toList();
+
+      _friendsCache.set(cacheKey, result);
+      return result;
     } catch (e) {
       debugPrint('[FriendsService] fetchFriends failed: $e');
       return [];
@@ -151,6 +188,11 @@ class FriendsService {
   >
   fetchPendingRequests() async {
     if (_userId == null) return [];
+
+    const cacheKey = 'pending';
+    final cached = _pendingCache.get(cacheKey);
+    if (cached != null) return cached;
+
     try {
       final data = await _client
           .from('friendships')
@@ -161,7 +203,7 @@ class FriendsService {
           .eq('addressee_id', _userId!)
           .eq('status', 'pending');
 
-      return data.map((row) {
+      final result = data.map((row) {
         final profile = row['requester'] as Map<String, dynamic>;
         return (
           friendshipId: row['id'] as int,
@@ -171,6 +213,9 @@ class FriendsService {
           avatarUrl: profile['avatar_url'] as String?,
         );
       }).toList();
+
+      _pendingCache.set(cacheKey, result);
+      return result;
     } catch (e) {
       debugPrint('[FriendsService] fetchPendingRequests failed: $e');
       return [];

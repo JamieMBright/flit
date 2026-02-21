@@ -10,6 +10,7 @@ import '../models/daily_result.dart';
 import '../models/daily_streak.dart';
 import '../models/pilot_license.dart';
 import '../models/player.dart';
+import 'leaderboard_service.dart';
 
 // ---------------------------------------------------------------------------
 // Offline write queue
@@ -416,6 +417,8 @@ class UserPreferencesService {
 
     try {
       await _client.from('scores').insert(data);
+      // New score is live — stale leaderboard caches must go.
+      LeaderboardService.instance.invalidateCache();
     } catch (e) {
       debugPrint(
         '[UserPreferencesService] saveGameResult failed, queuing for retry: $e',
