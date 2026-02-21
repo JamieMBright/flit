@@ -214,8 +214,178 @@ class LeaderboardService {
   }
 
   // ---------------------------------------------------------------------------
+  // View-based leaderboard queries
+  // ---------------------------------------------------------------------------
+
+  /// Fetch the global all-time leaderboard from the `leaderboard_global` view.
+  ///
+  /// The view pre-computes rank via `ROW_NUMBER()` ordered by score descending
+  /// then time ascending, so results arrive fully ranked.
+  Future<List<LeaderboardEntry>> fetchGlobal({int limit = 50}) async {
+    try {
+      final data = await _client
+          .from('leaderboard_global')
+          .select()
+          .order('rank', ascending: true)
+          .limit(limit);
+
+      return _mapViewEntries(data);
+    } catch (e) {
+      debugPrint('[LeaderboardService] fetchGlobal failed: $e');
+      return [];
+    }
+  }
+
+  /// Fetch today's daily leaderboard from the `leaderboard_daily` view.
+  ///
+  /// Only includes scores created since midnight UTC today.
+  Future<List<LeaderboardEntry>> fetchDaily({int limit = 50}) async {
+    try {
+      final data = await _client
+          .from('leaderboard_daily')
+          .select()
+          .order('rank', ascending: true)
+          .limit(limit);
+
+      return _mapViewEntries(data);
+    } catch (e) {
+      debugPrint('[LeaderboardService] fetchDaily failed: $e');
+      return [];
+    }
+  }
+
+  /// Fetch the regional leaderboard from the `leaderboard_regional` view,
+  /// filtered to a specific [region].
+  ///
+  /// The view partitions rank by region, so each region has its own rank 1, 2,
+  /// 3, etc.
+  Future<List<LeaderboardEntry>> fetchRegional(
+    String region, {
+    int limit = 50,
+  }) async {
+    try {
+      final data = await _client
+          .from('leaderboard_regional')
+          .select()
+          .eq('region', region)
+          .order('rank', ascending: true)
+          .limit(limit);
+
+      return _mapViewEntries(data);
+    } catch (e) {
+      debugPrint('[LeaderboardService] fetchRegional failed: $e');
+      return [];
+    }
+  }
+
+  /// Fetch a friends-only leaderboard for the given [userId].
+  ///
+  /// Joins scores with the `friendships` table to find accepted friends, then
+  /// includes the user's own scores. Results are ranked by score descending.
+  Future<List<LeaderboardEntry>> fetchFriends(
+    String userId, {
+    int limit = 50,
+  }) async {
+    try {
+      // Step 1: Get the list of accepted friend IDs.
+      final friendships = await _client
+          .from('friendships')
+          .select('requester_id, addressee_id')
+          .eq('status', 'accepted')
+          .or('requester_id.eq.$userId,addressee_id.eq.$userId');
+
+      final friendIds = <String>{userId}; // Include the player themselves.
+      for (final row in friendships) {
+        final requesterId = row['requester_id'] as String;
+        final addresseeId = row['addressee_id'] as String;
+        friendIds.add(requesterId == userId ? addresseeId : requesterId);
+      }
+
+      // Step 2: Fetch scores for all friend IDs from the global view.
+      final data = await _client
+          .from('leaderboard_global')
+          .select()
+          .inFilter('user_id', friendIds.toList())
+          .order('score', ascending: false)
+          .order('time_ms', ascending: true)
+          .limit(limit);
+
+      // Step 3: Re-rank within the friends group (view rank is global).
+      return List<LeaderboardEntry>.generate(data.length, (i) {
+        final row = data[i];
+        return LeaderboardEntry(
+          rank: i + 1,
+          playerId: row['user_id'] as String? ?? '',
+          playerName: row['username'] as String? ?? 'Unknown',
+          time: Duration(milliseconds: row['time_ms'] as int? ?? 0),
+          score: row['score'] as int? ?? 0,
+          avatarUrl: row['avatar_url'] as String?,
+          timestamp: row['created_at'] != null
+              ? DateTime.tryParse(row['created_at'] as String)
+              : null,
+        );
+      });
+    } catch (e) {
+      debugPrint('[LeaderboardService] fetchFriends failed: $e');
+      return [];
+    }
+  }
+
+  /// Fetch the current player's global rank.
+  ///
+  /// Returns the [LeaderboardEntry] for the player if found, or `null` if the
+  /// player has no scores.
+  Future<LeaderboardEntry?> fetchPlayerRank(String userId) async {
+    try {
+      final data = await _client
+          .from('leaderboard_global')
+          .select()
+          .eq('user_id', userId)
+          .order('rank', ascending: true)
+          .limit(1)
+          .maybeSingle();
+
+      if (data == null) return null;
+
+      return LeaderboardEntry(
+        rank: data['rank'] as int? ?? 0,
+        playerId: data['user_id'] as String? ?? '',
+        playerName: data['username'] as String? ?? 'Unknown',
+        time: Duration(milliseconds: data['time_ms'] as int? ?? 0),
+        score: data['score'] as int? ?? 0,
+        avatarUrl: data['avatar_url'] as String?,
+        timestamp: data['created_at'] != null
+            ? DateTime.tryParse(data['created_at'] as String)
+            : null,
+      );
+    } catch (e) {
+      debugPrint('[LeaderboardService] fetchPlayerRank failed: $e');
+      return null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Internal
   // ---------------------------------------------------------------------------
+
+  /// Map rows from a leaderboard view (which includes `rank`, `user_id`,
+  /// `username`, `avatar_url`, `score`, `time_ms`, `created_at` columns)
+  /// into [LeaderboardEntry] objects.
+  List<LeaderboardEntry> _mapViewEntries(List<Map<String, dynamic>> data) {
+    return data.map((row) {
+      return LeaderboardEntry(
+        rank: row['rank'] as int? ?? 0,
+        playerId: row['user_id'] as String? ?? '',
+        playerName: row['username'] as String? ?? 'Unknown',
+        time: Duration(milliseconds: row['time_ms'] as int? ?? 0),
+        score: row['score'] as int? ?? 0,
+        avatarUrl: row['avatar_url'] as String?,
+        timestamp: row['created_at'] != null
+            ? DateTime.tryParse(row['created_at'] as String)
+            : null,
+      );
+    }).toList();
+  }
 
   List<LeaderboardEntry> _mapToLeaderboardEntries(
     List<Map<String, dynamic>> data,

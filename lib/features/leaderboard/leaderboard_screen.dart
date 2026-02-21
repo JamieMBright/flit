@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/leaderboard_entry.dart';
 import '../../data/services/leaderboard_service.dart';
 import '../avatar/avatar_widget.dart';
 
-/// Leaderboard screen showing top scores.
+/// Leaderboard screen showing top scores from Supabase views.
+///
+/// Tabs: Global | Today | Regional | Friends
+/// Fetches ranked data from the `leaderboard_global`, `leaderboard_daily`,
+/// and `leaderboard_regional` SQL views, plus a friends query.
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
 
@@ -14,26 +19,62 @@ class LeaderboardScreen extends StatefulWidget {
 }
 
 class _LeaderboardScreenState extends State<LeaderboardScreen> {
-  LeaderboardPeriod _selectedPeriod = LeaderboardPeriod.daily;
+  LeaderboardTab _selectedTab = LeaderboardTab.global;
   bool _loading = true;
   List<LeaderboardEntry> _entries = [];
+  LeaderboardEntry? _playerRank;
+
+  String? get _userId => Supabase.instance.client.auth.currentUser?.id;
 
   @override
   void initState() {
     super.initState();
     _loadLeaderboard();
+    _loadPlayerRank();
   }
 
   Future<void> _loadLeaderboard() async {
     setState(() => _loading = true);
-    final entries = await LeaderboardService.instance.fetchLeaderboard(
-      period: _selectedPeriod,
-    );
+
+    final service = LeaderboardService.instance;
+    List<LeaderboardEntry> entries;
+
+    switch (_selectedTab) {
+      case LeaderboardTab.global:
+        entries = await service.fetchGlobal();
+        break;
+      case LeaderboardTab.daily:
+        entries = await service.fetchDaily();
+        break;
+      case LeaderboardTab.regional:
+        // Default to 'world' region; a region picker could be added later.
+        entries = await service.fetchRegional('world');
+        break;
+      case LeaderboardTab.friends:
+        final userId = _userId;
+        if (userId != null) {
+          entries = await service.fetchFriends(userId);
+        } else {
+          entries = [];
+        }
+        break;
+    }
+
     if (mounted) {
       setState(() {
         _entries = entries;
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _loadPlayerRank() async {
+    final userId = _userId;
+    if (userId == null) return;
+
+    final rank = await LeaderboardService.instance.fetchPlayerRank(userId);
+    if (mounted) {
+      setState(() => _playerRank = rank);
     }
   }
 
@@ -47,17 +88,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     ),
     body: Column(
       children: [
-        // Period selector
-        _PeriodSelector(
-          selected: _selectedPeriod,
-          onChanged: (period) {
+        // Tab selector
+        _TabSelector(
+          selected: _selectedTab,
+          onChanged: (tab) {
             setState(() {
-              _selectedPeriod = period;
+              _selectedTab = tab;
             });
             _loadLeaderboard();
           },
         ),
         const Divider(color: FlitColors.cardBorder, height: 1),
+        // Player's own rank banner
+        if (_playerRank != null) _PlayerRankBanner(entry: _playerRank!),
         // Leaderboard list
         Expanded(
           child: _loading
@@ -68,7 +111,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: _entries.length,
                   itemBuilder: (context, index) =>
-                      _LeaderboardRow(entry: _entries[index]),
+                      _LeaderboardRow(
+                        entry: _entries[index],
+                        isCurrentPlayer:
+                            _entries[index].playerId == _userId,
+                      ),
                 ),
         ),
       ],
@@ -76,11 +123,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   );
 }
 
-class _PeriodSelector extends StatelessWidget {
-  const _PeriodSelector({required this.selected, required this.onChanged});
+/// Horizontal chip selector for leaderboard tabs.
+class _TabSelector extends StatelessWidget {
+  const _TabSelector({required this.selected, required this.onChanged});
 
-  final LeaderboardPeriod selected;
-  final ValueChanged<LeaderboardPeriod> onChanged;
+  final LeaderboardTab selected;
+  final ValueChanged<LeaderboardTab> onChanged;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -89,18 +137,18 @@ class _PeriodSelector extends StatelessWidget {
     child: ListView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      children: LeaderboardPeriod.values
+      children: LeaderboardTab.values
           .map(
-            (period) => Padding(
+            (tab) => Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: ChoiceChip(
-                label: Text(period.displayName),
-                selected: period == selected,
-                onSelected: (_) => onChanged(period),
+                label: Text(tab.displayName),
+                selected: tab == selected,
+                onSelected: (_) => onChanged(tab),
                 selectedColor: FlitColors.accent,
                 backgroundColor: FlitColors.cardBackground,
                 labelStyle: TextStyle(
-                  color: period == selected
+                  color: tab == selected
                       ? FlitColors.textPrimary
                       : FlitColors.textSecondary,
                   fontSize: 12,
@@ -117,10 +165,120 @@ class _PeriodSelector extends StatelessWidget {
   );
 }
 
-class _LeaderboardRow extends StatelessWidget {
-  const _LeaderboardRow({required this.entry});
+/// Banner showing the current player's rank prominently at the top of the
+/// list. Styled differently from regular rows to draw attention.
+class _PlayerRankBanner extends StatelessWidget {
+  const _PlayerRankBanner({required this.entry});
 
   final LeaderboardEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [FlitColors.accent, FlitColors.accentDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          // Rank badge
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                '#${entry.rank}',
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Player info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Your Rank',
+                  style: TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  entry.playerName,
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Score
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${entry.score} pts',
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                _formatTime(entry.time),
+                style: TextStyle(
+                  color: FlitColors.textPrimary.withOpacity(0.8),
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTime(Duration d) {
+    final minutes = d.inMinutes;
+    final seconds = d.inSeconds % 60;
+    final millis = (d.inMilliseconds % 1000) ~/ 10;
+    return '${minutes.toString().padLeft(2, '0')}:'
+        '${seconds.toString().padLeft(2, '0')}.'
+        '${millis.toString().padLeft(2, '0')}';
+  }
+}
+
+/// A single leaderboard row with rank, avatar, name, score, and time.
+class _LeaderboardRow extends StatelessWidget {
+  const _LeaderboardRow({
+    required this.entry,
+    this.isCurrentPlayer = false,
+  });
+
+  final LeaderboardEntry entry;
+  final bool isCurrentPlayer;
 
   @override
   Widget build(BuildContext context) {
@@ -132,10 +290,16 @@ class _LeaderboardRow extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _rankColor.withOpacity(0.1),
+        color: isCurrentPlayer
+            ? FlitColors.accent.withOpacity(0.15)
+            : _rankColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: entry.rank <= 3 ? _rankColor : FlitColors.cardBorder,
+          color: isCurrentPlayer
+              ? FlitColors.accent
+              : entry.rank <= 3
+                  ? _rankColor
+                  : FlitColors.cardBorder,
         ),
       ),
       child: Row(
@@ -167,8 +331,10 @@ class _LeaderboardRow extends StatelessWidget {
               children: [
                 Text(
                   entry.playerName,
-                  style: const TextStyle(
-                    color: FlitColors.textPrimary,
+                  style: TextStyle(
+                    color: isCurrentPlayer
+                        ? FlitColors.accent
+                        : FlitColors.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -214,17 +380,18 @@ class _LeaderboardRow extends StatelessWidget {
   String get _rankEmoji {
     switch (entry.rank) {
       case 1:
-        return '🥇';
+        return '\u{1F947}';
       case 2:
-        return '🥈';
+        return '\u{1F948}';
       case 3:
-        return '🥉';
+        return '\u{1F949}';
       default:
         return '#${entry.rank}';
     }
   }
 }
 
+/// Empty state shown when there are no leaderboard entries.
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
