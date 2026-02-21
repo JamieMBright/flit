@@ -1719,12 +1719,51 @@ class _GameHistoryEntry {
     required this.duration,
     required this.score,
     required this.date,
+    required this.roundsCompleted,
   });
 
   final String region;
   final Duration duration;
   final int score;
   final DateTime date;
+  final int roundsCompleted;
+
+  /// Generate shareable result text for socials.
+  String toShareText() {
+    final timeFormatted = _formatShareTime(duration);
+    final scoreFormatted = _formatShareScore(score);
+    final regionLabel = region[0].toUpperCase() + region.substring(1);
+    return '     \u{1F6EB} \u{1F30D} \u{1F6EC}\n'
+        'Flit — $regionLabel\n'
+        'Score: $scoreFormatted pts\n'
+        'Time: $timeFormatted\n'
+        'Rounds: $roundsCompleted';
+  }
+
+  static String _formatShareTime(Duration d) {
+    final totalSeconds = d.inSeconds;
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    if (minutes > 0) {
+      return '${minutes}m${seconds.toString().padLeft(2, '0')}s';
+    }
+    return '${seconds}s';
+  }
+
+  static String _formatShareScore(int score) {
+    if (score >= 1000) {
+      final str = score.toString();
+      final result = StringBuffer();
+      var count = 0;
+      for (var i = str.length - 1; i >= 0; i--) {
+        if (count > 0 && count % 3 == 0) result.write(',');
+        result.write(str[i]);
+        count++;
+      }
+      return result.toString().split('').reversed.join();
+    }
+    return score.toString();
+  }
 }
 
 class _GameHistoryScreen extends ConsumerStatefulWidget {
@@ -1761,6 +1800,7 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
             duration: Duration(milliseconds: entry['time_ms'] as int),
             score: entry['score'] as int,
             date: DateTime.parse(entry['created_at'] as String),
+            roundsCompleted: (entry['rounds_completed'] as int?) ?? 0,
           );
         }).toList();
         _loading = false;
@@ -1775,12 +1815,21 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
   }
 
   String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final diff = now.difference(date);
-    if (diff.inHours < 24) {
-      return '${diff.inHours}h ago';
-    }
-    return '${diff.inDays}d ago';
+    final local = date.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = _monthAbbr(local.month);
+    final year = local.year;
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '$day $month $year, $hour:$minute';
+  }
+
+  static String _monthAbbr(int month) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return months[month - 1];
   }
 
   @override
@@ -1856,7 +1905,7 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
                         ],
                       ),
                     ),
-                    // Score
+                    // Score and share
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -1876,6 +1925,35 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(width: 10),
+                    // Share button
+                    GestureDetector(
+                      onTap: () {
+                        final text = entry.toShareText();
+                        Clipboard.setData(ClipboardData(text: text));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Result copied to clipboard!'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: FlitColors.backgroundLight,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.share,
+                            color: FlitColors.textMuted,
+                            size: 18,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
