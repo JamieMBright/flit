@@ -349,10 +349,10 @@ All privacy controls are implemented in the Vercel endpoint (`api/errors/index.j
 - All caller context across the Dart codebase is safe metadata only (source, category, screen names)
 
 #### 4b. Input Validation Constraints
-**Status:** PARTIALLY DONE
+**Status:** DONE
 - Client-side validation implemented: `saveGameResult()` clamps `score` to [0, 100000] and `time_ms` to [1, 3599999]
-- SQL migration script created at `sql/002_check_constraints.sql` with server-side CHECK constraints
-- TODO: Apply migration to production Supabase instance
+- SQL CHECK constraints applied to Supabase (profiles: username, level, xp, coins; scores: score, time_ms, rounds_completed)
+- Migration script archived at `sql/002_check_constraints.sql`
 
 #### 4c. Offline Resilience
 **Status:** DONE
