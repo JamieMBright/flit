@@ -111,6 +111,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 24),
                   const CircularProgressIndicator(color: FlitColors.accent),
                 ],
+
+                const SizedBox(height: 40),
+                const _PrivacyLink(),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -683,4 +687,101 @@ class _AuthButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Tappable "Privacy Policy" footer link.
+///
+/// Opens a dialog with the full URL since url_launcher is not in the
+/// dependency tree. Users can copy the URL or open it manually.
+class _PrivacyLink extends StatelessWidget {
+  const _PrivacyLink();
+
+  static const String _privacyUrl =
+      'https://flit-olive.vercel.app/privacy';
+
+  void _showPrivacyDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: FlitColors.cardBorder),
+        ),
+        title: const Text(
+          'Privacy Policy',
+          style: TextStyle(
+            color: FlitColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Read our full privacy policy at:',
+              style: TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundDark,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: FlitColors.cardBorder),
+              ),
+              child: const SelectableText(
+                _privacyUrl,
+                style: TextStyle(
+                  color: FlitColors.oceanHighlight,
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Copy the link above and open it in your browser.',
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 11,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text(
+              'Close',
+              style: TextStyle(color: FlitColors.accent),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: () => _showPrivacyDialog(context),
+    child: const Text(
+      'Privacy Policy',
+      style: TextStyle(
+        color: FlitColors.textMuted,
+        fontSize: 11,
+        decoration: TextDecoration.underline,
+        decorationColor: FlitColors.textMuted,
+      ),
+    ),
+  );
 }
