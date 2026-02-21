@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/web_download.dart';
 import '../../core/widgets/settings_sheet.dart';
 import '../../core/utils/profanity_filter.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/models/player.dart';
 import '../../data/providers/account_provider.dart';
+import '../../data/services/account_management_service.dart';
 import '../avatar/avatar_editor_screen.dart';
 import '../avatar/avatar_widget.dart';
 import '../license/license_screen.dart';
@@ -268,6 +272,136 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  void _exportData() {
+    final player = ref.read(accountProvider).currentPlayer;
+    if (player.id.isEmpty || player.id == 'guest') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Data export is not available for guest accounts'),
+          backgroundColor: FlitColors.warning,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+      return;
+    }
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => _ExportDataDialog(
+        userId: player.id,
+        email: Supabase.instance.client.auth.currentUser?.email,
+      ),
+    );
+  }
+
+  void _deleteAccount() {
+    final player = ref.read(accountProvider).currentPlayer;
+    if (player.id.isEmpty || player.id == 'guest') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Account deletion is not available for guest accounts',
+          ),
+          backgroundColor: FlitColors.warning,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+      return;
+    }
+
+    final userEmail =
+        Supabase.instance.client.auth.currentUser?.email ?? '';
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => _DeleteAccountDialog(
+        userEmail: userEmail,
+        onConfirmDelete: () async {
+          Navigator.of(dialogContext).pop();
+          await _performAccountDeletion(player.id);
+        },
+      ),
+    );
+  }
+
+  Future<void> _performAccountDeletion(String userId) async {
+    // Show a loading indicator while deleting.
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: FlitColors.accent),
+            SizedBox(height: 16),
+            Text(
+              'Deleting account data...',
+              style: TextStyle(color: FlitColors.textSecondary),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      await AccountManagementService.instance.deleteAccountData(userId);
+
+      // Sign out the Supabase auth session.
+      try {
+        await Supabase.instance.client.auth.signOut();
+      } catch (_) {
+        // Ignore sign-out errors.
+      }
+
+      // Clear local state.
+      ref.read(accountProvider.notifier).clearPreferences();
+
+      if (context.mounted) {
+        // Dismiss the loading dialog.
+        Navigator.of(context).pop();
+        // Navigate back to the login screen.
+        Navigator.of(context).popUntil((route) => route.isFirst);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Your account has been deleted'),
+            backgroundColor: FlitColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        // Dismiss the loading dialog.
+        Navigator.of(context).pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete account: $e'),
+            backgroundColor: FlitColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final account = ref.watch(accountProvider);
@@ -333,6 +467,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _ProfileActions(
               onEditProfile: _editProfile,
               onGameHistory: _showGameHistory,
+              onExportData: _exportData,
+              onDeleteAccount: _deleteAccount,
               onSignOut: _signOut,
             ),
           ],
@@ -572,11 +708,15 @@ class _ProfileActions extends StatelessWidget {
   const _ProfileActions({
     required this.onEditProfile,
     required this.onGameHistory,
+    required this.onExportData,
+    required this.onDeleteAccount,
     required this.onSignOut,
   });
 
   final VoidCallback onEditProfile;
   final VoidCallback onGameHistory;
+  final VoidCallback onExportData;
+  final VoidCallback onDeleteAccount;
   final VoidCallback onSignOut;
 
   @override
@@ -594,7 +734,33 @@ class _ProfileActions extends StatelessWidget {
         label: 'Game History',
         onTap: onGameHistory,
       ),
+      const SizedBox(height: 24),
+      // Data & Privacy section
+      const Padding(
+        padding: EdgeInsets.only(left: 4, bottom: 8),
+        child: Text(
+          'DATA & PRIVACY',
+          style: TextStyle(
+            color: FlitColors.textMuted,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ),
+      _ActionButton(
+        icon: Icons.download,
+        label: 'Export My Data',
+        onTap: onExportData,
+      ),
       const SizedBox(height: 12),
+      _ActionButton(
+        icon: Icons.delete_forever,
+        label: 'Delete Account',
+        isDestructive: true,
+        onTap: onDeleteAccount,
+      ),
+      const SizedBox(height: 24),
       _ActionButton(
         icon: Icons.logout,
         label: 'Sign Out',
@@ -702,6 +868,351 @@ class _QuickLinkButton extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Export Data dialog
+// ---------------------------------------------------------------------------
+
+class _ExportDataDialog extends StatefulWidget {
+  const _ExportDataDialog({
+    required this.userId,
+    required this.email,
+  });
+
+  final String userId;
+  final String? email;
+
+  @override
+  State<_ExportDataDialog> createState() => _ExportDataDialogState();
+}
+
+class _ExportDataDialogState extends State<_ExportDataDialog> {
+  bool _loading = true;
+  String? _jsonData;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final data = await AccountManagementService.instance.exportUserData(
+        userId: widget.userId,
+        email: widget.email,
+      );
+      if (mounted) {
+        setState(() {
+          _jsonData = data;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to export data: $e';
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  void _shareData() {
+    if (_jsonData == null) return;
+
+    if (WebDownload.isWeb) {
+      // On web, trigger a browser download.
+      WebDownload.download(_jsonData!, 'flit-data-export.json');
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Download started'),
+          backgroundColor: FlitColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+    } else {
+      // On mobile, copy to clipboard.
+      Clipboard.setData(ClipboardData(text: _jsonData!));
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Data copied to clipboard'),
+          backgroundColor: FlitColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: FlitColors.cardBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: FlitColors.cardBorder),
+      ),
+      title: const Text(
+        'Export My Data',
+        style: TextStyle(color: FlitColors.textPrimary),
+      ),
+      content: _loading
+          ? const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: FlitColors.accent),
+                SizedBox(height: 16),
+                Text(
+                  'Gathering your data...',
+                  style: TextStyle(color: FlitColors.textSecondary),
+                ),
+              ],
+            )
+          : _error != null
+              ? Text(
+                  _error!,
+                  style: const TextStyle(color: FlitColors.error),
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Your data is ready to export. This includes your '
+                      'profile, stats, settings, scores history, friends '
+                      'list, and challenge history.',
+                      style: TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 200),
+                      decoration: BoxDecoration(
+                        color: FlitColors.backgroundDark,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: FlitColors.cardBorder),
+                      ),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(12),
+                        child: Text(
+                          _jsonData ?? '',
+                          style: const TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text(
+            'Close',
+            style: TextStyle(color: FlitColors.textSecondary),
+          ),
+        ),
+        if (!_loading && _error == null)
+          TextButton(
+            onPressed: _shareData,
+            child: Text(
+              WebDownload.isWeb ? 'Download JSON' : 'Copy to Clipboard',
+              style: const TextStyle(color: FlitColors.accent),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Delete Account dialog
+// ---------------------------------------------------------------------------
+
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog({
+    required this.userEmail,
+    required this.onConfirmDelete,
+  });
+
+  final String userEmail;
+  final VoidCallback onConfirmDelete;
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final _emailController = TextEditingController();
+  bool _emailMatches = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_checkEmail);
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  void _checkEmail() {
+    final matches = _emailController.text.trim().toLowerCase() ==
+        widget.userEmail.toLowerCase();
+    if (matches != _emailMatches) {
+      setState(() => _emailMatches = matches);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: FlitColors.cardBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: FlitColors.cardBorder),
+      ),
+      title: const Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: FlitColors.error, size: 24),
+          SizedBox(width: 8),
+          Text(
+            'Delete Account',
+            style: TextStyle(color: FlitColors.error),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'This action is permanent and cannot be undone.',
+            style: TextStyle(
+              color: FlitColors.error,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'All your data will be permanently deleted, including:',
+            style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          const _DeletionItem(text: 'Your profile and stats'),
+          const _DeletionItem(text: 'All game scores and history'),
+          const _DeletionItem(text: 'Friends list and challenges'),
+          const _DeletionItem(text: 'Settings and customizations'),
+          const _DeletionItem(text: 'Coins and unlocked content'),
+          const SizedBox(height: 16),
+          Text(
+            'Type your email address to confirm:',
+            style: TextStyle(
+              color: FlitColors.textSecondary.withOpacity(0.8),
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _emailController,
+            style: const TextStyle(color: FlitColors.textPrimary),
+            keyboardType: TextInputType.emailAddress,
+            autocorrect: false,
+            decoration: InputDecoration(
+              hintText: widget.userEmail,
+              hintStyle: TextStyle(
+                color: FlitColors.textMuted.withOpacity(0.5),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: FlitColors.cardBorder),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: FlitColors.error),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: FlitColors.textSecondary),
+          ),
+        ),
+        TextButton(
+          onPressed: _emailMatches ? widget.onConfirmDelete : null,
+          child: Text(
+            'Delete My Account',
+            style: TextStyle(
+              color: _emailMatches
+                  ? FlitColors.error
+                  : FlitColors.textMuted.withOpacity(0.4),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DeletionItem extends StatelessWidget {
+  const _DeletionItem({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(left: 8, top: 4),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(top: 2),
+          child: Icon(
+            Icons.remove_circle_outline,
+            color: FlitColors.error,
+            size: 14,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Game History screen showing past game sessions
 // ---------------------------------------------------------------------------
 
@@ -738,7 +1249,7 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
 
   Future<void> _loadHistory() async {
     final userId = ref.read(accountProvider).currentPlayer.id;
-    if (userId.isEmpty || userId == 'guest') {
+    if (userId.isEmpty) {
       setState(() => _loading = false);
       return;
     }
