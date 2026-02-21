@@ -163,6 +163,14 @@ Vercel cron pings `/api/health` every 3 days. Health endpoint includes Supabase 
 **Status:** DONE
 SQL views created (`leaderboard_global`, `leaderboard_daily`, `leaderboard_regional`). `LeaderboardService` with fetchGlobal/Daily/Regional/Friends methods. `LeaderboardScreen` wired to real Supabase data with tab system and player rank banner.
 
+#### Regional Game Modes
+**Status:** NOT WORKING — all 5 regional modes (Europe, Asia, Africa, Americas, Oceania) are non-functional.
+**What to do:**
+- Gate regional modes behind a "Coming Soon" overlay for all regular users
+- Admin account should bypass the gate and have access for testing/development
+- Fix the underlying regional mode issues before ungating
+- Challengerless matchmaking is World-mode only until regional modes work (rule 9 in matchmaking spec)
+
 #### City Lights Texture
 **Status:** Placeholder `.gitkeep` — actual NASA texture not added.
 **What to do:** Download NASA Earth at Night (Public Domain), resize, add to assets.
@@ -339,6 +347,7 @@ For App Store / Play Store submission:
 - [x] Supabase keep-alive cron active
 - [ ] City lights texture added
 - [ ] Audio assets added (or graceful silence)
+- [ ] Regional game modes gated with "Coming Soon" (admin bypass)
 - [x] All leaderboard features functional (not placeholder data)
 - [x] Error handling tiered (users see toasts/dialogs, not raw errors)
 - [x] Critical errors auto-create GitHub issues
