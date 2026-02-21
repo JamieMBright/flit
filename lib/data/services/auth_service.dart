@@ -7,9 +7,6 @@ import '../models/player.dart';
 enum AuthMethod {
   /// Supabase email + password account
   email,
-
-  /// Guest mode (local only, no persistence across devices)
-  guest,
 }
 
 /// Current authentication state.
@@ -18,7 +15,7 @@ class AuthState {
     this.isAuthenticated = false,
     this.isLoading = false,
     this.player,
-    this.authMethod = AuthMethod.guest,
+    this.authMethod = AuthMethod.email,
     this.email,
     this.error,
     this.needsEmailConfirmation = false,
@@ -58,7 +55,7 @@ class AuthState {
 ///
 /// Strategy: Email + password accounts via Supabase Auth.
 /// Profiles are auto-created by a database trigger on sign-up.
-/// Guest mode remains local-only for trying the game.
+/// All players must have accounts — no guest mode.
 class AuthService {
   AuthState _state = const AuthState();
 
@@ -259,20 +256,6 @@ class AuthService {
         error: 'Something went wrong. Please try again.',
       );
     }
-
-    return _state;
-  }
-
-  /// Continue as guest (local only, no Supabase interaction).
-  Future<AuthState> continueAsGuest() async {
-    _state = _state.copyWith(isLoading: true, error: null);
-
-    _state = AuthState(
-      isAuthenticated: true,
-      isLoading: false,
-      player: Player.guest(),
-      authMethod: AuthMethod.guest,
-    );
 
     return _state;
   }

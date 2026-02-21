@@ -114,7 +114,4 @@ class Player {
         : null,
   );
 
-  /// Create a guest player
-  factory Player.guest() =>
-      Player(id: 'guest', username: 'Guest', createdAt: DateTime.now());
 }

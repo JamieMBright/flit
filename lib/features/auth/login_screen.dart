@@ -8,9 +8,8 @@ import '../home/home_screen.dart';
 
 /// Login/signup screen shown on first launch.
 ///
-/// Authentication strategy:
-/// 1. Primary: Email + password via Supabase Auth
-/// 2. Fallback: Guest mode (local only, no cross-device persistence)
+/// Authentication strategy: Email + password via Supabase Auth.
+/// All players must have accounts — no guest mode.
 ///
 /// No Google Auth — email only, kept simple.
 class LoginScreen extends ConsumerStatefulWidget {
@@ -158,13 +157,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           _mode = _AuthMode.signIn;
           _error = null;
         }),
-      ),
-      const SizedBox(height: 12),
-
-      _AuthButton(
-        label: 'PLAY AS GUEST',
-        icon: Icons.flight_takeoff,
-        onTap: _continueAsGuest,
       ),
 
       const SizedBox(height: 24),
@@ -480,24 +472,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       } else if (result.error != null) {
         setState(() => _error = result.error);
       }
-    }
-  }
-
-  Future<void> _continueAsGuest() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    await _authService.continueAsGuest();
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-      final guestState = _authService.state;
-      if (guestState.player != null) {
-        ref.read(accountProvider.notifier).switchAccount(guestState.player!);
-      }
-      _navigateToHome();
     }
   }
 

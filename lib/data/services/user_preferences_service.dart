@@ -17,7 +17,6 @@ import '../models/player.dart';
 ///   timer batches mutations into a single upsert per table.
 /// - **No duplicate state** — the Riverpod providers own the truth; this
 ///   service only serialises/deserialises to/from Supabase.
-/// - **Guest-safe** — all writes are no-ops for guest users (id == 'guest').
 class UserPreferencesService {
   UserPreferencesService._();
 
@@ -38,9 +37,6 @@ class UserPreferencesService {
   Map<String, dynamic>? _pendingSettings;
   Map<String, dynamic>? _pendingAccountState;
 
-  /// Whether the current session is a guest (no Supabase writes).
-  bool get _isGuest => _userId == null || _userId == 'guest';
-
   // ---------------------------------------------------------------------------
   // Load
   // ---------------------------------------------------------------------------
@@ -51,7 +47,7 @@ class UserPreferencesService {
   /// the user has no saved data yet (first login).
   Future<UserPreferencesSnapshot?> load(String userId) async {
     _userId = userId;
-    if (_isGuest) return null;
+    if (_userId == null) return null;
 
     try {
       // Parallel fetch — one round-trip per table, all concurrent.
@@ -92,7 +88,6 @@ class UserPreferencesService {
 
   /// Mark the profiles table as dirty and queue a write.
   void saveProfile(Player player) {
-    if (_isGuest) return;
     _profileDirty = true;
     _pendingProfile = {
       'id': _userId,
@@ -120,7 +115,6 @@ class UserPreferencesService {
     required bool englishLabels,
     required String difficulty,
   }) {
-    if (_isGuest) return;
     _settingsDirty = true;
     _pendingSettings = {
       'user_id': _userId,
@@ -145,7 +139,6 @@ class UserPreferencesService {
     String? lastFreeRerollDate,
     String? lastDailyChallengeDate,
   }) {
-    if (_isGuest) return;
     _accountStateDirty = true;
     _pendingAccountState = {
       'user_id': _userId,
@@ -168,7 +161,6 @@ class UserPreferencesService {
     required String region,
     required int roundsCompleted,
   }) async {
-    if (_isGuest) return;
     try {
       await _client.from('scores').insert({
         'user_id': _userId,
@@ -216,8 +208,6 @@ class UserPreferencesService {
   }
 
   Future<void> _flush() async {
-    if (_isGuest) return;
-
     final futures = <Future<void>>[];
 
     if (_profileDirty && _pendingProfile != null) {

@@ -12,8 +12,7 @@ graph TD
     B -->|No| C[LoginScreen]
     B -->|Yes| D[HomeScreen]
     C -->|Create Account| D
-    C -->|Sign Up Email| D
-    C -->|Play as Guest| D
+    C -->|Sign In| D
 
     D -->|Play| E[Game Mode Sheet]
     D -->|Leaderboard| F[LeaderboardScreen]
@@ -58,14 +57,12 @@ graph TD
 ```mermaid
 graph LR
     subgraph LoginScreen
-        W[Welcome View] -->|Create Account| CA[Username + Display Name]
-        W -->|Sign Up Email| ES[Email + Username + Display Name]
-        W -->|Play as Guest| GU[Guest Mode]
+        W[Welcome View] -->|Sign Up| ES[Email + Username + Display Name]
+        W -->|Sign In| SI[Email + Password]
     end
 
-    CA -->|AuthService.createDeviceAccount| AUTH{AuthResult}
-    ES -->|AuthService.signUpWithEmail| AUTH
-    GU -->|AuthService.continueAsGuest| AUTH
+    ES -->|AuthService.signUpWithEmail| AUTH{AuthResult}
+    SI -->|AuthService.signInWithEmail| AUTH
 
     AUTH -->|isAuthenticated| HOME[HomeScreen]
     AUTH -->|error| ERR[Show Error]
@@ -76,10 +73,9 @@ graph LR
 ```
 
 **Auth Strategy:**
-- Primary: Device-bound account (auto-tied to install)
-- Optional: Email upgrade for cross-device recovery
-- Fallback: Guest mode (limited features)
-- Anti-multi-account: One account per device install
+- Primary: Email + password via Supabase Auth
+- All players must have accounts — no guest mode
+- Profiles are auto-created by database trigger on sign-up
 
 ---
 

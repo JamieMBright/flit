@@ -5,7 +5,7 @@ import '../models/friend.dart';
 
 /// Service for managing friendships via Supabase.
 ///
-/// All methods require an authenticated user. Guest users get empty results.
+/// All methods require an authenticated user.
 class FriendsService {
   FriendsService._();
 
