@@ -166,7 +166,8 @@ async function appendToGitHub(newLines) {
 // ---------------------------------------------------------------------------
 
 /// Normalize a lightweight JS-sourced error into the full schema.
-/// JS errors only have { error, source, url, userAgent, timestamp }.
+/// JS errors only have { error, source, url, timestamp }.
+/// We never log userAgent to avoid capturing personally identifiable info.
 function normalizeJsPayload(payload) {
   if (!isNonEmptyString(payload.error)) return null;
   return {
@@ -174,7 +175,7 @@ function normalizeJsPayload(payload) {
     sessionId: 'js-' + Date.now(),
     appVersion: 'web-js',
     platform: 'web',
-    deviceInfo: payload.userAgent || navigator?.userAgent || 'unknown',
+    deviceInfo: 'web-browser',
     severity: 'critical',
     error: payload.error,
     stackTrace: payload.stackTrace || '',

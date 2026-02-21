@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/avatar_config.dart';
+import '../models/daily_result.dart';
+import '../models/daily_streak.dart';
 import '../models/pilot_license.dart';
 import '../models/player.dart';
 
@@ -17,7 +19,6 @@ import '../models/player.dart';
 ///   timer batches mutations into a single upsert per table.
 /// - **No duplicate state** — the Riverpod providers own the truth; this
 ///   service only serialises/deserialises to/from Supabase.
-/// - **Guest-safe** — all writes are no-ops for guest users (id == 'guest').
 class UserPreferencesService {
   UserPreferencesService._();
 
@@ -38,9 +39,6 @@ class UserPreferencesService {
   Map<String, dynamic>? _pendingSettings;
   Map<String, dynamic>? _pendingAccountState;
 
-  /// Whether the current session is a guest (no Supabase writes).
-  bool get _isGuest => _userId == null || _userId == 'guest';
-
   // ---------------------------------------------------------------------------
   // Load
   // ---------------------------------------------------------------------------
@@ -51,7 +49,7 @@ class UserPreferencesService {
   /// the user has no saved data yet (first login).
   Future<UserPreferencesSnapshot?> load(String userId) async {
     _userId = userId;
-    if (_isGuest) return null;
+    if (_userId == null) return null;
 
     try {
       // Parallel fetch — one round-trip per table, all concurrent.
@@ -92,7 +90,6 @@ class UserPreferencesService {
 
   /// Mark the profiles table as dirty and queue a write.
   void saveProfile(Player player) {
-    if (_isGuest) return;
     _profileDirty = true;
     _pendingProfile = {
       'id': _userId,
@@ -107,6 +104,12 @@ class UserPreferencesService {
       'best_time_ms': player.bestTime?.inMilliseconds,
       'total_flight_time_ms': player.totalFlightTime.inMilliseconds,
       'countries_found': player.countriesFound,
+      'flags_correct': player.flagsCorrect,
+      'capitals_correct': player.capitalsCorrect,
+      'outlines_correct': player.outlinesCorrect,
+      'borders_correct': player.bordersCorrect,
+      'stats_correct': player.statsCorrect,
+      'best_streak': player.bestStreak,
     };
     _scheduleSave();
   }
@@ -120,7 +123,6 @@ class UserPreferencesService {
     required bool englishLabels,
     required String difficulty,
   }) {
-    if (_isGuest) return;
     _settingsDirty = true;
     _pendingSettings = {
       'user_id': _userId,
@@ -142,10 +144,12 @@ class UserPreferencesService {
     required Set<String> ownedAvatarParts,
     required String equippedPlaneId,
     required String equippedContrailId,
+    String? equippedTitleId,
     String? lastFreeRerollDate,
     String? lastDailyChallengeDate,
+    DailyStreak dailyStreak = const DailyStreak(),
+    DailyResult? lastDailyResult,
   }) {
-    if (_isGuest) return;
     _accountStateDirty = true;
     _pendingAccountState = {
       'user_id': _userId,
@@ -155,8 +159,11 @@ class UserPreferencesService {
       'owned_avatar_parts': ownedAvatarParts.toList(),
       'equipped_plane_id': equippedPlaneId,
       'equipped_contrail_id': equippedContrailId,
+      'equipped_title_id': equippedTitleId,
       'last_free_reroll_date': lastFreeRerollDate,
       'last_daily_challenge_date': lastDailyChallengeDate,
+      'daily_streak_data': dailyStreak.toJson(),
+      'last_daily_result': lastDailyResult?.toJson(),
     };
     _scheduleSave();
   }
@@ -168,7 +175,6 @@ class UserPreferencesService {
     required String region,
     required int roundsCompleted,
   }) async {
-    if (_isGuest) return;
     try {
       await _client.from('scores').insert({
         'user_id': _userId,
@@ -216,8 +222,6 @@ class UserPreferencesService {
   }
 
   Future<void> _flush() async {
-    if (_isGuest) return;
-
     final futures = <Future<void>>[];
 
     if (_profileDirty && _pendingProfile != null) {
@@ -355,6 +359,11 @@ class UserPreferencesSnapshot {
     return data?['equipped_contrail_id'] as String? ?? 'contrail_default';
   }
 
+  String? get equippedTitleId {
+    final data = accountState;
+    return data?['equipped_title_id'] as String?;
+  }
+
   String? get lastFreeRerollDate {
     final data = accountState;
     return data?['last_free_reroll_date'] as String?;
@@ -363,6 +372,34 @@ class UserPreferencesSnapshot {
   String? get lastDailyChallengeDate {
     final data = accountState;
     return data?['last_daily_challenge_date'] as String?;
+  }
+
+  DailyStreak toDailyStreak() {
+    final data = accountState;
+    if (data == null) return const DailyStreak();
+    final json = data['daily_streak_data'];
+    if (json is Map<String, dynamic> && json.isNotEmpty) {
+      try {
+        return DailyStreak.fromJson(json);
+      } catch (_) {
+        return const DailyStreak();
+      }
+    }
+    return const DailyStreak();
+  }
+
+  DailyResult? toLastDailyResult() {
+    final data = accountState;
+    if (data == null) return null;
+    final json = data['last_daily_result'];
+    if (json is Map<String, dynamic> && json.isNotEmpty) {
+      try {
+        return DailyResult.fromJson(json);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
   }
 
   // ── Settings helpers ─────────────────────────────────────────────────

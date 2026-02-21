@@ -60,6 +60,19 @@ class CapturedError {
       '[${severity.label.toUpperCase()}] $error (${timestamp.toIso8601String()})';
 }
 
+/// An error event intended for user-facing display.
+///
+/// The [severity] determines how the error is surfaced:
+/// - [ErrorSeverity.warning]: silent (telemetry only, never shown to users)
+/// - [ErrorSeverity.error]: brief auto-dismiss toast ("Something went wrong")
+/// - [ErrorSeverity.critical]: dialog with optional "Send Report" button
+class UserFacingError {
+  const UserFacingError({required this.error, required this.severity});
+
+  final CapturedError error;
+  final ErrorSeverity severity;
+}
+
 /// Callback signature for error listeners.
 typedef ErrorListener = void Function(CapturedError error);
 
@@ -133,6 +146,30 @@ class ErrorService {
 
   /// Number of errors currently queued.
   int get pendingCount => _queue.length;
+
+  // ---------------------------------------------------------------------------
+  // User-facing error stream
+  // ---------------------------------------------------------------------------
+
+  /// Stream of errors that should be surfaced to the user.
+  ///
+  /// UI widgets (toast, dialog) listen to this stream to display errors.
+  /// Only `error` and `critical` severity events are emitted — warnings are
+  /// telemetry-only and never shown to users.
+  final StreamController<UserFacingError> _userFacingController =
+      StreamController<UserFacingError>.broadcast();
+
+  /// Public stream for UI widgets to listen to user-facing errors.
+  Stream<UserFacingError> get userFacingErrors => _userFacingController.stream;
+
+  void _emitUserFacingError(CapturedError captured) {
+    // Warnings are NEVER shown to users — telemetry only.
+    if (captured.severity == ErrorSeverity.warning) return;
+
+    _userFacingController.add(
+      UserFacingError(error: captured, severity: captured.severity),
+    );
+  }
 
   // ---------------------------------------------------------------------------
   // Listeners (reactive updates for DevOverlay)
@@ -233,6 +270,7 @@ class ErrorService {
     _enqueue(captured);
     _addToDisplay(captured);
     _notifyListeners(captured);
+    _emitUserFacingError(captured);
   }
 
   /// Convenience: report with [ErrorSeverity.warning].

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/daily_challenge.dart';
+import '../../data/models/daily_result.dart';
+import '../../data/models/daily_streak.dart';
 import '../../data/models/seasonal_theme.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/leaderboard_service.dart';
@@ -70,6 +73,8 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             children: [
+              const _StreakSection(),
+              const SizedBox(height: 12),
               _ChallengeHeader(challenge: _challenge),
               const SizedBox(height: 12),
               if (_seasonalTheme != null) ...[
@@ -143,11 +148,13 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           contrailSecondaryColor: contrail?.colorScheme?['secondary'] != null
               ? Color(contrail!.colorScheme!['secondary']!)
               : null,
+          isDailyChallenge: true,
+          dailyTheme: _challenge.title,
           onComplete: (totalScore) {
-            // Note: coinReward is also credited via recordGameCompletion
-            // inside PlayScreen._completeLanding, so we only record the
-            // daily challenge completion here — no extra addCoins call.
             ref.read(accountProvider.notifier).recordDailyChallengeCompletion();
+          },
+          onDailyComplete: (result) {
+            ref.read(accountProvider.notifier).recordDailyResult(result);
           },
         ),
       ),
@@ -1186,49 +1193,425 @@ class _PlayButton extends StatelessWidget {
 // Completed Banner (shown when daily challenge already done today)
 // =============================================================================
 
-class _CompletedBanner extends StatelessWidget {
+class _CompletedBanner extends ConsumerWidget {
   const _CompletedBanner();
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    top: false,
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: FlitColors.success.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.success.withOpacity(0.4)),
-        ),
-        child: const Column(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lastResult = ref.watch(lastDailyResultProvider);
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.check_circle, color: FlitColors.success, size: 24),
-                SizedBox(width: 8),
-                Text(
-                  'COMPLETED',
-                  style: TextStyle(
-                    color: FlitColors.success,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: FlitColors.success.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: FlitColors.success.withOpacity(0.4)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: FlitColors.success,
+                        size: 24,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'COMPLETED',
+                        style: TextStyle(
+                          color: FlitColors.success,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: 6),
-            Text(
-              'Try again tomorrow!',
-              style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+                  if (lastResult != null) ...[
+                    const SizedBox(height: 10),
+                    // Emoji row
+                    Text(
+                      lastResult.rounds.map((r) => r.emoji).join(),
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Score: ${DailyResult.formatScore(lastResult.totalScore)} pts  '
+                      '\u2022  Time: ${DailyResult.formatTime(lastResult.totalTimeMs)}',
+                      style: const TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Share button
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Clipboard.setData(
+                          ClipboardData(text: lastResult.toShareText()),
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Result copied to clipboard!'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      icon: const Icon(
+                        Icons.share,
+                        color: FlitColors.accent,
+                        size: 18,
+                      ),
+                      label: const Text(
+                        'SHARE RESULT',
+                        style: TextStyle(
+                          color: FlitColors.accent,
+                          letterSpacing: 1,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: FlitColors.accent),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (lastResult == null) ...[
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Try again tomorrow!',
+                      style: TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ],
         ),
       ),
-    ),
-  );
+    );
+  }
+}
+
+// =============================================================================
+// Streak Section
+// =============================================================================
+
+class _StreakSection extends ConsumerWidget {
+  const _StreakSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final streak = ref.watch(dailyStreakProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: streak.currentStreak > 0
+            ? FlitColors.gold.withOpacity(0.08)
+            : FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: streak.currentStreak > 0
+              ? FlitColors.gold.withOpacity(0.4)
+              : FlitColors.cardBorder,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'DAILY STREAK',
+            style: TextStyle(
+              color: FlitColors.textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              // Fire icon for active streak, snowflake for no streak
+              Text(
+                streak.currentStreak > 0 ? '\u{1F525}' : '\u{2744}\u{FE0F}',
+                style: const TextStyle(fontSize: 32),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      streak.currentStreak > 0
+                          ? '${streak.currentStreak} day streak!'
+                          : 'No active streak',
+                      style: const TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Best: ${streak.longestStreak}  '
+                      '\u2022  ${streak.totalCompleted} dailies played',
+                      style: const TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (streak.currentStreak > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: FlitColors.gold.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    '\u{1F525} ${streak.currentStreak}',
+                    style: const TextStyle(
+                      color: FlitColors.gold,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          // Streak recovery prompt
+          if (streak.isRecoverable) ...[
+            const SizedBox(height: 12),
+            const Divider(color: FlitColors.cardBorder, height: 1),
+            const SizedBox(height: 12),
+            _StreakRecoveryPrompt(streak: streak),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StreakRecoveryPrompt extends ConsumerWidget {
+  const _StreakRecoveryPrompt({required this.streak});
+
+  final DailyStreak streak;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final coins = ref.watch(currentCoinsProvider);
+    final canAfford = coins >= streak.recoveryCost;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: FlitColors.warning.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: FlitColors.warning.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: FlitColors.warning,
+                size: 18,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Streak at risk! ${streak.daysMissed} day${streak.daysMissed > 1 ? "s" : ""} missed',
+                style: const TextStyle(
+                  color: FlitColors.warning,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Recover your ${streak.currentStreak}-day streak for '
+            '${streak.recoveryCost} coins',
+            style: const TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: canAfford
+                  ? () => _showRecoveryDialog(context, ref)
+                  : null,
+              icon: const Icon(Icons.monetization_on, size: 18),
+              label: Text(
+                canAfford
+                    ? 'RECOVER STREAK (${streak.recoveryCost} coins)'
+                    : 'NOT ENOUGH COINS (${streak.recoveryCost} needed)',
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: canAfford
+                    ? FlitColors.gold
+                    : FlitColors.backgroundMid,
+                foregroundColor: canAfford
+                    ? FlitColors.backgroundDark
+                    : FlitColors.textMuted,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRecoveryDialog(BuildContext context, WidgetRef ref) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: FlitColors.cardBorder),
+        ),
+        title: Row(
+          children: [
+            const Text('\u{1F525}', style: TextStyle(fontSize: 24)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Recover ${streak.currentStreak}-Day Streak?',
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'You missed ${streak.daysMissed} day${streak.daysMissed > 1 ? "s" : ""}. '
+              'Pay ${streak.recoveryCost} coins to keep your streak alive.',
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 14,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Cost:',
+                    style: TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.monetization_on,
+                        color: FlitColors.gold,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${streak.recoveryCost}',
+                        style: const TextStyle(
+                          color: FlitColors.gold,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text(
+              'CANCEL',
+              style: TextStyle(color: FlitColors.textMuted),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final success = ref
+                  .read(accountProvider.notifier)
+                  .recoverStreak();
+              Navigator.of(ctx).pop();
+              if (success && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Streak recovered! Keep it going!'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FlitColors.gold,
+              foregroundColor: FlitColors.backgroundDark,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'RECOVER',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

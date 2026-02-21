@@ -4,8 +4,11 @@ import '../../core/config/admin_config.dart';
 import '../../core/services/game_settings.dart';
 import '../../game/map/region.dart';
 import '../models/avatar_config.dart';
+import '../models/daily_result.dart';
+import '../models/daily_streak.dart';
 import '../models/pilot_license.dart';
 import '../models/player.dart';
+import '../models/social_title.dart';
 import '../services/user_preferences_service.dart';
 
 /// Current account state.
@@ -18,8 +21,11 @@ class AccountState {
     this.ownedAvatarParts = const {},
     this.equippedPlaneId = 'plane_default',
     this.equippedContrailId = 'contrail_default',
+    this.equippedTitleId,
     this.lastFreeRerollDate,
     this.lastDailyChallengeDate,
+    this.dailyStreak = const DailyStreak(),
+    this.lastDailyResult,
   }) : avatar = avatar ?? const AvatarConfig(),
        license = license ?? PilotLicense.random();
 
@@ -46,6 +52,10 @@ class AccountState {
   /// Currently equipped contrail cosmetic ID.
   final String equippedContrailId;
 
+  /// The [SocialTitle.id] the player has chosen to display on their profile.
+  /// `null` means no title is shown.
+  final String? equippedTitleId;
+
   /// Date of the last free licence reroll (YYYY-MM-DD string).
   /// null means the player has never used a free reroll.
   final String? lastFreeRerollDate;
@@ -53,6 +63,12 @@ class AccountState {
   /// Date of the last daily challenge completion (YYYY-MM-DD string).
   /// null means the player has never completed a daily challenge.
   final String? lastDailyChallengeDate;
+
+  /// Daily challenge streak tracking.
+  final DailyStreak dailyStreak;
+
+  /// Last completed daily challenge result (for sharing).
+  final DailyResult? lastDailyResult;
 
   static String _todayStr() {
     final today = DateTime.now();
@@ -84,6 +100,13 @@ class AccountState {
     return lastDailyChallengeDate == todayStr;
   }
 
+  /// Convenience: resolves [equippedTitleId] to a [SocialTitle] object.
+  /// Returns `null` when no title is equipped or the ID is unknown.
+  SocialTitle? get equippedTitle {
+    if (equippedTitleId == null) return null;
+    return SocialTitleCatalog.getById(equippedTitleId!);
+  }
+
   AccountState copyWith({
     Player? currentPlayer,
     Set<String>? unlockedRegions,
@@ -92,8 +115,12 @@ class AccountState {
     Set<String>? ownedAvatarParts,
     String? equippedPlaneId,
     String? equippedContrailId,
+    // Use Object? sentinel to allow explicitly passing null to clear the title.
+    Object? equippedTitleId = _sentinel,
     String? lastFreeRerollDate,
     String? lastDailyChallengeDate,
+    DailyStreak? dailyStreak,
+    Object? lastDailyResult = _sentinel,
   }) => AccountState(
     currentPlayer: currentPlayer ?? this.currentPlayer,
     unlockedRegions: unlockedRegions ?? this.unlockedRegions,
@@ -102,11 +129,22 @@ class AccountState {
     ownedAvatarParts: ownedAvatarParts ?? this.ownedAvatarParts,
     equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
     equippedContrailId: equippedContrailId ?? this.equippedContrailId,
+    equippedTitleId: equippedTitleId == _sentinel
+        ? this.equippedTitleId
+        : equippedTitleId as String?,
     lastFreeRerollDate: lastFreeRerollDate ?? this.lastFreeRerollDate,
     lastDailyChallengeDate:
         lastDailyChallengeDate ?? this.lastDailyChallengeDate,
+    dailyStreak: dailyStreak ?? this.dailyStreak,
+    lastDailyResult: lastDailyResult == _sentinel
+        ? this.lastDailyResult
+        : lastDailyResult as DailyResult?,
   );
 }
+
+// Sentinel used by [AccountState.copyWith] to distinguish "not provided" from
+// an explicit `null` for [equippedTitleId].
+const Object _sentinel = Object();
 
 /// Account state notifier.
 class AccountNotifier extends StateNotifier<AccountState> {
@@ -143,8 +181,11 @@ class AccountNotifier extends StateNotifier<AccountState> {
       ownedAvatarParts: snapshot.ownedAvatarParts,
       equippedPlaneId: snapshot.equippedPlaneId,
       equippedContrailId: snapshot.equippedContrailId,
+      equippedTitleId: snapshot.equippedTitleId,
       lastFreeRerollDate: snapshot.lastFreeRerollDate,
       lastDailyChallengeDate: snapshot.lastDailyChallengeDate,
+      dailyStreak: snapshot.toDailyStreak(),
+      lastDailyResult: snapshot.toLastDailyResult(),
     );
 
     // Hydrate GameSettings from Supabase data without triggering writes back.
@@ -189,8 +230,11 @@ class AccountNotifier extends StateNotifier<AccountState> {
       ownedAvatarParts: state.ownedAvatarParts,
       equippedPlaneId: state.equippedPlaneId,
       equippedContrailId: state.equippedContrailId,
+      equippedTitleId: state.equippedTitleId,
       lastFreeRerollDate: state.lastFreeRerollDate,
       lastDailyChallengeDate: state.lastDailyChallengeDate,
+      dailyStreak: state.dailyStreak,
+      lastDailyResult: state.lastDailyResult,
     );
   }
 
@@ -315,6 +359,40 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _syncProfile();
   }
 
+  /// Record correct answers per clue type.
+  ///
+  /// Call this after each round with the breakdown of clue types the player
+  /// answered correctly this round.
+  void recordClueAnswers({
+    int flags = 0,
+    int capitals = 0,
+    int outlines = 0,
+    int borders = 0,
+    int stats = 0,
+  }) {
+    final p = state.currentPlayer;
+    state = state.copyWith(
+      currentPlayer: p.copyWith(
+        flagsCorrect: p.flagsCorrect + flags,
+        capitalsCorrect: p.capitalsCorrect + capitals,
+        outlinesCorrect: p.outlinesCorrect + outlines,
+        bordersCorrect: p.bordersCorrect + borders,
+        statsCorrect: p.statsCorrect + stats,
+      ),
+    );
+    _syncProfile();
+  }
+
+  /// Update the player's best streak if [streak] is higher than the current.
+  void updateBestStreak(int streak) {
+    if (streak > state.currentPlayer.bestStreak) {
+      state = state.copyWith(
+        currentPlayer: state.currentPlayer.copyWith(bestStreak: streak),
+      );
+      _syncProfile();
+    }
+  }
+
   /// Record a completed game session — updates all relevant stats in one call.
   ///
   /// Licence bonuses always apply (there is no unlicensed flight mode).
@@ -397,11 +475,37 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _syncAccountState();
   }
 
+  /// Equip a social title by [titleId].
+  ///
+  /// Silently does nothing if the title ID is not in the catalog. Call
+  /// [clearEquippedTitle] to remove the active title.
+  void equipTitle(String titleId) {
+    // Guard: only allow equipping real catalog titles.
+    if (SocialTitleCatalog.getById(titleId) == null) return;
+    state = state.copyWith(equippedTitleId: titleId);
+    _syncAccountState();
+  }
+
+  /// Remove the currently displayed title.
+  void clearEquippedTitle() {
+    // Explicit null — use the sentinel-aware copyWith.
+    state = state.copyWith(equippedTitleId: null);
+    _syncAccountState();
+  }
+
   // --- Pilot License ---
 
   /// Directly set the pilot license (used when LicenseScreen rerolls locally).
   void updateLicense(PilotLicense license) {
     state = state.copyWith(license: license);
+    _syncAccountState();
+  }
+
+  /// Update the pilot's nationality (ISO 3166-1 alpha-2 code).
+  void updateNationality(String? nationality) {
+    state = state.copyWith(
+      license: state.license.copyWith(nationality: nationality),
+    );
     _syncAccountState();
   }
 
@@ -454,9 +558,72 @@ class AccountNotifier extends StateNotifier<AccountState> {
   }
 
   /// Record that the player completed today's daily challenge.
+  ///
+  /// Updates the streak counter and persists to Supabase.
   void recordDailyChallengeCompletion() {
-    state = state.copyWith(lastDailyChallengeDate: AccountState._todayStr());
+    final todayStr = AccountState._todayStr();
+    state = state.copyWith(lastDailyChallengeDate: todayStr);
+
+    // Update streak.
+    final streak = state.dailyStreak;
+    final newTotal = streak.totalCompleted + 1;
+
+    int newCurrent;
+    if (streak.isStreakActive || streak.completedToday) {
+      // Streak is still going — just increment (or maintain if already done today).
+      newCurrent = streak.completedToday
+          ? streak.currentStreak
+          : streak.currentStreak + 1;
+    } else {
+      // Streak was broken — start fresh at 1.
+      newCurrent = 1;
+    }
+
+    final newLongest = newCurrent > streak.longestStreak
+        ? newCurrent
+        : streak.longestStreak;
+
+    state = state.copyWith(
+      dailyStreak: streak.copyWith(
+        currentStreak: newCurrent,
+        longestStreak: newLongest,
+        lastCompletionDate: todayStr,
+        totalCompleted: newTotal,
+      ),
+    );
     _syncAccountState();
+  }
+
+  /// Store the daily challenge result (for sharing later).
+  void recordDailyResult(DailyResult result) {
+    state = state.copyWith(lastDailyResult: result);
+    _syncAccountState();
+  }
+
+  /// Recover a broken daily streak by spending coins.
+  ///
+  /// Returns true if the recovery was successful (had enough coins).
+  bool recoverStreak() {
+    final streak = state.dailyStreak;
+    if (!streak.isRecoverable) return false;
+
+    final cost = streak.recoveryCost;
+    if (!spendCoins(cost)) return false;
+
+    // Fill in the missed days — the streak is restored as if those days
+    // were completed. The lastCompletionDate moves to yesterday so the
+    // streak is active again (the player still needs to play today).
+    final yesterday = DateTime.now().toUtc().subtract(const Duration(days: 1));
+    final yesterdayStr =
+        '${yesterday.year}-'
+        '${yesterday.month.toString().padLeft(2, '0')}-'
+        '${yesterday.day.toString().padLeft(2, '0')}';
+
+    state = state.copyWith(
+      dailyStreak: streak.copyWith(lastCompletionDate: yesterdayStr),
+    );
+    _syncAccountState();
+    return true;
   }
 
   /// Use the daily-scramble bonus reroll. Returns true if available.
@@ -531,4 +698,19 @@ final licenseProvider = Provider<PilotLicense>((ref) {
 /// Convenience provider for equipped plane ID
 final equippedPlaneIdProvider = Provider<String>((ref) {
   return ref.watch(accountProvider).equippedPlaneId;
+});
+
+/// Convenience provider for the currently equipped social title (may be null).
+final equippedTitleProvider = Provider<SocialTitle?>((ref) {
+  return ref.watch(accountProvider).equippedTitle;
+});
+
+/// Convenience provider for daily streak.
+final dailyStreakProvider = Provider<DailyStreak>((ref) {
+  return ref.watch(accountProvider).dailyStreak;
+});
+
+/// Convenience provider for the last daily result (may be null).
+final lastDailyResultProvider = Provider<DailyResult?>((ref) {
+  return ref.watch(accountProvider).lastDailyResult;
 });

@@ -46,7 +46,7 @@ class LeaderboardEntry {
       );
 }
 
-/// Time period for leaderboard filtering.
+/// Time period for leaderboard filtering (used by the legacy fetchLeaderboard).
 enum LeaderboardPeriod { daily, weekly, monthly, yearly, allTime }
 
 extension LeaderboardPeriodExtension on LeaderboardPeriod {
@@ -62,6 +62,26 @@ extension LeaderboardPeriodExtension on LeaderboardPeriod {
         return 'This Year';
       case LeaderboardPeriod.allTime:
         return 'All Time';
+    }
+  }
+}
+
+/// Board type tabs shown on the leaderboard screen.
+///
+/// Each tab maps to a different SQL view or service method.
+enum LeaderboardTab { global, daily, regional, friends }
+
+extension LeaderboardTabExtension on LeaderboardTab {
+  String get displayName {
+    switch (this) {
+      case LeaderboardTab.global:
+        return 'Global';
+      case LeaderboardTab.daily:
+        return 'Today';
+      case LeaderboardTab.regional:
+        return 'Regional';
+      case LeaderboardTab.friends:
+        return 'Friends';
     }
   }
 }

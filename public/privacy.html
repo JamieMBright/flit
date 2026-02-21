@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Flit Privacy Policy — how we collect, store, and protect your data.">
+  <title>Privacy Policy — Flit</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0A1620;
+      --surface:      #1A2A32;
+      --surface2:     #1E3340;
+      --border:       #3A5060;
+      --text:         #F0E8DC;
+      --text-sec:     #B8A890;
+      --text-muted:   #7A6E5E;
+      --accent:       #E87A5A;
+      --gold:         #D4A944;
+      --ocean:        #2A5674;
+      --link:         #4A90B8;
+    }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 40px 24px 32px;
+      text-align: center;
+    }
+
+    .logo-wordmark {
+      font-size: 2.5rem;
+      font-weight: 900;
+      letter-spacing: 0.25em;
+      color: var(--text);
+      text-transform: uppercase;
+    }
+
+    .logo-tagline {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .page-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      color: var(--text-sec);
+      text-transform: uppercase;
+      margin-top: 24px;
+    }
+
+    .last-updated {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* ── Layout ── */
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section + .section {
+      border-top: 1px solid var(--border);
+      padding-top: 40px;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 0.95rem;
+      color: var(--text-sec);
+      margin-bottom: 12px;
+    }
+
+    p:last-child { margin-bottom: 0; }
+
+    ul, ol {
+      padding-left: 20px;
+      margin-bottom: 12px;
+    }
+
+    li {
+      font-size: 0.95rem;
+      color: var(--text-sec);
+      margin-bottom: 6px;
+    }
+
+    strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    a {
+      color: var(--link);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    a:hover { color: var(--text); }
+
+    /* ── Info cards ── */
+    .card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-top: 16px;
+    }
+
+    .card p { margin-bottom: 6px; }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ── Highlight strip ── */
+    .highlight {
+      border-left: 3px solid var(--gold);
+      padding-left: 16px;
+      margin: 16px 0;
+    }
+
+    .highlight p { color: var(--text-sec); }
+
+    /* ── Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      font-size: 0.9rem;
+    }
+
+    th {
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      color: var(--text-sec);
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(58, 80, 96, 0.5);
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(212, 169, 68, 0.15);
+      color: var(--gold);
+      border: 1px solid rgba(212, 169, 68, 0.3);
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 32px 24px;
+    }
+
+    footer p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .logo-wordmark { font-size: 2rem; }
+      main { padding: 32px 16px 60px; }
+      table { font-size: 0.82rem; }
+      th, td { padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-wordmark">Flit</div>
+    <div class="logo-tagline">A Geographical Adventure</div>
+    <div class="page-title">Privacy Policy</div>
+    <div class="last-updated">Last updated: 21 February 2026</div>
+  </header>
+
+  <main>
+
+    <!-- Introduction -->
+    <div class="section">
+      <h2>Overview</h2>
+      <p>
+        Flit is a geography-based flight game. We take your privacy seriously. This policy describes
+        what data we collect, how it is stored, how long we keep it, and what rights you have over it.
+      </p>
+      <p>
+        <strong>Short version:</strong> We collect the minimum data needed to make the game work. We
+        do not sell it, share it, or use it for advertising. You can delete your account and all
+        associated data at any time from within the app.
+      </p>
+    </div>
+
+    <!-- Data collected -->
+    <div class="section">
+      <h2>Data We Collect</h2>
+      <p>We collect only what is necessary to operate the game and improve reliability.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Why</th>
+            <th>Stored</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Email address</strong></td>
+            <td>Account creation, login, and account recovery</td>
+            <td>Supabase (encrypted)</td>
+          </tr>
+          <tr>
+            <td><strong>Username</strong></td>
+            <td>Your visible pilot name in the game</td>
+            <td>Supabase</td>
+          </tr>
+          <tr>
+            <td><strong>Game statistics</strong></td>
+            <td>Scores, round times, games played, accuracy — so progress is saved across devices</td>
+            <td>Supabase</td>
+          </tr>
+          <tr>
+            <td><strong>Error telemetry</strong></td>
+            <td>Crash reports to help us fix bugs — contains error messages, platform (web/iOS/Android), and app version only</td>
+            <td>Vercel (ephemeral)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="card">
+        <p><strong>What error telemetry does NOT include:</strong></p>
+        <p>
+          Error logs never contain your email, username, device identifier, IP address, or browser
+          fingerprint. The platform field is a coarse label (<code>web-browser</code>,
+          <code>ios-device</code>, <code>android-device</code>) — not a User-Agent string.
+        </p>
+      </div>
+    </div>
+
+    <!-- Storage -->
+    <div class="section">
+      <h2>How Your Data Is Stored</h2>
+
+      <div class="highlight">
+        <p>
+          <strong>Account data</strong> (email, username, game statistics) is stored in
+          <a href="https://supabase.com" target="_blank" rel="noopener">Supabase</a>, a cloud
+          PostgreSQL database hosted on AWS infrastructure. Connections are TLS-encrypted.
+          Passwords are hashed using industry-standard bcrypt — we never see your plaintext password.
+        </p>
+      </div>
+
+      <div class="highlight">
+        <p>
+          <strong>Error telemetry</strong> is received by a Vercel serverless function and held
+          in an ephemeral in-memory buffer. Errors are periodically flushed to a private GitHub
+          repository log file for triage, then discarded. Vercel functions are stateless — the
+          buffer is cleared on every cold start. Error logs are not linked to any user account.
+        </p>
+      </div>
+
+      <p>
+        We do not operate our own database servers. All infrastructure is managed by reputable
+        third-party providers (Supabase, Vercel, GitHub) under their own security programs.
+      </p>
+    </div>
+
+    <!-- Data retention -->
+    <div class="section">
+      <h2>Data Retention</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Data type</th>
+            <th>Retention</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Account data</strong> (email, username, stats)</td>
+            <td>Kept until you delete your account. Deleted within 30 days of account deletion request.</td>
+          </tr>
+          <tr>
+            <td><strong>Error telemetry</strong></td>
+            <td>Ephemeral. Purged from memory on every server restart. GitHub log entries are pruned regularly.</td>
+          </tr>
+          <tr>
+            <td><strong>Local storage (web)</strong></td>
+            <td>Auth session token only. Cleared when you sign out.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- User rights -->
+    <div class="section">
+      <h2>Your Rights</h2>
+      <p>You have the following rights over your data, exercisable directly from within the app:</p>
+
+      <ul>
+        <li>
+          <strong>Right to access</strong> — You can view all your game statistics and profile
+          data from the Profile screen at any time.
+        </li>
+        <li>
+          <strong>Right to export</strong> — You can export all your data as a JSON file from
+          the Profile screen. The export includes your username, email, and full game history.
+        </li>
+        <li>
+          <strong>Right to deletion</strong> — You can delete your account from the Profile
+          screen. This permanently removes your email, username, and all associated game data
+          from Supabase. Deletion is irreversible.
+        </li>
+        <li>
+          <strong>Right to rectification</strong> — You can update your username and display
+          name from within the app.
+        </li>
+      </ul>
+
+      <p>
+        To exercise any right not available in-app, or to request deletion of historical error
+        log entries, contact us at <a href="mailto:jamiebright1@gmail.com">jamiebright1@gmail.com</a>.
+      </p>
+    </div>
+
+    <!-- No sharing -->
+    <div class="section">
+      <h2>No Third-Party Sharing</h2>
+      <p>
+        We do <strong>not</strong> sell, rent, trade, or otherwise transfer your personal information
+        to third parties. We do not share data with advertisers, data brokers, or analytics companies.
+      </p>
+      <p>
+        The only third-party services that process your data are our infrastructure providers
+        (Supabase and Vercel), which act as data processors on our behalf under their own privacy
+        policies and Terms of Service. They do not use your data for their own purposes.
+      </p>
+    </div>
+
+    <!-- No analytics / tracking -->
+    <div class="section">
+      <h2>No Analytics or Tracking</h2>
+      <p>
+        Flit does not use Google Analytics, Mixpanel, Amplitude, or any other third-party analytics
+        SDK. There are no tracking pixels, ad networks, or behavioural profiling tools in the app.
+      </p>
+      <p>
+        The only telemetry is the crash/error reporting described above, which contains no
+        personally identifiable information.
+      </p>
+    </div>
+
+    <!-- Cookies -->
+    <div class="section">
+      <h2>Cookies &amp; Local Storage</h2>
+      <p>
+        The Flit web app does <strong>not</strong> use cookies. On web, we use
+        <code>localStorage</code> solely to persist your Supabase auth session token between
+        page loads, so you do not have to log in every time you open the app. No other data
+        is written to local storage.
+      </p>
+      <p>
+        Native iOS and Android apps use the platform's secure keychain/keystore for session
+        persistence — no cookies are involved.
+      </p>
+    </div>
+
+    <!-- Children / COPPA -->
+    <div class="section">
+      <h2>Children &amp; COPPA</h2>
+      <p>
+        Flit is a geography education game suitable for all ages. However, creating an account
+        requires an email address. We do not knowingly collect personal information from children
+        under 13 years of age without verifiable parental consent, in compliance with the
+        Children's Online Privacy Protection Act (COPPA).
+      </p>
+      <p>
+        If you are a parent or guardian and believe your child under 13 has created an account
+        without your consent, please contact us at
+        <a href="mailto:jamiebright1@gmail.com">jamiebright1@gmail.com</a> and we will delete the
+        account promptly.
+      </p>
+    </div>
+
+    <!-- Changes -->
+    <div class="section">
+      <h2>Changes to This Policy</h2>
+      <p>
+        We may update this privacy policy from time to time. When we do, we will update the
+        "Last updated" date at the top of this page. For material changes that affect how we handle
+        your data, we will notify you by email at the address associated with your account.
+      </p>
+      <p>
+        Continued use of Flit after any changes constitutes your acceptance of the revised policy.
+      </p>
+    </div>
+
+    <!-- Contact -->
+    <div class="section">
+      <h2>Contact</h2>
+      <p>
+        For any privacy-related questions, requests, or concerns, please reach out to us at:
+      </p>
+      <div class="card">
+        <p><strong>Email:</strong> <a href="mailto:jamiebright1@gmail.com">jamiebright1@gmail.com</a></p>
+        <p><strong>App:</strong> Flit — A Geographical Adventure</p>
+        <p><strong>Website:</strong> <a href="https://flit-olive.vercel.app" target="_blank" rel="noopener">flit-olive.vercel.app</a></p>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Flit. All rights reserved.</p>
+    <p>
+      <a href="https://flit-olive.vercel.app">Back to Flit</a>
+    </p>
+  </footer>
+
+</body>
+</html>

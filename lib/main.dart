@@ -14,6 +14,7 @@ import 'core/services/error_service.dart';
 import 'core/theme/flit_theme.dart';
 import 'core/utils/game_log.dart';
 import 'core/utils/web_error_bridge.dart';
+import 'core/widgets/error_overlay_manager.dart';
 import 'features/auth/login_screen.dart';
 
 final _log = GameLog.instance;
@@ -245,6 +246,7 @@ class _FlitAppState extends State<FlitApp> with WidgetsBindingObserver {
         return Stack(
           children: [
             child ?? const SizedBox.shrink(),
+            const ErrorOverlayManager(),
             if (!kReleaseMode) const DevOverlay(),
           ],
         );

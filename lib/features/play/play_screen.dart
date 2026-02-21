@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/services/audio_manager.dart';
@@ -13,8 +14,11 @@ import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
 import '../../core/widgets/settings_sheet.dart';
 import '../../data/models/avatar_config.dart';
+import '../../data/models/daily_result.dart';
 import '../../data/providers/account_provider.dart';
+import '../../data/models/challenge.dart';
 import '../../data/services/challenge_service.dart';
+import '../challenge/challenge_result_screen.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/flit_game.dart';
 import '../../game/map/descent_map_view.dart';
@@ -53,6 +57,9 @@ class PlayScreen extends ConsumerStatefulWidget {
     this.enableFuel = false,
     this.contrailPrimaryColor,
     this.contrailSecondaryColor,
+    this.isDailyChallenge = false,
+    this.onDailyComplete,
+    this.dailyTheme = '',
   });
 
   /// The region to play in.
@@ -120,6 +127,15 @@ class PlayScreen extends ConsumerStatefulWidget {
 
   /// Secondary contrail color from equipped cosmetic.
   final Color? contrailSecondaryColor;
+
+  /// Whether this is a daily challenge game (enables share text generation).
+  final bool isDailyChallenge;
+
+  /// Called with the daily result when a daily challenge completes.
+  final void Function(DailyResult result)? onDailyComplete;
+
+  /// Daily challenge theme title for the share text.
+  final String dailyTheme;
 
   @override
   ConsumerState<PlayScreen> createState() => _PlayScreenState();
@@ -393,7 +409,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   void _onFuelEmpty() {
     if (_session == null || _session!.isCompleted) return;
     _log.info('fuel', 'Fuel depleted — ending session');
-    _completeLanding();
+    _completeLanding(fuelDepleted: true);
   }
 
   void _startNewGame() {
@@ -527,7 +543,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     _totalScore += _session?.score ?? 0;
     _cumulativeTime += _elapsed;
 
-    // Record per-round result for summary.
+    // Record per-round result for summary (capture hint tier before reset).
     if (_session != null) {
       _roundResults.add(
         _RoundResult(
@@ -535,6 +551,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           clueType: _session!.clue.type,
           elapsed: _elapsed,
           score: _session!.score,
+          hintsUsed: _hintTier,
+          completed: true,
         ),
       );
     }
@@ -625,7 +643,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     });
   }
 
-  void _completeLanding() {
+  void _completeLanding({bool fuelDepleted = false}) {
     _timer?.cancel();
     _session?.complete();
     _totalScore += _session?.score ?? 0;
@@ -640,11 +658,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           clueType: _session!.clue.type,
           elapsed: _elapsed,
           score: _session!.score,
+          hintsUsed: _hintTier,
+          completed: !fuelDepleted,
         ),
       );
     }
 
     // Submit final round result and try to complete the challenge.
+    // If the challenge is completed (both players done), navigate to the
+    // full ChallengeResultScreen instead of the generic result dialog.
     if (widget.challengeId != null) {
       ChallengeService.instance
           .submitRoundResult(
@@ -652,8 +674,24 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             roundIndex: _currentRound - 1,
             timeMs: _elapsed.inMilliseconds,
           )
-          .then((_) =>
-              ChallengeService.instance.tryCompleteChallenge(widget.challengeId!));
+          .then(
+            (_) => ChallengeService.instance.tryCompleteChallenge(
+              widget.challengeId!,
+            ),
+          )
+          .then((completedChallenge) {
+            if (completedChallenge != null && mounted) {
+              // Challenge is fully complete — fetch the final state and show
+              // the ChallengeResultScreen.
+              ChallengeService.instance
+                  .fetchChallenge(widget.challengeId!)
+                  .then((finalChallenge) {
+                    if (finalChallenge != null && mounted) {
+                      _navigateToChallengeResult(finalChallenge);
+                    }
+                  });
+            }
+          });
     }
 
     _log.info(
@@ -681,7 +719,58 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     // Notify completion callback
     widget.onComplete?.call(_totalScore);
 
+    // Build and report daily result if this is a daily challenge.
+    if (widget.isDailyChallenge) {
+      final now = DateTime.now().toUtc();
+      final dateStr =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+          '${now.day.toString().padLeft(2, '0')}';
+      final dailyResult = DailyResult(
+        date: dateStr,
+        rounds: _roundResults
+            .map(
+              (r) => DailyRoundResult(
+                hintsUsed: r.hintsUsed,
+                completed: r.completed,
+                timeMs: r.elapsed.inMilliseconds,
+                score: r.score,
+              ),
+            )
+            .toList(),
+        totalScore: _totalScore,
+        totalTimeMs: _cumulativeTime.inMilliseconds,
+        totalRounds: widget.totalRounds,
+        theme: widget.dailyTheme,
+      );
+      widget.onDailyComplete?.call(dailyResult);
+    }
+
     final friendName = widget.challengeFriendName;
+
+    // Capture daily result for the dialog (built above in the isDailyChallenge block).
+    final dailyResultForDialog = widget.isDailyChallenge
+        ? DailyResult(
+            date: () {
+              final now = DateTime.now().toUtc();
+              return '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+                  '${now.day.toString().padLeft(2, '0')}';
+            }(),
+            rounds: _roundResults
+                .map(
+                  (r) => DailyRoundResult(
+                    hintsUsed: r.hintsUsed,
+                    completed: r.completed,
+                    timeMs: r.elapsed.inMilliseconds,
+                    score: r.score,
+                  ),
+                )
+                .toList(),
+            totalScore: _totalScore,
+            totalTimeMs: _cumulativeTime.inMilliseconds,
+            totalRounds: widget.totalRounds,
+            theme: widget.dailyTheme,
+          )
+        : null;
 
     // Show result dialog
     showDialog<void>(
@@ -695,7 +784,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         cumulativeTime: _cumulativeTime,
         coinReward: widget.coinReward,
         roundResults: _roundResults,
-        onPlayAgain: friendName == null
+        dailyResult: dailyResultForDialog,
+        onShare: dailyResultForDialog != null
+            ? () {
+                Clipboard.setData(
+                  ClipboardData(text: dailyResultForDialog.toShareText()),
+                );
+                if (dialogContext.mounted) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Result copied to clipboard!'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              }
+            : null,
+        onPlayAgain: friendName == null && !widget.isDailyChallenge
             ? () {
                 Navigator.of(dialogContext).pop();
                 setState(() {
@@ -866,6 +971,27 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Navigate to the full ChallengeResultScreen after a H2H challenge
+  /// is completed by both players.
+  void _navigateToChallengeResult(Challenge completedChallenge) {
+    try {
+      _game.pauseEngine();
+    } catch (_) {}
+
+    final account = ref.read(accountProvider);
+    final userId = account.currentPlayer.id;
+    final isChallengerRole = completedChallenge.challengerId == userId;
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ChallengeResultScreen(
+          challenge: completedChallenge,
+          isChallenger: isChallengerRole,
         ),
       ),
     );
@@ -1204,12 +1330,20 @@ class _RoundResult {
     required this.clueType,
     required this.elapsed,
     required this.score,
+    this.hintsUsed = 0,
+    this.completed = true,
   });
 
   final String countryName;
   final ClueType clueType;
   final Duration elapsed;
   final int score;
+
+  /// Number of hint tiers used this round (0-4).
+  final int hintsUsed;
+
+  /// Whether the player found the target (false = fuel depleted).
+  final bool completed;
 }
 
 class _ResultDialog extends ConsumerWidget {
@@ -1224,6 +1358,8 @@ class _ResultDialog extends ConsumerWidget {
     this.cumulativeTime = Duration.zero,
     this.coinReward = 0,
     this.roundResults = const [],
+    this.dailyResult,
+    this.onShare,
   });
 
   final GameSession session;
@@ -1236,6 +1372,12 @@ class _ResultDialog extends ConsumerWidget {
   final Duration cumulativeTime;
   final int coinReward;
   final List<_RoundResult> roundResults;
+
+  /// Non-null when this is a daily challenge result.
+  final DailyResult? dailyResult;
+
+  /// Called to share the daily result.
+  final VoidCallback? onShare;
 
   static String _formatTime(Duration d) {
     final m = d.inMinutes;
@@ -1480,6 +1622,20 @@ class _ResultDialog extends ConsumerWidget {
                   ),
                 ),
               ],
+              // Daily challenge emoji row
+              if (dailyResult != null) ...[
+                const SizedBox(height: 16),
+                Text(
+                  dailyResult!.rounds.map((r) => r.emoji).join(),
+                  style: const TextStyle(fontSize: 28),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'No hints = green, 1-2 = yellow, 3+ = orange, missed = red',
+                  style: TextStyle(color: FlitColors.textMuted, fontSize: 9),
+                  textAlign: TextAlign.center,
+                ),
+              ],
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1491,6 +1647,33 @@ class _ResultDialog extends ConsumerWidget {
                       style: TextStyle(color: FlitColors.textMuted),
                     ),
                   ),
+                  if (onShare != null)
+                    OutlinedButton.icon(
+                      onPressed: onShare,
+                      icon: const Icon(
+                        Icons.share,
+                        color: FlitColors.accent,
+                        size: 18,
+                      ),
+                      label: const Text(
+                        'SHARE',
+                        style: TextStyle(
+                          color: FlitColors.accent,
+                          letterSpacing: 1,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: FlitColors.accent),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
                   if (isChallenge && onSendChallenge != null)
                     ElevatedButton(
                       onPressed: onSendChallenge,

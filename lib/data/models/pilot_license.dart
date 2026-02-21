@@ -21,6 +21,7 @@ class PilotLicense {
     required this.clueChance,
     required this.fuelBoost,
     required this.preferredClueType,
+    this.nationality,
   });
 
   /// Bonus coin percentage earned per game (1-25).
@@ -37,6 +38,10 @@ class PilotLicense {
 
   /// Which clue type receives the [clueBoost] bonus.
   final String preferredClueType;
+
+  /// Player's nationality as ISO 3166-1 alpha-2 code (e.g. 'GB', 'US', 'JP').
+  /// null means not set.
+  final String? nationality;
 
   // ---------------------------------------------------------------------------
   // Reroll costs (in coins)
@@ -176,6 +181,7 @@ class PilotLicense {
       preferredClueType: lockType
           ? current.preferredClueType
           : rollClueType(rng),
+      nationality: current.nationality, // Preserve across rerolls
     );
   }
 
@@ -227,12 +233,14 @@ class PilotLicense {
     int? clueChance,
     int? fuelBoost,
     String? preferredClueType,
+    String? nationality,
   }) => PilotLicense(
     coinBoost: coinBoost ?? this.coinBoost,
     clueBoost: clueBoost ?? this.clueBoost,
     clueChance: clueChance ?? this.clueChance,
     fuelBoost: fuelBoost ?? this.fuelBoost,
     preferredClueType: preferredClueType ?? this.preferredClueType,
+    nationality: nationality ?? this.nationality,
   );
 
   // ---------------------------------------------------------------------------
@@ -245,6 +253,7 @@ class PilotLicense {
     'clue_chance': clueChance,
     'fuel_boost': fuelBoost,
     'preferred_clue_type': preferredClueType,
+    'nationality': nationality,
   };
 
   factory PilotLicense.fromJson(Map<String, dynamic> json) => PilotLicense(
@@ -253,5 +262,6 @@ class PilotLicense {
     clueChance: json['clue_chance'] as int? ?? 1,
     fuelBoost: json['fuel_boost'] as int,
     preferredClueType: json['preferred_clue_type'] as String,
+    nationality: json['nationality'] as String?,
   );
 }

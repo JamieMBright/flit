@@ -1,8 +1,11 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/app_version.dart';
+import '../../data/models/daily_streak.dart';
+import '../../data/providers/account_provider.dart';
 import '../../core/config/admin_config.dart';
 import '../../core/theme/flit_colors.dart';
 import '../admin/admin_screen.dart';
@@ -10,20 +13,21 @@ import '../daily/daily_challenge_screen.dart';
 import '../friends/friends_screen.dart';
 import '../guide/gameplay_guide_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
+import '../matchmaking/find_challenger_screen.dart';
 import '../play/practice_screen.dart';
 import '../play/region_select_screen.dart';
 import '../profile/profile_screen.dart';
 import '../shop/shop_screen.dart';
 
 /// Home screen with animated map background and menu overlay.
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
+class _HomeScreenState extends ConsumerState<HomeScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animController;
 
@@ -141,6 +145,9 @@ class _HomeScreenState extends State<HomeScreen>
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
+      // Daily streak stats card
+      const _DailyStreakCard(),
+      const SizedBox(height: 10),
       // Primary PLAY button with glow
       _PlayButton(onTap: () => _showGameModes(context)),
       const SizedBox(height: 10),
@@ -281,6 +288,14 @@ class _HomeScreenState extends State<HomeScreen>
               subtitle: 'Challenge your friends head-to-head',
               icon: Icons.people_rounded,
               onTap: () => _closeSheetAndNavigate(ctx, const FriendsScreen()),
+            ),
+            const SizedBox(height: 10),
+            _GameModeCard(
+              title: 'Find a Challenger',
+              subtitle: 'Matchmake against pilots at your level',
+              icon: Icons.radar,
+              onTap: () =>
+                  _closeSheetAndNavigate(ctx, const FindChallengerScreen()),
             ),
             const SizedBox(height: 16),
           ],
@@ -835,6 +850,100 @@ class _GlobeBackgroundPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _GlobeBackgroundPainter oldDelegate) =>
       oldDelegate.t != t;
+}
+
+// ─── Daily streak card ─────────────────────────────────────────────────────
+
+class _DailyStreakCard extends ConsumerWidget {
+  const _DailyStreakCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final streak = ref.watch(dailyStreakProvider);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: streak.currentStreak > 0
+              ? FlitColors.gold.withOpacity(0.5)
+              : FlitColors.cardBorder.withOpacity(0.5),
+        ),
+      ),
+      child: streak.currentStreak > 0
+          ? Row(
+              children: [
+                // Fire + streak count
+                const Text(
+                  '\u{1F525}', // fire emoji
+                  style: TextStyle(fontSize: 22),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${streak.currentStreak} day streak',
+                        style: const TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        'Best: ${streak.longestStreak}  \u2022  ${streak.totalCompleted} dailies played',
+                        style: const TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Streak badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: FlitColors.gold.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '\u{1F525} ${streak.currentStreak}',
+                    style: const TextStyle(
+                      color: FlitColors.gold,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.today_rounded,
+                  color: FlitColors.textMuted,
+                  size: 18,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Play the daily to start your streak!',
+                  style: TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
 }
 
 // ─── Menu widgets ─────────────────────────────────────────────────────────

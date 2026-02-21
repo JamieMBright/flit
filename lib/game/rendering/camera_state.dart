@@ -1,5 +1,8 @@
 import 'dart:math';
 
+import '../map/region.dart';
+import 'region_camera_presets.dart';
+
 /// Manages the 3D camera state for the globe fragment shader.
 ///
 /// The camera orbits a unit-radius globe centered at the origin.
@@ -8,6 +11,9 @@ import 'dart:math';
 ///
 /// Provides smooth transitions between high and low altitude, and a
 /// speed-dependent FOV shift for a sense of acceleration.
+///
+/// Call [setRegion] when starting a regional game to snap the camera to the
+/// correct starting position and record the active region for bounds clamping.
 class CameraState {
   /// Globe radius in world units (normalized to 1.0).
   static const double globeRadius = 1.0;
@@ -37,6 +43,16 @@ class CameraState {
 
   /// Rate of easing for FOV transitions (higher = faster).
   static const double _fovEaseRate = 4.0;
+
+  // -- Region preset state --
+
+  /// Active region for camera bounds clamping.
+  /// null means no bounds clamping (full world freedom).
+  GameRegion? _activeRegion;
+
+  /// Optional FOV override from the region preset (radians).
+  /// When set, the camera uses this value instead of the speed-based FOV.
+  double? _fovOverrideRad;
 
   // -- Internal state --
 
@@ -115,10 +131,26 @@ class CameraState {
     double headingRad = 0.0,
     double? altitudeFraction,
   }) {
-    final targetLatRad = planeLatDeg * pi / 180.0;
-    final targetLngRad = planeLngDeg * pi / 180.0;
+    // Clamp the camera target to region bounds when a region is active.
+    // For GameRegion.world the bounds span ±90/±180 so clamping is a no-op.
+    double effectiveLat = planeLatDeg;
+    double effectiveLng = planeLngDeg;
+    if (_activeRegion != null) {
+      final clamped = RegionCameraPresets.clampToBounds(
+        planeLatDeg,
+        planeLngDeg,
+        _activeRegion!,
+      );
+      effectiveLat = clamped[0];
+      effectiveLng = clamped[1];
+    }
 
-    // Use continuous altitude if provided, otherwise binary high/low
+    final targetLatRad = effectiveLat * pi / 180.0;
+    final targetLngRad = effectiveLng * pi / 180.0;
+
+    // Use continuous altitude if provided, otherwise binary high/low.
+    // When a region preset overrides the altitude distance, use that instead
+    // of the standard high/low pair.
     final double targetDistance;
     if (altitudeFraction != null) {
       // Interpolate between low and high altitude distances
@@ -131,11 +163,17 @@ class CameraState {
           : lowAltitudeDistance;
     }
 
-    final targetFov = _lerpDouble(
-      fovNarrow,
-      fovWide,
-      speedFraction.clamp(0, 1),
-    );
+    // FOV: use preset override when set, otherwise compute speed-based value.
+    final double targetFov;
+    if (_fovOverrideRad != null) {
+      targetFov = _fovOverrideRad!;
+    } else {
+      targetFov = _lerpDouble(
+        fovNarrow,
+        fovWide,
+        speedFraction.clamp(0, 1),
+      );
+    }
 
     if (_firstUpdate) {
       // Snap to target on first frame - no interpolation.
@@ -241,9 +279,59 @@ class CameraState {
     _upZ = uz;
   }
 
+  /// Apply a [GameRegion] preset to the camera.
+  ///
+  /// Snaps the camera to the preset's center position and altitude distance.
+  /// Subsequent [update] calls will clamp the camera within the preset bounds.
+  ///
+  /// Call this when starting a regional game (before the first [update]).
+  /// For [GameRegion.world] the bounds span the full globe, so clamping is
+  /// effectively a no-op and the camera starts at the world preset position.
+  void setRegion(GameRegion region) {
+    final preset = RegionCameraPresets.getPreset(region);
+
+    _activeRegion = region;
+
+    // Convert optional FOV override from degrees to radians.
+    _fovOverrideRad =
+        preset.fovOverride != null ? preset.fovOverride! * pi / 180.0 : null;
+
+    // Snap camera center and altitude to the preset values.
+    _currentLatRad = preset.centerLat * pi / 180.0;
+    _currentLngRad = preset.centerLng * pi / 180.0;
+    _currentDistance = preset.altitudeDistance;
+    _currentFov = _fovOverrideRad ?? fovNarrow;
+    _currentHeadingRad = 0.0;
+
+    // Recompute cartesian position and up vector immediately so the very first
+    // render frame (before update() runs) uses the correct camera position.
+    _camX = cos(_currentLatRad) * cos(_currentLngRad) * _currentDistance;
+    _camY = sin(_currentLatRad) * _currentDistance;
+    _camZ = cos(_currentLatRad) * sin(_currentLngRad) * _currentDistance;
+    _computeUpVector();
+
+    // Force a snap on the next update so the camera doesn't ease from the
+    // previous position to the new one.
+    _firstUpdate = true;
+  }
+
+  /// Clamp a lat/lng position to the active region's camera bounds.
+  ///
+  /// Returns a clamped [lat, lng] list. When no region is active (or the
+  /// region is [GameRegion.world]) the position is returned unchanged.
+  List<double> clampToBounds(double lat, double lng) {
+    if (_activeRegion == null) return [lat, lng];
+    return RegionCameraPresets.clampToBounds(lat, lng, _activeRegion!);
+  }
+
   /// Reset the camera to default state, forcing a snap on next update.
+  ///
+  /// Clears any active region preset. Call [setRegion] after this if the
+  /// camera should be constrained to a region again.
   void reset() {
     _firstUpdate = true;
+    _activeRegion = null;
+    _fovOverrideRad = null;
     _currentDistance = highAltitudeDistance;
     _currentLatRad = 0.0;
     _currentLngRad = 0.0;
