@@ -284,6 +284,11 @@
           fingerprint. The platform field is a coarse label (<code>web-browser</code>,
           <code>ios-device</code>, <code>android-device</code>) — not a User-Agent string.
         </p>
+        <p>
+          URL query parameters are stripped before logging — only the page path is recorded, never
+          any tokens, session IDs, or other values that may appear in query strings. Browser
+          user-agent strings are not collected.
+        </p>
       </div>
     </div>
 

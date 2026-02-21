@@ -34,6 +34,45 @@ const corsHeaders = {
 };
 
 // ---------------------------------------------------------------------------
+// Privacy helpers
+// ---------------------------------------------------------------------------
+
+// Strip query parameters and hash from any URL string before logging.
+// Returns just origin + pathname so tokens and analytics IDs are not stored.
+function scrubUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.origin + parsed.pathname;
+  } catch {
+    // If the value isn't a parseable URL, return an empty string.
+    return '';
+  }
+}
+
+// Sensitive field-name prefixes that must never be logged.
+const SENSITIVE_PREFIXES = ['token', 'key', 'secret', 'password', 'auth'];
+
+// Scrub a context object in-place:
+//   - Remove userAgent entirely (PII / browser fingerprint).
+//   - Scrub the url field with scrubUrl().
+//   - Remove any field whose name starts with a sensitive prefix.
+function scrubContext(ctx) {
+  if (typeof ctx !== 'object' || ctx === null) return ctx;
+  const scrubbed = {};
+  for (const [field, value] of Object.entries(ctx)) {
+    if (field === 'userAgent') continue;
+    const lower = field.toLowerCase();
+    if (SENSITIVE_PREFIXES.some((prefix) => lower.startsWith(prefix))) continue;
+    if (field === 'url') {
+      scrubbed.url = scrubUrl(typeof value === 'string' ? value : '');
+    } else {
+      scrubbed[field] = value;
+    }
+  }
+  return scrubbed;
+}
+
+// ---------------------------------------------------------------------------
 // Validation helpers
 // ---------------------------------------------------------------------------
 
@@ -222,6 +261,7 @@ async function handlePost(req, res) {
     }
     const enriched = {
       ...payload,
+      context: scrubContext(payload.context),
       _receivedAt: new Date().toISOString(),
       _id: `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`,
     };
