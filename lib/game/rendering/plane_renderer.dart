@@ -1572,6 +1572,7 @@ class PlaneRenderer {
     final secondary = _secondary(colorScheme, 0xFF2E8B57);
     final detail = _detail(colorScheme, 0xFFF5F5F5);
 
+    final bodyShift = bankSin * 1.5;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 4.0;
 
