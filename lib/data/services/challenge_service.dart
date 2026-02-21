@@ -140,53 +140,74 @@ class ChallengeService {
   // Submit round result
   // ---------------------------------------------------------------------------
 
-  /// Submit the result of a single round.
+  /// Maximum retry attempts for round result submission.
+  static const int _maxRetries = 3;
+
+  /// Submit the result of a single round with exponential backoff retry.
   ///
   /// [roundIndex] is 0-based. [timeMs] is the player's completion time.
   /// The method reads the current rounds JSONB, updates the appropriate field,
-  /// and writes it back.
+  /// and writes it back. Retries up to [_maxRetries] times with exponential
+  /// backoff (1s, 2s, 4s) on failure.
   Future<bool> submitRoundResult({
     required String challengeId,
     required int roundIndex,
     required int timeMs,
   }) async {
     if (_userId == null) return false;
-    try {
-      // Fetch current challenge state.
-      final row = await _client
-          .from('challenges')
-          .select('challenger_id, challenged_id, rounds, status')
-          .eq('id', challengeId)
-          .single();
 
-      final isChallenger = row['challenger_id'] == _userId;
-      final rounds = List<Map<String, dynamic>>.from(
-        (row['rounds'] as List).map((r) => Map<String, dynamic>.from(r as Map)),
-      );
+    for (var attempt = 0; attempt <= _maxRetries; attempt++) {
+      try {
+        // Fetch current challenge state.
+        final row = await _client
+            .from('challenges')
+            .select('challenger_id, challenged_id, rounds, status')
+            .eq('id', challengeId)
+            .single();
 
-      if (roundIndex < 0 || roundIndex >= rounds.length) return false;
+        final isChallenger = row['challenger_id'] == _userId;
+        final rounds = List<Map<String, dynamic>>.from(
+          (row['rounds'] as List).map(
+            (r) => Map<String, dynamic>.from(r as Map),
+          ),
+        );
 
-      // Set the time for the appropriate player.
-      final timeKey = isChallenger
-          ? 'challenger_time_ms'
-          : 'challenged_time_ms';
-      rounds[roundIndex][timeKey] = timeMs;
+        if (roundIndex < 0 || roundIndex >= rounds.length) return false;
 
-      // If the challenge was pending, move to in_progress.
-      final newStatus = row['status'] == 'pending'
-          ? 'in_progress'
-          : row['status'];
+        // Set the time for the appropriate player.
+        final timeKey = isChallenger
+            ? 'challenger_time_ms'
+            : 'challenged_time_ms';
+        rounds[roundIndex][timeKey] = timeMs;
 
-      await _client
-          .from('challenges')
-          .update({'rounds': rounds, 'status': newStatus})
-          .eq('id', challengeId);
+        // If the challenge was pending, move to in_progress.
+        final newStatus = row['status'] == 'pending'
+            ? 'in_progress'
+            : row['status'];
 
-      return true;
-    } catch (e) {
-      debugPrint('[ChallengeService] submitRoundResult failed: $e');
-      return false;
+        await _client
+            .from('challenges')
+            .update({'rounds': rounds, 'status': newStatus})
+            .eq('id', challengeId);
+
+        return true;
+      } catch (e) {
+        debugPrint(
+          '[ChallengeService] submitRoundResult failed '
+          '(attempt ${attempt + 1}/${_maxRetries + 1}): $e',
+        );
+        if (attempt < _maxRetries) {
+          // Exponential backoff: 1s, 2s, 4s
+          await Future<void>.delayed(Duration(seconds: 1 << attempt));
+        }
+      }
     }
+
+    debugPrint(
+      '[ChallengeService] submitRoundResult exhausted all retries for '
+      'challenge=$challengeId round=$roundIndex',
+    );
+    return false;
   }
 
   // ---------------------------------------------------------------------------
@@ -197,61 +218,71 @@ class ChallengeService {
   ///
   /// Call this after submitting the final round. If both players have
   /// completed all rounds, sets winner, awards coins, and marks as completed.
-  /// Returns the updated challenge, or null if not yet complete.
+  /// Returns the updated challenge, or null if not yet complete. Retries up
+  /// to [_maxRetries] times with exponential backoff on failure.
   Future<Challenge?> tryCompleteChallenge(String challengeId) async {
     if (_userId == null) return null;
-    try {
-      final row = await _client
-          .from('challenges')
-          .select()
-          .eq('id', challengeId)
-          .single();
 
-      final challenge = _rowToChallenge(row);
+    for (var attempt = 0; attempt <= _maxRetries; attempt++) {
+      try {
+        final row = await _client
+            .from('challenges')
+            .select()
+            .eq('id', challengeId)
+            .single();
 
-      // Check if all rounds are complete (both players submitted).
-      final completedRounds = challenge.rounds
-          .where((r) => r.isComplete)
-          .length;
-      if (completedRounds < Challenge.totalRounds) return null;
+        final challenge = _rowToChallenge(row);
 
-      // Determine winner.
-      String? winnerId;
-      if (challenge.challengerWins > challenge.challengedWins) {
-        winnerId = challenge.challengerId;
-      } else if (challenge.challengedWins > challenge.challengerWins) {
-        winnerId = challenge.challengedId;
+        // Check if all rounds are complete (both players submitted).
+        final completedRounds = challenge.rounds
+            .where((r) => r.isComplete)
+            .length;
+        if (completedRounds < Challenge.totalRounds) return null;
+
+        // Determine winner.
+        String? winnerId;
+        if (challenge.challengerWins > challenge.challengedWins) {
+          winnerId = challenge.challengerId;
+        } else if (challenge.challengedWins > challenge.challengerWins) {
+          winnerId = challenge.challengedId;
+        }
+        // null winnerId means draw.
+
+        // Calculate coins.
+        final challengerCoins = _calculateCoins(
+          roundWins: challenge.challengerWins,
+          isWinner: winnerId == challenge.challengerId,
+          isDraw: winnerId == null,
+        );
+        final challengedCoins = _calculateCoins(
+          roundWins: challenge.challengedWins,
+          isWinner: winnerId == challenge.challengedId,
+          isDraw: winnerId == null,
+        );
+
+        await _client
+            .from('challenges')
+            .update({
+              'status': 'completed',
+              'winner_id': winnerId,
+              'challenger_coins': challengerCoins,
+              'challenged_coins': challengedCoins,
+              'completed_at': DateTime.now().toUtc().toIso8601String(),
+            })
+            .eq('id', challengeId);
+
+        return challenge;
+      } catch (e) {
+        debugPrint(
+          '[ChallengeService] tryCompleteChallenge failed '
+          '(attempt ${attempt + 1}/${_maxRetries + 1}): $e',
+        );
+        if (attempt < _maxRetries) {
+          await Future<void>.delayed(Duration(seconds: 1 << attempt));
+        }
       }
-      // null winnerId means draw.
-
-      // Calculate coins.
-      final challengerCoins = _calculateCoins(
-        roundWins: challenge.challengerWins,
-        isWinner: winnerId == challenge.challengerId,
-        isDraw: winnerId == null,
-      );
-      final challengedCoins = _calculateCoins(
-        roundWins: challenge.challengedWins,
-        isWinner: winnerId == challenge.challengedId,
-        isDraw: winnerId == null,
-      );
-
-      await _client
-          .from('challenges')
-          .update({
-            'status': 'completed',
-            'winner_id': winnerId,
-            'challenger_coins': challengerCoins,
-            'challenged_coins': challengedCoins,
-            'completed_at': DateTime.now().toUtc().toIso8601String(),
-          })
-          .eq('id', challengeId);
-
-      return challenge;
-    } catch (e) {
-      debugPrint('[ChallengeService] tryCompleteChallenge failed: $e');
-      return null;
     }
+    return null;
   }
 
   // ---------------------------------------------------------------------------

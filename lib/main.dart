@@ -14,6 +14,7 @@ import 'core/services/error_service.dart';
 import 'core/theme/flit_theme.dart';
 import 'core/utils/game_log.dart';
 import 'core/utils/web_error_bridge.dart';
+import 'core/utils/web_flush_bridge.dart';
 import 'core/widgets/error_overlay_manager.dart';
 import 'data/services/user_preferences_service.dart';
 import 'features/auth/login_screen.dart';
@@ -65,6 +66,15 @@ Future<void> main() async {
 
   // Initialize audio system (fire-and-forget; errors handled internally).
   AudioManager.instance.initialize();
+
+  // Register beforeunload flush for web — last-chance safety net for iOS
+  // Safari PWA kills where AppLifecycleState.hidden never fires.
+  WebFlushBridge.register(() async {
+    await Future.wait([
+      ErrorService.instance.flush(),
+      UserPreferencesService.instance.flush(),
+    ]);
+  });
 
   _log.info('app', 'Flit starting up');
 

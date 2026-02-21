@@ -797,6 +797,143 @@ sequenceDiagram
 
 ---
 
+## Known Persistence Risks & Data Loss Scenarios
+
+The debounced-write architecture is efficient but introduces windows where data exists only in memory. This section maps every scenario where player data can be lost, and which mitigations exist (or are still missing).
+
+### Risk Matrix
+
+```mermaid
+flowchart TD
+    subgraph "HIGH RISK — Data Loss Likely Without Mitigation"
+        R1["Web reload mid-debounce<br/>(browser refresh / tab close)"]
+        R2["Shop purchase → immediate navigation<br/>(back button before 2s flush)"]
+        R3["Game completion → app killed<br/>(before flush() completes)"]
+        R4["Avatar editor → app crash<br/>(after purchase, before Save tap)"]
+    end
+
+    subgraph "MEDIUM RISK — Data Loss Possible"
+        R5["Offline play → never reconnect<br/>(queue capped at 50, 3 retries)"]
+        R6["Rapid coin spend → concurrent writes<br/>(race between dirty flags)"]
+        R7["Daily streak at midnight boundary<br/>(timezone ambiguity)"]
+        R8["Challenge round result → network failure<br/>(no retry on submitRoundResult)"]
+    end
+
+    subgraph "LOW RISK — Mitigated"
+        R9["Normal app background<br/>(lifecycle flush covers this)"]
+        R10["Settings change → app close<br/>(lifecycle flush covers this)"]
+        R11["Auth session expiry<br/>(SDK auto-refreshes tokens)"]
+    end
+
+    R1 -->|"FIX: AppLifecycleState.hidden"| M1["Mitigation Added ✓"]
+    R2 -->|"FIX: owned_cosmetics DB column"| M2["Mitigation Added ✓"]
+    R3 -->|"FIX: immediate flush()"| M3["Mitigation Added ✓"]
+    R4 --> M4["NOT MITIGATED ✗<br/>Avatar parts purchased but<br/>config not saved until tap Save"]
+    R5 --> M5["PARTIAL — queue has limits"]
+    R6 --> M6["PARTIAL — debounce batches,<br/>but no server-side transactions"]
+    R7 --> M7["PARTIAL — uses date strings,<br/>no timezone normalization"]
+    R8 --> M8["NOT MITIGATED ✗<br/>Round result silently lost"]
+```
+
+### Detailed Breakdown by Flow
+
+#### On Web Reload / Tab Close
+
+| Scenario | What's at risk | Mitigation | Status |
+|----------|---------------|------------|--------|
+| User refreshes browser during 2s debounce | Any dirty `profiles`, `user_settings`, or `account_state` data | `AppLifecycleState.hidden` triggers immediate `flush()` | **Fixed** (`main.dart`) |
+| User closes tab (not refresh) | Same as above | `hidden` fires before `detached` on most browsers | **Fixed** but browser-dependent |
+| iOS Safari PWA swipe-away | App killed without lifecycle events | `sendBeacon()` fallback for error telemetry only — **no** equivalent for game state | **Not mitigated** |
+| `SharedPreferences` offline queue on web | Stored in `localStorage` — survives reload | Queue drains on next `flush()` after re-login | **Works** |
+
+#### On Shop Purchase
+
+| Scenario | What's at risk | Mitigation | Status |
+|----------|---------------|------------|--------|
+| Buy item → immediately navigate away | `owned_cosmetics` set only in Riverpod memory, not yet flushed to DB | `owned_cosmetics` column added to `account_state`; purchase calls `saveAccountState()` | **Fixed** (`account_provider.dart`, `20260221_owned_cosmetics.sql`) |
+| Buy item → app crash before 2s debounce | Coins deducted in memory but not written; cosmetic ownership not written | Both are dirty-flagged, but crash kills the timer | **Partially mitigated** — coin deduction and ownership are in the same flush, so they're atomic *when the flush runs* |
+| Buy item → Supabase write fails | Coins + ownership queued in offline write queue | Retried up to 3 times on next flush | **Mitigated** |
+| Equip item → navigate away | `equipped_plane_id` only in Riverpod until debounce flush | Covered by lifecycle flush on navigate/background | **Mitigated** |
+
+#### On Game Completion
+
+| Scenario | What's at risk | Mitigation | Status |
+|----------|---------------|------------|--------|
+| Game ends → `recordGameCompletion()` | Score INSERT + profile UPSERT | `flush()` called immediately (no debounce) | **Fixed** (`account_provider.dart`) |
+| Game ends → app killed before flush completes | Score row not inserted; coins/XP not updated | `flush()` is async — if killed mid-flight, data lost | **Risk remains** (no `sendBeacon` equivalent for Supabase writes) |
+| Daily challenge → onComplete callback | Streak + daily result saved to `account_state` | Debounced 2s — **not** immediate | **Risk** — fast app close after "Done" could lose streak |
+
+#### On Avatar Save
+
+| Scenario | What's at risk | Mitigation | Status |
+|----------|---------------|------------|--------|
+| Purchase part → don't tap Save → navigate away | Coins spent (will flush), but avatar config reverted to previous | Part ownership is saved; avatar config is not | **By design** — but user may not understand coins were spent for a part they "lost" |
+| Tap Save → app crash before debounce | Avatar config in memory, not yet written | Lifecycle flush covers normal app background; crash = loss | **Partially mitigated** |
+
+#### On Daily Challenge Streak
+
+| Scenario | What's at risk | Mitigation | Status |
+|----------|---------------|------------|--------|
+| Complete daily at 23:59 → streak date = today, but server sees tomorrow (UTC) | Streak may not increment or may double-count | Dates stored as `YYYY-MM-DD` strings with no timezone normalization | **Not mitigated** — no UTC enforcement |
+| Complete daily → close app before `saveAccountState` flushes | `daily_streak_data` JSONB not written | Debounced 2s, covered by lifecycle flush only | **Partially mitigated** |
+
+#### On Challenge Round Submission
+
+| Scenario | What's at risk | Mitigation | Status |
+|----------|---------------|------------|--------|
+| `submitRoundResult()` network failure | Round time/score not recorded in `challenges.rounds` JSONB | No retry mechanism — error caught and logged, but round result silently lost | **Not mitigated** |
+| Both players finish but `tryCompleteChallenge()` fails | Challenge stuck in `in_progress` forever | No expiry cron or cleanup job | **Not mitigated** |
+
+### Persistence Gap Diagram
+
+Shows what happens at each stage if the app is killed:
+
+```mermaid
+sequenceDiagram
+    participant Action as User Action
+    participant Memory as In-Memory (Riverpod)
+    participant Timer as 2s Debounce Timer
+    participant DB as Supabase DB
+
+    Action->>Memory: Mutation (buy, equip, setting, etc.)
+    Note over Memory: ⚠ DATA AT RISK<br/>Only in memory
+
+    Memory->>Timer: _scheduleSave()
+    Note over Timer: ⚠ DATA AT RISK<br/>Timer ticking (0-2s)
+
+    alt App killed here
+        Note over Memory,DB: ❌ DATA LOST<br/>Unless lifecycle flush fires first
+    end
+
+    alt Lifecycle event (pause/hidden)
+        Timer->>DB: flush() — IMMEDIATE
+        Note over DB: ✅ DATA SAFE
+    end
+
+    Timer->>DB: flush() after 2s
+    Note over DB: ✅ DATA SAFE
+
+    alt DB write fails
+        DB->>Timer: Error
+        Timer->>Timer: Enqueue to SharedPreferences
+        Note over Timer: ⚠ DATA AT RISK<br/>Max 5 retries, then dropped
+    end
+```
+
+### Previously Identified Gaps (All Fixed)
+
+| # | Gap | Fix Applied | Files Changed |
+|---|-----|-------------|---------------|
+| 1 | **iOS Safari PWA kill** — no lifecycle event fires | Added `beforeunload` web event handler via `WebFlushBridge` that triggers `UserPreferencesService.flush()` + `ErrorService.flush()` before page unload | `web_flush_bridge.dart`, `web_flush_bridge_web.dart`, `web_flush_bridge_stub.dart`, `main.dart` |
+| 2 | **Challenge round result has no retry** | Added exponential backoff retry (1s, 2s, 4s) up to 3 retries on both `submitRoundResult()` and `tryCompleteChallenge()` | `challenge_service.dart` |
+| 3 | **Stale challenges never expire** | Added `expire_stale_challenges()` SQL function that marks pending/in_progress challenges older than 7 days as expired; called automatically by Vercel health cron every 3 days | `20260221_expire_stale_challenges.sql`, `api/health/index.js` |
+| 4 | **Daily streak timezone ambiguity** | Changed `AccountState._todayStr()` from `DateTime.now()` to `DateTime.now().toUtc()`, matching `DailyStreak` model which already uses UTC | `account_provider.dart` |
+| 5 | **Avatar part purchase without Save** | Auto-save avatar config immediately after purchasing a part in the editor (calls `updateAvatar()` right after `purchaseAvatarPart()`) | `avatar_editor_screen.dart` |
+| 6 | **Offline queue hard limits** | Increased queue from 50→200 entries and 3→5 retries; added `SyncStatusIndicator` widget in profile AppBar that shows pending offline write count | `user_preferences_service.dart`, `sync_status_indicator.dart`, `profile_screen.dart` |
+| 7 | **No server-side coin validation** | Added `purchase_cosmetic()` SQL function with row-level locking, balance check, duplicate detection, and atomic coin deduction; `purchaseCosmetic()` now fires server-side RPC validation after optimistic client-side update | `20260221_purchase_cosmetic_function.sql`, `account_provider.dart` |
+
+---
+
 ## Flush Trigger Map
 
 ```mermaid
