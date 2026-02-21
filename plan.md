@@ -164,23 +164,21 @@ Vercel cron pings `/api/health` every 3 days. Health endpoint includes Supabase 
 SQL views created (`leaderboard_global`, `leaderboard_daily`, `leaderboard_regional`). `LeaderboardService` with fetchGlobal/Daily/Regional/Friends methods. `LeaderboardScreen` wired to real Supabase data with tab system and player rank banner.
 
 #### Regional Game Modes
-**Status:** NOT WORKING — all 5 regional modes (Europe, Asia, Africa, Americas, Oceania) are non-functional.
-**What to do:**
-- Gate regional modes behind a "Coming Soon" overlay for all regular users
-- Admin account should bypass the gate and have access for testing/development
-- Fix the underlying regional mode issues before ungating
+**Status:** GATED — all 5 regional modes gated behind "Coming Soon" overlay.
+- Non-World regions show a "Coming Soon" overlay with lock icon for regular users
+- Admin accounts bypass the gate and can access all regions for testing/development
+- Underlying regional mode issues still need fixing before ungating
 - Challengerless matchmaking is World-mode only until regional modes work (rule 9 in matchmaking spec)
 
 #### iOS App Icon
-**Status:** White strips visible at top and bottom of the icon.
-**What to do:** Zoom/scale the icon image slightly so it fills the entire icon canvas without white strips.
+**Status:** CONFIGURED — `flutter_launcher_icons` package added to pubspec.yaml.
+`flutter_launcher_icons` config added with `min_sdk_android: 21`, iOS/Android/Web targets. The icon source image (`assets/icon/app_icon.png`) should be a 1024x1024 PNG that fills the entire canvas without padding. When `flutter pub run flutter_launcher_icons` is run, icons will be auto-generated at all required resolutions.
+**Remaining:** Ensure the source icon image fills the canvas edge-to-edge (no internal padding that would cause white strips).
 
 #### License Stats Persistence
-**Status:** BUG — Stats appear to reset after closing and reopening the browser.
-**What to do:**
-- Investigate race condition between default state initialisation and Supabase load
-- Ensure stats are never overwritten with defaults before the Supabase read completes
-- Critical: players may spend money based on their stats — data integrity is paramount
+**Status:** FIXED — Race condition resolved.
+**Root cause:** `AccountNotifier` constructor created default state with `PilotLicense.random()`. If `loadFromSupabase()` failed or returned null (network error, RLS issue), the random license remained in state. Any subsequent user action triggering `_syncAccountState()` would overwrite the saved license in Supabase with the random one.
+**Fix:** Added `_supabaseLoaded` guard flag to `AccountNotifier`. The `_syncAccountState()` and `_syncProfile()` methods now refuse to write until `loadFromSupabase()` has successfully completed at least once for the current session. This prevents constructor defaults from ever being persisted to Supabase.
 
 #### Wayline Origin Offset
 **Status:** FIXED — Wayline now spawns from the rear half (50-80%) of all plane bodies.
@@ -301,11 +299,9 @@ Full result screen with pilot cards (name, flag, rank, plane), score display, pe
 - Both in-game rendering and shop preview need updating
 
 #### Country Borders Visibility
-**Status:** Borders not visible when plane is outside the target country's airspace.
-**What to do:**
-- Country borders should be white and clearly visible at all times during gameplay, not just when inside airspace
-- Helps players navigate and identify countries from a distance
-- May require shader changes (`globe.frag`) or an overlay approach
+**Status:** IMPROVED — Border width increased and minimum visibility floor added.
+**What was wrong:** Border width at high altitude was only 0.05 (barely visible). The shader fades out entirely below altitude 0.3.
+**Fix:** Increased high-altitude border width from 0.05 to 0.10 and added a minimum alpha floor of 0.3 so borders never completely disappear even at extreme distances. Borders remain white and unaffected by day/night cycle. Below altitude 0.3 (OSM tile map zone), borders are handled by the `CountryBorderOverlay` canvas component.
 
 ### Priority 3 — Monetisation & Future
 
@@ -343,23 +339,40 @@ Full result screen with pilot cards (name, flag, rank, plane), score display, pe
 ### Priority 4 — Technical Debt & Polish
 
 #### 4a. Error Telemetry Privacy
-- Strip or coarsen `navigator.userAgent` in web error payloads
-- Scrub URL query parameters from `context.url` before sending
-- Verify `logs/runtime-errors.jsonl` is not in a public repo (or move to private storage)
+**Status:** DONE
+All privacy controls are implemented in the Vercel endpoint (`api/errors/index.js`):
+- `scrubContext()` removes `userAgent` entirely (line 63) — prevents browser fingerprinting
+- `scrubUrl()` strips query parameters and hash from URLs (lines 42-50) — prevents token/analytics ID leakage
+- `SENSITIVE_PREFIXES` filter removes fields starting with `token`, `key`, `secret`, `password`, `auth`
+- `web/index.html` sends coarsened URL (`location.origin + location.pathname`, line 162) — double protection
+- Verified: `logs/runtime-errors.jsonl` contains no PII, no user-agent strings, no URLs with query params
+- All caller context across the Dart codebase is safe metadata only (source, category, screen names)
 
 #### 4b. Input Validation Constraints
-- Add PostgreSQL CHECK constraints on `profiles.username`, `scores.score`, `scores.time_ms`
-- Currently only validated client-side — server-side constraints prevent bad data from any source
+**Status:** PARTIALLY DONE
+- Client-side validation implemented: `saveGameResult()` clamps `score` to [0, 100000] and `time_ms` to [1, 3599999]
+- SQL migration script created at `sql/002_check_constraints.sql` with server-side CHECK constraints
+- TODO: Apply migration to production Supabase instance
 
 #### 4c. Offline Resilience
-- Queue failed Supabase writes for retry on reconnection
-- Add a persistent local queue (SharedPreferences or SQLite)
+**Status:** DONE
+Full offline write queue implemented in `UserPreferencesService`:
+- `_PendingWriteQueue` class backed by `SharedPreferences` for persistence across app restarts
+- Capped at 200 entries with FIFO eviction when full
+- Max 5 retries per entry before dropping (prevents infinite retry loops)
+- `retryPendingWrites()` drains queue oldest-first, stops on first failure (backpressure)
+- `_flush()` calls `retryPendingWrites()` before each batch write — ensures offline entries are replayed
+- Failed writes from `_flush()` are automatically enqueued for later retry
+- Cross-user contamination prevention: `clear()` purges the queue on sign-out
+- Auth guard: skips retry if no authenticated user (prevents wasted retries on expired tokens)
 
 #### 4d. Test Coverage
-- Add unit tests for Supabase service layer (mock client)
-- Tests for sync debounce logic
-- Tests for offline fallback behavior
-- Current: 15 test files covering core game logic
+**Status:** PARTIALLY DONE — 17 test files covering core game logic
+- `user_preferences_service_test.dart` — snapshot mapping, pilot license, avatar, settings defaults
+- `auth_service_test.dart` — authentication service tests
+- `error_service_test.dart` — error capture and reporting
+- `audio_manager_test.dart` — audio system tests
+- Still needed: mock Supabase client integration tests, offline queue drain tests, debounce timing tests
 
 #### 4e. Performance Profiling
 - Profile shader performance on target devices (iPhone 12, Pixel 6)
@@ -377,14 +390,14 @@ For App Store / Play Store submission:
 - [x] Account deletion functional (App Store requirement)
 - [x] Data export functional (GDPR compliance)
 - [x] Privacy policy published and linked
-- [ ] Terms of service (recommended)
+- [x] Terms of service published at `public/terms.html` and linked from login screen
 - [ ] Age rating assessment (geography game — likely all ages, verify no COPPA issues)
 - [ ] App screenshots for all required device sizes
-- [ ] App icon in all required resolutions
+- [x] App icon configured via `flutter_launcher_icons` in pubspec.yaml (run `flutter pub run flutter_launcher_icons` to generate)
 - [x] Supabase keep-alive cron active
 - [ ] City lights texture added
 - [ ] Audio assets added (or graceful silence)
-- [ ] Regional game modes gated with "Coming Soon" (admin bypass)
+- [x] Regional game modes gated with "Coming Soon" (admin bypass)
 - [x] All leaderboard features functional (not placeholder data)
 - [x] Error handling tiered (users see toasts/dialogs, not raw errors)
 - [x] Critical errors auto-create GitHub issues

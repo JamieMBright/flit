@@ -115,7 +115,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ],
 
                 const SizedBox(height: 40),
-                const _PrivacyLink(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const _PrivacyLink(),
+                    const SizedBox(width: 16),
+                    const Text(
+                      '|',
+                      style: TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    const _TermsLink(),
+                  ],
+                ),
                 const SizedBox(height: 16),
               ],
             ),
@@ -916,6 +931,93 @@ class _PrivacyLink extends StatelessWidget {
     onTap: () => _showPrivacyDialog(context),
     child: const Text(
       'Privacy Policy',
+      style: TextStyle(
+        color: FlitColors.textMuted,
+        fontSize: 11,
+        decoration: TextDecoration.underline,
+        decorationColor: FlitColors.textMuted,
+      ),
+    ),
+  );
+}
+
+/// Tappable "Terms of Service" footer link.
+class _TermsLink extends StatelessWidget {
+  const _TermsLink();
+
+  static const String _termsUrl = 'https://flit-olive.vercel.app/terms';
+
+  void _showTermsDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: FlitColors.cardBorder),
+        ),
+        title: const Text(
+          'Terms of Service',
+          style: TextStyle(
+            color: FlitColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Read our full terms of service at:',
+              style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundDark,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: FlitColors.cardBorder),
+              ),
+              child: const SelectableText(
+                _termsUrl,
+                style: TextStyle(
+                  color: FlitColors.oceanHighlight,
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Copy the link above and open it in your browser.',
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 11,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text(
+              'Close',
+              style: TextStyle(color: FlitColors.accent),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: () => _showTermsDialog(context),
+    child: const Text(
+      'Terms of Service',
       style: TextStyle(
         color: FlitColors.textMuted,
         fontSize: 11,
