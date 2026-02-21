@@ -307,6 +307,12 @@ class UserPreferencesSnapshot {
           ? Duration(milliseconds: p['total_flight_time_ms'] as int)
           : Duration.zero,
       countriesFound: p['countries_found'] as int? ?? 0,
+      flagsCorrect: p['flags_correct'] as int? ?? 0,
+      capitalsCorrect: p['capitals_correct'] as int? ?? 0,
+      outlinesCorrect: p['outlines_correct'] as int? ?? 0,
+      bordersCorrect: p['borders_correct'] as int? ?? 0,
+      statsCorrect: p['stats_correct'] as int? ?? 0,
+      bestStreak: p['best_streak'] as int? ?? 0,
       createdAt: p['created_at'] != null
           ? DateTime.tryParse(p['created_at'] as String)
           : null,
@@ -331,15 +337,23 @@ class UserPreferencesSnapshot {
 
   PilotLicense toPilotLicense() {
     final data = accountState;
-    if (data == null) return PilotLicense.random();
+    if (data == null) {
+      // No account_state row at all — genuinely new account.
+      return PilotLicense.random();
+    }
     final json = data['license_data'];
     if (json is Map<String, dynamic> && json.isNotEmpty) {
       try {
         return PilotLicense.fromJson(json);
-      } catch (_) {
+      } catch (e) {
+        // Parse failed — log but preserve what we can. Don't silently
+        // replace an existing license with a random one.
+        debugPrint('[UserPreferencesService] toPilotLicense parse error: $e');
         return PilotLicense.random();
       }
     }
+    // license_data key is missing or empty — first time after account_state
+    // row was created. Generate a new license for this new player.
     return PilotLicense.random();
   }
 
