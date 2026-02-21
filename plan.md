@@ -297,30 +297,30 @@ Full result screen with pilot cards (name, flag, rank, plane), score display, pe
 
 ### Priority 4 — Technical Debt & Polish
 
-#### Input Validation Constraints
-- Add PostgreSQL CHECK constraints on `profiles.username`, `scores.score`, `scores.time_ms`
-- Currently only validated client-side
-
-#### Error Telemetry Privacy
+#### 4a. Error Telemetry Privacy
 - Strip or coarsen `navigator.userAgent` in web error payloads
 - Scrub URL query parameters from `context.url` before sending
 - Verify `logs/runtime-errors.jsonl` is not in a public repo (or move to private storage)
 
-#### Offline Resilience
+#### 4b. Input Validation Constraints
+- Add PostgreSQL CHECK constraints on `profiles.username`, `scores.score`, `scores.time_ms`
+- Currently only validated client-side — server-side constraints prevent bad data from any source
+
+#### 4c. Offline Resilience
 - Queue failed Supabase writes for retry on reconnection
 - Add a persistent local queue (SharedPreferences or SQLite)
 
-#### Performance Profiling
-- Profile shader performance on target devices (iPhone 12, Pixel 6)
-- Measure LOD switching behavior
-- Validate 60fps sustained across all platforms
-- Asset bundle size audit (textures ~5MB uncompressed)
-
-#### Test Coverage
+#### 4d. Test Coverage
 - Add unit tests for Supabase service layer (mock client)
 - Tests for sync debounce logic
 - Tests for offline fallback behavior
 - Current: 15 test files covering core game logic
+
+#### 4e. Performance Profiling
+- Profile shader performance on target devices (iPhone 12, Pixel 6)
+- Measure LOD switching behavior
+- Validate 60fps sustained across all platforms
+- Asset bundle size audit (textures ~5MB uncompressed)
 
 ---
 
