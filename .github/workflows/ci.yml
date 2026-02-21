@@ -218,6 +218,32 @@ jobs:
             echo "Site is live and returning 200 OK."
           fi
 
+  # ── Deploy to Vercel (only after CI passes on main) ──
+  deploy-vercel:
+    name: Deploy Vercel
+    needs: [build-web, build-android]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Trigger Vercel production deployment
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$VERCEL_DEPLOY_HOOK" ]; then
+            echo "::warning::VERCEL_DEPLOY_HOOK secret not set — skipping Vercel deploy"
+            exit 0
+          fi
+
+          echo "Triggering Vercel production deployment (CI passed)..."
+          HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" -X POST "$VERCEL_DEPLOY_HOOK")
+
+          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 201 ]; then
+            echo "Vercel deployment triggered successfully (HTTP ${HTTP_STATUS})"
+          else
+            echo "::error::Vercel deploy hook returned HTTP ${HTTP_STATUS}"
+            exit 1
+          fi
+
   # ── Update App Version (v1.<PR_count>) ──
   update-version:
     name: Update Version

@@ -4,9 +4,7 @@
   "outputDirectory": "",
   "framework": null,
   "git": {
-    "deploymentEnabled": {
-      "main": true
-    }
+    "deploymentEnabled": false
   },
   "functions": {
     "api/errors/index.js": {

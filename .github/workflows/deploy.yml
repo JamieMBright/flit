@@ -1,4 +1,8 @@
-name: Deploy Vercel (Scheduled)
+name: Deploy Vercel (Scheduled / Manual)
+
+# NOTE: Primary Vercel deployments are triggered by ci.yml after CI passes on main.
+# This workflow is only for scheduled re-deploys and manual triggers.
+# Automatic Git-based Vercel deployments are DISABLED in vercel.json.
 
 on:
   schedule:
