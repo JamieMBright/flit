@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Flit Terms of Service — the rules and conditions for using the Flit geography flight game.">
+  <title>Terms of Service — Flit</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0A1620;
+      --surface:      #1A2A32;
+      --surface2:     #1E3340;
+      --border:       #3A5060;
+      --text:         #F0E8DC;
+      --text-sec:     #B8A890;
+      --text-muted:   #7A6E5E;
+      --accent:       #E87A5A;
+      --gold:         #D4A944;
+      --ocean:        #2A5674;
+      --link:         #4A90B8;
+    }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 40px 24px 32px;
+      text-align: center;
+    }
+
+    .logo-wordmark {
+      font-size: 2.5rem;
+      font-weight: 900;
+      letter-spacing: 0.25em;
+      color: var(--text);
+      text-transform: uppercase;
+    }
+
+    .logo-tagline {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .page-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      color: var(--text-sec);
+      text-transform: uppercase;
+      margin-top: 24px;
+    }
+
+    .last-updated {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* ── Layout ── */
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section + .section {
+      border-top: 1px solid var(--border);
+      padding-top: 40px;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 0.95rem;
+      color: var(--text-sec);
+      margin-bottom: 12px;
+    }
+
+    p:last-child { margin-bottom: 0; }
+
+    ul, ol {
+      padding-left: 20px;
+      margin-bottom: 12px;
+    }
+
+    li {
+      font-size: 0.95rem;
+      color: var(--text-sec);
+      margin-bottom: 6px;
+    }
+
+    strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    a {
+      color: var(--link);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    a:hover { color: var(--text); }
+
+    /* ── Info cards ── */
+    .card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-top: 16px;
+    }
+
+    .card p { margin-bottom: 6px; }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ── Highlight strip ── */
+    .highlight {
+      border-left: 3px solid var(--gold);
+      padding-left: 16px;
+      margin: 16px 0;
+    }
+
+    .highlight p { color: var(--text-sec); }
+
+    /* ── Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      font-size: 0.9rem;
+    }
+
+    th {
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      color: var(--text-sec);
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(58, 80, 96, 0.5);
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(212, 169, 68, 0.15);
+      color: var(--gold);
+      border: 1px solid rgba(212, 169, 68, 0.3);
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 32px 24px;
+    }
+
+    footer p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .logo-wordmark { font-size: 2rem; }
+      main { padding: 32px 16px 60px; }
+      table { font-size: 0.82rem; }
+      th, td { padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-wordmark">Flit</div>
+    <div class="logo-tagline">A Geographical Adventure</div>
+    <div class="page-title">Terms of Service</div>
+    <div class="last-updated">Last updated: February 2026</div>
+  </header>
+
+  <main>
+
+    <!-- 1. Acceptance of Terms -->
+    <div class="section">
+      <h2>1. Acceptance of Terms</h2>
+      <p>
+        By downloading, installing, or playing <strong>Flit</strong> ("the Game"), or by creating an
+        account, you agree to be bound by these Terms of Service ("Terms"). If you do not agree to
+        these Terms, do not use the Game.
+      </p>
+      <p>
+        These Terms constitute a legally binding agreement between you and the developer of Flit
+        ("we", "us", or "our"). We reserve the right to update these Terms at any time. Continued
+        use of the Game after any update constitutes acceptance of the revised Terms.
+      </p>
+      <div class="highlight">
+        <p>
+          <strong>Age requirement:</strong> You must be at least 13 years old to create an account
+          and use Flit. If you are under 13, you may only use the Game with verifiable parental or
+          guardian consent. See our <a href="privacy.html">Privacy Policy</a> for details on
+          how we handle data for younger users.
+        </p>
+      </div>
+    </div>
+
+    <!-- 2. Description of Service -->
+    <div class="section">
+      <h2>2. Description of Service</h2>
+      <p>
+        Flit is an immersive geography-based flight game available on iOS, Android, and the web.
+        Players pilot a virtual aircraft across a rendered globe, identifying countries, cities, and
+        geographic features from aerial clues. The Game uses real satellite imagery (NASA Blue Marble,
+        public domain) and open-licence geographic data to deliver an educational and entertaining
+        experience.
+      </p>
+      <p>
+        An account is required to play. There is no guest mode. Your account saves progress, scores,
+        and statistics across all your devices.
+      </p>
+      <p>
+        We reserve the right to modify, suspend, or discontinue the Game or any part of it at any
+        time, with or without notice. We are not liable to you or any third party for any
+        modification, suspension, or discontinuation of the service.
+      </p>
+    </div>
+
+    <!-- 3. User Accounts -->
+    <div class="section">
+      <h2>3. User Accounts</h2>
+      <p>
+        To play Flit you must create an account using a valid email address and password. You are
+        responsible for maintaining the confidentiality of your account credentials and for all
+        activity that occurs under your account.
+      </p>
+      <ul>
+        <li>You must provide accurate and complete information when creating your account.</li>
+        <li>You may not share your account or credentials with any other person.</li>
+        <li>You must notify us immediately if you suspect unauthorised access to your account.</li>
+        <li>
+          You may delete your account at any time from the Profile screen within the app. Account
+          deletion permanently removes your email, username, and all associated game data within
+          30 days.
+        </li>
+        <li>
+          We reserve the right to suspend or terminate accounts that violate these Terms, without
+          prior notice.
+        </li>
+      </ul>
+    </div>
+
+    <!-- 4. User Conduct -->
+    <div class="section">
+      <h2>4. User Conduct</h2>
+      <p>
+        You agree to use Flit only for lawful purposes and in a manner consistent with these Terms.
+        You must not:
+      </p>
+      <ul>
+        <li>
+          <strong>Cheat or exploit</strong> — Use hacks, bots, scripts, modified clients, or any
+          automated means to gain an unfair advantage in the Game or to manipulate scores and
+          leaderboards.
+        </li>
+        <li>
+          <strong>Use inappropriate usernames</strong> — Your username must not contain hate speech,
+          slurs, profanity, sexually explicit language, or content that impersonates another person
+          or entity. We may change or remove usernames that violate this rule without notice.
+        </li>
+        <li>
+          <strong>Abuse or harass</strong> — Use the Game or any associated features to harass,
+          threaten, intimidate, or otherwise harm other users.
+        </li>
+        <li>
+          <strong>Reverse-engineer</strong> — Attempt to decompile, disassemble, or reverse-engineer
+          any part of the Game, including shaders, game logic, or server-side code.
+        </li>
+        <li>
+          <strong>Interfere with the service</strong> — Take any action that disrupts or overloads
+          the servers or networks supporting Flit, including denial-of-service attacks.
+        </li>
+        <li>
+          <strong>Commercially exploit</strong> — Sell, rent, or otherwise commercially exploit any
+          part of the Game without our prior written consent.
+        </li>
+      </ul>
+      <p>
+        Violation of these rules may result in immediate account termination and, where applicable,
+        reporting to relevant legal authorities.
+      </p>
+    </div>
+
+    <!-- 5. Virtual Currency -->
+    <div class="section">
+      <h2>5. Virtual Currency &amp; In-Game Items</h2>
+      <p>
+        Flit may include an in-game currency ("Coins") and other virtual items earned through
+        gameplay. The following terms apply to all virtual currency and items:
+      </p>
+      <div class="card">
+        <p>
+          <strong>No real-money value.</strong> Coins and virtual items are provided for use
+          within the Game only. They have no monetary value outside the Game, cannot be exchanged
+          for real money, goods, or services, and are not transferable between accounts.
+        </p>
+      </div>
+      <ul>
+        <li>Virtual currency and items are licensed to you, not sold. You do not own them.</li>
+        <li>
+          We may modify, reset, or remove virtual currency or items at any time — including in
+          response to exploits or changes to game balance — without compensation.
+        </li>
+        <li>
+          If your account is terminated for violation of these Terms, any accumulated virtual
+          currency or items will be forfeited without refund.
+        </li>
+        <li>
+          Any in-app purchases (if offered) are subject to the applicable platform's terms
+          (Apple App Store or Google Play). All sales are final except as required by applicable law.
+        </li>
+      </ul>
+    </div>
+
+    <!-- 6. Intellectual Property -->
+    <div class="section">
+      <h2>6. Intellectual Property</h2>
+      <p>
+        All game content — including but not limited to code, shaders, artwork, UI design, sound,
+        and game mechanics — is owned by the developer of Flit and is protected by applicable
+        copyright, trademark, and other intellectual property laws. You may not reproduce,
+        distribute, or create derivative works from any game content without our express written
+        permission.
+      </p>
+      <div class="highlight">
+        <p>
+          <strong>Third-party assets with open licences:</strong> Flit uses satellite imagery from
+          NASA (Blue Marble, Earth at Night) and elevation data from ETOPO, all of which are in the
+          public domain. Geographic boundary data is sourced from Natural Earth (public domain) and
+          OpenStreetMap (ODbL). Place name data is sourced from GeoNames (CC-BY). These assets are
+          used in accordance with their respective licences. Third-party licence terms do not grant
+          you any additional rights to the Game as a whole.
+        </p>
+      </div>
+      <p>
+        By creating an account you grant us a non-exclusive, royalty-free licence to store and
+        display your username and display name in connection with in-game leaderboards and similar
+        game features.
+      </p>
+    </div>
+
+    <!-- 7. Data Collection -->
+    <div class="section">
+      <h2>7. Data Collection &amp; Privacy</h2>
+      <p>
+        Your use of Flit is also governed by our
+        <a href="privacy.html">Privacy Policy</a>, which is incorporated into these Terms by
+        reference. By agreeing to these Terms, you also agree to the Privacy Policy.
+      </p>
+      <p>
+        In summary: we collect only what is necessary to run the Game — your email address,
+        username, and game statistics. We do not sell your data, serve advertising, or use
+        third-party analytics SDKs. Error telemetry contains no personally identifiable information.
+      </p>
+      <p>
+        You can view, export, or permanently delete all your data at any time from the Profile screen
+        within the app. For full details, please read the
+        <a href="privacy.html">Privacy Policy</a>.
+      </p>
+    </div>
+
+    <!-- 8. Disclaimers -->
+    <div class="section">
+      <h2>8. Disclaimers</h2>
+      <p>
+        The Game is provided on an <strong>"as is" and "as available"</strong> basis, without
+        warranties of any kind, either express or implied, including but not limited to warranties
+        of merchantability, fitness for a particular purpose, or non-infringement.
+      </p>
+      <p>
+        We do not warrant that the Game will be uninterrupted, error-free, or free of viruses or
+        other harmful components. Geographic data is provided for entertainment purposes only and
+        may not reflect current political boundaries, place names, or real-world conditions. It
+        should not be relied upon for navigation or any other practical purpose.
+      </p>
+      <p>
+        Satellite imagery and geographic data are sourced from publicly available datasets (NASA,
+        Natural Earth, OSM, GeoNames) and are used in good faith. We make no warranty as to their
+        accuracy, completeness, or currency.
+      </p>
+    </div>
+
+    <!-- 9. Limitation of Liability -->
+    <div class="section">
+      <h2>9. Limitation of Liability</h2>
+      <p>
+        To the fullest extent permitted by applicable law, we shall not be liable for any indirect,
+        incidental, special, consequential, or punitive damages, including but not limited to loss
+        of profits, data, goodwill, or other intangible losses, arising out of or in connection with:
+      </p>
+      <ul>
+        <li>Your access to or use of (or inability to access or use) the Game;</li>
+        <li>Any conduct or content of any third party in connection with the Game;</li>
+        <li>Unauthorised access to or alteration of your account or data;</li>
+        <li>Deletion, corruption, or failure to store any account data or game progress;</li>
+        <li>Any other matter relating to the Game.</li>
+      </ul>
+      <p>
+        Our total aggregate liability for any claims arising under these Terms shall not exceed the
+        greater of (a) the amount you paid us in the twelve months preceding the claim, or (b)
+        USD $10.
+      </p>
+      <p>
+        Some jurisdictions do not allow the exclusion of certain warranties or the limitation of
+        liability, so some of the above limitations may not apply to you.
+      </p>
+    </div>
+
+    <!-- 10. Termination -->
+    <div class="section">
+      <h2>10. Termination</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Who</th>
+            <th>How</th>
+            <th>Effect</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>You</strong></td>
+            <td>Delete your account from the Profile screen at any time</td>
+            <td>Account and all associated data permanently removed within 30 days</td>
+          </tr>
+          <tr>
+            <td><strong>Us</strong></td>
+            <td>We may suspend or terminate your account for any breach of these Terms</td>
+            <td>Immediate loss of access; virtual currency and items are forfeited</td>
+          </tr>
+          <tr>
+            <td><strong>Service shutdown</strong></td>
+            <td>We may discontinue the Game with reasonable notice where practicable</td>
+            <td>Accounts and data deleted in accordance with the Privacy Policy</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p style="margin-top: 16px;">
+        Sections 6 (Intellectual Property), 8 (Disclaimers), 9 (Limitation of Liability), and any
+        other provisions that by their nature should survive termination will survive the expiry
+        or termination of these Terms.
+      </p>
+    </div>
+
+    <!-- 11. Changes to Terms -->
+    <div class="section">
+      <h2>11. Changes to These Terms</h2>
+      <p>
+        We may revise these Terms from time to time. When we do, we will update the "Last updated"
+        date at the top of this page. For material changes we will make reasonable efforts to notify
+        you — for example, by sending an email to the address associated with your account or by
+        displaying a notice within the Game.
+      </p>
+      <p>
+        Your continued use of Flit after any change to these Terms constitutes your acceptance of
+        the updated Terms. If you do not agree to the revised Terms, you must stop using the Game
+        and delete your account.
+      </p>
+    </div>
+
+    <!-- 12. Contact -->
+    <div class="section">
+      <h2>12. Contact</h2>
+      <p>
+        If you have any questions about these Terms, wish to report a violation, or need to reach
+        us for any other reason, please contact us at:
+      </p>
+      <div class="card">
+        <p><strong>Email:</strong> <a href="mailto:jamiebright1@gmail.com">jamiebright1@gmail.com</a></p>
+        <p><strong>App:</strong> Flit — A Geographical Adventure</p>
+        <p><strong>Website:</strong> <a href="https://flit-olive.vercel.app" target="_blank" rel="noopener">flit-olive.vercel.app</a></p>
+      </div>
+      <p style="margin-top: 16px;">
+        For privacy-specific enquiries, please refer to our
+        <a href="privacy.html">Privacy Policy</a> or contact us at the address above.
+      </p>
+    </div>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Flit. All rights reserved.</p>
+    <p>
+      <a href="https://flit-olive.vercel.app">Back to Flit</a>
+      &nbsp;&middot;&nbsp;
+      <a href="privacy.html">Privacy Policy</a>
+    </p>
+  </footer>
+
+</body>
+</html>

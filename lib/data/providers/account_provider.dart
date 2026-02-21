@@ -183,6 +183,13 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// The user ID for the current session (used by periodic refresh).
   String? _userId;
 
+  /// Guard flag: prevents writes to Supabase until [loadFromSupabase] has
+  /// successfully completed at least once for this session. Without this,
+  /// the constructor's default `PilotLicense.random()` could be persisted
+  /// to Supabase if any user action triggers [_syncAccountState] before
+  /// the real data is loaded — causing the license stats reset bug.
+  bool _supabaseLoaded = false;
+
   /// Load full account state from Supabase and hydrate all providers.
   ///
   /// Called after auth completes. Clears any stale dirty flags from a
@@ -222,6 +229,10 @@ class AccountNotifier extends StateNotifier<AccountState> {
       dailyStreak: snapshot.toDailyStreak(),
       lastDailyResult: snapshot.toLastDailyResult(),
     );
+
+    // Mark Supabase data as loaded — enables writes. Must happen AFTER
+    // state is set so the first write contains real data, not defaults.
+    _supabaseLoaded = true;
 
     // Hydrate GameSettings from Supabase data without triggering writes back.
     GameSettings.instance.hydrateFrom(
@@ -277,6 +288,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _refreshTimer?.cancel();
     _refreshTimer = null;
     _userId = null;
+    _supabaseLoaded = false;
     _prefs.clear();
   }
 
@@ -300,10 +312,12 @@ class AccountNotifier extends StateNotifier<AccountState> {
   // ── Internal sync helpers ────────────────────────────────────────────
 
   void _syncProfile() {
+    if (!_supabaseLoaded) return;
     _prefs.saveProfile(state.currentPlayer);
   }
 
   void _syncAccountState() {
+    if (!_supabaseLoaded) return;
     _prefs.saveAccountState(
       avatar: state.avatar,
       license: state.license,

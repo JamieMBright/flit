@@ -113,7 +113,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
     ),
   );
 
-  void _onPlay() {
+  Future<void> _onPlay() async {
     final reward = _challenge.coinReward;
     final planeId = ref.read(equippedPlaneIdProvider);
     final plane = CosmeticCatalog.getById(planeId);
@@ -123,7 +123,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
     final license = account.license;
     final contrailId = ref.read(accountProvider).equippedContrailId;
     final contrail = CosmeticCatalog.getById(contrailId);
-    Navigator.of(context).push(
+    await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => PlayScreen(
           region: GameRegion.world,
@@ -160,6 +160,8 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
         ),
       ),
     );
+    // Refresh leaderboard data after returning from the game.
+    if (mounted) _loadData();
   }
 }
 
@@ -1194,6 +1196,16 @@ class _PlayButton extends StatelessWidget {
 // Completed Banner (shown when daily challenge already done today)
 // =============================================================================
 
+/// Maps a [DailyRoundResult] to its corresponding display color.
+/// Kept as a top-level function because [_CompletedBanner] is a
+/// [ConsumerWidget] and cannot have static helper methods.
+Color _roundColor(DailyRoundResult round) {
+  if (!round.completed) return const Color(0xFFCC4444); // red
+  if (round.hintsUsed == 0) return FlitColors.success; // green
+  if (round.hintsUsed <= 2) return FlitColors.gold; // yellow
+  return FlitColors.accent; // orange
+}
+
 class _CompletedBanner extends ConsumerWidget {
   const _CompletedBanner();
 
@@ -1241,10 +1253,26 @@ class _CompletedBanner extends ConsumerWidget {
                   ),
                   if (lastResult != null) ...[
                     const SizedBox(height: 10),
-                    // Emoji row
-                    Text(
-                      lastResult.rounds.map((r) => r.emoji).join(),
-                      style: const TextStyle(fontSize: 24),
+                    // Round result circles (Flutter Container widgets avoid
+                    // iOS emoji rendering issues with Unicode colored circles)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (var i = 0; i < lastResult.totalRounds; i++)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: i < lastResult.rounds.length
+                                    ? _roundColor(lastResult.rounds[i])
+                                    : const Color(0xFFCC4444),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(

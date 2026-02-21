@@ -562,7 +562,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// position and heading, giving a smooth "correct! next clue" feel.
   void _advanceRound() {
     _timer?.cancel();
-    _session?.complete();
+    final fuelFrac = _game.maxFuel > 0 ? _game.fuel / _game.maxFuel : 1.0;
+    _session?.complete(hintsUsed: _hintTier, fuelFraction: fuelFrac);
     _totalScore += _session?.score ?? 0;
     _cumulativeTime += _elapsed;
 
@@ -667,7 +668,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
   void _completeLanding({bool fuelDepleted = false}) {
     _timer?.cancel();
-    _session?.complete();
+    final fuelFrac = fuelDepleted
+        ? 0.0
+        : (_game.maxFuel > 0 ? _game.fuel / _game.maxFuel : 1.0);
+    _session?.complete(hintsUsed: _hintTier, fuelFraction: fuelFrac);
     _totalScore += _session?.score ?? 0;
     _cumulativeTime += _elapsed;
     AudioManager.instance.playSfx(SfxType.landingSuccess);
@@ -977,7 +981,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   void _recordAbort() {
     _timer?.cancel();
     _autoHintTimer?.cancel();
-    _session?.complete();
+    _session?.complete(hintsUsed: 4, fuelFraction: 0.0);
     _cumulativeTime += _elapsed;
 
     // Record the current in-progress round as a failed round.

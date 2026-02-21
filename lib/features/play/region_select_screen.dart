@@ -97,13 +97,17 @@ class RegionSelectScreen extends ConsumerWidget {
                 final cost = unlockCost(region);
                 final canAfford = coins >= cost && cost > 0;
 
-                return _RegionCard(
-                  region: region,
-                  isUnlocked: isUnlocked,
-                  playerLevel: playerLevel,
-                  unlockCost: cost,
-                  canBuy: !isUnlocked && canAfford,
-                  onTap: isUnlocked
+                final isAdmin = accountState.isAdmin;
+                final isWorld = region == GameRegion.world;
+
+                // For non-admin users, non-World regions are gated behind a
+                // "Coming Soon" dialog regardless of unlock / purchase state.
+                VoidCallback? tapHandler;
+                VoidCallback? buyHandler;
+
+                if (isAdmin) {
+                  // Admin: full existing behaviour.
+                  tapHandler = isUnlocked
                       ? () {
                           final planeId = ref.read(equippedPlaneIdProvider);
                           final plane = CosmeticCatalog.getById(planeId);
@@ -147,10 +151,78 @@ class RegionSelectScreen extends ConsumerWidget {
                             ),
                           );
                         }
-                      : null,
-                  onBuy: (!isUnlocked && canAfford)
+                      : null;
+                  buyHandler = (!isUnlocked && canAfford)
                       ? () => _showUnlockDialog(context, ref, region, cost)
-                      : null,
+                      : null;
+                } else if (isWorld) {
+                  // Regular user, World region: normal play flow (always unlocked).
+                  tapHandler = isUnlocked
+                      ? () {
+                          final planeId = ref.read(equippedPlaneIdProvider);
+                          final plane = CosmeticCatalog.getById(planeId);
+                          final account = ref.read(accountProvider);
+                          final companion = account.avatar.companion;
+                          final fuelBoost = ref
+                              .read(accountProvider.notifier)
+                              .fuelBoostMultiplier;
+                          final license = account.license;
+                          final contrailId = ref
+                              .read(accountProvider)
+                              .equippedContrailId;
+                          final contrail = CosmeticCatalog.getById(contrailId);
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute<void>(
+                              builder: (context) => PlayScreen(
+                                region: region,
+                                planeColorScheme: plane?.colorScheme,
+                                planeWingSpan: plane?.wingSpan,
+                                equippedPlaneId: planeId,
+                                companionType: companion,
+                                fuelBoostMultiplier: fuelBoost,
+                                clueBoost: license.clueBoost,
+                                clueChance: license.clueChance,
+                                preferredClueType: license.preferredClueType,
+                                planeHandling: plane?.handling ?? 1.0,
+                                planeSpeed: plane?.speed ?? 1.0,
+                                planeFuelEfficiency:
+                                    plane?.fuelEfficiency ?? 1.0,
+                                contrailPrimaryColor:
+                                    contrail?.colorScheme?['primary'] != null
+                                    ? Color(contrail!.colorScheme!['primary']!)
+                                    : null,
+                                contrailSecondaryColor:
+                                    contrail?.colorScheme?['secondary'] != null
+                                    ? Color(
+                                        contrail!.colorScheme!['secondary']!,
+                                      )
+                                    : null,
+                              ),
+                            ),
+                          );
+                        }
+                      : null;
+                  // World is always unlocked so buyHandler stays null.
+                } else {
+                  // Regular user, non-World region: show "Coming Soon" for both
+                  // tap (when nominally unlocked) and buy button.
+                  tapHandler = isUnlocked
+                      ? () => _showComingSoonDialog(context, region)
+                      : null;
+                  buyHandler = (!isUnlocked && canAfford)
+                      ? () => _showComingSoonDialog(context, region)
+                      : null;
+                }
+
+                return _RegionCard(
+                  region: region,
+                  isUnlocked: isUnlocked,
+                  playerLevel: playerLevel,
+                  unlockCost: cost,
+                  canBuy: !isUnlocked && canAfford,
+                  isAdmin: isAdmin,
+                  onTap: tapHandler,
+                  onBuy: buyHandler,
                 );
               },
             ),
@@ -221,6 +293,34 @@ class RegionSelectScreen extends ConsumerWidget {
       ),
     );
   }
+
+  void _showComingSoonDialog(BuildContext context, GameRegion region) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Coming Soon',
+          style: TextStyle(color: FlitColors.textPrimary),
+        ),
+        content: Text(
+          '${region.displayName} is coming soon! Stay tuned.',
+          style: const TextStyle(color: FlitColors.textPrimary),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FlitColors.accent,
+              foregroundColor: FlitColors.textPrimary,
+            ),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _RegionCard extends StatelessWidget {
@@ -230,6 +330,7 @@ class _RegionCard extends StatelessWidget {
     required this.playerLevel,
     required this.unlockCost,
     required this.canBuy,
+    required this.isAdmin,
     this.onTap,
     this.onBuy,
   });
@@ -239,8 +340,12 @@ class _RegionCard extends StatelessWidget {
   final int playerLevel;
   final int unlockCost;
   final bool canBuy;
+  final bool isAdmin;
   final VoidCallback? onTap;
   final VoidCallback? onBuy;
+
+  /// Whether to show the "COMING SOON" badge on this card.
+  bool get _showComingSoonBadge => !isAdmin && region != GameRegion.world;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -251,123 +356,157 @@ class _RegionCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isUnlocked ? FlitColors.cardBorder : FlitColors.textMuted,
-            ),
-          ),
-          child: Row(
-            children: [
-              // Region icon
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
+        child: Stack(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
                   color: isUnlocked
-                      ? FlitColors.accent.withOpacity(0.2)
-                      : FlitColors.backgroundMid,
-                  borderRadius: BorderRadius.circular(12),
+                      ? FlitColors.cardBorder
+                      : FlitColors.textMuted,
                 ),
-                child: Center(
-                  child: Icon(
-                    _getRegionIcon(region),
-                    size: 32,
+              ),
+              child: Row(
+                children: [
+                  // Region icon
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: isUnlocked
+                          ? FlitColors.accent.withOpacity(0.2)
+                          : FlitColors.backgroundMid,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        _getRegionIcon(region),
+                        size: 32,
+                        color: isUnlocked
+                            ? FlitColors.accent
+                            : FlitColors.textMuted,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Region info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          region.displayName,
+                          style: TextStyle(
+                            color: isUnlocked
+                                ? FlitColors.textPrimary
+                                : FlitColors.textMuted,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          region.description,
+                          style: TextStyle(
+                            color: isUnlocked
+                                ? FlitColors.textSecondary
+                                : FlitColors.textMuted,
+                            fontSize: 14,
+                          ),
+                        ),
+                        if (!isUnlocked) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.lock,
+                                size: 14,
+                                color: FlitColors.warning,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Unlocks at Level ${region.requiredLevel}',
+                                style: const TextStyle(
+                                  color: FlitColors.warning,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (canBuy) ...[
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: onBuy,
+                                icon: const Icon(
+                                  Icons.monetization_on,
+                                  size: 16,
+                                ),
+                                label: Text(
+                                  'BUY FOR $unlockCost COINS',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: FlitColors.gold,
+                                  foregroundColor: FlitColors.backgroundDark,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ],
+                    ),
+                  ),
+                  // Arrow or lock
+                  Icon(
+                    isUnlocked ? Icons.chevron_right : Icons.lock,
                     color: isUnlocked
-                        ? FlitColors.accent
+                        ? FlitColors.textSecondary
                         : FlitColors.textMuted,
+                  ),
+                ],
+              ),
+            ),
+            // "COMING SOON" badge — shown for non-World regions for regular users.
+            if (_showComingSoonBadge)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: FlitColors.accent.withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'COMING SOON',
+                    style: TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
-              // Region info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      region.displayName,
-                      style: TextStyle(
-                        color: isUnlocked
-                            ? FlitColors.textPrimary
-                            : FlitColors.textMuted,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      region.description,
-                      style: TextStyle(
-                        color: isUnlocked
-                            ? FlitColors.textSecondary
-                            : FlitColors.textMuted,
-                        fontSize: 14,
-                      ),
-                    ),
-                    if (!isUnlocked) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.lock,
-                            size: 14,
-                            color: FlitColors.warning,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Unlocks at Level ${region.requiredLevel}',
-                            style: const TextStyle(
-                              color: FlitColors.warning,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (canBuy) ...[
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: onBuy,
-                            icon: const Icon(Icons.monetization_on, size: 16),
-                            label: Text(
-                              'BUY FOR $unlockCost COINS',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: FlitColors.gold,
-                              foregroundColor: FlitColors.backgroundDark,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ],
-                ),
-              ),
-              // Arrow or lock
-              Icon(
-                isUnlocked ? Icons.chevron_right : Icons.lock,
-                color: isUnlocked
-                    ? FlitColors.textSecondary
-                    : FlitColors.textMuted,
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     ),

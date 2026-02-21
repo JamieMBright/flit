@@ -542,6 +542,88 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // License persistence — Supabase load guard
+  // -------------------------------------------------------------------------
+
+  group('License persistence guard', () {
+    test('toPilotLicense preserves saved license from valid account_state', () {
+      final license = const PilotLicense(
+        coinBoost: 12,
+        clueBoost: 18,
+        clueChance: 7,
+        fuelBoost: 22,
+        preferredClueType: 'capital',
+        nationality: 'US',
+      );
+      final snapshot = UserPreferencesSnapshot(
+        profile: _baseProfile(),
+        accountState: {
+          'user_id': 'user-123',
+          'license_data': license.toJson(),
+          'avatar_config': null,
+          'unlocked_regions': <String>[],
+          'owned_avatar_parts': <String>[],
+          'equipped_plane_id': 'plane_default',
+          'equipped_contrail_id': 'contrail_default',
+          'equipped_title_id': null,
+          'last_free_reroll_date': null,
+          'last_daily_challenge_date': null,
+        },
+      );
+      final restored = snapshot.toPilotLicense();
+
+      expect(restored.coinBoost, equals(12));
+      expect(restored.clueBoost, equals(18));
+      expect(restored.clueChance, equals(7));
+      expect(restored.fuelBoost, equals(22));
+      expect(restored.preferredClueType, equals('capital'));
+      expect(restored.nationality, equals('US'));
+    });
+
+    test(
+      'toPilotLicense returns random when account_state has no license_data',
+      () {
+        final snapshot = UserPreferencesSnapshot(
+          profile: _baseProfile(),
+          accountState: {
+            'user_id': 'user-123',
+            'license_data': null,
+            'avatar_config': null,
+            'unlocked_regions': <String>[],
+            'owned_avatar_parts': <String>[],
+            'equipped_plane_id': 'plane_default',
+            'equipped_contrail_id': 'contrail_default',
+            'equipped_title_id': null,
+            'last_free_reroll_date': null,
+            'last_daily_challenge_date': null,
+          },
+        );
+        final license = snapshot.toPilotLicense();
+
+        // Should be a valid random license
+        expect(license.coinBoost, inInclusiveRange(1, 25));
+        expect(license.clueBoost, inInclusiveRange(1, 25));
+        expect(license.fuelBoost, inInclusiveRange(1, 25));
+      },
+    );
+
+    test('toPilotLicense nationality is preserved through serialization', () {
+      const license = PilotLicense(
+        coinBoost: 5,
+        clueBoost: 5,
+        clueChance: 5,
+        fuelBoost: 5,
+        preferredClueType: 'flag',
+        nationality: 'JP',
+      );
+      final json = license.toJson();
+      final restored = PilotLicense.fromJson(json);
+
+      expect(restored.nationality, equals('JP'));
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // UserPreferencesSnapshot settings accessors
   // -------------------------------------------------------------------------
 

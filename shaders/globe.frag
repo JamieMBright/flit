@@ -596,15 +596,16 @@ void main() {
         // Camera altitude modulates border width only (not visibility)
         float camAlt = length(uCameraPos) - uGlobeRadius;
 
-        // Border width: thicker when close, thinner when far away
-        float borderWidth = mix(0.14, 0.05, smoothstep(0.3, 3.0, camAlt));
+        // Border width: thicker when close, thinner when far away.
+        // Minimum width of 0.10 ensures borders stay visible at max zoom-out.
+        float borderWidth = mix(0.14, 0.10, smoothstep(0.3, 3.0, camAlt));
 
         // Anti-aliased border line (smooth falloff at edges)
         float borderLine = 1.0 - smoothstep(0.0, borderWidth, borderDist);
 
-        // Borders always visible: constant white, unaffected by day/night
-        // Slight brightness lift on night side so borders stay readable
-        float borderAlpha = borderLine * 0.8;
+        // Borders always visible: constant white, unaffected by day/night.
+        // Alpha floor of 0.3 prevents borders from vanishing at distance.
+        float borderAlpha = max(borderLine * 0.8, borderLine * 0.3);
         vec3 borderColor = vec3(1.0, 1.0, 1.0);
 
         surfaceColor = mix(surfaceColor, borderColor, borderAlpha);

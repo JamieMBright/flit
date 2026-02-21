@@ -48,6 +48,24 @@ dev_dependencies:
   # Linting
   flutter_lints: ^3.0.1
 
+  # App Icon Generation (cross-platform: iOS, Android, Web)
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  web: true
+  image_path: "assets/icon/app_icon.png"
+  min_sdk_android: 21
+  remove_alpha_ios: true
+  background_color_ios: "#1a1a2e"
+  ios:
+    generate: true
+  web:
+    generate: true
+    background_color: "#1a1a2e"
+    theme_color: "#1a1a2e"
+
 flutter:
   uses-material-design: true
 

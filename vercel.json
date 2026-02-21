@@ -16,6 +16,10 @@
     "api/health/index.js": {
       "memory": 128,
       "maxDuration": 5
+    },
+    "api/admin/stats.js": {
+      "memory": 256,
+      "maxDuration": 10
     }
   },
   "crons": [

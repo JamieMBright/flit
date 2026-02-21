@@ -27,24 +27,44 @@ class GameSession {
   bool _completed = false;
   List<Vector2> flightPath = [];
 
+  /// Hints used when this round was completed (set by [complete]).
+  int _hintsUsed = 0;
+
+  /// Fuel fraction (0.0–1.0) when this round was completed (set by [complete]).
+  double _fuelFraction = 1.0;
+
   /// Whether the session is complete
   bool get isCompleted => _completed;
 
   /// Time taken to complete (or current elapsed time)
   Duration get elapsed => (endTime ?? DateTime.now()).difference(startTime);
 
-  /// Score based on time (lower is better)
+  /// Score for this round.
+  ///
+  /// Formula:
+  ///   base     = 10,000 per round
+  ///   hints    = −1,000 per hint used (0–4 hints)
+  ///   fuel     = −up to 5,000 scaled linearly by fuel burned
+  ///             (100% fuel remaining = 0 penalty, 0% = −5,000)
+  ///
+  /// Result is clamped to [0, 10000].
   int get score {
     if (!_completed) return 0;
-    // Base score is 10000, minus 10 per second
-    final seconds = elapsed.inSeconds;
-    return max(0, 10000 - (seconds * 10));
+    const int base = 10000;
+    final int hintPenalty = _hintsUsed * 1000;
+    final int fuelPenalty = ((1.0 - _fuelFraction) * 5000).round();
+    return max(0, base - hintPenalty - fuelPenalty);
   }
 
-  /// Mark the session as completed
-  void complete() {
+  /// Mark the session as completed.
+  ///
+  /// [hintsUsed] — number of hint tiers used this round (0–4).
+  /// [fuelFraction] — fuel remaining as a fraction of max (0.0–1.0).
+  void complete({int hintsUsed = 0, double fuelFraction = 1.0}) {
     if (!_completed) {
       _completed = true;
+      _hintsUsed = hintsUsed;
+      _fuelFraction = fuelFraction.clamp(0.0, 1.0);
       endTime = DateTime.now();
     }
   }
