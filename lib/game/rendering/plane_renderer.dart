@@ -272,7 +272,7 @@ class PlaneRenderer {
           planeId,
         );
         break;
-      case 'plane_bryanair':
+      case 'plane_padraigaer':
         _renderAirliner(
           canvas,
           bankCos,
@@ -282,8 +282,8 @@ class PlaneRenderer {
           planeId,
         );
         break;
-      case 'plane_air_force_one':
-        _renderAirForceOne(
+      case 'plane_presidential':
+        _renderPresidential(
           canvas,
           bankCos,
           bankSin,
@@ -309,7 +309,7 @@ class PlaneRenderer {
     }
   }
 
-  // ─── Bi-Plane (default, prop, spitfire, lancaster) ──────────────────
+  // ─── Bi-Plane (default, prop, warbird, night raider) ────────────────
 
   static void _renderBiPlane(
     Canvas canvas,
@@ -1357,7 +1357,7 @@ class PlaneRenderer {
     );
   }
 
-  // ─── Airliner (Bryanair, Air Force One) ─────────────────────────────
+  // ─── Airliner (Padraigaer, Presidential) ────────────────────────────
 
   static void _renderAirliner(
     Canvas canvas,
@@ -1369,8 +1369,8 @@ class PlaneRenderer {
   ) {
     final rng = _sketchRng(planeId);
     final primary = _primary(colorScheme, 0xFFF5F5F5);
-    final secondary = _secondary(colorScheme, 0xFF003580);
-    final detail = _detail(colorScheme, 0xFFFFCC00);
+    final secondary = _secondary(colorScheme, 0xFF169B62);
+    final detail = _detail(colorScheme, 0xFFFF883E);
 
     final shade = -bankSin;
     final bodyShift = bankSin * 1.0;
@@ -1518,9 +1518,9 @@ class PlaneRenderer {
     }
   }
 
-  // ─── Air Force One (Presidential 747) ──────────────────────────────
+  // ─── Presidential (747-style) ──────────────────────────────────────
 
-  static void _renderAirForceOne(
+  static void _renderPresidential(
     Canvas canvas,
     double bankCos,
     double bankSin,
@@ -1538,7 +1538,7 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 2.0;
 
-    // Swept-back wings — wider and more authoritative than Bryanair
+    // Swept-back wings — wider and more authoritative than Padraigaer
     final leftWingColor = shade < 0
         ? primary
         : Color.lerp(primary, Colors.grey, 0.15)!;
@@ -1629,7 +1629,7 @@ class PlaneRenderer {
         ..strokeWidth = 1.2,
     );
 
-    // Wide presidential fuselage (larger than Bryanair)
+    // Wide presidential fuselage (larger than Padraigaer)
     final fuselagePath = Path()
       ..moveTo(bodyShift, -19)
       ..quadraticBezierTo(7 + bodyShift, -14, 7 + bodyShift, 0)
@@ -1649,7 +1649,7 @@ class PlaneRenderer {
       ..strokeJoin = StrokeJoin.round;
     _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.33);
 
-    // Presidential blue belly stripe (the iconic two-tone)
+    // Blue belly stripe (the iconic two-tone)
     final bellyStripe = Path()
       ..moveTo(bodyShift - 6, -2)
       ..quadraticBezierTo(bodyShift - 5, 8, bodyShift - 3, 16)
@@ -1658,7 +1658,7 @@ class PlaneRenderer {
       ..close();
     canvas.drawPath(bellyStripe, Paint()..color = secondary.withOpacity(0.4));
 
-    // Upper blue band (the distinctive Air Force One livery)
+    // Upper blue band (distinctive presidential livery)
     canvas.drawLine(
       Offset(bodyShift - 6.5, -4),
       Offset(bodyShift + 6.5, -4),
@@ -1703,7 +1703,7 @@ class PlaneRenderer {
       );
     }
 
-    // American flag accent at tail (small red-white-blue stripes)
+    // Flag accent at tail (small tricolour stripes)
     for (var i = 0; i < 3; i++) {
       final flagY = 13.0 + i * 1.5;
       final flagColor = i == 1 ? primary : (i == 0 ? secondary : detail);

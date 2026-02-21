@@ -66,10 +66,10 @@ void main() {
     });
 
     test('airliner uses correct cosmetic ID', () {
-      final bryanair = CosmeticCatalog.getById('plane_bryanair');
-      expect(bryanair, isNotNull);
-      expect(bryanair!.id, equals('plane_bryanair'));
-      expect(bryanair.wingSpan, equals(32.0));
+      final padraigaer = CosmeticCatalog.getById('plane_padraigaer');
+      expect(padraigaer, isNotNull);
+      expect(padraigaer!.id, equals('plane_padraigaer'));
+      expect(padraigaer.wingSpan, equals(32.0));
     });
 
     test('PlaneComponent stores equippedPlaneId correctly', () {
@@ -120,8 +120,8 @@ void main() {
         'plane_concorde_classic',
         'plane_diamond_concorde',
         'plane_seaplane',
-        'plane_bryanair',
-        'plane_air_force_one',
+        'plane_padraigaer',
+        'plane_presidential',
         'plane_golden_jet',
       };
 

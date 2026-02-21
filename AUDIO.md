@@ -24,9 +24,9 @@ and be **mono, OGG Vorbis, 44.1 kHz**.
 | File | Description | Plane IDs | Suggested Source |
 |------|-------------|-----------|-----------------|
 | `biplane_engine.ogg` | Chuttering propeller, rhythmic | `plane_default`, `plane_red_baron` | Freesound: search "biplane propeller loop" CC0 |
-| `prop_engine.ogg` | Smooth propeller drone | `plane_prop`, `plane_spitfire`, `plane_seaplane` | Freesound: search "propeller aircraft loop" CC0 |
-| `bomber_engine.ogg` | Low, heavy drone | `plane_lancaster`, `plane_stealth` | Freesound: search "heavy aircraft engine" CC0 |
-| `jet_engine.ogg` | Smooth jet engine hum | `plane_jet`, `plane_bryanair`, `plane_concorde_classic`, `plane_air_force_one`, `plane_golden_jet`, `plane_diamond_concorde`, `plane_platinum_eagle` | Freesound: search "jet engine cabin loop" CC0 |
+| `prop_engine.ogg` | Smooth propeller drone | `plane_prop`, `plane_warbird`, `plane_seaplane` | Freesound: search "propeller aircraft loop" CC0 |
+| `bomber_engine.ogg` | Low, heavy drone | `plane_night_raider`, `plane_stealth` | Freesound: search "heavy aircraft engine" CC0 |
+| `jet_engine.ogg` | Smooth jet engine hum | `plane_jet`, `plane_padraigaer`, `plane_concorde_classic`, `plane_presidential`, `plane_golden_jet`, `plane_diamond_concorde`, `plane_platinum_eagle` | Freesound: search "jet engine cabin loop" CC0 |
 | `rocket_engine.ogg` | Rocket roar / rumble | `plane_rocket` | Freesound: search "rocket engine loop" CC0 |
 | `wind.ogg` | Just wind / air rush | `plane_paper` | Freesound: search "wind loop outdoor" CC0 |
 

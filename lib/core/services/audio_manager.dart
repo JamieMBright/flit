@@ -11,13 +11,13 @@ enum EngineType {
   /// Chuttering propeller (Classic Bi-Plane, Red Baron Triplane)
   biplane,
 
-  /// Smooth propeller drone (Prop Plane, Spitfire, Island Hopper)
+  /// Smooth propeller drone (Prop Plane, Warbird, Island Hopper)
   prop,
 
-  /// Low heavy drone (Lancaster Bomber, Stealth Bomber)
+  /// Low heavy drone (Night Raider, Stealth Bomber)
   bomber,
 
-  /// Smooth jet engine (Sleek Jet, Concorde, Bryanair, Air Force One, etc.)
+  /// Smooth jet engine (Sleek Jet, Concorde, Padraigaer, Presidential, etc.)
   jet,
 
   /// Rocket roar (Rocket Ship)
@@ -147,12 +147,12 @@ class AudioManager {
 
       // Smooth propeller
       case 'plane_prop': // Prop Plane
-      case 'plane_spitfire': // Spitfire
+      case 'plane_warbird': // Warbird
       case 'plane_seaplane': // Island Hopper
         return EngineType.prop;
 
       // Low drone
-      case 'plane_lancaster': // Lancaster Bomber
+      case 'plane_night_raider': // Night Raider
       case 'plane_stealth': // Stealth Bomber
         return EngineType.bomber;
 
@@ -166,9 +166,9 @@ class AudioManager {
 
       // Smooth jet (default for all jets, concordes, etc.)
       case 'plane_jet': // Sleek Jet
-      case 'plane_bryanair': // Bryanair
+      case 'plane_padraigaer': // Padraigaer
       case 'plane_concorde_classic': // Concorde Classic
-      case 'plane_air_force_one': // Air Force One
+      case 'plane_presidential': // Presidential
       case 'plane_golden_jet': // Golden Private Jet
       case 'plane_diamond_concorde': // Diamond Concorde
       case 'plane_platinum_eagle': // Platinum Eagle
