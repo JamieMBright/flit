@@ -4,6 +4,8 @@ import '../../core/config/admin_config.dart';
 import '../../core/services/game_settings.dart';
 import '../../game/map/region.dart';
 import '../models/avatar_config.dart';
+import '../models/daily_result.dart';
+import '../models/daily_streak.dart';
 import '../models/pilot_license.dart';
 import '../models/player.dart';
 import '../models/social_title.dart';
@@ -22,6 +24,8 @@ class AccountState {
     this.equippedTitleId,
     this.lastFreeRerollDate,
     this.lastDailyChallengeDate,
+    this.dailyStreak = const DailyStreak(),
+    this.lastDailyResult,
   }) : avatar = avatar ?? const AvatarConfig(),
        license = license ?? PilotLicense.random();
 
@@ -59,6 +63,12 @@ class AccountState {
   /// Date of the last daily challenge completion (YYYY-MM-DD string).
   /// null means the player has never completed a daily challenge.
   final String? lastDailyChallengeDate;
+
+  /// Daily challenge streak tracking.
+  final DailyStreak dailyStreak;
+
+  /// Last completed daily challenge result (for sharing).
+  final DailyResult? lastDailyResult;
 
   static String _todayStr() {
     final today = DateTime.now();
@@ -109,6 +119,8 @@ class AccountState {
     Object? equippedTitleId = _sentinel,
     String? lastFreeRerollDate,
     String? lastDailyChallengeDate,
+    DailyStreak? dailyStreak,
+    Object? lastDailyResult = _sentinel,
   }) => AccountState(
     currentPlayer: currentPlayer ?? this.currentPlayer,
     unlockedRegions: unlockedRegions ?? this.unlockedRegions,
@@ -123,6 +135,10 @@ class AccountState {
     lastFreeRerollDate: lastFreeRerollDate ?? this.lastFreeRerollDate,
     lastDailyChallengeDate:
         lastDailyChallengeDate ?? this.lastDailyChallengeDate,
+    dailyStreak: dailyStreak ?? this.dailyStreak,
+    lastDailyResult: lastDailyResult == _sentinel
+        ? this.lastDailyResult
+        : lastDailyResult as DailyResult?,
   );
 }
 
@@ -168,6 +184,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
       equippedTitleId: snapshot.equippedTitleId,
       lastFreeRerollDate: snapshot.lastFreeRerollDate,
       lastDailyChallengeDate: snapshot.lastDailyChallengeDate,
+      dailyStreak: snapshot.toDailyStreak(),
+      lastDailyResult: snapshot.toLastDailyResult(),
     );
 
     // Hydrate GameSettings from Supabase data without triggering writes back.
@@ -215,6 +233,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
       equippedTitleId: state.equippedTitleId,
       lastFreeRerollDate: state.lastFreeRerollDate,
       lastDailyChallengeDate: state.lastDailyChallengeDate,
+      dailyStreak: state.dailyStreak,
+      lastDailyResult: state.lastDailyResult,
     );
   }
 
@@ -538,9 +558,72 @@ class AccountNotifier extends StateNotifier<AccountState> {
   }
 
   /// Record that the player completed today's daily challenge.
+  ///
+  /// Updates the streak counter and persists to Supabase.
   void recordDailyChallengeCompletion() {
-    state = state.copyWith(lastDailyChallengeDate: AccountState._todayStr());
+    final todayStr = AccountState._todayStr();
+    state = state.copyWith(lastDailyChallengeDate: todayStr);
+
+    // Update streak.
+    final streak = state.dailyStreak;
+    final newTotal = streak.totalCompleted + 1;
+
+    int newCurrent;
+    if (streak.isStreakActive || streak.completedToday) {
+      // Streak is still going — just increment (or maintain if already done today).
+      newCurrent = streak.completedToday
+          ? streak.currentStreak
+          : streak.currentStreak + 1;
+    } else {
+      // Streak was broken — start fresh at 1.
+      newCurrent = 1;
+    }
+
+    final newLongest = newCurrent > streak.longestStreak
+        ? newCurrent
+        : streak.longestStreak;
+
+    state = state.copyWith(
+      dailyStreak: streak.copyWith(
+        currentStreak: newCurrent,
+        longestStreak: newLongest,
+        lastCompletionDate: todayStr,
+        totalCompleted: newTotal,
+      ),
+    );
     _syncAccountState();
+  }
+
+  /// Store the daily challenge result (for sharing later).
+  void recordDailyResult(DailyResult result) {
+    state = state.copyWith(lastDailyResult: result);
+    _syncAccountState();
+  }
+
+  /// Recover a broken daily streak by spending coins.
+  ///
+  /// Returns true if the recovery was successful (had enough coins).
+  bool recoverStreak() {
+    final streak = state.dailyStreak;
+    if (!streak.isRecoverable) return false;
+
+    final cost = streak.recoveryCost;
+    if (!spendCoins(cost)) return false;
+
+    // Fill in the missed days — the streak is restored as if those days
+    // were completed. The lastCompletionDate moves to yesterday so the
+    // streak is active again (the player still needs to play today).
+    final yesterday = DateTime.now().toUtc().subtract(const Duration(days: 1));
+    final yesterdayStr =
+        '${yesterday.year}-'
+        '${yesterday.month.toString().padLeft(2, '0')}-'
+        '${yesterday.day.toString().padLeft(2, '0')}';
+
+    state = state.copyWith(
+      dailyStreak: streak.copyWith(lastCompletionDate: yesterdayStr),
+    );
+    _syncAccountState();
+    return true;
   }
 
   /// Use the daily-scramble bonus reroll. Returns true if available.
@@ -620,4 +703,14 @@ final equippedPlaneIdProvider = Provider<String>((ref) {
 /// Convenience provider for the currently equipped social title (may be null).
 final equippedTitleProvider = Provider<SocialTitle?>((ref) {
   return ref.watch(accountProvider).equippedTitle;
+});
+
+/// Convenience provider for daily streak.
+final dailyStreakProvider = Provider<DailyStreak>((ref) {
+  return ref.watch(accountProvider).dailyStreak;
+});
+
+/// Convenience provider for the last daily result (may be null).
+final lastDailyResultProvider = Provider<DailyResult?>((ref) {
+  return ref.watch(accountProvider).lastDailyResult;
 });

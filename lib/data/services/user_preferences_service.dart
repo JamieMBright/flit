@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/avatar_config.dart';
+import '../models/daily_result.dart';
+import '../models/daily_streak.dart';
 import '../models/pilot_license.dart';
 import '../models/player.dart';
 
@@ -145,6 +147,8 @@ class UserPreferencesService {
     String? equippedTitleId,
     String? lastFreeRerollDate,
     String? lastDailyChallengeDate,
+    DailyStreak dailyStreak = const DailyStreak(),
+    DailyResult? lastDailyResult,
   }) {
     _accountStateDirty = true;
     _pendingAccountState = {
@@ -158,6 +162,8 @@ class UserPreferencesService {
       'equipped_title_id': equippedTitleId,
       'last_free_reroll_date': lastFreeRerollDate,
       'last_daily_challenge_date': lastDailyChallengeDate,
+      'daily_streak_data': dailyStreak.toJson(),
+      'last_daily_result': lastDailyResult?.toJson(),
     };
     _scheduleSave();
   }
@@ -366,6 +372,34 @@ class UserPreferencesSnapshot {
   String? get lastDailyChallengeDate {
     final data = accountState;
     return data?['last_daily_challenge_date'] as String?;
+  }
+
+  DailyStreak toDailyStreak() {
+    final data = accountState;
+    if (data == null) return const DailyStreak();
+    final json = data['daily_streak_data'];
+    if (json is Map<String, dynamic> && json.isNotEmpty) {
+      try {
+        return DailyStreak.fromJson(json);
+      } catch (_) {
+        return const DailyStreak();
+      }
+    }
+    return const DailyStreak();
+  }
+
+  DailyResult? toLastDailyResult() {
+    final data = accountState;
+    if (data == null) return null;
+    final json = data['last_daily_result'];
+    if (json is Map<String, dynamic> && json.isNotEmpty) {
+      try {
+        return DailyResult.fromJson(json);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
   }
 
   // ── Settings helpers ─────────────────────────────────────────────────
