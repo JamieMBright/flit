@@ -15,6 +15,7 @@ import 'core/theme/flit_theme.dart';
 import 'core/utils/game_log.dart';
 import 'core/utils/web_error_bridge.dart';
 import 'core/widgets/error_overlay_manager.dart';
+import 'data/services/user_preferences_service.dart';
 import 'features/auth/login_screen.dart';
 
 final _log = GameLog.instance;
@@ -229,10 +230,15 @@ class _FlitAppState extends State<FlitApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Flush queued errors when the app goes to background or is about to close.
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
+      // Flush queued errors when the app goes to background or is about to
+      // close.
       ErrorService.instance.flush();
+
+      // Flush any pending user settings/profile writes so nothing is lost
+      // if the OS kills the app before the debounce timer fires.
+      UserPreferencesService.instance.flush();
     }
   }
 

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/config/admin_config.dart';
@@ -163,14 +166,32 @@ class AccountNotifier extends StateNotifier<AccountState> {
 
   final _prefs = UserPreferencesService.instance;
 
+  /// Periodic refresh timer — re-fetches settings from Supabase to keep
+  /// the local state in sync (e.g. if changed on another device).
+  Timer? _refreshTimer;
+
+  /// How often to refresh settings from the database.
+  static const _refreshInterval = Duration(minutes: 5);
+
+  /// The user ID for the current session (used by periodic refresh).
+  String? _userId;
+
   /// Load full account state from Supabase and hydrate all providers.
   ///
   /// Called after auth completes. Loads profile, settings, avatar, license,
-  /// cosmetics, and daily state in one parallel fetch.
+  /// cosmetics, and daily state in one parallel fetch. Also starts a periodic
+  /// refresh timer to keep settings in sync.
   Future<void> loadFromSupabase(String userId) async {
+    _userId = userId;
     final snapshot = await _prefs.load(userId);
     if (snapshot == null) return;
 
+    _applySnapshot(snapshot);
+    _startPeriodicRefresh();
+  }
+
+  /// Apply a [UserPreferencesSnapshot] to in-memory state.
+  void _applySnapshot(UserPreferencesSnapshot snapshot) {
     final player = snapshot.toPlayer();
 
     state = AccountState(
@@ -202,14 +223,52 @@ class AccountNotifier extends StateNotifier<AccountState> {
         (d) => d.name == snapshot.difficulty,
         orElse: () => GameDifficulty.normal,
       ),
+      soundEnabled: snapshot.soundEnabled,
+      notificationsEnabled: snapshot.notificationsEnabled,
+      hapticEnabled: snapshot.hapticEnabled,
     );
+  }
+
+  /// Start a periodic timer that re-fetches user data from Supabase.
+  void _startPeriodicRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) => _refreshFromDb());
+  }
+
+  /// Re-fetch all user data from Supabase and re-hydrate local state.
+  ///
+  /// Skips the refresh if there are pending local writes (to avoid
+  /// overwriting unsaved changes).
+  Future<void> _refreshFromDb() async {
+    if (_userId == null) return;
+    if (_prefs.hasPendingWrites) return;
+
+    try {
+      final snapshot = await _prefs.load(_userId!);
+      if (snapshot != null) {
+        _applySnapshot(snapshot);
+      }
+    } catch (e) {
+      debugPrint('[AccountNotifier] periodic refresh failed: $e');
+    }
   }
 
   /// Flush pending writes (call on sign-out or app pause).
   Future<void> flushPreferences() => _prefs.flush();
 
   /// Clear sync state (call on sign-out).
-  void clearPreferences() => _prefs.clear();
+  void clearPreferences() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+    _userId = null;
+    _prefs.clear();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
 
   /// Set the current player (called after auth completes).
   void switchAccount(Player player) {
