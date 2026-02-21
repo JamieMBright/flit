@@ -1245,7 +1245,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
+      onPopInvoked: (didPop) {
         if (!didPop) _requestExit();
       },
       child: Scaffold(
