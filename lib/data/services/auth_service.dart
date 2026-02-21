@@ -123,6 +123,20 @@ class AuthService {
       );
       return _state;
     }
+    if (username.length > 20) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Username must be 20 characters or fewer',
+      );
+      return _state;
+    }
+    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(username)) {
+      _state = _state.copyWith(
+        isLoading: false,
+        error: 'Username may only contain letters, numbers, and underscores',
+      );
+      return _state;
+    }
     if (password.length < 6) {
       _state = _state.copyWith(
         isLoading: false,

@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/avatar_config.dart';
@@ -8,6 +10,161 @@ import '../models/daily_result.dart';
 import '../models/daily_streak.dart';
 import '../models/pilot_license.dart';
 import '../models/player.dart';
+
+// ---------------------------------------------------------------------------
+// Offline write queue
+// ---------------------------------------------------------------------------
+
+/// Persists failed Supabase writes to SharedPreferences so they can be
+/// retried on the next flush cycle or app resume.
+///
+/// Entries are stored under [_kKey] as a JSON list. Each entry has:
+///   `{'table': String, 'data': Map, 'op': 'upsert'|'insert',
+///     'timestamp': int, 'retries': int}`
+///
+/// The queue is capped at [_kMaxEntries]. When full the oldest entry is
+/// dropped to make room for the newest — keeping the queue small and
+/// avoiding unbounded growth.
+class _PendingWriteQueue {
+  static const String _kKey = 'pending_writes';
+  static const int _kMaxEntries = 50;
+  static const int _kMaxRetries = 3;
+
+  /// In-memory fallback used when SharedPreferences is unavailable.
+  List<Map<String, dynamic>> _memory = [];
+  SharedPreferences? _prefs;
+  bool _prefsAvailable = false;
+
+  /// Must be called once before any other method.
+  Future<void> init() async {
+    try {
+      _prefs = await SharedPreferences.getInstance();
+      _prefsAvailable = true;
+      // Migrate any entries stored when prefs were unavailable.
+      if (_memory.isNotEmpty) {
+        final existing = _load();
+        final merged = [...existing, ..._memory];
+        await _save(merged);
+        _memory = [];
+      }
+    } catch (e) {
+      debugPrint('[PendingWriteQueue] SharedPreferences unavailable, '
+          'falling back to in-memory queue: $e');
+      _prefsAvailable = false;
+    }
+  }
+
+  // ── Public API ────────────────────────────────────────────────────────────
+
+  bool get isEmpty => _loadAll().isEmpty;
+
+  /// Add a write to the back of the queue.
+  ///
+  /// If the queue is already at capacity the oldest entry is removed first.
+  Future<void> enqueue(
+    String table,
+    Map<String, dynamic> data,
+    String op,
+  ) async {
+    final entries = _loadAll();
+
+    if (entries.length >= _kMaxEntries) {
+      // Drop the oldest entry (index 0) to stay under the cap.
+      entries.removeAt(0);
+      debugPrint('[PendingWriteQueue] queue full — dropped oldest entry');
+    }
+
+    entries.add({
+      'table': table,
+      'data': data,
+      'op': op,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+      'retries': 0,
+    });
+
+    await _persist(entries);
+  }
+
+  /// Return the oldest entry without removing it, or null if empty.
+  Map<String, dynamic>? peek() {
+    final entries = _loadAll();
+    return entries.isEmpty ? null : entries.first;
+  }
+
+  /// Remove and return the oldest entry, or null if empty.
+  Future<Map<String, dynamic>?> dequeue() async {
+    final entries = _loadAll();
+    if (entries.isEmpty) return null;
+    final head = entries.removeAt(0);
+    await _persist(entries);
+    return head;
+  }
+
+  /// Increment the retry counter on the oldest entry and re-persist.
+  ///
+  /// If the entry has reached [_kMaxRetries] it is dropped instead.
+  Future<void> incrementRetryOrDrop() async {
+    final entries = _loadAll();
+    if (entries.isEmpty) return;
+    final head = entries.first;
+    final retries = (head['retries'] as int? ?? 0) + 1;
+    if (retries >= _kMaxRetries) {
+      entries.removeAt(0);
+      debugPrint('[PendingWriteQueue] dropped entry after $_kMaxRetries '
+          'retries: table=${head['table']}');
+    } else {
+      entries[0] = {...head, 'retries': retries};
+    }
+    await _persist(entries);
+  }
+
+  /// Remove all entries from the queue.
+  Future<void> clear() async {
+    if (_prefsAvailable) {
+      await _prefs!.remove(_kKey);
+    } else {
+      _memory = [];
+    }
+  }
+
+  // ── Internal helpers ──────────────────────────────────────────────────────
+
+  List<Map<String, dynamic>> _loadAll() {
+    return _prefsAvailable ? _load() : List.from(_memory);
+  }
+
+  List<Map<String, dynamic>> _load() {
+    if (!_prefsAvailable) return List.from(_memory);
+    try {
+      final raw = _prefs!.getString(_kKey);
+      if (raw == null) return [];
+      final list = jsonDecode(raw) as List<dynamic>;
+      return list.cast<Map<String, dynamic>>();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> _persist(List<Map<String, dynamic>> entries) async {
+    if (_prefsAvailable) {
+      await _save(entries);
+    } else {
+      _memory = entries;
+    }
+  }
+
+  Future<void> _save(List<Map<String, dynamic>> entries) async {
+    try {
+      await _prefs!.setString(_kKey, jsonEncode(entries));
+    } catch (e) {
+      debugPrint('[PendingWriteQueue] failed to persist queue: $e');
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// UserPreferencesService
+// ---------------------------------------------------------------------------
 
 /// Lightweight, memory-efficient service that syncs user preferences to
 /// Supabase.
@@ -19,6 +176,8 @@ import '../models/player.dart';
 ///   timer batches mutations into a single upsert per table.
 /// - **No duplicate state** — the Riverpod providers own the truth; this
 ///   service only serialises/deserialises to/from Supabase.
+/// - **Offline resilience** — failed writes are persisted to SharedPreferences
+///   and retried on the next flush cycle or app resume.
 class UserPreferencesService {
   UserPreferencesService._();
 
@@ -43,6 +202,20 @@ class UserPreferencesService {
   Map<String, dynamic>? _pendingSettings;
   Map<String, dynamic>? _pendingAccountState;
 
+  // Offline write queue — survives app restarts via SharedPreferences.
+  final _PendingWriteQueue _queue = _PendingWriteQueue();
+  bool _queueInitialised = false;
+
+  // ---------------------------------------------------------------------------
+  // Queue initialisation
+  // ---------------------------------------------------------------------------
+
+  Future<void> _ensureQueueInitialised() async {
+    if (_queueInitialised) return;
+    await _queue.init();
+    _queueInitialised = true;
+  }
+
   // ---------------------------------------------------------------------------
   // Load
   // ---------------------------------------------------------------------------
@@ -54,6 +227,8 @@ class UserPreferencesService {
   Future<UserPreferencesSnapshot?> load(String userId) async {
     _userId = userId;
     if (_userId == null) return null;
+
+    await _ensureQueueInitialised();
 
     try {
       // Parallel fetch — one round-trip per table, all concurrent.
@@ -179,22 +354,104 @@ class UserPreferencesService {
   }
 
   /// Insert a game result into the scores table.
+  ///
+  /// Input values are clamped to valid ranges before writing.
+  /// If the insert fails, the entry is placed in the offline queue for retry.
   Future<void> saveGameResult({
     required int score,
     required int timeMs,
     required String region,
     required int roundsCompleted,
   }) async {
+    await _ensureQueueInitialised();
+
+    // Client-side input validation — clamp to valid ranges.
+    const int maxScore = 100000;
+    const int maxTimeMs = 3600000; // 1 hour
+
+    int validatedScore = score;
+    if (score < 0 || score > maxScore) {
+      debugPrint(
+        '[UserPreferencesService] saveGameResult: score $score out of range '
+        '[0, $maxScore], clamping.',
+      );
+      validatedScore = score.clamp(0, maxScore);
+    }
+
+    int validatedTimeMs = timeMs;
+    if (timeMs <= 0 || timeMs >= maxTimeMs) {
+      debugPrint(
+        '[UserPreferencesService] saveGameResult: timeMs $timeMs out of range '
+        '(0, $maxTimeMs), clamping.',
+      );
+      validatedTimeMs = timeMs.clamp(1, maxTimeMs - 1);
+    }
+
+    final data = {
+      'user_id': _userId,
+      'score': validatedScore,
+      'time_ms': validatedTimeMs,
+      'region': region,
+      'rounds_completed': roundsCompleted,
+    };
+
     try {
-      await _client.from('scores').insert({
-        'user_id': _userId,
-        'score': score,
-        'time_ms': timeMs,
-        'region': region,
-        'rounds_completed': roundsCompleted,
-      });
+      await _client.from('scores').insert(data);
     } catch (e) {
-      debugPrint('[UserPreferencesService] saveGameResult failed: $e');
+      debugPrint(
+        '[UserPreferencesService] saveGameResult failed, queuing for retry: $e',
+      );
+      await _queue.enqueue('scores', data, 'insert');
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Retry pending writes
+  // ---------------------------------------------------------------------------
+
+  /// Attempt to flush all entries from the offline write queue.
+  ///
+  /// Items are processed oldest-first, one at a time, to avoid overwhelming
+  /// the server. An entry is removed from the queue only on success. On
+  /// failure the retry counter is incremented; entries that exceed
+  /// [_PendingWriteQueue._kMaxRetries] are dropped automatically.
+  Future<void> retryPendingWrites() async {
+    await _ensureQueueInitialised();
+
+    if (_queue.isEmpty) return;
+
+    debugPrint('[UserPreferencesService] retryPendingWrites: draining queue…');
+
+    // We loop until the queue is empty or we hit a consecutive failure,
+    // at which point we stop to avoid hammering a down server.
+    while (!_queue.isEmpty) {
+      final entry = _queue.peek();
+      if (entry == null) break;
+
+      final table = entry['table'] as String;
+      final data = entry['data'] as Map<String, dynamic>;
+      final op = entry['op'] as String;
+
+      try {
+        if (op == 'insert') {
+          await _client.from(table).insert(data);
+        } else {
+          await _client.from(table).upsert(data);
+        }
+        // Success — remove the entry from the queue.
+        await _queue.dequeue();
+        debugPrint(
+          '[UserPreferencesService] retryPendingWrites: $op on $table succeeded',
+        );
+      } catch (e) {
+        debugPrint(
+          '[UserPreferencesService] retryPendingWrites: $op on $table failed '
+          '(retries=${entry['retries']}): $e',
+        );
+        await _queue.incrementRetryOrDrop();
+        // Stop retrying this cycle — likely a network issue; try again later.
+        break;
+      }
     }
   }
 
@@ -232,41 +489,74 @@ class UserPreferencesService {
   }
 
   Future<void> _flush() async {
+    await _ensureQueueInitialised();
+
+    // Attempt to drain any previously failed writes before issuing new ones.
+    await retryPendingWrites();
+
     final futures = <Future<void>>[];
 
     if (_profileDirty && _pendingProfile != null) {
+      final payload = _pendingProfile!;
       futures.add(
-        _client.from('profiles').upsert(_pendingProfile!).then((_) {
-          _profileDirty = false;
-          _pendingProfile = null;
-        }),
+        _client
+            .from('profiles')
+            .upsert(payload)
+            .then((_) {
+              _profileDirty = false;
+              _pendingProfile = null;
+            })
+            .catchError((Object e) async {
+              debugPrint(
+                '[UserPreferencesService] flush profiles failed, queuing: $e',
+              );
+              await _queue.enqueue('profiles', payload, 'upsert');
+            }),
       );
     }
 
     if (_settingsDirty && _pendingSettings != null) {
+      final payload = _pendingSettings!;
       futures.add(
-        _client.from('user_settings').upsert(_pendingSettings!).then((_) {
-          _settingsDirty = false;
-          _pendingSettings = null;
-        }),
+        _client
+            .from('user_settings')
+            .upsert(payload)
+            .then((_) {
+              _settingsDirty = false;
+              _pendingSettings = null;
+            })
+            .catchError((Object e) async {
+              debugPrint(
+                '[UserPreferencesService] flush user_settings failed, queuing: $e',
+              );
+              await _queue.enqueue('user_settings', payload, 'upsert');
+            }),
       );
     }
 
     if (_accountStateDirty && _pendingAccountState != null) {
+      final payload = _pendingAccountState!;
       futures.add(
-        _client.from('account_state').upsert(_pendingAccountState!).then((_) {
-          _accountStateDirty = false;
-          _pendingAccountState = null;
-        }),
+        _client
+            .from('account_state')
+            .upsert(payload)
+            .then((_) {
+              _accountStateDirty = false;
+              _pendingAccountState = null;
+            })
+            .catchError((Object e) async {
+              debugPrint(
+                '[UserPreferencesService] flush account_state failed, queuing: $e',
+              );
+              await _queue.enqueue('account_state', payload, 'upsert');
+            }),
       );
     }
 
     if (futures.isNotEmpty) {
-      try {
-        await Future.wait(futures);
-      } catch (e) {
-        debugPrint('[UserPreferencesService] flush failed: $e');
-      }
+      // We intentionally don't wrap in try/catch here because each future
+      // already handles its own error via catchError above.
+      await Future.wait(futures);
     }
   }
 }
