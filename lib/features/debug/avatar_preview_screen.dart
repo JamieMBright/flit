@@ -16,7 +16,7 @@ class AvatarPreviewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: FlitColors.backgroundDeep,
+      backgroundColor: FlitColors.backgroundDark,
       appBar: AppBar(
         backgroundColor: FlitColors.cardBackground,
         title: const Text(

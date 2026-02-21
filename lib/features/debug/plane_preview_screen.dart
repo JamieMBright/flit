@@ -43,7 +43,7 @@ class _PlanePreviewScreenState extends State<PlanePreviewScreen>
     final planes = CosmeticCatalog.planes;
 
     return Scaffold(
-      backgroundColor: FlitColors.backgroundDeep,
+      backgroundColor: FlitColors.backgroundDark,
       appBar: AppBar(
         backgroundColor: FlitColors.cardBackground,
         title: const Text(
