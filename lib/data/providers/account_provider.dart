@@ -493,6 +493,11 @@ class AccountNotifier extends StateNotifier<AccountState> {
       region: region,
       roundsCompleted: roundsCompleted,
     );
+
+    // Flush all pending writes immediately — game completion is a critical
+    // save point. Without this, debounced profile/account writes can be lost
+    // if the user closes the browser tab within the 2-second debounce window.
+    _prefs.flush();
   }
 
   // --- Avatar ---
