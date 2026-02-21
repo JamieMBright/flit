@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <circle cx="256" cy="256" r="256" fill="#1A2A32"/>
+  <!-- Full-bleed square background: let iOS/Android apply their own masks -->
+  <rect width="512" height="512" fill="#1A2A32"/>
   <circle cx="256" cy="295" r="155" fill="none" stroke="#F0E8DC" stroke-width="8"/>
   <ellipse cx="256" cy="295" rx="155" ry="28" fill="none" stroke="#F0E8DC" stroke-width="5"/>
   <ellipse cx="256" cy="295" rx="48" ry="155" fill="none" stroke="#F0E8DC" stroke-width="5"/>
