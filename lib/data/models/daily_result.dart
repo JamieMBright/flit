@@ -76,7 +76,7 @@ class DailyResult {
   ///
   /// Example output:
   /// ```
-  ///      🛫 🌍  🛬
+  ///      🛫 🌍 🛬
   /// Flit daily challenge!
   /// 🟢🟡🟠🟢🔴
   /// Score: 34,655 pts
@@ -87,7 +87,7 @@ class DailyResult {
     final scoreFormatted = formatScore(totalScore);
     final timeFormatted = formatTime(totalTimeMs);
 
-    return '     \u{1F6EB} \u{1F30D}  \u{1F6EC}\n'
+    return '     \u{1F6EB} \u{1F30D} \u{1F6EC}\n'
         'Flit daily challenge!\n'
         '$emojiRow\n'
         'Score: $scoreFormatted pts\n'
