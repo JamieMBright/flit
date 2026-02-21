@@ -270,6 +270,28 @@ Full result screen with pilot cards (name, flag, rank, plane), score display, pe
 - Source or create audio: engine loops (6 types), background music, SFX (6 types)
 - `AudioManager` code is ready — just needs actual audio files
 
+#### Companion Sprites Quality
+**Status:** Poor quality — all 8 companions (pidgey, sparrow, eagle, parrot, phoenix, dragon, charizard) are procedurally drawn with Canvas primitives (ovals, paths, circles).
+**What to do:**
+- Replace procedural Canvas drawing with proper sprite assets or significantly improve the Canvas rendering
+- Current rendering uses simple geometric shapes that lack detail and polish
+- Two rendering paths need updating: in-game (`CompanionRenderer`) and shop preview (`_CompanionPreviewPainter`)
+- Consider: hand-drawn sprite sheets matching the lo-fi plane aesthetic, or SVG assets
+
+#### Plane Sprites Quality
+**Status:** Needs improvement — plane rendering uses basic Canvas drawing.
+**What to do:**
+- Improve the visual quality of plane sprites to match the intended hand-drawn aesthetic
+- Ensure all unlockable plane cosmetics look distinct and polished
+- Both in-game rendering and shop preview need updating
+
+#### Country Borders Visibility
+**Status:** Borders not visible when plane is outside the target country's airspace.
+**What to do:**
+- Country borders should be white and clearly visible at all times during gameplay, not just when inside airspace
+- Helps players navigate and identify countries from a distance
+- May require shader changes (`globe.frag`) or an overlay approach
+
 ### Priority 3 — Monetisation & Future
 
 #### Subscription System
