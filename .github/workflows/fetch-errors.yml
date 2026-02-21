@@ -34,14 +34,23 @@ jobs:
           # ---------------------------------------------------------------
           # 1. Fetch critical errors from Vercel endpoint
           # ---------------------------------------------------------------
-          RESPONSE=$(curl -sf \
+          HTTP_CODE=$(curl -s -o /tmp/errors_response.json -w "%{http_code}" \
             -H "X-API-Key: ${VERCEL_ERRORS_API_KEY}" \
             "${ERRORS_ENDPOINT}?severity=critical&limit=100" \
           ) || {
-            echo "::warning::Failed to fetch errors from endpoint"
+            echo "::warning::curl failed to connect to errors endpoint"
             exit 0
           }
 
+          echo "Endpoint returned HTTP ${HTTP_CODE}"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::warning::Errors endpoint returned HTTP ${HTTP_CODE}"
+            cat /tmp/errors_response.json 2>/dev/null || true
+            exit 0
+          fi
+
+          RESPONSE=$(cat /tmp/errors_response.json)
           COUNT=$(echo "$RESPONSE" | jq -r '.count // 0')
           echo "Fetched ${COUNT} critical error(s)"
 
@@ -88,59 +97,63 @@ jobs:
 
             if [ -n "$EXISTING_ISSUE" ]; then
               # d. Duplicate found: add a comment with occurrence + timestamp.
-              COMMENT_BODY="## Recurring Occurrence
+              {
+                echo "## Recurring Occurrence"
+                echo ""
+                echo "**Timestamp:** ${TIMESTAMP}"
+                echo "**Platform:** ${PLATFORM}"
+                echo "**Device:** ${DEVICE_INFO}"
+                echo "**App Version:** ${APP_VERSION}"
+                echo "**Context:** ${CONTEXT}"
+                echo ""
+                echo '```'
+                echo "${ERROR_MSG}"
+                echo '```'
+                echo ""
+                echo "_This error has been reported again. Auto-detected by error pipeline._"
+              } > /tmp/comment_body.md
 
-**Timestamp:** ${TIMESTAMP}
-**Platform:** ${PLATFORM}
-**Device:** ${DEVICE_INFO}
-**App Version:** ${APP_VERSION}
-**Context:** ${CONTEXT}
-
-\`\`\`
-${ERROR_MSG}
-\`\`\`
-
-_This error has been reported again. Auto-detected by error pipeline._"
-
-              gh issue comment "$EXISTING_ISSUE" --body "$COMMENT_BODY"
+              gh issue comment "$EXISTING_ISSUE" --body-file /tmp/comment_body.md
               echo "Updated existing issue #${EXISTING_ISSUE} with new occurrence"
               ISSUES_UPDATED=$((ISSUES_UPDATED + 1))
             else
               # e. New error: create a GitHub issue.
               ISSUE_TITLE="${ERROR_MSG:0:80}"
 
-              ISSUE_BODY="## Critical Runtime Error
-
-${FINGERPRINT_TAG}
-
-### Error
-\`\`\`
-${ERROR_MSG}
-\`\`\`
-
-### Stack Trace
-\`\`\`
-${STACK_TRACE}
-\`\`\`
-
-### Environment
-| Field | Value |
-|---|---|
-| **Platform** | ${PLATFORM} |
-| **Device** | ${DEVICE_INFO} |
-| **App Version** | ${APP_VERSION} |
-| **Severity** | ${SEVERITY} |
-| **Timestamp** | ${TIMESTAMP} |
-
-### Context
-${CONTEXT:-No additional context}
-
----
-_Auto-created by error telemetry pipeline._"
+              {
+                echo "## Critical Runtime Error"
+                echo ""
+                echo "${FINGERPRINT_TAG}"
+                echo ""
+                echo "### Error"
+                echo '```'
+                echo "${ERROR_MSG}"
+                echo '```'
+                echo ""
+                echo "### Stack Trace"
+                echo '```'
+                echo "${STACK_TRACE}"
+                echo '```'
+                echo ""
+                echo "### Environment"
+                echo "| Field | Value |"
+                echo "|---|---|"
+                echo "| **Platform** | ${PLATFORM} |"
+                echo "| **Device** | ${DEVICE_INFO} |"
+                echo "| **App Version** | ${APP_VERSION} |"
+                echo "| **Severity** | ${SEVERITY} |"
+                echo "| **Timestamp** | ${TIMESTAMP} |"
+                echo ""
+                echo "### Context"
+                echo "${CONTEXT:-No additional context}"
+                echo ""
+                echo "---"
+                echo "_Auto-created by error telemetry pipeline._"
+              } > /tmp/issue_body.md
 
               gh issue create \
                 --title "$ISSUE_TITLE" \
-                --body "$ISSUE_BODY" \
+                --body-file /tmp/issue_body.md \
                 --label "bug,critical,auto-triage"
 
               echo "Created new issue: ${ISSUE_TITLE}"
@@ -150,8 +163,8 @@ _Auto-created by error telemetry pipeline._"
 
           echo "Summary: ${ISSUES_CREATED} issues created, ${ISSUES_UPDATED} issues updated"
 
-          # Clean up temp file.
-          rm -f /tmp/critical_errors.jsonl
+          # Clean up temp files.
+          rm -f /tmp/critical_errors.jsonl /tmp/comment_body.md /tmp/issue_body.md /tmp/errors_response.json
 
       - name: Purge logs and commit
         run: |
