@@ -616,8 +616,15 @@ class FlitGame extends FlameGame
             if (shaderManager.isReady) {
               _globeRenderer = GlobeRenderer();
               await add(_globeRenderer!);
+              // Apply the region preset so the camera starts at the correct
+              // position and is bounded to the region for the entire session.
+              _globeRenderer!.camera.setRegion(region);
               _shaderReady = true;
-              _log.info('game', 'Shader renderer initialised');
+              _log.info(
+                'game',
+                'Shader renderer initialised',
+                data: {'region': region.name},
+              );
             } else {
               _log.warning(
                 'game',
