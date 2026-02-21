@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/services/user_preferences_service.dart';
 import '../services/game_settings.dart';
 import '../theme/flit_colors.dart';
 
@@ -25,7 +26,12 @@ void showSettingsSheet(BuildContext context) {
       builder: (context, scrollController) =>
           _SettingsSheetContent(scrollController: scrollController),
     ),
-  );
+  ).then((_) {
+    // Flush pending settings writes when the sheet is dismissed.
+    // Without this, the last setting change within the 2-second debounce
+    // window could be lost if the user immediately kills the app.
+    UserPreferencesService.instance.flush();
+  });
 }
 
 class _SettingsSheetContent extends StatefulWidget {

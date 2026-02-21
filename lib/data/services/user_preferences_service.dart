@@ -439,6 +439,16 @@ class UserPreferencesService {
 
     if (_queue.isEmpty) return;
 
+    // Guard: skip retry if there is no authenticated user. Without this,
+    // entries queued for a user whose token expired and failed to refresh
+    // would waste all retry attempts on auth errors.
+    if (_client.auth.currentUser == null) {
+      debugPrint(
+        '[UserPreferencesService] retryPendingWrites: no auth user — skipping',
+      );
+      return;
+    }
+
     debugPrint('[UserPreferencesService] retryPendingWrites: draining queue…');
 
     // We loop until the queue is empty or we hit a consecutive failure,
@@ -485,7 +495,26 @@ class UserPreferencesService {
     await _flush();
   }
 
-  /// Clear cached user and cancel pending writes.
+  /// Cancel any pending debounced writes and reset dirty flags.
+  ///
+  /// Called before loading a new user's data to prevent stale writes from
+  /// a prior session from firing after the new data is hydrated.
+  void clearDirtyFlags() {
+    _debounceTimer?.cancel();
+    _debounceTimer = null;
+    _profileDirty = false;
+    _settingsDirty = false;
+    _accountStateDirty = false;
+    _pendingProfile = null;
+    _pendingSettings = null;
+    _pendingAccountState = null;
+  }
+
+  /// Clear cached user, cancel pending writes, and purge the offline queue.
+  ///
+  /// Called on sign-out or account deletion. The offline queue is cleared to
+  /// prevent cross-user contamination — without this, writes queued for user A
+  /// could be replayed when user B logs in on the same device.
   void clear() {
     _debounceTimer?.cancel();
     _debounceTimer = null;
@@ -496,6 +525,10 @@ class UserPreferencesService {
     _pendingProfile = null;
     _pendingSettings = null;
     _pendingAccountState = null;
+    // Purge offline queue to prevent cross-user contamination.
+    if (_queueInitialised) {
+      _queue.clear();
+    }
   }
 
   // ---------------------------------------------------------------------------

@@ -129,8 +129,12 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
                 coins: coins,
                 ownedIds: ownedIds,
                 onReveal: (Cosmetic plane) {
-                  ref.read(accountProvider.notifier).spendCoins(10000);
-                  ref.read(accountProvider.notifier).addOwnedCosmetic(plane.id);
+                  // Use purchaseCosmetic for atomic coins+cosmetic persistence.
+                  // Previously used two separate calls (spendCoins then
+                  // addOwnedCosmetic) which could lose coins on crash.
+                  ref
+                      .read(accountProvider.notifier)
+                      .purchaseCosmetic(plane.id, 10000);
                 },
               ),
               Expanded(

@@ -185,10 +185,16 @@ class AccountNotifier extends StateNotifier<AccountState> {
 
   /// Load full account state from Supabase and hydrate all providers.
   ///
-  /// Called after auth completes. Loads profile, settings, avatar, license,
-  /// cosmetics, and daily state in one parallel fetch. Also starts a periodic
-  /// refresh timer to keep settings in sync.
+  /// Called after auth completes. Clears any stale dirty flags from a
+  /// previous session before loading, so debounced writes from the old
+  /// user don't fire after the new user's data is loaded. Then loads
+  /// profile, settings, avatar, license, cosmetics, and daily state in
+  /// one parallel fetch. Also starts a periodic refresh timer.
   Future<void> loadFromSupabase(String userId) async {
+    // Clear stale dirty flags / pending payloads from a prior session.
+    // This prevents a race where the old user's debounce timer fires
+    // after the new user's data has been loaded.
+    _prefs.clearDirtyFlags();
     _userId = userId;
     final snapshot = await _prefs.load(userId);
     if (snapshot == null) return;
@@ -280,9 +286,15 @@ class AccountNotifier extends StateNotifier<AccountState> {
     super.dispose();
   }
 
-  /// Set the current player (called after auth completes).
+  /// Set the current player (called after auth completes or profile edit).
+  ///
+  /// Syncs the profile to Supabase so changes like displayName/username
+  /// are persisted. The login path follows this with [loadFromSupabase]
+  /// which overwrites from DB — that's fine because the DB is authoritative
+  /// there. For profile edits, this sync is the only write path.
   void switchAccount(Player player) {
     state = state.copyWith(currentPlayer: player);
+    _syncProfile();
   }
 
   // ── Internal sync helpers ────────────────────────────────────────────

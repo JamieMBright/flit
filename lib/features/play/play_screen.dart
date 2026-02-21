@@ -582,11 +582,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
     // Submit round result to Supabase for H2H challenges.
     if (widget.challengeId != null) {
-      ChallengeService.instance.submitRoundResult(
-        challengeId: widget.challengeId!,
-        roundIndex: _currentRound - 1,
-        timeMs: _elapsed.inMilliseconds,
-      );
+      ChallengeService.instance
+          .submitRoundResult(
+            challengeId: widget.challengeId!,
+            roundIndex: _currentRound - 1,
+            timeMs: _elapsed.inMilliseconds,
+          )
+          .catchError((Object e) {
+            _log.warning('challenge', 'Failed to submit round result: $e');
+          });
     }
 
     _log.info(
@@ -707,8 +711,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                     if (finalChallenge != null && mounted) {
                       _navigateToChallengeResult(finalChallenge);
                     }
+                  })
+                  .catchError((Object e) {
+                    _log.warning(
+                      'challenge',
+                      'Failed to fetch completed challenge: $e',
+                    );
                   });
             }
+          })
+          .catchError((Object e) {
+            _log.warning(
+              'challenge',
+              'Challenge round submit / complete chain failed: $e',
+            );
           });
     }
 
@@ -725,17 +741,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     );
 
     // Record stats via Riverpod account provider.
-    ref
-        .read(accountProvider.notifier)
-        .recordGameCompletion(
-          elapsed: _cumulativeTime,
-          score: _totalScore,
-          roundsCompleted: _currentRound,
-          coinReward: widget.coinReward,
-          region: widget.isDailyChallenge ? 'daily' : widget.region.name,
-        );
+    // Note: recordGameCompletion includes an explicit flush() call, but we
+    // must fire the daily callbacks BEFORE that flush so their state changes
+    // (streak, daily result) are included in the same flush cycle.
 
-    // Notify completion callback
+    // Notify daily callbacks first so their state is dirty before the flush.
     widget.onComplete?.call(_totalScore);
 
     // Build and report daily result if this is a daily challenge.
@@ -763,6 +773,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       );
       widget.onDailyComplete?.call(dailyResult);
     }
+
+    // Record game completion last — this calls flush() which persists all
+    // pending dirty state including the daily callbacks above.
+    ref
+        .read(accountProvider.notifier)
+        .recordGameCompletion(
+          elapsed: _cumulativeTime,
+          score: _totalScore,
+          roundsCompleted: _currentRound,
+          coinReward: widget.coinReward,
+          region: widget.isDailyChallenge ? 'daily' : widget.region.name,
+        );
 
     final friendName = widget.challengeFriendName;
 
@@ -851,6 +873,27 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   void _requestExit() {
     _log.info('screen', 'Exit requested by user');
     final isChallenge = widget.challengeFriendName != null;
+    final isDailyChallenge = widget.isDailyChallenge;
+
+    // Build the warning message — aborting records the game with all
+    // unseen rounds counted as failures, preventing daily challenge
+    // exploitation (abort-to-learn-clues).
+    String warningText;
+    if (isChallenge) {
+      warningText =
+          'This will end your attempt and send your current '
+          'score to ${widget.challengeFriendName}. You only '
+          'get one shot at each challenge.';
+    } else if (isDailyChallenge) {
+      warningText =
+          'Aborting will register this attempt with your current '
+          'score. All remaining rounds will count as missed. '
+          'You cannot replay today\'s daily challenge.';
+    } else {
+      warningText =
+          'Aborting will register this game with your current '
+          'score. All remaining rounds will count as missed.';
+    }
 
     showDialog<void>(
       context: context,
@@ -863,8 +906,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                isChallenge ? Icons.warning_amber_rounded : Icons.flight,
-                color: isChallenge
+                Icons.warning_amber_rounded,
+                color: isDailyChallenge || isChallenge
                     ? FlitColors.warning
                     : FlitColors.textSecondary,
                 size: 36,
@@ -880,11 +923,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                isChallenge
-                    ? 'This will end your attempt and send your current '
-                          'score to ${widget.challengeFriendName}. You only '
-                          'get one shot at each challenge.'
-                    : 'Your current progress will be lost.',
+                warningText,
                 style: const TextStyle(
                   color: FlitColors.textSecondary,
                   fontSize: 14,
@@ -904,16 +943,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      _log.info('screen', 'User confirmed exit');
-                      _timer?.cancel();
-                      try {
-                        _game.pauseEngine();
-                      } catch (_) {}
+                      _log.info('screen', 'User confirmed abort');
                       Navigator.of(dialogContext).pop();
-                      Navigator.of(context).pop();
+                      _recordAbort();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isChallenge
+                      backgroundColor: isDailyChallenge || isChallenge
                           ? FlitColors.error
                           : FlitColors.textMuted,
                       foregroundColor: FlitColors.textPrimary,
@@ -934,6 +969,107 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         ),
       ),
     );
+  }
+
+  /// Record an aborted game as a completion where all unseen rounds
+  /// count as failures (score 0, completed: false). This prevents
+  /// daily challenge exploitation (abort-to-learn-clues-ahead).
+  void _recordAbort() {
+    _timer?.cancel();
+    _autoHintTimer?.cancel();
+    _session?.complete();
+    _cumulativeTime += _elapsed;
+
+    // Record the current in-progress round as a failed round.
+    if (_session != null) {
+      _roundResults.add(
+        _RoundResult(
+          countryName: _session!.targetName,
+          clueType: _session!.clue.type,
+          elapsed: _elapsed,
+          score: 0,
+          hintsUsed: _hintTier,
+          completed: false,
+        ),
+      );
+    }
+
+    // Fill remaining unseen rounds as failures with zero score.
+    for (var i = _currentRound + 1; i <= widget.totalRounds; i++) {
+      _roundResults.add(
+        _RoundResult(
+          countryName: 'Unseen',
+          clueType: ClueType.values.first,
+          elapsed: Duration.zero,
+          score: 0,
+          hintsUsed: 0,
+          completed: false,
+        ),
+      );
+    }
+
+    _log.info(
+      'session',
+      'Game aborted — recording as completion with failed unseen rounds',
+      data: {
+        'totalScore': _totalScore,
+        'roundsCompleted': _currentRound,
+        'totalRounds': widget.totalRounds,
+      },
+    );
+
+    // Record stats as a completed game (abort counts as a game played).
+    ref
+        .read(accountProvider.notifier)
+        .recordGameCompletion(
+          elapsed: _cumulativeTime,
+          score: _totalScore,
+          roundsCompleted: _currentRound,
+          coinReward: 0, // No coin reward for aborted games.
+          region: widget.isDailyChallenge ? 'daily' : widget.region.name,
+        );
+
+    // Fire daily callbacks so the daily challenge is marked as used.
+    if (widget.isDailyChallenge) {
+      widget.onComplete?.call(_totalScore);
+
+      final now = DateTime.now().toUtc();
+      final dateStr =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+          '${now.day.toString().padLeft(2, '0')}';
+      final dailyResult = DailyResult(
+        date: dateStr,
+        rounds: _roundResults
+            .map(
+              (r) => DailyRoundResult(
+                hintsUsed: r.hintsUsed,
+                completed: r.completed,
+                timeMs: r.elapsed.inMilliseconds,
+                score: r.score,
+              ),
+            )
+            .toList(),
+        totalScore: _totalScore,
+        totalTimeMs: _cumulativeTime.inMilliseconds,
+        totalRounds: widget.totalRounds,
+        theme: widget.dailyTheme,
+      );
+      widget.onDailyComplete?.call(dailyResult);
+    }
+
+    // Submit challenge abort if this is a H2H challenge.
+    if (widget.challengeId != null) {
+      ChallengeService.instance.submitRoundResult(
+        challengeId: widget.challengeId!,
+        roundIndex: _currentRound - 1,
+        timeMs: _elapsed.inMilliseconds,
+      );
+    }
+
+    try {
+      _game.pauseEngine();
+    } catch (_) {}
+    Navigator.of(context).pop();
   }
 
   void _showChallengeSentDialog(String friendName) {
@@ -1107,174 +1243,181 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       return _buildErrorScreen(_error!);
     }
 
-    return Scaffold(
-      backgroundColor: FlitColors.backgroundDark,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Flat map regional mode — static satellite tile map behind
-          // the game canvas. Centered on the region, zoom fits the region.
-          if (_gameReady && _session != null && _game.isFlatMapMode)
-            Positioned.fill(
-              child: DescentMapView(
-                centerLng: widget.region.center.x,
-                centerLat: widget.region.center.y,
-                heading: 0, // No rotation for flat map
-                altitudeTransition: _flatMapZoom,
-                tileUrl: GameSettings.instance.mapTileUrl,
-              ),
-            )
-          // Globe mode — OSM tile map shown during descent transition.
-          // Appears when altitude drops below 0.6 and crossfades with the
-          // globe shader which fades out between 0.6→0.3.
-          else if (_gameReady &&
-              _session != null &&
-              _game.plane.continuousAltitude < 0.6)
-            Positioned.fill(
-              child: Opacity(
-                opacity: (1.0 - _game.plane.continuousAltitude / 0.6).clamp(
-                  0.0,
-                  1.0,
-                ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _requestExit();
+      },
+      child: Scaffold(
+        backgroundColor: FlitColors.backgroundDark,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Flat map regional mode — static satellite tile map behind
+            // the game canvas. Centered on the region, zoom fits the region.
+            if (_gameReady && _session != null && _game.isFlatMapMode)
+              Positioned.fill(
                 child: DescentMapView(
-                  centerLng: _game.worldPosition.x,
-                  centerLat: _game.worldPosition.y,
-                  heading: _game.cameraHeadingBearing,
-                  altitudeTransition: _game.plane.continuousAltitude,
+                  centerLng: widget.region.center.x,
+                  centerLat: widget.region.center.y,
+                  heading: 0, // No rotation for flat map
+                  altitudeTransition: _flatMapZoom,
                   tileUrl: GameSettings.instance.mapTileUrl,
-                  trackPlane: true,
+                ),
+              )
+            // Globe mode — OSM tile map shown during descent transition.
+            // Appears when altitude drops below 0.6 and crossfades with the
+            // globe shader which fades out between 0.6→0.3.
+            else if (_gameReady &&
+                _session != null &&
+                _game.plane.continuousAltitude < 0.6)
+              Positioned.fill(
+                child: Opacity(
+                  opacity: (1.0 - _game.plane.continuousAltitude / 0.6).clamp(
+                    0.0,
+                    1.0,
+                  ),
+                  child: DescentMapView(
+                    centerLng: _game.worldPosition.x,
+                    centerLat: _game.worldPosition.y,
+                    heading: _game.cameraHeadingBearing,
+                    altitudeTransition: _game.plane.continuousAltitude,
+                    tileUrl: GameSettings.instance.mapTileUrl,
+                    trackPlane: true,
+                  ),
                 ),
               ),
+
+            // Game canvas – use builders to avoid white flash during init.
+            // In descent mode the background is transparent so the OSM map
+            // shows through, with the plane sprite rendered on top.
+            GameWidget(
+              game: _game,
+              loadingBuilder: (_) =>
+                  Container(color: FlitColors.backgroundDark),
+              errorBuilder: (ctx, err) {
+                _log.error('screen', 'GameWidget error', error: err);
+                ErrorService.instance.reportCritical(
+                  err,
+                  null,
+                  context: {
+                    'screen': 'PlayScreen',
+                    'action': 'GameWidget.errorBuilder',
+                    'region': widget.region.name,
+                  },
+                );
+                // Schedule state update so the error-only build path takes
+                // over on the next frame, completely removing the GameWidget.
+                SchedulerBinding.instance.addPostFrameCallback((_) {
+                  if (mounted && _error == null) {
+                    setState(() {
+                      _error = 'Game engine failed to load.\n\nError: $err';
+                    });
+                  }
+                });
+                // Return a dark container while waiting for rebuild.
+                return Container(color: FlitColors.backgroundDark);
+              },
             ),
 
-          // Game canvas – use builders to avoid white flash during init.
-          // In descent mode the background is transparent so the OSM map
-          // shows through, with the plane sprite rendered on top.
-          GameWidget(
-            game: _game,
-            loadingBuilder: (_) => Container(color: FlitColors.backgroundDark),
-            errorBuilder: (ctx, err) {
-              _log.error('screen', 'GameWidget error', error: err);
-              ErrorService.instance.reportCritical(
-                err,
-                null,
-                context: {
-                  'screen': 'PlayScreen',
-                  'action': 'GameWidget.errorBuilder',
-                  'region': widget.region.name,
-                },
-              );
-              // Schedule state update so the error-only build path takes
-              // over on the next frame, completely removing the GameWidget.
-              SchedulerBinding.instance.addPostFrameCallback((_) {
-                if (mounted && _error == null) {
-                  setState(() {
-                    _error = 'Game engine failed to load.\n\nError: $err';
-                  });
-                }
-              });
-              // Return a dark container while waiting for rebuild.
-              return Container(color: FlitColors.backgroundDark);
-            },
-          ),
-
-          // Launch intro overlay (black screen while globe positions)
-          if (_gameReady && _launchIntroVisible)
-            AnimatedOpacity(
-              opacity: _launchIntroVisible ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 500),
-              child: const IgnorePointer(
-                child: ColoredBox(
-                  color: FlitColors.backgroundDark,
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.flight_takeoff,
-                          color: FlitColors.accent,
-                          size: 48,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Preparing Flight...',
-                          style: TextStyle(
-                            color: FlitColors.textPrimary,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
+            // Launch intro overlay (black screen while globe positions)
+            if (_gameReady && _launchIntroVisible)
+              AnimatedOpacity(
+                opacity: _launchIntroVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 500),
+                child: const IgnorePointer(
+                  child: ColoredBox(
+                    color: FlitColors.backgroundDark,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.flight_takeoff,
+                            color: FlitColors.accent,
+                            size: 48,
                           ),
-                        ),
-                      ],
+                          SizedBox(height: 16),
+                          Text(
+                            'Preparing Flight...',
+                            style: TextStyle(
+                              color: FlitColors.textPrimary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
 
-          // HUD overlay
-          if (_gameReady && _session != null)
-            GameHud(
-              isHighAltitude: _isHighAltitude,
-              elapsedTime: _elapsed,
-              currentClue: _currentClue,
-              onAltitudeToggle: _game.isFlatMapMode
-                  ? null
-                  : () {
-                      _game.plane.toggleAltitude();
-                      AudioManager.instance.playSfx(SfxType.altitudeChange);
-                    },
-              onExit: _requestExit,
-              onSettings: () => showSettingsSheet(context),
-              currentSpeed: _game.flightSpeed,
-              onSpeedChanged: (speed) {
-                setState(() {
-                  _game.setFlightSpeed(speed);
-                });
-              },
-              onHint: _hintTier < 4 ? _useHint : null,
-              hintTier: _hintTier,
-              revealedCountry: _revealedCountry,
-              countryName: _game.currentCountryName,
-              heading: _game.heading,
-              countryFlashProgress: _game.countryFlashProgress,
-              currentRound: _isMultiRound ? _currentRound : null,
-              totalRounds: _isMultiRound ? widget.totalRounds : null,
-              fuelLevel: _game.fuelEnabled ? _game.fuel : null,
-              maxFuel: _game.maxFuel,
-            ),
+            // HUD overlay
+            if (_gameReady && _session != null)
+              GameHud(
+                isHighAltitude: _isHighAltitude,
+                elapsedTime: _elapsed,
+                currentClue: _currentClue,
+                onAltitudeToggle: _game.isFlatMapMode
+                    ? null
+                    : () {
+                        _game.plane.toggleAltitude();
+                        AudioManager.instance.playSfx(SfxType.altitudeChange);
+                      },
+                onExit: _requestExit,
+                onSettings: () => showSettingsSheet(context),
+                currentSpeed: _game.flightSpeed,
+                onSpeedChanged: (speed) {
+                  setState(() {
+                    _game.setFlightSpeed(speed);
+                  });
+                },
+                onHint: _hintTier < 4 ? _useHint : null,
+                hintTier: _hintTier,
+                revealedCountry: _revealedCountry,
+                countryName: _game.currentCountryName,
+                heading: _game.heading,
+                countryFlashProgress: _game.countryFlashProgress,
+                currentRound: _isMultiRound ? _currentRound : null,
+                totalRounds: _isMultiRound ? widget.totalRounds : null,
+                fuelLevel: _game.fuelEnabled ? _game.fuel : null,
+                maxFuel: _game.maxFuel,
+              ),
 
-          // Mobile turn buttons (L/R) — positioned at bottom corners.
-          // Use GestureDetector for press/release to get progressive turning.
-          if (_gameReady && _session != null) ...[
-            Positioned(
-              left: 16,
-              bottom: MediaQuery.of(context).padding.bottom + 80,
-              child: _TurnButton(
-                icon: Icons.turn_left,
-                onPressStart: () => _game.setButtonTurn(-1),
-                onPressEnd: () => _game.releaseButtonTurn(),
+            // Mobile turn buttons (L/R) — positioned at bottom corners.
+            // Use GestureDetector for press/release to get progressive turning.
+            if (_gameReady && _session != null) ...[
+              Positioned(
+                left: 16,
+                bottom: MediaQuery.of(context).padding.bottom + 80,
+                child: _TurnButton(
+                  icon: Icons.turn_left,
+                  onPressStart: () => _game.setButtonTurn(-1),
+                  onPressEnd: () => _game.releaseButtonTurn(),
+                ),
               ),
-            ),
-            Positioned(
-              right: 16,
-              bottom: MediaQuery.of(context).padding.bottom + 80,
-              child: _TurnButton(
-                icon: Icons.turn_right,
-                onPressStart: () => _game.setButtonTurn(1),
-                onPressEnd: () => _game.releaseButtonTurn(),
+              Positioned(
+                right: 16,
+                bottom: MediaQuery.of(context).padding.bottom + 80,
+                child: _TurnButton(
+                  icon: Icons.turn_right,
+                  onPressStart: () => _game.setButtonTurn(1),
+                  onPressEnd: () => _game.releaseButtonTurn(),
+                ),
               ),
-            ),
+            ],
+
+            // Loading overlay
+            if (!_gameReady)
+              Container(
+                color: FlitColors.backgroundDark,
+                child: const Center(
+                  child: CircularProgressIndicator(color: FlitColors.accent),
+                ),
+              ),
           ],
-
-          // Loading overlay
-          if (!_gameReady)
-            Container(
-              color: FlitColors.backgroundDark,
-              child: const Center(
-                child: CircularProgressIndicator(color: FlitColors.accent),
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }
