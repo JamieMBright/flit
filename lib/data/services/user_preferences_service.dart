@@ -48,8 +48,10 @@ class _PendingWriteQueue {
         _memory = [];
       }
     } catch (e) {
-      debugPrint('[PendingWriteQueue] SharedPreferences unavailable, '
-          'falling back to in-memory queue: $e');
+      debugPrint(
+        '[PendingWriteQueue] SharedPreferences unavailable, '
+        'falling back to in-memory queue: $e',
+      );
       _prefsAvailable = false;
     }
   }
@@ -110,8 +112,10 @@ class _PendingWriteQueue {
     final retries = (head['retries'] as int? ?? 0) + 1;
     if (retries >= _kMaxRetries) {
       entries.removeAt(0);
-      debugPrint('[PendingWriteQueue] dropped entry after $_kMaxRetries '
-          'retries: table=${head['table']}');
+      debugPrint(
+        '[PendingWriteQueue] dropped entry after $_kMaxRetries '
+        'retries: table=${head['table']}',
+      );
     } else {
       entries[0] = {...head, 'retries': retries};
     }
@@ -302,6 +306,8 @@ class UserPreferencesService {
     required bool englishLabels,
     required String difficulty,
     required bool soundEnabled,
+    required double musicVolume,
+    required double effectsVolume,
     required bool notificationsEnabled,
     required bool hapticEnabled,
   }) {
@@ -315,6 +321,8 @@ class UserPreferencesService {
       'english_labels': englishLabels,
       'difficulty': difficulty,
       'sound_enabled': soundEnabled,
+      'music_volume': musicVolume,
+      'effects_volume': effectsVolume,
       'notifications_enabled': notificationsEnabled,
       'haptic_enabled': hapticEnabled,
     };
@@ -744,6 +752,14 @@ class UserPreferencesSnapshot {
 
   bool get soundEnabled {
     return settings?['sound_enabled'] as bool? ?? true;
+  }
+
+  double get musicVolume {
+    return (settings?['music_volume'] as num?)?.toDouble() ?? 1.0;
+  }
+
+  double get effectsVolume {
+    return (settings?['effects_volume'] as num?)?.toDouble() ?? 1.0;
   }
 
   bool get notificationsEnabled {

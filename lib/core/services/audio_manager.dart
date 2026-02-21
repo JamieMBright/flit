@@ -92,11 +92,38 @@ class AudioManager {
   /// Maximum additional volume added during full turn.
   static const double _engineTurnBoost = 0.08;
 
-  /// Background music volume.
-  static const double _musicVolume = 0.25;
+  /// Default background music volume.
+  static const double _defaultMusicVolume = 0.25;
 
-  /// SFX volume.
-  static const double _sfxVolume = 0.5;
+  /// Default SFX volume.
+  static const double _defaultSfxVolume = 0.5;
+
+  /// User-configurable music volume multiplier (0.0 = silent, 1.0 = full).
+  double _musicVolume = 1.0;
+
+  double get musicVolume => _musicVolume;
+
+  set musicVolume(double value) {
+    _musicVolume = value.clamp(0.0, 1.0);
+    // Immediately update the playing music player volume.
+    if (_enabled) {
+      _musicPlayer.setVolume(_defaultMusicVolume * _musicVolume);
+    }
+  }
+
+  /// User-configurable effects volume multiplier (0.0 = silent, 1.0 = full).
+  /// Applies to both engine sounds and one-shot SFX.
+  double _effectsVolume = 1.0;
+
+  double get effectsVolume => _effectsVolume;
+
+  set effectsVolume(double value) {
+    _effectsVolume = value.clamp(0.0, 1.0);
+    // Immediately update the playing engine volume.
+    if (_enabled && _currentEngine != null) {
+      _enginePlayer.setVolume(_engineBaseVolume * _effectsVolume);
+    }
+  }
 
   /// Whether [initialize] has been called.
   bool _initialized = false;
@@ -249,7 +276,7 @@ class AudioManager {
     if (_failedAssets.contains(asset)) return;
 
     try {
-      await _musicPlayer.setVolume(_musicVolume);
+      await _musicPlayer.setVolume(_defaultMusicVolume * _musicVolume);
       await _musicPlayer.play(AssetSource(asset));
     } catch (e) {
       _log.warning('audio', 'Music track failed: $asset', error: e);
@@ -293,7 +320,7 @@ class AudioManager {
 
     try {
       await _enginePlayer.stop();
-      await _enginePlayer.setVolume(_engineBaseVolume);
+      await _enginePlayer.setVolume(_engineBaseVolume * _effectsVolume);
       await _enginePlayer.play(AssetSource(asset));
     } catch (e) {
       _log.warning('audio', 'Engine sound failed: $asset', error: e);
@@ -317,8 +344,9 @@ class AudioManager {
     if (!_enabled || _currentEngine == null) return;
 
     final volume =
-        (_engineBaseVolume +
-                _engineTurnBoost * turnAmount.abs().clamp(0.0, 1.0))
+        ((_engineBaseVolume +
+                    _engineTurnBoost * turnAmount.abs().clamp(0.0, 1.0)) *
+                _effectsVolume)
             .clamp(0.0, 1.0);
 
     try {
@@ -345,7 +373,7 @@ class AudioManager {
     _sfxPoolIndex = (_sfxPoolIndex + 1) % _sfxPool.length;
 
     try {
-      await player.setVolume(_sfxVolume);
+      await player.setVolume(_defaultSfxVolume * _effectsVolume);
       await player.play(AssetSource(asset));
     } catch (e) {
       _log.warning('audio', 'SFX failed: $asset', error: e);
