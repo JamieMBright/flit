@@ -291,6 +291,7 @@ class AvatarConfig {
     this.earrings = AvatarEarrings.none,
     this.feature = AvatarFeature.none,
     this.companion = AvatarCompanion.none,
+    this.extras = const {},
   });
 
   final AvatarStyle style;
@@ -305,9 +306,18 @@ class AvatarConfig {
   final AvatarFeature feature;
   final AvatarCompanion companion;
 
+  /// Style-specific customisation options stored as key→index pairs.
+  ///
+  /// Used for categories that only exist for certain styles (e.g. Notionists
+  /// 'body' or 'gesture') and have no dedicated enum field.
+  final Map<String, int> extras;
+
   // ---------------------------------------------------------------------------
   // Copy
   // ---------------------------------------------------------------------------
+
+  /// Read a style-specific extra option, defaulting to 0 if not set.
+  int extra(String key) => extras[key] ?? 0;
 
   AvatarConfig copyWith({
     AvatarStyle? style,
@@ -321,6 +331,7 @@ class AvatarConfig {
     AvatarEarrings? earrings,
     AvatarFeature? feature,
     AvatarCompanion? companion,
+    Map<String, int>? extras,
   }) => AvatarConfig(
     style: style ?? this.style,
     eyes: eyes ?? this.eyes,
@@ -333,6 +344,7 @@ class AvatarConfig {
     earrings: earrings ?? this.earrings,
     feature: feature ?? this.feature,
     companion: companion ?? this.companion,
+    extras: extras ?? this.extras,
   );
 
   // ---------------------------------------------------------------------------
@@ -540,6 +552,7 @@ class AvatarConfig {
     'earrings': earrings.name,
     'feature': feature.name,
     'companion': companion.name,
+    if (extras.isNotEmpty) 'extras': extras,
   };
 
   factory AvatarConfig.fromJson(Map<String, dynamic> json) => AvatarConfig(
@@ -587,6 +600,11 @@ class AvatarConfig {
       (v) => v.name == json['companion'],
       orElse: () => AvatarCompanion.none,
     ),
+    extras:
+        (json['extras'] as Map<String, dynamic>?)?.map(
+          (k, v) => MapEntry(k, v as int),
+        ) ??
+        const {},
   );
 
   @override
@@ -603,7 +621,16 @@ class AvatarConfig {
           glasses == other.glasses &&
           earrings == other.earrings &&
           feature == other.feature &&
-          companion == other.companion;
+          companion == other.companion &&
+          _mapEquals(extras, other.extras);
+
+  static bool _mapEquals(Map<String, int> a, Map<String, int> b) {
+    if (a.length != b.length) return false;
+    for (final key in a.keys) {
+      if (a[key] != b[key]) return false;
+    }
+    return true;
+  }
 
   @override
   int get hashCode => Object.hash(
@@ -618,5 +645,6 @@ class AvatarConfig {
     earrings,
     feature,
     companion,
+    Object.hashAll(extras.entries.map((e) => Object.hash(e.key, e.value))),
   );
 }

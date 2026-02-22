@@ -98,6 +98,8 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat();
+    // Pull latest server state so license stats are always current.
+    ref.read(accountProvider.notifier).refreshFromServer();
   }
 
   @override
@@ -110,8 +112,9 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
   // Cost helpers
   // ---------------------------------------------------------------------------
 
-  int get _totalCost {
-    var cost = PilotLicense.rerollAllCost;
+  /// Cost to lock selected stats (without the base reroll cost).
+  int get _lockOnlyCost {
+    var cost = 0;
     for (final stat in _lockedStats) {
       int statValue;
       switch (stat) {
@@ -131,6 +134,9 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
     if (_lockClueType) cost += PilotLicense.lockTypeCost;
     return cost;
   }
+
+  /// Total cost for a paid reroll (base cost + lock costs).
+  int get _totalCost => PilotLicense.rerollAllCost + _lockOnlyCost;
 
   bool _canAfford(int coins) => coins >= _totalCost;
 
@@ -754,36 +760,71 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
 
   Widget _buildFreeRerollButton() {
     final hasFree = ref.watch(accountProvider).hasFreeRerollToday;
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton.icon(
-        onPressed: hasFree && !_isRolling ? _freeReroll : null,
-        icon: Icon(
-          hasFree ? Icons.card_giftcard : Icons.check_circle_outline,
-          size: 20,
-        ),
-        label: Text(
-          hasFree ? 'FREE DAILY REROLL' : 'FREE REROLL USED TODAY',
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.5,
+    final coins = ref.watch(currentCoinsProvider);
+    final lockCost = _lockOnlyCost;
+    final canAffordLocks = lockCost == 0 || coins >= lockCost;
+    final enabled = hasFree && !_isRolling && canAffordLocks;
+
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: enabled ? _freeReroll : null,
+            icon: Icon(
+              hasFree ? Icons.card_giftcard : Icons.check_circle_outline,
+              size: 20,
+            ),
+            label: Text(
+              hasFree ? 'FREE DAILY REROLL' : 'FREE REROLL USED TODAY',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: hasFree
+                  ? FlitColors.success
+                  : FlitColors.backgroundMid,
+              foregroundColor: FlitColors.textPrimary,
+              disabledBackgroundColor: FlitColors.backgroundMid,
+              disabledForegroundColor: FlitColors.textMuted,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: hasFree ? 4 : 0,
+            ),
           ),
         ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: hasFree
-              ? FlitColors.success
-              : FlitColors.backgroundMid,
-          foregroundColor: FlitColors.textPrimary,
-          disabledBackgroundColor: FlitColors.backgroundMid,
-          disabledForegroundColor: FlitColors.textMuted,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+        if (hasFree && lockCost > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.lock, size: 12, color: FlitColors.textMuted),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.monetization_on,
+                  size: 12,
+                  color: FlitColors.warning,
+                ),
+                const SizedBox(width: 2),
+                Text(
+                  '$lockCost lock cost',
+                  style: TextStyle(
+                    color: canAffordLocks
+                        ? FlitColors.textMuted
+                        : FlitColors.error,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
           ),
-          elevation: hasFree ? 4 : 0,
-        ),
-      ),
+      ],
     );
   }
 
@@ -796,7 +837,9 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
 
     if (!mounted) return;
 
-    final success = ref.read(accountProvider.notifier).useFreeReroll();
+    final success = ref
+        .read(accountProvider.notifier)
+        .useFreeReroll(lockedStats: _lockedStats, lockType: _lockClueType);
     if (success) {
       _license = ref.read(licenseProvider);
     }
@@ -810,31 +853,66 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
   Widget _buildDailyScrambleRerollButton() {
     final hasBonus = ref.watch(accountProvider).hasDailyScrambleReroll;
     if (!hasBonus) return const SizedBox.shrink();
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton.icon(
-        onPressed: !_isRolling ? _dailyScrambleReroll : null,
-        icon: const Icon(Icons.today_rounded, size: 20),
-        label: const Text(
-          'DAILY SCRAMBLE REROLL',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.5,
+    final coins = ref.watch(currentCoinsProvider);
+    final lockCost = _lockOnlyCost;
+    final canAffordLocks = lockCost == 0 || coins >= lockCost;
+    final enabled = !_isRolling && canAffordLocks;
+
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: enabled ? _dailyScrambleReroll : null,
+            icon: const Icon(Icons.today_rounded, size: 20),
+            label: const Text(
+              'DAILY SCRAMBLE REROLL',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FlitColors.accent,
+              foregroundColor: FlitColors.textPrimary,
+              disabledBackgroundColor: FlitColors.backgroundMid,
+              disabledForegroundColor: FlitColors.textMuted,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 4,
+            ),
           ),
         ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: FlitColors.accent,
-          foregroundColor: FlitColors.textPrimary,
-          disabledBackgroundColor: FlitColors.backgroundMid,
-          disabledForegroundColor: FlitColors.textMuted,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+        if (lockCost > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.lock, size: 12, color: FlitColors.textMuted),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.monetization_on,
+                  size: 12,
+                  color: FlitColors.warning,
+                ),
+                const SizedBox(width: 2),
+                Text(
+                  '$lockCost lock cost',
+                  style: TextStyle(
+                    color: canAffordLocks
+                        ? FlitColors.textMuted
+                        : FlitColors.error,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
           ),
-          elevation: 4,
-        ),
-      ),
+      ],
     );
   }
 
@@ -847,7 +925,12 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
 
     if (!mounted) return;
 
-    final success = ref.read(accountProvider.notifier).useDailyScrambleReroll();
+    final success = ref
+        .read(accountProvider.notifier)
+        .useDailyScrambleReroll(
+          lockedStats: _lockedStats,
+          lockType: _lockClueType,
+        );
     if (success) {
       _license = ref.read(licenseProvider);
     }

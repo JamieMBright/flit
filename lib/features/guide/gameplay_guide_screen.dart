@@ -1377,142 +1377,129 @@ class _ControlsDiagram extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 110,
+      padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
         color: FlitColors.backgroundDark,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: FlitColors.cardBorder),
       ),
-      child: CustomPaint(painter: _ControlsDiagramPainter()),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            // Zone 1: Steer
+            Expanded(
+              child: _GestureZone(
+                color: FlitColors.oceanHighlight,
+                icon: Icons.swipe_rounded,
+                label: 'STEER',
+              ),
+            ),
+            Container(
+              width: 0.5,
+              color: FlitColors.cardBorder.withOpacity(0.5),
+            ),
+            // Zone 2: Altitude
+            Expanded(
+              child: _GestureZone(
+                color: FlitColors.gold,
+                icon: Icons.height_rounded,
+                label: 'ALT',
+              ),
+            ),
+            Container(
+              width: 0.5,
+              color: FlitColors.cardBorder.withOpacity(0.5),
+            ),
+            // Zone 3: Tap
+            Expanded(
+              child: _GestureZone(
+                color: FlitColors.accent,
+                icon: Icons.ads_click_rounded,
+                label: 'TAP',
+                showRipple: true,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
-class _ControlsDiagramPainter extends CustomPainter {
+class _GestureZone extends StatelessWidget {
+  const _GestureZone({
+    required this.color,
+    required this.icon,
+    required this.label,
+    this.showRipple = false,
+  });
+
+  final Color color;
+  final IconData icon;
+  final String label;
+  final bool showRipple;
+
   @override
-  void paint(Canvas canvas, Size size) {
-    // Draw three gesture zones side by side
-    final third = size.width / 3;
-    final cy = size.height / 2;
-
-    // --- Zone 1: Drag ---
-    final zone1cx = third * 0.5;
-    _drawGestureCircle(
-      canvas,
-      Offset(zone1cx, cy - 8),
-      18,
-      FlitColors.oceanHighlight,
-    );
-    // Arrow right
-    _drawArrow(
-      canvas,
-      Offset(zone1cx, cy - 8),
-      Offset(zone1cx + 26, cy - 8),
-      FlitColors.oceanHighlight,
-    );
-    _drawLabel(canvas, 'STEER', Offset(zone1cx, cy + 22), FlitColors.textMuted);
-
-    // --- Zone 2: Altitude ---
-    final zone2cx = third * 1.5;
-    _drawGestureCircle(canvas, Offset(zone2cx, cy - 8), 18, FlitColors.gold);
-    // Up/down arrow
-    final altPaint = Paint()
-      ..color = FlitColors.gold.withOpacity(0.7)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(
-      Offset(zone2cx, cy - 20),
-      Offset(zone2cx, cy + 4),
-      altPaint,
-    );
-    _drawLabel(canvas, 'ALT', Offset(zone2cx, cy + 22), FlitColors.textMuted);
-
-    // --- Zone 3: Tap ---
-    final zone3cx = third * 2.5;
-    _drawGestureCircle(canvas, Offset(zone3cx, cy - 8), 18, FlitColors.accent);
-    // Ripple rings
-    final ripplePaint = Paint()
-      ..color = FlitColors.accent.withOpacity(0.3)
-      ..strokeWidth = 1.2
-      ..style = PaintingStyle.stroke;
-    canvas.drawCircle(Offset(zone3cx, cy - 8), 26, ripplePaint);
-    canvas.drawCircle(
-      Offset(zone3cx, cy - 8),
-      34,
-      ripplePaint..color = FlitColors.accent.withOpacity(0.15),
-    );
-    _drawLabel(canvas, 'TAP', Offset(zone3cx, cy + 22), FlitColors.textMuted);
-
-    // Dividers
-    final divPaint = Paint()
-      ..color = FlitColors.cardBorder.withOpacity(0.5)
-      ..strokeWidth = 0.5;
-    canvas.drawLine(
-      Offset(third, 12),
-      Offset(third, size.height - 12),
-      divPaint,
-    );
-    canvas.drawLine(
-      Offset(third * 2, 12),
-      Offset(third * 2, size.height - 12),
-      divPaint,
-    );
-  }
-
-  void _drawGestureCircle(Canvas canvas, Offset center, double r, Color color) {
-    final paint = Paint()..color = color.withOpacity(0.25);
-    canvas.drawCircle(center, r, paint);
-    final borderPaint = Paint()
-      ..color = color.withOpacity(0.6)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-    canvas.drawCircle(center, r, borderPaint);
-  }
-
-  void _drawArrow(Canvas canvas, Offset from, Offset to, Color color) {
-    final paint = Paint()
-      ..color = color.withOpacity(0.7)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(from, to, paint);
-    // Arrowhead
-    final dir = (to - from);
-    final len = dir.distance;
-    final unit = Offset(dir.dx / len, dir.dy / len);
-    final perp = Offset(-unit.dy, unit.dx);
-    final arrowPaint = Paint()..color = color.withOpacity(0.7);
-    final arrowPath = Path()
-      ..moveTo(to.dx, to.dy)
-      ..lineTo(
-        to.dx - unit.dx * 6 + perp.dx * 4,
-        to.dy - unit.dy * 6 + perp.dy * 4,
-      )
-      ..lineTo(
-        to.dx - unit.dx * 6 - perp.dx * 4,
-        to.dy - unit.dy * 6 - perp.dy * 4,
-      )
-      ..close();
-    canvas.drawPath(arrowPath, arrowPaint);
-  }
-
-  void _drawLabel(Canvas canvas, String text, Offset position, Color color) {
-    final tp = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: TextStyle(
-          color: color,
-          fontSize: 9,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1,
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 68,
+          height: 68,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              if (showRipple) ...[
+                Container(
+                  width: 68,
+                  height: 68,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: color.withOpacity(0.15),
+                      width: 1.2,
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: color.withOpacity(0.3),
+                      width: 1.2,
+                    ),
+                  ),
+                ),
+              ],
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color.withOpacity(0.25),
+                  border: Border.all(color: color.withOpacity(0.6), width: 1.5),
+                ),
+                child: Icon(icon, color: color.withOpacity(0.8), size: 18),
+              ),
+            ],
+          ),
         ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas, position - Offset(tp.width / 2, tp.height / 2));
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: TextStyle(
+            color: FlitColors.textMuted,
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1,
+          ),
+        ),
+      ],
+    );
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _ControlRow extends StatelessWidget {

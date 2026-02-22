@@ -171,15 +171,17 @@ class GameSettings extends ChangeNotifier {
       _notificationsEnabled =
           data['notifications_enabled'] as bool? ?? _notificationsEnabled;
       _hapticEnabled = data['haptic_enabled'] as bool? ?? _hapticEnabled;
-      _hydrating = false;
-
       // Sync audio manager state from loaded values — the setters above
       // bypassed the public setters which normally do this.
       AudioManager.instance.enabled = _soundEnabled;
       AudioManager.instance.musicVolume = _musicVolume;
       AudioManager.instance.effectsVolume = _effectsVolume;
 
+      // Notify listeners while still hydrating so _syncToSupabase is blocked.
+      // This prevents locally-cached settings from being written to Supabase
+      // before loadFromSupabase has a chance to fetch the authoritative data.
       notifyListeners();
+      _hydrating = false;
       return true;
     } catch (_) {
       return false;

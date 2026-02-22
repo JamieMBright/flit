@@ -196,6 +196,12 @@ class UserPreferencesService {
   Timer? _debounceTimer;
   String? _userId;
 
+  // Crash-safe local persistence — survives iOS force-close.
+  SharedPreferences? _localPrefs;
+  static const _kLocalProfile = 'crash_safe_profile';
+  static const _kLocalSettings = 'crash_safe_settings';
+  static const _kLocalAccountState = 'crash_safe_account_state';
+
   // Dirty flags — only the changed tables are written.
   bool _profileDirty = false;
   bool _settingsDirty = false;
@@ -227,6 +233,9 @@ class UserPreferencesService {
   Future<void> _ensureQueueInitialised() async {
     if (_queueInitialised) return;
     await _queue.init();
+    try {
+      _localPrefs ??= await SharedPreferences.getInstance();
+    } catch (_) {}
     _queueInitialised = true;
   }
 
@@ -260,14 +269,40 @@ class UserPreferencesService {
             .maybeSingle(),
       ]);
 
-      final profileData = results[0] as Map<String, dynamic>?;
-      final settingsData = results[1] as Map<String, dynamic>?;
-      final accountData = results[2] as Map<String, dynamic>?;
+      var profileData = results[0] as Map<String, dynamic>?;
+      var settingsData = results[1] as Map<String, dynamic>?;
+      var accountData = results[2] as Map<String, dynamic>?;
 
-      if (profileData == null) return null;
+      if (profileData == null) {
+        debugPrint(
+          '[UserPreferencesService] load: profiles row is null for $userId',
+        );
+        return null;
+      }
+
+      // Recover any crash-safe data that wasn't flushed (e.g. iOS force-close
+      // killed the process before the 2-second debounce timer fired).
+      profileData = _recoverLocalCache(
+        _kLocalProfile,
+        profileData,
+        'id',
+        userId,
+      );
+      settingsData = _recoverLocalCache(
+        _kLocalSettings,
+        settingsData,
+        'user_id',
+        userId,
+      );
+      accountData = _recoverLocalCache(
+        _kLocalAccountState,
+        accountData,
+        'user_id',
+        userId,
+      );
 
       return UserPreferencesSnapshot(
-        profile: profileData,
+        profile: profileData!,
         settings: settingsData,
         accountState: accountData,
       );
@@ -304,6 +339,7 @@ class UserPreferencesService {
       'stats_correct': player.statsCorrect,
       'best_streak': player.bestStreak,
     };
+    _cacheLocally(_kLocalProfile, _pendingProfile!);
     _scheduleSave();
   }
 
@@ -336,6 +372,7 @@ class UserPreferencesService {
       'notifications_enabled': notificationsEnabled,
       'haptic_enabled': hapticEnabled,
     };
+    _cacheLocally(_kLocalSettings, _pendingSettings!);
     _scheduleSave();
   }
 
@@ -370,6 +407,7 @@ class UserPreferencesService {
       'daily_streak_data': dailyStreak.toJson(),
       'last_daily_result': lastDailyResult?.toJson(),
     };
+    _cacheLocally(_kLocalAccountState, _pendingAccountState!);
     _scheduleSave();
   }
 
@@ -532,15 +570,87 @@ class UserPreferencesService {
     _pendingProfile = null;
     _pendingSettings = null;
     _pendingAccountState = null;
-    // Purge offline queue to prevent cross-user contamination.
+    // Purge offline queue and crash-safe cache to prevent cross-user
+    // contamination.
     if (_queueInitialised) {
       _queue.clear();
     }
+    _clearLocalCache(_kLocalProfile);
+    _clearLocalCache(_kLocalSettings);
+    _clearLocalCache(_kLocalAccountState);
   }
 
   // ---------------------------------------------------------------------------
   // Internal
   // ---------------------------------------------------------------------------
+
+  /// Immediately persist a payload to SharedPreferences as a crash-safe cache.
+  ///
+  /// Called from each `save*()` method so that even if the app is force-killed
+  /// before the 2-second debounce fires, the data is recoverable from local
+  /// storage on the next launch.
+  void _cacheLocally(String key, Map<String, dynamic> payload) {
+    try {
+      if (_localPrefs == null) {
+        // Eagerly initialise if the queue hasn't been set up yet. The
+        // getInstance() Future resolves almost instantly on iOS/Android
+        // (in-process cache after the first call).
+        SharedPreferences.getInstance().then((prefs) {
+          _localPrefs = prefs;
+          try {
+            prefs.setString(key, jsonEncode(payload));
+          } catch (_) {}
+        });
+        return;
+      }
+      _localPrefs!.setString(key, jsonEncode(payload));
+    } catch (_) {}
+  }
+
+  void _clearLocalCache(String key) {
+    try {
+      _localPrefs?.remove(key);
+    } catch (_) {}
+  }
+
+  /// Recover locally cached data that was written but never flushed to
+  /// Supabase (e.g. after an iOS force-close during the debounce window).
+  ///
+  /// If found and belonging to [userId], the local data is merged over the
+  /// server data (local is newer since it was written after the last successful
+  /// Supabase sync). Returns the merged map, or the original server data if
+  /// nothing to recover.
+  Map<String, dynamic>? _recoverLocalCache(
+    String key,
+    Map<String, dynamic>? serverData,
+    String userIdField,
+    String userId,
+  ) {
+    try {
+      final cached = _localPrefs?.getString(key);
+      if (cached == null) return serverData;
+
+      final localData = jsonDecode(cached) as Map<String, dynamic>;
+      // Verify the cached data is for the same user.
+      if (localData[userIdField] != userId) {
+        _clearLocalCache(key);
+        return serverData;
+      }
+
+      debugPrint(
+        '[UserPreferencesService] recovered crash-safe $key for $userId',
+      );
+      _clearLocalCache(key);
+
+      // Local data takes priority — merge over server data.
+      if (serverData != null) {
+        return {...serverData, ...localData};
+      }
+      return localData;
+    } catch (_) {
+      return serverData;
+    }
+  }
 
   void _scheduleSave() {
     _debounceTimer?.cancel();
@@ -564,6 +674,7 @@ class UserPreferencesService {
             .then((_) {
               _profileDirty = false;
               _pendingProfile = null;
+              _clearLocalCache(_kLocalProfile);
             })
             .catchError((Object e) async {
               debugPrint(
@@ -583,6 +694,7 @@ class UserPreferencesService {
             .then((_) {
               _settingsDirty = false;
               _pendingSettings = null;
+              _clearLocalCache(_kLocalSettings);
             })
             .catchError((Object e) async {
               debugPrint(
@@ -602,6 +714,7 @@ class UserPreferencesService {
             .then((_) {
               _accountStateDirty = false;
               _pendingAccountState = null;
+              _clearLocalCache(_kLocalAccountState);
             })
             .catchError((Object e) async {
               debugPrint(

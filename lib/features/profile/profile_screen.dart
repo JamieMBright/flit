@@ -58,6 +58,13 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Pull latest server state so profile stats are always current.
+    ref.read(accountProvider.notifier).refreshFromServer();
+  }
+
   void _openSettings() => showSettingsSheet(context);
 
   void _editProfile() {
@@ -487,6 +494,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Navigator.of(dialogContext).pop();
               // Flush pending preferences before signing out.
               await ref.read(accountProvider.notifier).flushPreferences();
+              // Clear the Supabase auth session so auto-login doesn't
+              // immediately re-authenticate on the login screen.
+              await AuthService().signOut();
               ref.read(accountProvider.notifier).clearPreferences();
               if (context.mounted) {
                 Navigator.of(context).popUntil((route) => route.isFirst);

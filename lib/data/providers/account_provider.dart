@@ -205,8 +205,28 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // after the new user's data has been loaded.
     _prefs.clearDirtyFlags();
     _userId = userId;
-    final snapshot = await _prefs.load(userId);
-    if (snapshot == null) return;
+
+    // Retry up to 3 times with exponential backoff. Without this, a
+    // transient Supabase timeout on cold start (common after iOS force-close)
+    // silently leaves the user with default/empty state for the session.
+    UserPreferencesSnapshot? snapshot;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      snapshot = await _prefs.load(userId);
+      if (snapshot != null) break;
+      debugPrint(
+        '[AccountNotifier] loadFromSupabase attempt ${attempt + 1} returned '
+        'null — retrying in ${1 << attempt}s',
+      );
+      await Future<void>.delayed(Duration(seconds: 1 << attempt));
+    }
+
+    if (snapshot == null) {
+      debugPrint(
+        '[AccountNotifier] loadFromSupabase: all retries failed for $userId '
+        '— user will see default state',
+      );
+      return;
+    }
 
     await _applySnapshot(snapshot);
     _startPeriodicRefresh();
@@ -261,16 +281,26 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// Start a periodic timer that re-fetches user data from Supabase.
   void _startPeriodicRefresh() {
     _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(_refreshInterval, (_) => _refreshFromDb());
+    _refreshTimer = Timer.periodic(
+      _refreshInterval,
+      (_) => refreshFromServer(),
+    );
   }
 
   /// Re-fetch all user data from Supabase and re-hydrate local state.
   ///
   /// Skips the refresh if there are pending local writes (to avoid
   /// overwriting unsaved changes).
-  Future<void> _refreshFromDb() async {
+  ///
+  /// Called automatically on a periodic timer, but also available for
+  /// on-demand refresh when navigating to key screens (shop, profile, etc.)
+  /// so the user always sees the latest server state.
+  Future<void> refreshFromServer() async {
     if (_userId == null) return;
-    if (_prefs.hasPendingWrites) return;
+    if (_prefs.hasPendingWrites) {
+      // Flush pending writes first, then refresh.
+      await _prefs.flush();
+    }
 
     try {
       final snapshot = await _prefs.load(_userId!);
@@ -278,7 +308,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
         await _applySnapshot(snapshot);
       }
     } catch (e) {
-      debugPrint('[AccountNotifier] periodic refresh failed: $e');
+      debugPrint('[AccountNotifier] refresh failed: $e');
     }
   }
 
@@ -334,6 +364,32 @@ class AccountNotifier extends StateNotifier<AccountState> {
       dailyStreak: state.dailyStreak,
       lastDailyResult: state.lastDailyResult,
     );
+  }
+
+  /// Calculate the total coin cost for locking stats during a reroll.
+  ///
+  /// Each locked stat has a cost based on its current value, and locking
+  /// the preferred clue type has a flat cost.
+  int _calculateLockCost(Set<String> lockedStats, bool lockType) {
+    var cost = 0;
+    for (final stat in lockedStats) {
+      int statValue;
+      switch (stat) {
+        case 'coinBoost':
+          statValue = state.license.coinBoost;
+        case 'clueBoost':
+          statValue = state.license.clueBoost;
+        case 'clueChance':
+          statValue = state.license.clueChance;
+        case 'fuelBoost':
+          statValue = state.license.fuelBoost;
+        default:
+          statValue = 1;
+      }
+      cost += PilotLicense.lockCostForValue(statValue);
+    }
+    if (lockType) cost += PilotLicense.lockTypeCost;
+    return cost;
   }
 
   /// Add coins to current account.
@@ -635,11 +691,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
 
       final result = await Supabase.instance.client.rpc(
         'purchase_avatar_part',
-        params: {
-          'p_user_id': userId,
-          'p_part_id': partId,
-          'p_cost': cost,
-        },
+        params: {'p_user_id': userId, 'p_part_id': partId, 'p_cost': cost},
       );
 
       if (result is Map<String, dynamic>) {
@@ -649,8 +701,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
           if (serverBalance != null &&
               serverBalance != state.currentPlayer.coins) {
             state = state.copyWith(
-              currentPlayer:
-                  state.currentPlayer.copyWith(coins: serverBalance),
+              currentPlayer: state.currentPlayer.copyWith(coins: serverBalance),
             );
           }
         } else {
@@ -776,16 +827,27 @@ class AccountNotifier extends StateNotifier<AccountState> {
 
   /// Use the daily free reroll. Returns true if the free reroll was available.
   ///
-  /// The free reroll rerolls ALL stats and the clue type (no locks).
-  /// Locking individual stats still costs coins via [rerollLicense].
-  bool useFreeReroll() {
+  /// The base reroll is free, but locking individual stats still costs coins.
+  /// If [lockedStats] or [lockType] are provided, the corresponding lock
+  /// costs are charged via [spendCoins]. Returns false if the player cannot
+  /// afford the lock costs.
+  bool useFreeReroll({
+    Set<String> lockedStats = const {},
+    bool lockType = false,
+  }) {
     if (!state.hasFreeRerollToday) return false;
+
+    // Base reroll is free, but locking stats still costs coins.
+    final lockCost = _calculateLockCost(lockedStats, lockType);
+    if (lockCost > 0 && !spendCoins(lockCost)) return false;
 
     final todayStr = AccountState._todayStr();
 
     state = state.copyWith(
       license: PilotLicense.reroll(
         state.license,
+        lockedStats: lockedStats,
+        lockType: lockType,
         luckBonus: state.avatar.luckBonus,
       ),
       lastFreeRerollDate: todayStr,
@@ -866,15 +928,27 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// Use the daily-scramble bonus reroll. Returns true if available.
   ///
   /// Available only if the player has completed today's daily scramble
-  /// and hasn't already used this bonus reroll. Rerolls ALL stats.
-  bool useDailyScrambleReroll() {
+  /// and hasn't already used this bonus reroll. The base reroll is free,
+  /// but locking stats still costs coins. Returns false if the player
+  /// cannot afford the lock costs.
+  bool useDailyScrambleReroll({
+    Set<String> lockedStats = const {},
+    bool lockType = false,
+  }) {
     if (!state.hasDailyScrambleReroll) return false;
+
+    // Base reroll is free, but locking stats still costs coins.
+    final lockCost = _calculateLockCost(lockedStats, lockType);
+    if (lockCost > 0 && !spendCoins(lockCost)) return false;
+
     // Mark as used by clearing the daily challenge date (prevents reuse).
     // We use a special suffix to distinguish "completed" from "reroll used".
     final todayStr = AccountState._todayStr();
     state = state.copyWith(
       license: PilotLicense.reroll(
         state.license,
+        lockedStats: lockedStats,
+        lockType: lockType,
         luckBonus: state.avatar.luckBonus,
       ),
       lastDailyChallengeDate: '${todayStr}_used',

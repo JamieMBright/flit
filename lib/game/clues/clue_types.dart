@@ -433,9 +433,9 @@ class Clue {
     final labels = <String, String>{
       'population': 'Pop',
       'continent': 'Continent',
-      'language': 'Language',
+      'language': 'Predominant language',
       'currency': 'Currency',
-      'religion': 'Religion',
+      'religion': 'Predominant religion',
       'headOfState': 'Leader',
       'sport': 'Sport',
       'celebrity': 'Celebrity',

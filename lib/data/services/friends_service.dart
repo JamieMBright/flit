@@ -227,6 +227,8 @@ class FriendsService {
   // ---------------------------------------------------------------------------
 
   /// Compute H2H record between current user and a friend from challenges.
+  ///
+  /// Returns lifetime totals, last-10-game breakdown, and last-game result.
   Future<HeadToHead> fetchH2HRecord(String friendId, String friendName) async {
     if (_userId == null) {
       return HeadToHead(
@@ -238,7 +240,7 @@ class FriendsService {
       );
     }
     try {
-      // Fetch all completed challenges between the two players.
+      // Fetch all completed challenges between the two players (newest first).
       final data = await _client
           .from('challenges')
           .select('winner_id, created_at')
@@ -251,17 +253,36 @@ class FriendsService {
 
       var wins = 0;
       var losses = 0;
+      var last10Wins = 0;
+      var last10Losses = 0;
+      bool? lastGameWon;
       DateTime? lastPlayed;
 
-      for (final row in data) {
+      for (var i = 0; i < data.length; i++) {
+        final row = data[i];
         if (lastPlayed == null && row['created_at'] != null) {
           lastPlayed = DateTime.tryParse(row['created_at'] as String);
         }
         final winnerId = row['winner_id'] as String?;
-        if (winnerId == _userId) {
-          wins++;
-        } else if (winnerId == friendId) {
-          losses++;
+        final isWin = winnerId == _userId;
+        final isLoss = winnerId == friendId;
+
+        if (isWin) wins++;
+        if (isLoss) losses++;
+
+        // Last 10 games.
+        if (i < 10) {
+          if (isWin) last10Wins++;
+          if (isLoss) last10Losses++;
+        }
+
+        // Most recent game result.
+        if (i == 0) {
+          if (isWin) {
+            lastGameWon = true;
+          } else if (isLoss) {
+            lastGameWon = false;
+          }
         }
       }
 
@@ -271,6 +292,10 @@ class FriendsService {
         wins: wins,
         losses: losses,
         totalChallenges: data.length,
+        last10Wins: last10Wins,
+        last10Losses: last10Losses,
+        last10Total: data.length < 10 ? data.length : 10,
+        lastGameWon: lastGameWon,
         lastPlayed: lastPlayed,
       );
     } catch (e) {

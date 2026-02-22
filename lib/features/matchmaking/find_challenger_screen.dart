@@ -175,6 +175,8 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
     final license = account.license;
     final contrailId = account.equippedContrailId;
     final contrail = CosmeticCatalog.getById(contrailId);
+    final contrailPrimary = contrail?.colorScheme?['primary'];
+    final contrailSecondary = contrail?.colorScheme?['secondary'];
 
     Navigator.of(context)
         .push(
@@ -195,12 +197,11 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
               planeHandling: plane?.handling ?? 1.0,
               planeSpeed: plane?.speed ?? 1.0,
               planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
-              contrailPrimaryColor: contrail?.colorScheme?['primary'] != null
-                  ? Color(contrail!.colorScheme!['primary']!)
+              contrailPrimaryColor: contrailPrimary != null
+                  ? Color(contrailPrimary)
                   : null,
-              contrailSecondaryColor:
-                  contrail?.colorScheme?['secondary'] != null
-                  ? Color(contrail!.colorScheme!['secondary']!)
+              contrailSecondaryColor: contrailSecondary != null
+                  ? Color(contrailSecondary)
                   : null,
             ),
           ),
