@@ -487,6 +487,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Navigator.of(dialogContext).pop();
               // Flush pending preferences before signing out.
               await ref.read(accountProvider.notifier).flushPreferences();
+              // Clear the Supabase auth session so auto-login doesn't
+              // immediately re-authenticate on the login screen.
+              await AuthService().signOut();
               ref.read(accountProvider.notifier).clearPreferences();
               if (context.mounted) {
                 Navigator.of(context).popUntil((route) => route.isFirst);

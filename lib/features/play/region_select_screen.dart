@@ -121,6 +121,10 @@ class RegionSelectScreen extends ConsumerWidget {
                               .read(accountProvider)
                               .equippedContrailId;
                           final contrail = CosmeticCatalog.getById(contrailId);
+                          final contrailPrimary =
+                              contrail?.colorScheme?['primary'];
+                          final contrailSecondary =
+                              contrail?.colorScheme?['secondary'];
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute<void>(
                               builder: (context) => PlayScreen(
@@ -137,15 +141,12 @@ class RegionSelectScreen extends ConsumerWidget {
                                 planeSpeed: plane?.speed ?? 1.0,
                                 planeFuelEfficiency:
                                     plane?.fuelEfficiency ?? 1.0,
-                                contrailPrimaryColor:
-                                    contrail?.colorScheme?['primary'] != null
-                                    ? Color(contrail!.colorScheme!['primary']!)
+                                contrailPrimaryColor: contrailPrimary != null
+                                    ? Color(contrailPrimary)
                                     : null,
                                 contrailSecondaryColor:
-                                    contrail?.colorScheme?['secondary'] != null
-                                    ? Color(
-                                        contrail!.colorScheme!['secondary']!,
-                                      )
+                                    contrailSecondary != null
+                                    ? Color(contrailSecondary)
                                     : null,
                               ),
                             ),
@@ -171,6 +172,10 @@ class RegionSelectScreen extends ConsumerWidget {
                               .read(accountProvider)
                               .equippedContrailId;
                           final contrail = CosmeticCatalog.getById(contrailId);
+                          final contrailPrimary =
+                              contrail?.colorScheme?['primary'];
+                          final contrailSecondary =
+                              contrail?.colorScheme?['secondary'];
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute<void>(
                               builder: (context) => PlayScreen(
@@ -187,15 +192,12 @@ class RegionSelectScreen extends ConsumerWidget {
                                 planeSpeed: plane?.speed ?? 1.0,
                                 planeFuelEfficiency:
                                     plane?.fuelEfficiency ?? 1.0,
-                                contrailPrimaryColor:
-                                    contrail?.colorScheme?['primary'] != null
-                                    ? Color(contrail!.colorScheme!['primary']!)
+                                contrailPrimaryColor: contrailPrimary != null
+                                    ? Color(contrailPrimary)
                                     : null,
                                 contrailSecondaryColor:
-                                    contrail?.colorScheme?['secondary'] != null
-                                    ? Color(
-                                        contrail!.colorScheme!['secondary']!,
-                                      )
+                                    contrailSecondary != null
+                                    ? Color(contrailSecondary)
                                     : null,
                               ),
                             ),

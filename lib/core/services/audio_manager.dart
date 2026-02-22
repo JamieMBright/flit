@@ -114,8 +114,13 @@ class AudioManager {
     _musicVolume = value.clamp(0.0, 1.0);
     // Immediately update the playing music player volume.
     if (_enabled) {
-      _musicPlayer.setVolume(_defaultMusicVolume * _musicVolume);
+      _applyMusicVolume();
     }
+  }
+
+  /// Apply the current music volume to the music player.
+  Future<void> _applyMusicVolume() async {
+    await _musicPlayer.setVolume(_defaultMusicVolume * _musicVolume);
   }
 
   /// User-configurable effects volume multiplier (0.0 = silent, 1.0 = full).
@@ -128,8 +133,13 @@ class AudioManager {
     _effectsVolume = value.clamp(0.0, 1.0);
     // Immediately update the playing engine volume.
     if (_enabled && _currentEngine != null) {
-      _enginePlayer.setVolume(_engineBaseVolume * _effectsVolume);
+      _applyEngineVolume();
     }
+  }
+
+  /// Apply the current effects volume to the engine player.
+  Future<void> _applyEngineVolume() async {
+    await _enginePlayer.setVolume(_engineBaseVolume * _effectsVolume);
   }
 
   /// Whether [initialize] has been called.
