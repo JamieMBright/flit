@@ -68,6 +68,25 @@ class FriendsService {
   Future<bool> sendFriendRequest(String addresseeId) async {
     if (_userId == null) return false;
     try {
+      // If they already sent us a pending request, auto-accept it so both
+      // players become friends immediately when they add each other.
+      final reversePending = await _client
+          .from('friendships')
+          .select('id')
+          .eq('requester_id', addresseeId)
+          .eq('addressee_id', _userId!)
+          .eq('status', 'pending')
+          .maybeSingle();
+
+      if (reversePending != null) {
+        await _client
+            .from('friendships')
+            .update({'status': 'accepted'})
+            .eq('id', reversePending['id'] as int);
+        invalidateCache();
+        return true;
+      }
+
       await _client.from('friendships').insert({
         'requester_id': _userId,
         'addressee_id': addresseeId,
