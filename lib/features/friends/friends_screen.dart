@@ -33,6 +33,16 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     })
   >
   _pendingRequests = [];
+  List<
+    ({
+      int friendshipId,
+      String addresseeId,
+      String username,
+      String? displayName,
+      String? avatarUrl,
+    })
+  >
+  _sentRequests = [];
   bool _loading = true;
 
   // Track pending outgoing challenges
@@ -52,6 +62,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       FriendsService.instance.fetchPendingRequests(),
       ChallengeService.instance.fetchPendingChallenges(),
       ChallengeService.instance.fetchSentChallenges(),
+      FriendsService.instance.fetchSentRequests(),
     ]);
 
     final friends = results[0] as List<Friend>;
@@ -68,6 +79,17 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
             >;
     final incoming = results[2] as List<Challenge>;
     final sent = results[3] as List<Challenge>;
+    final sentRequests =
+        results[4]
+            as List<
+              ({
+                int friendshipId,
+                String addresseeId,
+                String username,
+                String? displayName,
+                String? avatarUrl,
+              })
+            >;
 
     // Load H2H records for all friends in parallel.
     final h2hEntries = await Future.wait(
@@ -95,6 +117,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       _h2hRecords = h2hMap;
       _pendingRequests = pending;
       _incomingChallenges = incoming;
+      _sentRequests = sentRequests;
       _pendingChallenges
         ..clear()
         ..addAll(pendingIds);
@@ -131,7 +154,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   Widget _buildBody() {
     if (_friends.isEmpty &&
         _pendingRequests.isEmpty &&
-        _incomingChallenges.isEmpty) {
+        _incomingChallenges.isEmpty &&
+        _sentRequests.isEmpty) {
       return const _EmptyState();
     }
     return ListView(
@@ -157,6 +181,28 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               displayName: req.displayName,
               onAccept: () => _acceptRequest(req.friendshipId),
               onDecline: () => _declineRequest(req.friendshipId),
+            ),
+          const SizedBox(height: 8),
+        ],
+        // Pending sent friend requests
+        if (_sentRequests.isNotEmpty) ...[
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              'SENT REQUESTS',
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          for (final req in _sentRequests)
+            _SentRequestTile(
+              username: req.username,
+              displayName: req.displayName,
+              onCancel: () => _cancelSentRequest(req.friendshipId),
             ),
           const SizedBox(height: 8),
         ],
@@ -242,6 +288,20 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Friend request declined'),
+          backgroundColor: FlitColors.textMuted,
+        ),
+      );
+      _loadData();
+    }
+  }
+
+  Future<void> _cancelSentRequest(int friendshipId) async {
+    final ok = await FriendsService.instance.cancelFriendRequest(friendshipId);
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Friend request cancelled'),
           backgroundColor: FlitColors.textMuted,
         ),
       );
@@ -486,7 +546,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               equippedPlaneId: planeId,
               companionType: companion,
               fuelBoostMultiplier: fuelBoost,
-              clueBoost: license.clueBoost,
+
               clueChance: license.clueChance,
               preferredClueType: license.preferredClueType,
               enableFuel: true,
@@ -1268,6 +1328,68 @@ class _FriendRequestTile extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.cancel, color: FlitColors.error),
           onPressed: onDecline,
+        ),
+      ],
+    ),
+  );
+}
+
+class _SentRequestTile extends StatelessWidget {
+  const _SentRequestTile({
+    required this.username,
+    this.displayName,
+    required this.onCancel,
+  });
+
+  final String username;
+  final String? displayName;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: FlitColors.cardBackground,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: FlitColors.textMuted.withOpacity(0.3)),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.schedule_send, color: FlitColors.textMuted, size: 32),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                displayName ?? username,
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                '@$username \u2022 Pending',
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        TextButton(
+          onPressed: onCancel,
+          child: const Text(
+            'Cancel',
+            style: TextStyle(
+              color: FlitColors.error,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ],
     ),

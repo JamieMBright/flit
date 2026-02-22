@@ -122,8 +122,6 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
       switch (stat) {
         case 'coinBoost':
           statValue = _license.coinBoost;
-        case 'clueBoost':
-          statValue = _license.clueBoost;
         case 'clueChance':
           statValue = _license.clueChance;
         case 'fuelBoost':
@@ -469,10 +467,9 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
         // Preferred clue type (no bar — just an info row)
         _ClueTypeRow(
           preferredType: _license.preferredClueType,
-          clueBoost: _license.clueBoost,
           onTap: () => _showEffectPopup(
             'Preferred Clue Type',
-            'You have a ${_license.clueBoost}% bonus chance of receiving ${_license.preferredClueType} clues. '
+            'You have a bonus chance of receiving ${_license.preferredClueType} clues. '
                 'This stacks with your Clue Chance stat.',
             Icons.lightbulb_outline,
           ),
@@ -674,15 +671,6 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
         ),
         const SizedBox(height: 8),
         _LockRow(
-          label: 'Clue Boost',
-          value: _license.clueBoostStatLabel,
-          icon: Icons.auto_awesome,
-          isLocked: _lockedStats.contains('clueBoost'),
-          cost: _lockCostFor('clueBoost'),
-          onChanged: (locked) => _toggleLock('clueBoost', locked),
-        ),
-        const SizedBox(height: 8),
-        _LockRow(
           label: 'Clue Chance',
           value: _license.clueChanceLabel,
           icon: Icons.casino,
@@ -693,7 +681,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
         const SizedBox(height: 8),
         _LockRow(
           label: 'Clue Type',
-          value: _license.clueBoostLabel,
+          value: _license.clueTypeLabel,
           icon: Icons.lightbulb_outline,
           isLocked: _lockClueType,
           cost: PilotLicense.lockTypeCost,
@@ -743,8 +731,6 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
     switch (stat) {
       case 'coinBoost':
         statValue = _license.coinBoost;
-      case 'clueBoost':
-        statValue = _license.clueBoost;
       case 'clueChance':
         statValue = _license.clueChance;
       case 'fuelBoost':
@@ -1292,14 +1278,9 @@ class _WideStatBar extends StatelessWidget {
 // =============================================================================
 
 class _ClueTypeRow extends StatelessWidget {
-  const _ClueTypeRow({
-    required this.preferredType,
-    required this.clueBoost,
-    this.onTap,
-  });
+  const _ClueTypeRow({required this.preferredType, this.onTap});
 
   final String preferredType;
-  final int clueBoost;
   final VoidCallback? onTap;
 
   @override
@@ -1326,14 +1307,6 @@ class _ClueTypeRow extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          Text(
-            '+$clueBoost% boost',
-            style: const TextStyle(
-              color: FlitColors.accent,
-              fontSize: 9,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
         ],
       ),
     );

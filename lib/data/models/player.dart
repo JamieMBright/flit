@@ -73,8 +73,8 @@ class Player {
   /// Progress to next level (0.0 to 1.0)
   double get levelProgress => xp / xpForNextLevel;
 
-  /// Display name or username
-  String get name => displayName ?? username;
+  /// Display name is the username — no separate display name concept.
+  String get name => username;
 
   Player copyWith({
     String? id,

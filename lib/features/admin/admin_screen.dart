@@ -416,12 +416,154 @@ class AdminScreen extends ConsumerWidget {
     );
   }
 
+  // ── Manage Moderators ──
+
+  void _showManageRoleDialog(BuildContext context) {
+    final usernameCtl = TextEditingController();
+    String selectedRole = 'moderator';
+    String? error;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => _AdminDialog(
+          icon: Icons.shield,
+          iconColor: FlitColors.accent,
+          title: 'Manage Player Role',
+          subtitle: 'Promote to moderator or revoke access.',
+          error: error,
+          children: [
+            _UsernameField(controller: usernameCtl),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: DropdownButton<String>(
+                value: selectedRole,
+                isExpanded: true,
+                dropdownColor: FlitColors.cardBackground,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                underline: const SizedBox.shrink(),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'moderator',
+                    child: Text('Moderator'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'revoke',
+                    child: Text('Revoke (Regular User)'),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setDialogState(() => selectedRole = value);
+                  }
+                },
+              ),
+            ),
+          ],
+          actionLabel: 'Set Role',
+          actionIcon: Icons.shield,
+          actionColor: FlitColors.accent,
+          onAction: () async {
+            final username = usernameCtl.text.trim();
+            if (username.isEmpty) {
+              setDialogState(() => error = 'Enter a username');
+              return;
+            }
+
+            try {
+              final user = await _lookupUser(username);
+              if (user == null) {
+                setDialogState(() => error = 'User @$username not found');
+                return;
+              }
+
+              final userId = user['id'] as String;
+              final roleValue = selectedRole == 'revoke' ? null : selectedRole;
+
+              await _client.rpc(
+                'admin_set_role',
+                params: {'target_user_id': userId, 'p_role': roleValue},
+              );
+
+              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              final label = roleValue == null ? 'regular user' : roleValue;
+              _snack(context, '@$username is now: $label');
+            } on PostgrestException catch (e) {
+              setDialogState(() => error = 'Failed: ${e.message}');
+            } catch (_) {
+              setDialogState(() => error = 'Something went wrong');
+            }
+          },
+          onCancel: () => Navigator.of(dialogCtx).pop(),
+        ),
+      ),
+    );
+  }
+
+  // ── Unlock All ──
+
+  void _showUnlockAllDialog(BuildContext context) {
+    final usernameCtl = TextEditingController();
+    String? error;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => _AdminDialog(
+          icon: Icons.lock_open,
+          iconColor: FlitColors.success,
+          title: 'Unlock All Items',
+          subtitle: 'Unlock all shop cosmetics and avatar parts for a player.',
+          error: error,
+          children: [_UsernameField(controller: usernameCtl)],
+          actionLabel: 'Unlock All',
+          actionIcon: Icons.lock_open,
+          actionColor: FlitColors.success,
+          onAction: () async {
+            final username = usernameCtl.text.trim();
+            if (username.isEmpty) {
+              setDialogState(() => error = 'Enter a username');
+              return;
+            }
+
+            try {
+              final user = await _lookupUser(username);
+              if (user == null) {
+                setDialogState(() => error = 'User @$username not found');
+                return;
+              }
+
+              final userId = user['id'] as String;
+
+              await _client.rpc(
+                'admin_unlock_all',
+                params: {'target_user_id': userId},
+              );
+
+              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              _snack(context, 'All items unlocked for @$username');
+            } on PostgrestException catch (e) {
+              setDialogState(() => error = 'Failed: ${e.message}');
+            } catch (_) {
+              setDialogState(() => error = 'Something went wrong');
+            }
+          },
+          onCancel: () => Navigator.of(dialogCtx).pop(),
+        ),
+      ),
+    );
+  }
+
   // ── Set License ──
 
   void _showSetLicenseDialog(BuildContext context) {
     final usernameCtl = TextEditingController();
     final coinBoostCtl = TextEditingController();
-    final clueBoostCtl = TextEditingController();
     final clueChanceCtl = TextEditingController();
     final fuelBoostCtl = TextEditingController();
     String selectedClueType = 'flag';
@@ -452,30 +594,14 @@ class AdminScreen extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _AmountField(
-                    controller: clueBoostCtl,
-                    hint: 'Clue Boost',
+                    controller: clueChanceCtl,
+                    hint: 'Clue Chance',
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _AmountField(
-                    controller: clueChanceCtl,
-                    hint: 'Clue Chance',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _AmountField(
-                    controller: fuelBoostCtl,
-                    hint: 'Fuel Boost',
-                  ),
-                ),
-              ],
-            ),
+            _AmountField(controller: fuelBoostCtl, hint: 'Fuel Boost'),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -525,14 +651,12 @@ class AdminScreen extends ConsumerWidget {
             }
 
             final coinB = parseStat(coinBoostCtl.text.trim());
-            final clueB = parseStat(clueBoostCtl.text.trim());
             final clueC = parseStat(clueChanceCtl.text.trim());
             final fuelB = parseStat(fuelBoostCtl.text.trim());
 
             // Validate: non-empty fields must be 1-25
             for (final entry in {
               'Coin Boost': coinBoostCtl.text.trim(),
-              'Clue Boost': clueBoostCtl.text.trim(),
               'Clue Chance': clueChanceCtl.text.trim(),
               'Fuel Boost': fuelBoostCtl.text.trim(),
             }.entries) {
@@ -555,23 +679,24 @@ class AdminScreen extends ConsumerWidget {
               final userId = user['id'] as String;
               final licenseData = {
                 'coin_boost': coinB ?? PilotLicense.rollStat(),
-                'clue_boost': clueB ?? PilotLicense.rollStat(),
                 'clue_chance': clueC ?? PilotLicense.rollStat(),
                 'fuel_boost': fuelB ?? PilotLicense.rollStat(),
                 'preferred_clue_type': selectedClueType,
               };
 
-              await _client.from('account_state').upsert({
-                'user_id': userId,
-                'license_data': licenseData,
-              });
+              await _client.rpc(
+                'admin_set_license',
+                params: {
+                  'target_user_id': userId,
+                  'p_license_data': licenseData,
+                },
+              );
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
               _snack(
                 context,
                 'License set for @$username: '
                 '${licenseData['coin_boost']}/'
-                '${licenseData['clue_boost']}/'
                 '${licenseData['clue_chance']}/'
                 '${licenseData['fuel_boost']} '
                 '($selectedClueType)',
@@ -700,6 +825,23 @@ class AdminScreen extends ConsumerWidget {
             label: 'Change Player Username',
             onTap: () => _showChangeUsernameDialog(context),
           ),
+          const SizedBox(height: 8),
+          if (state.currentPlayer.isOwner) ...[
+            _AdminActionCard(
+              icon: Icons.shield,
+              iconColor: FlitColors.accent,
+              label: 'Manage Moderators',
+              onTap: () => _showManageRoleDialog(context),
+            ),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.lock_open,
+              iconColor: FlitColors.success,
+              label: 'Unlock All (Player)',
+              onTap: () => _showUnlockAllDialog(context),
+            ),
+            const SizedBox(height: 8),
+          ],
           const SizedBox(height: 24),
 
           // Design Preview

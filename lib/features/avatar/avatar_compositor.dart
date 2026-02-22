@@ -137,6 +137,15 @@ class AvatarCompositor {
     config.hairColor.hex,
   ).abs();
 
+  /// Stable hash that does NOT vary with skin/hair color changes.
+  /// Used for structural parts (face shape, ear shape, nose, etc.)
+  /// that should stay fixed regardless of colour customization.
+  static int _structuralHash(AvatarConfig config) => Object.hash(
+    config.style.slug,
+    config.eyes.index,
+    config.mouth.index,
+  ).abs();
+
   /// Pick a variant from a map using a deterministic hash + salt.
   static String _pick(Map<String, String> parts, int hash, [int salt = 0]) {
     if (parts.isEmpty) return '';
@@ -324,19 +333,23 @@ class AvatarCompositor {
   // ---------------------------------------------------------------------------
 
   static String? _composeBigEars(AvatarConfig config) {
-    final sh = _stableHash(config);
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
+    final strH = _structuralHash(config);
 
     final face = _pick(
       bigearsFace,
-      sh,
+      strH,
       1,
     ).replaceAll('{{SKIN_COLOR}}', skinHex);
-    final ear = _pick(bigearsEar, sh, 2).replaceAll('{{SKIN_COLOR}}', skinHex);
+    final ear = _pick(
+      bigearsEar,
+      strH,
+      2,
+    ).replaceAll('{{SKIN_COLOR}}', skinHex);
     final sideburn = _pick(
       bigearsSideburn,
-      sh,
+      strH,
       3,
     ).replaceAll('{{HAIR_COLOR}}', hairHex);
     // Cheek and nose vary with eyebrows and feature selections for more
@@ -355,7 +368,7 @@ class AvatarCompositor {
 
     final buf = StringBuffer()
       ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
-      ..write('viewBox="0 0 440 440" fill="none" ')
+      ..write('viewBox="0 0 440 420" fill="none" ')
       ..write('shape-rendering="auto">');
 
     // Face — DiceBear: translate(81.7 150.7) scale(.71856).
@@ -415,12 +428,13 @@ class AvatarCompositor {
 
   static String? _composeLorelei(AvatarConfig config) {
     final sh = _stableHash(config);
+    final strH = _structuralHash(config);
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
 
     final head = _pick(
       loreleiHead,
-      sh,
+      strH,
       1,
     ).replaceAll('{{SKIN_COLOR}}', skinHex);
     // Freckles only for freckles / blush / birthmark features.
@@ -447,7 +461,7 @@ class AvatarCompositor {
     ).replaceAll('{{EYES_COLOR}}', '#000000');
     final nose = _pick(
       loreleiNose,
-      sh,
+      strH,
       5,
     ).replaceAll('{{NOSE_COLOR}}', _darkenHex(skinHex, 0.9));
     final mouth = _pick(loreleiMouth, config.mouth.index, 6).replaceAll(
@@ -542,15 +556,15 @@ class AvatarCompositor {
 
   static String? _composeMicah(AvatarConfig config) {
     final sh = _stableHash(config);
+    final strH = _structuralHash(config);
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
-    // Pick a natural eye color that varies with the eyes selection.
+    // Pick a natural eye color that varies with the eyes selection only.
     final eyeColor =
-        _naturalEyeColors[(sh + config.eyes.index * 3) %
-            _naturalEyeColors.length];
-    final shirtColor = _hashColor(sh, 77);
+        _naturalEyeColors[(config.eyes.index * 3) % _naturalEyeColors.length];
+    final shirtColor = _hashColor(strH, 77);
     // Eye shadow: slightly darker/muted version via hash.
-    final eyeShadow = _hashColor(sh, 88);
+    final eyeShadow = _hashColor(strH, 88);
     // Mouth color: pick from natural lip palette based on skin tone.
     final mouthColor =
         _mouthColors[config.skinColor.index % _mouthColors.length];
@@ -596,8 +610,8 @@ class AvatarCompositor {
         .replaceAll('{{EYES_COLOR}}', eyeColor)
         .replaceAll('{{EYE_SHADOW_COLOR}}', eyeShadow)
         .replaceAll('{{GLASSES}}', glassesRaw);
-    final nose = _pick(micahNose, sh, 6);
-    final ears = _pick(micahEars, sh, 7).replaceAll('{{EAR_COLOR}}', skinHex);
+    final nose = _pick(micahNose, strH, 6);
+    final ears = _pick(micahEars, strH, 7).replaceAll('{{EAR_COLOR}}', skinHex);
     final earrings = config.earrings == AvatarEarrings.none
         ? ''
         : _pick(
@@ -607,7 +621,7 @@ class AvatarCompositor {
           ).replaceAll('{{EARRING_COLOR}}', '#d4af37');
     final shirt = _pick(
       micahShirt,
-      sh,
+      strH,
       9,
     ).replaceAll('{{SHIRT_COLOR}}', shirtColor);
 
@@ -727,11 +741,15 @@ class AvatarCompositor {
   // Bottts (180 x 180)
   // ---------------------------------------------------------------------------
 
+  // Direct skin-to-bot-color mapping for predictable, sensible results.
+  static const _botttsSkinColors = ['#C0C0C0', '#808080', '#505050', '#303030'];
+
   static String? _composeBottts(AvatarConfig config) {
     final sh = _stableHash(config);
-    // Body color derived only from skin color so the "Color" picker is the
-    // sole control. Hair color no longer bleeds into the body colour.
-    final baseColor = _hashColor(config.skinColor.index * 97, 10);
+    // Body color derived from a direct mapping so skin picker gives
+    // predictable bot body colours (light grey → dark grey).
+    final baseColor =
+        _botttsSkinColors[config.skinColor.index % _botttsSkinColors.length];
 
     // Sides (arms/antenna) vary with hair selection for user control.
     final sides = _pick(botttsSides, config.hair.index, 1);
@@ -820,9 +838,10 @@ class AvatarCompositor {
 
   static String? _composeOpenPeeps(AvatarConfig config) {
     final sh = _stableHash(config);
+    final strH = _structuralHash(config);
     final skinHex = '#${config.skinColor.hex}';
     final contrastHex = _darkenHex(skinHex, 0.8);
-    final clothingColor = _hashColor(sh, 77);
+    final clothingColor = _hashColor(strH, 77);
 
     final head = _pick(openpeepsHead, config.hair.index, 1)
         .replaceAll('{{SKIN_COLOR}}', skinHex)
@@ -836,7 +855,10 @@ class AvatarCompositor {
     final accessories = config.glasses == AvatarGlasses.none
         ? ''
         : _pick(openpeepsAccessories, config.glasses.index, 4);
-    final mask = _pick(openpeepsMask, sh, 5);
+    // Mask only shown when feature is 'blush' (repurposed for Peeps).
+    final mask = config.feature == AvatarFeature.blush
+        ? _pick(openpeepsMask, config.feature.index, 5)
+        : '';
 
     // Open Peeps body base (bust silhouette).
     // Centered under the head at matrix(.99789 0 0 1 156 62).
@@ -885,18 +907,17 @@ class AvatarCompositor {
   // Thumbs (100 x 100)
   // ---------------------------------------------------------------------------
 
+  // Direct skin-to-shape-color mapping for Thumbs avatars.
+  static const _thumbsSkinColors = ['#FFD93D', '#FFA94D', '#FF6B6B', '#C084FC'];
+
   static String? _composeThumbs(AvatarConfig config) {
-    final sh = _stableHash(config);
-    // Derive colors from user config so each Thumbs avatar looks different.
-    // Shape color: warm tint derived from skin + hair color combos.
-    final shapeColor = _hashColor(
-      config.skinColor.index * 89 + config.hairColor.index * 47,
-      20,
-    );
-    // Eye color varies with eyes selection.
-    final eyeColor = _hashColor(config.eyes.index * 41 + sh, 30);
-    // Mouth color varies with mouth selection.
-    final mouthColor = _hashColor(config.mouth.index * 61 + sh, 40);
+    // Shape color: direct mapping from skin color only (no hair bleed).
+    final shapeColor =
+        _thumbsSkinColors[config.skinColor.index % _thumbsSkinColors.length];
+    // Eye color varies with eyes selection only.
+    final eyeColor = _hashColor(config.eyes.index * 41, 30);
+    // Mouth color varies with mouth selection only.
+    final mouthColor = _hashColor(config.mouth.index * 61, 40);
 
     // Thumbs uses width-matched variants for eyes. Pick a base variant
     // plus a width suffix. Width offsets: 10, 12, 14, 16.

@@ -63,7 +63,6 @@ Map<String, dynamic> _fullProfile() => {
 Map<String, dynamic> _accountStateWithLicense() {
   const license = PilotLicense(
     coinBoost: 10,
-    clueBoost: 15,
     clueChance: 5,
     fuelBoost: 20,
     preferredClueType: 'flag',
@@ -360,7 +359,6 @@ void main() {
       final license = snapshot.toPilotLicense();
 
       expect(license.coinBoost, equals(10));
-      expect(license.clueBoost, equals(15));
       expect(license.clueChance, equals(5));
       expect(license.fuelBoost, equals(20));
       expect(license.preferredClueType, equals('flag'));
@@ -377,7 +375,6 @@ void main() {
       // Random license — just verify it is a valid PilotLicense instance
       // with stats in the allowed range [1, 25].
       expect(license.coinBoost, inInclusiveRange(1, 25));
-      expect(license.clueBoost, inInclusiveRange(1, 25));
       expect(license.clueChance, inInclusiveRange(1, 25));
       expect(license.fuelBoost, inInclusiveRange(1, 25));
       expect(clueTypes, contains(license.preferredClueType));
@@ -549,7 +546,6 @@ void main() {
     test('toPilotLicense preserves saved license from valid account_state', () {
       final license = const PilotLicense(
         coinBoost: 12,
-        clueBoost: 18,
         clueChance: 7,
         fuelBoost: 22,
         preferredClueType: 'capital',
@@ -573,7 +569,6 @@ void main() {
       final restored = snapshot.toPilotLicense();
 
       expect(restored.coinBoost, equals(12));
-      expect(restored.clueBoost, equals(18));
       expect(restored.clueChance, equals(7));
       expect(restored.fuelBoost, equals(22));
       expect(restored.preferredClueType, equals('capital'));
@@ -602,7 +597,6 @@ void main() {
 
         // Should be a valid random license
         expect(license.coinBoost, inInclusiveRange(1, 25));
-        expect(license.clueBoost, inInclusiveRange(1, 25));
         expect(license.fuelBoost, inInclusiveRange(1, 25));
       },
     );
@@ -610,7 +604,6 @@ void main() {
     test('toPilotLicense nationality is preserved through serialization', () {
       const license = PilotLicense(
         coinBoost: 5,
-        clueBoost: 5,
         clueChance: 5,
         fuelBoost: 5,
         preferredClueType: 'flag',

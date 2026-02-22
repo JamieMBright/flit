@@ -1623,16 +1623,9 @@ class FlitGame extends FlameGame
     // startPosition is already (lng, lat) degrees — use directly
     _worldPosition = startPosition.clone();
 
-    // Compute initial heading toward the target (great-circle initial bearing).
-    final lat1 = startPosition.y * _deg2rad;
-    final lat2 = targetPosition.y * _deg2rad;
-    final dLng = (targetPosition.x - startPosition.x) * _deg2rad;
-    final bearing = atan2(
-      sin(dLng) * cos(lat2),
-      cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLng),
-    );
-    // Convert nav bearing (0=north) to code heading (heading = bearing - π/2).
-    _heading = bearing - pi / 2;
+    // Random initial heading so the player doesn't start facing the target.
+    final rng = Random();
+    _heading = (rng.nextDouble() * 2 * pi) - pi;
     _cameraHeading = _heading; // snap camera to heading on game start
     _cameraFirstUpdate = true;
     _plane.fadeIn(); // Start invisible during positioning phase

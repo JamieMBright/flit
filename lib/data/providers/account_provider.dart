@@ -12,6 +12,7 @@ import '../models/daily_streak.dart';
 import '../models/pilot_license.dart';
 import '../models/player.dart';
 import '../models/social_title.dart';
+import '../services/leaderboard_service.dart';
 import '../services/user_preferences_service.dart';
 
 /// Current account state.
@@ -234,7 +235,15 @@ class AccountNotifier extends StateNotifier<AccountState> {
   }
 
   /// Apply a [UserPreferencesSnapshot] to in-memory state.
-  Future<void> _applySnapshot(UserPreferencesSnapshot snapshot) async {
+  ///
+  /// When [hydrateSettings] is false, game settings (sensitivity, difficulty,
+  /// sound, etc.) are NOT overwritten from the snapshot. This prevents stale
+  /// server data from clobbering local settings that haven't been synced yet
+  /// (e.g. during on-demand or periodic refreshes).
+  Future<void> _applySnapshot(
+    UserPreferencesSnapshot snapshot, {
+    bool hydrateSettings = true,
+  }) async {
     final player = snapshot.toPlayer();
 
     state = AccountState(
@@ -257,26 +266,30 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // state is set so the first write contains real data, not defaults.
     _supabaseLoaded = true;
 
-    // Hydrate GameSettings from Supabase data without triggering writes back.
-    await GameSettings.instance.hydrateFrom(
-      turnSensitivity: snapshot.turnSensitivity,
-      invertControls: snapshot.invertControls,
-      enableNight: snapshot.enableNight,
-      englishLabels: snapshot.englishLabels,
-      mapStyle: MapStyle.values.firstWhere(
-        (s) => s.name == snapshot.mapStyle,
-        orElse: () => MapStyle.standard,
-      ),
-      difficulty: GameDifficulty.values.firstWhere(
-        (d) => d.name == snapshot.difficulty,
-        orElse: () => GameDifficulty.normal,
-      ),
-      soundEnabled: snapshot.soundEnabled,
-      musicVolume: snapshot.musicVolume,
-      effectsVolume: snapshot.effectsVolume,
-      notificationsEnabled: snapshot.notificationsEnabled,
-      hapticEnabled: snapshot.hapticEnabled,
-    );
+    // Only hydrate GameSettings on initial load. On subsequent refreshes,
+    // skip this to avoid overwriting local settings with stale server data
+    // (debounced writes may not have reached the server yet).
+    if (hydrateSettings) {
+      await GameSettings.instance.hydrateFrom(
+        turnSensitivity: snapshot.turnSensitivity,
+        invertControls: snapshot.invertControls,
+        enableNight: snapshot.enableNight,
+        englishLabels: snapshot.englishLabels,
+        mapStyle: MapStyle.values.firstWhere(
+          (s) => s.name == snapshot.mapStyle,
+          orElse: () => MapStyle.standard,
+        ),
+        difficulty: GameDifficulty.values.firstWhere(
+          (d) => d.name == snapshot.difficulty,
+          orElse: () => GameDifficulty.normal,
+        ),
+        soundEnabled: snapshot.soundEnabled,
+        musicVolume: snapshot.musicVolume,
+        effectsVolume: snapshot.effectsVolume,
+        notificationsEnabled: snapshot.notificationsEnabled,
+        hapticEnabled: snapshot.hapticEnabled,
+      );
+    }
   }
 
   /// Start a periodic timer that re-fetches user data from Supabase.
@@ -306,7 +319,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     try {
       final snapshot = await _prefs.load(_userId!);
       if (snapshot != null) {
-        await _applySnapshot(snapshot);
+        await _applySnapshot(snapshot, hydrateSettings: false);
       }
     } catch (e) {
       debugPrint('[AccountNotifier] refresh failed: $e');
@@ -347,6 +360,10 @@ class AccountNotifier extends StateNotifier<AccountState> {
   void _syncProfile() {
     if (!_supabaseLoaded) return;
     _prefs.saveProfile(state.currentPlayer);
+    // Invalidate leaderboard cache so username changes are visible immediately
+    // on any leaderboard screen opened after the edit, rather than waiting up
+    // to 30 seconds for the TTL to expire.
+    LeaderboardService.instance.invalidateCache();
   }
 
   void _syncAccountState() {
@@ -378,8 +395,6 @@ class AccountNotifier extends StateNotifier<AccountState> {
       switch (stat) {
         case 'coinBoost':
           statValue = state.license.coinBoost;
-        case 'clueBoost':
-          statValue = state.license.clueBoost;
         case 'clueChance':
           statValue = state.license.clueChance;
         case 'fuelBoost':

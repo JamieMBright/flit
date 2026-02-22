@@ -134,7 +134,7 @@ class RegionSelectScreen extends ConsumerWidget {
                                 equippedPlaneId: planeId,
                                 companionType: companion,
                                 fuelBoostMultiplier: fuelBoost,
-                                clueBoost: license.clueBoost,
+
                                 clueChance: license.clueChance,
                                 preferredClueType: license.preferredClueType,
                                 planeHandling: plane?.handling ?? 1.0,
@@ -185,7 +185,7 @@ class RegionSelectScreen extends ConsumerWidget {
                                 equippedPlaneId: planeId,
                                 companionType: companion,
                                 fuelBoostMultiplier: fuelBoost,
-                                clueBoost: license.clueBoost,
+
                                 clueChance: license.clueChance,
                                 preferredClueType: license.preferredClueType,
                                 planeHandling: plane?.handling ?? 1.0,

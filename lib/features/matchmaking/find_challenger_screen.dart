@@ -190,7 +190,7 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
               equippedPlaneId: planeId,
               companionType: companion,
               fuelBoostMultiplier: fuelBoost,
-              clueBoost: license.clueBoost,
+
               clueChance: license.clueChance,
               preferredClueType: license.preferredClueType,
               enableFuel: true,

@@ -137,6 +137,9 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
                   ref
                       .read(accountProvider.notifier)
                       .purchaseCosmetic(plane.id, 10000);
+                  // Force a rebuild so the grid reflects the new ownership
+                  // immediately when the reveal dialog is dismissed.
+                  setState(() {});
                 },
               ),
               Expanded(
@@ -740,19 +743,74 @@ class _CosmeticGrid extends StatelessWidget {
         meetsLevel: meetsLevel,
         onTap: () {
           if (isOwned) {
-            onEquip(item.id);
-          } else if (canAfford && meetsLevel) {
-            _showPurchaseDialog(context, item);
+            _showOwnedDialog(context, item, isEquipped);
+          } else if (meetsLevel) {
+            _showPurchaseDialog(context, item, canAfford);
           }
         },
       );
     },
   );
 
-  void _showPurchaseDialog(BuildContext context, Cosmetic item) {
+  void _showOwnedDialog(BuildContext context, Cosmetic item, bool isEquipped) {
     showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        title: Text(
+          item.name,
+          style: const TextStyle(color: FlitColors.textPrimary),
+        ),
+        content: const Text(
+          'You own this item.',
+          style: TextStyle(color: FlitColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: FlitColors.textMuted),
+            ),
+          ),
+          if (!isEquipped)
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogCtx).pop();
+                onEquip(item.id);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FlitColors.accent,
+                foregroundColor: FlitColors.textPrimary,
+              ),
+              child: const Text('Equip'),
+            ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(dialogCtx).pop();
+              _showGiftDialog(context, item);
+            },
+            icon: const Icon(Icons.card_giftcard, size: 16),
+            label: const Text('Gift'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FlitColors.gold,
+              foregroundColor: FlitColors.backgroundDark,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPurchaseDialog(
+    BuildContext context,
+    Cosmetic item,
+    bool canAfford,
+  ) {
+    final deficit = item.price - coins;
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
         backgroundColor: FlitColors.cardBackground,
         title: Text(
           'Purchase ${item.name}?',
@@ -764,48 +822,72 @@ class _CosmeticGrid extends StatelessWidget {
             // Coin price row
             Row(
               children: [
-                const Icon(Icons.monetization_on, color: FlitColors.warning),
+                Icon(
+                  Icons.monetization_on,
+                  color: canAfford ? FlitColors.warning : FlitColors.error,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   '${item.price} coins',
-                  style: const TextStyle(
-                    color: FlitColors.textPrimary,
+                  style: TextStyle(
+                    color: canAfford
+                        ? FlitColors.textPrimary
+                        : FlitColors.error,
                     fontSize: 18,
                   ),
                 ),
               ],
             ),
+            if (!canAfford) ...[
+              const SizedBox(height: 8),
+              Text(
+                'You need $deficit more coins to buy this!',
+                style: const TextStyle(color: FlitColors.error, fontSize: 13),
+              ),
+            ],
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogCtx).pop(),
             child: const Text(
               'Cancel',
               style: TextStyle(color: FlitColors.textMuted),
             ),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              onPurchase(item);
-            },
+            onPressed: canAfford
+                ? () {
+                    Navigator.of(dialogCtx).pop();
+                    onPurchase(item);
+                  }
+                : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: FlitColors.accent,
+              backgroundColor: canAfford
+                  ? FlitColors.accent
+                  : FlitColors.textMuted.withOpacity(0.3),
               foregroundColor: FlitColors.textPrimary,
+              disabledBackgroundColor: FlitColors.textMuted.withOpacity(0.3),
+              disabledForegroundColor: FlitColors.textMuted,
             ),
             child: const Text('Buy'),
           ),
           ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _showGiftDialog(context, item);
-            },
+            onPressed: canAfford
+                ? () {
+                    Navigator.of(dialogCtx).pop();
+                    // Use the outer context (not the dialog context which
+                    // is unmounted after pop) to open the gift dialog.
+                    _showGiftDialog(context, item);
+                  }
+                : null,
             icon: const Icon(Icons.card_giftcard, size: 16),
             label: const Text('Gift'),
             style: ElevatedButton.styleFrom(
               backgroundColor: FlitColors.gold,
               foregroundColor: FlitColors.backgroundDark,
+              disabledBackgroundColor: FlitColors.textMuted.withOpacity(0.3),
+              disabledForegroundColor: FlitColors.textMuted,
             ),
           ),
         ],

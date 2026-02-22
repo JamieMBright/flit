@@ -234,7 +234,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           equippedPlaneId: planeId,
           companionType: companion,
           fuelBoostMultiplier: fuelBoost,
-          clueBoost: license.clueBoost,
+
           clueChance: license.clueChance,
           preferredClueType: license.preferredClueType,
           enabledClueTypes: enabledClueTypeNames,

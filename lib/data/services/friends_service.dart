@@ -32,11 +32,24 @@ class FriendsService {
           })
         >
       >(const Duration(seconds: 60));
+  final _sentCache =
+      TtlCache<
+        List<
+          ({
+            int friendshipId,
+            String addresseeId,
+            String username,
+            String? displayName,
+            String? avatarUrl,
+          })
+        >
+      >(const Duration(seconds: 60));
 
   /// Drop cached friends/pending data. Called automatically after mutations.
   void invalidateCache() {
     _friendsCache.invalidate();
     _pendingCache.invalidate();
+    _sentCache.invalidate();
   }
 
   // ---------------------------------------------------------------------------
@@ -267,6 +280,67 @@ class FriendsService {
     } catch (e) {
       debugPrint('[FriendsService] fetchPendingRequests failed: $e');
       return [];
+    }
+  }
+
+  /// Fetch pending friend requests sent BY the current user.
+  Future<
+    List<
+      ({
+        int friendshipId,
+        String addresseeId,
+        String username,
+        String? displayName,
+        String? avatarUrl,
+      })
+    >
+  >
+  fetchSentRequests() async {
+    if (_userId == null) return [];
+
+    const cacheKey = 'sent';
+    final cached = _sentCache.get(cacheKey);
+    if (cached != null) return cached;
+
+    try {
+      final data = await _client
+          .from('friendships')
+          .select(
+            'id, addressee_id, '
+            'addressee:profiles!friendships_addressee_id_fkey(id, username, display_name, avatar_url)',
+          )
+          .eq('requester_id', _userId!)
+          .eq('status', 'pending');
+
+      final result = data.map((row) {
+        final profile = row['addressee'] as Map<String, dynamic>;
+        return (
+          friendshipId: row['id'] as int,
+          addresseeId: profile['id'] as String,
+          username: profile['username'] as String? ?? 'Unknown',
+          displayName: profile['display_name'] as String?,
+          avatarUrl: profile['avatar_url'] as String?,
+        );
+      }).toList();
+
+      _sentCache.set(cacheKey, result);
+      return result;
+    } catch (e) {
+      debugPrint('[FriendsService] fetchSentRequests failed: $e');
+      return [];
+    }
+  }
+
+  /// Cancel a pending sent friend request. Returns true on success.
+  Future<bool> cancelFriendRequest(int friendshipId) async {
+    if (_userId == null) return false;
+    try {
+      await _client.from('friendships').delete().eq('id', friendshipId);
+      invalidateCache();
+      return true;
+    } catch (e) {
+      debugPrint('[FriendsService] cancelFriendRequest failed: $e');
+      return false;
     }
   }
 
