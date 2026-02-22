@@ -301,11 +301,16 @@ class AvatarCompositor {
     buf.write('<circle cx="132" cy="136" r="62" fill="$skinHex"/>');
 
     // Layer order: nose → mouth → eyes → eyebrows → top.
-    if (nose.isNotEmpty) buf.write(_g(nose, 'translate(76 100)'));
-    if (mouth.isNotEmpty) buf.write(_g(mouth, 'translate(76 154)'));
-    if (eyes.isNotEmpty) buf.write(_g(eyes, 'translate(0 0)'));
-    if (eyebrows.isNotEmpty) buf.write(_g(eyebrows, 'translate(0 0)'));
-    if (top.isNotEmpty) buf.write(_g(top, 'translate(0 0)'));
+    // DiceBear: translate(104 122)
+    if (nose.isNotEmpty) buf.write(_g(nose, 'translate(104 122)'));
+    // DiceBear: translate(78 134)
+    if (mouth.isNotEmpty) buf.write(_g(mouth, 'translate(78 134)'));
+    // DiceBear: translate(76 90)
+    if (eyes.isNotEmpty) buf.write(_g(eyes, 'translate(76 90)'));
+    // DiceBear: translate(76 82)
+    if (eyebrows.isNotEmpty) buf.write(_g(eyebrows, 'translate(76 82)'));
+    // DiceBear: translate(-1)
+    if (top.isNotEmpty) buf.write(_g(top, 'translate(-1 0)'));
 
     buf.write('</g></g></svg>');
     return buf.toString();
