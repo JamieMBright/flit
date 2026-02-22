@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
@@ -210,166 +211,178 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   // ── Sign Up form ──
 
-  Widget _buildSignUp() => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      _BackButton(
-        onTap: () => setState(() {
-          _mode = _AuthMode.welcome;
-          _error = null;
-        }),
-      ),
-      const SizedBox(height: 16),
-
-      const Text(
-        'Create your account',
-        style: TextStyle(
-          color: FlitColors.textPrimary,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
+  Widget _buildSignUp() => AutofillGroup(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _BackButton(
+          onTap: () => setState(() {
+            _mode = _AuthMode.welcome;
+            _error = null;
+          }),
         ),
-      ),
-      const SizedBox(height: 8),
-      const Text(
-        'Choose a pilot name and set your password.',
-        style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
-      ),
-      const SizedBox(height: 24),
+        const SizedBox(height: 16),
 
-      _AuthTextField(
-        controller: _emailController,
-        label: 'Email',
-        hint: 'pilot@example.com',
-        keyboardType: TextInputType.emailAddress,
-      ),
-      const SizedBox(height: 12),
-
-      _AuthTextField(
-        controller: _passwordController,
-        label: 'Password',
-        hint: 'At least 6 characters',
-        obscureText: _obscurePassword,
-        suffixIcon: IconButton(
-          icon: Icon(
-            _obscurePassword ? Icons.visibility_off : Icons.visibility,
-            color: FlitColors.textMuted,
-            size: 20,
+        const Text(
+          'Create your account',
+          style: TextStyle(
+            color: FlitColors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
           ),
-          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
         ),
-      ),
-      const SizedBox(height: 12),
+        const SizedBox(height: 8),
+        const Text(
+          'Choose a pilot name and set your password.',
+          style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+        ),
+        const SizedBox(height: 24),
 
-      _AuthTextField(
-        controller: _usernameController,
-        label: 'Username',
-        hint: 'e.g. SkyPilot42',
-        prefix: '@',
-      ),
-      const SizedBox(height: 12),
+        _AuthTextField(
+          controller: _emailController,
+          label: 'Email',
+          hint: 'pilot@example.com',
+          keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
+        ),
+        const SizedBox(height: 12),
 
-      _AuthTextField(
-        controller: _displayNameController,
-        label: 'Display Name (optional)',
-        hint: 'Your visible name',
-      ),
-      const SizedBox(height: 24),
+        _AuthTextField(
+          controller: _passwordController,
+          label: 'Password',
+          hint: 'At least 6 characters',
+          obscureText: _obscurePassword,
+          autofillHints: const [AutofillHints.newPassword],
+          suffixIcon: IconButton(
+            icon: Icon(
+              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+              color: FlitColors.textMuted,
+              size: 20,
+            ),
+            onPressed: () =>
+                setState(() => _obscurePassword = !_obscurePassword),
+          ),
+        ),
+        const SizedBox(height: 12),
 
-      _AuthButton(
-        label: 'CREATE ACCOUNT',
-        isPrimary: true,
-        icon: Icons.flight_takeoff,
-        onTap: _signUp,
-      ),
+        _AuthTextField(
+          controller: _usernameController,
+          label: 'Username',
+          hint: 'e.g. SkyPilot42',
+          prefix: '@',
+          autofillHints: const [AutofillHints.username],
+        ),
+        const SizedBox(height: 12),
 
-      const SizedBox(height: 16),
-      const Text(
-        'We only store your email for account recovery. '
-        'No spam, no sharing.',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
-      ),
-    ],
+        _AuthTextField(
+          controller: _displayNameController,
+          label: 'Display Name (optional)',
+          hint: 'Your visible name',
+          autofillHints: const [AutofillHints.name],
+        ),
+        const SizedBox(height: 24),
+
+        _AuthButton(
+          label: 'CREATE ACCOUNT',
+          isPrimary: true,
+          icon: Icons.flight_takeoff,
+          onTap: _signUp,
+        ),
+
+        const SizedBox(height: 16),
+        const Text(
+          'We only store your email for account recovery. '
+          'No spam, no sharing.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
+        ),
+      ],
+    ),
   );
 
   // ── Sign In form ──
 
-  Widget _buildSignIn() => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      _BackButton(
-        onTap: () => setState(() {
-          _mode = _AuthMode.welcome;
-          _error = null;
-        }),
-      ),
-      const SizedBox(height: 16),
-
-      const Text(
-        'Welcome back',
-        style: TextStyle(
-          color: FlitColors.textPrimary,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      const SizedBox(height: 8),
-      const Text(
-        'Sign in to continue your adventure.',
-        style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
-      ),
-      const SizedBox(height: 24),
-
-      _AuthTextField(
-        controller: _emailController,
-        label: 'Email',
-        hint: 'pilot@example.com',
-        keyboardType: TextInputType.emailAddress,
-      ),
-      const SizedBox(height: 12),
-
-      _AuthTextField(
-        controller: _passwordController,
-        label: 'Password',
-        hint: 'Your password',
-        obscureText: _obscurePassword,
-        suffixIcon: IconButton(
-          icon: Icon(
-            _obscurePassword ? Icons.visibility_off : Icons.visibility,
-            color: FlitColors.textMuted,
-            size: 20,
-          ),
-          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-        ),
-      ),
-      const SizedBox(height: 8),
-
-      Align(
-        alignment: Alignment.centerRight,
-        child: GestureDetector(
+  Widget _buildSignIn() => AutofillGroup(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _BackButton(
           onTap: () => setState(() {
-            _mode = _AuthMode.forgotPassword;
+            _mode = _AuthMode.welcome;
             _error = null;
           }),
-          child: const Text(
-            'Forgot password?',
-            style: TextStyle(
-              color: FlitColors.accent,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
+        ),
+        const SizedBox(height: 16),
+
+        const Text(
+          'Welcome back',
+          style: TextStyle(
+            color: FlitColors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Sign in to continue your adventure.',
+          style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+        ),
+        const SizedBox(height: 24),
+
+        _AuthTextField(
+          controller: _emailController,
+          label: 'Email',
+          hint: 'pilot@example.com',
+          keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
+        ),
+        const SizedBox(height: 12),
+
+        _AuthTextField(
+          controller: _passwordController,
+          label: 'Password',
+          hint: 'Your password',
+          obscureText: _obscurePassword,
+          autofillHints: const [AutofillHints.password],
+          suffixIcon: IconButton(
+            icon: Icon(
+              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+              color: FlitColors.textMuted,
+              size: 20,
+            ),
+            onPressed: () =>
+                setState(() => _obscurePassword = !_obscurePassword),
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        Align(
+          alignment: Alignment.centerRight,
+          child: GestureDetector(
+            onTap: () => setState(() {
+              _mode = _AuthMode.forgotPassword;
+              _error = null;
+            }),
+            child: const Text(
+              'Forgot password?',
+              style: TextStyle(
+                color: FlitColors.accent,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ),
-      ),
-      const SizedBox(height: 20),
+        const SizedBox(height: 20),
 
-      _AuthButton(
-        label: 'SIGN IN',
-        isPrimary: true,
-        icon: Icons.login,
-        onTap: _signIn,
-      ),
-    ],
+        _AuthButton(
+          label: 'SIGN IN',
+          isPrimary: true,
+          icon: Icons.login,
+          onTap: _signIn,
+        ),
+      ],
+    ),
   );
 
   // ── Email confirmation screen ──
@@ -585,8 +598,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (result.needsEmailConfirmation) {
+        TextInput.finishAutofillContext();
         setState(() => _mode = _AuthMode.confirmEmail);
       } else if (result.isAuthenticated && result.player != null) {
+        TextInput.finishAutofillContext();
         final notifier = ref.read(accountProvider.notifier);
         notifier.switchAccount(result.player!);
         await notifier.loadFromSupabase(result.player!.id);
@@ -624,6 +639,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (result.isAuthenticated && result.player != null) {
+        TextInput.finishAutofillContext();
         final notifier = ref.read(accountProvider.notifier);
         notifier.switchAccount(result.player!);
         await notifier.loadFromSupabase(result.player!.id);
@@ -734,6 +750,7 @@ class _AuthTextField extends StatelessWidget {
     this.keyboardType,
     this.obscureText = false,
     this.suffixIcon,
+    this.autofillHints,
   });
 
   final TextEditingController controller;
@@ -743,6 +760,7 @@ class _AuthTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final bool obscureText;
   final Widget? suffixIcon;
+  final Iterable<String>? autofillHints;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -762,6 +780,7 @@ class _AuthTextField extends StatelessWidget {
         controller: controller,
         keyboardType: keyboardType,
         obscureText: obscureText,
+        autofillHints: autofillHints,
         style: const TextStyle(color: FlitColors.textPrimary, fontSize: 16),
         decoration: InputDecoration(
           hintText: hint,
