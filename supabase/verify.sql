@@ -150,9 +150,9 @@ BEGIN
   CALL check_table('challenges');
   CALL check_table('matchmaking_pool');
 
-  -- ------- PROFILES COLUMNS (20) -------
+  -- ------- PROFILES COLUMNS (21) -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- profiles columns (20) ---');
+  _results := array_append(_results, '--- profiles columns (21) ---');
   CALL check_column('profiles', 'id');
   CALL check_column('profiles', 'username');
   CALL check_column('profiles', 'display_name');
@@ -171,6 +171,7 @@ BEGIN
   CALL check_column('profiles', 'borders_correct');
   CALL check_column('profiles', 'stats_correct');
   CALL check_column('profiles', 'best_streak');
+  CALL check_column('profiles', 'admin_role');
   CALL check_column('profiles', 'created_at');
   CALL check_column('profiles', 'updated_at');
 

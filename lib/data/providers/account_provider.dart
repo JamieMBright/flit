@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../core/config/admin_config.dart';
 import '../../core/services/game_settings.dart';
 import '../../game/map/region.dart';
 import '../models/avatar_config.dart';
@@ -36,8 +35,11 @@ class AccountState {
 
   final Player currentPlayer;
 
-  /// Whether the current user is an admin (derived from Supabase auth email).
-  bool get isAdmin => AdminConfig.isCurrentUserAdmin;
+  /// Whether the current user has any admin access (from DB admin_role column).
+  bool get isAdmin => currentPlayer.isAdmin;
+
+  /// Whether the current user is the owner (god mode).
+  bool get isOwner => currentPlayer.isOwner;
 
   /// Set of region IDs that have been unlocked via coin purchase.
   final Set<String> unlockedRegions;

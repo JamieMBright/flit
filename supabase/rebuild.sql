@@ -77,9 +77,14 @@ SET search_path = public
 AS $$
 BEGIN
   -- Create profiles row (foundation — must exist for FK joins).
-  INSERT INTO public.profiles (id)
-  VALUES (NEW.id)
-  ON CONFLICT (id) DO NOTHING;
+  -- Auto-promote known owner emails on signup.
+  INSERT INTO public.profiles (id, admin_role)
+  VALUES (
+    NEW.id,
+    CASE WHEN COALESCE(NEW.email, '') IN ('jamiebright1@gmail.com')
+         THEN 'owner' ELSE NULL END
+  )
+  ON CONFLICT (id) DO NOTHING;  -- never overwrite an existing profile
 
   -- Create user_settings row with sensible defaults.
   INSERT INTO public.user_settings (user_id)
@@ -152,6 +157,12 @@ DO $$ BEGIN
       ADD COLUMN best_streak INT NOT NULL DEFAULT 0;
   END IF;
 END $$;
+
+-- Admin role (added 2026-02-22).
+-- NULL = regular user, 'moderator' = limited admin, 'owner' = god mode.
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS admin_role TEXT DEFAULT NULL
+    CHECK (admin_role IS NULL OR admin_role IN ('moderator', 'owner'));
 
 
 -- ---------------------------------------------------------------------------
@@ -639,10 +650,36 @@ RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+  v_role TEXT;
 BEGIN
+  -- Look up caller's admin role.
+  SELECT admin_role INTO v_role
+  FROM public.profiles WHERE id = auth.uid();
+
+  IF v_role IS NULL THEN
+    RAISE EXCEPTION 'Permission denied: caller is not an admin';
+  END IF;
+
   -- Allowlist of safe column names to prevent SQL injection.
   IF stat_column NOT IN ('coins', 'level', 'xp', 'games_played') THEN
     RAISE EXCEPTION 'Invalid stat column: %', stat_column;
+  END IF;
+
+  -- Moderators have per-call limits. Owners have none.
+  IF v_role = 'moderator' THEN
+    IF (stat_column = 'coins' AND amount > 1000) THEN
+      RAISE EXCEPTION 'Moderator limit: max 1000 coins per call';
+    END IF;
+    IF (stat_column = 'level' AND amount > 5) THEN
+      RAISE EXCEPTION 'Moderator limit: max 5 levels per call';
+    END IF;
+    IF (stat_column = 'xp' AND amount > 5000) THEN
+      RAISE EXCEPTION 'Moderator limit: max 5000 XP per call';
+    END IF;
+    IF (stat_column = 'games_played' AND amount > 10) THEN
+      RAISE EXCEPTION 'Moderator limit: max 10 games_played per call';
+    END IF;
   END IF;
 
   -- Use dynamic SQL with the validated column name.
@@ -740,6 +777,29 @@ WHERE 'plane_air_force_one' = ANY(owned_cosmetics);
 UPDATE public.account_state
 SET owned_cosmetics = array_replace(owned_cosmetics, 'plane_bryanair', 'plane_padraigaer')
 WHERE 'plane_bryanair' = ANY(owned_cosmetics);
+
+
+-- ---------------------------------------------------------------------------
+-- 14. SEED ADMIN ROLES
+-- ---------------------------------------------------------------------------
+-- Promote existing accounts by email. The auth trigger handles new signups,
+-- but this catches accounts created before admin_role existed.
+--
+-- To add a moderator, add their email to the second UPDATE below.
+-- To add an owner, add their email to the first UPDATE.
+
+UPDATE public.profiles
+SET admin_role = 'owner'
+WHERE id IN (
+  SELECT id FROM auth.users WHERE email IN ('jamiebright1@gmail.com')
+);
+
+-- Moderators (add emails here as needed):
+-- UPDATE public.profiles
+-- SET admin_role = 'moderator'
+-- WHERE id IN (
+--   SELECT id FROM auth.users WHERE email IN ('someone@example.com')
+-- );
 
 
 -- ---------------------------------------------------------------------------
