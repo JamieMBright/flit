@@ -83,6 +83,7 @@ class FriendsService {
             .from('friendships')
             .update({'status': 'accepted'})
             .eq('id', reversePending['id'] as int);
+        await _deleteOwnPendingRequest(addresseeId);
         invalidateCache();
         return true;
       }
@@ -108,6 +109,7 @@ class FriendsService {
             .from('friendships')
             .update({'status': 'accepted'})
             .eq('id', reverseAfterInsert['id'] as int);
+        await _deleteOwnPendingRequest(addresseeId);
       }
       invalidateCache();
       return true;
@@ -115,6 +117,16 @@ class FriendsService {
       debugPrint('[FriendsService] sendFriendRequest failed: $e');
       return false;
     }
+  }
+
+  Future<void> _deleteOwnPendingRequest(String addresseeId) async {
+    if (_userId == null) return;
+    await _client
+        .from('friendships')
+        .delete()
+        .eq('requester_id', _userId!)
+        .eq('addressee_id', addresseeId)
+        .eq('status', 'pending');
   }
 
   /// Accept a friend request. Returns true on success.
