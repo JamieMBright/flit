@@ -16,6 +16,13 @@ DROP VIEW IF EXISTS leaderboard_regional CASCADE;
 DROP VIEW IF EXISTS leaderboard_daily CASCADE;
 DROP VIEW IF EXISTS leaderboard_global CASCADE;
 
+-- Drop triggers (before tables so partial runs are clean).
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP TRIGGER IF EXISTS trg_profiles_updated_at ON public.profiles;
+DROP TRIGGER IF EXISTS trg_user_settings_updated_at ON public.user_settings;
+DROP TRIGGER IF EXISTS trg_account_state_updated_at ON public.account_state;
+DROP TRIGGER IF EXISTS trg_friendships_updated_at ON public.friendships;
+
 -- Drop tables (order matters for foreign keys).
 DROP TABLE IF EXISTS public.matchmaking_pool CASCADE;
 DROP TABLE IF EXISTS public.challenges CASCADE;
@@ -35,6 +42,3 @@ DROP FUNCTION IF EXISTS public.purchase_cosmetic(UUID, TEXT, INT) CASCADE;
 DROP FUNCTION IF EXISTS public.expire_stale_challenges() CASCADE;
 DROP FUNCTION IF EXISTS public.update_updated_at() CASCADE;
 DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
-
--- Drop the auth trigger (the function was already dropped above).
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;

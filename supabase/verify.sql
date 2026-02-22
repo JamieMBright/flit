@@ -248,9 +248,9 @@ BEGIN
   IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname='leaderboard_regional' AND c.relkind='v' AND (SELECT COALESCE((reloptions::text[] @> ARRAY['security_invoker=on']::text[]) OR (reloptions::text[] @> ARRAY['security_invoker=true']::text[]), false) FROM pg_class WHERE relname='leaderboard_regional' AND relnamespace='public'::regnamespace)) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  security_invoker: leaderboard_regional'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  security_invoker: leaderboard_regional — NOT SET'); END IF;
   IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname='daily_streak_leaderboard' AND c.relkind='v' AND (SELECT COALESCE((reloptions::text[] @> ARRAY['security_invoker=on']::text[]) OR (reloptions::text[] @> ARRAY['security_invoker=true']::text[]), false) FROM pg_class WHERE relname='daily_streak_leaderboard' AND relnamespace='public'::regnamespace)) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  security_invoker: daily_streak_leaderboard'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  security_invoker: daily_streak_leaderboard — NOT SET'); END IF;
 
-  -- ------- INDEXES (11) -------
+  -- ------- INDEXES (12) -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- Indexes (11) ---');
+  _results := array_append(_results, '--- Indexes (12) ---');
 
   IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_scores_leaderboard') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_scores_leaderboard'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_scores_leaderboard — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_scores_user') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_scores_user'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_scores_user — MISSING'); END IF;
@@ -261,8 +261,21 @@ BEGIN
   IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_friendships_addressee') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_friendships_addressee'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_friendships_addressee — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_challenges_challenger') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_challenges_challenger'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_challenges_challenger — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_challenges_challenged') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_challenges_challenged'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_challenges_challenged — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_challenges_created') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_challenges_created'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_challenges_created — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_matchmaking_unmatched') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_matchmaking_unmatched'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_matchmaking_unmatched — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_matchmaking_user') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_matchmaking_user'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_matchmaking_user — MISSING'); END IF;
+
+  -- ------- CONSTRAINTS (7) -------
+  _results := array_append(_results, '');
+  _results := array_append(_results, '--- Constraints (7) ---');
+
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_score') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  constraint: chk_score'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  constraint: chk_score — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_time') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  constraint: chk_time'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  constraint: chk_time — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_username_length') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  constraint: check_username_length'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  constraint: check_username_length — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_username_pattern') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  constraint: check_username_pattern'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  constraint: check_username_pattern — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_level_positive') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  constraint: check_level_positive'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  constraint: check_level_positive — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_xp_non_negative') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  constraint: check_xp_non_negative'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  constraint: check_xp_non_negative — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_coins_non_negative') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  constraint: check_coins_non_negative'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  constraint: check_coins_non_negative — MISSING'); END IF;
 
   -- ------- SUMMARY -------
   _results := array_append(_results, '');
@@ -305,9 +318,17 @@ WITH checks AS (
 
   UNION ALL
 
-  -- Auth trigger
-  SELECT 'trigger', 'on_auth_user_created',
-    EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='on_auth_user_created')
+  -- Triggers
+  SELECT 'trigger', tg,
+    EXISTS (SELECT 1 FROM pg_trigger WHERE tgname=tg)
+  FROM unnest(ARRAY['on_auth_user_created','trg_profiles_updated_at','trg_user_settings_updated_at','trg_account_state_updated_at','trg_friendships_updated_at']) tg
+
+  UNION ALL
+
+  -- Constraints
+  SELECT 'constraint', c,
+    EXISTS (SELECT 1 FROM pg_constraint WHERE conname=c)
+  FROM unnest(ARRAY['chk_score','chk_time','check_username_length','check_username_pattern','check_level_positive','check_xp_non_negative','check_coins_non_negative']) c
 
   UNION ALL
 
