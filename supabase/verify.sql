@@ -164,9 +164,9 @@ BEGIN
   IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relname = 'challenges' AND c.relrowsecurity = true) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  RLS enabled: challenges'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  RLS enabled: challenges — DISABLED'); END IF;
   IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relname = 'matchmaking_pool' AND c.relrowsecurity = true) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  RLS enabled: matchmaking_pool'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  RLS enabled: matchmaking_pool — DISABLED'); END IF;
 
-  -- ------- ALL RLS POLICIES (24) -------
+  -- ------- ALL RLS POLICIES (25) -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- RLS policies (24) ---');
+  _results := array_append(_results, '--- RLS policies (25) ---');
 
   -- profiles (4)
   IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Users can read own profile') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: profiles / Users can read own profile'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: profiles / Users can read own profile — MISSING'); END IF;
@@ -179,10 +179,11 @@ BEGIN
   IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'user_settings' AND policyname = 'Users can insert own settings') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: user_settings / Users can insert own settings'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: user_settings / Users can insert own settings — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'user_settings' AND policyname = 'Users can update own settings') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: user_settings / Users can update own settings'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: user_settings / Users can update own settings — MISSING'); END IF;
 
-  -- account_state (3)
+  -- account_state (4)
   IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'account_state' AND policyname = 'Users can read own account state') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: account_state / Users can read own account state'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: account_state / Users can read own account state — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'account_state' AND policyname = 'Users can insert own account state') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: account_state / Users can insert own account state'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: account_state / Users can insert own account state — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'account_state' AND policyname = 'Users can update own account state') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: account_state / Users can update own account state'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: account_state / Users can update own account state — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'account_state' AND policyname = 'Account state is publicly readable') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: account_state / Account state is publicly readable'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: account_state / Account state is publicly readable — MISSING'); END IF;
 
   -- scores (2)
   IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'scores' AND policyname = 'Scores are viewable by everyone') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: scores / Scores are viewable by everyone'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: scores / Scores are viewable by everyone — MISSING'); END IF;
@@ -237,6 +238,15 @@ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.views WHERE table_schema = 'public' AND table_name = 'leaderboard_daily') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  view: leaderboard_daily'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  view: leaderboard_daily — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM information_schema.views WHERE table_schema = 'public' AND table_name = 'leaderboard_regional') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  view: leaderboard_regional'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  view: leaderboard_regional — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM information_schema.views WHERE table_schema = 'public' AND table_name = 'daily_streak_leaderboard') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  view: daily_streak_leaderboard'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  view: daily_streak_leaderboard — MISSING'); END IF;
+
+  -- ------- VIEW SECURITY INVOKER (4) -------
+  _results := array_append(_results, '');
+  _results := array_append(_results, '--- View security_invoker (4) ---');
+
+  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname='leaderboard_global' AND c.relkind='v' AND (SELECT COALESCE((reloptions::text[] @> ARRAY['security_invoker=on']::text[]) OR (reloptions::text[] @> ARRAY['security_invoker=true']::text[]), false) FROM pg_class WHERE relname='leaderboard_global' AND relnamespace='public'::regnamespace)) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  security_invoker: leaderboard_global'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  security_invoker: leaderboard_global — NOT SET'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname='leaderboard_daily' AND c.relkind='v' AND (SELECT COALESCE((reloptions::text[] @> ARRAY['security_invoker=on']::text[]) OR (reloptions::text[] @> ARRAY['security_invoker=true']::text[]), false) FROM pg_class WHERE relname='leaderboard_daily' AND relnamespace='public'::regnamespace)) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  security_invoker: leaderboard_daily'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  security_invoker: leaderboard_daily — NOT SET'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname='leaderboard_regional' AND c.relkind='v' AND (SELECT COALESCE((reloptions::text[] @> ARRAY['security_invoker=on']::text[]) OR (reloptions::text[] @> ARRAY['security_invoker=true']::text[]), false) FROM pg_class WHERE relname='leaderboard_regional' AND relnamespace='public'::regnamespace)) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  security_invoker: leaderboard_regional'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  security_invoker: leaderboard_regional — NOT SET'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname='daily_streak_leaderboard' AND c.relkind='v' AND (SELECT COALESCE((reloptions::text[] @> ARRAY['security_invoker=on']::text[]) OR (reloptions::text[] @> ARRAY['security_invoker=true']::text[]), false) FROM pg_class WHERE relname='daily_streak_leaderboard' AND relnamespace='public'::regnamespace)) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  security_invoker: daily_streak_leaderboard'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  security_invoker: daily_streak_leaderboard — NOT SET'); END IF;
 
   -- ------- INDEXES (11) -------
   _results := array_append(_results, '');
@@ -305,6 +315,13 @@ WITH checks AS (
   SELECT 'rls', t,
     EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname=t AND c.relrowsecurity)
   FROM unnest(ARRAY['profiles','user_settings','account_state','scores','friendships','challenges','matchmaking_pool']) t
+
+  UNION ALL
+
+  -- View security_invoker
+  SELECT 'security_invoker', v,
+    COALESCE((SELECT reloptions::text[] @> ARRAY['security_invoker=on']::text[] OR reloptions::text[] @> ARRAY['security_invoker=true']::text[] FROM pg_class WHERE relname=v AND relnamespace='public'::regnamespace), false)
+  FROM unnest(ARRAY['leaderboard_global','leaderboard_daily','leaderboard_regional','daily_streak_leaderboard']) v
 )
 SELECT
   CASE WHEN ok THEN 'PASS' ELSE 'FAIL' END AS status,

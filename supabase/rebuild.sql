@@ -256,6 +256,17 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- Public read access for leaderboards (daily_streak_leaderboard needs to read
+-- other players' streak data). Same pattern as profiles public read policy.
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'account_state' AND policyname = 'Account state is publicly readable'
+  ) THEN
+    CREATE POLICY "Account state is publicly readable"
+      ON public.account_state FOR SELECT USING (true);
+  END IF;
+END $$;
+
 
 -- ---------------------------------------------------------------------------
 -- 4. SCORES — individual game results (leaderboard source)
@@ -992,6 +1003,14 @@ JOIN profiles p ON p.id = a.user_id
 WHERE (a.daily_streak_data->>'current_streak')::int > 0
 ORDER BY current_streak DESC, longest_streak DESC
 LIMIT 100;
+
+-- Use SECURITY INVOKER so views respect the querying user's RLS policies
+-- instead of bypassing them with the view creator's permissions.
+-- Requires the underlying tables to have public SELECT policies (which they do).
+ALTER VIEW leaderboard_global SET (security_invoker = on);
+ALTER VIEW leaderboard_daily SET (security_invoker = on);
+ALTER VIEW leaderboard_regional SET (security_invoker = on);
+ALTER VIEW daily_streak_leaderboard SET (security_invoker = on);
 
 
 -- ---------------------------------------------------------------------------
