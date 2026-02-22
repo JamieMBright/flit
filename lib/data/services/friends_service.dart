@@ -68,17 +68,65 @@ class FriendsService {
   Future<bool> sendFriendRequest(String addresseeId) async {
     if (_userId == null) return false;
     try {
+      // If they already sent us a pending request, auto-accept it so both
+      // players become friends immediately when they add each other.
+      final reversePending = await _client
+          .from('friendships')
+          .select('id')
+          .eq('requester_id', addresseeId)
+          .eq('addressee_id', _userId!)
+          .eq('status', 'pending')
+          .maybeSingle();
+
+      if (reversePending != null) {
+        await _client
+            .from('friendships')
+            .update({'status': 'accepted'})
+            .eq('id', reversePending['id'] as int);
+        await _deleteOwnPendingRequest(addresseeId);
+        invalidateCache();
+        return true;
+      }
+
       await _client.from('friendships').insert({
         'requester_id': _userId,
         'addressee_id': addresseeId,
         'status': 'pending',
       });
+
+      // Handle near-simultaneous mutual requests: if the reverse pending row
+      // appeared between our first check and insert, accept it now.
+      final reverseAfterInsert = await _client
+          .from('friendships')
+          .select('id')
+          .eq('requester_id', addresseeId)
+          .eq('addressee_id', _userId!)
+          .eq('status', 'pending')
+          .maybeSingle();
+
+      if (reverseAfterInsert != null) {
+        await _client
+            .from('friendships')
+            .update({'status': 'accepted'})
+            .eq('id', reverseAfterInsert['id'] as int);
+        await _deleteOwnPendingRequest(addresseeId);
+      }
       invalidateCache();
       return true;
     } catch (e) {
       debugPrint('[FriendsService] sendFriendRequest failed: $e');
       return false;
     }
+  }
+
+  Future<void> _deleteOwnPendingRequest(String addresseeId) async {
+    if (_userId == null) return;
+    await _client
+        .from('friendships')
+        .delete()
+        .eq('requester_id', _userId!)
+        .eq('addressee_id', addresseeId)
+        .eq('status', 'pending');
   }
 
   /// Accept a friend request. Returns true on success.
