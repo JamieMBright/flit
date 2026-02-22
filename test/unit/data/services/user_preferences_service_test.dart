@@ -649,8 +649,8 @@ void main() {
       expect(snapshotNoSettings.enableNight, isTrue);
     });
 
-    test('mapStyle defaults to "topo" when no settings', () {
-      expect(snapshotNoSettings.mapStyle, equals('topo'));
+    test('mapStyle defaults to "standard" when no settings', () {
+      expect(snapshotNoSettings.mapStyle, equals('standard'));
     });
 
     test('difficulty defaults to "normal" when no settings', () {
