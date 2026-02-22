@@ -463,6 +463,20 @@ void main() {
     // debugging texture projection and plane direction.
     if (uEnableShading < 0.5) {
         vec3 rawColor = satColor.rgb;
+
+        // Country borders (distance field from uShoreDist green channel).
+        // Must render here because the early return below skips the full
+        // V7 border block further down.
+        {
+            float borderDist = texture(uShoreDist, uv).g;
+            float camAlt = length(uCameraPos) - uGlobeRadius;
+            float borderWidth = mix(0.14, 0.10, smoothstep(0.3, 3.0, camAlt));
+            float borderLine = 1.0 - smoothstep(0.0, borderWidth, borderDist);
+            float borderAlpha = borderLine * 0.8;
+            vec3 borderColor = vec3(1.0, 1.0, 1.0);
+            rawColor = mix(rawColor, borderColor, borderAlpha);
+        }
+
         vec3 finalColor = mix(background, rawColor, surfaceFade);
         // Gamma correction only (no tone-mapping needed for raw texture)
         finalColor = pow(finalColor, vec3(1.0 / 2.2));
@@ -604,8 +618,7 @@ void main() {
         float borderLine = 1.0 - smoothstep(0.0, borderWidth, borderDist);
 
         // Borders always visible: constant white, unaffected by day/night.
-        // Alpha floor of 0.3 prevents borders from vanishing at distance.
-        float borderAlpha = max(borderLine * 0.8, borderLine * 0.3);
+        float borderAlpha = borderLine * 0.8;
         vec3 borderColor = vec3(1.0, 1.0, 1.0);
 
         surfaceColor = mix(surfaceColor, borderColor, borderAlpha);

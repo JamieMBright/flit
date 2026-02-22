@@ -472,6 +472,10 @@ class UserPreferencesService {
         }
         // Success — remove the entry from the queue.
         await _queue.dequeue();
+        // Invalidate leaderboard cache when a queued score lands.
+        if (table == 'scores') {
+          LeaderboardService.instance.invalidateCache();
+        }
         debugPrint(
           '[UserPreferencesService] retryPendingWrites: $op on $table succeeded',
         );

@@ -1059,13 +1059,39 @@ class _FilterChip extends StatelessWidget {
   );
 }
 
-class _LogEntryTile extends StatelessWidget {
+class _LogEntryTile extends StatefulWidget {
   const _LogEntryTile({required this.entry});
 
   final LogEntry entry;
 
   @override
+  State<_LogEntryTile> createState() => _LogEntryTileState();
+}
+
+class _LogEntryTileState extends State<_LogEntryTile> {
+  bool _isExpanded = false;
+
+  void _copyEntry() {
+    final buf = StringBuffer()
+      ..writeln(
+        '[${widget.entry.timeString}] ${widget.entry.levelTag} '
+        '${widget.entry.category}',
+      )
+      ..writeln(widget.entry.message);
+    if (widget.entry.data != null) buf.writeln('Data: ${widget.entry.data}');
+    if (widget.entry.error != null) buf.writeln('Error: ${widget.entry.error}');
+    Clipboard.setData(ClipboardData(text: buf.toString()));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Log entry copied'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final entry = widget.entry;
     final color = switch (entry.level) {
       LogLevel.debug => FlitColors.textMuted,
       LogLevel.info => FlitColors.textSecondary,
@@ -1075,95 +1101,146 @@ class _LogEntryTile extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground,
-          borderRadius: BorderRadius.circular(6),
-          border: entry.level == LogLevel.error
-              ? Border.all(color: FlitColors.error.withOpacity(0.4))
-              : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  entry.timeString,
-                  style: const TextStyle(
+      child: GestureDetector(
+        onTap: () => setState(() => _isExpanded = !_isExpanded),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: FlitColors.cardBackground,
+            borderRadius: BorderRadius.circular(6),
+            border: entry.level == LogLevel.error
+                ? Border.all(color: FlitColors.error.withOpacity(0.4))
+                : null,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    entry.timeString,
+                    style: const TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 10,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Text(
+                      entry.levelTag,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      entry.category,
+                      style: const TextStyle(
+                        color: FlitColors.gold,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    _isExpanded ? Icons.expand_less : Icons.expand_more,
                     color: FlitColors.textMuted,
-                    fontSize: 10,
-                    fontFamily: 'monospace',
+                    size: 16,
                   ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              SelectableText(
+                entry.message,
+                style: TextStyle(
+                  color: entry.level.index >= LogLevel.warning.index
+                      ? color
+                      : FlitColors.textPrimary,
+                  fontSize: 12,
                 ),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: Text(
-                    entry.levelTag,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
+              ),
+              if (entry.data != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: _isExpanded
+                      ? SelectableText(
+                          '${entry.data}',
+                          style: const TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 10,
+                            fontFamily: 'monospace',
+                          ),
+                        )
+                      : Text(
+                          '${entry.data}',
+                          style: const TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 10,
+                            fontFamily: 'monospace',
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                ),
+              if (entry.error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: _isExpanded
+                      ? SelectableText(
+                          '${entry.error}',
+                          style: const TextStyle(
+                            color: FlitColors.error,
+                            fontSize: 10,
+                            fontFamily: 'monospace',
+                          ),
+                        )
+                      : Text(
+                          '${entry.error}',
+                          style: const TextStyle(
+                            color: FlitColors.error,
+                            fontSize: 10,
+                            fontFamily: 'monospace',
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                ),
+              if (_isExpanded)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: GestureDetector(
+                    onTap: _copyEntry,
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.copy, size: 12, color: FlitColors.textMuted),
+                        SizedBox(width: 4),
+                        Text(
+                          'Copy full entry',
+                          style: TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 9,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  entry.category,
-                  style: const TextStyle(
-                    color: FlitColors.gold,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              entry.message,
-              style: TextStyle(
-                color: entry.level.index >= LogLevel.warning.index
-                    ? color
-                    : FlitColors.textPrimary,
-                fontSize: 12,
-              ),
-            ),
-            if (entry.data != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  '${entry.data}',
-                  style: const TextStyle(
-                    color: FlitColors.textMuted,
-                    fontSize: 10,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ),
-            if (entry.error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  '${entry.error}',
-                  style: const TextStyle(
-                    color: FlitColors.error,
-                    fontSize: 10,
-                    fontFamily: 'monospace',
-                  ),
-                  maxLines: 5,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

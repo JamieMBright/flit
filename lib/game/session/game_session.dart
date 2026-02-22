@@ -190,9 +190,9 @@ class GameSession {
   }) {
     final random = Random(seed);
 
-    // Pick country based on seed
-    final countryIndex = random.nextInt(CountryData.countries.length);
-    final country = CountryData.countries[countryIndex];
+    // Pick country based on seed (from playable pool, excluding obscure territories)
+    final countryIndex = random.nextInt(CountryData.playableCountries.length);
+    final country = CountryData.playableCountries[countryIndex];
 
     // Use Clue.random() with the same filters as random mode
     final clue = Clue.random(
