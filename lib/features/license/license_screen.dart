@@ -98,6 +98,8 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat();
+    // Pull latest server state so license stats are always current.
+    ref.read(accountProvider.notifier).refreshFromServer();
   }
 
   @override

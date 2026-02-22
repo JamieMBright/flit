@@ -281,16 +281,26 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// Start a periodic timer that re-fetches user data from Supabase.
   void _startPeriodicRefresh() {
     _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(_refreshInterval, (_) => _refreshFromDb());
+    _refreshTimer = Timer.periodic(
+      _refreshInterval,
+      (_) => refreshFromServer(),
+    );
   }
 
   /// Re-fetch all user data from Supabase and re-hydrate local state.
   ///
   /// Skips the refresh if there are pending local writes (to avoid
   /// overwriting unsaved changes).
-  Future<void> _refreshFromDb() async {
+  ///
+  /// Called automatically on a periodic timer, but also available for
+  /// on-demand refresh when navigating to key screens (shop, profile, etc.)
+  /// so the user always sees the latest server state.
+  Future<void> refreshFromServer() async {
     if (_userId == null) return;
-    if (_prefs.hasPendingWrites) return;
+    if (_prefs.hasPendingWrites) {
+      // Flush pending writes first, then refresh.
+      await _prefs.flush();
+    }
 
     try {
       final snapshot = await _prefs.load(_userId!);
@@ -298,7 +308,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
         await _applySnapshot(snapshot);
       }
     } catch (e) {
-      debugPrint('[AccountNotifier] periodic refresh failed: $e');
+      debugPrint('[AccountNotifier] refresh failed: $e');
     }
   }
 

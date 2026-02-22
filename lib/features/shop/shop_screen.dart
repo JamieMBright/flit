@@ -31,6 +31,8 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
       vsync: this,
       initialIndex: widget.initialTabIndex.clamp(0, 3),
     );
+    // Pull latest server state so purchases made via RPC are reflected.
+    ref.read(accountProvider.notifier).refreshFromServer();
   }
 
   @override

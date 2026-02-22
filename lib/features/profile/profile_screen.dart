@@ -58,6 +58,13 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Pull latest server state so profile stats are always current.
+    ref.read(accountProvider.notifier).refreshFromServer();
+  }
+
   void _openSettings() => showSettingsSheet(context);
 
   void _editProfile() {
