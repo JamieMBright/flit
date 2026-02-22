@@ -916,7 +916,7 @@ class UserPreferencesSnapshot {
   }
 
   String get mapStyle {
-    return settings?['map_style'] as String? ?? 'topo';
+    return settings?['map_style'] as String? ?? 'standard';
   }
 
   bool get englishLabels {
