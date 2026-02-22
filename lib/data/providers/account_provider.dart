@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../core/config/admin_config.dart';
 import '../../core/services/game_settings.dart';
 import '../../game/map/region.dart';
 import '../models/avatar_config.dart';
@@ -36,8 +35,11 @@ class AccountState {
 
   final Player currentPlayer;
 
-  /// Whether the current user is an admin (derived from Supabase auth email).
-  bool get isAdmin => AdminConfig.isCurrentUserAdmin;
+  /// Whether the current user has any admin access (from DB admin_role column).
+  bool get isAdmin => currentPlayer.isAdmin;
+
+  /// Whether the current user is the owner (god mode).
+  bool get isOwner => currentPlayer.isOwner;
 
   /// Set of region IDs that have been unlocked via coin purchase.
   final Set<String> unlockedRegions;
@@ -206,12 +208,12 @@ class AccountNotifier extends StateNotifier<AccountState> {
     final snapshot = await _prefs.load(userId);
     if (snapshot == null) return;
 
-    _applySnapshot(snapshot);
+    await _applySnapshot(snapshot);
     _startPeriodicRefresh();
   }
 
   /// Apply a [UserPreferencesSnapshot] to in-memory state.
-  void _applySnapshot(UserPreferencesSnapshot snapshot) {
+  Future<void> _applySnapshot(UserPreferencesSnapshot snapshot) async {
     final player = snapshot.toPlayer();
 
     state = AccountState(
@@ -235,7 +237,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _supabaseLoaded = true;
 
     // Hydrate GameSettings from Supabase data without triggering writes back.
-    GameSettings.instance.hydrateFrom(
+    await GameSettings.instance.hydrateFrom(
       turnSensitivity: snapshot.turnSensitivity,
       invertControls: snapshot.invertControls,
       enableNight: snapshot.enableNight,
@@ -273,7 +275,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     try {
       final snapshot = await _prefs.load(_userId!);
       if (snapshot != null) {
-        _applySnapshot(snapshot);
+        await _applySnapshot(snapshot);
       }
     } catch (e) {
       debugPrint('[AccountNotifier] periodic refresh failed: $e');
@@ -536,12 +538,19 @@ class AccountNotifier extends StateNotifier<AccountState> {
   }
 
   /// Purchase an avatar part. Returns true if successful.
+  ///
+  /// Attempts server-side validation via the `purchase_avatar_part` DB function.
+  /// If the server call fails (offline/network error), falls back to
+  /// client-side deduction for offline resilience.
   bool purchaseAvatarPart(String partKey, int cost) {
     if (!spendCoins(cost)) return false;
     state = state.copyWith(
       ownedAvatarParts: {...state.ownedAvatarParts, partKey},
     );
     _syncAccountState();
+
+    // Fire-and-forget server-side validation.
+    _serverValidateAvatarPartPurchase(partKey, cost);
     return true;
   }
 
@@ -611,6 +620,49 @@ class AccountNotifier extends StateNotifier<AccountState> {
       // Network error — rely on client-side debounced sync.
       debugPrint(
         '[AccountNotifier] Server purchase validation unavailable: $e',
+      );
+    }
+  }
+
+  /// Attempt server-side atomic avatar part purchase via Supabase RPC.
+  Future<void> _serverValidateAvatarPartPurchase(
+    String partId,
+    int cost,
+  ) async {
+    try {
+      final userId = state.currentPlayer.id;
+      if (userId.isEmpty) return;
+
+      final result = await Supabase.instance.client.rpc(
+        'purchase_avatar_part',
+        params: {
+          'p_user_id': userId,
+          'p_part_id': partId,
+          'p_cost': cost,
+        },
+      );
+
+      if (result is Map<String, dynamic>) {
+        final success = result['success'] as bool? ?? false;
+        if (success) {
+          final serverBalance = result['new_balance'] as int?;
+          if (serverBalance != null &&
+              serverBalance != state.currentPlayer.coins) {
+            state = state.copyWith(
+              currentPlayer:
+                  state.currentPlayer.copyWith(coins: serverBalance),
+            );
+          }
+        } else {
+          debugPrint(
+            '[AccountNotifier] Server avatar part purchase failed: '
+            '${result['error']}',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint(
+        '[AccountNotifier] Server avatar part purchase unavailable: $e',
       );
     }
   }

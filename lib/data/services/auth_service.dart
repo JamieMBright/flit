@@ -405,6 +405,7 @@ class AuthService {
           bordersCorrect: data['borders_correct'] as int? ?? 0,
           statsCorrect: data['stats_correct'] as int? ?? 0,
           bestStreak: data['best_streak'] as int? ?? 0,
+          adminRole: data['admin_role'] as String?,
           createdAt: data['created_at'] != null
               ? DateTime.tryParse(data['created_at'] as String)
               : null,

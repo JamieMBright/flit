@@ -41,6 +41,7 @@ enum GameDifficulty {
 class GameSettings extends ChangeNotifier {
   GameSettings._() {
     addListener(_syncToSupabase);
+    addListener(_syncToLocal);
   }
 
   /// Singleton instance.
@@ -67,8 +68,15 @@ class GameSettings extends ChangeNotifier {
     );
   }
 
+  /// Persist settings to SharedPreferences on every change so they survive
+  /// browser refresh / app restart even when Supabase is unreachable.
+  void _syncToLocal() {
+    if (_hydrating) return;
+    _saveToLocal();
+  }
+
   /// Bulk-set all fields from Supabase snapshot without triggering writes back.
-  void hydrateFrom({
+  Future<void> hydrateFrom({
     required double turnSensitivity,
     required bool invertControls,
     required bool enableNight,
@@ -80,7 +88,7 @@ class GameSettings extends ChangeNotifier {
     required double effectsVolume,
     required bool notificationsEnabled,
     required bool hapticEnabled,
-  }) {
+  }) async {
     _hydrating = true;
     this.turnSensitivity = turnSensitivity;
     this.invertControls = invertControls;
@@ -93,7 +101,7 @@ class GameSettings extends ChangeNotifier {
     this.effectsVolume = effectsVolume;
     this.notificationsEnabled = notificationsEnabled;
     this.hapticEnabled = hapticEnabled;
-    _saveToLocal();
+    await _saveToLocal();
     _hydrating = false;
   }
 
@@ -164,6 +172,14 @@ class GameSettings extends ChangeNotifier {
           data['notifications_enabled'] as bool? ?? _notificationsEnabled;
       _hapticEnabled = data['haptic_enabled'] as bool? ?? _hapticEnabled;
       _hydrating = false;
+
+      // Sync audio manager state from loaded values — the setters above
+      // bypassed the public setters which normally do this.
+      AudioManager.instance.enabled = _soundEnabled;
+      AudioManager.instance.musicVolume = _musicVolume;
+      AudioManager.instance.effectsVolume = _effectsVolume;
+
+      notifyListeners();
       return true;
     } catch (_) {
       return false;

@@ -662,6 +662,7 @@ class UserPreferencesSnapshot {
       bordersCorrect: p['borders_correct'] as int? ?? 0,
       statsCorrect: p['stats_correct'] as int? ?? 0,
       bestStreak: p['best_streak'] as int? ?? 0,
+      adminRole: p['admin_role'] as String?,
       createdAt: p['created_at'] != null
           ? DateTime.tryParse(p['created_at'] as String)
           : null,

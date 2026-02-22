@@ -19,6 +19,7 @@ class Player {
     this.bordersCorrect = 0,
     this.statsCorrect = 0,
     this.bestStreak = 0,
+    this.adminRole,
     this.createdAt,
   });
 
@@ -52,6 +53,18 @@ class Player {
   /// Longest streak of consecutive correct answers ever achieved.
   final int bestStreak;
 
+  /// Admin role: null = regular user, 'moderator' = limited admin, 'owner' = god mode.
+  final String? adminRole;
+
+  /// Whether this player has any admin access.
+  bool get isAdmin => adminRole != null;
+
+  /// Whether this player has owner (god mode) access.
+  bool get isOwner => adminRole == 'owner';
+
+  /// Whether this player has moderator access.
+  bool get isModerator => adminRole == 'moderator';
+
   final DateTime? createdAt;
 
   /// XP required for next level
@@ -82,6 +95,7 @@ class Player {
     int? bordersCorrect,
     int? statsCorrect,
     int? bestStreak,
+    String? adminRole,
     DateTime? createdAt,
   }) => Player(
     id: id ?? this.id,
@@ -102,6 +116,7 @@ class Player {
     bordersCorrect: bordersCorrect ?? this.bordersCorrect,
     statsCorrect: statsCorrect ?? this.statsCorrect,
     bestStreak: bestStreak ?? this.bestStreak,
+    adminRole: adminRole ?? this.adminRole,
     createdAt: createdAt ?? this.createdAt,
   );
 
@@ -124,6 +139,7 @@ class Player {
     'borders_correct': bordersCorrect,
     'stats_correct': statsCorrect,
     'best_streak': bestStreak,
+    'admin_role': adminRole,
     'created_at': createdAt?.toIso8601String(),
   };
 
@@ -150,6 +166,7 @@ class Player {
     bordersCorrect: json['borders_correct'] as int? ?? 0,
     statsCorrect: json['stats_correct'] as int? ?? 0,
     bestStreak: json['best_streak'] as int? ?? 0,
+    adminRole: json['admin_role'] as String?,
     createdAt: json['created_at'] != null
         ? DateTime.parse(json['created_at'] as String)
         : null,

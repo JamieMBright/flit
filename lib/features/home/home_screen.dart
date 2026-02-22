@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_version.dart';
 import '../../data/models/daily_streak.dart';
 import '../../data/providers/account_provider.dart';
-import '../../core/config/admin_config.dart';
 import '../../core/theme/flit_colors.dart';
 import '../admin/admin_screen.dart';
 import '../daily/daily_challenge_screen.dart';
@@ -192,7 +191,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ],
       ),
-      if (AdminConfig.isCurrentUserAdmin) ...[
+      if (ref.watch(accountProvider).isAdmin) ...[
         const SizedBox(height: 10),
         _MenuButton(
           label: 'Admin',
