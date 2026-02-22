@@ -62,6 +62,8 @@ class Friend {
 }
 
 /// Head-to-head record between two players.
+///
+/// Includes lifetime totals, last-10-game breakdown, and last-game result.
 class HeadToHead {
   const HeadToHead({
     required this.friendId,
@@ -69,14 +71,30 @@ class HeadToHead {
     required this.wins,
     required this.losses,
     required this.totalChallenges,
+    this.last10Wins = 0,
+    this.last10Losses = 0,
+    this.last10Total = 0,
+    this.lastGameWon,
     this.lastPlayed,
   });
 
   final String friendId;
   final String friendName;
+
+  /// Lifetime totals.
   final int wins;
   final int losses;
   final int totalChallenges;
+
+  /// Last 10 games breakdown.
+  final int last10Wins;
+  final int last10Losses;
+  final int last10Total;
+
+  /// Result of the most recent game: true = you won, false = you lost,
+  /// null = draw or no games played.
+  final bool? lastGameWon;
+
   final DateTime? lastPlayed;
 
   int get draws => totalChallenges - wins - losses;
@@ -89,12 +107,23 @@ class HeadToHead {
     return 'Tied';
   }
 
+  String get last10Record => '$last10Wins - $last10Losses';
+
+  String get lastGameText {
+    if (lastGameWon == null) return 'N/A';
+    return lastGameWon! ? 'Won' : 'Lost';
+  }
+
   Map<String, dynamic> toJson() => {
     'friend_id': friendId,
     'friend_name': friendName,
     'wins': wins,
     'losses': losses,
     'total_challenges': totalChallenges,
+    'last_10_wins': last10Wins,
+    'last_10_losses': last10Losses,
+    'last_10_total': last10Total,
+    'last_game_won': lastGameWon,
     'last_played': lastPlayed?.toIso8601String(),
   };
 
@@ -104,6 +133,10 @@ class HeadToHead {
     wins: json['wins'] as int? ?? 0,
     losses: json['losses'] as int? ?? 0,
     totalChallenges: json['total_challenges'] as int? ?? 0,
+    last10Wins: json['last_10_wins'] as int? ?? 0,
+    last10Losses: json['last_10_losses'] as int? ?? 0,
+    last10Total: json['last_10_total'] as int? ?? 0,
+    lastGameWon: json['last_game_won'] as bool?,
     lastPlayed: json['last_played'] != null
         ? DateTime.parse(json['last_played'] as String)
         : null,

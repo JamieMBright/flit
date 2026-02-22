@@ -175,12 +175,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         children: [
           Expanded(
             child: _MenuTile(
+              label: 'Friends',
+              icon: Icons.people_rounded,
+              onTap: () => _navigateSafely(context, const FriendsScreen()),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _MenuTile(
               label: 'Shop',
               icon: Icons.storefront_rounded,
               onTap: () => _navigateSafely(context, const ShopScreen()),
             ),
           ),
-          const SizedBox(width: 10),
+        ],
+      ),
+      const SizedBox(height: 10),
+      Row(
+        children: [
           Expanded(
             child: _MenuTile(
               label: 'How to Play',
@@ -189,6 +201,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   _navigateSafely(context, const GameplayGuideScreen()),
             ),
           ),
+          const SizedBox(width: 10),
+          const Expanded(child: SizedBox()),
         ],
       ),
       if (ref.watch(accountProvider).isAdmin) ...[

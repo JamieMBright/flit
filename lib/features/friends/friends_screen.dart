@@ -680,27 +680,103 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              if (h2h != null && h2h.totalChallenges > 0)
+              // ── Head-to-head stats ──
+              if (h2h != null && h2h.totalChallenges > 0) ...[
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: FlitColors.backgroundMid,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  child: Column(
                     children: [
-                      _MiniStat('Wins', '${h2h.wins}', FlitColors.success),
-                      _MiniStat('Losses', '${h2h.losses}', FlitColors.error),
-                      _MiniStat(
-                        'Total',
-                        '${h2h.totalChallenges}',
-                        FlitColors.textSecondary,
+                      // Lifetime record
+                      const Text(
+                        'LIFETIME',
+                        style: TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                        ),
                       ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _MiniStat('W', '${h2h.wins}', FlitColors.success),
+                          _MiniStat('L', '${h2h.losses}', FlitColors.error),
+                          _MiniStat(
+                            'Total',
+                            '${h2h.totalChallenges}',
+                            FlitColors.textSecondary,
+                          ),
+                        ],
+                      ),
+                      if (h2h.last10Total > 0) ...[
+                        const SizedBox(height: 12),
+                        const Divider(color: FlitColors.cardBorder, height: 1),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // Last 10 column
+                            Column(
+                              children: [
+                                const Text(
+                                  'LAST 10',
+                                  style: TextStyle(
+                                    color: FlitColors.textMuted,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  h2h.last10Record,
+                                  style: const TextStyle(
+                                    color: FlitColors.textPrimary,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // Last game column
+                            Column(
+                              children: [
+                                const Text(
+                                  'LAST GAME',
+                                  style: TextStyle(
+                                    color: FlitColors.textMuted,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  h2h.lastGameText,
+                                  style: TextStyle(
+                                    color: h2h.lastGameWon == true
+                                        ? FlitColors.success
+                                        : h2h.lastGameWon == false
+                                        ? FlitColors.error
+                                        : FlitColors.textSecondary,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
-                )
-              else
+                ),
+              ] else
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -713,6 +789,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                   ),
                 ),
               const SizedBox(height: 20),
+              // ── Challenge button ──
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -798,30 +875,56 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _showReportDialog(friend);
-                  },
-                  icon: const Icon(
-                    Icons.flag_outlined,
-                    size: 16,
-                    color: FlitColors.textMuted,
-                  ),
-                  label: const Text(
-                    'REPORT USERNAME',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.0,
+              // ── Remove friend + Report row ──
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _confirmRemoveFriend(friend);
+                    },
+                    icon: const Icon(
+                      Icons.person_remove_outlined,
+                      size: 16,
+                      color: FlitColors.error,
+                    ),
+                    label: const Text(
+                      'REMOVE',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: FlitColors.error,
                     ),
                   ),
-                  style: TextButton.styleFrom(
-                    foregroundColor: FlitColors.textMuted,
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _showReportDialog(friend);
+                    },
+                    icon: const Icon(
+                      Icons.flag_outlined,
+                      size: 16,
+                      color: FlitColors.textMuted,
+                    ),
+                    label: const Text(
+                      'REPORT',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: FlitColors.textMuted,
+                    ),
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 12),
             ],
@@ -1002,6 +1105,106 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         ),
       ),
     );
+  }
+
+  void _confirmRemoveFriend(Friend friend) {
+    showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.person_remove,
+                color: FlitColors.error,
+                size: 36,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Remove ${friend.name}?',
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'This will remove them from your friends list. '
+                'You can always add them again later.',
+                style: TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: const Text(
+                      'CANCEL',
+                      style: TextStyle(color: FlitColors.textMuted),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.error,
+                      foregroundColor: FlitColors.textPrimary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'REMOVE',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).then((confirmed) async {
+      if (confirmed != true || !mounted) return;
+      final friendshipId = int.tryParse(friend.id);
+      if (friendshipId == null) return;
+      final ok = await FriendsService.instance.removeFriend(friendshipId);
+      if (!mounted) return;
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Removed ${friend.name} from friends'),
+            backgroundColor: FlitColors.textMuted,
+          ),
+        );
+        _loadData();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to remove friend'),
+            backgroundColor: FlitColors.error,
+          ),
+        );
+      }
+    });
   }
 }
 
