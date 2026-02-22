@@ -438,10 +438,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
 
   Future<void> _createAndLaunchChallenge(Friend friend) async {
     final account = ref.read(accountProvider);
-    final myName =
-        account.currentPlayer.displayName ??
-        account.currentPlayer.username ??
-        'Player';
+    final myName = account.currentPlayer.displayName.isNotEmpty
+        ? account.currentPlayer.displayName
+        : (account.currentPlayer.username.isNotEmpty
+              ? account.currentPlayer.username
+              : 'Player');
 
     final challengeId = await ChallengeService.instance.createChallenge(
       challengedId: friend.playerId,

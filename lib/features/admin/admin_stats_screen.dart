@@ -63,7 +63,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
       final d30 = now.subtract(const Duration(days: 30)).toIso8601String();
 
       // Run all queries in parallel
-      final results = await Future.wait([
+      final results = await Future.wait<dynamic>([
         // 0: total players
         _client.from('profiles').select('id').count(CountOption.exact),
         // 1: signups 24h
@@ -429,7 +429,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: FlitColors.accent.withValues(alpha: 0.15),
+              color: FlitColors.accent.withOpacity(0.15),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
