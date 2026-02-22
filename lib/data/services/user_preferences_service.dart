@@ -595,12 +595,16 @@ class UserPreferencesService {
         // Eagerly initialise if the queue hasn't been set up yet. The
         // getInstance() Future resolves almost instantly on iOS/Android
         // (in-process cache after the first call).
-        SharedPreferences.getInstance().then((prefs) {
-          _localPrefs = prefs;
-          try {
-            prefs.setString(key, jsonEncode(payload));
-          } catch (_) {}
-        });
+        SharedPreferences.getInstance()
+            .then((prefs) {
+              _localPrefs = prefs;
+              try {
+                prefs.setString(key, jsonEncode(payload));
+              } catch (_) {}
+            })
+            .catchError((_) {
+              // Binding not initialised (e.g. in unit tests) — silently skip.
+            });
         return;
       }
       _localPrefs!.setString(key, jsonEncode(payload));
