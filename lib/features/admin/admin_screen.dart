@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
 import '../../data/models/cosmetic.dart';
+import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
 import '../debug/avatar_preview_screen.dart';
 import '../debug/plane_preview_screen.dart';
@@ -415,6 +416,178 @@ class AdminScreen extends ConsumerWidget {
     );
   }
 
+  // ── Set License ──
+
+  void _showSetLicenseDialog(BuildContext context) {
+    final usernameCtl = TextEditingController();
+    final coinBoostCtl = TextEditingController();
+    final clueBoostCtl = TextEditingController();
+    final clueChanceCtl = TextEditingController();
+    final fuelBoostCtl = TextEditingController();
+    String selectedClueType = 'flag';
+    String? error;
+
+    const clueTypes = ['flag', 'outline', 'borders', 'capital', 'stats'];
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => _AdminDialog(
+          icon: Icons.badge,
+          iconColor: FlitColors.oceanHighlight,
+          title: 'Set Player License',
+          subtitle: 'All stats 1-25. Leave blank to randomise.',
+          error: error,
+          children: [
+            _UsernameField(controller: usernameCtl),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _AmountField(
+                    controller: coinBoostCtl,
+                    hint: 'Coin Boost',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _AmountField(
+                    controller: clueBoostCtl,
+                    hint: 'Clue Boost',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _AmountField(
+                    controller: clueChanceCtl,
+                    hint: 'Clue Chance',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _AmountField(
+                    controller: fuelBoostCtl,
+                    hint: 'Fuel Boost',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: DropdownButton<String>(
+                value: selectedClueType,
+                isExpanded: true,
+                dropdownColor: FlitColors.cardBackground,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                underline: const SizedBox.shrink(),
+                items: clueTypes
+                    .map(
+                      (t) => DropdownMenuItem(
+                        value: t,
+                        child: Text(
+                          'Clue Type: ${t[0].toUpperCase()}${t.substring(1)}',
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setDialogState(() => selectedClueType = value);
+                  }
+                },
+              ),
+            ),
+          ],
+          actionLabel: 'Set License',
+          actionIcon: Icons.badge,
+          actionColor: FlitColors.oceanHighlight,
+          onAction: () async {
+            final username = usernameCtl.text.trim();
+            if (username.isEmpty) {
+              setDialogState(() => error = 'Enter a username');
+              return;
+            }
+
+            int? parseStat(String text) {
+              if (text.isEmpty) return null;
+              final v = int.tryParse(text);
+              if (v == null || v < 1 || v > 25) return null;
+              return v;
+            }
+
+            final coinB = parseStat(coinBoostCtl.text.trim());
+            final clueB = parseStat(clueBoostCtl.text.trim());
+            final clueC = parseStat(clueChanceCtl.text.trim());
+            final fuelB = parseStat(fuelBoostCtl.text.trim());
+
+            // Validate: non-empty fields must be 1-25
+            for (final entry in {
+              'Coin Boost': coinBoostCtl.text.trim(),
+              'Clue Boost': clueBoostCtl.text.trim(),
+              'Clue Chance': clueChanceCtl.text.trim(),
+              'Fuel Boost': fuelBoostCtl.text.trim(),
+            }.entries) {
+              if (entry.value.isNotEmpty) {
+                final v = int.tryParse(entry.value);
+                if (v == null || v < 1 || v > 25) {
+                  setDialogState(() => error = '${entry.key} must be 1-25');
+                  return;
+                }
+              }
+            }
+
+            try {
+              final user = await _lookupUser(username);
+              if (user == null) {
+                setDialogState(() => error = 'User @$username not found');
+                return;
+              }
+
+              final userId = user['id'] as String;
+              final licenseData = {
+                'coin_boost': coinB ?? PilotLicense.rollStat(),
+                'clue_boost': clueB ?? PilotLicense.rollStat(),
+                'clue_chance': clueC ?? PilotLicense.rollStat(),
+                'fuel_boost': fuelB ?? PilotLicense.rollStat(),
+                'preferred_clue_type': selectedClueType,
+              };
+
+              await _client.from('account_state').upsert({
+                'user_id': userId,
+                'license_data': licenseData,
+              });
+
+              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              _snack(
+                context,
+                'License set for @$username: '
+                '${licenseData['coin_boost']}/'
+                '${licenseData['clue_boost']}/'
+                '${licenseData['clue_chance']}/'
+                '${licenseData['fuel_boost']} '
+                '($selectedClueType)',
+              );
+            } on PostgrestException catch (e) {
+              setDialogState(() => error = 'Failed: ${e.message}');
+            } catch (_) {
+              setDialogState(() => error = 'Something went wrong');
+            }
+          },
+          onCancel: () => Navigator.of(dialogCtx).pop(),
+        ),
+      ),
+    );
+  }
+
   // ── Build ──
 
   @override
@@ -508,6 +681,13 @@ class AdminScreen extends ConsumerWidget {
             iconColor: const Color(0xFF9B59B6),
             label: 'Gift Cosmetic Item',
             onTap: () => _showGiftCosmeticDialog(context),
+          ),
+          const SizedBox(height: 8),
+          _AdminActionCard(
+            icon: Icons.badge,
+            iconColor: FlitColors.oceanHighlight,
+            label: 'Set Player License',
+            onTap: () => _showSetLicenseDialog(context),
           ),
           const SizedBox(height: 24),
 

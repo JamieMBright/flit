@@ -93,13 +93,15 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
   void initState() {
     super.initState();
     // Read the license from the account provider so rerolls persist.
+    // NOTE: Do NOT call refreshFromServer() here — the license screen keeps
+    // a local _license field for the reroll UI. An async refresh would update
+    // state.license in the provider without updating _license, causing the
+    // reroll to copy locked stat values from the wrong source.
     _license = ref.read(licenseProvider);
     _shimmerController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat();
-    // Pull latest server state so license stats are always current.
-    ref.read(accountProvider.notifier).refreshFromServer();
   }
 
   @override
@@ -185,7 +187,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
           GestureDetector(
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => const ShopScreen(initialTabIndex: 2),
+                builder: (_) => const ShopScreen(initialTabIndex: 3),
               ),
             ),
             child: Container(
@@ -672,6 +674,15 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
         ),
         const SizedBox(height: 8),
         _LockRow(
+          label: 'Clue Boost',
+          value: _license.clueBoostStatLabel,
+          icon: Icons.auto_awesome,
+          isLocked: _lockedStats.contains('clueBoost'),
+          cost: _lockCostFor('clueBoost'),
+          onChanged: (locked) => _toggleLock('clueBoost', locked),
+        ),
+        const SizedBox(height: 8),
+        _LockRow(
           label: 'Clue Chance',
           value: _license.clueChanceLabel,
           icon: Icons.casino,
@@ -1062,7 +1073,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
                 child: GestureDetector(
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => const ShopScreen(initialTabIndex: 2),
+                      builder: (_) => const ShopScreen(initialTabIndex: 3),
                     ),
                   ),
                   child: const Text(

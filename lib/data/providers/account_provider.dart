@@ -264,7 +264,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       englishLabels: snapshot.englishLabels,
       mapStyle: MapStyle.values.firstWhere(
         (s) => s.name == snapshot.mapStyle,
-        orElse: () => MapStyle.topo,
+        orElse: () => MapStyle.standard,
       ),
       difficulty: GameDifficulty.values.firstWhere(
         (d) => d.name == snapshot.difficulty,

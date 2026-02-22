@@ -212,7 +212,7 @@ void main() {
       expect(clue.displayText, isNotEmpty);
       expect(clue.displayText.contains('Pop: 83M'), isTrue);
       expect(clue.displayText.contains('Continent: Europe'), isTrue);
-      expect(clue.displayText.contains('Language: German'), isTrue);
+      expect(clue.displayText.contains('Predominant language: German'), isTrue);
     });
 
     test('sportsTeam displayText is non-empty', () {

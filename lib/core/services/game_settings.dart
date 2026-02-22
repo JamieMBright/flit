@@ -236,7 +236,7 @@ class GameSettings extends ChangeNotifier {
   }
 
   /// Map tile style for descent mode (OSM, dark, voyager, topo).
-  MapStyle _mapStyle = MapStyle.topo;
+  MapStyle _mapStyle = MapStyle.standard;
 
   MapStyle get mapStyle => _mapStyle;
 
