@@ -92,6 +92,23 @@ class FriendsService {
         'addressee_id': addresseeId,
         'status': 'pending',
       });
+
+      // Handle near-simultaneous mutual requests: if the reverse pending row
+      // appeared between our first check and insert, accept it now.
+      final reverseAfterInsert = await _client
+          .from('friendships')
+          .select('id')
+          .eq('requester_id', addresseeId)
+          .eq('addressee_id', _userId!)
+          .eq('status', 'pending')
+          .maybeSingle();
+
+      if (reverseAfterInsert != null) {
+        await _client
+            .from('friendships')
+            .update({'status': 'accepted'})
+            .eq('id', reverseAfterInsert['id'] as int);
+      }
       invalidateCache();
       return true;
     } catch (e) {
