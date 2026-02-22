@@ -205,6 +205,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // after the new user's data has been loaded.
     _prefs.clearDirtyFlags();
     _userId = userId;
+    _supabaseLoaded = false;
 
     // Retry up to 3 times with exponential backoff. Without this, a
     // transient Supabase timeout on cold start (common after iOS force-close)

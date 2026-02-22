@@ -49,8 +49,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (result.isAuthenticated && result.player != null) {
         final notifier = ref.read(accountProvider.notifier);
-        notifier.switchAccount(result.player!);
         await notifier.loadFromSupabase(result.player!.id);
+        if (notifier.state.currentPlayer.id != result.player!.id) {
+          notifier.switchAccount(result.player!);
+        }
         if (mounted) _navigateToHome();
       }
     }
@@ -603,8 +605,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       } else if (result.isAuthenticated && result.player != null) {
         TextInput.finishAutofillContext();
         final notifier = ref.read(accountProvider.notifier);
-        notifier.switchAccount(result.player!);
         await notifier.loadFromSupabase(result.player!.id);
+        if (notifier.state.currentPlayer.id != result.player!.id) {
+          notifier.switchAccount(result.player!);
+        }
         if (mounted) _navigateToHome();
       } else if (result.error != null) {
         setState(() => _error = result.error);
@@ -641,8 +645,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (result.isAuthenticated && result.player != null) {
         TextInput.finishAutofillContext();
         final notifier = ref.read(accountProvider.notifier);
-        notifier.switchAccount(result.player!);
         await notifier.loadFromSupabase(result.player!.id);
+        if (notifier.state.currentPlayer.id != result.player!.id) {
+          notifier.switchAccount(result.player!);
+        }
         if (mounted) _navigateToHome();
       } else if (result.error != null) {
         setState(() => _error = result.error);
