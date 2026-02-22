@@ -76401,9 +76401,33 @@ abstract class CountryData {
     }
   }
 
-  /// Get random country
+  /// Overseas territories / dependencies excluded from the game pool because
+  /// they are too obscure or their flag emoji renders as the parent country's
+  /// flag (e.g. UM shows 🇺🇸 rather than anything unique).
+  static const Set<String> excludedTerritories = {
+    'AI', // Anguilla
+    'AQ', // Antarctica
+    'AS', // American Samoa
+    'MS', // Montserrat
+    'NF', // Norfolk Island
+    'NU', // Niue
+    'PM', // St. Pierre and Miquelon
+    'PN', // Pitcairn Islands
+    'SH', // Saint Helena
+    'UM', // U.S. Minor Outlying Islands
+    'VG', // British Virgin Islands
+    'WF', // Wallis and Futuna
+  };
+
+  /// Countries eligible as game targets (excludes obscure territories).
+  static late final List<CountryShape> playableCountries = countries
+      .where((c) => !excludedTerritories.contains(c.code))
+      .toList(growable: false);
+
+  /// Get random country (from playable pool only).
   static CountryShape getRandomCountry() {
-    return countries[DateTime.now().millisecondsSinceEpoch % countries.length];
+    return playableCountries[DateTime.now().millisecondsSinceEpoch %
+        playableCountries.length];
   }
 
   /// Get cities for a country

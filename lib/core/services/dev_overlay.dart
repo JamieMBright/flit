@@ -299,20 +299,32 @@ class _DevOverlayState extends State<DevOverlay> {
               ],
             ),
             const SizedBox(height: 4),
-            // Error message (truncated when collapsed)
-            Text(
-              error.error,
-              maxLines: isExpanded ? null : 2,
-              overflow: isExpanded ? null : TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFFE0E0E0),
-                fontSize: 11,
-                fontFamily: 'monospace',
-                height: 1.4,
-                decoration: TextDecoration.none,
+            // Error message (truncated when collapsed, selectable when expanded)
+            if (isExpanded)
+              SelectableText(
+                error.error,
+                style: const TextStyle(
+                  color: Color(0xFFE0E0E0),
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                  height: 1.4,
+                  decoration: TextDecoration.none,
+                ),
+              )
+            else
+              Text(
+                error.error,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFFE0E0E0),
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                  height: 1.4,
+                  decoration: TextDecoration.none,
+                ),
               ),
-            ),
-            // Expanded: stack trace
+            // Expanded: stack trace (selectable)
             if (isExpanded && error.stackTrace != null) ...[
               const SizedBox(height: 8),
               Container(
@@ -323,7 +335,7 @@ class _DevOverlayState extends State<DevOverlay> {
                 ),
                 constraints: const BoxConstraints(maxHeight: 150),
                 child: SingleChildScrollView(
-                  child: Text(
+                  child: SelectableText(
                     error.stackTrace!,
                     style: const TextStyle(
                       color: Color(0xFF8BC34A),
@@ -336,13 +348,13 @@ class _DevOverlayState extends State<DevOverlay> {
                 ),
               ),
             ],
-            // Expanded: context metadata
+            // Expanded: context metadata (selectable)
             if (isExpanded && error.context != null) ...[
               const SizedBox(height: 6),
               ...error.context!.entries.map(
                 (entry) => Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: Text(
+                  child: SelectableText(
                     '${entry.key}: ${entry.value}',
                     style: const TextStyle(
                       color: Color(0xFF64B5F6),
@@ -354,18 +366,31 @@ class _DevOverlayState extends State<DevOverlay> {
                 ),
               ),
             ],
-            // Long-press hint
+            // Copy button + long-press hint
             if (isExpanded)
-              const Padding(
-                padding: EdgeInsets.only(top: 6),
-                child: Text(
-                  'Long-press to copy JSON',
-                  style: TextStyle(
-                    color: Color(0xFF616161),
-                    fontSize: 9,
-                    fontStyle: FontStyle.italic,
-                    decoration: TextDecoration.none,
-                  ),
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => _copyErrorToClipboard(error),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.copy, size: 12, color: Color(0xFF757575)),
+                          SizedBox(width: 4),
+                          Text(
+                            'Copy full error JSON',
+                            style: TextStyle(
+                              color: Color(0xFF757575),
+                              fontSize: 9,
+                              decoration: TextDecoration.none,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],

@@ -1,20 +1,11 @@
-import 'dart:math';
-
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../flit_game.dart';
 
-/// Renders a translucent dashed line from the plane to the current waymarker.
-///
-/// The line curves along the globe surface by interpolating intermediate
-/// points along the great-circle path, then projecting each to screen space.
+/// Renders a straight line from the plane to the current waymarker / hint.
 class WaylineRenderer extends Component with HasGameRef<FlitGame> {
-  static const int _segments = 30;
-  static const double _deg2rad = pi / 180;
-  static const double _rad2deg = 180 / pi;
-
   @override
   void render(Canvas canvas) {
     super.render(canvas);
@@ -27,7 +18,6 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
     // is consistent between the game canvas and the tile map underneath).
     if (!gameRef.isFlatMapMode && !gameRef.isHighAltitude) return;
 
-    final planePos = gameRef.worldPosition;
     final screenSize = gameRef.size;
     if (screenSize.x < 1 || screenSize.y < 1) return;
 
@@ -36,7 +26,6 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
     if (waymarker != null) {
       _drawWayline(
         canvas,
-        planePos,
         waymarker,
         FlitColors.accent.withOpacity(0.45),
         dotOpacity: 0.7,
@@ -48,7 +37,6 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
     if (hintTarget != null) {
       _drawWayline(
         canvas,
-        planePos,
         hintTarget,
         FlitColors.textPrimary.withOpacity(0.35),
         dotOpacity: 0.5,
@@ -59,43 +47,22 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
 
   void _drawWayline(
     Canvas canvas,
-    Vector2 planePos,
     Vector2 target,
     Color lineColor, {
     double dotOpacity = 0.7,
     bool isHint = false,
   }) {
-    // Build screen points along the great-circle arc.
-    // Include i=0 (plane origin) so the first point uses the same
-    // projection coordinate system as all subsequent wayline points.
-    final points = <Offset>[];
-    for (var i = 0; i <= _segments; i++) {
-      final t = i / _segments;
-      final interp = _interpolateGreatCircle(planePos, target, t);
-      final screen = gameRef.worldToScreenGlobe(interp);
-      if (screen.x > -500) {
-        points.add(Offset(screen.x, screen.y));
-      }
-    }
+    // Target screen position — skip if occluded (worldToScreen returns
+    // (-1000, -1000) for points hidden behind the globe).
+    final targetScreen = gameRef.worldToScreenGlobe(target);
+    if (targetScreen.x <= -500) return;
 
-    if (points.isEmpty) return;
+    // Start at the plane's fixed screen position (50% x, 80% y).
+    final planeScreen = gameRef.plane.position;
+    final startOffset = Offset(planeScreen.x, planeScreen.y);
+    final endOffset = Offset(targetScreen.x, targetScreen.y);
 
-    // Offset the first point (the plane's globe-projected position) to
-    // the rear half of the aircraft body (50-80% from nose toward tail).
-    // A positive tailOffset pushes the start point behind the plane center,
-    // which keeps the wayline origin consistently at the plane's aft section
-    // regardless of which plane sprite is equipped.
-    final plane = gameRef.plane;
-    final totalRotation = plane.visualHeading + plane.turnDirection * 0.4;
-    const tailOffset = 5.0; // ~65% down the body (between 50-80%)
-    points[0] = Offset(
-      points[0].dx - sin(totalRotation) * tailOffset,
-      points[0].dy + cos(totalRotation) * tailOffset,
-    );
-
-    if (points.length < 2) return;
-
-    // Draw solid unbroken line.
+    // Draw a straight line from beneath the plane to the target.
     final paint = Paint()
       ..color = lineColor
       ..strokeWidth = isHint ? 2.5 : 2.0
@@ -103,61 +70,22 @@ class WaylineRenderer extends Component with HasGameRef<FlitGame> {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
-    final path = Path()..moveTo(points[0].dx, points[0].dy);
-    for (var i = 1; i < points.length; i++) {
-      path.lineTo(points[i].dx, points[i].dy);
-    }
-    canvas.drawPath(path, paint);
+    canvas.drawLine(startOffset, endOffset, paint);
 
-    // Target dot — only draw if the actual target is visible (not occluded
-    // by the globe). worldToScreen returns (-1000, -1000) for hidden points.
-    final targetScreen = gameRef.worldToScreenGlobe(target);
-    if (targetScreen.x > -500) {
-      final markerPos = Offset(targetScreen.x, targetScreen.y);
-      final dotColor = isHint ? FlitColors.textPrimary : FlitColors.accent;
-      canvas.drawCircle(
-        markerPos,
-        6.0,
-        Paint()..color = dotColor.withOpacity(dotOpacity),
-      );
-      canvas.drawCircle(
-        markerPos,
-        10.0,
-        Paint()
-          ..color = dotColor.withOpacity(dotOpacity * 0.6)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5,
-      );
-    }
-  }
-
-  /// Spherical linear interpolation between two (lng, lat) points.
-  Vector2 _interpolateGreatCircle(Vector2 a, Vector2 b, double t) {
-    final lat1 = a.y * _deg2rad;
-    final lng1 = a.x * _deg2rad;
-    final lat2 = b.y * _deg2rad;
-    final lng2 = b.x * _deg2rad;
-
-    final dLat = lat2 - lat1;
-    final dLng = lng2 - lng1;
-    final h =
-        sin(dLat / 2) * sin(dLat / 2) +
-        cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
-    final c = 2 * atan2(sqrt(h), sqrt(1 - h));
-
-    if (c < 1e-10) return a.clone();
-
-    final sinC = sin(c);
-    final aFrac = sin((1 - t) * c) / sinC;
-    final bFrac = sin(t * c) / sinC;
-
-    final x = aFrac * cos(lat1) * cos(lng1) + bFrac * cos(lat2) * cos(lng2);
-    final y = aFrac * sin(lat1) + bFrac * sin(lat2);
-    final z = aFrac * cos(lat1) * sin(lng1) + bFrac * cos(lat2) * sin(lng2);
-
-    final lat = atan2(y, sqrt(x * x + z * z));
-    final lng = atan2(z, x);
-
-    return Vector2(lng * _rad2deg, lat * _rad2deg);
+    // Target dot.
+    final dotColor = isHint ? FlitColors.textPrimary : FlitColors.accent;
+    canvas.drawCircle(
+      endOffset,
+      6.0,
+      Paint()..color = dotColor.withOpacity(dotOpacity),
+    );
+    canvas.drawCircle(
+      endOffset,
+      10.0,
+      Paint()
+        ..color = dotColor.withOpacity(dotOpacity * 0.6)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
   }
 }
