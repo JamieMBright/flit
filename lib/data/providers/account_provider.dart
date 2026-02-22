@@ -206,12 +206,12 @@ class AccountNotifier extends StateNotifier<AccountState> {
     final snapshot = await _prefs.load(userId);
     if (snapshot == null) return;
 
-    _applySnapshot(snapshot);
+    await _applySnapshot(snapshot);
     _startPeriodicRefresh();
   }
 
   /// Apply a [UserPreferencesSnapshot] to in-memory state.
-  void _applySnapshot(UserPreferencesSnapshot snapshot) {
+  Future<void> _applySnapshot(UserPreferencesSnapshot snapshot) async {
     final player = snapshot.toPlayer();
 
     state = AccountState(
@@ -235,7 +235,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _supabaseLoaded = true;
 
     // Hydrate GameSettings from Supabase data without triggering writes back.
-    GameSettings.instance.hydrateFrom(
+    await GameSettings.instance.hydrateFrom(
       turnSensitivity: snapshot.turnSensitivity,
       invertControls: snapshot.invertControls,
       enableNight: snapshot.enableNight,
@@ -273,7 +273,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     try {
       final snapshot = await _prefs.load(_userId!);
       if (snapshot != null) {
-        _applySnapshot(snapshot);
+        await _applySnapshot(snapshot);
       }
     } catch (e) {
       debugPrint('[AccountNotifier] periodic refresh failed: $e');

@@ -2,54 +2,69 @@
 -- Add server-side CHECK constraints to the Flit database
 -- Purpose: Enforce data integrity at the database level for critical fields
 -- This migration adds validation constraints that mirror client-side validation rules
+--
+-- NOTE: Idempotent — safe to re-run (IF NOT EXISTS guards on all constraints).
+-- The username constraints allow NULL (new users from auth trigger don't have
+-- a username yet; it's set during onboarding).
 
 -- Profiles table constraints
 
--- profiles.username: Length between 3 and 20 characters, alphanumeric + underscores
-ALTER TABLE profiles
-ADD CONSTRAINT check_username_length CHECK (
-  LENGTH(username) >= 3 AND LENGTH(username) <= 20
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_username_length') THEN
+    ALTER TABLE profiles ADD CONSTRAINT check_username_length
+      CHECK (username IS NULL OR (LENGTH(username) >= 3 AND LENGTH(username) <= 20));
+  END IF;
+END $$;
 
-ALTER TABLE profiles
-ADD CONSTRAINT check_username_pattern CHECK (
-  username ~ '^[a-zA-Z0-9_]+$'
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_username_pattern') THEN
+    ALTER TABLE profiles ADD CONSTRAINT check_username_pattern
+      CHECK (username IS NULL OR username ~ '^[a-zA-Z0-9_]+$');
+  END IF;
+END $$;
 
--- profiles.level: Must be >= 1
-ALTER TABLE profiles
-ADD CONSTRAINT check_level_positive CHECK (
-  level >= 1
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_level_positive') THEN
+    ALTER TABLE profiles ADD CONSTRAINT check_level_positive
+      CHECK (level >= 1);
+  END IF;
+END $$;
 
--- profiles.xp: Must be >= 0
-ALTER TABLE profiles
-ADD CONSTRAINT check_xp_non_negative CHECK (
-  xp >= 0
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_xp_non_negative') THEN
+    ALTER TABLE profiles ADD CONSTRAINT check_xp_non_negative
+      CHECK (xp >= 0);
+  END IF;
+END $$;
 
--- profiles.coins: Must be >= 0
-ALTER TABLE profiles
-ADD CONSTRAINT check_coins_non_negative CHECK (
-  coins >= 0
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_coins_non_negative') THEN
+    ALTER TABLE profiles ADD CONSTRAINT check_coins_non_negative
+      CHECK (coins >= 0);
+  END IF;
+END $$;
 
--- Scores table constraints
+-- Scores table constraints (only add if the base migration's chk_* don't exist)
 
--- scores.score: Between 0 and 100000
-ALTER TABLE scores
-ADD CONSTRAINT check_score_range CHECK (
-  score >= 0 AND score <= 100000
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_score_range')
+     AND NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_score') THEN
+    ALTER TABLE scores ADD CONSTRAINT check_score_range
+      CHECK (score >= 0 AND score <= 100000);
+  END IF;
+END $$;
 
--- scores.time_ms: Between 1 and 3599999 (>0 and <1 hour)
-ALTER TABLE scores
-ADD CONSTRAINT check_time_ms_range CHECK (
-  time_ms >= 1 AND time_ms <= 3599999
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_time_ms_range')
+     AND NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_time') THEN
+    ALTER TABLE scores ADD CONSTRAINT check_time_ms_range
+      CHECK (time_ms >= 1 AND time_ms <= 3599999);
+  END IF;
+END $$;
 
--- scores.rounds_completed: Between 1 and 50
-ALTER TABLE scores
-ADD CONSTRAINT check_rounds_completed_range CHECK (
-  rounds_completed >= 1 AND rounds_completed <= 50
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_rounds_completed_range') THEN
+    ALTER TABLE scores ADD CONSTRAINT check_rounds_completed_range
+      CHECK (rounds_completed >= 1 AND rounds_completed <= 50);
+  END IF;
+END $$;
