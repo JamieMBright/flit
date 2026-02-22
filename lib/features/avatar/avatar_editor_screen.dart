@@ -989,7 +989,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                                     Navigator.of(context).push(
                                       MaterialPageRoute<void>(
                                         builder: (_) => const ShopScreen(
-                                          initialTabIndex: 2,
+                                          initialTabIndex: 3,
                                         ),
                                       ),
                                     );
@@ -1116,7 +1116,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
           GestureDetector(
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => const ShopScreen(initialTabIndex: 2),
+                builder: (_) => const ShopScreen(initialTabIndex: 3),
               ),
             ),
             child: Container(
