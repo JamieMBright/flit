@@ -389,11 +389,11 @@ class AvatarCompositor {
       buf.write(_g(eyes, 'translate(114.8 215.5) scale(0.71856)'));
     }
 
-    // Front hair — DiceBear: matrix(.71048 0 0 .71048 24 2)
-    // (Separate scale from main features.)
+    // Front hair — DiceBear: matrix(.52237 0 0 .52237 108.7 145.6)
+    // (Different scale & offset from the back-hair layer.)
     if (frontHair.isNotEmpty) {
       buf.write(
-        '<g transform="matrix(0.71048 0 0 0.71048 24 2)">$frontHair</g>',
+        '<g transform="matrix(0.52237 0 0 0.52237 108.7 145.6)">$frontHair</g>',
       );
     }
 
@@ -431,7 +431,12 @@ class AvatarCompositor {
       config.eyebrows.index,
       3,
     ).replaceAll('{{EYEBROWS_COLOR}}', hairHex);
-    final eyes = _pick(loreleiEyes, config.eyes.index, 4);
+    // DiceBear default eyes color is #000000 (black).
+    final eyes = _pick(
+      loreleiEyes,
+      config.eyes.index,
+      4,
+    ).replaceAll('{{EYES_COLOR}}', '#000000');
     final nose = _pick(
       loreleiNose,
       sh,
@@ -479,11 +484,11 @@ class AvatarCompositor {
     final buf = StringBuffer()
       ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
       ..write('viewBox="0 0 980 980" fill="none" ')
-      ..write('shape-rendering="auto">')
-      ..write('<g transform="translate(10 -60)">');
+      ..write('shape-rendering="auto">');
 
-    // Lorelei features use full 980x980 canvas coordinates and are designed
-    // to be placed directly inside the head SVG — no additional translate.
+    // Lorelei features use full 980x980 canvas coordinates — no transform
+    // needed for head/face components. Only hair and hairAccessories get
+    // translate(10 -60) per the DiceBear source.
     buf.write(head);
     if (freckles.isNotEmpty) buf.write(freckles);
     if (eyebrows.isNotEmpty) buf.write(eyebrows);
@@ -492,11 +497,14 @@ class AvatarCompositor {
     if (mouth.isNotEmpty) buf.write(mouth);
     if (glasses.isNotEmpty) buf.write(glasses);
     if (earrings.isNotEmpty) buf.write(earrings);
-    if (hair.isNotEmpty) buf.write(hair);
-    if (hairAccessories.isNotEmpty) buf.write(hairAccessories);
+    // DiceBear: hair and hairAccessories wrapped in translate(10 -60).
+    if (hair.isNotEmpty) buf.write(_g(hair, 'translate(10 -60)'));
+    if (hairAccessories.isNotEmpty) {
+      buf.write(_g(hairAccessories, 'translate(10 -60)'));
+    }
     if (beard.isNotEmpty) buf.write(beard);
 
-    buf.write('</g></svg>');
+    buf.write('</svg>');
     return buf.toString();
   }
 
@@ -816,35 +824,42 @@ class AvatarCompositor {
     final mask = _pick(openpeepsMask, sh, 5);
 
     // Open Peeps body base (bust silhouette).
+    // Centered under the head at matrix(.99789 0 0 1 156 62).
     final body =
-        '<path d="M325 580c-35 0-68 10-96 30-20 14-36 33-48 55l-2 4v35h346v-35'
+        '<path d="M349 580c-35 0-68 10-96 30-20 14-36 33-48 55l-2 4v35h346v-35'
         'l-2-4c-12-22-28-41-48-55-28-20-61-30-96-30h-54Z" fill="$skinHex"/>';
 
     final buf = StringBuffer()
       ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
       ..write('viewBox="0 0 704 704" fill="none" ')
-      ..write('shape-rendering="auto">')
+      ..write('shape-rendering="auto" ')
+      ..write('fill-rule="evenodd" clip-rule="evenodd">')
       ..write(body);
 
     // Head (contains hair + head shape + outline).
+    // DiceBear: matrix(.99789 0 0 1 156 62)
     if (head.isNotEmpty) {
-      buf.write('<g transform="matrix(0.84 0 0 0.84 88 36)">$head</g>');
+      buf.write('<g transform="matrix(0.99789 0 0 1 156 62)">$head</g>');
     }
     // Face expression.
+    // DiceBear: translate(315 248)
     if (face.isNotEmpty) {
-      buf.write(_g(face, 'translate(220 240)'));
+      buf.write(_g(face, 'translate(315 248)'));
     }
     // Facial hair.
+    // DiceBear: translate(279 400)
     if (facialHair.isNotEmpty) {
-      buf.write(_g(facialHair, 'translate(220 340)'));
+      buf.write(_g(facialHair, 'translate(279 400)'));
     }
     // Accessories (piercings, headphones, etc.).
+    // DiceBear: translate(203 303)
     if (accessories.isNotEmpty) {
-      buf.write(_g(accessories, 'translate(170 180)'));
+      buf.write(_g(accessories, 'translate(203 303)'));
     }
     // Mask.
+    // DiceBear: translate(179 343)
     if (mask.isNotEmpty) {
-      buf.write(_g(mask, 'translate(210 300)'));
+      buf.write(_g(mask, 'translate(179 343)'));
     }
 
     buf.write('</svg>');
