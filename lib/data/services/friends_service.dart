@@ -291,47 +291,89 @@ class FriendsService {
 
   /// Transfer coins from current user to another user.
   ///
-  /// This deducts from the sender's profile and adds to the receiver's.
-  /// Both operations happen sequentially — no server-side transaction
-  /// without an RPC, but acceptable for gifting small amounts.
+  /// Uses the atomic `send_coins` DB function to prevent race conditions
+  /// (double-spend, negative balances). Both deduction and credit happen
+  /// in a single transaction with row-level locks.
   Future<bool> sendCoins({
     required String recipientId,
     required int amount,
   }) async {
     if (_userId == null || amount <= 0) return false;
     try {
-      // Fetch sender's current coins.
-      final senderData = await _client
-          .from('profiles')
-          .select('coins')
-          .eq('id', _userId!)
-          .single();
-      final senderCoins = senderData['coins'] as int? ?? 0;
-      if (senderCoins < amount) return false;
+      final result = await _client.rpc(
+        'send_coins',
+        params: {
+          'p_sender_id': _userId!,
+          'p_recipient_id': recipientId,
+          'p_amount': amount,
+        },
+      );
 
-      // Fetch recipient's current coins.
-      final recipientData = await _client
-          .from('profiles')
-          .select('coins')
-          .eq('id', recipientId)
-          .single();
-      final recipientCoins = recipientData['coins'] as int? ?? 0;
-
-      // Deduct from sender, add to recipient.
-      await Future.wait([
-        _client
-            .from('profiles')
-            .update({'coins': senderCoins - amount})
-            .eq('id', _userId!),
-        _client
-            .from('profiles')
-            .update({'coins': recipientCoins + amount})
-            .eq('id', recipientId),
-      ]);
-      return true;
+      if (result is Map<String, dynamic>) {
+        return result['success'] as bool? ?? false;
+      }
+      return false;
     } catch (e) {
       debugPrint('[FriendsService] sendCoins failed: $e');
       return false;
+    }
+  }
+
+  /// Gift a shop cosmetic to another player (gifter pays the cost).
+  ///
+  /// Uses the atomic `gift_cosmetic` DB function.
+  Future<Map<String, dynamic>> giftCosmetic({
+    required String recipientId,
+    required String cosmeticId,
+    required int cost,
+  }) async {
+    if (_userId == null) {
+      return {'success': false, 'error': 'Not logged in'};
+    }
+    try {
+      final result = await _client.rpc(
+        'gift_cosmetic',
+        params: {
+          'p_gifter_id': _userId!,
+          'p_recipient_id': recipientId,
+          'p_cosmetic_id': cosmeticId,
+          'p_cost': cost,
+        },
+      );
+      if (result is Map<String, dynamic>) return result;
+      return {'success': false, 'error': 'Unexpected response'};
+    } catch (e) {
+      debugPrint('[FriendsService] giftCosmetic failed: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Gift an avatar part to another player (gifter pays the cost).
+  ///
+  /// Uses the atomic `gift_avatar_part` DB function.
+  Future<Map<String, dynamic>> giftAvatarPart({
+    required String recipientId,
+    required String partId,
+    required int cost,
+  }) async {
+    if (_userId == null) {
+      return {'success': false, 'error': 'Not logged in'};
+    }
+    try {
+      final result = await _client.rpc(
+        'gift_avatar_part',
+        params: {
+          'p_gifter_id': _userId!,
+          'p_recipient_id': recipientId,
+          'p_part_id': partId,
+          'p_cost': cost,
+        },
+      );
+      if (result is Map<String, dynamic>) return result;
+      return {'success': false, 'error': 'Unexpected response'};
+    } catch (e) {
+      debugPrint('[FriendsService] giftAvatarPart failed: $e');
+      return {'success': false, 'error': e.toString()};
     }
   }
 }

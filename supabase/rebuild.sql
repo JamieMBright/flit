@@ -440,12 +440,15 @@ END $$;
 -- ---------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.update_updated_at()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
 BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_profiles_updated_at') THEN
@@ -563,6 +566,7 @@ CREATE OR REPLACE FUNCTION public.purchase_cosmetic(
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_current_coins INT;
@@ -619,6 +623,7 @@ CREATE OR REPLACE FUNCTION public.expire_stale_challenges()
 RETURNS INT
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   expired_count INT;
@@ -649,6 +654,7 @@ CREATE OR REPLACE FUNCTION public.admin_increment_stat(
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_role TEXT;
@@ -692,6 +698,255 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.admin_increment_stat(UUID, TEXT, INT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_increment_stat(UUID, TEXT, INT) TO service_role;
+
+
+-- Atomic avatar-part purchase (mirrors purchase_cosmetic for avatar parts).
+CREATE OR REPLACE FUNCTION public.purchase_avatar_part(
+  p_user_id UUID,
+  p_part_id TEXT,
+  p_cost INT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_current_coins INT;
+  v_owned TEXT[];
+  v_new_balance INT;
+BEGIN
+  IF p_cost <= 0 THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Invalid cost');
+  END IF;
+  IF p_part_id IS NULL OR p_part_id = '' THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Invalid part ID');
+  END IF;
+
+  SELECT coins INTO v_current_coins
+  FROM public.profiles WHERE id = p_user_id FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Profile not found');
+  END IF;
+  IF v_current_coins < p_cost THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Insufficient coins',
+      'current_balance', v_current_coins, 'cost', p_cost);
+  END IF;
+
+  SELECT owned_avatar_parts INTO v_owned
+  FROM public.account_state WHERE user_id = p_user_id;
+
+  IF v_owned IS NOT NULL AND p_part_id = ANY(v_owned) THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Already owned',
+      'current_balance', v_current_coins);
+  END IF;
+
+  v_new_balance := v_current_coins - p_cost;
+  UPDATE public.profiles SET coins = v_new_balance WHERE id = p_user_id;
+
+  INSERT INTO public.account_state (user_id, owned_avatar_parts)
+  VALUES (p_user_id, ARRAY[p_part_id])
+  ON CONFLICT (user_id) DO UPDATE
+  SET owned_avatar_parts = array_append(
+    COALESCE(account_state.owned_avatar_parts, '{}'), p_part_id
+  );
+
+  RETURN jsonb_build_object('success', true, 'new_balance', v_new_balance,
+    'part_id', p_part_id);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.purchase_avatar_part(UUID, TEXT, INT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.purchase_avatar_part(UUID, TEXT, INT) TO service_role;
+
+
+-- Atomic coin transfer between two players.
+-- Replaces the non-atomic dual-UPDATE pattern in friends_service.dart.
+CREATE OR REPLACE FUNCTION public.send_coins(
+  p_sender_id UUID,
+  p_recipient_id UUID,
+  p_amount INT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_sender_coins INT;
+  v_recipient_coins INT;
+  v_sender_balance INT;
+BEGIN
+  IF p_amount <= 0 THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Invalid amount');
+  END IF;
+  IF p_sender_id = p_recipient_id THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Cannot send coins to yourself');
+  END IF;
+
+  -- Lock sender first (consistent ordering prevents deadlocks).
+  SELECT coins INTO v_sender_coins
+  FROM public.profiles WHERE id = p_sender_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Sender not found');
+  END IF;
+  IF v_sender_coins < p_amount THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Insufficient coins',
+      'current_balance', v_sender_coins);
+  END IF;
+
+  -- Lock recipient.
+  SELECT coins INTO v_recipient_coins
+  FROM public.profiles WHERE id = p_recipient_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Recipient not found');
+  END IF;
+
+  v_sender_balance := v_sender_coins - p_amount;
+  UPDATE public.profiles SET coins = v_sender_balance WHERE id = p_sender_id;
+  UPDATE public.profiles SET coins = v_recipient_coins + p_amount WHERE id = p_recipient_id;
+
+  RETURN jsonb_build_object('success', true,
+    'sender_balance', v_sender_balance,
+    'amount', p_amount);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.send_coins(UUID, UUID, INT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.send_coins(UUID, UUID, INT) TO service_role;
+
+
+-- Gift a shop cosmetic to another player (gifter pays the cost).
+CREATE OR REPLACE FUNCTION public.gift_cosmetic(
+  p_gifter_id UUID,
+  p_recipient_id UUID,
+  p_cosmetic_id TEXT,
+  p_cost INT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_gifter_coins INT;
+  v_recipient_owned TEXT[];
+  v_new_balance INT;
+BEGIN
+  IF p_cost <= 0 THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Invalid cost');
+  END IF;
+  IF p_cosmetic_id IS NULL OR p_cosmetic_id = '' THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Invalid cosmetic ID');
+  END IF;
+  IF p_gifter_id = p_recipient_id THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Cannot gift to yourself');
+  END IF;
+
+  -- Lock gifter.
+  SELECT coins INTO v_gifter_coins
+  FROM public.profiles WHERE id = p_gifter_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Gifter not found');
+  END IF;
+  IF v_gifter_coins < p_cost THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Insufficient coins',
+      'current_balance', v_gifter_coins, 'cost', p_cost);
+  END IF;
+
+  -- Check recipient doesn't already own it.
+  SELECT owned_cosmetics INTO v_recipient_owned
+  FROM public.account_state WHERE user_id = p_recipient_id;
+  IF v_recipient_owned IS NOT NULL AND p_cosmetic_id = ANY(v_recipient_owned) THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Recipient already owns this');
+  END IF;
+
+  -- Deduct from gifter.
+  v_new_balance := v_gifter_coins - p_cost;
+  UPDATE public.profiles SET coins = v_new_balance WHERE id = p_gifter_id;
+
+  -- Add to recipient.
+  INSERT INTO public.account_state (user_id, owned_cosmetics)
+  VALUES (p_recipient_id, ARRAY[p_cosmetic_id])
+  ON CONFLICT (user_id) DO UPDATE
+  SET owned_cosmetics = array_append(
+    COALESCE(account_state.owned_cosmetics, '{}'), p_cosmetic_id
+  );
+
+  RETURN jsonb_build_object('success', true, 'new_balance', v_new_balance,
+    'cosmetic_id', p_cosmetic_id);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.gift_cosmetic(UUID, UUID, TEXT, INT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.gift_cosmetic(UUID, UUID, TEXT, INT) TO service_role;
+
+
+-- Gift an avatar part to another player (gifter pays the cost).
+CREATE OR REPLACE FUNCTION public.gift_avatar_part(
+  p_gifter_id UUID,
+  p_recipient_id UUID,
+  p_part_id TEXT,
+  p_cost INT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_gifter_coins INT;
+  v_recipient_owned TEXT[];
+  v_new_balance INT;
+BEGIN
+  IF p_cost <= 0 THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Invalid cost');
+  END IF;
+  IF p_part_id IS NULL OR p_part_id = '' THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Invalid part ID');
+  END IF;
+  IF p_gifter_id = p_recipient_id THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Cannot gift to yourself');
+  END IF;
+
+  -- Lock gifter.
+  SELECT coins INTO v_gifter_coins
+  FROM public.profiles WHERE id = p_gifter_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Gifter not found');
+  END IF;
+  IF v_gifter_coins < p_cost THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Insufficient coins',
+      'current_balance', v_gifter_coins, 'cost', p_cost);
+  END IF;
+
+  -- Check recipient doesn't already own it.
+  SELECT owned_avatar_parts INTO v_recipient_owned
+  FROM public.account_state WHERE user_id = p_recipient_id;
+  IF v_recipient_owned IS NOT NULL AND p_part_id = ANY(v_recipient_owned) THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Recipient already owns this');
+  END IF;
+
+  -- Deduct from gifter.
+  v_new_balance := v_gifter_coins - p_cost;
+  UPDATE public.profiles SET coins = v_new_balance WHERE id = p_gifter_id;
+
+  -- Add to recipient.
+  INSERT INTO public.account_state (user_id, owned_avatar_parts)
+  VALUES (p_recipient_id, ARRAY[p_part_id])
+  ON CONFLICT (user_id) DO UPDATE
+  SET owned_avatar_parts = array_append(
+    COALESCE(account_state.owned_avatar_parts, '{}'), p_part_id
+  );
+
+  RETURN jsonb_build_object('success', true, 'new_balance', v_new_balance,
+    'part_id', p_part_id);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.gift_avatar_part(UUID, UUID, TEXT, INT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.gift_avatar_part(UUID, UUID, TEXT, INT) TO service_role;
 
 
 -- ---------------------------------------------------------------------------

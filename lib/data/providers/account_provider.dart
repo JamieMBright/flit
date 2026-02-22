@@ -538,12 +538,19 @@ class AccountNotifier extends StateNotifier<AccountState> {
   }
 
   /// Purchase an avatar part. Returns true if successful.
+  ///
+  /// Attempts server-side validation via the `purchase_avatar_part` DB function.
+  /// If the server call fails (offline/network error), falls back to
+  /// client-side deduction for offline resilience.
   bool purchaseAvatarPart(String partKey, int cost) {
     if (!spendCoins(cost)) return false;
     state = state.copyWith(
       ownedAvatarParts: {...state.ownedAvatarParts, partKey},
     );
     _syncAccountState();
+
+    // Fire-and-forget server-side validation.
+    _serverValidateAvatarPartPurchase(partKey, cost);
     return true;
   }
 
@@ -613,6 +620,49 @@ class AccountNotifier extends StateNotifier<AccountState> {
       // Network error — rely on client-side debounced sync.
       debugPrint(
         '[AccountNotifier] Server purchase validation unavailable: $e',
+      );
+    }
+  }
+
+  /// Attempt server-side atomic avatar part purchase via Supabase RPC.
+  Future<void> _serverValidateAvatarPartPurchase(
+    String partId,
+    int cost,
+  ) async {
+    try {
+      final userId = state.currentPlayer.id;
+      if (userId.isEmpty) return;
+
+      final result = await Supabase.instance.client.rpc(
+        'purchase_avatar_part',
+        params: {
+          'p_user_id': userId,
+          'p_part_id': partId,
+          'p_cost': cost,
+        },
+      );
+
+      if (result is Map<String, dynamic>) {
+        final success = result['success'] as bool? ?? false;
+        if (success) {
+          final serverBalance = result['new_balance'] as int?;
+          if (serverBalance != null &&
+              serverBalance != state.currentPlayer.coins) {
+            state = state.copyWith(
+              currentPlayer:
+                  state.currentPlayer.copyWith(coins: serverBalance),
+            );
+          }
+        } else {
+          debugPrint(
+            '[AccountNotifier] Server avatar part purchase failed: '
+            '${result['error']}',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint(
+        '[AccountNotifier] Server avatar part purchase unavailable: $e',
       );
     }
   }

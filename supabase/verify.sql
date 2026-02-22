@@ -316,12 +316,16 @@ BEGIN
   CALL check_trigger('trg_account_state_updated_at');
   CALL check_trigger('trg_friendships_updated_at');
 
-  -- ------- FUNCTIONS (5) -------
+  -- ------- FUNCTIONS (9) -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- Functions (5) ---');
+  _results := array_append(_results, '--- Functions (9) ---');
   CALL check_function('handle_new_user');
   CALL check_function('update_updated_at');
   CALL check_function('purchase_cosmetic');
+  CALL check_function('purchase_avatar_part');
+  CALL check_function('send_coins');
+  CALL check_function('gift_cosmetic');
+  CALL check_function('gift_avatar_part');
   CALL check_function('expire_stale_challenges');
   CALL check_function('admin_increment_stat');
 
@@ -382,7 +386,7 @@ WITH checks AS (
   -- Functions
   SELECT 'function', f,
     EXISTS (SELECT 1 FROM pg_proc WHERE proname=f AND pronamespace='public'::regnamespace)
-  FROM unnest(ARRAY['handle_new_user','update_updated_at','purchase_cosmetic','expire_stale_challenges','admin_increment_stat']) f
+  FROM unnest(ARRAY['handle_new_user','update_updated_at','purchase_cosmetic','purchase_avatar_part','send_coins','gift_cosmetic','gift_avatar_part','expire_stale_challenges','admin_increment_stat']) f
 
   UNION ALL
 
