@@ -76,9 +76,21 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+  -- Create profiles row (foundation — must exist for FK joins).
   INSERT INTO public.profiles (id)
   VALUES (NEW.id)
   ON CONFLICT (id) DO NOTHING;
+
+  -- Create user_settings row with sensible defaults.
+  INSERT INTO public.user_settings (user_id)
+  VALUES (NEW.id)
+  ON CONFLICT (user_id) DO NOTHING;
+
+  -- Create account_state row with sensible defaults.
+  INSERT INTO public.account_state (user_id)
+  VALUES (NEW.id)
+  ON CONFLICT (user_id) DO NOTHING;
+
   RETURN NEW;
 END;
 $$;
@@ -614,6 +626,35 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.expire_stale_challenges() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.expire_stale_challenges() TO service_role;
+
+
+-- Atomic admin stat increment (used by admin panel to gift coins/levels/flights).
+-- Uses an allowlist to prevent SQL injection via stat_column.
+CREATE OR REPLACE FUNCTION public.admin_increment_stat(
+  target_user_id UUID,
+  stat_column TEXT,
+  amount INT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- Allowlist of safe column names to prevent SQL injection.
+  IF stat_column NOT IN ('coins', 'level', 'xp', 'games_played') THEN
+    RAISE EXCEPTION 'Invalid stat column: %', stat_column;
+  END IF;
+
+  -- Use dynamic SQL with the validated column name.
+  EXECUTE format(
+    'UPDATE public.profiles SET %I = %I + $1 WHERE id = $2',
+    stat_column, stat_column
+  ) USING amount, target_user_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_increment_stat(UUID, TEXT, INT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_increment_stat(UUID, TEXT, INT) TO service_role;
 
 
 -- ---------------------------------------------------------------------------

@@ -26,6 +26,7 @@ DROP TABLE IF EXISTS public.user_settings CASCADE;
 DROP TABLE IF EXISTS public.profiles CASCADE;
 
 -- Drop functions.
+DROP FUNCTION IF EXISTS public.admin_increment_stat(UUID, TEXT, INT) CASCADE;
 DROP FUNCTION IF EXISTS public.purchase_cosmetic(UUID, TEXT, INT) CASCADE;
 DROP FUNCTION IF EXISTS public.expire_stale_challenges() CASCADE;
 DROP FUNCTION IF EXISTS public.update_updated_at() CASCADE;

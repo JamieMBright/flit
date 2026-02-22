@@ -136,12 +136,12 @@ DECLARE
 
 BEGIN
   _results := array_append(_results, '========================================');
-  _results := array_append(_results, 'Flit Schema Verification');
+  _results := array_append(_results, 'Flit Schema Verification — COMPREHENSIVE');
   _results := array_append(_results, '========================================');
 
   -- ------- TABLES -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- Tables ---');
+  _results := array_append(_results, '--- Tables (7) ---');
   CALL check_table('profiles');
   CALL check_table('user_settings');
   CALL check_table('account_state');
@@ -150,9 +150,9 @@ BEGIN
   CALL check_table('challenges');
   CALL check_table('matchmaking_pool');
 
-  -- ------- PROFILES COLUMNS -------
+  -- ------- PROFILES COLUMNS (20) -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- profiles columns ---');
+  _results := array_append(_results, '--- profiles columns (20) ---');
   CALL check_column('profiles', 'id');
   CALL check_column('profiles', 'username');
   CALL check_column('profiles', 'display_name');
@@ -174,9 +174,9 @@ BEGIN
   CALL check_column('profiles', 'created_at');
   CALL check_column('profiles', 'updated_at');
 
-  -- ------- USER_SETTINGS COLUMNS -------
+  -- ------- USER_SETTINGS COLUMNS (13) -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- user_settings columns ---');
+  _results := array_append(_results, '--- user_settings columns (13) ---');
   CALL check_column('user_settings', 'user_id');
   CALL check_column('user_settings', 'turn_sensitivity');
   CALL check_column('user_settings', 'invert_controls');
@@ -191,9 +191,9 @@ BEGIN
   CALL check_column('user_settings', 'haptic_enabled');
   CALL check_column('user_settings', 'updated_at');
 
-  -- ------- ACCOUNT_STATE COLUMNS -------
+  -- ------- ACCOUNT_STATE COLUMNS (14) -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- account_state columns ---');
+  _results := array_append(_results, '--- account_state columns (14) ---');
   CALL check_column('account_state', 'user_id');
   CALL check_column('account_state', 'avatar_config');
   CALL check_column('account_state', 'license_data');
@@ -209,9 +209,9 @@ BEGIN
   CALL check_column('account_state', 'last_daily_result');
   CALL check_column('account_state', 'updated_at');
 
-  -- ------- SCORES COLUMNS -------
+  -- ------- SCORES COLUMNS (7) -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- scores columns ---');
+  _results := array_append(_results, '--- scores columns (7) ---');
   CALL check_column('scores', 'id');
   CALL check_column('scores', 'user_id');
   CALL check_column('scores', 'score');
@@ -220,9 +220,50 @@ BEGIN
   CALL check_column('scores', 'rounds_completed');
   CALL check_column('scores', 'created_at');
 
-  -- ------- RLS ENABLED -------
+  -- ------- FRIENDSHIPS COLUMNS (6) -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- RLS enabled ---');
+  _results := array_append(_results, '--- friendships columns (6) ---');
+  CALL check_column('friendships', 'id');
+  CALL check_column('friendships', 'requester_id');
+  CALL check_column('friendships', 'addressee_id');
+  CALL check_column('friendships', 'status');
+  CALL check_column('friendships', 'created_at');
+  CALL check_column('friendships', 'updated_at');
+
+  -- ------- CHALLENGES COLUMNS (12) -------
+  _results := array_append(_results, '');
+  _results := array_append(_results, '--- challenges columns (12) ---');
+  CALL check_column('challenges', 'id');
+  CALL check_column('challenges', 'challenger_id');
+  CALL check_column('challenges', 'challenger_name');
+  CALL check_column('challenges', 'challenged_id');
+  CALL check_column('challenges', 'challenged_name');
+  CALL check_column('challenges', 'status');
+  CALL check_column('challenges', 'rounds');
+  CALL check_column('challenges', 'winner_id');
+  CALL check_column('challenges', 'challenger_coins');
+  CALL check_column('challenges', 'challenged_coins');
+  CALL check_column('challenges', 'created_at');
+  CALL check_column('challenges', 'completed_at');
+
+  -- ------- MATCHMAKING_POOL COLUMNS (11) -------
+  _results := array_append(_results, '');
+  _results := array_append(_results, '--- matchmaking_pool columns (11) ---');
+  CALL check_column('matchmaking_pool', 'id');
+  CALL check_column('matchmaking_pool', 'user_id');
+  CALL check_column('matchmaking_pool', 'region');
+  CALL check_column('matchmaking_pool', 'seed');
+  CALL check_column('matchmaking_pool', 'rounds');
+  CALL check_column('matchmaking_pool', 'elo_rating');
+  CALL check_column('matchmaking_pool', 'gameplay_version');
+  CALL check_column('matchmaking_pool', 'created_at');
+  CALL check_column('matchmaking_pool', 'matched_at');
+  CALL check_column('matchmaking_pool', 'matched_with');
+  CALL check_column('matchmaking_pool', 'challenge_id');
+
+  -- ------- RLS ENABLED (7) -------
+  _results := array_append(_results, '');
+  _results := array_append(_results, '--- RLS enabled (7) ---');
   CALL check_rls('profiles');
   CALL check_rls('user_settings');
   CALL check_rls('account_state');
@@ -231,48 +272,69 @@ BEGIN
   CALL check_rls('challenges');
   CALL check_rls('matchmaking_pool');
 
-  -- ------- KEY RLS POLICIES -------
+  -- ------- ALL RLS POLICIES (24) -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- RLS policies ---');
+  _results := array_append(_results, '--- RLS policies (24) ---');
+  -- profiles (4)
   CALL check_policy('profiles', 'Users can read own profile');
+  CALL check_policy('profiles', 'Users can insert own profile');
   CALL check_policy('profiles', 'Users can update own profile');
+  CALL check_policy('profiles', 'Profiles are publicly readable');
+  -- user_settings (3)
   CALL check_policy('user_settings', 'Users can read own settings');
   CALL check_policy('user_settings', 'Users can insert own settings');
   CALL check_policy('user_settings', 'Users can update own settings');
+  -- account_state (3)
   CALL check_policy('account_state', 'Users can read own account state');
   CALL check_policy('account_state', 'Users can insert own account state');
   CALL check_policy('account_state', 'Users can update own account state');
+  -- scores (2)
   CALL check_policy('scores', 'Scores are viewable by everyone');
   CALL check_policy('scores', 'Users can insert own scores');
+  -- friendships (4)
+  CALL check_policy('friendships', 'Users can see own friendships');
+  CALL check_policy('friendships', 'Users can send friend requests');
+  CALL check_policy('friendships', 'Addressee can respond to friend requests');
+  CALL check_policy('friendships', 'Users can remove friendships');
+  -- challenges (3)
+  CALL check_policy('challenges', 'Players can see own challenges');
+  CALL check_policy('challenges', 'Challenger can create challenges');
+  CALL check_policy('challenges', 'Players can update own challenges');
+  -- matchmaking_pool (4)
+  CALL check_policy('matchmaking_pool', 'Users can insert own entries');
+  CALL check_policy('matchmaking_pool', 'Users can read own or matched entries');
+  CALL check_policy('matchmaking_pool', 'Users can update own entries on match');
+  CALL check_policy('matchmaking_pool', 'Allow pool size counting for stats');
 
-  -- ------- TRIGGERS -------
+  -- ------- TRIGGERS (5) -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- Triggers ---');
+  _results := array_append(_results, '--- Triggers (5) ---');
   CALL check_trigger('on_auth_user_created');
   CALL check_trigger('trg_profiles_updated_at');
   CALL check_trigger('trg_user_settings_updated_at');
   CALL check_trigger('trg_account_state_updated_at');
   CALL check_trigger('trg_friendships_updated_at');
 
-  -- ------- FUNCTIONS -------
+  -- ------- FUNCTIONS (5) -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- Functions ---');
+  _results := array_append(_results, '--- Functions (5) ---');
   CALL check_function('handle_new_user');
   CALL check_function('update_updated_at');
   CALL check_function('purchase_cosmetic');
   CALL check_function('expire_stale_challenges');
+  CALL check_function('admin_increment_stat');
 
-  -- ------- VIEWS -------
+  -- ------- VIEWS (4) -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- Views ---');
+  _results := array_append(_results, '--- Views (4) ---');
   CALL check_view('leaderboard_global');
   CALL check_view('leaderboard_daily');
   CALL check_view('leaderboard_regional');
   CALL check_view('daily_streak_leaderboard');
 
-  -- ------- INDEXES -------
+  -- ------- INDEXES (11) -------
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- Indexes ---');
+  _results := array_append(_results, '--- Indexes (11) ---');
   CALL check_index('idx_scores_leaderboard');
   CALL check_index('idx_scores_user');
   CALL check_index('idx_scores_global_rank');
@@ -319,7 +381,7 @@ WITH checks AS (
   -- Functions
   SELECT 'function', f,
     EXISTS (SELECT 1 FROM pg_proc WHERE proname=f AND pronamespace='public'::regnamespace)
-  FROM unnest(ARRAY['handle_new_user','update_updated_at','purchase_cosmetic','expire_stale_challenges']) f
+  FROM unnest(ARRAY['handle_new_user','update_updated_at','purchase_cosmetic','expire_stale_challenges','admin_increment_stat']) f
 
   UNION ALL
 
