@@ -1805,8 +1805,8 @@ class _ResultDialog extends ConsumerWidget {
                         : r.hintsUsed == 0
                         ? FlitColors.success
                         : r.hintsUsed <= 2
-                        ? FlitColors.warning
-                        : const Color(0xFFFFD700);
+                        ? const Color(0xFFFFD700)
+                        : FlitColors.warning;
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Container(

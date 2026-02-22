@@ -1202,8 +1202,8 @@ class _PlayButton extends StatelessWidget {
 Color _roundColor(DailyRoundResult round) {
   if (!round.completed) return const Color(0xFFCC4444); // red
   if (round.hintsUsed == 0) return FlitColors.success; // green
-  if (round.hintsUsed <= 2) return FlitColors.accent; // orange
-  return FlitColors.gold; // yellow
+  if (round.hintsUsed <= 2) return FlitColors.gold; // yellow
+  return FlitColors.accent; // orange
 }
 
 class _CompletedBanner extends ConsumerWidget {
