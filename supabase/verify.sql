@@ -14,343 +14,245 @@ DECLARE
   _pass INT := 0;
   _fail INT := 0;
   _results TEXT[] := '{}';
-
-  -- Helper: check if a table exists
-  PROCEDURE check_table(t TEXT)
-  LANGUAGE plpgsql AS $p$
-  BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = t) THEN
-      _pass := _pass + 1;
-      _results := array_append(_results, 'PASS  table: ' || t);
-    ELSE
-      _fail := _fail + 1;
-      _results := array_append(_results, 'FAIL  table: ' || t || ' — MISSING');
-    END IF;
-  END;
-  $p$;
-
-  -- Helper: check if a column exists on a table
-  PROCEDURE check_column(t TEXT, c TEXT)
-  LANGUAGE plpgsql AS $p$
-  BEGIN
-    IF EXISTS (
-      SELECT 1 FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = t AND column_name = c
-    ) THEN
-      _pass := _pass + 1;
-      _results := array_append(_results, 'PASS  column: ' || t || '.' || c);
-    ELSE
-      _fail := _fail + 1;
-      _results := array_append(_results, 'FAIL  column: ' || t || '.' || c || ' — MISSING');
-    END IF;
-  END;
-  $p$;
-
-  -- Helper: check if an RLS policy exists
-  PROCEDURE check_policy(t TEXT, p TEXT)
-  LANGUAGE plpgsql AS $p$
-  BEGIN
-    IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = t AND policyname = p) THEN
-      _pass := _pass + 1;
-      _results := array_append(_results, 'PASS  policy: ' || t || ' / ' || p);
-    ELSE
-      _fail := _fail + 1;
-      _results := array_append(_results, 'FAIL  policy: ' || t || ' / ' || p || ' — MISSING');
-    END IF;
-  END;
-  $p$;
-
-  -- Helper: check if a trigger exists
-  PROCEDURE check_trigger(trg TEXT)
-  LANGUAGE plpgsql AS $p$
-  BEGIN
-    IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = trg) THEN
-      _pass := _pass + 1;
-      _results := array_append(_results, 'PASS  trigger: ' || trg);
-    ELSE
-      _fail := _fail + 1;
-      _results := array_append(_results, 'FAIL  trigger: ' || trg || ' — MISSING');
-    END IF;
-  END;
-  $p$;
-
-  -- Helper: check if a function exists
-  PROCEDURE check_function(f TEXT)
-  LANGUAGE plpgsql AS $p$
-  BEGIN
-    IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = f AND pronamespace = 'public'::regnamespace) THEN
-      _pass := _pass + 1;
-      _results := array_append(_results, 'PASS  function: ' || f);
-    ELSE
-      _fail := _fail + 1;
-      _results := array_append(_results, 'FAIL  function: ' || f || ' — MISSING');
-    END IF;
-  END;
-  $p$;
-
-  -- Helper: check if a view exists
-  PROCEDURE check_view(v TEXT)
-  LANGUAGE plpgsql AS $p$
-  BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.views WHERE table_schema = 'public' AND table_name = v) THEN
-      _pass := _pass + 1;
-      _results := array_append(_results, 'PASS  view: ' || v);
-    ELSE
-      _fail := _fail + 1;
-      _results := array_append(_results, 'FAIL  view: ' || v || ' — MISSING');
-    END IF;
-  END;
-  $p$;
-
-  -- Helper: check if an index exists
-  PROCEDURE check_index(i TEXT)
-  LANGUAGE plpgsql AS $p$
-  BEGIN
-    IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = i) THEN
-      _pass := _pass + 1;
-      _results := array_append(_results, 'PASS  index: ' || i);
-    ELSE
-      _fail := _fail + 1;
-      _results := array_append(_results, 'FAIL  index: ' || i || ' — MISSING');
-    END IF;
-  END;
-  $p$;
-
-  -- Helper: check if RLS is enabled on a table
-  PROCEDURE check_rls(t TEXT)
-  LANGUAGE plpgsql AS $p$
-  BEGIN
-    IF EXISTS (
-      SELECT 1 FROM pg_class c
-      JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname = 'public' AND c.relname = t AND c.relrowsecurity = true
-    ) THEN
-      _pass := _pass + 1;
-      _results := array_append(_results, 'PASS  RLS enabled: ' || t);
-    ELSE
-      _fail := _fail + 1;
-      _results := array_append(_results, 'FAIL  RLS enabled: ' || t || ' — DISABLED');
-    END IF;
-  END;
-  $p$;
+  _line TEXT;
 
 BEGIN
   _results := array_append(_results, '========================================');
   _results := array_append(_results, 'Flit Schema Verification — COMPREHENSIVE');
   _results := array_append(_results, '========================================');
 
-  -- ------- TABLES -------
+  -- ------- TABLES (7) -------
   _results := array_append(_results, '');
   _results := array_append(_results, '--- Tables (7) ---');
-  CALL check_table('profiles');
-  CALL check_table('user_settings');
-  CALL check_table('account_state');
-  CALL check_table('scores');
-  CALL check_table('friendships');
-  CALL check_table('challenges');
-  CALL check_table('matchmaking_pool');
+
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='profiles') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: profiles'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: profiles — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='user_settings') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: user_settings'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: user_settings — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='account_state') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: account_state'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: account_state — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='scores') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: scores'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: scores — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='friendships') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: friendships'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: friendships — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='challenges') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: challenges'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: challenges — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='matchmaking_pool') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: matchmaking_pool'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: matchmaking_pool — MISSING'); END IF;
 
   -- ------- PROFILES COLUMNS (21) -------
   _results := array_append(_results, '');
   _results := array_append(_results, '--- profiles columns (21) ---');
-  CALL check_column('profiles', 'id');
-  CALL check_column('profiles', 'username');
-  CALL check_column('profiles', 'display_name');
-  CALL check_column('profiles', 'avatar_url');
-  CALL check_column('profiles', 'level');
-  CALL check_column('profiles', 'xp');
-  CALL check_column('profiles', 'coins');
-  CALL check_column('profiles', 'games_played');
-  CALL check_column('profiles', 'best_score');
-  CALL check_column('profiles', 'best_time_ms');
-  CALL check_column('profiles', 'total_flight_time_ms');
-  CALL check_column('profiles', 'countries_found');
-  CALL check_column('profiles', 'flags_correct');
-  CALL check_column('profiles', 'capitals_correct');
-  CALL check_column('profiles', 'outlines_correct');
-  CALL check_column('profiles', 'borders_correct');
-  CALL check_column('profiles', 'stats_correct');
-  CALL check_column('profiles', 'best_streak');
-  CALL check_column('profiles', 'admin_role');
-  CALL check_column('profiles', 'created_at');
-  CALL check_column('profiles', 'updated_at');
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='username') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.username'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.username — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='display_name') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.display_name'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.display_name — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='avatar_url') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.avatar_url'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.avatar_url — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='level') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.level'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.level — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='xp') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.xp'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.xp — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='coins') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.coins'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.coins — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='games_played') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.games_played'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.games_played — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='best_score') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.best_score'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.best_score — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='best_time_ms') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.best_time_ms'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.best_time_ms — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='total_flight_time_ms') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.total_flight_time_ms'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.total_flight_time_ms — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='countries_found') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.countries_found'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.countries_found — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='flags_correct') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.flags_correct'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.flags_correct — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='capitals_correct') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.capitals_correct'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.capitals_correct — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='outlines_correct') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.outlines_correct'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.outlines_correct — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='borders_correct') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.borders_correct'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.borders_correct — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='stats_correct') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.stats_correct'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.stats_correct — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='best_streak') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.best_streak'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.best_streak — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='admin_role') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.admin_role'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.admin_role — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='created_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.created_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.created_at — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='updated_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: profiles.updated_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: profiles.updated_at — MISSING'); END IF;
 
   -- ------- USER_SETTINGS COLUMNS (13) -------
   _results := array_append(_results, '');
   _results := array_append(_results, '--- user_settings columns (13) ---');
-  CALL check_column('user_settings', 'user_id');
-  CALL check_column('user_settings', 'turn_sensitivity');
-  CALL check_column('user_settings', 'invert_controls');
-  CALL check_column('user_settings', 'enable_night');
-  CALL check_column('user_settings', 'map_style');
-  CALL check_column('user_settings', 'english_labels');
-  CALL check_column('user_settings', 'difficulty');
-  CALL check_column('user_settings', 'sound_enabled');
-  CALL check_column('user_settings', 'music_volume');
-  CALL check_column('user_settings', 'effects_volume');
-  CALL check_column('user_settings', 'notifications_enabled');
-  CALL check_column('user_settings', 'haptic_enabled');
-  CALL check_column('user_settings', 'updated_at');
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='user_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.user_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.user_id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='turn_sensitivity') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.turn_sensitivity'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.turn_sensitivity — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='invert_controls') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.invert_controls'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.invert_controls — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='enable_night') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.enable_night'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.enable_night — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='map_style') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.map_style'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.map_style — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='english_labels') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.english_labels'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.english_labels — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='difficulty') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.difficulty'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.difficulty — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='sound_enabled') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.sound_enabled'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.sound_enabled — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='music_volume') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.music_volume'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.music_volume — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='effects_volume') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.effects_volume'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.effects_volume — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='notifications_enabled') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.notifications_enabled'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.notifications_enabled — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='haptic_enabled') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.haptic_enabled'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.haptic_enabled — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_settings' AND column_name='updated_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: user_settings.updated_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: user_settings.updated_at — MISSING'); END IF;
 
   -- ------- ACCOUNT_STATE COLUMNS (14) -------
   _results := array_append(_results, '');
   _results := array_append(_results, '--- account_state columns (14) ---');
-  CALL check_column('account_state', 'user_id');
-  CALL check_column('account_state', 'avatar_config');
-  CALL check_column('account_state', 'license_data');
-  CALL check_column('account_state', 'unlocked_regions');
-  CALL check_column('account_state', 'owned_avatar_parts');
-  CALL check_column('account_state', 'owned_cosmetics');
-  CALL check_column('account_state', 'equipped_plane_id');
-  CALL check_column('account_state', 'equipped_contrail_id');
-  CALL check_column('account_state', 'equipped_title_id');
-  CALL check_column('account_state', 'last_free_reroll_date');
-  CALL check_column('account_state', 'last_daily_challenge_date');
-  CALL check_column('account_state', 'daily_streak_data');
-  CALL check_column('account_state', 'last_daily_result');
-  CALL check_column('account_state', 'updated_at');
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='account_state' AND column_name='user_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: account_state.user_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: account_state.user_id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='account_state' AND column_name='avatar_config') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: account_state.avatar_config'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: account_state.avatar_config — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='account_state' AND column_name='license_data') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: account_state.license_data'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: account_state.license_data — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='account_state' AND column_name='unlocked_regions') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: account_state.unlocked_regions'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: account_state.unlocked_regions — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='account_state' AND column_name='owned_avatar_parts') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: account_state.owned_avatar_parts'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: account_state.owned_avatar_parts — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='account_state' AND column_name='owned_cosmetics') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: account_state.owned_cosmetics'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: account_state.owned_cosmetics — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='account_state' AND column_name='equipped_plane_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: account_state.equipped_plane_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: account_state.equipped_plane_id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='account_state' AND column_name='equipped_contrail_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: account_state.equipped_contrail_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: account_state.equipped_contrail_id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='account_state' AND column_name='equipped_title_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: account_state.equipped_title_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: account_state.equipped_title_id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='account_state' AND column_name='last_free_reroll_date') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: account_state.last_free_reroll_date'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: account_state.last_free_reroll_date — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='account_state' AND column_name='last_daily_challenge_date') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: account_state.last_daily_challenge_date'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: account_state.last_daily_challenge_date — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='account_state' AND column_name='daily_streak_data') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: account_state.daily_streak_data'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: account_state.daily_streak_data — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='account_state' AND column_name='last_daily_result') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: account_state.last_daily_result'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: account_state.last_daily_result — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='account_state' AND column_name='updated_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: account_state.updated_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: account_state.updated_at — MISSING'); END IF;
 
   -- ------- SCORES COLUMNS (7) -------
   _results := array_append(_results, '');
   _results := array_append(_results, '--- scores columns (7) ---');
-  CALL check_column('scores', 'id');
-  CALL check_column('scores', 'user_id');
-  CALL check_column('scores', 'score');
-  CALL check_column('scores', 'time_ms');
-  CALL check_column('scores', 'region');
-  CALL check_column('scores', 'rounds_completed');
-  CALL check_column('scores', 'created_at');
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='scores' AND column_name='id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: scores.id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: scores.id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='scores' AND column_name='user_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: scores.user_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: scores.user_id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='scores' AND column_name='score') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: scores.score'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: scores.score — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='scores' AND column_name='time_ms') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: scores.time_ms'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: scores.time_ms — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='scores' AND column_name='region') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: scores.region'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: scores.region — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='scores' AND column_name='rounds_completed') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: scores.rounds_completed'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: scores.rounds_completed — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='scores' AND column_name='created_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: scores.created_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: scores.created_at — MISSING'); END IF;
 
   -- ------- FRIENDSHIPS COLUMNS (6) -------
   _results := array_append(_results, '');
   _results := array_append(_results, '--- friendships columns (6) ---');
-  CALL check_column('friendships', 'id');
-  CALL check_column('friendships', 'requester_id');
-  CALL check_column('friendships', 'addressee_id');
-  CALL check_column('friendships', 'status');
-  CALL check_column('friendships', 'created_at');
-  CALL check_column('friendships', 'updated_at');
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='friendships' AND column_name='id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: friendships.id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: friendships.id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='friendships' AND column_name='requester_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: friendships.requester_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: friendships.requester_id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='friendships' AND column_name='addressee_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: friendships.addressee_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: friendships.addressee_id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='friendships' AND column_name='status') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: friendships.status'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: friendships.status — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='friendships' AND column_name='created_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: friendships.created_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: friendships.created_at — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='friendships' AND column_name='updated_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: friendships.updated_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: friendships.updated_at — MISSING'); END IF;
 
   -- ------- CHALLENGES COLUMNS (12) -------
   _results := array_append(_results, '');
   _results := array_append(_results, '--- challenges columns (12) ---');
-  CALL check_column('challenges', 'id');
-  CALL check_column('challenges', 'challenger_id');
-  CALL check_column('challenges', 'challenger_name');
-  CALL check_column('challenges', 'challenged_id');
-  CALL check_column('challenges', 'challenged_name');
-  CALL check_column('challenges', 'status');
-  CALL check_column('challenges', 'rounds');
-  CALL check_column('challenges', 'winner_id');
-  CALL check_column('challenges', 'challenger_coins');
-  CALL check_column('challenges', 'challenged_coins');
-  CALL check_column('challenges', 'created_at');
-  CALL check_column('challenges', 'completed_at');
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='challenges' AND column_name='id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: challenges.id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: challenges.id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='challenges' AND column_name='challenger_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: challenges.challenger_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: challenges.challenger_id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='challenges' AND column_name='challenger_name') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: challenges.challenger_name'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: challenges.challenger_name — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='challenges' AND column_name='challenged_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: challenges.challenged_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: challenges.challenged_id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='challenges' AND column_name='challenged_name') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: challenges.challenged_name'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: challenges.challenged_name — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='challenges' AND column_name='status') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: challenges.status'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: challenges.status — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='challenges' AND column_name='rounds') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: challenges.rounds'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: challenges.rounds — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='challenges' AND column_name='winner_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: challenges.winner_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: challenges.winner_id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='challenges' AND column_name='challenger_coins') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: challenges.challenger_coins'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: challenges.challenger_coins — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='challenges' AND column_name='challenged_coins') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: challenges.challenged_coins'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: challenges.challenged_coins — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='challenges' AND column_name='created_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: challenges.created_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: challenges.created_at — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='challenges' AND column_name='completed_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: challenges.completed_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: challenges.completed_at — MISSING'); END IF;
 
   -- ------- MATCHMAKING_POOL COLUMNS (11) -------
   _results := array_append(_results, '');
   _results := array_append(_results, '--- matchmaking_pool columns (11) ---');
-  CALL check_column('matchmaking_pool', 'id');
-  CALL check_column('matchmaking_pool', 'user_id');
-  CALL check_column('matchmaking_pool', 'region');
-  CALL check_column('matchmaking_pool', 'seed');
-  CALL check_column('matchmaking_pool', 'rounds');
-  CALL check_column('matchmaking_pool', 'elo_rating');
-  CALL check_column('matchmaking_pool', 'gameplay_version');
-  CALL check_column('matchmaking_pool', 'created_at');
-  CALL check_column('matchmaking_pool', 'matched_at');
-  CALL check_column('matchmaking_pool', 'matched_with');
-  CALL check_column('matchmaking_pool', 'challenge_id');
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='matchmaking_pool' AND column_name='id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: matchmaking_pool.id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: matchmaking_pool.id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='matchmaking_pool' AND column_name='user_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: matchmaking_pool.user_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: matchmaking_pool.user_id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='matchmaking_pool' AND column_name='region') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: matchmaking_pool.region'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: matchmaking_pool.region — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='matchmaking_pool' AND column_name='seed') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: matchmaking_pool.seed'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: matchmaking_pool.seed — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='matchmaking_pool' AND column_name='rounds') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: matchmaking_pool.rounds'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: matchmaking_pool.rounds — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='matchmaking_pool' AND column_name='elo_rating') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: matchmaking_pool.elo_rating'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: matchmaking_pool.elo_rating — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='matchmaking_pool' AND column_name='gameplay_version') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: matchmaking_pool.gameplay_version'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: matchmaking_pool.gameplay_version — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='matchmaking_pool' AND column_name='created_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: matchmaking_pool.created_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: matchmaking_pool.created_at — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='matchmaking_pool' AND column_name='matched_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: matchmaking_pool.matched_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: matchmaking_pool.matched_at — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='matchmaking_pool' AND column_name='matched_with') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: matchmaking_pool.matched_with'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: matchmaking_pool.matched_with — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='matchmaking_pool' AND column_name='challenge_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: matchmaking_pool.challenge_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: matchmaking_pool.challenge_id — MISSING'); END IF;
 
   -- ------- RLS ENABLED (7) -------
   _results := array_append(_results, '');
   _results := array_append(_results, '--- RLS enabled (7) ---');
-  CALL check_rls('profiles');
-  CALL check_rls('user_settings');
-  CALL check_rls('account_state');
-  CALL check_rls('scores');
-  CALL check_rls('friendships');
-  CALL check_rls('challenges');
-  CALL check_rls('matchmaking_pool');
+
+  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relname = 'profiles' AND c.relrowsecurity = true) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  RLS enabled: profiles'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  RLS enabled: profiles — DISABLED'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relname = 'user_settings' AND c.relrowsecurity = true) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  RLS enabled: user_settings'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  RLS enabled: user_settings — DISABLED'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relname = 'account_state' AND c.relrowsecurity = true) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  RLS enabled: account_state'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  RLS enabled: account_state — DISABLED'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relname = 'scores' AND c.relrowsecurity = true) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  RLS enabled: scores'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  RLS enabled: scores — DISABLED'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relname = 'friendships' AND c.relrowsecurity = true) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  RLS enabled: friendships'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  RLS enabled: friendships — DISABLED'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relname = 'challenges' AND c.relrowsecurity = true) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  RLS enabled: challenges'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  RLS enabled: challenges — DISABLED'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relname = 'matchmaking_pool' AND c.relrowsecurity = true) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  RLS enabled: matchmaking_pool'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  RLS enabled: matchmaking_pool — DISABLED'); END IF;
 
   -- ------- ALL RLS POLICIES (24) -------
   _results := array_append(_results, '');
   _results := array_append(_results, '--- RLS policies (24) ---');
+
   -- profiles (4)
-  CALL check_policy('profiles', 'Users can read own profile');
-  CALL check_policy('profiles', 'Users can insert own profile');
-  CALL check_policy('profiles', 'Users can update own profile');
-  CALL check_policy('profiles', 'Profiles are publicly readable');
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Users can read own profile') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: profiles / Users can read own profile'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: profiles / Users can read own profile — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Users can insert own profile') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: profiles / Users can insert own profile'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: profiles / Users can insert own profile — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Users can update own profile') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: profiles / Users can update own profile'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: profiles / Users can update own profile — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Profiles are publicly readable') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: profiles / Profiles are publicly readable'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: profiles / Profiles are publicly readable — MISSING'); END IF;
+
   -- user_settings (3)
-  CALL check_policy('user_settings', 'Users can read own settings');
-  CALL check_policy('user_settings', 'Users can insert own settings');
-  CALL check_policy('user_settings', 'Users can update own settings');
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'user_settings' AND policyname = 'Users can read own settings') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: user_settings / Users can read own settings'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: user_settings / Users can read own settings — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'user_settings' AND policyname = 'Users can insert own settings') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: user_settings / Users can insert own settings'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: user_settings / Users can insert own settings — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'user_settings' AND policyname = 'Users can update own settings') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: user_settings / Users can update own settings'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: user_settings / Users can update own settings — MISSING'); END IF;
+
   -- account_state (3)
-  CALL check_policy('account_state', 'Users can read own account state');
-  CALL check_policy('account_state', 'Users can insert own account state');
-  CALL check_policy('account_state', 'Users can update own account state');
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'account_state' AND policyname = 'Users can read own account state') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: account_state / Users can read own account state'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: account_state / Users can read own account state — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'account_state' AND policyname = 'Users can insert own account state') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: account_state / Users can insert own account state'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: account_state / Users can insert own account state — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'account_state' AND policyname = 'Users can update own account state') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: account_state / Users can update own account state'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: account_state / Users can update own account state — MISSING'); END IF;
+
   -- scores (2)
-  CALL check_policy('scores', 'Scores are viewable by everyone');
-  CALL check_policy('scores', 'Users can insert own scores');
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'scores' AND policyname = 'Scores are viewable by everyone') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: scores / Scores are viewable by everyone'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: scores / Scores are viewable by everyone — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'scores' AND policyname = 'Users can insert own scores') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: scores / Users can insert own scores'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: scores / Users can insert own scores — MISSING'); END IF;
+
   -- friendships (4)
-  CALL check_policy('friendships', 'Users can see own friendships');
-  CALL check_policy('friendships', 'Users can send friend requests');
-  CALL check_policy('friendships', 'Addressee can respond to friend requests');
-  CALL check_policy('friendships', 'Users can remove friendships');
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'friendships' AND policyname = 'Users can see own friendships') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: friendships / Users can see own friendships'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: friendships / Users can see own friendships — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'friendships' AND policyname = 'Users can send friend requests') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: friendships / Users can send friend requests'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: friendships / Users can send friend requests — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'friendships' AND policyname = 'Addressee can respond to friend requests') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: friendships / Addressee can respond to friend requests'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: friendships / Addressee can respond to friend requests — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'friendships' AND policyname = 'Users can remove friendships') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: friendships / Users can remove friendships'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: friendships / Users can remove friendships — MISSING'); END IF;
+
   -- challenges (3)
-  CALL check_policy('challenges', 'Players can see own challenges');
-  CALL check_policy('challenges', 'Challenger can create challenges');
-  CALL check_policy('challenges', 'Players can update own challenges');
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'challenges' AND policyname = 'Players can see own challenges') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: challenges / Players can see own challenges'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: challenges / Players can see own challenges — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'challenges' AND policyname = 'Challenger can create challenges') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: challenges / Challenger can create challenges'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: challenges / Challenger can create challenges — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'challenges' AND policyname = 'Players can update own challenges') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: challenges / Players can update own challenges'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: challenges / Players can update own challenges — MISSING'); END IF;
+
   -- matchmaking_pool (4)
-  CALL check_policy('matchmaking_pool', 'Users can insert own entries');
-  CALL check_policy('matchmaking_pool', 'Users can read own or matched entries');
-  CALL check_policy('matchmaking_pool', 'Users can update own entries on match');
-  CALL check_policy('matchmaking_pool', 'Allow pool size counting for stats');
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'matchmaking_pool' AND policyname = 'Users can insert own entries') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: matchmaking_pool / Users can insert own entries'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: matchmaking_pool / Users can insert own entries — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'matchmaking_pool' AND policyname = 'Users can read own or matched entries') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: matchmaking_pool / Users can read own or matched entries'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: matchmaking_pool / Users can read own or matched entries — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'matchmaking_pool' AND policyname = 'Users can update own entries on match') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: matchmaking_pool / Users can update own entries on match'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: matchmaking_pool / Users can update own entries on match — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'matchmaking_pool' AND policyname = 'Allow pool size counting for stats') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: matchmaking_pool / Allow pool size counting for stats'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: matchmaking_pool / Allow pool size counting for stats — MISSING'); END IF;
 
   -- ------- TRIGGERS (5) -------
   _results := array_append(_results, '');
   _results := array_append(_results, '--- Triggers (5) ---');
-  CALL check_trigger('on_auth_user_created');
-  CALL check_trigger('trg_profiles_updated_at');
-  CALL check_trigger('trg_user_settings_updated_at');
-  CALL check_trigger('trg_account_state_updated_at');
-  CALL check_trigger('trg_friendships_updated_at');
+
+  IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'on_auth_user_created') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  trigger: on_auth_user_created'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  trigger: on_auth_user_created — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_profiles_updated_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  trigger: trg_profiles_updated_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  trigger: trg_profiles_updated_at — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_user_settings_updated_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  trigger: trg_user_settings_updated_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  trigger: trg_user_settings_updated_at — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_account_state_updated_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  trigger: trg_account_state_updated_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  trigger: trg_account_state_updated_at — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_friendships_updated_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  trigger: trg_friendships_updated_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  trigger: trg_friendships_updated_at — MISSING'); END IF;
 
   -- ------- FUNCTIONS (9) -------
   _results := array_append(_results, '');
   _results := array_append(_results, '--- Functions (9) ---');
-  CALL check_function('handle_new_user');
-  CALL check_function('update_updated_at');
-  CALL check_function('purchase_cosmetic');
-  CALL check_function('purchase_avatar_part');
-  CALL check_function('send_coins');
-  CALL check_function('gift_cosmetic');
-  CALL check_function('gift_avatar_part');
-  CALL check_function('expire_stale_challenges');
-  CALL check_function('admin_increment_stat');
+
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'handle_new_user' AND pronamespace = 'public'::regnamespace) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: handle_new_user'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: handle_new_user — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'update_updated_at' AND pronamespace = 'public'::regnamespace) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: update_updated_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: update_updated_at — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'purchase_cosmetic' AND pronamespace = 'public'::regnamespace) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: purchase_cosmetic'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: purchase_cosmetic — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'purchase_avatar_part' AND pronamespace = 'public'::regnamespace) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: purchase_avatar_part'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: purchase_avatar_part — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'send_coins' AND pronamespace = 'public'::regnamespace) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: send_coins'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: send_coins — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'gift_cosmetic' AND pronamespace = 'public'::regnamespace) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: gift_cosmetic'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: gift_cosmetic — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'gift_avatar_part' AND pronamespace = 'public'::regnamespace) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: gift_avatar_part'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: gift_avatar_part — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'expire_stale_challenges' AND pronamespace = 'public'::regnamespace) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: expire_stale_challenges'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: expire_stale_challenges — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'admin_increment_stat' AND pronamespace = 'public'::regnamespace) THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: admin_increment_stat'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: admin_increment_stat — MISSING'); END IF;
 
   -- ------- VIEWS (4) -------
   _results := array_append(_results, '');
   _results := array_append(_results, '--- Views (4) ---');
-  CALL check_view('leaderboard_global');
-  CALL check_view('leaderboard_daily');
-  CALL check_view('leaderboard_regional');
-  CALL check_view('daily_streak_leaderboard');
+
+  IF EXISTS (SELECT 1 FROM information_schema.views WHERE table_schema = 'public' AND table_name = 'leaderboard_global') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  view: leaderboard_global'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  view: leaderboard_global — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.views WHERE table_schema = 'public' AND table_name = 'leaderboard_daily') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  view: leaderboard_daily'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  view: leaderboard_daily — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.views WHERE table_schema = 'public' AND table_name = 'leaderboard_regional') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  view: leaderboard_regional'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  view: leaderboard_regional — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.views WHERE table_schema = 'public' AND table_name = 'daily_streak_leaderboard') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  view: daily_streak_leaderboard'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  view: daily_streak_leaderboard — MISSING'); END IF;
 
   -- ------- INDEXES (11) -------
   _results := array_append(_results, '');
   _results := array_append(_results, '--- Indexes (11) ---');
-  CALL check_index('idx_scores_leaderboard');
-  CALL check_index('idx_scores_user');
-  CALL check_index('idx_scores_global_rank');
-  CALL check_index('idx_scores_daily_rank');
-  CALL check_index('idx_profiles_username');
-  CALL check_index('idx_friendships_requester');
-  CALL check_index('idx_friendships_addressee');
-  CALL check_index('idx_challenges_challenger');
-  CALL check_index('idx_challenges_challenged');
-  CALL check_index('idx_matchmaking_unmatched');
-  CALL check_index('idx_matchmaking_user');
+
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_scores_leaderboard') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_scores_leaderboard'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_scores_leaderboard — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_scores_user') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_scores_user'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_scores_user — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_scores_global_rank') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_scores_global_rank'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_scores_global_rank — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_scores_daily_rank') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_scores_daily_rank'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_scores_daily_rank — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_profiles_username') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_profiles_username'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_profiles_username — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_friendships_requester') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_friendships_requester'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_friendships_requester — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_friendships_addressee') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_friendships_addressee'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_friendships_addressee — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_challenges_challenger') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_challenges_challenger'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_challenges_challenger — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_challenges_challenged') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_challenges_challenged'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_challenges_challenged — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_matchmaking_unmatched') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_matchmaking_unmatched'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_matchmaking_unmatched — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_matchmaking_user') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  index: idx_matchmaking_user'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  index: idx_matchmaking_user — MISSING'); END IF;
 
   -- ------- SUMMARY -------
   _results := array_append(_results, '');
@@ -364,13 +266,9 @@ BEGIN
   _results := array_append(_results, '========================================');
 
   -- Print results via RAISE NOTICE (visible in SQL Editor "Messages" tab).
-  DECLARE
-    line TEXT;
-  BEGIN
-    FOREACH line IN ARRAY _results LOOP
-      RAISE NOTICE '%', line;
-    END LOOP;
-  END;
+  FOREACH _line IN ARRAY _results LOOP
+    RAISE NOTICE '%', _line;
+  END LOOP;
 END;
 $$;
 
