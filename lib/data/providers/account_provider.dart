@@ -205,8 +205,28 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // after the new user's data has been loaded.
     _prefs.clearDirtyFlags();
     _userId = userId;
-    final snapshot = await _prefs.load(userId);
-    if (snapshot == null) return;
+
+    // Retry up to 3 times with exponential backoff. Without this, a
+    // transient Supabase timeout on cold start (common after iOS force-close)
+    // silently leaves the user with default/empty state for the session.
+    UserPreferencesSnapshot? snapshot;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      snapshot = await _prefs.load(userId);
+      if (snapshot != null) break;
+      debugPrint(
+        '[AccountNotifier] loadFromSupabase attempt ${attempt + 1} returned '
+        'null — retrying in ${1 << attempt}s',
+      );
+      await Future<void>.delayed(Duration(seconds: 1 << attempt));
+    }
+
+    if (snapshot == null) {
+      debugPrint(
+        '[AccountNotifier] loadFromSupabase: all retries failed for $userId '
+        '— user will see default state',
+      );
+      return;
+    }
 
     await _applySnapshot(snapshot);
     _startPeriodicRefresh();

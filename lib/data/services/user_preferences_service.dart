@@ -273,7 +273,12 @@ class UserPreferencesService {
       var settingsData = results[1] as Map<String, dynamic>?;
       var accountData = results[2] as Map<String, dynamic>?;
 
-      if (profileData == null) return null;
+      if (profileData == null) {
+        debugPrint(
+          '[UserPreferencesService] load: profiles row is null for $userId',
+        );
+        return null;
+      }
 
       // Recover any crash-safe data that wasn't flushed (e.g. iOS force-close
       // killed the process before the 2-second debounce timer fired).
@@ -586,7 +591,19 @@ class UserPreferencesService {
   /// storage on the next launch.
   void _cacheLocally(String key, Map<String, dynamic> payload) {
     try {
-      _localPrefs?.setString(key, jsonEncode(payload));
+      if (_localPrefs == null) {
+        // Eagerly initialise if the queue hasn't been set up yet. The
+        // getInstance() Future resolves almost instantly on iOS/Android
+        // (in-process cache after the first call).
+        SharedPreferences.getInstance().then((prefs) {
+          _localPrefs = prefs;
+          try {
+            prefs.setString(key, jsonEncode(payload));
+          } catch (_) {}
+        });
+        return;
+      }
+      _localPrefs!.setString(key, jsonEncode(payload));
     } catch (_) {}
   }
 
