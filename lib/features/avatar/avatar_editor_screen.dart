@@ -50,173 +50,657 @@ class _AvatarCategory {
   final List<_AvatarPart> parts;
 }
 
-/// Build the category list. The first category is always "Style" which lets
-/// the player pick a DiceBear collection. The remaining categories control
-/// per-feature customisation (directly for Adventurer, via seed for others).
-List<_AvatarCategory> _buildCategories() {
+// =============================================================================
+// Part list generators — truncated to each style's actual visual variant count.
+// Variant counts are derived from the DiceBear part source files.
+// =============================================================================
+
+List<_AvatarPart> _eyesParts(int n) => AvatarEyes.values
+    .take(n)
+    .map(
+      (e) => _AvatarPart(
+        id: 'eyes_${e.name}',
+        label: '#${e.index + 1}',
+        price: AvatarConfig.eyesPrice(e),
+      ),
+    )
+    .toList();
+
+List<_AvatarPart> _browsParts(int n) => AvatarEyebrows.values
+    .take(n)
+    .map(
+      (e) => _AvatarPart(
+        id: 'eyebrows_${e.name}',
+        label: '#${e.index + 1}',
+        price: AvatarConfig.eyebrowsPrice(e),
+      ),
+    )
+    .toList();
+
+List<_AvatarPart> _mouthParts(int n) => AvatarMouth.values
+    .take(n)
+    .map(
+      (e) => _AvatarPart(
+        id: 'mouth_${e.name}',
+        label: '#${e.index + 1}',
+        price: AvatarConfig.mouthPrice(e),
+      ),
+    )
+    .toList();
+
+/// Build hair parts with an optional leading 'None'.
+/// [nNonNone] is the number of non-none variants the style supports.
+List<_AvatarPart> _hairParts(int nNonNone, {bool includeNone = true}) => [
+  if (includeNone) const _AvatarPart(id: 'hair_none', label: 'None'),
+  ...AvatarHair.values
+      .skip(1)
+      .take(nNonNone)
+      .map(
+        (e) => _AvatarPart(
+          id: 'hair_${e.name}',
+          label: e.label,
+          price: AvatarConfig.hairPrice(e),
+        ),
+      ),
+];
+
+List<_AvatarPart> _glassesParts(int nNonNone) => [
+  const _AvatarPart(id: 'glasses_none', label: 'None'),
+  ...AvatarGlasses.values
+      .skip(1)
+      .take(nNonNone)
+      .map(
+        (g) => _AvatarPart(
+          id: 'glasses_${g.name}',
+          label: '#${g.index}',
+          price: AvatarConfig.glassesPrice(g),
+        ),
+      ),
+];
+
+List<_AvatarPart> _earringsParts(int nNonNone) => [
+  const _AvatarPart(id: 'earrings_none', label: 'None'),
+  ...AvatarEarrings.values
+      .skip(1)
+      .take(nNonNone)
+      .map(
+        (e) => _AvatarPart(
+          id: 'earrings_${e.name}',
+          label: '#${e.index}',
+          price: AvatarConfig.earringsPrice(e),
+        ),
+      ),
+];
+
+List<_AvatarPart> _featureParts(int nNonNone, {String label = 'Features'}) => [
+  _AvatarPart(id: 'feature_${AvatarFeature.none.name}', label: 'None'),
+  ...AvatarFeature.values
+      .skip(1)
+      .take(nNonNone)
+      .map((f) => _AvatarPart(id: 'feature_${f.name}', label: f.label)),
+];
+
+List<_AvatarPart> _hairColorParts() => AvatarHairColor.values
+    .map(
+      (c) => _AvatarPart(
+        id: 'hairColor_${c.name}',
+        label: c.label,
+        price: AvatarConfig.hairColorPrice(c),
+        colorHex: c.hex,
+      ),
+    )
+    .toList();
+
+List<_AvatarPart> _skinParts() => AvatarSkinColor.values
+    .map(
+      (c) => _AvatarPart(
+        id: 'skinColor_${c.name}',
+        label: c.label,
+        colorHex: c.hex,
+      ),
+    )
+    .toList();
+
+/// Generate parts for a style-specific extras category.
+/// If [hasNone] is true, index 0 means 'None' (off).
+List<_AvatarPart> _extrasParts(String key, int n, {bool hasNone = false}) {
+  if (hasNone) {
+    return [
+      _AvatarPart(id: 'extras_${key}_0', label: 'None'),
+      for (var i = 1; i <= n; i++)
+        _AvatarPart(id: 'extras_${key}_$i', label: '#$i'),
+    ];
+  }
   return [
-    // -- Style (10 DiceBear collections) --
-    _AvatarCategory(
-      label: 'Style',
-      icon: Icons.style,
-      configKey: 'style',
-      parts: AvatarStyle.values
-          .map(
-            (s) => _AvatarPart(
-              id: 'style_${s.name}',
-              label: s.label,
-              price: AvatarConfig.stylePrice(s),
-            ),
-          )
-          .toList(),
-    ),
+    for (var i = 0; i < n; i++)
+      _AvatarPart(id: 'extras_${key}_$i', label: '#${i + 1}'),
+  ];
+}
 
-    // -- Eyes (26 variants) --
-    _AvatarCategory(
-      label: 'Eyes',
-      icon: Icons.visibility,
-      configKey: 'eyes',
-      parts: AvatarEyes.values
-          .map(
-            (e) => _AvatarPart(
-              id: 'eyes_${e.name}',
-              label: e.name.replaceAll('variant', '#'),
-              price: AvatarConfig.eyesPrice(e),
-            ),
-          )
-          .toList(),
-    ),
+// =============================================================================
+// Per-style category builder
+// =============================================================================
 
-    // -- Eyebrows (15 variants) --
-    _AvatarCategory(
-      label: 'Brows',
-      icon: Icons.remove,
-      configKey: 'eyebrows',
-      parts: AvatarEyebrows.values
-          .map(
-            (e) => _AvatarPart(
-              id: 'eyebrows_${e.name}',
-              label: e.name.replaceAll('variant', '#'),
-              price: AvatarConfig.eyebrowsPrice(e),
-            ),
-          )
-          .toList(),
-    ),
+/// Build the category list for the given [style].
+///
+/// Each style defines its own tree of customisation categories, derived from
+/// the actual parts/variant files that exist for that DiceBear collection.
+/// The first category is always "Style" (the DiceBear collection picker).
+List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
+  // Style picker — always first.
+  final styleCategory = _AvatarCategory(
+    label: 'Style',
+    icon: Icons.style,
+    configKey: 'style',
+    parts: AvatarStyle.values
+        .map(
+          (s) => _AvatarPart(
+            id: 'style_${s.name}',
+            label: s.label,
+            price: AvatarConfig.stylePrice(s),
+          ),
+        )
+        .toList(),
+  );
 
-    // -- Mouth (30 variants) --
-    _AvatarCategory(
-      label: 'Mouth',
-      icon: Icons.mood,
-      configKey: 'mouth',
-      parts: AvatarMouth.values
-          .map(
-            (e) => _AvatarPart(
-              id: 'mouth_${e.name}',
-              label: e.name.replaceAll('variant', '#'),
-              price: AvatarConfig.mouthPrice(e),
-            ),
-          )
-          .toList(),
-    ),
+  return [
+    styleCategory,
+    ...switch (style) {
+      // -----------------------------------------------------------------------
+      // Adventurer — full per-feature control (26 eyes, 15 brows, 30 mouth,
+      //   45 hair, 5 glasses, 6 earrings, 4 features, 14 hair colors, 4 skin)
+      // -----------------------------------------------------------------------
+      AvatarStyle.adventurer => [
+        _AvatarCategory(
+          label: 'Eyes',
+          icon: Icons.visibility,
+          configKey: 'eyes',
+          parts: _eyesParts(26),
+        ),
+        _AvatarCategory(
+          label: 'Brows',
+          icon: Icons.remove,
+          configKey: 'eyebrows',
+          parts: _browsParts(15),
+        ),
+        _AvatarCategory(
+          label: 'Mouth',
+          icon: Icons.mood,
+          configKey: 'mouth',
+          parts: _mouthParts(30),
+        ),
+        _AvatarCategory(
+          label: 'Hair',
+          icon: Icons.content_cut,
+          configKey: 'hair',
+          parts: _hairParts(45),
+        ),
+        _AvatarCategory(
+          label: 'Hair Color',
+          icon: Icons.color_lens,
+          configKey: 'hairColor',
+          parts: _hairColorParts(),
+        ),
+        _AvatarCategory(
+          label: 'Skin',
+          icon: Icons.palette,
+          configKey: 'skinColor',
+          parts: _skinParts(),
+        ),
+        _AvatarCategory(
+          label: 'Glasses',
+          icon: Icons.remove_red_eye,
+          configKey: 'glasses',
+          parts: _glassesParts(5),
+        ),
+        _AvatarCategory(
+          label: 'Earrings',
+          icon: Icons.radio_button_unchecked,
+          configKey: 'earrings',
+          parts: _earringsParts(6),
+        ),
+        _AvatarCategory(
+          label: 'Features',
+          icon: Icons.auto_awesome,
+          configKey: 'feature',
+          parts: _featureParts(4),
+        ),
+      ],
 
-    // -- Hair (46 variants) --
-    _AvatarCategory(
-      label: 'Hair',
-      icon: Icons.content_cut,
-      configKey: 'hair',
-      parts: AvatarHair.values
-          .map(
-            (e) => _AvatarPart(
-              id: 'hair_${e.name}',
-              label: e.label,
-              price: AvatarConfig.hairPrice(e),
-            ),
-          )
-          .toList(),
-    ),
+      // -----------------------------------------------------------------------
+      // Avataaars — 12 eyes, 13 brows, 12 mouth, 33 top/hair
+      // -----------------------------------------------------------------------
+      AvatarStyle.avataaars => [
+        _AvatarCategory(
+          label: 'Eyes',
+          icon: Icons.visibility,
+          configKey: 'eyes',
+          parts: _eyesParts(12),
+        ),
+        _AvatarCategory(
+          label: 'Brows',
+          icon: Icons.remove,
+          configKey: 'eyebrows',
+          parts: _browsParts(13),
+        ),
+        _AvatarCategory(
+          label: 'Mouth',
+          icon: Icons.mood,
+          configKey: 'mouth',
+          parts: _mouthParts(12),
+        ),
+        _AvatarCategory(
+          label: 'Hair',
+          icon: Icons.content_cut,
+          configKey: 'hair',
+          parts: _hairParts(33),
+        ),
+        _AvatarCategory(
+          label: 'Hair Color',
+          icon: Icons.color_lens,
+          configKey: 'hairColor',
+          parts: _hairColorParts(),
+        ),
+        _AvatarCategory(
+          label: 'Skin',
+          icon: Icons.palette,
+          configKey: 'skinColor',
+          parts: _skinParts(),
+        ),
+      ],
 
-    // -- Hair Color (14 colors) --
-    _AvatarCategory(
-      label: 'Hair Color',
-      icon: Icons.color_lens,
-      configKey: 'hairColor',
-      parts: AvatarHairColor.values
-          .map(
-            (c) => _AvatarPart(
-              id: 'hairColor_${c.name}',
-              label: c.label,
-              price: AvatarConfig.hairColorPrice(c),
-              colorHex: c.hex,
-            ),
-          )
-          .toList(),
-    ),
+      // -----------------------------------------------------------------------
+      // Big Ears — 32 eyes, 38 mouth, 12 front hair, 6 cheek (brows key)
+      // -----------------------------------------------------------------------
+      AvatarStyle.bigEars => [
+        _AvatarCategory(
+          label: 'Eyes',
+          icon: Icons.visibility,
+          configKey: 'eyes',
+          parts: _eyesParts(26),
+        ),
+        _AvatarCategory(
+          label: 'Mouth',
+          icon: Icons.mood,
+          configKey: 'mouth',
+          parts: _mouthParts(30),
+        ),
+        _AvatarCategory(
+          label: 'Hair',
+          icon: Icons.content_cut,
+          configKey: 'hair',
+          parts: _hairParts(12),
+        ),
+        _AvatarCategory(
+          label: 'Cheek',
+          icon: Icons.blur_on,
+          configKey: 'eyebrows',
+          parts: _browsParts(6),
+        ),
+        _AvatarCategory(
+          label: 'Hair Color',
+          icon: Icons.color_lens,
+          configKey: 'hairColor',
+          parts: _hairColorParts(),
+        ),
+        _AvatarCategory(
+          label: 'Skin',
+          icon: Icons.palette,
+          configKey: 'skinColor',
+          parts: _skinParts(),
+        ),
+      ],
 
-    // -- Skin Color (4 tones) --
-    _AvatarCategory(
-      label: 'Skin',
-      icon: Icons.palette,
-      configKey: 'skinColor',
-      parts: AvatarSkinColor.values
-          .map(
-            (c) => _AvatarPart(
-              id: 'skinColor_${c.name}',
-              label: c.label,
-              price: 0,
-              colorHex: c.hex,
-            ),
-          )
-          .toList(),
-    ),
+      // -----------------------------------------------------------------------
+      // Lorelei — 24 eyes, 13 brows, 27 mouth, 48 hair, 5 glasses,
+      //   3 earrings, freckles/beard via features
+      // -----------------------------------------------------------------------
+      AvatarStyle.lorelei => [
+        _AvatarCategory(
+          label: 'Eyes',
+          icon: Icons.visibility,
+          configKey: 'eyes',
+          parts: _eyesParts(24),
+        ),
+        _AvatarCategory(
+          label: 'Brows',
+          icon: Icons.remove,
+          configKey: 'eyebrows',
+          parts: _browsParts(13),
+        ),
+        _AvatarCategory(
+          label: 'Mouth',
+          icon: Icons.mood,
+          configKey: 'mouth',
+          parts: _mouthParts(27),
+        ),
+        _AvatarCategory(
+          label: 'Hair',
+          icon: Icons.content_cut,
+          configKey: 'hair',
+          parts: _hairParts(46),
+        ),
+        _AvatarCategory(
+          label: 'Hair Color',
+          icon: Icons.color_lens,
+          configKey: 'hairColor',
+          parts: _hairColorParts(),
+        ),
+        _AvatarCategory(
+          label: 'Skin',
+          icon: Icons.palette,
+          configKey: 'skinColor',
+          parts: _skinParts(),
+        ),
+        _AvatarCategory(
+          label: 'Glasses',
+          icon: Icons.remove_red_eye,
+          configKey: 'glasses',
+          parts: _glassesParts(5),
+        ),
+        _AvatarCategory(
+          label: 'Earrings',
+          icon: Icons.radio_button_unchecked,
+          configKey: 'earrings',
+          parts: _earringsParts(3),
+        ),
+        _AvatarCategory(
+          label: 'Features',
+          icon: Icons.auto_awesome,
+          configKey: 'feature',
+          parts: _featureParts(4),
+        ),
+      ],
 
-    // -- Glasses (6 options incl. none) --
-    _AvatarCategory(
-      label: 'Glasses',
-      icon: Icons.remove_red_eye,
-      configKey: 'glasses',
-      parts: AvatarGlasses.values
-          .map(
-            (g) => _AvatarPart(
-              id: 'glasses_${g.name}',
-              label: g == AvatarGlasses.none
-                  ? 'None'
-                  : g.name.replaceAll('variant', '#'),
-              price: AvatarConfig.glassesPrice(g),
-            ),
-          )
-          .toList(),
-    ),
+      // -----------------------------------------------------------------------
+      // Micah — 5 eyes, 4 brows, 8 mouth, 27 hair, 2 glasses, 2 earrings,
+      //   3 facial hair (feature key)
+      // -----------------------------------------------------------------------
+      AvatarStyle.micah => [
+        _AvatarCategory(
+          label: 'Eyes',
+          icon: Icons.visibility,
+          configKey: 'eyes',
+          parts: _eyesParts(5),
+        ),
+        _AvatarCategory(
+          label: 'Brows',
+          icon: Icons.remove,
+          configKey: 'eyebrows',
+          parts: _browsParts(4),
+        ),
+        _AvatarCategory(
+          label: 'Mouth',
+          icon: Icons.mood,
+          configKey: 'mouth',
+          parts: _mouthParts(8),
+        ),
+        _AvatarCategory(
+          label: 'Hair',
+          icon: Icons.content_cut,
+          configKey: 'hair',
+          parts: _hairParts(27),
+        ),
+        _AvatarCategory(
+          label: 'Hair Color',
+          icon: Icons.color_lens,
+          configKey: 'hairColor',
+          parts: _hairColorParts(),
+        ),
+        _AvatarCategory(
+          label: 'Skin',
+          icon: Icons.palette,
+          configKey: 'skinColor',
+          parts: _skinParts(),
+        ),
+        _AvatarCategory(
+          label: 'Glasses',
+          icon: Icons.remove_red_eye,
+          configKey: 'glasses',
+          parts: _glassesParts(2),
+        ),
+        _AvatarCategory(
+          label: 'Earrings',
+          icon: Icons.radio_button_unchecked,
+          configKey: 'earrings',
+          parts: _earringsParts(2),
+        ),
+        _AvatarCategory(
+          label: 'Facial Hair',
+          icon: Icons.auto_awesome,
+          configKey: 'feature',
+          parts: _featureParts(3),
+        ),
+      ],
 
-    // -- Earrings (7 options incl. none) --
-    _AvatarCategory(
-      label: 'Earrings',
-      icon: Icons.radio_button_unchecked,
-      configKey: 'earrings',
-      parts: AvatarEarrings.values
-          .map(
-            (e) => _AvatarPart(
-              id: 'earrings_${e.name}',
-              label: e == AvatarEarrings.none
-                  ? 'None'
-                  : e.name.replaceAll('variant', '#'),
-              price: AvatarConfig.earringsPrice(e),
-            ),
-          )
-          .toList(),
-    ),
+      // -----------------------------------------------------------------------
+      // Pixel Art — 12 eyes, 23 mouth, 45 hair, 14 glasses (enum capped
+      //   at 5), 4 accessories (earrings key), beard via features
+      // -----------------------------------------------------------------------
+      AvatarStyle.pixelArt => [
+        _AvatarCategory(
+          label: 'Eyes',
+          icon: Icons.visibility,
+          configKey: 'eyes',
+          parts: _eyesParts(12),
+        ),
+        _AvatarCategory(
+          label: 'Mouth',
+          icon: Icons.mood,
+          configKey: 'mouth',
+          parts: _mouthParts(23),
+        ),
+        _AvatarCategory(
+          label: 'Hair',
+          icon: Icons.content_cut,
+          configKey: 'hair',
+          parts: _hairParts(45),
+        ),
+        _AvatarCategory(
+          label: 'Hair Color',
+          icon: Icons.color_lens,
+          configKey: 'hairColor',
+          parts: _hairColorParts(),
+        ),
+        _AvatarCategory(
+          label: 'Skin',
+          icon: Icons.palette,
+          configKey: 'skinColor',
+          parts: _skinParts(),
+        ),
+        _AvatarCategory(
+          label: 'Glasses',
+          icon: Icons.remove_red_eye,
+          configKey: 'glasses',
+          parts: _glassesParts(5),
+        ),
+        _AvatarCategory(
+          label: 'Accessories',
+          icon: Icons.radio_button_unchecked,
+          configKey: 'earrings',
+          parts: _earringsParts(4),
+        ),
+        _AvatarCategory(
+          label: 'Features',
+          icon: Icons.auto_awesome,
+          configKey: 'feature',
+          parts: _featureParts(4),
+        ),
+      ],
 
-    // -- Features (5 options incl. none) --
-    _AvatarCategory(
-      label: 'Features',
-      icon: Icons.auto_awesome,
-      configKey: 'feature',
-      parts: AvatarFeature.values
-          .map(
-            (f) =>
-                _AvatarPart(id: 'feature_${f.name}', label: f.label, price: 0),
-          )
-          .toList(),
-    ),
+      // -----------------------------------------------------------------------
+      // Bottts — robot: 13 eyes, 9 mouth, 9 top (brows key), 7 sides
+      //   (hair key, no 'none'), body colour (skin key). No hair/skin colours.
+      // -----------------------------------------------------------------------
+      AvatarStyle.bottts => [
+        _AvatarCategory(
+          label: 'Eyes',
+          icon: Icons.visibility,
+          configKey: 'eyes',
+          parts: _eyesParts(13),
+        ),
+        _AvatarCategory(
+          label: 'Mouth',
+          icon: Icons.mood,
+          configKey: 'mouth',
+          parts: _mouthParts(9),
+        ),
+        _AvatarCategory(
+          label: 'Top',
+          icon: Icons.arrow_upward,
+          configKey: 'eyebrows',
+          parts: _browsParts(9),
+        ),
+        _AvatarCategory(
+          label: 'Sides',
+          icon: Icons.pan_tool,
+          configKey: 'hair',
+          parts: _hairParts(7, includeNone: false),
+        ),
+        _AvatarCategory(
+          label: 'Color',
+          icon: Icons.palette,
+          configKey: 'skinColor',
+          parts: _skinParts(),
+        ),
+      ],
+
+      // -----------------------------------------------------------------------
+      // Notionists — line-art style: no skin/hair colours. 5 eyes, 13 brows,
+      //   30 lips (mouth key), 63 hair, 11 glasses (enum 6), plus extras for
+      //   body (25), gesture (10), nose (20), beard (12+none).
+      // -----------------------------------------------------------------------
+      AvatarStyle.notionists => [
+        _AvatarCategory(
+          label: 'Eyes',
+          icon: Icons.visibility,
+          configKey: 'eyes',
+          parts: _eyesParts(5),
+        ),
+        _AvatarCategory(
+          label: 'Brows',
+          icon: Icons.remove,
+          configKey: 'eyebrows',
+          parts: _browsParts(13),
+        ),
+        _AvatarCategory(
+          label: 'Lips',
+          icon: Icons.mood,
+          configKey: 'mouth',
+          parts: _mouthParts(30),
+        ),
+        _AvatarCategory(
+          label: 'Hair',
+          icon: Icons.content_cut,
+          configKey: 'hair',
+          parts: _hairParts(46),
+        ),
+        _AvatarCategory(
+          label: 'Glasses',
+          icon: Icons.remove_red_eye,
+          configKey: 'glasses',
+          parts: _glassesParts(5),
+        ),
+        _AvatarCategory(
+          label: 'Body',
+          icon: Icons.checkroom,
+          configKey: 'extras_body',
+          parts: _extrasParts('body', 25),
+        ),
+        _AvatarCategory(
+          label: 'Gesture',
+          icon: Icons.waving_hand,
+          configKey: 'extras_gesture',
+          parts: _extrasParts('gesture', 10),
+        ),
+        _AvatarCategory(
+          label: 'Nose',
+          icon: Icons.face,
+          configKey: 'extras_nose',
+          parts: _extrasParts('nose', 20),
+        ),
+        _AvatarCategory(
+          label: 'Beard',
+          icon: Icons.auto_awesome,
+          configKey: 'extras_beard',
+          parts: _extrasParts('beard', 12, hasNone: true),
+        ),
+      ],
+
+      // -----------------------------------------------------------------------
+      // Open Peeps — 48 head (hair key), 30 face expressions (eyes key),
+      //   8 accessories (glasses key), 16 facial hair (feature key)
+      // -----------------------------------------------------------------------
+      AvatarStyle.openPeeps => [
+        _AvatarCategory(
+          label: 'Hair',
+          icon: Icons.content_cut,
+          configKey: 'hair',
+          parts: _hairParts(46),
+        ),
+        _AvatarCategory(
+          label: 'Expression',
+          icon: Icons.visibility,
+          configKey: 'eyes',
+          parts: _eyesParts(26),
+        ),
+        _AvatarCategory(
+          label: 'Accessories',
+          icon: Icons.remove_red_eye,
+          configKey: 'glasses',
+          parts: _glassesParts(5),
+        ),
+        _AvatarCategory(
+          label: 'Facial Hair',
+          icon: Icons.auto_awesome,
+          configKey: 'feature',
+          parts: _featureParts(4),
+        ),
+        _AvatarCategory(
+          label: 'Skin',
+          icon: Icons.palette,
+          configKey: 'skinColor',
+          parts: _skinParts(),
+        ),
+      ],
+
+      // -----------------------------------------------------------------------
+      // Thumbs — 36 eyes (26 enum), 5 mouth, 5 face (hair key, no none),
+      //   body colour (skin key), accent colour (hair colour key)
+      // -----------------------------------------------------------------------
+      AvatarStyle.thumbs => [
+        _AvatarCategory(
+          label: 'Eyes',
+          icon: Icons.visibility,
+          configKey: 'eyes',
+          parts: _eyesParts(26),
+        ),
+        _AvatarCategory(
+          label: 'Mouth',
+          icon: Icons.mood,
+          configKey: 'mouth',
+          parts: _mouthParts(5),
+        ),
+        _AvatarCategory(
+          label: 'Face',
+          icon: Icons.face,
+          configKey: 'hair',
+          parts: _hairParts(5, includeNone: false),
+        ),
+        _AvatarCategory(
+          label: 'Color',
+          icon: Icons.palette,
+          configKey: 'skinColor',
+          parts: _skinParts(),
+        ),
+        _AvatarCategory(
+          label: 'Accent',
+          icon: Icons.color_lens,
+          configKey: 'hairColor',
+          parts: _hairColorParts(),
+        ),
+      ],
+    },
   ];
 }
 
@@ -227,11 +711,20 @@ List<_AvatarCategory> _buildCategories() {
 /// Creates an [AvatarConfig] with one category option swapped from [base].
 ///
 /// Used to generate mini avatar previews for each selectable part card.
+/// Supports both standard enum-based categories and extras-based categories.
 AvatarConfig _previewConfig(
   AvatarConfig base,
   String categoryKey,
   String partId,
 ) {
+  // Extras: configKey = 'extras_body', partId = 'extras_body_5'.
+  if (categoryKey.startsWith('extras_')) {
+    final extrasKey = categoryKey.substring(7);
+    final idxStr = partId.substring(partId.lastIndexOf('_') + 1);
+    final idx = int.parse(idxStr);
+    return base.copyWith(extras: {...base.extras, extrasKey: idx});
+  }
+
   final suffix = partId.substring(partId.indexOf('_') + 1);
   return switch (categoryKey) {
     'style' => base.copyWith(
@@ -290,14 +783,14 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
   /// Index of the active category tab.
   int _selectedCategory = 0;
 
-  /// Cached category list (built once).
-  late final List<_AvatarCategory> _categories;
+  /// Category list — rebuilt when the active style changes.
+  late List<_AvatarCategory> _categories;
 
   @override
   void initState() {
     super.initState();
     _config = ref.read(accountProvider).avatar;
-    _categories = _buildCategories();
+    _categories = _buildCategoriesForStyle(_config.style);
   }
 
   // ---------------------------------------------------------------------------
@@ -306,41 +799,53 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
 
   /// Returns the currently selected part id for the given [categoryKey].
   String _selectedPartForCategory(String categoryKey) {
-    switch (categoryKey) {
-      case 'style':
-        return 'style_${_config.style.name}';
-      case 'eyes':
-        return 'eyes_${_config.eyes.name}';
-      case 'eyebrows':
-        return 'eyebrows_${_config.eyebrows.name}';
-      case 'mouth':
-        return 'mouth_${_config.mouth.name}';
-      case 'hair':
-        return 'hair_${_config.hair.name}';
-      case 'hairColor':
-        return 'hairColor_${_config.hairColor.name}';
-      case 'skinColor':
-        return 'skinColor_${_config.skinColor.name}';
-      case 'glasses':
-        return 'glasses_${_config.glasses.name}';
-      case 'earrings':
-        return 'earrings_${_config.earrings.name}';
-      case 'feature':
-        return 'feature_${_config.feature.name}';
-      default:
-        return '';
+    // Extras categories: configKey = 'extras_body' → 'extras_body_<idx>'.
+    if (categoryKey.startsWith('extras_')) {
+      final extrasKey = categoryKey.substring(7);
+      return 'extras_${extrasKey}_${_config.extra(extrasKey)}';
     }
+    return switch (categoryKey) {
+      'style' => 'style_${_config.style.name}',
+      'eyes' => 'eyes_${_config.eyes.name}',
+      'eyebrows' => 'eyebrows_${_config.eyebrows.name}',
+      'mouth' => 'mouth_${_config.mouth.name}',
+      'hair' => 'hair_${_config.hair.name}',
+      'hairColor' => 'hairColor_${_config.hairColor.name}',
+      'skinColor' => 'skinColor_${_config.skinColor.name}',
+      'glasses' => 'glasses_${_config.glasses.name}',
+      'earrings' => 'earrings_${_config.earrings.name}',
+      'feature' => 'feature_${_config.feature.name}',
+      _ => '',
+    };
   }
 
   /// Updates `_config` so that [categoryKey] now points to [partId].
   void _selectPart(String categoryKey, String partId) {
     setState(() {
+      // Extras categories: configKey = 'extras_body', partId = 'extras_body_5'.
+      if (categoryKey.startsWith('extras_')) {
+        final extrasKey = categoryKey.substring(7);
+        final idxStr = partId.substring(partId.lastIndexOf('_') + 1);
+        final idx = int.parse(idxStr);
+        final newExtras = Map<String, int>.from(_config.extras);
+        newExtras[extrasKey] = idx;
+        _config = _config.copyWith(extras: newExtras);
+        return;
+      }
+
       final suffix = partId.substring(partId.indexOf('_') + 1);
       switch (categoryKey) {
         case 'style':
-          _config = _config.copyWith(
-            style: AvatarStyle.values.firstWhere((v) => v.name == suffix),
+          final newStyle = AvatarStyle.values.firstWhere(
+            (v) => v.name == suffix,
           );
+          _config = _config.copyWith(style: newStyle);
+          // Rebuild categories for the new style. Keep the tab on "Style" (0)
+          // because the user just changed it and should see the new selection.
+          _categories = _buildCategoriesForStyle(newStyle);
+          if (_selectedCategory >= _categories.length) {
+            _selectedCategory = 0;
+          }
         case 'eyes':
           _config = _config.copyWith(
             eyes: AvatarEyes.values.firstWhere((v) => v.name == suffix),
