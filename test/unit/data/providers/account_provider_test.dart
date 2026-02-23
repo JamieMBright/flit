@@ -54,5 +54,23 @@ void main() {
       expect(notifier.state.avatar, equals(avatar));
       notifier.dispose();
     });
+
+    test('spendCoins supports explicit source/logActivity flags', () {
+      final notifier = AccountNotifier();
+      notifier.switchAccount(
+        notifier.state.currentPlayer.copyWith(id: 'u1', username: 'pilot'),
+      );
+      notifier.addCoins(100, applyBoost: false, source: 'test_grant');
+
+      final spent = notifier.spendCoins(
+        25,
+        source: 'test_purchase',
+        logActivity: false,
+      );
+
+      expect(spent, isTrue);
+      expect(notifier.state.currentPlayer.coins, equals(75));
+      notifier.dispose();
+    });
   });
 }

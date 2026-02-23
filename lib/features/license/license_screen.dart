@@ -163,7 +163,9 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
       );
       _isRolling = false;
     });
-    ref.read(accountProvider.notifier).spendCoins(_totalCost);
+    ref
+        .read(accountProvider.notifier)
+        .spendCoins(_totalCost, source: 'license_screen_reroll');
     // Persist the rerolled license to the account provider.
     ref.read(accountProvider.notifier).updateLicense(_license);
   }

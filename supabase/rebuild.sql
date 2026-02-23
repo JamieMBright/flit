@@ -302,7 +302,40 @@ END $$;
 
 
 -- ---------------------------------------------------------------------------
--- 5. FRIENDSHIPS — friend connections between players
+-- 5. COIN_ACTIVITY — coin movement audit log
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS public.coin_activity (
+  id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  username      TEXT NOT NULL,
+  coin_amount   INT NOT NULL,
+  source        TEXT NOT NULL,
+  balance_after INT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_coin_activity_user_time
+  ON public.coin_activity (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_coin_activity_source_time
+  ON public.coin_activity (source, created_at DESC);
+
+ALTER TABLE public.coin_activity ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'coin_activity' AND policyname = 'Users can read own coin activity'
+  ) THEN
+    CREATE POLICY "Users can read own coin activity"
+      ON public.coin_activity FOR SELECT USING (auth.uid() = user_id);
+    CREATE POLICY "Users can insert own coin activity"
+      ON public.coin_activity FOR INSERT WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
+
+
+-- ---------------------------------------------------------------------------
+-- 6. FRIENDSHIPS — friend connections between players
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS public.friendships (
@@ -345,7 +378,7 @@ END $$;
 
 
 -- ---------------------------------------------------------------------------
--- 6. CHALLENGES — H2H dogfight matches
+-- 7. CHALLENGES — H2H dogfight matches
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS public.challenges (
@@ -391,7 +424,7 @@ END $$;
 
 
 -- ---------------------------------------------------------------------------
--- 7. MATCHMAKING_POOL — async challengerless matchmaking
+-- 8. MATCHMAKING_POOL — async challengerless matchmaking
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS public.matchmaking_pool (
@@ -669,6 +702,8 @@ SET search_path = public
 AS $$
 DECLARE
   v_role TEXT;
+  v_target_username TEXT;
+  v_new_balance INT;
 BEGIN
   -- Look up caller's admin role.
   SELECT admin_role INTO v_role
@@ -704,6 +739,26 @@ BEGIN
     'UPDATE public.profiles SET %I = %I + $1 WHERE id = $2',
     stat_column, stat_column
   ) USING amount, target_user_id;
+
+  IF stat_column = 'coins' THEN
+    SELECT username, coins INTO v_target_username, v_new_balance
+    FROM public.profiles
+    WHERE id = target_user_id;
+
+    INSERT INTO public.coin_activity (
+      user_id,
+      username,
+      coin_amount,
+      source,
+      balance_after
+    ) VALUES (
+      target_user_id,
+      COALESCE(NULLIF(v_target_username, ''), target_user_id::TEXT),
+      amount,
+      'admin_gift',
+      v_new_balance
+    );
+  END IF;
 END;
 $$;
 
@@ -946,6 +1001,8 @@ DECLARE
   v_sender_coins INT;
   v_recipient_coins INT;
   v_sender_balance INT;
+  v_sender_username TEXT;
+  v_recipient_username TEXT;
 BEGIN
   IF p_amount <= 0 THEN
     RETURN jsonb_build_object('success', false, 'error', 'Invalid amount');
@@ -975,6 +1032,37 @@ BEGIN
   v_sender_balance := v_sender_coins - p_amount;
   UPDATE public.profiles SET coins = v_sender_balance WHERE id = p_sender_id;
   UPDATE public.profiles SET coins = v_recipient_coins + p_amount WHERE id = p_recipient_id;
+
+  SELECT username INTO v_sender_username FROM public.profiles WHERE id = p_sender_id;
+  SELECT username INTO v_recipient_username FROM public.profiles WHERE id = p_recipient_id;
+
+  INSERT INTO public.coin_activity (
+    user_id,
+    username,
+    coin_amount,
+    source,
+    balance_after
+  ) VALUES (
+    p_sender_id,
+    COALESCE(NULLIF(v_sender_username, ''), p_sender_id::TEXT),
+    -p_amount,
+    'gift_sent',
+    v_sender_balance
+  );
+
+  INSERT INTO public.coin_activity (
+    user_id,
+    username,
+    coin_amount,
+    source,
+    balance_after
+  ) VALUES (
+    p_recipient_id,
+    COALESCE(NULLIF(v_recipient_username, ''), p_recipient_id::TEXT),
+    p_amount,
+    'gift_received',
+    v_recipient_coins + p_amount
+  );
 
   RETURN jsonb_build_object('success', true,
     'sender_balance', v_sender_balance,
