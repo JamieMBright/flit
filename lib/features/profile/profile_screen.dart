@@ -645,7 +645,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(width: 8),
           IconButton(
             tooltip: 'Refresh profile',
-            onPressed: _refreshProfile,
+            onPressed: _isRefreshingProfile ? null : _refreshProfile,
             icon: _isRefreshingProfile
                 ? const SizedBox(
                     width: 18,
