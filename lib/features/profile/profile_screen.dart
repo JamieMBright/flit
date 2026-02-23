@@ -59,6 +59,8 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _isRefreshingProfile = false;
+
   @override
   void initState() {
     super.initState();
@@ -67,6 +69,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _openSettings() => showSettingsSheet(context);
+
+  Future<void> _refreshProfile() async {
+    if (_isRefreshingProfile) return;
+    setState(() => _isRefreshingProfile = true);
+    try {
+      await ref.read(accountProvider.notifier).refreshFromServer();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile refreshed from server'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      debugPrint('[ProfileScreen] refresh failed: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to refresh profile. Please try again.'),
+          backgroundColor: FlitColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isRefreshingProfile = false);
+    }
+  }
 
   void _editProfile() {
     final currentPlayer = ref.read(accountProvider).currentPlayer;
@@ -615,6 +643,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         actions: [
           const SyncStatusIndicator(),
           const SizedBox(width: 8),
+          IconButton(
+            tooltip: 'Refresh profile',
+            onPressed: _isRefreshingProfile ? null : _refreshProfile,
+            icon: _isRefreshingProfile
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: _openSettings,

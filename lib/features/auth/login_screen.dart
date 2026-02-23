@@ -49,9 +49,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (result.isAuthenticated && result.player != null) {
         final notifier = ref.read(accountProvider.notifier);
-        await notifier.loadFromSupabase(result.player!.id);
-        if (notifier.state.currentPlayer.id != result.player!.id) {
-          notifier.switchAccount(result.player!);
+        final loaded = await notifier.loadFromSupabase(result.player!.id);
+        if (!loaded) {
+          setState(
+            () => _error =
+                'Could not load your cloud save. Check your connection and try again.',
+          );
+          return;
         }
         if (mounted) _navigateToHome();
       }
@@ -608,9 +612,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       } else if (result.isAuthenticated && result.player != null) {
         TextInput.finishAutofillContext();
         final notifier = ref.read(accountProvider.notifier);
-        await notifier.loadFromSupabase(result.player!.id);
-        if (notifier.state.currentPlayer.id != result.player!.id) {
-          notifier.switchAccount(result.player!);
+        final loaded = await notifier.loadFromSupabase(result.player!.id);
+        if (!loaded) {
+          setState(
+            () => _error =
+                'Could not load your cloud save. Check your connection and try again.',
+          );
+          return;
         }
         if (mounted) _navigateToHome();
       } else if (result.error != null) {
@@ -648,9 +656,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (result.isAuthenticated && result.player != null) {
         TextInput.finishAutofillContext();
         final notifier = ref.read(accountProvider.notifier);
-        await notifier.loadFromSupabase(result.player!.id);
-        if (notifier.state.currentPlayer.id != result.player!.id) {
-          notifier.switchAccount(result.player!);
+        final loaded = await notifier.loadFromSupabase(result.player!.id);
+        if (!loaded) {
+          setState(
+            () => _error =
+                'Could not load your cloud save. Check your connection and try again.',
+          );
+          return;
         }
         if (mounted) _navigateToHome();
       } else if (result.error != null) {
