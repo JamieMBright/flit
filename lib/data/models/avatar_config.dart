@@ -292,6 +292,8 @@ class AvatarConfig {
     this.feature = AvatarFeature.none,
     this.companion = AvatarCompanion.none,
     this.extras = const {},
+    this.customColors = const {},
+    this.equippedCustomColors = const {},
   });
 
   final AvatarStyle style;
@@ -311,6 +313,12 @@ class AvatarConfig {
   /// Used for categories that only exist for certain styles (e.g. Notionists
   /// 'body' or 'gesture') and have no dedicated enum field.
   final Map<String, int> extras;
+
+  /// Purchased custom colors keyed by feature (for example: `eyesColor`).
+  final Map<String, String> customColors;
+
+  /// Currently equipped color overrides keyed by feature.
+  final Map<String, String> equippedCustomColors;
 
   // ---------------------------------------------------------------------------
   // Copy
@@ -332,6 +340,8 @@ class AvatarConfig {
     AvatarFeature? feature,
     AvatarCompanion? companion,
     Map<String, int>? extras,
+    Map<String, String>? customColors,
+    Map<String, String>? equippedCustomColors,
   }) => AvatarConfig(
     style: style ?? this.style,
     eyes: eyes ?? this.eyes,
@@ -345,7 +355,18 @@ class AvatarConfig {
     feature: feature ?? this.feature,
     companion: companion ?? this.companion,
     extras: extras ?? this.extras,
+    customColors: customColors ?? this.customColors,
+    equippedCustomColors: equippedCustomColors ?? this.equippedCustomColors,
   );
+
+  String colorOverride(String key, String fallbackHex) {
+    final raw = equippedCustomColors[key];
+    if (raw == null) return fallbackHex;
+    final cleaned = raw.toLowerCase().replaceAll('#', '');
+    if (cleaned.length != 6) return fallbackHex;
+    final isHex = RegExp(r'^[0-9a-f]{6}$').hasMatch(cleaned);
+    return isHex ? '#$cleaned' : fallbackHex;
+  }
 
   // ---------------------------------------------------------------------------
   // DiceBear URL builder
@@ -553,6 +574,9 @@ class AvatarConfig {
     'feature': feature.name,
     'companion': companion.name,
     if (extras.isNotEmpty) 'extras': extras,
+    if (customColors.isNotEmpty) 'custom_colors': customColors,
+    if (equippedCustomColors.isNotEmpty)
+      'equipped_custom_colors': equippedCustomColors,
   };
 
   factory AvatarConfig.fromJson(Map<String, dynamic> json) => AvatarConfig(
@@ -605,6 +629,16 @@ class AvatarConfig {
           (k, v) => MapEntry(k, v as int),
         ) ??
         const {},
+    customColors:
+        (json['custom_colors'] as Map<String, dynamic>?)?.map(
+          (k, v) => MapEntry(k, v.toString()),
+        ) ??
+        const {},
+    equippedCustomColors:
+        (json['equipped_custom_colors'] as Map<String, dynamic>?)?.map(
+          (k, v) => MapEntry(k, v.toString()),
+        ) ??
+        const {},
   );
 
   @override
@@ -622,11 +656,23 @@ class AvatarConfig {
           earrings == other.earrings &&
           feature == other.feature &&
           companion == other.companion &&
-          _mapEquals(extras, other.extras);
+          _mapEquals(extras, other.extras) &&
+          _stringMapEquals(customColors, other.customColors) &&
+          _stringMapEquals(equippedCustomColors, other.equippedCustomColors);
 
   static bool _mapEquals(Map<String, int> a, Map<String, int> b) {
     if (a.length != b.length) return false;
     for (final key in a.keys) {
+      if (!b.containsKey(key)) return false;
+      if (a[key] != b[key]) return false;
+    }
+    return true;
+  }
+
+  static bool _stringMapEquals(Map<String, String> a, Map<String, String> b) {
+    if (a.length != b.length) return false;
+    for (final key in a.keys) {
+      if (!b.containsKey(key)) return false;
       if (a[key] != b[key]) return false;
     }
     return true;
@@ -646,5 +692,9 @@ class AvatarConfig {
     feature,
     companion,
     Object.hashAll(extras.entries.map((e) => Object.hash(e.key, e.value))),
+    Object.hashAll(customColors.entries.map((e) => Object.hash(e.key, e.value))),
+    Object.hashAll(
+      equippedCustomColors.entries.map((e) => Object.hash(e.key, e.value)),
+    ),
   );
 }

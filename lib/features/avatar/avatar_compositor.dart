@@ -294,7 +294,10 @@ class AvatarCompositor {
         ? ''
         : _pick(avataaarsTop, config.hair.index, 5)
               .replaceAll('{{HAIR_COLOR}}', hairHex)
-              .replaceAll('{{HAT_COLOR}}', _hashColor(sh, 44));
+              .replaceAll(
+                '{{HAT_COLOR}}',
+                config.colorOverride('hatColor', _hashColor(sh, 44)),
+              );
 
     final buf = StringBuffer()
       ..write('<svg xmlns="http://www.w3.org/2000/svg" ')
@@ -459,7 +462,10 @@ class AvatarCompositor {
       loreleiEyes,
       config.eyes.index,
       4,
-    ).replaceAll('{{EYES_COLOR}}', '#000000');
+    ).replaceAll(
+      '{{EYES_COLOR}}',
+      config.colorOverride('eyesColor', '#000000'),
+    );
     final nose = _pick(
       loreleiNose,
       strH,
@@ -475,14 +481,20 @@ class AvatarCompositor {
             loreleiGlasses,
             config.glasses.index,
             7,
-          ).replaceAll('{{GLASSES_COLOR}}', '#4a4a4a');
+          ).replaceAll(
+            '{{GLASSES_COLOR}}',
+            config.colorOverride('glassesColor', '#4a4a4a'),
+          );
     final earrings = config.earrings == AvatarEarrings.none
         ? ''
         : _pick(
             loreleiEarrings,
             config.earrings.index,
             8,
-          ).replaceAll('{{EARRINGS_COLOR}}', '#d4af37');
+          ).replaceAll(
+            '{{EARRINGS_COLOR}}',
+            config.colorOverride('earringsColor', '#d4af37'),
+          );
     final hair = config.hair == AvatarHair.none
         ? ''
         : _pick(
@@ -496,7 +508,10 @@ class AvatarCompositor {
             loreleiHairAccessories,
             sh,
             10,
-          ).replaceAll('{{HAIRACCESSORIES_COLOR}}', _hashColor(sh, 55));
+          ).replaceAll(
+            '{{HAIRACCESSORIES_COLOR}}',
+            config.colorOverride('hairAccessoriesColor', _hashColor(sh, 55)),
+          );
     // Beard only for mustache feature.
     final beard = config.feature == AvatarFeature.mustache
         ? _pick(loreleiBeard, sh, 11)
@@ -561,9 +576,11 @@ class AvatarCompositor {
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
     // Pick a natural eye color that varies with the eyes selection only.
-    final eyeColor =
-        _naturalEyeColors[(config.eyes.index * 3) % _naturalEyeColors.length];
-    final shirtColor = _hashColor(strH, 77);
+    final eyeColor = config.colorOverride(
+      'eyesColor',
+      _naturalEyeColors[(config.eyes.index * 3) % _naturalEyeColors.length],
+    );
+    final shirtColor = config.colorOverride('shirtColor', _hashColor(strH, 77));
     // Eye shadow: slightly darker/muted version via hash.
     final eyeShadow = _hashColor(strH, 88);
     // Mouth color: pick from natural lip palette based on skin tone.
@@ -577,7 +594,10 @@ class AvatarCompositor {
             micahGlasses,
             config.glasses.index,
             10,
-          ).replaceAll('{{GLASSES_COLOR}}', '#4a4a4a');
+          ).replaceAll(
+            '{{GLASSES_COLOR}}',
+            config.colorOverride('glassesColor', '#4a4a4a'),
+          );
     // Micah facialHair: controlled by feature selection instead of locked to
     // style hash. 'none' feature = clean-shaven; other features cycle through
     // facial hair variants. This gives users control over stubble/beard.
@@ -619,7 +639,10 @@ class AvatarCompositor {
             micahEarrings,
             config.earrings.index,
             8,
-          ).replaceAll('{{EARRING_COLOR}}', '#d4af37');
+          ).replaceAll(
+            '{{EARRING_COLOR}}',
+            config.colorOverride('earringColor', '#d4af37'),
+          );
     final shirt = _pick(
       micahShirt,
       strH,
@@ -658,14 +681,20 @@ class AvatarCompositor {
     final strH = _structuralHash(config);
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
-    final eyeColor = _hashColor(config.eyes.index * 41, 33);
-    final accColor = _hashColor(sh, 55);
+    final eyeColor = config.colorOverride(
+      'eyesColor',
+      _hashColor(config.eyes.index * 41, 33),
+    );
+    final accColor = config.colorOverride('accessoriesColor', _hashColor(sh, 55));
 
     final clothing = _pick(
       pixelartClothing,
       strH,
       1,
-    ).replaceAll('{{CLOTHING_COLOR}}', _hashColor(strH, 66));
+    ).replaceAll(
+      '{{CLOTHING_COLOR}}',
+      config.colorOverride('clothingColor', _hashColor(strH, 66)),
+    );
     final eyes = _pick(
       pixelartEyes,
       config.eyes.index,
@@ -675,7 +704,10 @@ class AvatarCompositor {
       pixelartMouth,
       config.mouth.index,
       3,
-    ).replaceAll('{{MOUTH_COLOR}}', '#d2691e');
+    ).replaceAll(
+      '{{MOUTH_COLOR}}',
+      config.colorOverride('mouthColor', '#d2691e'),
+    );
     final hair = config.hair == AvatarHair.none
         ? ''
         : _pick(
@@ -695,12 +727,18 @@ class AvatarCompositor {
             pixelartGlasses,
             config.glasses.index,
             6,
-          ).replaceAll('{{GLASSES_COLOR}}', '#4a4a4a');
+          ).replaceAll(
+            '{{GLASSES_COLOR}}',
+            config.colorOverride('glassesColor', '#4a4a4a'),
+          );
     final hat = _pick(
       pixelartHat,
       sh,
       7,
-    ).replaceAll('{{HAT_COLOR}}', _hashColor(sh, 44));
+    ).replaceAll(
+      '{{HAT_COLOR}}',
+      config.colorOverride('hatColor', _hashColor(sh, 44)),
+    );
     final accessories = config.earrings == AvatarEarrings.none
         ? ''
         : _pick(
@@ -844,7 +882,10 @@ class AvatarCompositor {
     final strH = _structuralHash(config);
     final skinHex = '#${config.skinColor.hex}';
     final contrastHex = _darkenHex(skinHex, 0.8);
-    final clothingColor = _hashColor(strH, 77);
+    final clothingColor = config.colorOverride(
+      'clothingColor',
+      _hashColor(strH, 77),
+    );
 
     final head = _pick(openpeepsHead, config.hair.index, 1)
         .replaceAll('{{SKIN_COLOR}}', skinHex)
@@ -918,9 +959,15 @@ class AvatarCompositor {
     final shapeColor =
         _thumbsSkinColors[config.skinColor.index % _thumbsSkinColors.length];
     // Eye color varies with eyes selection only.
-    final eyeColor = _hashColor(config.eyes.index * 41, 30);
+    final eyeColor = config.colorOverride(
+      'eyesColor',
+      _hashColor(config.eyes.index * 41, 30),
+    );
     // Mouth color varies with mouth selection only.
-    final mouthColor = _hashColor(config.mouth.index * 61, 40);
+    final mouthColor = config.colorOverride(
+      'mouthColor',
+      _hashColor(config.mouth.index * 61, 40),
+    );
 
     // Thumbs uses width-matched variants for eyes. Pick a base variant
     // plus a width suffix. Width offsets: 10, 12, 14, 16.
