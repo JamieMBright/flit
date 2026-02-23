@@ -11,6 +11,9 @@ void main() {
 
       expect(loaded, isFalse);
       expect(notifier.state.currentPlayer.id, isEmpty);
+      expect(notifier.state.currentPlayer.level, equals(1));
+      expect(notifier.state.currentPlayer.coins, equals(0));
+      expect(notifier.state.currentPlayer.gamesPlayed, equals(0));
 
       notifier.dispose();
     });

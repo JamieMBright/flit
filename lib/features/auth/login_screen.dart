@@ -52,7 +52,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final loaded = await notifier.loadFromSupabase(result.player!.id);
         if (!loaded) {
           setState(
-            () => _error = 'Could not load your cloud save. Please try again.',
+            () => _error =
+                'Could not load your cloud save. Check your connection and try again.',
           );
           return;
         }
@@ -614,7 +615,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final loaded = await notifier.loadFromSupabase(result.player!.id);
         if (!loaded) {
           setState(
-            () => _error = 'Could not load your cloud save. Please try again.',
+            () => _error =
+                'Could not load your cloud save. Check your connection and try again.',
           );
           return;
         }
@@ -657,7 +659,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final loaded = await notifier.loadFromSupabase(result.player!.id);
         if (!loaded) {
           setState(
-            () => _error = 'Could not load your cloud save. Please try again.',
+            () => _error =
+                'Could not load your cloud save. Check your connection and try again.',
           );
           return;
         }

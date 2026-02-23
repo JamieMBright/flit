@@ -10,10 +10,13 @@
 -- =============================================================================
 
 -- 1) Current authoritative rows used by app login hydration.
-with target as (
+with params as (
+  select 'jamieb01'::text as username
+),
+target as (
   select id, username
   from public.profiles
-  where username = 'jamieb01'
+  where username = (select username from params)
   limit 1
 )
 select
@@ -54,10 +57,13 @@ left join public.account_state ac on ac.user_id = t.id;
 
 -- 2) Rebuild what can be inferred from game logs (scores/challenges).
 -- NOTE: this can recover best score/time and total rounds played from scores.
-with target as (
+with params as (
+  select 'jamieb01'::text as username
+),
+target as (
   select id
   from public.profiles
-  where username = 'jamieb01'
+  where username = (select username from params)
   limit 1
 ),
 score_agg as (
@@ -86,7 +92,7 @@ select
   null::int as inferred_coins_unavailable
 from public.profiles p
 left join score_agg sa on sa.user_id = p.id
-where p.username = 'jamieb01';
+where p.username = (select username from params);
 
 -- 3) Coin recovery note:
 -- Coins cannot be accurately reconstructed from scores/challenges alone because
