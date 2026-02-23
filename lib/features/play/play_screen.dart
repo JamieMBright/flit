@@ -1712,10 +1712,16 @@ class _ResultDialog extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Icon(
-                            _clueIcon(r.clueType),
-                            color: FlitColors.textMuted,
-                            size: 16,
+                          Tooltip(
+                            message: 'Clue type: ${r.clueType.name}',
+                            child: Semantics(
+                              label: 'Clue type: ${r.clueType.name}',
+                              child: Icon(
+                                _clueIcon(r.clueType),
+                                color: FlitColors.textMuted,
+                                size: 16,
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Text(
