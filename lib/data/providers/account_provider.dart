@@ -200,7 +200,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// user don't fire after the new user's data is loaded. Then loads
   /// profile, settings, avatar, license, cosmetics, and daily state in
   /// one parallel fetch. Also starts a periodic refresh timer.
-  Future<void> loadFromSupabase(String userId) async {
+  Future<bool> loadFromSupabase(String userId) async {
     // Clear stale dirty flags / pending payloads from a prior session.
     // This prevents a race where the old user's debounce timer fires
     // after the new user's data has been loaded.
@@ -225,13 +225,14 @@ class AccountNotifier extends StateNotifier<AccountState> {
     if (snapshot == null) {
       debugPrint(
         '[AccountNotifier] loadFromSupabase: all retries failed for $userId '
-        '— user will see default state',
+        '— aborting hydration',
       );
-      return;
+      return false;
     }
 
     await _applySnapshot(snapshot);
     _startPeriodicRefresh();
+    return true;
   }
 
   /// Apply a [UserPreferencesSnapshot] to in-memory state.
