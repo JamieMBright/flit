@@ -847,11 +847,16 @@ BEGIN
   SET owned_cosmetics = (
     SELECT ARRAY(
       SELECT DISTINCT unnest(owned_cosmetics || ARRAY[
-        'plane_stealth','plane_vintage','plane_jumbo','plane_fighter',
-        'plane_seaplane','plane_biplane','plane_concorde','plane_blackbird',
-        'plane_presidential','plane_ufo','plane_dragon','plane_santa',
-        'contrail_rainbow','contrail_fire','contrail_ice','contrail_neon',
-        'contrail_gold','contrail_aurora','contrail_shadow','contrail_glitch'
+        'plane_paper','plane_prop','plane_padraigaer','plane_seaplane',
+        'plane_jet','plane_red_baron','plane_rocket','plane_warbird',
+        'plane_night_raider','plane_concorde_classic','plane_stealth',
+        'plane_presidential','plane_golden_jet','plane_diamond_concorde',
+        'plane_platinum_eagle',
+        'contrail_fire','contrail_rainbow','contrail_sparkle','contrail_neon',
+        'contrail_gold_dust','contrail_aurora','contrail_chemtrails',
+        'companion_pidgey','companion_sparrow','companion_eagle',
+        'companion_parrot','companion_phoenix','companion_dragon',
+        'companion_charizard'
       ])
     )
   ),
