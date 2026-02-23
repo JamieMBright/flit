@@ -316,6 +316,12 @@ class AccountNotifier extends StateNotifier<AccountState> {
       // Flush pending writes first, then refresh.
       await _prefs.flush();
     }
+    if (_prefs.hasPendingWrites || _prefs.hasPendingOfflineWrites) {
+      // Don't hydrate from server while local writes are still pending/queued.
+      // Hydrating now can overwrite newer local state (e.g. post-game stats or
+      // avatar edits) with stale server rows before those writes are retried.
+      return;
+    }
 
     try {
       final snapshot = await _prefs.load(_userId!);
@@ -608,6 +614,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
   void updateAvatar(AvatarConfig config) {
     state = state.copyWith(avatar: config);
     _syncAccountState();
+    // Avatar edits are user-facing and should be persisted immediately.
+    _prefs.flush();
   }
 
   /// Purchase an avatar part. Returns true if successful.
