@@ -83,6 +83,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
       );
     } catch (e) {
+      debugPrint('[ProfileScreen] refresh failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
