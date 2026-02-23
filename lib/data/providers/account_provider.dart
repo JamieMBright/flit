@@ -611,11 +611,11 @@ class AccountNotifier extends StateNotifier<AccountState> {
   // --- Avatar ---
 
   /// Update the avatar configuration.
-  void updateAvatar(AvatarConfig config) {
+  Future<void> updateAvatar(AvatarConfig config) async {
     state = state.copyWith(avatar: config);
     _syncAccountState();
     // Avatar edits are user-facing and should be persisted immediately.
-    _prefs.flush();
+    await _prefs.flush();
   }
 
   /// Purchase an avatar part. Returns true if successful.

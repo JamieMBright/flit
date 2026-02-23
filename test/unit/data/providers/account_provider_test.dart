@@ -42,14 +42,14 @@ void main() {
       notifier.dispose();
     });
 
-    test('updateAvatar updates in-memory avatar config', () {
+    test('updateAvatar updates in-memory avatar config', () async {
       final notifier = AccountNotifier();
       const avatar = AvatarConfig(
         style: AvatarStyle.avataaars,
         eyes: AvatarEyes.variant05,
       );
 
-      notifier.updateAvatar(avatar);
+      await notifier.updateAvatar(avatar);
 
       expect(notifier.state.avatar, equals(avatar));
       notifier.dispose();
