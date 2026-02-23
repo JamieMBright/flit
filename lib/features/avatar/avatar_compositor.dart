@@ -282,10 +282,11 @@ class AvatarCompositor {
 
   static String? _composeAvataaars(AvatarConfig config) {
     final sh = _stableHash(config);
+    final strH = _structuralHash(config);
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
 
-    final nose = _pick(avataaarsNose, sh, 1);
+    final nose = _pick(avataaarsNose, strH, 1);
     final mouth = _pick(avataarsMouth, config.mouth.index, 2);
     final eyes = _pick(avataaarsEyes, config.eyes.index, 3);
     final eyebrows = _pick(avataaarsEyebrows, config.eyebrows.index, 4);
@@ -654,16 +655,17 @@ class AvatarCompositor {
 
   static String? _composePixelArt(AvatarConfig config) {
     final sh = _stableHash(config);
+    final strH = _structuralHash(config);
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
-    final eyeColor = _hashColor(sh, 33);
+    final eyeColor = _hashColor(config.eyes.index * 41, 33);
     final accColor = _hashColor(sh, 55);
 
     final clothing = _pick(
       pixelartClothing,
-      sh,
+      strH,
       1,
-    ).replaceAll('{{CLOTHING_COLOR}}', _hashColor(sh, 66));
+    ).replaceAll('{{CLOTHING_COLOR}}', _hashColor(strH, 66));
     final eyes = _pick(
       pixelartEyes,
       config.eyes.index,
@@ -792,8 +794,9 @@ class AvatarCompositor {
 
   static String? _composeNotionists(AvatarConfig config) {
     final sh = _stableHash(config);
+    final strH = _structuralHash(config);
 
-    final base = _pick(notionistsBase, sh, 1);
+    final base = _pick(notionistsBase, strH, 1);
     // Body and gesture are user-controllable via extras.
     final body = _pickDirect(notionistsBody, config.extra('body'));
     final hair = _pick(notionistsHair, config.hair.index, 3);
