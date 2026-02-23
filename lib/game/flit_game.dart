@@ -1418,6 +1418,9 @@ class FlitGame extends FlameGame
   @override
   void onTapUp(TapUpInfo info) {
     if (!_isPlaying) return;
+    final tapY = info.eventPosition.widget.y;
+    final tapBlockTop = size.y * 0.82;
+    if (tapY >= tapBlockTop) return;
 
     // Convert screen tap to globe lat/lng.
     Vector2? latLng;

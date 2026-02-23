@@ -44,12 +44,26 @@ class FriendsService {
           })
         >
       >(const Duration(seconds: 60));
+  // Product rule: friend invites (incoming + sent pending) expire after 3 days.
+  static const Duration _inviteExpiry = Duration(days: 3);
 
   /// Drop cached friends/pending data. Called automatically after mutations.
   void invalidateCache() {
     _friendsCache.invalidate();
     _pendingCache.invalidate();
     _sentCache.invalidate();
+  }
+
+  bool _isExpiredCreatedAt(String? raw) {
+    if (raw == null || raw.isEmpty) return false;
+    final created = DateTime.tryParse(raw);
+    if (created == null) return false;
+    return DateTime.now().toUtc().difference(created.toUtc()) > _inviteExpiry;
+  }
+
+  @visibleForTesting
+  bool isInviteExpiredForTest(String? createdAt) {
+    return _isExpiredCreatedAt(createdAt);
   }
 
   // ---------------------------------------------------------------------------
@@ -281,22 +295,46 @@ class FriendsService {
       final data = await _client
           .from('friendships')
           .select(
-            'id, requester_id, '
+            'id, requester_id, created_at, '
             'requester:profiles!friendships_requester_id_fkey(id, username, display_name, avatar_url)',
           )
           .eq('addressee_id', _userId!)
           .eq('status', 'pending');
 
+      final expiredIds = <int>[];
       final result = data.map((row) {
+        if (_isExpiredCreatedAt(row['created_at'] as String?)) {
+          expiredIds.add((row['id'] as num).toInt());
+          return null;
+        }
         final profile = row['requester'] as Map<String, dynamic>;
         return (
-          friendshipId: row['id'] as int,
+          friendshipId: (row['id'] as num).toInt(),
           requesterId: profile['id'] as String,
           username: profile['username'] as String? ?? 'Unknown',
           displayName: profile['display_name'] as String?,
           avatarUrl: profile['avatar_url'] as String?,
         );
-      }).toList();
+      }).whereType<
+        ({
+          int friendshipId,
+          String requesterId,
+          String username,
+          String? displayName,
+          String? avatarUrl,
+        })
+      >().toList();
+
+      if (expiredIds.isNotEmpty) {
+        try {
+          await _client
+              .from('friendships')
+              .delete()
+              .inFilter('id', expiredIds);
+        } catch (e) {
+          debugPrint('[FriendsService] pending expiry cleanup failed: $e');
+        }
+      }
 
       _pendingCache.set(cacheKey, result);
       return result;
@@ -329,22 +367,46 @@ class FriendsService {
       final data = await _client
           .from('friendships')
           .select(
-            'id, addressee_id, '
+            'id, addressee_id, created_at, '
             'addressee:profiles!friendships_addressee_id_fkey(id, username, display_name, avatar_url)',
           )
           .eq('requester_id', _userId!)
           .eq('status', 'pending');
 
+      final expiredIds = <int>[];
       final result = data.map((row) {
+        if (_isExpiredCreatedAt(row['created_at'] as String?)) {
+          expiredIds.add((row['id'] as num).toInt());
+          return null;
+        }
         final profile = row['addressee'] as Map<String, dynamic>;
         return (
-          friendshipId: row['id'] as int,
+          friendshipId: (row['id'] as num).toInt(),
           addresseeId: profile['id'] as String,
           username: profile['username'] as String? ?? 'Unknown',
           displayName: profile['display_name'] as String?,
           avatarUrl: profile['avatar_url'] as String?,
         );
-      }).toList();
+      }).whereType<
+        ({
+          int friendshipId,
+          String addresseeId,
+          String username,
+          String? displayName,
+          String? avatarUrl,
+        })
+      >().toList();
+
+      if (expiredIds.isNotEmpty) {
+        try {
+          await _client
+              .from('friendships')
+              .delete()
+              .inFilter('id', expiredIds);
+        } catch (e) {
+          debugPrint('[FriendsService] sent expiry cleanup failed: $e');
+        }
+      }
 
       _sentCache.set(cacheKey, result);
       return result;

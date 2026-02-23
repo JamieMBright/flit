@@ -599,7 +599,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// Record a completed game session — updates all relevant stats in one call.
   ///
   /// Licence bonuses always apply (there is no unlicensed flight mode).
-  void recordGameCompletion({
+  Future<void> recordGameCompletion({
     required Duration elapsed,
     required int score,
     required int roundsCompleted,
@@ -621,7 +621,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     }
 
     // Persist individual game result to scores table.
-    _prefs.saveGameResult(
+    await _prefs.saveGameResult(
       score: score,
       timeMs: elapsed.inMilliseconds,
       region: region,
@@ -631,7 +631,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // Flush all pending writes immediately — game completion is a critical
     // save point. Without this, debounced profile/account writes can be lost
     // if the user closes the browser tab within the 2-second debounce window.
-    _prefs.flush();
+    await _prefs.flush();
   }
 
   // --- Avatar ---

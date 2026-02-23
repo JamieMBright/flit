@@ -773,6 +773,70 @@ GRANT EXECUTE ON FUNCTION public.admin_increment_stat(UUID, TEXT, INT) TO authen
 GRANT EXECUTE ON FUNCTION public.admin_increment_stat(UUID, TEXT, INT) TO service_role;
 
 
+-- Atomic admin stat setter for absolute-value updates.
+-- Uses the same admin checks and allowlist as admin_increment_stat.
+CREATE OR REPLACE FUNCTION public.admin_set_stat(
+  target_user_id UUID,
+  stat_column TEXT,
+  new_value INT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_role TEXT;
+  v_target_username TEXT;
+BEGIN
+  SELECT admin_role INTO v_role
+  FROM public.profiles WHERE id = auth.uid();
+
+  IF v_role IS NULL THEN
+    RAISE EXCEPTION 'Permission denied: caller is not an admin';
+  END IF;
+
+  IF stat_column NOT IN ('coins', 'level', 'xp', 'games_played') THEN
+    RAISE EXCEPTION 'Invalid stat column: %', stat_column;
+  END IF;
+
+  IF new_value < 0 THEN
+    RAISE EXCEPTION 'Invalid stat value: must be >= 0';
+  END IF;
+
+  EXECUTE format(
+    'UPDATE public.profiles SET %I = $1 WHERE id = $2',
+    stat_column
+  ) USING new_value, target_user_id;
+
+  IF stat_column = 'coins' THEN
+    SELECT username INTO v_target_username
+    FROM public.profiles
+    WHERE id = target_user_id;
+
+    INSERT INTO public.coin_activity (
+      user_id,
+      username,
+      coin_amount,
+      source,
+      balance_after
+    ) VALUES (
+      target_user_id,
+      COALESCE(NULLIF(v_target_username, ''), target_user_id::TEXT),
+      -- Absolute set operation: store delta as 0 and use balance_after
+      -- for the authoritative post-set coin balance.
+      0,
+      'admin_set',
+      new_value
+    );
+  END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_set_stat(UUID, TEXT, INT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_set_stat(UUID, TEXT, INT) TO service_role;
+
+
 -- Admin: set another player's license data (bypasses RLS on account_state).
 -- Only owners can set licenses; moderators are denied.
 CREATE OR REPLACE FUNCTION public.admin_set_license(

@@ -132,6 +132,7 @@ class MatchmakingService {
     required int eloRating,
     required String playerName,
     String region = 'world',
+    String? myPoolEntryId,
   }) async {
     if (_userId == null) {
       return const MatchResult(matched: false);
@@ -222,6 +223,24 @@ class MatchmakingService {
 
       // 5. Mark both pool entries as matched.
       final now = DateTime.now().toUtc().toIso8601String();
+      final myEntryId =
+          myPoolEntryId ??
+          (await _client
+              .from('matchmaking_pool')
+              .select('id')
+              .eq('user_id', _userId!)
+              .eq('region', region)
+              .eq('gameplay_version', _gameplayVersion)
+              .isFilter('matched_at', null)
+              .order('created_at', ascending: true)
+              .limit(1)
+              .maybeSingle())?['id'] as String?;
+      if (myEntryId == null) {
+        debugPrint(
+          '[MatchmakingService] findMatch warning: caller pool entry missing; '
+          'opponent entry will be marked matched only',
+        );
+      }
 
       await _client
           .from('matchmaking_pool')
@@ -232,6 +251,17 @@ class MatchmakingService {
           })
           .eq('id', matchedEntryId);
 
+      if (myEntryId != null) {
+        await _client
+            .from('matchmaking_pool')
+            .update({
+              'matched_at': now,
+              'matched_with': matchedUserId,
+              'challenge_id': challengeId,
+            })
+            .eq('id', myEntryId);
+      }
+
       // 6. Auto-friend both players (fire-and-forget, ignore if already friends).
       _autoFriend(matchedUserId);
 
@@ -240,7 +270,7 @@ class MatchmakingService {
         opponentId: matchedUserId,
         opponentName: opponentName,
         challengeId: challengeId,
-        poolEntryId: matchedEntryId,
+        poolEntryId: myEntryId ?? matchedEntryId,
       );
     } catch (e) {
       debugPrint('[MatchmakingService] findMatch failed: $e');

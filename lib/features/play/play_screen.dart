@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
@@ -191,6 +192,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
   /// Per-round results for the summary screen.
   final List<_RoundResult> _roundResults = [];
+  final Random _sessionSeedRandom = Random();
+  bool _isCheckingProximity = false;
 
   @override
   void initState() {
@@ -428,6 +431,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         preferredClueType: widget.preferredClueType,
       );
     }
+    if (widget.region == GameRegion.world) {
+      final seed =
+          DateTime.now().microsecondsSinceEpoch ^
+          _sessionSeedRandom.nextInt(1 << 31);
+      return GameSession.seeded(
+        seed,
+        allowedClueTypes: widget.enabledClueTypes,
+        preferredClueType: widget.preferredClueType,
+      );
+    }
     return GameSession.random(
       region: widget.region,
       preferredClueType: widget.preferredClueType,
@@ -484,7 +497,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
       // Start timer
       _timer?.cancel();
-      _timer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+      _timer = Timer.periodic(const Duration(milliseconds: 16), (_) async {
         if (mounted && _session != null && !_session!.isCompleted) {
           setState(() {
             _elapsed = _session!.elapsed;
@@ -496,7 +509,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           }
 
           // Check for proximity to target
-          _checkProximity();
+          await _checkProximity();
         }
       });
 
@@ -530,23 +543,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     }
   }
 
-  void _checkProximity() {
+  Future<void> _checkProximity() async {
+    if (_isCheckingProximity) return;
     if (_session == null || _session!.isCompleted) return;
+    _isCheckingProximity = true;
 
-    // Two ways to complete: proximity to target point OR entering the
-    // target country's borders. The border check allows high-altitude
-    // fly-over to register — the player shouldn't need to descend.
-    final nearTarget = _game.isNearTarget(threshold: 25);
-    final inTargetCountry =
-        _game.currentCountryName != null &&
-        _game.currentCountryName == _session!.targetName;
+    try {
+      // Two ways to complete: proximity to target point OR entering the
+      // target country's borders. The border check allows high-altitude
+      // fly-over to register — the player shouldn't need to descend.
+      final nearTarget = _game.isNearTarget(threshold: 25);
+      final inTargetCountry =
+          _game.currentCountryName != null &&
+          _game.currentCountryName == _session!.targetName;
 
-    if (nearTarget || inTargetCountry) {
-      if (_isMultiRound && !_isFinalRound) {
-        _advanceRound();
-      } else {
-        _completeLanding();
+      if (nearTarget || inTargetCountry) {
+        if (_isMultiRound && !_isFinalRound) {
+          _advanceRound();
+        } else {
+          await _completeLanding();
+        }
       }
+    } finally {
+      _isCheckingProximity = false;
     }
   }
 
@@ -634,7 +653,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
         // Restart timer
         _timer?.cancel();
-        _timer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+        _timer = Timer.periodic(const Duration(milliseconds: 16), (_) async {
           if (mounted && _session != null && !_session!.isCompleted) {
             setState(() {
               _elapsed = _session!.elapsed;
@@ -642,7 +661,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             if (_elapsed.inMilliseconds % 100 < 20) {
               _session!.recordPosition(_game.worldPosition);
             }
-            _checkProximity();
+            await _checkProximity();
           }
         });
 
@@ -661,7 +680,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     });
   }
 
-  void _completeLanding({bool fuelDepleted = false}) {
+  Future<void> _completeLanding({bool fuelDepleted = false}) async {
     _timer?.cancel();
     final fuelFrac = fuelDepleted
         ? 0.0
@@ -775,15 +794,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
     // Record game completion last — this calls flush() which persists all
     // pending dirty state including the daily callbacks above.
-    ref
-        .read(accountProvider.notifier)
-        .recordGameCompletion(
-          elapsed: _cumulativeTime,
-          score: _totalScore,
-          roundsCompleted: _currentRound,
-          coinReward: widget.coinReward,
-          region: widget.isDailyChallenge ? 'daily' : widget.region.name,
-        );
+    await ref.read(accountProvider.notifier).recordGameCompletion(
+      elapsed: _cumulativeTime,
+      score: _totalScore,
+      roundsCompleted: _currentRound,
+      coinReward: widget.coinReward,
+      region: widget.isDailyChallenge ? 'daily' : widget.region.name,
+    );
 
     final friendName = widget.challengeFriendName;
 
@@ -941,10 +958,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       _log.info('screen', 'User confirmed abort');
                       Navigator.of(dialogContext).pop();
-                      _recordAbort();
+                      await _recordAbort();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isDailyChallenge || isChallenge
@@ -973,7 +990,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// Record an aborted game as a completion where all unseen rounds
   /// count as failures (score 0, completed: false). This prevents
   /// daily challenge exploitation (abort-to-learn-clues-ahead).
-  void _recordAbort() {
+  Future<void> _recordAbort() async {
     _timer?.cancel();
     _autoHintTimer?.cancel();
     _session?.complete(hintsUsed: 4, fuelFraction: 0.0);
@@ -1018,15 +1035,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     );
 
     // Record stats as a completed game (abort counts as a game played).
-    ref
-        .read(accountProvider.notifier)
-        .recordGameCompletion(
-          elapsed: _cumulativeTime,
-          score: _totalScore,
-          roundsCompleted: _currentRound,
-          coinReward: 0, // No coin reward for aborted games.
-          region: widget.isDailyChallenge ? 'daily' : widget.region.name,
-        );
+    await ref.read(accountProvider.notifier).recordGameCompletion(
+      elapsed: _cumulativeTime,
+      score: _totalScore,
+      roundsCompleted: _currentRound,
+      coinReward: 0, // No coin reward for aborted games.
+      region: widget.isDailyChallenge ? 'daily' : widget.region.name,
+    );
 
     // Fire daily callbacks so the daily challenge is marked as used.
     if (widget.isDailyChallenge) {

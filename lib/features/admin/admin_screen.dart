@@ -48,6 +48,18 @@ class AdminScreen extends ConsumerWidget {
     );
   }
 
+  /// Atomically set a numeric column on a profile row.
+  Future<void> _setStat(String userId, String column, int value) async {
+    await _client.rpc(
+      'admin_set_stat',
+      params: {
+        'target_user_id': userId,
+        'stat_column': column,
+        'new_value': value,
+      },
+    );
+  }
+
   /// Show a snackbar with [message].
   void _snack(BuildContext context, String message, {bool isError = false}) {
     if (!context.mounted) return;
@@ -228,6 +240,123 @@ class AdminScreen extends ConsumerWidget {
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
               _snack(context, 'Granted $amount flights to @$username');
+            } on PostgrestException catch (e) {
+              setDialogState(() => error = 'Failed: ${e.message}');
+            } catch (_) {
+              setDialogState(() => error = 'Something went wrong');
+            }
+          },
+          onCancel: () => Navigator.of(dialogCtx).pop(),
+        ),
+      ),
+    );
+  }
+
+  void _showSetStatDialog(
+    BuildContext context, {
+    required String title,
+    required String statColumn,
+    required String valueLabel,
+    required IconData icon,
+    required Color iconColor,
+  }) {
+    final usernameCtl = TextEditingController();
+    final valueCtl = TextEditingController();
+    String? error;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => _AdminDialog(
+          icon: icon,
+          iconColor: iconColor,
+          title: title,
+          error: error,
+          children: [
+            _UsernameField(controller: usernameCtl),
+            const SizedBox(height: 12),
+            _AmountField(controller: valueCtl, hint: valueLabel),
+          ],
+          actionLabel: 'Set Value',
+          actionIcon: Icons.check,
+          actionColor: iconColor,
+          onAction: () async {
+            final username = usernameCtl.text.trim();
+            final targetValue = int.tryParse(valueCtl.text.trim());
+
+            if (username.isEmpty) {
+              setDialogState(() => error = 'Enter a username');
+              return;
+            }
+            if (targetValue == null || targetValue < 0) {
+              setDialogState(() => error = 'Enter a valid value (>= 0)');
+              return;
+            }
+
+            try {
+              final user = await _lookupUser(username);
+              if (user == null) {
+                setDialogState(() => error = 'User @$username not found');
+                return;
+              }
+
+              await _setStat(user['id'] as String, statColumn, targetValue);
+
+              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              _snack(context, 'Set $statColumn for @$username to $targetValue');
+            } on PostgrestException catch (e) {
+              setDialogState(() => error = 'Failed: ${e.message}');
+            } catch (_) {
+              setDialogState(() => error = 'Something went wrong');
+            }
+          },
+          onCancel: () => Navigator.of(dialogCtx).pop(),
+        ),
+      ),
+    );
+  }
+
+  void _showCoinLedgerDialog(BuildContext context) {
+    final usernameCtl = TextEditingController();
+    String? error;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => _AdminDialog(
+          icon: Icons.receipt_long,
+          iconColor: FlitColors.gold,
+          title: 'Coin Ledger Explorer',
+          subtitle: 'Inspect coin activity for a player',
+          error: error,
+          children: [_UsernameField(controller: usernameCtl)],
+          actionLabel: 'Open Ledger',
+          actionIcon: Icons.open_in_new,
+          actionColor: FlitColors.gold,
+          onAction: () async {
+            final username = usernameCtl.text.trim();
+            if (username.isEmpty) {
+              setDialogState(() => error = 'Enter a username');
+              return;
+            }
+
+            try {
+              final user = await _lookupUser(username);
+              if (user == null) {
+                setDialogState(() => error = 'User @$username not found');
+                return;
+              }
+
+              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!context.mounted) return;
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => _CoinLedgerScreen(
+                    userId: user['id'] as String,
+                    username: user['username'] as String? ?? username,
+                  ),
+                ),
+              );
             } on PostgrestException catch (e) {
               setDialogState(() => error = 'Failed: ${e.message}');
             } catch (_) {
@@ -746,6 +875,13 @@ class AdminScreen extends ConsumerWidget {
               MaterialPageRoute<void>(builder: (_) => const AdminStatsScreen()),
             ),
           ),
+          const SizedBox(height: 8),
+          _AdminActionCard(
+            icon: Icons.receipt_long,
+            iconColor: FlitColors.gold,
+            label: 'Coin Ledger Explorer',
+            onTap: () => _showCoinLedgerDialog(context),
+          ),
           const SizedBox(height: 24),
 
           // Quick self-actions
@@ -811,6 +947,48 @@ class AdminScreen extends ConsumerWidget {
             iconColor: FlitColors.oceanHighlight,
             label: 'Gift Flights',
             onTap: () => _showGiftFlightsDialog(context),
+          ),
+          const SizedBox(height: 8),
+          _AdminActionCard(
+            icon: Icons.monetization_on_outlined,
+            iconColor: FlitColors.gold,
+            label: 'Set Coins',
+            onTap: () => _showSetStatDialog(
+              context,
+              title: 'Set Coins',
+              statColumn: 'coins',
+              valueLabel: 'Coins total',
+              icon: Icons.monetization_on,
+              iconColor: FlitColors.gold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _AdminActionCard(
+            icon: Icons.trending_up,
+            iconColor: FlitColors.accent,
+            label: 'Set Level',
+            onTap: () => _showSetStatDialog(
+              context,
+              title: 'Set Level',
+              statColumn: 'level',
+              valueLabel: 'Level',
+              icon: Icons.trending_up,
+              iconColor: FlitColors.accent,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _AdminActionCard(
+            icon: Icons.flight_takeoff,
+            iconColor: FlitColors.oceanHighlight,
+            label: 'Set Flights',
+            onTap: () => _showSetStatDialog(
+              context,
+              title: 'Set Flights',
+              statColumn: 'games_played',
+              valueLabel: 'Flights',
+              icon: Icons.flight_takeoff,
+              iconColor: FlitColors.oceanHighlight,
+            ),
           ),
           const SizedBox(height: 8),
           _AdminActionCard(
@@ -931,6 +1109,113 @@ class AdminScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _CoinLedgerScreen extends StatefulWidget {
+  const _CoinLedgerScreen({required this.userId, required this.username});
+
+  final String userId;
+  final String username;
+
+  @override
+  State<_CoinLedgerScreen> createState() => _CoinLedgerScreenState();
+}
+
+class _CoinLedgerScreenState extends State<_CoinLedgerScreen> {
+  List<Map<String, dynamic>> _entries = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final data = await Supabase.instance.client
+          .from('coin_activity')
+          .select('coin_amount, source, balance_after, created_at')
+          .eq('user_id', widget.userId)
+          .order('created_at', ascending: false)
+          .limit(200);
+      if (!mounted) return;
+      setState(() {
+        _entries = List<Map<String, dynamic>>.from(data);
+        _loading = false;
+      });
+    } on PostgrestException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = '$e';
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: FlitColors.backgroundDark,
+    appBar: AppBar(
+      backgroundColor: FlitColors.backgroundMid,
+      title: Text('Coin Ledger • @${widget.username}'),
+    ),
+    body: _loading
+        ? const Center(child: CircularProgressIndicator())
+        : _error != null
+        ? Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                _error!,
+                style: const TextStyle(color: FlitColors.error),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          )
+        : _entries.isEmpty
+        ? const Center(
+            child: Text(
+              'No coin activity found.',
+              style: TextStyle(color: FlitColors.textMuted),
+            ),
+          )
+        : ListView.separated(
+            padding: const EdgeInsets.all(12),
+            itemCount: _entries.length,
+            separatorBuilder: (_, __) =>
+                const Divider(color: FlitColors.cardBorder, height: 1),
+            itemBuilder: (context, index) {
+              final entry = _entries[index];
+              final amount = (entry['coin_amount'] as num?)?.toInt() ?? 0;
+              final createdAt = DateTime.tryParse(
+                (entry['created_at'] as String?) ?? '',
+              );
+              final time = createdAt?.toLocal().toString().split('.').first ?? '';
+              return ListTile(
+                dense: true,
+                title: Text(
+                  '${amount >= 0 ? '+' : ''}$amount • ${entry['source'] ?? 'unknown'}',
+                  style: TextStyle(
+                    color: amount >= 0 ? FlitColors.success : FlitColors.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  'Balance: ${entry['balance_after'] ?? '—'}\n$time',
+                  style: const TextStyle(color: FlitColors.textMuted),
+                ),
+              );
+            },
+          ),
+  );
 }
 
 // ── Shared widgets ──

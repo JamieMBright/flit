@@ -117,6 +117,7 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
     final result = await MatchmakingService.instance.findMatch(
       eloRating: elo,
       playerName: playerName,
+      myPoolEntryId: poolEntryId,
     );
 
     if (!mounted) return;
@@ -148,6 +149,9 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
     final result = await MatchmakingService.instance.findMatch(
       eloRating: elo,
       playerName: player.name,
+      myPoolEntryId: _poolEntries.isNotEmpty
+          ? _poolEntries.first['id'] as String?
+          : null,
     );
 
     if (!mounted) return;

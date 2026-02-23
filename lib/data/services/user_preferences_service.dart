@@ -462,8 +462,14 @@ class UserPreferencesService {
       'rounds_completed': roundsCompleted,
     };
 
+    final client = _clientOrNull;
+    if (client == null) {
+      await _queue.enqueue('scores', data, 'insert');
+      return;
+    }
+
     try {
-      await _client.from('scores').insert(data);
+      await client.from('scores').insert(data);
       // New score is live — stale leaderboard caches must go.
       LeaderboardService.instance.invalidateCache();
     } catch (e) {
@@ -513,8 +519,14 @@ class UserPreferencesService {
       'balance_after': balanceAfter,
     };
 
+    final client = _clientOrNull;
+    if (client == null) {
+      await _queue.enqueue('coin_activity', data, 'insert');
+      return;
+    }
+
     try {
-      await _client.from('coin_activity').insert(data);
+      await client.from('coin_activity').insert(data);
     } catch (e) {
       debugPrint(
         '[UserPreferencesService] saveCoinActivity failed, queuing for retry: $e',
