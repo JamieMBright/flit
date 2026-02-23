@@ -496,7 +496,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
       // Start timer
       _timer?.cancel();
-      _timer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+      _timer = Timer.periodic(const Duration(milliseconds: 16), (_) async {
         if (mounted && _session != null && !_session!.isCompleted) {
           setState(() {
             _elapsed = _session!.elapsed;
@@ -508,7 +508,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           }
 
           // Check for proximity to target
-          _checkProximity();
+          await _checkProximity();
         }
       });
 
@@ -542,7 +542,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     }
   }
 
-  void _checkProximity() {
+  Future<void> _checkProximity() async {
     if (_session == null || _session!.isCompleted) return;
 
     // Two ways to complete: proximity to target point OR entering the
@@ -557,7 +557,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       if (_isMultiRound && !_isFinalRound) {
         _advanceRound();
       } else {
-        unawaited(_completeLanding());
+        await _completeLanding();
       }
     }
   }
@@ -646,7 +646,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
         // Restart timer
         _timer?.cancel();
-        _timer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+        _timer = Timer.periodic(const Duration(milliseconds: 16), (_) async {
           if (mounted && _session != null && !_session!.isCompleted) {
             setState(() {
               _elapsed = _session!.elapsed;
@@ -654,7 +654,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             if (_elapsed.inMilliseconds % 100 < 20) {
               _session!.recordPosition(_game.worldPosition);
             }
-            _checkProximity();
+            await _checkProximity();
           }
         });
 
@@ -951,10 +951,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       _log.info('screen', 'User confirmed abort');
                       Navigator.of(dialogContext).pop();
-                      unawaited(_recordAbort());
+                      await _recordAbort();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isDailyChallenge || isChallenge

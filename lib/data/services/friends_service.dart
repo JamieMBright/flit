@@ -320,8 +320,11 @@ class FriendsService {
         })
       >().toList();
 
-      for (final id in expiredIds) {
-        await _client.from('friendships').delete().eq('id', id);
+      if (expiredIds.isNotEmpty) {
+        await _client
+            .from('friendships')
+            .delete()
+            .inFilter('id', expiredIds);
       }
 
       _pendingCache.set(cacheKey, result);
@@ -385,8 +388,11 @@ class FriendsService {
         })
       >().toList();
 
-      for (final id in expiredIds) {
-        await _client.from('friendships').delete().eq('id', id);
+      if (expiredIds.isNotEmpty) {
+        await _client
+            .from('friendships')
+            .delete()
+            .inFilter('id', expiredIds);
       }
 
       _sentCache.set(cacheKey, result);
