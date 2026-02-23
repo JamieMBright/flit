@@ -85,8 +85,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Refresh failed: $e'),
+        const SnackBar(
+          content: Text('Failed to refresh profile. Please try again.'),
           backgroundColor: FlitColors.error,
         ),
       );
