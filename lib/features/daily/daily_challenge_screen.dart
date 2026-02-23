@@ -136,7 +136,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           equippedPlaneId: planeId,
           companionType: companion,
           fuelBoostMultiplier: fuelBoost,
-          clueBoost: license.clueBoost,
+
           clueChance: license.clueChance,
           preferredClueType: license.preferredClueType,
           enabledClueTypes: _challenge.enabledClueTypes,

@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/player.dart';
+
 /// Service for account management operations: data export and account deletion.
 ///
 /// Handles fetching all user data for export and cascading deletion of user
@@ -26,6 +28,7 @@ class AccountManagementService {
   Future<String> exportUserData({
     required String userId,
     required String? email,
+    Player? currentPlayer,
   }) async {
     try {
       // Fetch all data in parallel for speed.
@@ -74,15 +77,24 @@ class AccountManagementService {
           'display_name': profileData?['display_name'],
           'created_at': profileData?['created_at'],
         },
+        // Use local AccountState stats (currentPlayer) when available,
+        // falling back to Supabase profile data. This avoids showing stale
+        // lvl 1 / xp 0 when the latest state hasn't been synced to the DB yet.
         'stats': {
-          'level': profileData?['level'],
-          'xp': profileData?['xp'],
-          'coins': profileData?['coins'],
-          'games_played': profileData?['games_played'],
-          'best_score': profileData?['best_score'],
-          'best_time_ms': profileData?['best_time_ms'],
-          'total_flight_time_ms': profileData?['total_flight_time_ms'],
-          'countries_found': profileData?['countries_found'],
+          'level': currentPlayer?.level ?? profileData?['level'],
+          'xp': currentPlayer?.xp ?? profileData?['xp'],
+          'coins': currentPlayer?.coins ?? profileData?['coins'],
+          'games_played':
+              currentPlayer?.gamesPlayed ?? profileData?['games_played'],
+          'best_score': currentPlayer?.bestScore ?? profileData?['best_score'],
+          'best_time_ms':
+              currentPlayer?.bestTime?.inMilliseconds ??
+              profileData?['best_time_ms'],
+          'total_flight_time_ms':
+              currentPlayer?.totalFlightTime.inMilliseconds ??
+              profileData?['total_flight_time_ms'],
+          'countries_found':
+              currentPlayer?.countriesFound ?? profileData?['countries_found'],
         },
         'settings': settingsData != null
             ? {

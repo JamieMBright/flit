@@ -114,12 +114,11 @@ class GameSession {
   /// When [allowedClueTypes] is provided (e.g. from a daily challenge
   /// theme), only those clue types will be generated.
   ///
-  /// When [preferredClueType] and [clueBoost] are provided, the generated
-  /// clue will favour the preferred type within the allowed set.
+  /// When [preferredClueType] is provided, the generated clue will favour
+  /// the preferred type within the allowed set.
   factory GameSession.random({
     GameRegion region = GameRegion.world,
     String? preferredClueType,
-    int clueBoost = 0,
     Set<String>? allowedClueTypes,
   }) {
     final random = Random();
@@ -130,7 +129,6 @@ class GameSession {
       final clue = Clue.random(
         country.code,
         preferredClueType: preferredClueType,
-        clueBoost: clueBoost,
         allowedTypes: allowedClueTypes,
       );
 
@@ -185,7 +183,6 @@ class GameSession {
   factory GameSession.seeded(
     int seed, {
     String? preferredClueType,
-    int clueBoost = 0,
     Set<String>? allowedClueTypes,
   }) {
     final random = Random(seed);
@@ -198,7 +195,6 @@ class GameSession {
     final clue = Clue.random(
       country.code,
       preferredClueType: preferredClueType,
-      clueBoost: clueBoost,
       allowedTypes: allowedClueTypes,
     );
 

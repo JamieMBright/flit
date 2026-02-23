@@ -337,6 +337,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           hint: 'pilot@example.com',
           keyboardType: TextInputType.emailAddress,
           autofillHints: const [AutofillHints.email],
+          textInputAction: TextInputAction.next,
         ),
         const SizedBox(height: 12),
 
@@ -346,6 +347,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           hint: 'Your password',
           obscureText: _obscurePassword,
           autofillHints: const [AutofillHints.password],
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _signIn(),
           suffixIcon: IconButton(
             icon: Icon(
               _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -757,6 +760,8 @@ class _AuthTextField extends StatelessWidget {
     this.obscureText = false,
     this.suffixIcon,
     this.autofillHints,
+    this.textInputAction,
+    this.onSubmitted,
   });
 
   final TextEditingController controller;
@@ -767,6 +772,8 @@ class _AuthTextField extends StatelessWidget {
   final bool obscureText;
   final Widget? suffixIcon;
   final Iterable<String>? autofillHints;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -787,6 +794,8 @@ class _AuthTextField extends StatelessWidget {
         keyboardType: keyboardType,
         obscureText: obscureText,
         autofillHints: autofillHints,
+        textInputAction: textInputAction,
+        onSubmitted: onSubmitted,
         style: const TextStyle(color: FlitColors.textPrimary, fontSize: 16),
         decoration: InputDecoration(
           hintText: hint,

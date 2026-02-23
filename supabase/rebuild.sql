@@ -711,6 +711,159 @@ GRANT EXECUTE ON FUNCTION public.admin_increment_stat(UUID, TEXT, INT) TO authen
 GRANT EXECUTE ON FUNCTION public.admin_increment_stat(UUID, TEXT, INT) TO service_role;
 
 
+-- Admin: set another player's license data (bypasses RLS on account_state).
+-- Only owners can set licenses; moderators are denied.
+CREATE OR REPLACE FUNCTION public.admin_set_license(
+  target_user_id UUID,
+  p_license_data JSONB
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_role TEXT;
+BEGIN
+  SELECT admin_role INTO v_role
+  FROM public.profiles WHERE id = auth.uid();
+
+  IF v_role IS NULL THEN
+    RAISE EXCEPTION 'Permission denied: caller is not an admin';
+  END IF;
+
+  IF v_role = 'moderator' THEN
+    RAISE EXCEPTION 'Permission denied: only owners can set licenses';
+  END IF;
+
+  -- Upsert account_state with the license data.
+  INSERT INTO public.account_state (user_id, license_data)
+  VALUES (target_user_id, p_license_data)
+  ON CONFLICT (user_id)
+  DO UPDATE SET license_data = p_license_data, updated_at = NOW();
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_set_license(UUID, JSONB) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_set_license(UUID, JSONB) TO service_role;
+
+
+-- Admin: manage player roles (promote/demote moderators). Owner-only.
+CREATE OR REPLACE FUNCTION public.admin_set_role(
+  target_user_id UUID,
+  p_role TEXT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_role TEXT;
+BEGIN
+  SELECT admin_role INTO v_role
+  FROM public.profiles WHERE id = auth.uid();
+
+  IF v_role != 'owner' THEN
+    RAISE EXCEPTION 'Permission denied: only owners can manage roles';
+  END IF;
+
+  -- Validate role value.
+  IF p_role IS NOT NULL AND p_role NOT IN ('moderator', 'owner') THEN
+    RAISE EXCEPTION 'Invalid role: must be NULL, moderator, or owner';
+  END IF;
+
+  -- Prevent demoting self.
+  IF target_user_id = auth.uid() THEN
+    RAISE EXCEPTION 'Cannot change your own role';
+  END IF;
+
+  UPDATE public.profiles SET admin_role = p_role WHERE id = target_user_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_set_role(UUID, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_set_role(UUID, TEXT) TO service_role;
+
+
+-- Admin: unlock all shop cosmetics and avatar parts for a player. Owner-only.
+CREATE OR REPLACE FUNCTION public.admin_unlock_all(
+  target_user_id UUID
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_role TEXT;
+BEGIN
+  SELECT admin_role INTO v_role
+  FROM public.profiles WHERE id = auth.uid();
+
+  IF v_role != 'owner' THEN
+    RAISE EXCEPTION 'Permission denied: only owners can unlock all';
+  END IF;
+
+  -- Unlock all avatar parts: merge with existing.
+  UPDATE public.account_state
+  SET owned_avatar_parts = (
+    SELECT ARRAY(
+      SELECT DISTINCT unnest(owned_avatar_parts || ARRAY[
+        -- All paid eye variants
+        'eyes_variant14','eyes_variant15','eyes_variant16','eyes_variant17',
+        'eyes_variant18','eyes_variant19','eyes_variant20','eyes_variant21',
+        'eyes_variant22','eyes_variant23','eyes_variant24','eyes_variant25','eyes_variant26',
+        -- All paid hair colors
+        'hairColor_green','hairColor_teal','hairColor_pink','hairColor_purple',
+        -- All paid glasses
+        'glasses_variant01','glasses_variant02','glasses_variant03','glasses_variant04','glasses_variant05',
+        -- All paid earrings
+        'earrings_variant01','earrings_variant02','earrings_variant03',
+        'earrings_variant04','earrings_variant05','earrings_variant06',
+        -- All paid hair styles (short06-19, long06-26)
+        'hair_short06','hair_short07','hair_short08','hair_short09','hair_short10',
+        'hair_short11','hair_short12','hair_short13','hair_short14','hair_short15',
+        'hair_short16','hair_short17','hair_short18','hair_short19',
+        'hair_long06','hair_long07','hair_long08','hair_long09','hair_long10',
+        'hair_long11','hair_long12','hair_long13','hair_long14','hair_long15',
+        'hair_long16','hair_long17','hair_long18','hair_long19','hair_long20',
+        'hair_long21','hair_long22','hair_long23','hair_long24','hair_long25','hair_long26',
+        -- All paid eyebrow variants
+        'eyebrows_variant09','eyebrows_variant10','eyebrows_variant11',
+        'eyebrows_variant12','eyebrows_variant13','eyebrows_variant14','eyebrows_variant15',
+        -- All paid mouth variants
+        'mouth_variant16','mouth_variant17','mouth_variant18','mouth_variant19','mouth_variant20',
+        'mouth_variant21','mouth_variant22','mouth_variant23','mouth_variant24','mouth_variant25',
+        'mouth_variant26','mouth_variant27','mouth_variant28','mouth_variant29','mouth_variant30'
+      ])
+    )
+  ),
+  updated_at = NOW()
+  WHERE user_id = target_user_id;
+
+  -- Unlock all cosmetics (planes, contrails, companions).
+  UPDATE public.account_state
+  SET owned_cosmetics = (
+    SELECT ARRAY(
+      SELECT DISTINCT unnest(owned_cosmetics || ARRAY[
+        'plane_stealth','plane_vintage','plane_jumbo','plane_fighter',
+        'plane_seaplane','plane_biplane','plane_concorde','plane_blackbird',
+        'plane_presidential','plane_ufo','plane_dragon','plane_santa',
+        'contrail_rainbow','contrail_fire','contrail_ice','contrail_neon',
+        'contrail_gold','contrail_aurora','contrail_shadow','contrail_glitch'
+      ])
+    )
+  ),
+  updated_at = NOW()
+  WHERE user_id = target_user_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_unlock_all(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_unlock_all(UUID) TO service_role;
+
+
 -- Atomic avatar-part purchase (mirrors purchase_cosmetic for avatar parts).
 CREATE OR REPLACE FUNCTION public.purchase_avatar_part(
   p_user_id UUID,

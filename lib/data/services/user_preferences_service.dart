@@ -679,6 +679,10 @@ class UserPreferencesService {
               _profileDirty = false;
               _pendingProfile = null;
               _clearLocalCache(_kLocalProfile);
+              // Profile (including username) is now committed to the DB.
+              // Invalidate leaderboard caches so views immediately reflect the
+              // updated username rather than serving stale cached data.
+              LeaderboardService.instance.invalidateCache();
             })
             .catchError((Object e) async {
               debugPrint(

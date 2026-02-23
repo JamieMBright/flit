@@ -50,7 +50,7 @@ class PlayScreen extends ConsumerStatefulWidget {
     this.planeHandling = 1.0,
     this.planeSpeed = 1.0,
     this.planeFuelEfficiency = 1.0,
-    this.clueBoost = 0,
+
     this.clueChance = 0,
     this.preferredClueType,
     this.enabledClueTypes,
@@ -105,9 +105,6 @@ class PlayScreen extends ConsumerStatefulWidget {
 
   /// Plane fuel efficiency from equipped plane (higher = less burn).
   final double planeFuelEfficiency;
-
-  /// Bonus % chance of receiving the preferred clue type (from pilot license).
-  final int clueBoost;
 
   /// Bonus % chance of receiving extra clues (from pilot license).
   final int clueChance;
@@ -338,7 +335,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           final candidate = Clue.random(
             _session!.targetCountry.code,
             preferredClueType: widget.preferredClueType,
-            clueBoost: widget.clueBoost,
+
             allowedTypes: widget.enabledClueTypes,
           );
           if (candidate.type != previousType || i == 4) {
@@ -429,13 +426,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         roundSeed,
         allowedClueTypes: widget.enabledClueTypes,
         preferredClueType: widget.preferredClueType,
-        clueBoost: widget.clueBoost,
       );
     }
     return GameSession.random(
       region: widget.region,
       preferredClueType: widget.preferredClueType,
-      clueBoost: widget.clueBoost,
       allowedClueTypes: widget.enabledClueTypes,
     );
   }
@@ -1555,27 +1550,27 @@ class _ResultDialog extends ConsumerWidget {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}.${ms.toString().padLeft(2, '0')}';
   }
 
-  static String _clueLabel(ClueType type) {
+  static IconData _clueIcon(ClueType type) {
     switch (type) {
       case ClueType.flag:
       case ClueType.flagDescription:
-        return 'Flag';
+        return Icons.flag;
       case ClueType.outline:
-        return 'Outline';
+        return Icons.crop_square;
       case ClueType.borders:
-        return 'Borders';
+        return Icons.border_all;
       case ClueType.capital:
-        return 'Capital';
+        return Icons.location_city;
       case ClueType.stats:
-        return 'Stats';
+        return Icons.bar_chart;
       case ClueType.sportsTeam:
-        return 'Sports';
+        return Icons.sports_soccer;
       case ClueType.leader:
-        return 'Leader';
+        return Icons.person;
       case ClueType.nickname:
-        return 'Nickname';
+        return Icons.label;
       case ClueType.landmark:
-        return 'Landmark';
+        return Icons.landscape;
     }
   }
 
@@ -1717,11 +1712,15 @@ class _ResultDialog extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            _clueLabel(r.clueType),
-                            style: const TextStyle(
-                              color: FlitColors.textMuted,
-                              fontSize: 11,
+                          Tooltip(
+                            message: 'Clue type: ${r.clueType.name}',
+                            child: Semantics(
+                              label: 'Clue type: ${r.clueType.name}',
+                              child: Icon(
+                                _clueIcon(r.clueType),
+                                color: FlitColors.textMuted,
+                                size: 16,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),

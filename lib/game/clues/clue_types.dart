@@ -88,15 +88,13 @@ class Clue {
   ///
   /// When [allowedTypes] is provided (e.g. from a daily challenge theme),
   /// only those clue types will be considered. This overrides the
-  /// [preferredClueType]/[clueBoost] mechanism.
+  /// [preferredClueType] mechanism.
   ///
-  /// When [preferredClueType] and [clueBoost] are provided, the preferred
-  /// type has [clueBoost]% more chance of being selected (e.g. clueBoost=5
-  /// gives the preferred type a 5 percentage-point bonus).
+  /// When [preferredClueType] is provided, the preferred type has a bonus
+  /// chance of being selected.
   factory Clue.random(
     String countryCode, {
     String? preferredClueType,
-    int clueBoost = 0,
     Set<String>? allowedTypes,
   }) {
     // Determine the pool of clue types to draw from.
@@ -116,7 +114,7 @@ class Clue {
 
     // Resolve preferred ClueType enum from the string name.
     ClueType? preferredType;
-    if (preferredClueType != null && clueBoost > 0) {
+    if (preferredClueType != null) {
       for (final t in types) {
         if (t.name == preferredClueType) {
           preferredType = t;
@@ -134,10 +132,10 @@ class Clue {
 
       ClueType randomType;
       // If we have a preferred type and it hasn't been tried, give it a
-      // [clueBoost]% chance of being picked directly.
+      // flat 25% chance of being picked directly.
       if (preferredType != null &&
           availableTypes.contains(preferredType) &&
-          random.nextInt(100) < clueBoost) {
+          random.nextInt(100) < 25) {
         randomType = preferredType;
       } else {
         randomType = availableTypes[random.nextInt(availableTypes.length)];

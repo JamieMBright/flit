@@ -14,6 +14,7 @@ import '../../data/models/player.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/account_management_service.dart';
 import '../../data/services/auth_service.dart';
+import '../auth/login_screen.dart';
 import '../avatar/avatar_editor_screen.dart';
 import '../avatar/avatar_widget.dart';
 import '../license/license_screen.dart';
@@ -69,13 +70,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   void _editProfile() {
     final currentPlayer = ref.read(accountProvider).currentPlayer;
-    final displayNameController = TextEditingController(
-      text: currentPlayer.displayName ?? '',
-    );
     final usernameController = TextEditingController(
       text: currentPlayer.username,
     );
-    String? displayNameError;
     String? usernameError;
 
     showDialog<void>(
@@ -88,44 +85,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             side: const BorderSide(color: FlitColors.cardBorder),
           ),
           title: const Text(
-            'Edit Profile',
+            'Change Username',
             style: TextStyle(color: FlitColors.textPrimary),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: displayNameController,
-                style: const TextStyle(color: FlitColors.textPrimary),
-                decoration: InputDecoration(
-                  labelText: 'Display Name',
-                  labelStyle: const TextStyle(color: FlitColors.textSecondary),
-                  errorText: displayNameError,
-                  errorStyle: const TextStyle(color: FlitColors.error),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: FlitColors.cardBorder),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: FlitColors.accent),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: FlitColors.error),
-                  ),
-                  focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: FlitColors.error),
-                  ),
-                ),
-                onChanged: (_) {
-                  if (displayNameError != null) {
-                    setDialogState(() => displayNameError = null);
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
               TextField(
                 controller: usernameController,
                 style: const TextStyle(color: FlitColors.textPrimary),
@@ -172,18 +137,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             TextButton(
               onPressed: () {
                 final filter = ProfanityFilter.instance;
-                final displayName = displayNameController.text.trim();
                 final username = usernameController.text.trim();
                 var hasError = false;
-
-                // Validate display name for profanity.
-                if (displayName.isNotEmpty &&
-                    filter.containsProfanity(displayName)) {
-                  setDialogState(() {
-                    displayNameError = 'Inappropriate language detected';
-                  });
-                  hasError = true;
-                }
 
                 // Validate username for profanity and format.
                 if (username.isNotEmpty &&
@@ -203,7 +158,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     .read(accountProvider.notifier)
                     .switchAccount(
                       currentPlayer.copyWith(
-                        displayName: displayName.isEmpty ? null : displayName,
                         username: username.isEmpty
                             ? currentPlayer.username
                             : username,
@@ -212,7 +166,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Navigator.of(dialogContext).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('Profile updated'),
+                    content: const Text('Username updated'),
                     backgroundColor: FlitColors.success,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
@@ -499,7 +453,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               await AuthService().signOut();
               ref.read(accountProvider.notifier).clearPreferences();
               if (context.mounted) {
-                Navigator.of(context).popUntil((route) => route.isFirst);
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
               }
             },
             child: const Text(
@@ -534,6 +491,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       builder: (dialogContext) => _ExportDataDialog(
         userId: player.id,
         email: Supabase.instance.client.auth.currentUser?.email,
+        currentPlayer: player,
       ),
     );
   }
@@ -607,7 +565,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         // Dismiss the loading dialog.
         Navigator.of(context).pop();
         // Navigate back to the login screen.
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1510,6 +1471,7 @@ const List<_CountryEntry> _countries = [
   _CountryEntry('OM', 'Oman'),
   _CountryEntry('PK', 'Pakistan'),
   _CountryEntry('PW', 'Palau'),
+  _CountryEntry('PS', 'Palestine'),
   _CountryEntry('PA', 'Panama'),
   _CountryEntry('PG', 'Papua New Guinea'),
   _CountryEntry('PY', 'Paraguay'),
@@ -1579,10 +1541,15 @@ const List<_CountryEntry> _countries = [
 // ---------------------------------------------------------------------------
 
 class _ExportDataDialog extends StatefulWidget {
-  const _ExportDataDialog({required this.userId, required this.email});
+  const _ExportDataDialog({
+    required this.userId,
+    required this.email,
+    required this.currentPlayer,
+  });
 
   final String userId;
   final String? email;
+  final Player currentPlayer;
 
   @override
   State<_ExportDataDialog> createState() => _ExportDataDialogState();
@@ -1604,6 +1571,7 @@ class _ExportDataDialogState extends State<_ExportDataDialog> {
       final data = await AccountManagementService.instance.exportUserData(
         userId: widget.userId,
         email: widget.email,
+        currentPlayer: widget.currentPlayer,
       );
       if (mounted) {
         setState(() {
@@ -1911,6 +1879,22 @@ class _DeletionItem extends StatelessWidget {
 // Game History screen showing past game sessions
 // ---------------------------------------------------------------------------
 
+/// Small icon widget representing a clue type in game history entries.
+class _ClueTypeIcon extends StatelessWidget {
+  const _ClueTypeIcon(this.icon, this.tooltip);
+
+  final IconData icon;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Icon(icon, size: 14, color: FlitColors.textMuted),
+    );
+  }
+}
+
 class _GameHistoryEntry {
   const _GameHistoryEntry({
     required this.region,
@@ -2128,6 +2112,22 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
                               color: FlitColors.textMuted,
                               fontSize: 12,
                             ),
+                          ),
+                          const SizedBox(height: 6),
+                          // Clue type icons row
+                          const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _ClueTypeIcon(Icons.flag, 'Flag'),
+                              SizedBox(width: 8),
+                              _ClueTypeIcon(Icons.location_city, 'Capital'),
+                              SizedBox(width: 8),
+                              _ClueTypeIcon(Icons.crop_square, 'Outline'),
+                              SizedBox(width: 8),
+                              _ClueTypeIcon(Icons.border_all, 'Borders'),
+                              SizedBox(width: 8),
+                              _ClueTypeIcon(Icons.bar_chart, 'Stats'),
+                            ],
                           ),
                         ],
                       ),

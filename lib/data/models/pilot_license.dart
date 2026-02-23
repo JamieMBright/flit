@@ -17,7 +17,6 @@ const List<String> clueTypes = [
 class PilotLicense {
   const PilotLicense({
     required this.coinBoost,
-    required this.clueBoost,
     required this.clueChance,
     required this.fuelBoost,
     required this.preferredClueType,
@@ -27,16 +26,13 @@ class PilotLicense {
   /// Bonus coin percentage earned per game (1-25).
   final int coinBoost;
 
-  /// Bonus percentage chance of receiving [preferredClueType] clues (1-25).
-  final int clueBoost;
-
   /// Bonus percentage chance of receiving extra clues (1-25).
   final int clueChance;
 
   /// Bonus fuel / speed-boost duration percentage in solo play (1-25).
   final int fuelBoost;
 
-  /// Which clue type receives the [clueBoost] bonus.
+  /// Which clue type the pilot prefers.
   final String preferredClueType;
 
   /// Player's nationality as ISO 3166-1 alpha-2 code (e.g. 'GB', 'US', 'JP').
@@ -145,7 +141,6 @@ class PilotLicense {
   factory PilotLicense.random({Random? rng, int luckBonus = 0}) {
     return PilotLicense(
       coinBoost: rollStat(rng: rng, luckBonus: luckBonus),
-      clueBoost: rollStat(rng: rng, luckBonus: luckBonus),
       clueChance: rollStat(rng: rng, luckBonus: luckBonus),
       fuelBoost: rollStat(rng: rng, luckBonus: luckBonus),
       preferredClueType: rollClueType(rng),
@@ -154,8 +149,7 @@ class PilotLicense {
 
   /// Reroll a license, keeping any stats whose keys are in [lockedStats].
   ///
-  /// Valid keys for [lockedStats]: `'coinBoost'`, `'clueBoost'`,
-  /// `'clueChance'`, `'fuelBoost'`.
+  /// Valid keys for [lockedStats]: `'coinBoost'`, `'clueChance'`, `'fuelBoost'`.
   /// If [lockType] is true the [preferredClueType] is preserved.
   /// When [luckBonus] > 0, unlocked stats get advantage rolls.
   factory PilotLicense.reroll(
@@ -168,9 +162,6 @@ class PilotLicense {
     return PilotLicense(
       coinBoost: lockedStats.contains('coinBoost')
           ? current.coinBoost
-          : rollStat(rng: rng, luckBonus: luckBonus),
-      clueBoost: lockedStats.contains('clueBoost')
-          ? current.clueBoost
           : rollStat(rng: rng, luckBonus: luckBonus),
       clueChance: lockedStats.contains('clueChance')
           ? current.clueChance
@@ -192,11 +183,8 @@ class PilotLicense {
   /// Human-readable coin boost, e.g. "+5% Extra Coins".
   String get coinBoostLabel => '+$coinBoost% Extra Coins';
 
-  /// Human-readable clue boost stat, e.g. "+5% Clue Boost".
-  String get clueBoostStatLabel => '+$clueBoost% Clue Boost';
-
   /// Human-readable clue type, e.g. "Clue Type: Flag".
-  String get clueBoostLabel {
+  String get clueTypeLabel {
     final typeLabel =
         '${preferredClueType[0].toUpperCase()}${preferredClueType.substring(1)}';
     return 'Clue Type: $typeLabel';
@@ -208,21 +196,21 @@ class PilotLicense {
   /// Human-readable fuel boost, e.g. "+7% Fuel Efficiency".
   String get fuelBoostLabel => '+$fuelBoost% Fuel Efficiency';
 
-  /// Sum of all four boosts (useful for ranking / comparison).
-  int get totalBoost => coinBoost + clueBoost + clueChance + fuelBoost;
+  /// Sum of all three boosts (useful for ranking / comparison).
+  int get totalBoost => coinBoost + clueChance + fuelBoost;
 
   /// Rarity tier derived from [totalBoost].
   ///
-  ///   4-25  → Bronze
-  ///   26-50 → Silver
-  ///   51-75 → Gold
-  ///   76-90 → Diamond
-  ///   91-100 → Perfect
+  ///   3-18  → Bronze
+  ///   19-37 → Silver
+  ///   38-56 → Gold
+  ///   57-68 → Diamond
+  ///   69-75 → Perfect
   String get rarityTier {
-    if (totalBoost >= 91) return 'Perfect';
-    if (totalBoost >= 76) return 'Diamond';
-    if (totalBoost >= 51) return 'Gold';
-    if (totalBoost >= 26) return 'Silver';
+    if (totalBoost >= 69) return 'Perfect';
+    if (totalBoost >= 57) return 'Diamond';
+    if (totalBoost >= 38) return 'Gold';
+    if (totalBoost >= 19) return 'Silver';
     return 'Bronze';
   }
 
@@ -232,14 +220,12 @@ class PilotLicense {
 
   PilotLicense copyWith({
     int? coinBoost,
-    int? clueBoost,
     int? clueChance,
     int? fuelBoost,
     String? preferredClueType,
     String? nationality,
   }) => PilotLicense(
     coinBoost: coinBoost ?? this.coinBoost,
-    clueBoost: clueBoost ?? this.clueBoost,
     clueChance: clueChance ?? this.clueChance,
     fuelBoost: fuelBoost ?? this.fuelBoost,
     preferredClueType: preferredClueType ?? this.preferredClueType,
@@ -252,7 +238,6 @@ class PilotLicense {
 
   Map<String, dynamic> toJson() => {
     'coin_boost': coinBoost,
-    'clue_boost': clueBoost,
     'clue_chance': clueChance,
     'fuel_boost': fuelBoost,
     'preferred_clue_type': preferredClueType,
@@ -261,7 +246,6 @@ class PilotLicense {
 
   factory PilotLicense.fromJson(Map<String, dynamic> json) => PilotLicense(
     coinBoost: json['coin_boost'] as int,
-    clueBoost: json['clue_boost'] as int,
     clueChance: json['clue_chance'] as int? ?? 1,
     fuelBoost: json['fuel_boost'] as int,
     preferredClueType: json['preferred_clue_type'] as String,
