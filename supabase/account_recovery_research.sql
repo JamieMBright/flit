@@ -6,7 +6,7 @@
 --   2) Reconstruct deducible gameplay stats from scores/challenges data.
 --   3) Highlight gaps that cannot be reconstructed (notably coin balance).
 --
--- Replace jamieb01 in the `params` CTE in each block if needed.
+-- Replace jamieb01 in the `params` CTE for username-filtered queries if needed.
 -- =============================================================================
 
 -- 1) Current authoritative rows used by app login hydration.
@@ -136,7 +136,6 @@ challenge_coin_events as (
     case
       when c.challenger_id = t.id then c.challenger_coins
       when c.challenged_id = t.id then c.challenged_coins
-      else null
     end as coin_delta
   from public.challenges c
   join target t
