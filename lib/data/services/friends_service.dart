@@ -335,7 +335,17 @@ class FriendsService {
   Future<bool> cancelFriendRequest(int friendshipId) async {
     if (_userId == null) return false;
     try {
-      await _client.from('friendships').delete().eq('id', friendshipId);
+      final deleted = await _client
+          .from('friendships')
+          .delete()
+          .eq('id', friendshipId)
+          .eq('requester_id', _userId!)
+          .eq('status', 'pending')
+          .select('id');
+
+      if (deleted is! List || deleted.isEmpty) {
+        return false;
+      }
       invalidateCache();
       return true;
     } catch (e) {
