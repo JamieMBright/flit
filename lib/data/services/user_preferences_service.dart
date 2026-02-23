@@ -197,6 +197,8 @@ class UserPreferencesService {
       return Supabase.instance.client;
     } on AssertionError {
       return null;
+    } on StateError {
+      return null;
     }
   }
 
@@ -538,7 +540,7 @@ class UserPreferencesService {
     final client = _clientOrNull;
     if (client == null) {
       debugPrint(
-        '[UserPreferencesService] retryPendingWrites: Supabase not initialised — skipping',
+        '[UserPreferencesService] retryPendingWrites: Supabase not initialized — skipping',
       );
       return;
     }
@@ -732,7 +734,7 @@ class UserPreferencesService {
     final client = _clientOrNull;
     if (client == null) {
       debugPrint(
-        '[UserPreferencesService] flush: Supabase not initialised — skipping',
+        '[UserPreferencesService] flush: Supabase not initialized — skipping',
       );
       return;
     }
