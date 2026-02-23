@@ -192,6 +192,13 @@ class UserPreferencesService {
   static final UserPreferencesService instance = UserPreferencesService._();
 
   SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient? get _clientOrNull {
+    try {
+      return Supabase.instance.client;
+    } on AssertionError {
+      return null;
+    }
+  }
 
   Timer? _debounceTimer;
   String? _userId;
@@ -528,11 +535,18 @@ class UserPreferencesService {
     await _ensureQueueInitialised();
 
     if (_queue.isEmpty) return;
+    final client = _clientOrNull;
+    if (client == null) {
+      debugPrint(
+        '[UserPreferencesService] retryPendingWrites: Supabase not initialised — skipping',
+      );
+      return;
+    }
 
     // Guard: skip retry if there is no authenticated user. Without this,
     // entries queued for a user whose token expired and failed to refresh
     // would waste all retry attempts on auth errors.
-    if (_client.auth.currentUser == null) {
+    if (client.auth.currentUser == null) {
       debugPrint(
         '[UserPreferencesService] retryPendingWrites: no auth user — skipping',
       );
@@ -553,9 +567,9 @@ class UserPreferencesService {
 
       try {
         if (op == 'insert') {
-          await _client.from(table).insert(data);
+          await client.from(table).insert(data);
         } else {
-          await _client.from(table).upsert(data);
+          await client.from(table).upsert(data);
         }
         // Success — remove the entry from the queue.
         await _queue.dequeue();
@@ -715,13 +729,20 @@ class UserPreferencesService {
 
     // Attempt to drain any previously failed writes before issuing new ones.
     await retryPendingWrites();
+    final client = _clientOrNull;
+    if (client == null) {
+      debugPrint(
+        '[UserPreferencesService] flush: Supabase not initialised — skipping',
+      );
+      return;
+    }
 
     final futures = <Future<void>>[];
 
     if (_profileDirty && _pendingProfile != null) {
       final payload = _pendingProfile!;
       futures.add(
-        _client
+        client
             .from('profiles')
             .upsert(payload)
             .then((_) {
@@ -745,7 +766,7 @@ class UserPreferencesService {
     if (_settingsDirty && _pendingSettings != null) {
       final payload = _pendingSettings!;
       futures.add(
-        _client
+        client
             .from('user_settings')
             .upsert(payload)
             .then((_) {
@@ -765,7 +786,7 @@ class UserPreferencesService {
     if (_accountStateDirty && _pendingAccountState != null) {
       final payload = _pendingAccountState!;
       futures.add(
-        _client
+        client
             .from('account_state')
             .upsert(payload)
             .then((_) {
