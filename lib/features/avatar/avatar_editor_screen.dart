@@ -352,7 +352,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
       ],
 
       // -----------------------------------------------------------------------
-      // Lorelei — 24 eyes, 13 brows, 27 mouth, 48 hair, 5 glasses,
+      // Lorelei — 24 eyes, 13 brows, 27 mouth, 45 hair, 5 glasses,
       //   3 earrings, freckles/beard via features
       // -----------------------------------------------------------------------
       AvatarStyle.lorelei => [
@@ -372,7 +372,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
           label: 'Hair',
           icon: Icons.content_cut,
           configKey: 'hair',
-          parts: _hairParts(46),
+          parts: _hairParts(45),
         ),
         _AvatarCategory(
           label: 'Eyes',
@@ -575,7 +575,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
           label: 'Hair',
           icon: Icons.content_cut,
           configKey: 'hair',
-          parts: _hairParts(46),
+          parts: _hairParts(45),
         ),
         _AvatarCategory(
           label: 'Eyes',
@@ -642,7 +642,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
           label: 'Hair',
           icon: Icons.content_cut,
           configKey: 'hair',
-          parts: _hairParts(46),
+          parts: _hairParts(45),
         ),
         _AvatarCategory(
           label: 'Expression',
@@ -660,7 +660,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
           label: 'Facial Hair',
           icon: Icons.auto_awesome,
           configKey: 'feature',
-          parts: _featureParts(4),
+          parts: _featureParts(2),
         ),
       ],
 
@@ -674,12 +674,6 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
           icon: Icons.palette,
           configKey: 'skinColor',
           parts: _skinParts(),
-        ),
-        _AvatarCategory(
-          label: 'Accent',
-          icon: Icons.color_lens,
-          configKey: 'hairColor',
-          parts: _hairColorParts(),
         ),
         _AvatarCategory(
           label: 'Face',
