@@ -312,9 +312,15 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// so the user always sees the latest server state.
   Future<void> refreshFromServer() async {
     if (_userId == null) return;
-    if (_prefs.hasPendingWrites) {
-      // Flush pending writes first, then refresh.
+    if (_prefs.hasPendingWrites || _prefs.hasPendingOfflineWrites) {
+      // Flush pending writes / retry queued offline writes first, then refresh.
       await _prefs.flush();
+    }
+    if (_prefs.hasPendingWrites || _prefs.hasPendingOfflineWrites) {
+      // Don't hydrate from server while local writes are still pending/queued.
+      // Hydrating now can overwrite newer local state (e.g. post-game stats or
+      // avatar edits) with stale server rows before those writes are retried.
+      return;
     }
 
     try {
@@ -416,7 +422,11 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// store purchases or debug grants where boosts should not apply.
   ///
   /// Returns the actual amount of coins added (after boosts).
-  int addCoins(int amount, {bool applyBoost = true}) {
+  int addCoins(
+    int amount, {
+    bool applyBoost = true,
+    String source = 'coins_earned',
+  }) {
     var earned = amount;
     if (applyBoost) {
       earned = (amount * totalGoldMultiplier).round();
@@ -426,13 +436,18 @@ class AccountNotifier extends StateNotifier<AccountState> {
         coins: state.currentPlayer.coins + earned,
       ),
     );
+    _logCoinActivity(amount: earned, source: source);
     _syncProfile();
     return earned;
   }
 
   /// Spend coins from current account.
   /// Returns true if successful, false if insufficient funds or invalid amount.
-  bool spendCoins(int amount) {
+  bool spendCoins(
+    int amount, {
+    String source = 'coins_spent',
+    bool logActivity = true,
+  }) {
     if (amount <= 0) return false;
     if (state.currentPlayer.coins < amount) return false;
     state = state.copyWith(
@@ -440,14 +455,31 @@ class AccountNotifier extends StateNotifier<AccountState> {
         coins: state.currentPlayer.coins - amount,
       ),
     );
+    if (logActivity) {
+      _logCoinActivity(amount: -amount, source: source);
+    }
     _syncProfile();
     return true;
+  }
+
+  void _logCoinActivity({required int amount, required String source}) {
+    final username = state.currentPlayer.username.trim().isNotEmpty
+        ? state.currentPlayer.username
+        : state.currentPlayer.id;
+    // Fire-and-forget on purpose: coin logging should never block gameplay UI.
+    // UserPreferencesService handles offline queue fallback on insert failures.
+    _prefs.saveCoinActivity(
+      username: username,
+      coinAmount: amount,
+      source: source,
+      balanceAfter: state.currentPlayer.coins,
+    );
   }
 
   /// Unlock a region with coins. Deducts the cost and marks the region
   /// as purchased. Returns true if successful, false if insufficient funds.
   bool unlockRegion(GameRegion region, int cost) {
-    if (!spendCoins(cost)) return false;
+    if (!spendCoins(cost, source: 'region_unlock')) return false;
     state = state.copyWith(
       unlockedRegions: {...state.unlockedRegions, region.name},
     );
@@ -585,7 +617,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     addXp(xpEarned);
 
     if (coinReward > 0) {
-      addCoins(coinReward);
+      addCoins(coinReward, source: 'game_completion');
     }
 
     // Persist individual game result to scores table.
@@ -605,9 +637,11 @@ class AccountNotifier extends StateNotifier<AccountState> {
   // --- Avatar ---
 
   /// Update the avatar configuration.
-  void updateAvatar(AvatarConfig config) {
+  Future<void> updateAvatar(AvatarConfig config) async {
     state = state.copyWith(avatar: config);
     _syncAccountState();
+    // Avatar edits are user-facing and should be persisted immediately.
+    await _prefs.flush();
   }
 
   /// Purchase an avatar part. Returns true if successful.
@@ -616,7 +650,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// If the server call fails (offline/network error), falls back to
   /// client-side deduction for offline resilience.
   bool purchaseAvatarPart(String partKey, int cost) {
-    if (!spendCoins(cost)) return false;
+    if (!spendCoins(cost, source: 'avatar_part_purchase')) return false;
     state = state.copyWith(
       ownedAvatarParts: {...state.ownedAvatarParts, partKey},
     );
@@ -641,7 +675,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// client-side deduction for offline resilience. The optimistic client-side
   /// state is applied immediately for responsive UI.
   bool purchaseCosmetic(String cosmeticId, int cost) {
-    if (!spendCoins(cost)) return false;
+    if (!spendCoins(cost, source: 'cosmetic_purchase')) return false;
     state = state.copyWith(
       ownedCosmetics: {...state.ownedCosmetics, cosmeticId},
     );
@@ -676,9 +710,11 @@ class AccountNotifier extends StateNotifier<AccountState> {
           final serverBalance = result['new_balance'] as int?;
           if (serverBalance != null &&
               serverBalance != state.currentPlayer.coins) {
+            final delta = serverBalance - state.currentPlayer.coins;
             state = state.copyWith(
               currentPlayer: state.currentPlayer.copyWith(coins: serverBalance),
             );
+            _logCoinActivity(amount: delta, source: 'server_balance_reconcile');
           }
         } else {
           debugPrint(
@@ -717,9 +753,11 @@ class AccountNotifier extends StateNotifier<AccountState> {
           final serverBalance = result['new_balance'] as int?;
           if (serverBalance != null &&
               serverBalance != state.currentPlayer.coins) {
+            final delta = serverBalance - state.currentPlayer.coins;
             state = state.copyWith(
               currentPlayer: state.currentPlayer.copyWith(coins: serverBalance),
             );
+            _logCoinActivity(amount: delta, source: 'server_balance_reconcile');
           }
         } else {
           debugPrint(
@@ -828,7 +866,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     if (lockedStats.length == 2) cost = PilotLicense.lockTwoCost;
     if (lockType) cost += PilotLicense.lockTypeCost;
 
-    if (!spendCoins(cost)) return false;
+    if (!spendCoins(cost, source: 'license_reroll')) return false;
 
     state = state.copyWith(
       license: PilotLicense.reroll(
@@ -856,7 +894,9 @@ class AccountNotifier extends StateNotifier<AccountState> {
 
     // Base reroll is free, but locking stats still costs coins.
     final lockCost = _calculateLockCost(lockedStats, lockType);
-    if (lockCost > 0 && !spendCoins(lockCost)) return false;
+    if (lockCost > 0 && !spendCoins(lockCost, source: 'license_lock_cost')) {
+      return false;
+    }
 
     final todayStr = AccountState._todayStr();
 
@@ -924,7 +964,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     if (!streak.isRecoverable) return false;
 
     final cost = streak.recoveryCost;
-    if (!spendCoins(cost)) return false;
+    if (!spendCoins(cost, source: 'streak_recovery')) return false;
 
     // Fill in the missed days — the streak is restored as if those days
     // were completed. The lastCompletionDate moves to yesterday so the
@@ -956,7 +996,10 @@ class AccountNotifier extends StateNotifier<AccountState> {
 
     // Base reroll is free, but locking stats still costs coins.
     final lockCost = _calculateLockCost(lockedStats, lockType);
-    if (lockCost > 0 && !spendCoins(lockCost)) return false;
+    if (lockCost > 0 &&
+        !spendCoins(lockCost, source: 'daily_scramble_lock_cost')) {
+      return false;
+    }
 
     // Mark as used by clearing the daily challenge date (prevents reuse).
     // We use a special suffix to distinguish "completed" from "reroll used".

@@ -465,6 +465,55 @@ class UserPreferencesService {
     }
   }
 
+  /// Insert a coin activity entry for auditing coin balance changes.
+  ///
+  /// [coinAmount] should be signed (+earn, -spend). [source] describes where
+  /// the change came from (e.g. game_completion, cosmetic_purchase, gift_sent).
+  Future<void> saveCoinActivity({
+    required String username,
+    required int coinAmount,
+    required String source,
+    int? balanceAfter,
+  }) async {
+    await _ensureQueueInitialised();
+
+    final userId = _userId;
+    if (userId == null || userId.isEmpty) return;
+    if (coinAmount == 0) return;
+
+    final trimmedUsername = username.trim();
+    final safeUsername = trimmedUsername.isNotEmpty
+        ? trimmedUsername.substring(
+            0,
+            trimmedUsername.length > 64 ? 64 : trimmedUsername.length,
+          )
+        : userId;
+    final trimmedSource = source.trim();
+    final safeSource = trimmedSource.isNotEmpty
+        ? trimmedSource.substring(
+            0,
+            trimmedSource.length > 64 ? 64 : trimmedSource.length,
+          )
+        : 'unknown';
+
+    final data = {
+      'user_id': userId,
+      'username': safeUsername,
+      'coin_amount': coinAmount,
+      'source': safeSource,
+      'balance_after': balanceAfter,
+    };
+
+    try {
+      await _client.from('coin_activity').insert(data);
+    } catch (e) {
+      debugPrint(
+        '[UserPreferencesService] saveCoinActivity failed, queuing for retry: $e',
+      );
+      await _queue.enqueue('coin_activity', data, 'insert');
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Retry pending writes
   // ---------------------------------------------------------------------------

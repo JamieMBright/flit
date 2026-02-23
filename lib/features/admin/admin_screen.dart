@@ -757,15 +757,27 @@ class AdminScreen extends ConsumerWidget {
             children: [
               _ActionChip(
                 label: '+100 Gold',
-                onTap: () => notifier.addCoins(100, applyBoost: false),
+                onTap: () => notifier.addCoins(
+                  100,
+                  applyBoost: false,
+                  source: 'admin_grant',
+                ),
               ),
               _ActionChip(
                 label: '+1,000 Gold',
-                onTap: () => notifier.addCoins(1000, applyBoost: false),
+                onTap: () => notifier.addCoins(
+                  1000,
+                  applyBoost: false,
+                  source: 'admin_grant',
+                ),
               ),
               _ActionChip(
                 label: '+999,999 Gold',
-                onTap: () => notifier.addCoins(999999, applyBoost: false),
+                onTap: () => notifier.addCoins(
+                  999999,
+                  applyBoost: false,
+                  source: 'admin_grant',
+                ),
               ),
               _ActionChip(label: '+50 XP', onTap: () => notifier.addXp(50)),
               _ActionChip(label: '+500 XP', onTap: () => notifier.addXp(500)),

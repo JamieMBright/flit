@@ -208,7 +208,9 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     if (!(_hasAnyEnabled && _canAffordWith(coins))) return;
     final cost = _coinCost;
     if (cost > 0) {
-      ref.read(accountProvider.notifier).spendCoins(cost);
+      ref
+          .read(accountProvider.notifier)
+          .spendCoins(cost, source: 'practice_entry_fee');
     }
     final planeId = ref.read(equippedPlaneIdProvider);
     final plane = CosmeticCatalog.getById(planeId);

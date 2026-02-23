@@ -656,7 +656,13 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                       );
                       if (!mounted) return;
                       if (ok) {
-                        ref.read(accountProvider.notifier).spendCoins(amount);
+                        ref
+                            .read(accountProvider.notifier)
+                            .spendCoins(
+                              amount,
+                              source: 'gift_sent',
+                              logActivity: false,
+                            );
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
