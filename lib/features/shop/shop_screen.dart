@@ -1078,17 +1078,17 @@ class _CosmeticCard extends StatelessWidget {
                           item.speed != 1.0 ||
                           item.fuelEfficiency != 1.0)) ...[
                     _AttrBar(
-                      label: 'HDL',
+                      label: 'Handling',
                       value: item.handling,
                       color: FlitColors.accent,
                     ),
                     _AttrBar(
-                      label: 'SPD',
+                      label: 'Speed',
                       value: item.speed,
                       color: FlitColors.success,
                     ),
                     _AttrBar(
-                      label: 'FUL',
+                      label: 'Fuel Efficiency',
                       value: item.fuelEfficiency,
                       color: FlitColors.warning,
                     ),

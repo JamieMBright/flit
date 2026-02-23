@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
@@ -191,6 +192,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
   /// Per-round results for the summary screen.
   final List<_RoundResult> _roundResults = [];
+  final Random _sessionSeedRandom = Random();
 
   @override
   void initState() {
@@ -428,6 +430,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         preferredClueType: widget.preferredClueType,
       );
     }
+    if (widget.region == GameRegion.world) {
+      final seed =
+          DateTime.now().microsecondsSinceEpoch ^
+          _sessionSeedRandom.nextInt(1 << 31);
+      return GameSession.seeded(
+        seed,
+        allowedClueTypes: widget.enabledClueTypes,
+        preferredClueType: widget.preferredClueType,
+      );
+    }
     return GameSession.random(
       region: widget.region,
       preferredClueType: widget.preferredClueType,
@@ -545,7 +557,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       if (_isMultiRound && !_isFinalRound) {
         _advanceRound();
       } else {
-        _completeLanding();
+        unawaited(_completeLanding());
       }
     }
   }
@@ -661,7 +673,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     });
   }
 
-  void _completeLanding({bool fuelDepleted = false}) {
+  Future<void> _completeLanding({bool fuelDepleted = false}) async {
     _timer?.cancel();
     final fuelFrac = fuelDepleted
         ? 0.0
@@ -775,15 +787,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
     // Record game completion last — this calls flush() which persists all
     // pending dirty state including the daily callbacks above.
-    ref
-        .read(accountProvider.notifier)
-        .recordGameCompletion(
-          elapsed: _cumulativeTime,
-          score: _totalScore,
-          roundsCompleted: _currentRound,
-          coinReward: widget.coinReward,
-          region: widget.isDailyChallenge ? 'daily' : widget.region.name,
-        );
+    await ref.read(accountProvider.notifier).recordGameCompletion(
+      elapsed: _cumulativeTime,
+      score: _totalScore,
+      roundsCompleted: _currentRound,
+      coinReward: widget.coinReward,
+      region: widget.isDailyChallenge ? 'daily' : widget.region.name,
+    );
 
     final friendName = widget.challengeFriendName;
 
@@ -944,7 +954,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                     onPressed: () {
                       _log.info('screen', 'User confirmed abort');
                       Navigator.of(dialogContext).pop();
-                      _recordAbort();
+                      unawaited(_recordAbort());
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isDailyChallenge || isChallenge
@@ -973,7 +983,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// Record an aborted game as a completion where all unseen rounds
   /// count as failures (score 0, completed: false). This prevents
   /// daily challenge exploitation (abort-to-learn-clues-ahead).
-  void _recordAbort() {
+  Future<void> _recordAbort() async {
     _timer?.cancel();
     _autoHintTimer?.cancel();
     _session?.complete(hintsUsed: 4, fuelFraction: 0.0);
@@ -1018,15 +1028,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     );
 
     // Record stats as a completed game (abort counts as a game played).
-    ref
-        .read(accountProvider.notifier)
-        .recordGameCompletion(
-          elapsed: _cumulativeTime,
-          score: _totalScore,
-          roundsCompleted: _currentRound,
-          coinReward: 0, // No coin reward for aborted games.
-          region: widget.isDailyChallenge ? 'daily' : widget.region.name,
-        );
+    await ref.read(accountProvider.notifier).recordGameCompletion(
+      elapsed: _cumulativeTime,
+      score: _totalScore,
+      roundsCompleted: _currentRound,
+      coinReward: 0, // No coin reward for aborted games.
+      region: widget.isDailyChallenge ? 'daily' : widget.region.name,
+    );
 
     // Fire daily callbacks so the daily challenge is marked as used.
     if (widget.isDailyChallenge) {

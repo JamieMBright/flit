@@ -21,10 +21,10 @@ void main() {
   });
 
   group('AccountNotifier local state updates', () {
-    test('recordGameCompletion updates profile stats in-memory', () {
+    test('recordGameCompletion updates profile stats in-memory', () async {
       final notifier = AccountNotifier();
 
-      notifier.recordGameCompletion(
+      await notifier.recordGameCompletion(
         elapsed: const Duration(seconds: 30),
         score: 500,
         roundsCompleted: 2,

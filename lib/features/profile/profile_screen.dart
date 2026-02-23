@@ -1918,22 +1918,6 @@ class _DeletionItem extends StatelessWidget {
 // Game History screen showing past game sessions
 // ---------------------------------------------------------------------------
 
-/// Small icon widget representing a clue type in game history entries.
-class _ClueTypeIcon extends StatelessWidget {
-  const _ClueTypeIcon(this.icon, this.tooltip);
-
-  final IconData icon;
-  final String tooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: Icon(icon, size: 14, color: FlitColors.textMuted),
-    );
-  }
-}
-
 class _GameHistoryEntry {
   const _GameHistoryEntry({
     required this.region,
@@ -1949,15 +1933,6 @@ class _GameHistoryEntry {
   final DateTime date;
   final int roundsCompleted;
 
-  /// Returns a color representing overall performance for this game session.
-  Color get performanceColor {
-    final int perRound = roundsCompleted > 0 ? score ~/ roundsCompleted : score;
-    if (perRound >= 8000) return const Color(0xFF6AAB5C);
-    if (perRound >= 5000) return const Color(0xFFD4A944);
-    if (perRound >= 2000) return const Color(0xFFE87A5A);
-    return const Color(0xFFCC4444);
-  }
-
   /// Generate shareable result text for socials.
   String toShareText() {
     final timeFormatted = _formatShareTime(duration);
@@ -1965,9 +1940,19 @@ class _GameHistoryEntry {
     final regionLabel = region[0].toUpperCase() + region.substring(1);
     return '     \u{1F6EB} \u{1F30D} \u{1F6EC}\n'
         'Flit — $regionLabel\n'
+        '$clueEmojiRow\n'
         'Score: $scoreFormatted pts\n'
         'Time: $timeFormatted\n'
         'Rounds: $roundsCompleted';
+  }
+
+  String get clueEmojiRow {
+    if (roundsCompleted <= 0) return '';
+    const emojis = ['🚩', '🏛️', '⬜', '🧭', '📊'];
+    return List.generate(
+      roundsCompleted,
+      (index) => emojis[index % emojis.length],
+    ).join();
   }
 
   static String _formatShareTime(Duration d) {
@@ -2121,16 +2106,6 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
                       ),
                     ),
                     const SizedBox(width: 14),
-                    // Performance dot
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: entry.performanceColor,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
                     // Region and time
                     Expanded(
                       child: Column(
@@ -2153,19 +2128,13 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
                             ),
                           ),
                           const SizedBox(height: 6),
-                          // Clue type icons row
-                          const Row(
+                          Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              _ClueTypeIcon(Icons.flag, 'Flag'),
-                              SizedBox(width: 8),
-                              _ClueTypeIcon(Icons.location_city, 'Capital'),
-                              SizedBox(width: 8),
-                              _ClueTypeIcon(Icons.crop_square, 'Outline'),
-                              SizedBox(width: 8),
-                              _ClueTypeIcon(Icons.border_all, 'Borders'),
-                              SizedBox(width: 8),
-                              _ClueTypeIcon(Icons.bar_chart, 'Stats'),
+                              Text(
+                                entry.clueEmojiRow,
+                                style: const TextStyle(fontSize: 14),
+                              ),
                             ],
                           ),
                         ],
