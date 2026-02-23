@@ -6,7 +6,7 @@
 --   2) Reconstruct deducible gameplay stats from scores/challenges data.
 --   3) Highlight gaps that cannot be reconstructed (notably coin balance).
 --
--- Replace jamieb01 if you need to run this for a different user.
+-- Replace jamieb01 in the `params` CTE in each block if needed.
 -- =============================================================================
 
 -- 1) Current authoritative rows used by app login hydration.
@@ -130,6 +130,7 @@ target as (
 ),
 challenge_coin_events as (
   select
+    t.id as user_id,
     c.id as challenge_id,
     c.completed_at,
     case
@@ -152,5 +153,5 @@ select
   min(e.completed_at) as first_completed_match_at,
   max(e.completed_at) as last_completed_match_at
 from target t
-left join challenge_coin_events e on true
+left join challenge_coin_events e on e.user_id = t.id
 group by t.username, t.coins;
