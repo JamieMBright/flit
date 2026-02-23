@@ -663,6 +663,7 @@ class AvatarConfig {
   static bool _mapEquals(Map<String, int> a, Map<String, int> b) {
     if (a.length != b.length) return false;
     for (final key in a.keys) {
+      if (!b.containsKey(key)) return false;
       if (a[key] != b[key]) return false;
     }
     return true;
@@ -671,6 +672,7 @@ class AvatarConfig {
   static bool _stringMapEquals(Map<String, String> a, Map<String, String> b) {
     if (a.length != b.length) return false;
     for (final key in a.keys) {
+      if (!b.containsKey(key)) return false;
       if (a[key] != b[key]) return false;
     }
     return true;

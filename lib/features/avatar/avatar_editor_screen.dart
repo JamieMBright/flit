@@ -1066,7 +1066,10 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
         return;
       }
       if (_isFeatureColorCategory(categoryKey)) {
-        final hex = partId.substring(partId.lastIndexOf('_') + 1);
+        final separator = partId.lastIndexOf('_');
+        if (separator < 0 || separator >= partId.length - 1) return;
+        final hex = partId.substring(separator + 1).toLowerCase();
+        if (!RegExp(r'^[0-9a-f]{6}$').hasMatch(hex)) return;
         final newEquipped = Map<String, String>.from(_config.equippedCustomColors)
           ..[categoryKey] = hex;
         _config = _config.copyWith(equippedCustomColors: newEquipped);
