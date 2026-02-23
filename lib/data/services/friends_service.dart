@@ -109,7 +109,7 @@ class FriendsService {
           .maybeSingle();
       if (ownExisting != null) {
         final existingStatus = ownExisting['status'] as String?;
-        final existingId = ownExisting['id'] as int;
+        final existingId = (ownExisting['id'] as num).toInt();
         if (existingStatus == 'pending') {
           invalidateCache();
           return true;
