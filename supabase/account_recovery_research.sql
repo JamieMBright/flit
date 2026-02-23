@@ -116,3 +116,41 @@ where table_schema = 'public'
     or column_name ilike '%transaction%'
   )
 order by table_name, ordinal_position;
+
+-- 5) Challenge-coin audit using discovered columns.
+-- Interprets challenger_coins/challenged_coins as post-match coin deltas.
+with params as (
+  select 'jamieb01'::text as username
+),
+target as (
+  select id, username, coins
+  from public.profiles
+  where username = (select username from params)
+  limit 1
+),
+challenge_coin_events as (
+  select
+    c.id as challenge_id,
+    c.completed_at,
+    case
+      when c.challenger_id = t.id then c.challenger_coins
+      when c.challenged_id = t.id then c.challenged_coins
+      else null
+    end as coin_delta
+  from public.challenges c
+  join target t
+    on c.challenger_id = t.id
+    or c.challenged_id = t.id
+  where c.status = 'completed'
+)
+select
+  t.username,
+  t.coins as stored_profile_coins,
+  count(*)::int as completed_challenges_with_coin_entry,
+  coalesce(sum(e.coin_delta), 0)::bigint as challenge_coin_delta_sum,
+  coalesce(avg(e.coin_delta), 0)::numeric(10,2) as avg_coin_delta_per_match,
+  min(e.completed_at) as first_completed_match_at,
+  max(e.completed_at) as last_completed_match_at
+from target t
+left join challenge_coin_events e on true
+group by t.username, t.coins;
