@@ -18,6 +18,7 @@ class _AvatarPart {
     required this.label,
     this.price = 0,
     this.colorHex,
+    this.isCustomPicker = false,
   });
 
   final String id;
@@ -26,6 +27,7 @@ class _AvatarPart {
 
   /// Optional color hex for color-swatch categories (hair color, skin color).
   final String? colorHex;
+  final bool isCustomPicker;
 
   bool get isFree => price == 0;
   bool get isColorSwatch => colorHex != null;
@@ -161,6 +163,48 @@ List<_AvatarPart> _skinParts() => AvatarSkinColor.values
     )
     .toList();
 
+const _customColorWheelPrice = 800;
+
+const Map<String, List<String>> _featureColorPresets = {
+  'eyesColor': ['1f3a5f', '4a7c59', '6b4423'],
+  'glassesColor': ['4a4a4a', '1f2933', '8b5e3c'],
+  'earringsColor': ['d4af37', 'c0c0c0', 'cd7f32'],
+  'earringColor': ['d4af37', 'c0c0c0', 'cd7f32'],
+  'hairAccessoriesColor': ['a855f7', 'ec4899', '3b82f6'],
+  'shirtColor': ['2563eb', '16a34a', 'dc2626'],
+  'mouthColor': ['d2691e', 'b06a4f', '7a3d1a'],
+  'clothingColor': ['2563eb', '16a34a', 'ef4444'],
+  'hatColor': ['0ea5e9', 'f59e0b', '8b5cf6'],
+  'accessoriesColor': ['22c55e', 'f97316', 'eab308'],
+};
+
+List<_AvatarPart> _featureColorParts(
+  String featureKey, {
+  String? customHex,
+}) {
+  final presets = _featureColorPresets[featureKey] ?? const ['4a4a4a'];
+  return [
+    for (final hex in presets)
+      _AvatarPart(
+        id: 'featureColor_${featureKey}_$hex',
+        label: '#${hex.toUpperCase()}',
+        colorHex: hex,
+      ),
+    if (customHex != null)
+      _AvatarPart(
+        id: 'featureColor_${featureKey}_$customHex',
+        label: '#${customHex.toUpperCase()}',
+        colorHex: customHex,
+      ),
+    const _AvatarPart(
+      id: 'featureColor_picker',
+      label: 'Custom',
+      price: _customColorWheelPrice,
+      isCustomPicker: true,
+    ),
+  ];
+}
+
 /// Generate parts for a style-specific extras category.
 /// If [hasNone] is true, index 0 means 'None' (off).
 List<_AvatarPart> _extrasParts(String key, int n, {bool hasNone = false}) {
@@ -186,7 +230,8 @@ List<_AvatarPart> _extrasParts(String key, int n, {bool hasNone = false}) {
 /// Each style defines its own tree of customisation categories, derived from
 /// the actual parts/variant files that exist for that DiceBear collection.
 /// The first category is always "Style" (the DiceBear collection picker).
-List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
+List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
+  final style = config.style;
   // Style picker — always first.
   final styleCategory = _AvatarCategory(
     label: 'Style',
@@ -290,6 +335,15 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
           parts: _hairParts(33),
         ),
         _AvatarCategory(
+          label: 'Hat Color',
+          icon: Icons.color_lens,
+          configKey: 'hatColor',
+          parts: _featureColorParts(
+            'hatColor',
+            customHex: config.customColors['hatColor'],
+          ),
+        ),
+        _AvatarCategory(
           label: 'Eyes',
           icon: Icons.visibility,
           configKey: 'eyes',
@@ -381,6 +435,15 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
           parts: _eyesParts(24),
         ),
         _AvatarCategory(
+          label: 'Eyes Color',
+          icon: Icons.color_lens,
+          configKey: 'eyesColor',
+          parts: _featureColorParts(
+            'eyesColor',
+            customHex: config.customColors['eyesColor'],
+          ),
+        ),
+        _AvatarCategory(
           label: 'Brows',
           icon: Icons.remove,
           configKey: 'eyebrows',
@@ -399,10 +462,37 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
           parts: _glassesParts(5),
         ),
         _AvatarCategory(
+          label: 'Glasses Color',
+          icon: Icons.color_lens,
+          configKey: 'glassesColor',
+          parts: _featureColorParts(
+            'glassesColor',
+            customHex: config.customColors['glassesColor'],
+          ),
+        ),
+        _AvatarCategory(
           label: 'Earrings',
           icon: Icons.radio_button_unchecked,
           configKey: 'earrings',
           parts: _earringsParts(3),
+        ),
+        _AvatarCategory(
+          label: 'Earrings Color',
+          icon: Icons.color_lens,
+          configKey: 'earringsColor',
+          parts: _featureColorParts(
+            'earringsColor',
+            customHex: config.customColors['earringsColor'],
+          ),
+        ),
+        _AvatarCategory(
+          label: 'Hair Accessory Color',
+          icon: Icons.color_lens,
+          configKey: 'hairAccessoriesColor',
+          parts: _featureColorParts(
+            'hairAccessoriesColor',
+            customHex: config.customColors['hairAccessoriesColor'],
+          ),
         ),
         _AvatarCategory(
           label: 'Features',
@@ -442,6 +532,15 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
           parts: _eyesParts(5),
         ),
         _AvatarCategory(
+          label: 'Eyes Color',
+          icon: Icons.color_lens,
+          configKey: 'eyesColor',
+          parts: _featureColorParts(
+            'eyesColor',
+            customHex: config.customColors['eyesColor'],
+          ),
+        ),
+        _AvatarCategory(
           label: 'Brows',
           icon: Icons.remove,
           configKey: 'eyebrows',
@@ -460,10 +559,37 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
           parts: _glassesParts(2),
         ),
         _AvatarCategory(
+          label: 'Glasses Color',
+          icon: Icons.color_lens,
+          configKey: 'glassesColor',
+          parts: _featureColorParts(
+            'glassesColor',
+            customHex: config.customColors['glassesColor'],
+          ),
+        ),
+        _AvatarCategory(
           label: 'Earrings',
           icon: Icons.radio_button_unchecked,
           configKey: 'earrings',
           parts: _earringsParts(2),
+        ),
+        _AvatarCategory(
+          label: 'Earring Color',
+          icon: Icons.color_lens,
+          configKey: 'earringColor',
+          parts: _featureColorParts(
+            'earringColor',
+            customHex: config.customColors['earringColor'],
+          ),
+        ),
+        _AvatarCategory(
+          label: 'Shirt Color',
+          icon: Icons.color_lens,
+          configKey: 'shirtColor',
+          parts: _featureColorParts(
+            'shirtColor',
+            customHex: config.customColors['shirtColor'],
+          ),
         ),
         _AvatarCategory(
           label: 'Facial Hair',
@@ -503,10 +629,28 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
           parts: _eyesParts(12),
         ),
         _AvatarCategory(
+          label: 'Eyes Color',
+          icon: Icons.color_lens,
+          configKey: 'eyesColor',
+          parts: _featureColorParts(
+            'eyesColor',
+            customHex: config.customColors['eyesColor'],
+          ),
+        ),
+        _AvatarCategory(
           label: 'Mouth',
           icon: Icons.mood,
           configKey: 'mouth',
           parts: _mouthParts(23),
+        ),
+        _AvatarCategory(
+          label: 'Mouth Color',
+          icon: Icons.color_lens,
+          configKey: 'mouthColor',
+          parts: _featureColorParts(
+            'mouthColor',
+            customHex: config.customColors['mouthColor'],
+          ),
         ),
         _AvatarCategory(
           label: 'Glasses',
@@ -515,10 +659,46 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
           parts: _glassesParts(5),
         ),
         _AvatarCategory(
+          label: 'Glasses Color',
+          icon: Icons.color_lens,
+          configKey: 'glassesColor',
+          parts: _featureColorParts(
+            'glassesColor',
+            customHex: config.customColors['glassesColor'],
+          ),
+        ),
+        _AvatarCategory(
           label: 'Accessories',
           icon: Icons.radio_button_unchecked,
           configKey: 'earrings',
           parts: _earringsParts(4),
+        ),
+        _AvatarCategory(
+          label: 'Accessories Color',
+          icon: Icons.color_lens,
+          configKey: 'accessoriesColor',
+          parts: _featureColorParts(
+            'accessoriesColor',
+            customHex: config.customColors['accessoriesColor'],
+          ),
+        ),
+        _AvatarCategory(
+          label: 'Clothing Color',
+          icon: Icons.color_lens,
+          configKey: 'clothingColor',
+          parts: _featureColorParts(
+            'clothingColor',
+            customHex: config.customColors['clothingColor'],
+          ),
+        ),
+        _AvatarCategory(
+          label: 'Hat Color',
+          icon: Icons.color_lens,
+          configKey: 'hatColor',
+          parts: _featureColorParts(
+            'hatColor',
+            customHex: config.customColors['hatColor'],
+          ),
         ),
         _AvatarCategory(
           label: 'Features',
@@ -639,6 +819,15 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
           parts: _skinParts(),
         ),
         _AvatarCategory(
+          label: 'Clothing Color',
+          icon: Icons.color_lens,
+          configKey: 'clothingColor',
+          parts: _featureColorParts(
+            'clothingColor',
+            customHex: config.customColors['clothingColor'],
+          ),
+        ),
+        _AvatarCategory(
           label: 'Hair',
           icon: Icons.content_cut,
           configKey: 'hair',
@@ -692,6 +881,24 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarStyle style) {
           icon: Icons.mood,
           configKey: 'mouth',
           parts: _mouthParts(5),
+        ),
+        _AvatarCategory(
+          label: 'Eyes Color',
+          icon: Icons.color_lens,
+          configKey: 'eyesColor',
+          parts: _featureColorParts(
+            'eyesColor',
+            customHex: config.customColors['eyesColor'],
+          ),
+        ),
+        _AvatarCategory(
+          label: 'Mouth Color',
+          icon: Icons.color_lens,
+          configKey: 'mouthColor',
+          parts: _featureColorParts(
+            'mouthColor',
+            customHex: config.customColors['mouthColor'],
+          ),
         ),
       ],
     },
@@ -784,12 +991,37 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
   void initState() {
     super.initState();
     _config = ref.read(accountProvider).avatar;
-    _categories = _buildCategoriesForStyle(_config.style);
+    _categories = _buildCategoriesForStyle(_config);
   }
 
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
+
+  static const Set<String> _featureColorKeys = {
+    'eyesColor',
+    'glassesColor',
+    'earringsColor',
+    'earringColor',
+    'hairAccessoriesColor',
+    'shirtColor',
+    'mouthColor',
+    'clothingColor',
+    'hatColor',
+    'accessoriesColor',
+  };
+
+  bool _isFeatureColorCategory(String key) => _featureColorKeys.contains(key);
+
+  String _defaultColorFor(String categoryKey) =>
+      _featureColorPresets[categoryKey]?.first ?? '4a4a4a';
+
+  void _rebuildCategories() {
+    _categories = _buildCategoriesForStyle(_config);
+    if (_selectedCategory >= _categories.length) {
+      _selectedCategory = 0;
+    }
+  }
 
   /// Returns the currently selected part id for the given [categoryKey].
   String _selectedPartForCategory(String categoryKey) {
@@ -797,6 +1029,13 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
     if (categoryKey.startsWith('extras_')) {
       final extrasKey = categoryKey.substring(7);
       return 'extras_${extrasKey}_${_config.extra(extrasKey)}';
+    }
+    if (_isFeatureColorCategory(categoryKey)) {
+      final hex =
+          _config.equippedCustomColors[categoryKey] ??
+          _config.customColors[categoryKey] ??
+          _defaultColorFor(categoryKey);
+      return 'featureColor_${categoryKey}_$hex';
     }
     return switch (categoryKey) {
       'style' => 'style_${_config.style.name}',
@@ -826,6 +1065,13 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
         _config = _config.copyWith(extras: newExtras);
         return;
       }
+      if (_isFeatureColorCategory(categoryKey)) {
+        final hex = partId.substring(partId.lastIndexOf('_') + 1);
+        final newEquipped = Map<String, String>.from(_config.equippedCustomColors)
+          ..[categoryKey] = hex;
+        _config = _config.copyWith(equippedCustomColors: newEquipped);
+        return;
+      }
 
       final suffix = partId.substring(partId.indexOf('_') + 1);
       switch (categoryKey) {
@@ -836,10 +1082,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
           _config = _config.copyWith(style: newStyle);
           // Rebuild categories for the new style. Keep the tab on "Style" (0)
           // because the user just changed it and should see the new selection.
-          _categories = _buildCategoriesForStyle(newStyle);
-          if (_selectedCategory >= _categories.length) {
-            _selectedCategory = 0;
-          }
+          _rebuildCategories();
         case 'eyes':
           _config = _config.copyWith(
             eyes: AvatarEyes.values.firstWhere((v) => v.name == suffix),
@@ -886,6 +1129,11 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
 
   /// Whether the player can use [part] (either free or already owned).
   bool _canUsePart(_AvatarPart part) =>
+      part.isCustomPicker ||
+      (_isFeatureColorCategory(
+            _categories[_selectedCategory].configKey,
+          ) &&
+          part.isColorSwatch) ||
       part.isFree ||
       ref.read(accountProvider).ownedAvatarParts.contains(part.id);
 
@@ -1077,6 +1325,158 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
     );
   }
 
+  void _showCustomColorPickerDialog(String categoryKey) {
+    final existing = _config.customColors[categoryKey];
+    final initialHex = (existing ?? _defaultColorFor(categoryKey))
+        .toLowerCase()
+        .replaceAll('#', '');
+    final safeInitialHex = RegExp(r'^[0-9a-f]{6}$').hasMatch(initialHex)
+        ? initialHex
+        : _defaultColorFor(categoryKey);
+    var selected = Color(
+      int.parse(
+        'FF$safeInitialHex',
+        radix: 16,
+      ),
+    );
+    final coins = ref.read(currentCoinsProvider);
+    final canAfford = coins >= _customColorWheelPrice;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final hsv = HSVColor.fromColor(selected);
+          final selectedHex = selected.value
+              .toRadixString(16)
+              .padLeft(8, '0')
+              .substring(2);
+          final isExisting = existing == selectedHex;
+          final price = isExisting ? 0 : _customColorWheelPrice;
+          return AlertDialog(
+            backgroundColor: FlitColors.cardBackground,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: FlitColors.cardBorder),
+            ),
+            title: const Text(
+              'Custom Color Wheel',
+              style: TextStyle(color: FlitColors.textPrimary),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: selected,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: FlitColors.cardBorder, width: 2),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Slider(
+                    value: hsv.hue,
+                    min: 0,
+                    max: 360,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selected = hsv.withHue(value).toColor();
+                      });
+                    },
+                  ),
+                  Slider(
+                    value: hsv.saturation,
+                    min: 0,
+                    max: 1,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selected = hsv.withSaturation(value).toColor();
+                      });
+                    },
+                  ),
+                  Slider(
+                    value: hsv.value,
+                    min: 0,
+                    max: 1,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selected = hsv.withValue(value).toColor();
+                      });
+                    },
+                  ),
+                  Text(
+                    '#$selectedHex',
+                    style: const TextStyle(color: FlitColors.textSecondary),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    price == 0
+                        ? 'Already purchased for this feature'
+                        : '$price coins to apply this custom color',
+                    style: TextStyle(
+                      color: price == 0
+                          ? FlitColors.success
+                          : (canAfford
+                                ? FlitColors.warning
+                                : FlitColors.error),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: FlitColors.textMuted),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: price > 0 && !canAfford
+                    ? null
+                    : () {
+                        if (price > 0) {
+                          final ok = ref
+                              .read(accountProvider.notifier)
+                              .purchaseAvatarPart(
+                                'customColorWheel_$categoryKey',
+                                price,
+                              );
+                          if (!ok) return;
+                        }
+                        final newCustom = Map<String, String>.from(
+                          _config.customColors,
+                        )..[categoryKey] = selectedHex;
+                        final newEquipped = Map<String, String>.from(
+                          _config.equippedCustomColors,
+                        )..[categoryKey] = selectedHex;
+                        setState(() {
+                          _config = _config.copyWith(
+                            customColors: newCustom,
+                            equippedCustomColors: newEquipped,
+                          );
+                          _rebuildCategories();
+                        });
+                        ref.read(accountProvider.notifier).updateAvatar(_config);
+                        Navigator.of(dialogContext).pop();
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FlitColors.accent,
+                  foregroundColor: FlitColors.textPrimary,
+                ),
+                child: const Text('Apply'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   void _saveConfig() {
     ref.read(accountProvider.notifier).updateAvatar(_config);
     Navigator.of(context).pop();
@@ -1168,7 +1568,9 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
               coins: coins,
               onPartTapped: (part) {
                 final key = _categories[_selectedCategory].configKey;
-                if (_canUsePart(part)) {
+                if (part.isCustomPicker) {
+                  _showCustomColorPickerDialog(key);
+                } else if (_canUsePart(part)) {
                   _selectPart(key, part.id);
                 } else {
                   _showPurchaseDialog(part, key);
@@ -1425,7 +1827,13 @@ class _PartCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Center(
-                      child: part.isColorSwatch
+                      child: part.isCustomPicker
+                          ? const Icon(
+                              Icons.colorize,
+                              color: FlitColors.accent,
+                              size: 24,
+                            )
+                          : part.isColorSwatch
                           ? _ColorSwatch(hex: part.colorHex!)
                           : LayoutBuilder(
                               builder: (context, constraints) {
