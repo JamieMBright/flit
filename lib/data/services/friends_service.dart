@@ -44,6 +44,7 @@ class FriendsService {
           })
         >
       >(const Duration(seconds: 60));
+  // Product rule: friend invites (incoming + sent pending) expire after 3 days.
   static const Duration _inviteExpiry = Duration(days: 3);
 
   /// Drop cached friends/pending data. Called automatically after mutations.
@@ -53,12 +54,16 @@ class FriendsService {
     _sentCache.invalidate();
   }
 
-  bool _isExpiredCreatedAt(dynamic createdAt) {
-    final raw = createdAt as String?;
+  bool _isExpiredCreatedAt(String? raw) {
     if (raw == null || raw.isEmpty) return false;
     final created = DateTime.tryParse(raw);
     if (created == null) return false;
     return DateTime.now().toUtc().difference(created.toUtc()) > _inviteExpiry;
+  }
+
+  @visibleForTesting
+  bool isInviteExpiredForTest(String? createdAt) {
+    return _isExpiredCreatedAt(createdAt);
   }
 
   // ---------------------------------------------------------------------------
@@ -298,7 +303,7 @@ class FriendsService {
 
       final expiredIds = <int>[];
       final result = data.map((row) {
-        if (_isExpiredCreatedAt(row['created_at'])) {
+        if (_isExpiredCreatedAt(row['created_at'] as String?)) {
           expiredIds.add((row['id'] as num).toInt());
           return null;
         }
@@ -321,10 +326,14 @@ class FriendsService {
       >().toList();
 
       if (expiredIds.isNotEmpty) {
-        await _client
-            .from('friendships')
-            .delete()
-            .inFilter('id', expiredIds);
+        try {
+          await _client
+              .from('friendships')
+              .delete()
+              .inFilter('id', expiredIds);
+        } catch (e) {
+          debugPrint('[FriendsService] pending expiry cleanup failed: $e');
+        }
       }
 
       _pendingCache.set(cacheKey, result);
@@ -366,7 +375,7 @@ class FriendsService {
 
       final expiredIds = <int>[];
       final result = data.map((row) {
-        if (_isExpiredCreatedAt(row['created_at'])) {
+        if (_isExpiredCreatedAt(row['created_at'] as String?)) {
           expiredIds.add((row['id'] as num).toInt());
           return null;
         }
@@ -389,10 +398,14 @@ class FriendsService {
       >().toList();
 
       if (expiredIds.isNotEmpty) {
-        await _client
-            .from('friendships')
-            .delete()
-            .inFilter('id', expiredIds);
+        try {
+          await _client
+              .from('friendships')
+              .delete()
+              .inFilter('id', expiredIds);
+        } catch (e) {
+          debugPrint('[FriendsService] sent expiry cleanup failed: $e');
+        }
       }
 
       _sentCache.set(cacheKey, result);

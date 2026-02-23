@@ -193,6 +193,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// Per-round results for the summary screen.
   final List<_RoundResult> _roundResults = [];
   final Random _sessionSeedRandom = Random();
+  bool _isCheckingProximity = false;
 
   @override
   void initState() {
@@ -543,22 +544,28 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   }
 
   Future<void> _checkProximity() async {
+    if (_isCheckingProximity) return;
     if (_session == null || _session!.isCompleted) return;
+    _isCheckingProximity = true;
 
-    // Two ways to complete: proximity to target point OR entering the
-    // target country's borders. The border check allows high-altitude
-    // fly-over to register — the player shouldn't need to descend.
-    final nearTarget = _game.isNearTarget(threshold: 25);
-    final inTargetCountry =
-        _game.currentCountryName != null &&
-        _game.currentCountryName == _session!.targetName;
+    try {
+      // Two ways to complete: proximity to target point OR entering the
+      // target country's borders. The border check allows high-altitude
+      // fly-over to register — the player shouldn't need to descend.
+      final nearTarget = _game.isNearTarget(threshold: 25);
+      final inTargetCountry =
+          _game.currentCountryName != null &&
+          _game.currentCountryName == _session!.targetName;
 
-    if (nearTarget || inTargetCountry) {
-      if (_isMultiRound && !_isFinalRound) {
-        _advanceRound();
-      } else {
-        await _completeLanding();
+      if (nearTarget || inTargetCountry) {
+        if (_isMultiRound && !_isFinalRound) {
+          _advanceRound();
+        } else {
+          await _completeLanding();
+        }
       }
+    } finally {
+      _isCheckingProximity = false;
     }
   }
 

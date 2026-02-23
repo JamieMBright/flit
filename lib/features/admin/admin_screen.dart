@@ -48,6 +48,18 @@ class AdminScreen extends ConsumerWidget {
     );
   }
 
+  /// Atomically set a numeric column on a profile row.
+  Future<void> _setStat(String userId, String column, int value) async {
+    await _client.rpc(
+      'admin_set_stat',
+      params: {
+        'target_user_id': userId,
+        'stat_column': column,
+        'new_value': value,
+      },
+    );
+  }
+
   /// Show a snackbar with [message].
   void _snack(BuildContext context, String message, {bool isError = false}) {
     if (!context.mounted) return;
@@ -288,11 +300,7 @@ class AdminScreen extends ConsumerWidget {
                 return;
               }
 
-              final currentValue = (user[statColumn] as num?)?.toInt() ?? 0;
-              final delta = targetValue - currentValue;
-              if (delta != 0) {
-                await _incrementStat(user['id'] as String, statColumn, delta);
-              }
+              await _setStat(user['id'] as String, statColumn, targetValue);
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
               _snack(context, 'Set $statColumn for @$username to $targetValue');

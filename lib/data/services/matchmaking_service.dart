@@ -235,6 +235,12 @@ class MatchmakingService {
               .order('created_at', ascending: true)
               .limit(1)
               .maybeSingle())?['id'] as String?;
+      if (myEntryId == null) {
+        debugPrint(
+          '[MatchmakingService] findMatch warning: caller pool entry missing; '
+          'opponent entry will be marked matched only',
+        );
+      }
 
       await _client
           .from('matchmaking_pool')

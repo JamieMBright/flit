@@ -1946,13 +1946,11 @@ class _GameHistoryEntry {
         'Rounds: $roundsCompleted';
   }
 
+  /// Decorative emoji row for history share text.
+  /// This does not encode actual clue types from the run.
   String get clueEmojiRow {
     if (roundsCompleted <= 0) return '';
-    const emojis = ['🚩', '🏛️', '⬜', '🧭', '📊'];
-    return List.generate(
-      roundsCompleted,
-      (index) => emojis[index % emojis.length],
-    ).join();
+    return List.filled(roundsCompleted, '✈️').join();
   }
 
   static String _formatShareTime(Duration d) {
