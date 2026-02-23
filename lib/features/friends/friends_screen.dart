@@ -363,6 +363,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 backgroundColor: FlitColors.success,
               ),
             );
+            _loadData();
           } else {
             ScaffoldMessenger.of(this.context).showSnackBar(
               SnackBar(

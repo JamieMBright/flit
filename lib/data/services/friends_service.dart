@@ -101,6 +101,29 @@ class FriendsService {
         return true;
       }
 
+      final ownExisting = await _client
+          .from('friendships')
+          .select('id, status')
+          .eq('requester_id', _userId!)
+          .eq('addressee_id', addresseeId)
+          .maybeSingle();
+      if (ownExisting != null) {
+        final existingStatus = ownExisting['status'] as String?;
+        final existingId = ownExisting['id'] as int;
+        if (existingStatus == 'pending') {
+          invalidateCache();
+          return true;
+        }
+        if (existingStatus == 'declined') {
+          await _client
+              .from('friendships')
+              .update({'status': 'pending'})
+              .eq('id', existingId);
+          invalidateCache();
+          return true;
+        }
+      }
+
       await _client.from('friendships').insert({
         'requester_id': _userId,
         'addressee_id': addresseeId,
