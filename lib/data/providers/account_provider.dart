@@ -466,6 +466,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
     final username = state.currentPlayer.username.trim().isNotEmpty
         ? state.currentPlayer.username
         : state.currentPlayer.id;
+    // Fire-and-forget on purpose: coin logging should never block gameplay UI.
+    // UserPreferencesService handles offline queue fallback on insert failures.
     _prefs.saveCoinActivity(
       username: username,
       coinAmount: amount,

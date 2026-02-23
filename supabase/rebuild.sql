@@ -328,6 +328,13 @@ DO $$ BEGIN
   ) THEN
     CREATE POLICY "Users can read own coin activity"
       ON public.coin_activity FOR SELECT USING (auth.uid() = user_id);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'coin_activity' AND policyname = 'Users can insert own coin activity'
+  ) THEN
     CREATE POLICY "Users can insert own coin activity"
       ON public.coin_activity FOR INSERT WITH CHECK (auth.uid() = user_id);
   END IF;

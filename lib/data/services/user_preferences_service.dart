@@ -481,16 +481,18 @@ class UserPreferencesService {
     if (userId == null || userId.isEmpty) return;
     if (coinAmount == 0) return;
 
-    final safeUsername = username.trim().isNotEmpty
-        ? username.trim().substring(
+    final trimmedUsername = username.trim();
+    final safeUsername = trimmedUsername.isNotEmpty
+        ? trimmedUsername.substring(
             0,
-            username.trim().length > 64 ? 64 : username.trim().length,
+            trimmedUsername.length > 64 ? 64 : trimmedUsername.length,
           )
         : userId;
-    final safeSource = source.trim().isNotEmpty
-        ? source.trim().substring(
+    final trimmedSource = source.trim();
+    final safeSource = trimmedSource.isNotEmpty
+        ? trimmedSource.substring(
             0,
-            source.trim().length > 64 ? 64 : source.trim().length,
+            trimmedSource.length > 64 ? 64 : trimmedSource.length,
           )
         : 'unknown';
 
