@@ -1803,9 +1803,11 @@ class _ResultDialog extends ConsumerWidget {
                         ? FlitColors.error
                         : r.hintsUsed == 0
                         ? FlitColors.success
-                        : r.hintsUsed <= 2
+                        : r.hintsUsed == 1
                         ? FlitColors.accent
-                        : FlitColors.gold;
+                        : r.hintsUsed <= 3
+                        ? FlitColors.gold
+                        : FlitColors.accent;
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Container(

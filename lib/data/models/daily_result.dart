@@ -23,8 +23,9 @@ class DailyRoundResult {
   String get emoji {
     if (!completed) return '\u{1F534}'; // red
     if (hintsUsed == 0) return '\u{1F7E2}'; // green
-    if (hintsUsed <= 2) return '\u{1F7E0}'; // orange
-    return '\u{1F7E1}'; // yellow
+    if (hintsUsed == 1) return '\u{1F7E0}'; // orange
+    if (hintsUsed <= 3) return '\u{1F7E1}'; // yellow
+    return '\u{1F7E0}'; // orange
   }
 
   Map<String, dynamic> toJson() => {
