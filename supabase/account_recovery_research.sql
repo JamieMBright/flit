@@ -136,6 +136,7 @@ challenge_coin_events as (
     case
       when c.challenger_id = t.id then c.challenger_coins
       when c.challenged_id = t.id then c.challenged_coins
+      else 0
     end as coin_delta
   from public.challenges c
   join target t
