@@ -312,8 +312,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// so the user always sees the latest server state.
   Future<void> refreshFromServer() async {
     if (_userId == null) return;
-    if (_prefs.hasPendingWrites) {
-      // Flush pending writes first, then refresh.
+    if (_prefs.hasPendingWrites || _prefs.hasPendingOfflineWrites) {
+      // Flush pending writes / retry queued offline writes first, then refresh.
       await _prefs.flush();
     }
     if (_prefs.hasPendingWrites || _prefs.hasPendingOfflineWrites) {
