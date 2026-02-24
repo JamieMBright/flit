@@ -608,8 +608,9 @@ class LeaderboardService {
     final cached = _historyCache.get(cacheKey);
     if (cached != null) {
       return {
-        'daily': cached.isNotEmpty ? cached[0] : null,
-        'training': cached.length > 1 ? cached[1] : null,
+        'daily': cached.isNotEmpty ? Map<String, int>.from(cached[0]) : null,
+        'training':
+            cached.length > 1 ? Map<String, int>.from(cached[1]) : null,
       };
     }
 
