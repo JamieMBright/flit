@@ -6,11 +6,12 @@ import '../../data/models/leaderboard_entry.dart';
 import '../../data/services/leaderboard_service.dart';
 import '../avatar/avatar_widget.dart';
 
-/// Leaderboard screen showing top scores from Supabase views.
+/// Leaderboard screen showing daily challenge scores from Supabase views.
 ///
-/// Tabs: Global | Today | Regional | Friends
-/// Fetches ranked data from the `leaderboard_global`, `leaderboard_daily`,
-/// and `leaderboard_regional` SQL views, plus a friends query.
+/// Tabs: All Time | Today | Streaks | Friends
+/// Fetches ranked data from the `leaderboard_global` (daily-only),
+/// `leaderboard_daily`, and `daily_streak_leaderboard` SQL views, plus a
+/// friends query.
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
 
@@ -47,8 +48,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         entries = await service.fetchDaily();
         break;
       case LeaderboardTab.regional:
-        // Default to 'world' region; a region picker could be added later.
-        entries = await service.fetchRegional('world');
+        entries = await service.fetchStreaks();
         break;
       case LeaderboardTab.friends:
         final userId = _userId;
@@ -113,6 +113,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   itemBuilder: (context, index) => _LeaderboardRow(
                     entry: _entries[index],
                     isCurrentPlayer: _entries[index].playerId == _userId,
+                    isStreakTab: _selectedTab == LeaderboardTab.regional,
                   ),
                 ),
         ),
@@ -270,10 +271,15 @@ class _PlayerRankBanner extends StatelessWidget {
 
 /// A single leaderboard row with rank, avatar, name, score, and time.
 class _LeaderboardRow extends StatelessWidget {
-  const _LeaderboardRow({required this.entry, this.isCurrentPlayer = false});
+  const _LeaderboardRow({
+    required this.entry,
+    this.isCurrentPlayer = false,
+    this.isStreakTab = false,
+  });
 
   final LeaderboardEntry entry;
   final bool isCurrentPlayer;
+  final bool isStreakTab;
 
   @override
   Widget build(BuildContext context) {
@@ -335,7 +341,9 @@ class _LeaderboardRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${entry.score} pts',
+                  isStreakTab
+                      ? '${entry.score} day streak'
+                      : '${entry.score} pts',
                   style: const TextStyle(
                     color: FlitColors.textSecondary,
                     fontSize: 12,
@@ -344,16 +352,17 @@ class _LeaderboardRow extends StatelessWidget {
               ],
             ),
           ),
-          // Time
-          Text(
-            '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}.${millis.toString().padLeft(2, '0')}',
-            style: const TextStyle(
-              color: FlitColors.textPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'monospace',
+          // Time (hidden for streak tab)
+          if (!isStreakTab)
+            Text(
+              '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}.${millis.toString().padLeft(2, '0')}',
+              style: const TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'monospace',
+              ),
             ),
-          ),
         ],
       ),
     );

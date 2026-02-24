@@ -75,11 +75,11 @@ extension LeaderboardTabExtension on LeaderboardTab {
   String get displayName {
     switch (this) {
       case LeaderboardTab.global:
-        return 'Global';
+        return 'All Time';
       case LeaderboardTab.daily:
         return 'Today';
       case LeaderboardTab.regional:
-        return 'Regional';
+        return 'Streaks';
       case LeaderboardTab.friends:
         return 'Friends';
     }

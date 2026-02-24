@@ -429,6 +429,7 @@ class UserPreferencesService {
     required int timeMs,
     required String region,
     required int roundsCompleted,
+    String? roundEmojis,
   }) async {
     await _ensureQueueInitialised();
 
@@ -460,6 +461,7 @@ class UserPreferencesService {
       'time_ms': validatedTimeMs,
       'region': region,
       'rounds_completed': roundsCompleted,
+      if (roundEmojis != null) 'round_emojis': roundEmojis,
     };
 
     final client = _clientOrNull;

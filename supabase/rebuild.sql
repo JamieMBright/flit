@@ -282,6 +282,8 @@ CREATE TABLE IF NOT EXISTS public.scores (
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE public.scores ADD COLUMN IF NOT EXISTS round_emojis TEXT;
+
 CREATE INDEX IF NOT EXISTS idx_scores_leaderboard
   ON public.scores (region, score DESC, created_at);
 CREATE INDEX IF NOT EXISTS idx_scores_user
@@ -1287,6 +1289,7 @@ SELECT s.user_id, p.username, p.level, p.avatar_url,
        ROW_NUMBER() OVER (ORDER BY s.score DESC, s.time_ms ASC) as rank
 FROM scores s
 JOIN profiles p ON s.user_id = p.id
+WHERE s.region = 'daily'
 ORDER BY s.score DESC, s.time_ms ASC;
 
 CREATE OR REPLACE VIEW leaderboard_daily AS
@@ -1295,7 +1298,7 @@ SELECT s.user_id, p.username, p.level, p.avatar_url,
        ROW_NUMBER() OVER (ORDER BY s.score DESC, s.time_ms ASC) as rank
 FROM scores s
 JOIN profiles p ON s.user_id = p.id
-WHERE s.created_at >= CURRENT_DATE
+WHERE s.created_at >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date
   AND s.region = 'daily'
 ORDER BY s.score DESC, s.time_ms ASC;
 

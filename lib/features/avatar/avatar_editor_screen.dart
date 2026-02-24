@@ -178,10 +178,7 @@ const Map<String, List<String>> _featureColorPresets = {
   'accessoriesColor': ['22c55e', 'f97316', 'eab308'],
 };
 
-List<_AvatarPart> _featureColorParts(
-  String featureKey, {
-  String? customHex,
-}) {
+List<_AvatarPart> _featureColorParts(String featureKey, {String? customHex}) {
   final presets = _featureColorPresets[featureKey] ?? const ['4a4a4a'];
   return [
     for (final hex in presets)
@@ -1070,8 +1067,9 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
         if (separator < 0 || separator >= partId.length - 1) return;
         final hex = partId.substring(separator + 1).toLowerCase();
         if (!RegExp(r'^[0-9a-f]{6}$').hasMatch(hex)) return;
-        final newEquipped = Map<String, String>.from(_config.equippedCustomColors)
-          ..[categoryKey] = hex;
+        final newEquipped = Map<String, String>.from(
+          _config.equippedCustomColors,
+        )..[categoryKey] = hex;
         _config = _config.copyWith(equippedCustomColors: newEquipped);
         return;
       }
@@ -1133,9 +1131,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
   /// Whether the player can use [part] (either free or already owned).
   bool _canUsePart(_AvatarPart part) =>
       part.isCustomPicker ||
-      (_isFeatureColorCategory(
-            _categories[_selectedCategory].configKey,
-          ) &&
+      (_isFeatureColorCategory(_categories[_selectedCategory].configKey) &&
           part.isColorSwatch) ||
       part.isFree ||
       ref.read(accountProvider).ownedAvatarParts.contains(part.id);
@@ -1336,12 +1332,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
     final safeInitialHex = RegExp(r'^[0-9a-f]{6}$').hasMatch(initialHex)
         ? initialHex
         : _defaultColorFor(categoryKey);
-    var selected = Color(
-      int.parse(
-        'FF$safeInitialHex',
-        radix: 16,
-      ),
-    );
+    var selected = Color(int.parse('FF$safeInitialHex', radix: 16));
     final coins = ref.read(currentCoinsProvider);
     final canAfford = coins >= _customColorWheelPrice;
 
@@ -1376,7 +1367,10 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                     decoration: BoxDecoration(
                       color: selected,
                       shape: BoxShape.circle,
-                      border: Border.all(color: FlitColors.cardBorder, width: 2),
+                      border: Border.all(
+                        color: FlitColors.cardBorder,
+                        width: 2,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1422,9 +1416,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                     style: TextStyle(
                       color: price == 0
                           ? FlitColors.success
-                          : (canAfford
-                                ? FlitColors.warning
-                                : FlitColors.error),
+                          : (canAfford ? FlitColors.warning : FlitColors.error),
                     ),
                   ),
                 ],
@@ -1464,7 +1456,9 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                           );
                           _rebuildCategories();
                         });
-                        ref.read(accountProvider.notifier).updateAvatar(_config);
+                        ref
+                            .read(accountProvider.notifier)
+                            .updateAvatar(_config);
                         Navigator.of(dialogContext).pop();
                       },
                 style: ElevatedButton.styleFrom(

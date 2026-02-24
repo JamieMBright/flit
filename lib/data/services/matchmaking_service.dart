@@ -226,15 +226,16 @@ class MatchmakingService {
       final myEntryId =
           myPoolEntryId ??
           (await _client
-              .from('matchmaking_pool')
-              .select('id')
-              .eq('user_id', _userId!)
-              .eq('region', region)
-              .eq('gameplay_version', _gameplayVersion)
-              .isFilter('matched_at', null)
-              .order('created_at', ascending: true)
-              .limit(1)
-              .maybeSingle())?['id'] as String?;
+                  .from('matchmaking_pool')
+                  .select('id')
+                  .eq('user_id', _userId!)
+                  .eq('region', region)
+                  .eq('gameplay_version', _gameplayVersion)
+                  .isFilter('matched_at', null)
+                  .order('created_at', ascending: true)
+                  .limit(1)
+                  .maybeSingle())?['id']
+              as String?;
       if (myEntryId == null) {
         debugPrint(
           '[MatchmakingService] findMatch warning: caller pool entry missing; '

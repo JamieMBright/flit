@@ -232,7 +232,9 @@ class LeaderboardService {
     try {
       final data = await _client
           .from('scores')
-          .select('score, time_ms, region, rounds_completed, created_at')
+          .select(
+            'score, time_ms, region, rounds_completed, round_emojis, created_at',
+          )
           .eq('user_id', userId)
           .order('created_at', ascending: false)
           .limit(limit);
@@ -353,6 +355,37 @@ class LeaderboardService {
       return result;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchRegional failed: $e');
+      return [];
+    }
+  }
+
+  /// Fetch daily streak leaderboard (ranked by current streak).
+  Future<List<LeaderboardEntry>> fetchStreaks({int limit = 50}) async {
+    const cacheKey = 'streaks';
+    final cached = _boardCache.get(cacheKey);
+    if (cached != null) return cached;
+
+    try {
+      final data = await _client
+          .from('daily_streak_leaderboard')
+          .select()
+          .limit(limit);
+
+      final result = data.asMap().entries.map((e) {
+        final row = e.value;
+        return LeaderboardEntry(
+          playerId: row['user_id'] as String? ?? '',
+          playerName: row['username'] as String? ?? 'Unknown',
+          score: row['current_streak'] as int? ?? 0,
+          time: Duration.zero,
+          rank: e.key + 1,
+        );
+      }).toList();
+
+      _boardCache.set(cacheKey, result);
+      return result;
+    } catch (e) {
+      debugPrint('[LeaderboardService] fetchStreaks failed: $e');
       return [];
     }
   }

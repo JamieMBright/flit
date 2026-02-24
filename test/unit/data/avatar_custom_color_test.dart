@@ -20,7 +20,9 @@ void main() {
     });
 
     test('colorOverride falls back for invalid values', () {
-      const config = AvatarConfig(equippedCustomColors: {'eyesColor': 'notHex'});
+      const config = AvatarConfig(
+        equippedCustomColors: {'eyesColor': 'notHex'},
+      );
 
       expect(config.colorOverride('eyesColor', '#112233'), equals('#112233'));
       expect(config.colorOverride('missing', '#112233'), equals('#112233'));

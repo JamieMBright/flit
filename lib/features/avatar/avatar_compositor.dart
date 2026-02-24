@@ -458,11 +458,7 @@ class AvatarCompositor {
       3,
     ).replaceAll('{{EYEBROWS_COLOR}}', hairHex);
     // DiceBear default eyes color is #000000 (black).
-    final eyes = _pick(
-      loreleiEyes,
-      config.eyes.index,
-      4,
-    ).replaceAll(
+    final eyes = _pick(loreleiEyes, config.eyes.index, 4).replaceAll(
       '{{EYES_COLOR}}',
       config.colorOverride('eyesColor', '#000000'),
     );
@@ -477,21 +473,13 @@ class AvatarCompositor {
     );
     final glasses = config.glasses == AvatarGlasses.none
         ? ''
-        : _pick(
-            loreleiGlasses,
-            config.glasses.index,
-            7,
-          ).replaceAll(
+        : _pick(loreleiGlasses, config.glasses.index, 7).replaceAll(
             '{{GLASSES_COLOR}}',
             config.colorOverride('glassesColor', '#4a4a4a'),
           );
     final earrings = config.earrings == AvatarEarrings.none
         ? ''
-        : _pick(
-            loreleiEarrings,
-            config.earrings.index,
-            8,
-          ).replaceAll(
+        : _pick(loreleiEarrings, config.earrings.index, 8).replaceAll(
             '{{EARRINGS_COLOR}}',
             config.colorOverride('earringsColor', '#d4af37'),
           );
@@ -504,11 +492,7 @@ class AvatarCompositor {
           ).replaceAll('{{HAIR_COLOR}}', hairHex);
     final hairAccessories = config.hair == AvatarHair.none
         ? ''
-        : _pick(
-            loreleiHairAccessories,
-            sh,
-            10,
-          ).replaceAll(
+        : _pick(loreleiHairAccessories, sh, 10).replaceAll(
             '{{HAIRACCESSORIES_COLOR}}',
             config.colorOverride('hairAccessoriesColor', _hashColor(sh, 55)),
           );
@@ -590,11 +574,7 @@ class AvatarCompositor {
     // Micah glasses embed inside eyes via {{GLASSES}} placeholder.
     final glassesRaw = config.glasses == AvatarGlasses.none
         ? ''
-        : _pick(
-            micahGlasses,
-            config.glasses.index,
-            10,
-          ).replaceAll(
+        : _pick(micahGlasses, config.glasses.index, 10).replaceAll(
             '{{GLASSES_COLOR}}',
             config.colorOverride('glassesColor', '#4a4a4a'),
           );
@@ -635,11 +615,7 @@ class AvatarCompositor {
     final ears = _pick(micahEars, strH, 7).replaceAll('{{EAR_COLOR}}', skinHex);
     final earrings = config.earrings == AvatarEarrings.none
         ? ''
-        : _pick(
-            micahEarrings,
-            config.earrings.index,
-            8,
-          ).replaceAll(
+        : _pick(micahEarrings, config.earrings.index, 8).replaceAll(
             '{{EARRING_COLOR}}',
             config.colorOverride('earringColor', '#d4af37'),
           );
@@ -685,13 +661,12 @@ class AvatarCompositor {
       'eyesColor',
       _hashColor(config.eyes.index * 41, 33),
     );
-    final accColor = config.colorOverride('accessoriesColor', _hashColor(sh, 55));
+    final accColor = config.colorOverride(
+      'accessoriesColor',
+      _hashColor(sh, 55),
+    );
 
-    final clothing = _pick(
-      pixelartClothing,
-      strH,
-      1,
-    ).replaceAll(
+    final clothing = _pick(pixelartClothing, strH, 1).replaceAll(
       '{{CLOTHING_COLOR}}',
       config.colorOverride('clothingColor', _hashColor(strH, 66)),
     );
@@ -700,11 +675,7 @@ class AvatarCompositor {
       config.eyes.index,
       2,
     ).replaceAll('{{EYES_COLOR}}', eyeColor);
-    final mouth = _pick(
-      pixelartMouth,
-      config.mouth.index,
-      3,
-    ).replaceAll(
+    final mouth = _pick(pixelartMouth, config.mouth.index, 3).replaceAll(
       '{{MOUTH_COLOR}}',
       config.colorOverride('mouthColor', '#d2691e'),
     );
@@ -723,19 +694,11 @@ class AvatarCompositor {
         : '';
     final glasses = config.glasses == AvatarGlasses.none
         ? ''
-        : _pick(
-            pixelartGlasses,
-            config.glasses.index,
-            6,
-          ).replaceAll(
+        : _pick(pixelartGlasses, config.glasses.index, 6).replaceAll(
             '{{GLASSES_COLOR}}',
             config.colorOverride('glassesColor', '#4a4a4a'),
           );
-    final hat = _pick(
-      pixelartHat,
-      sh,
-      7,
-    ).replaceAll(
+    final hat = _pick(pixelartHat, sh, 7).replaceAll(
       '{{HAT_COLOR}}',
       config.colorOverride('hatColor', _hashColor(sh, 44)),
     );

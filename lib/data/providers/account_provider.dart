@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -244,8 +245,61 @@ class AccountNotifier extends StateNotifier<AccountState> {
   Future<void> _applySnapshot(
     UserPreferencesSnapshot snapshot, {
     bool hydrateSettings = true,
+    bool adminOverride = false,
   }) async {
-    final player = snapshot.toPlayer();
+    final serverPlayer = snapshot.toPlayer();
+
+    // Merge monotonic stats: take the max of local vs server to prevent
+    // stale server data from resetting counters that were just incremented.
+    // Coins are consumable (server-authoritative), so they are NOT protected.
+    // Admin overrides bypass this protection entirely.
+    final local = state.currentPlayer;
+    final player =
+        (!adminOverride && local.id.isNotEmpty && local.id == serverPlayer.id)
+        ? serverPlayer.copyWith(
+            gamesPlayed: math.max(local.gamesPlayed, serverPlayer.gamesPlayed),
+            countriesFound: math.max(
+              local.countriesFound,
+              serverPlayer.countriesFound,
+            ),
+            level: math.max(local.level, serverPlayer.level),
+            xp: local.level > serverPlayer.level
+                ? local.xp
+                : (local.level == serverPlayer.level
+                      ? math.max(local.xp, serverPlayer.xp)
+                      : serverPlayer.xp),
+            totalFlightTime:
+                local.totalFlightTime > serverPlayer.totalFlightTime
+                ? local.totalFlightTime
+                : serverPlayer.totalFlightTime,
+            flagsCorrect: math.max(
+              local.flagsCorrect,
+              serverPlayer.flagsCorrect,
+            ),
+            capitalsCorrect: math.max(
+              local.capitalsCorrect,
+              serverPlayer.capitalsCorrect,
+            ),
+            outlinesCorrect: math.max(
+              local.outlinesCorrect,
+              serverPlayer.outlinesCorrect,
+            ),
+            bordersCorrect: math.max(
+              local.bordersCorrect,
+              serverPlayer.bordersCorrect,
+            ),
+            statsCorrect: math.max(
+              local.statsCorrect,
+              serverPlayer.statsCorrect,
+            ),
+            bestStreak: math.max(local.bestStreak, serverPlayer.bestStreak),
+            bestScore: _maxNullable(local.bestScore, serverPlayer.bestScore),
+            bestTime: _minNullableDuration(
+              local.bestTime,
+              serverPlayer.bestTime,
+            ),
+          )
+        : serverPlayer;
 
     state = AccountState(
       currentPlayer: player,
@@ -293,6 +347,18 @@ class AccountNotifier extends StateNotifier<AccountState> {
     }
   }
 
+  static int? _maxNullable(int? a, int? b) {
+    if (a == null) return b;
+    if (b == null) return a;
+    return math.max(a, b);
+  }
+
+  static Duration? _minNullableDuration(Duration? a, Duration? b) {
+    if (a == null) return b;
+    if (b == null) return a;
+    return a < b ? a : b;
+  }
+
   /// Start a periodic timer that re-fetches user data from Supabase.
   void _startPeriodicRefresh() {
     _refreshTimer?.cancel();
@@ -330,6 +396,25 @@ class AccountNotifier extends StateNotifier<AccountState> {
       }
     } catch (e) {
       debugPrint('[AccountNotifier] refresh failed: $e');
+    }
+  }
+
+  /// Force-refresh from server, bypassing monotonic stat protection.
+  /// Used after admin set-stat to allow decreasing stats.
+  Future<void> adminForceRefresh() async {
+    if (_userId == null) return;
+    await _prefs.flush();
+    try {
+      final snapshot = await _prefs.load(_userId!);
+      if (snapshot != null) {
+        await _applySnapshot(
+          snapshot,
+          hydrateSettings: false,
+          adminOverride: true,
+        );
+      }
+    } catch (e) {
+      debugPrint('[AccountNotifier] admin force-refresh failed: $e');
     }
   }
 
@@ -605,6 +690,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     required int roundsCompleted,
     int coinReward = 0,
     String region = 'world',
+    String? roundEmojis,
   }) async {
     incrementGamesPlayed();
     updateBestScore(score);
@@ -626,6 +712,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       timeMs: elapsed.inMilliseconds,
       region: region,
       roundsCompleted: roundsCompleted,
+      roundEmojis: roundEmojis,
     );
 
     // Flush all pending writes immediately — game completion is a critical

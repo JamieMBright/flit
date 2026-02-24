@@ -1925,6 +1925,7 @@ class _GameHistoryEntry {
     required this.score,
     required this.date,
     required this.roundsCompleted,
+    this.roundEmojis,
   });
 
   final String region;
@@ -1932,6 +1933,7 @@ class _GameHistoryEntry {
   final int score;
   final DateTime date;
   final int roundsCompleted;
+  final String? roundEmojis;
 
   /// Generate shareable result text for socials.
   String toShareText() {
@@ -1946,11 +1948,12 @@ class _GameHistoryEntry {
         'Rounds: $roundsCompleted';
   }
 
-  /// Decorative emoji row for history share text.
-  /// This does not encode actual clue types from the run.
+  /// Per-round performance emoji row (colored circles).
   String get clueEmojiRow {
+    if (roundEmojis != null && roundEmojis!.isNotEmpty) return roundEmojis!;
     if (roundsCompleted <= 0) return '';
-    return List.filled(roundsCompleted, '✈️').join();
+    // Fallback for old rows without stored emojis.
+    return List.filled(roundsCompleted, '\u{2B1C}').join();
   }
 
   static String _formatShareTime(Duration d) {
@@ -2014,6 +2017,7 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
             score: entry['score'] as int,
             date: DateTime.parse(entry['created_at'] as String),
             roundsCompleted: (entry['rounds_completed'] as int?) ?? 0,
+            roundEmojis: entry['round_emojis'] as String?,
           );
         }).toList();
         _loading = false;

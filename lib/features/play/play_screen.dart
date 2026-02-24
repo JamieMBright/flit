@@ -792,15 +792,26 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       widget.onDailyComplete?.call(dailyResult);
     }
 
+    // Build per-round performance emoji string (colored circles).
+    final roundEmojis = _roundResults.map((r) {
+      if (!r.completed) return '\u{1F534}'; // red
+      if (r.hintsUsed == 0) return '\u{1F7E2}'; // green
+      if (r.hintsUsed <= 2) return '\u{1F7E1}'; // yellow
+      return '\u{1F7E0}'; // orange
+    }).join();
+
     // Record game completion last — this calls flush() which persists all
     // pending dirty state including the daily callbacks above.
-    await ref.read(accountProvider.notifier).recordGameCompletion(
-      elapsed: _cumulativeTime,
-      score: _totalScore,
-      roundsCompleted: _currentRound,
-      coinReward: widget.coinReward,
-      region: widget.isDailyChallenge ? 'daily' : widget.region.name,
-    );
+    await ref
+        .read(accountProvider.notifier)
+        .recordGameCompletion(
+          elapsed: _cumulativeTime,
+          score: _totalScore,
+          roundsCompleted: _currentRound,
+          coinReward: widget.coinReward,
+          region: widget.isDailyChallenge ? 'daily' : widget.region.name,
+          roundEmojis: roundEmojis,
+        );
 
     final friendName = widget.challengeFriendName;
 
@@ -1034,14 +1045,25 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       },
     );
 
+    // Build per-round performance emoji string (colored circles).
+    final roundEmojis = _roundResults.map((r) {
+      if (!r.completed) return '\u{1F534}'; // red
+      if (r.hintsUsed == 0) return '\u{1F7E2}'; // green
+      if (r.hintsUsed <= 2) return '\u{1F7E1}'; // yellow
+      return '\u{1F7E0}'; // orange
+    }).join();
+
     // Record stats as a completed game (abort counts as a game played).
-    await ref.read(accountProvider.notifier).recordGameCompletion(
-      elapsed: _cumulativeTime,
-      score: _totalScore,
-      roundsCompleted: _currentRound,
-      coinReward: 0, // No coin reward for aborted games.
-      region: widget.isDailyChallenge ? 'daily' : widget.region.name,
-    );
+    await ref
+        .read(accountProvider.notifier)
+        .recordGameCompletion(
+          elapsed: _cumulativeTime,
+          score: _totalScore,
+          roundsCompleted: _currentRound,
+          coinReward: 0, // No coin reward for aborted games.
+          region: widget.isDailyChallenge ? 'daily' : widget.region.name,
+          roundEmojis: roundEmojis,
+        );
 
     // Fire daily callbacks so the daily challenge is marked as used.
     if (widget.isDailyChallenge) {
