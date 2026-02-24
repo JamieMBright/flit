@@ -1387,7 +1387,7 @@ class _ControlsDiagram extends StatelessWidget {
         child: Row(
           children: [
             // Zone 1: Steer
-            Expanded(
+            const Expanded(
               child: _GestureZone(
                 color: FlitColors.oceanHighlight,
                 icon: Icons.swipe_rounded,
@@ -1399,7 +1399,7 @@ class _ControlsDiagram extends StatelessWidget {
               color: FlitColors.cardBorder.withOpacity(0.5),
             ),
             // Zone 2: Altitude
-            Expanded(
+            const Expanded(
               child: _GestureZone(
                 color: FlitColors.gold,
                 icon: Icons.height_rounded,
@@ -1411,7 +1411,7 @@ class _ControlsDiagram extends StatelessWidget {
               color: FlitColors.cardBorder.withOpacity(0.5),
             ),
             // Zone 3: Tap
-            Expanded(
+            const Expanded(
               child: _GestureZone(
                 color: FlitColors.accent,
                 icon: Icons.ads_click_rounded,
@@ -1490,7 +1490,7 @@ class _GestureZone extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             color: FlitColors.textMuted,
             fontSize: 9,
             fontWeight: FontWeight.bold,

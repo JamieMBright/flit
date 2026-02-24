@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/app_version.dart';
-import '../../data/models/daily_streak.dart';
 import '../../data/providers/account_provider.dart';
 import '../../core/theme/flit_colors.dart';
 import '../admin/admin_screen.dart';

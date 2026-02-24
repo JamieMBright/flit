@@ -720,8 +720,9 @@ class _MilestoneBar extends StatelessWidget {
   }
 
   static String _formatScore(int s) {
-    if (s >= 1000)
+    if (s >= 1000) {
       return '${(s / 1000).toStringAsFixed(s % 1000 == 0 ? 0 : 1)}k';
+    }
     return '$s';
   }
 }

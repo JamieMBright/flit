@@ -764,7 +764,8 @@ class _TotalTimeRow extends StatelessWidget {
     final s = time.inSeconds % 60;
     final ms = (time.inMilliseconds % 1000) ~/ 10;
     if (m > 0) {
-      return '${m}m ${s}.${ms.toString().padLeft(2, '0')}s';
+      return '$m'
+          'm $s.${ms.toString().padLeft(2, '0')}s';
     }
     return '$s.${ms.toString().padLeft(2, '0')}s';
   }

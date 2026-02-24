@@ -605,6 +605,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           )
           .catchError((Object e) {
             _log.warning('challenge', 'Failed to submit round result: $e');
+            return false;
           });
     }
 
@@ -821,6 +822,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           statsCorrect: clueStats.stats,
           consecutiveCorrect: clueStats.streak,
         );
+    if (!mounted) return;
 
     final friendName = widget.challengeFriendName;
 
@@ -1122,6 +1124,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           statsCorrect: clueStats.stats,
           consecutiveCorrect: clueStats.streak,
         );
+    if (!mounted) return;
 
     // Fire daily callbacks so the daily challenge is marked as used.
     if (widget.isDailyChallenge) {

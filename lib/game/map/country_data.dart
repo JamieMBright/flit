@@ -76420,7 +76420,7 @@ abstract class CountryData {
   };
 
   /// Countries eligible as game targets (excludes obscure territories).
-  static late final List<CountryShape> playableCountries = countries
+  static final List<CountryShape> playableCountries = countries
       .where((c) => !excludedTerritories.contains(c.code))
       .toList(growable: false);
 

@@ -555,7 +555,6 @@ class AvatarCompositor {
   ];
 
   static String? _composeMicah(AvatarConfig config) {
-    final sh = _stableHash(config);
     final strH = _structuralHash(config);
     final skinHex = '#${config.skinColor.hex}';
     final hairHex = '#${config.hairColor.hex}';
@@ -794,7 +793,6 @@ class AvatarCompositor {
   }
 
   static String? _composeNotionists(AvatarConfig config) {
-    final sh = _stableHash(config);
     final strH = _structuralHash(config);
 
     final base = _pick(notionistsBase, strH, 1);

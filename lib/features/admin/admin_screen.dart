@@ -86,11 +86,6 @@ class AdminScreen extends ConsumerWidget {
           iconColor: FlitColors.gold,
           title: 'Gift Gold',
           error: error,
-          children: [
-            _UsernameField(controller: usernameCtl),
-            const SizedBox(height: 12),
-            _AmountField(controller: amountCtl, hint: 'Amount of gold'),
-          ],
           actionLabel: 'Send Gold',
           actionIcon: Icons.send,
           actionColor: FlitColors.gold,
@@ -117,6 +112,7 @@ class AdminScreen extends ConsumerWidget {
               await _incrementStat(user['id'] as String, 'coins', amount);
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!context.mounted) return;
               _snack(context, 'Gifted $amount gold to @$username');
             } on PostgrestException catch (e) {
               setDialogState(() => error = 'Failed: ${e.message}');
@@ -125,6 +121,11 @@ class AdminScreen extends ConsumerWidget {
             }
           },
           onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [
+            _UsernameField(controller: usernameCtl),
+            const SizedBox(height: 12),
+            _AmountField(controller: amountCtl, hint: 'Amount of gold'),
+          ],
         ),
       ),
     );
@@ -145,11 +146,6 @@ class AdminScreen extends ConsumerWidget {
           iconColor: FlitColors.accent,
           title: 'Gift Levels',
           error: error,
-          children: [
-            _UsernameField(controller: usernameCtl),
-            const SizedBox(height: 12),
-            _AmountField(controller: amountCtl, hint: 'Number of levels'),
-          ],
           actionLabel: 'Grant Levels',
           actionIcon: Icons.send,
           actionColor: FlitColors.accent,
@@ -176,6 +172,7 @@ class AdminScreen extends ConsumerWidget {
               await _incrementStat(user['id'] as String, 'level', amount);
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!context.mounted) return;
               _snack(context, 'Granted $amount levels to @$username');
             } on PostgrestException catch (e) {
               setDialogState(() => error = 'Failed: ${e.message}');
@@ -184,6 +181,11 @@ class AdminScreen extends ConsumerWidget {
             }
           },
           onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [
+            _UsernameField(controller: usernameCtl),
+            const SizedBox(height: 12),
+            _AmountField(controller: amountCtl, hint: 'Number of levels'),
+          ],
         ),
       ),
     );
@@ -204,11 +206,6 @@ class AdminScreen extends ConsumerWidget {
           iconColor: FlitColors.oceanHighlight,
           title: 'Gift Flights',
           error: error,
-          children: [
-            _UsernameField(controller: usernameCtl),
-            const SizedBox(height: 12),
-            _AmountField(controller: amountCtl, hint: 'Number of flights'),
-          ],
           actionLabel: 'Grant Flights',
           actionIcon: Icons.send,
           actionColor: FlitColors.oceanHighlight,
@@ -239,6 +236,7 @@ class AdminScreen extends ConsumerWidget {
               );
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!context.mounted) return;
               _snack(context, 'Granted $amount flights to @$username');
             } on PostgrestException catch (e) {
               setDialogState(() => error = 'Failed: ${e.message}');
@@ -247,6 +245,11 @@ class AdminScreen extends ConsumerWidget {
             }
           },
           onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [
+            _UsernameField(controller: usernameCtl),
+            const SizedBox(height: 12),
+            _AmountField(controller: amountCtl, hint: 'Number of flights'),
+          ],
         ),
       ),
     );
@@ -273,11 +276,6 @@ class AdminScreen extends ConsumerWidget {
           iconColor: iconColor,
           title: title,
           error: error,
-          children: [
-            _UsernameField(controller: usernameCtl),
-            const SizedBox(height: 12),
-            _AmountField(controller: valueCtl, hint: valueLabel),
-          ],
           actionLabel: 'Set Value',
           actionIcon: Icons.check,
           actionColor: iconColor,
@@ -311,6 +309,7 @@ class AdminScreen extends ConsumerWidget {
               }
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!context.mounted) return;
               _snack(context, 'Set $statColumn for @$username to $targetValue');
             } on PostgrestException catch (e) {
               setDialogState(() => error = 'Failed: ${e.message}');
@@ -319,6 +318,11 @@ class AdminScreen extends ConsumerWidget {
             }
           },
           onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [
+            _UsernameField(controller: usernameCtl),
+            const SizedBox(height: 12),
+            _AmountField(controller: valueCtl, hint: valueLabel),
+          ],
         ),
       ),
     );
@@ -337,7 +341,6 @@ class AdminScreen extends ConsumerWidget {
           title: 'Coin Ledger Explorer',
           subtitle: 'Inspect coin activity for a player',
           error: error,
-          children: [_UsernameField(controller: usernameCtl)],
           actionLabel: 'Open Ledger',
           actionIcon: Icons.open_in_new,
           actionColor: FlitColors.gold,
@@ -372,6 +375,7 @@ class AdminScreen extends ConsumerWidget {
             }
           },
           onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [_UsernameField(controller: usernameCtl)],
         ),
       ),
     );
@@ -393,14 +397,6 @@ class AdminScreen extends ConsumerWidget {
           title: 'Change Username',
           subtitle: 'Moderation tool — rename offensive usernames',
           error: error,
-          children: [
-            _UsernameField(
-              controller: oldUsernameCtl,
-              hint: 'Current username',
-            ),
-            const SizedBox(height: 12),
-            _UsernameField(controller: newUsernameCtl, hint: 'New username'),
-          ],
           actionLabel: 'Rename',
           actionIcon: Icons.check,
           actionColor: FlitColors.warning,
@@ -432,6 +428,7 @@ class AdminScreen extends ConsumerWidget {
                   .eq('id', user['id']);
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!context.mounted) return;
               _snack(context, 'Renamed @$oldName → @$newName');
             } on PostgrestException catch (e) {
               if (e.code == '23505') {
@@ -446,6 +443,14 @@ class AdminScreen extends ConsumerWidget {
             }
           },
           onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [
+            _UsernameField(
+              controller: oldUsernameCtl,
+              hint: 'Current username',
+            ),
+            const SizedBox(height: 12),
+            _UsernameField(controller: newUsernameCtl, hint: 'New username'),
+          ],
         ),
       ),
     );
@@ -569,6 +574,42 @@ class AdminScreen extends ConsumerWidget {
           title: 'Manage Player Role',
           subtitle: 'Promote to moderator or revoke access.',
           error: error,
+          actionLabel: 'Set Role',
+          actionIcon: Icons.shield,
+          actionColor: FlitColors.accent,
+          onAction: () async {
+            final username = usernameCtl.text.trim();
+            if (username.isEmpty) {
+              setDialogState(() => error = 'Enter a username');
+              return;
+            }
+
+            try {
+              final user = await _lookupUser(username);
+              if (user == null) {
+                setDialogState(() => error = 'User @$username not found');
+                return;
+              }
+
+              final userId = user['id'] as String;
+              final roleValue = selectedRole == 'revoke' ? null : selectedRole;
+
+              await _client.rpc(
+                'admin_set_role',
+                params: {'target_user_id': userId, 'p_role': roleValue},
+              );
+
+              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              final label = roleValue ?? 'regular user';
+              if (!context.mounted) return;
+              _snack(context, '@$username is now: $label');
+            } on PostgrestException catch (e) {
+              setDialogState(() => error = 'Failed: ${e.message}');
+            } catch (_) {
+              setDialogState(() => error = 'Something went wrong');
+            }
+          },
+          onCancel: () => Navigator.of(dialogCtx).pop(),
           children: [
             _UsernameField(controller: usernameCtl),
             const SizedBox(height: 12),
@@ -602,41 +643,6 @@ class AdminScreen extends ConsumerWidget {
               ),
             ),
           ],
-          actionLabel: 'Set Role',
-          actionIcon: Icons.shield,
-          actionColor: FlitColors.accent,
-          onAction: () async {
-            final username = usernameCtl.text.trim();
-            if (username.isEmpty) {
-              setDialogState(() => error = 'Enter a username');
-              return;
-            }
-
-            try {
-              final user = await _lookupUser(username);
-              if (user == null) {
-                setDialogState(() => error = 'User @$username not found');
-                return;
-              }
-
-              final userId = user['id'] as String;
-              final roleValue = selectedRole == 'revoke' ? null : selectedRole;
-
-              await _client.rpc(
-                'admin_set_role',
-                params: {'target_user_id': userId, 'p_role': roleValue},
-              );
-
-              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
-              final label = roleValue == null ? 'regular user' : roleValue;
-              _snack(context, '@$username is now: $label');
-            } on PostgrestException catch (e) {
-              setDialogState(() => error = 'Failed: ${e.message}');
-            } catch (_) {
-              setDialogState(() => error = 'Something went wrong');
-            }
-          },
-          onCancel: () => Navigator.of(dialogCtx).pop(),
         ),
       ),
     );
@@ -657,7 +663,6 @@ class AdminScreen extends ConsumerWidget {
           title: 'Unlock All Items',
           subtitle: 'Unlock all shop cosmetics and avatar parts for a player.',
           error: error,
-          children: [_UsernameField(controller: usernameCtl)],
           actionLabel: 'Unlock All',
           actionIcon: Icons.lock_open,
           actionColor: FlitColors.success,
@@ -683,6 +688,7 @@ class AdminScreen extends ConsumerWidget {
               );
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!context.mounted) return;
               _snack(context, 'All items unlocked for @$username');
             } on PostgrestException catch (e) {
               setDialogState(() => error = 'Failed: ${e.message}');
@@ -691,6 +697,7 @@ class AdminScreen extends ConsumerWidget {
             }
           },
           onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [_UsernameField(controller: usernameCtl)],
         ),
       ),
     );
@@ -717,59 +724,6 @@ class AdminScreen extends ConsumerWidget {
           title: 'Set Player License',
           subtitle: 'All stats 1-25. Leave blank to randomise.',
           error: error,
-          children: [
-            _UsernameField(controller: usernameCtl),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _AmountField(
-                    controller: coinBoostCtl,
-                    hint: 'Coin Boost',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _AmountField(
-                    controller: clueChanceCtl,
-                    hint: 'Clue Chance',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _AmountField(controller: fuelBoostCtl, hint: 'Fuel Boost'),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: FlitColors.backgroundMid,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: DropdownButton<String>(
-                value: selectedClueType,
-                isExpanded: true,
-                dropdownColor: FlitColors.cardBackground,
-                style: const TextStyle(color: FlitColors.textPrimary),
-                underline: const SizedBox.shrink(),
-                items: clueTypes
-                    .map(
-                      (t) => DropdownMenuItem(
-                        value: t,
-                        child: Text(
-                          'Clue Type: ${t[0].toUpperCase()}${t.substring(1)}',
-                        ),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setDialogState(() => selectedClueType = value);
-                  }
-                },
-              ),
-            ),
-          ],
           actionLabel: 'Set License',
           actionIcon: Icons.badge,
           actionColor: FlitColors.oceanHighlight,
@@ -830,6 +784,7 @@ class AdminScreen extends ConsumerWidget {
               );
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!context.mounted) return;
               _snack(
                 context,
                 'License set for @$username: '
@@ -845,6 +800,59 @@ class AdminScreen extends ConsumerWidget {
             }
           },
           onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [
+            _UsernameField(controller: usernameCtl),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _AmountField(
+                    controller: coinBoostCtl,
+                    hint: 'Coin Boost',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _AmountField(
+                    controller: clueChanceCtl,
+                    hint: 'Clue Chance',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _AmountField(controller: fuelBoostCtl, hint: 'Fuel Boost'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: DropdownButton<String>(
+                value: selectedClueType,
+                isExpanded: true,
+                dropdownColor: FlitColors.cardBackground,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                underline: const SizedBox.shrink(),
+                items: clueTypes
+                    .map(
+                      (t) => DropdownMenuItem(
+                        value: t,
+                        child: Text(
+                          'Clue Type: ${t[0].toUpperCase()}${t.substring(1)}',
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setDialogState(() => selectedClueType = value);
+                  }
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

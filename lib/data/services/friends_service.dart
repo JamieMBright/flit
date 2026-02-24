@@ -432,7 +432,7 @@ class FriendsService {
           .eq('status', 'pending')
           .select('id');
 
-      if (deleted is! List || deleted.isEmpty) {
+      if (deleted.isEmpty) {
         return false;
       }
       invalidateCache();
