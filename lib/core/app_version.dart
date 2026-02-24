@@ -5,4 +5,4 @@
 /// This file is auto-updated by CI on every merge to main.
 /// See `.github/workflows/ci.yml` → "Update app version" step.
 /// Do not edit manually — your changes will be overwritten.
-const String appVersion = 'v1.203';
+const String appVersion = 'v1.205';
