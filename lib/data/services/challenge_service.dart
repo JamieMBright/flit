@@ -65,6 +65,28 @@ class ChallengeService {
   // Fetch
   // ---------------------------------------------------------------------------
 
+  /// Fetch ALL active challenges (pending + in_progress) involving the current
+  /// user as either challenger or challenged.
+  ///
+  /// Used by the friends screen to show per-friend challenge status
+  /// (your turn, their turn, play, sent, etc.).
+  Future<List<Challenge>> fetchAllActiveChallenges() async {
+    if (_userId == null) return [];
+    try {
+      final data = await _client
+          .from('challenges')
+          .select()
+          .or('challenger_id.eq.$_userId,challenged_id.eq.$_userId')
+          .inFilter('status', ['pending', 'in_progress'])
+          .order('created_at', ascending: false);
+
+      return data.map((row) => _rowToChallenge(row)).toList();
+    } catch (e) {
+      debugPrint('[ChallengeService] fetchAllActiveChallenges failed: $e');
+      return [];
+    }
+  }
+
   /// Fetch incoming pending challenges (where current user is the challenged).
   Future<List<Challenge>> fetchPendingChallenges() async {
     if (_userId == null) return [];

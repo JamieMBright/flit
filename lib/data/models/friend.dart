@@ -114,6 +114,46 @@ class HeadToHead {
     return lastGameWon! ? 'Won' : 'Lost';
   }
 
+  /// Friendship level based on total H2H games played.
+  String get friendshipLevel {
+    if (totalChallenges >= 50) return 'Legendary';
+    if (totalChallenges >= 30) return 'Nemesis';
+    if (totalChallenges >= 15) return 'Rival';
+    if (totalChallenges >= 5) return 'Companion';
+    if (totalChallenges >= 1) return 'Acquaintance';
+    return 'New';
+  }
+
+  /// Star count for friendship level (1-5).
+  int get friendshipStars {
+    if (totalChallenges >= 50) return 5;
+    if (totalChallenges >= 30) return 4;
+    if (totalChallenges >= 15) return 3;
+    if (totalChallenges >= 5) return 2;
+    if (totalChallenges >= 1) return 1;
+    return 0;
+  }
+
+  /// Recent trend indicator: 1 = improving, -1 = declining, 0 = stable/neutral.
+  int get recentTrend {
+    if (last10Total == 0) return 0;
+    if (last10Wins > last10Losses) return 1;
+    if (last10Losses > last10Wins) return -1;
+    return 0;
+  }
+
+  /// Trend arrow character.
+  String get trendArrow {
+    switch (recentTrend) {
+      case 1:
+        return '\u25B2'; // ▲
+      case -1:
+        return '\u25BC'; // ▼
+      default:
+        return '\u2014'; // —
+    }
+  }
+
   Map<String, dynamic> toJson() => {
     'friend_id': friendId,
     'friend_name': friendName,
