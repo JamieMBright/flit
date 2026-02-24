@@ -691,12 +691,39 @@ class AccountNotifier extends StateNotifier<AccountState> {
     int coinReward = 0,
     String region = 'world',
     String? roundEmojis,
+    int flagsCorrect = 0,
+    int capitalsCorrect = 0,
+    int outlinesCorrect = 0,
+    int bordersCorrect = 0,
+    int statsCorrect = 0,
+    int consecutiveCorrect = 0,
   }) async {
     incrementGamesPlayed();
     updateBestScore(score);
     updateBestTime(elapsed);
     addFlightTime(elapsed);
     incrementCountriesFound(count: roundsCompleted);
+
+    // Record per-clue-type correct answers.
+    if (flagsCorrect +
+            capitalsCorrect +
+            outlinesCorrect +
+            bordersCorrect +
+            statsCorrect >
+        0) {
+      recordClueAnswers(
+        flags: flagsCorrect,
+        capitals: capitalsCorrect,
+        outlines: outlinesCorrect,
+        borders: bordersCorrect,
+        stats: statsCorrect,
+      );
+    }
+
+    // Update best streak if this game had a longer consecutive run.
+    if (consecutiveCorrect > 0) {
+      updateBestStreak(consecutiveCorrect);
+    }
 
     // XP: base 50 + 10 per round + score/100
     final xpEarned = 50 + (roundsCompleted * 10) + (score ~/ 100);

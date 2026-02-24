@@ -800,6 +800,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       return '\u{1F7E0}'; // orange
     }).join();
 
+    // Compute per-clue-type correct counts and best streak.
+    final clueStats = _computeClueStats();
+
     // Record game completion last — this calls flush() which persists all
     // pending dirty state including the daily callbacks above.
     await ref
@@ -811,6 +814,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           coinReward: widget.coinReward,
           region: widget.isDailyChallenge ? 'daily' : widget.region.name,
           roundEmojis: roundEmojis,
+          flagsCorrect: clueStats.flags,
+          capitalsCorrect: clueStats.capitals,
+          outlinesCorrect: clueStats.outlines,
+          bordersCorrect: clueStats.borders,
+          statsCorrect: clueStats.stats,
+          consecutiveCorrect: clueStats.streak,
         );
 
     final friendName = widget.challengeFriendName;
@@ -1001,6 +1010,46 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// Record an aborted game as a completion where all unseen rounds
   /// count as failures (score 0, completed: false). This prevents
   /// daily challenge exploitation (abort-to-learn-clues-ahead).
+  /// Compute per-clue-type correct counts and longest consecutive streak
+  /// from the accumulated round results.
+  _ClueStatsResult _computeClueStats() {
+    int flags = 0, capitals = 0, outlines = 0, borders = 0, stats = 0;
+    int streak = 0, currentStreak = 0;
+    for (final r in _roundResults) {
+      if (r.completed) {
+        currentStreak++;
+        if (currentStreak > streak) streak = currentStreak;
+        switch (r.clueType) {
+          case ClueType.flag:
+          case ClueType.flagDescription:
+            flags++;
+          case ClueType.capital:
+            capitals++;
+          case ClueType.outline:
+            outlines++;
+          case ClueType.borders:
+            borders++;
+          case ClueType.stats:
+          case ClueType.sportsTeam:
+          case ClueType.leader:
+          case ClueType.nickname:
+          case ClueType.landmark:
+            stats++;
+        }
+      } else {
+        currentStreak = 0;
+      }
+    }
+    return _ClueStatsResult(
+      flags: flags,
+      capitals: capitals,
+      outlines: outlines,
+      borders: borders,
+      stats: stats,
+      streak: streak,
+    );
+  }
+
   Future<void> _recordAbort() async {
     _timer?.cancel();
     _autoHintTimer?.cancel();
@@ -1053,6 +1102,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       return '\u{1F7E0}'; // orange
     }).join();
 
+    // Compute per-clue-type correct counts and best streak.
+    final clueStats = _computeClueStats();
+
     // Record stats as a completed game (abort counts as a game played).
     await ref
         .read(accountProvider.notifier)
@@ -1063,6 +1115,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           coinReward: 0, // No coin reward for aborted games.
           region: widget.isDailyChallenge ? 'daily' : widget.region.name,
           roundEmojis: roundEmojis,
+          flagsCorrect: clueStats.flags,
+          capitalsCorrect: clueStats.capitals,
+          outlinesCorrect: clueStats.outlines,
+          bordersCorrect: clueStats.borders,
+          statsCorrect: clueStats.stats,
+          consecutiveCorrect: clueStats.streak,
         );
 
     // Fire daily callbacks so the daily challenge is marked as used.
@@ -1520,6 +1578,25 @@ class _TurnButtonState extends State<_TurnButton> {
       ),
     ),
   );
+}
+
+/// Aggregated clue-type correct counts and streak from round results.
+class _ClueStatsResult {
+  const _ClueStatsResult({
+    this.flags = 0,
+    this.capitals = 0,
+    this.outlines = 0,
+    this.borders = 0,
+    this.stats = 0,
+    this.streak = 0,
+  });
+
+  final int flags;
+  final int capitals;
+  final int outlines;
+  final int borders;
+  final int stats;
+  final int streak;
 }
 
 /// Per-round result data for the summary screen.
