@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/challenge.dart';
@@ -22,7 +23,6 @@ class FriendsScreen extends ConsumerStatefulWidget {
 class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   List<Friend> _friends = [];
   Map<String, HeadToHead> _h2hRecords = {};
-  List<Challenge> _incomingChallenges = [];
   List<
     ({
       int friendshipId,
@@ -45,8 +45,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   _sentRequests = [];
   bool _loading = true;
 
-  // Track pending outgoing challenges
-  final Set<String> _pendingChallenges = {};
+  /// Per-friend challenge status derived from all active challenges.
+  Map<String, _FriendChallengeInfo> _challengeInfoMap = {};
 
   @override
   void initState() {
@@ -60,8 +60,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     final results = await Future.wait([
       FriendsService.instance.fetchFriends(),
       FriendsService.instance.fetchPendingRequests(),
-      ChallengeService.instance.fetchPendingChallenges(),
-      ChallengeService.instance.fetchSentChallenges(),
+      ChallengeService.instance.fetchAllActiveChallenges(),
       FriendsService.instance.fetchSentRequests(),
     ]);
 
@@ -77,10 +76,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 String? avatarUrl,
               })
             >;
-    final incoming = results[2] as List<Challenge>;
-    final sent = results[3] as List<Challenge>;
+    final activeChallenges = results[2] as List<Challenge>;
     final sentRequests =
-        results[4]
+        results[3]
             as List<
               ({
                 int friendshipId,
@@ -102,12 +100,23 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       h2hMap[h2h.friendId] = h2h;
     }
 
-    // Mark friends with pending sent challenges.
-    final pendingIds = <String>{};
-    for (final c in sent) {
-      if (c.status == ChallengeStatus.pending ||
-          c.status == ChallengeStatus.inProgress) {
-        pendingIds.add(c.challengedId);
+    // Build per-friend challenge status from ALL active challenges.
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    final infoMap = <String, _FriendChallengeInfo>{};
+    if (userId != null) {
+      for (final c in activeChallenges) {
+        final isChallenger = c.challengerId == userId;
+        final friendId = isChallenger ? c.challengedId : c.challengerId;
+
+        // Keep the most recent challenge per friend (list is already sorted).
+        if (infoMap.containsKey(friendId)) continue;
+
+        final status = _deriveChallengeStatus(c, userId);
+        infoMap[friendId] = _FriendChallengeInfo(
+          status: status,
+          challenge: c,
+          opponentName: isChallenger ? c.challengedName : c.challengerName,
+        );
       }
     }
 
@@ -116,13 +125,37 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       _friends = friends;
       _h2hRecords = h2hMap;
       _pendingRequests = pending;
-      _incomingChallenges = incoming;
       _sentRequests = sentRequests;
-      _pendingChallenges
-        ..clear()
-        ..addAll(pendingIds);
+      _challengeInfoMap = infoMap;
       _loading = false;
     });
+  }
+
+  /// Determine the challenge status for the current user.
+  static _FriendChallengeStatus _deriveChallengeStatus(
+    Challenge c,
+    String userId,
+  ) {
+    final isChallenger = c.challengerId == userId;
+
+    if (c.status == ChallengeStatus.pending) {
+      return isChallenger
+          ? _FriendChallengeStatus.sent
+          : _FriendChallengeStatus.received;
+    }
+
+    if (c.status == ChallengeStatus.inProgress) {
+      // Check if this user has completed all their rounds.
+      final allMyRoundsDone = c.rounds.every((r) {
+        if (isChallenger) return r.challengerTime != null;
+        return r.challengedTime != null;
+      });
+      return allMyRoundsDone
+          ? _FriendChallengeStatus.theirTurn
+          : _FriendChallengeStatus.yourTurn;
+    }
+
+    return _FriendChallengeStatus.none;
   }
 
   @override
@@ -152,10 +185,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   );
 
   Widget _buildBody() {
-    if (_friends.isEmpty &&
-        _pendingRequests.isEmpty &&
-        _incomingChallenges.isEmpty &&
-        _sentRequests.isEmpty) {
+    if (_friends.isEmpty && _pendingRequests.isEmpty && _sentRequests.isEmpty) {
       return const _EmptyState();
     }
     return ListView(
@@ -206,31 +236,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
             ),
           const SizedBox(height: 8),
         ],
-        // Incoming challenges
-        if (_incomingChallenges.isNotEmpty) ...[
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              'INCOMING CHALLENGES',
-              style: TextStyle(
-                color: FlitColors.textMuted,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ),
-          for (final challenge in _incomingChallenges)
-            _IncomingChallengeTile(
-              challenge: challenge,
-              onAccept: () => _acceptChallenge(challenge),
-              onDecline: () => _declineChallenge(challenge),
-            ),
-          const SizedBox(height: 8),
-        ],
         // Friends list
         if (_friends.isNotEmpty) ...[
-          if (_pendingRequests.isNotEmpty || _incomingChallenges.isNotEmpty)
+          if (_pendingRequests.isNotEmpty || _sentRequests.isNotEmpty)
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
               child: Text(
@@ -247,9 +255,18 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
             _FriendTile(
               friend: friend,
               h2h: _h2hRecords[friend.playerId],
-              hasPendingChallenge: _pendingChallenges.contains(friend.playerId),
+              challengeInfo: _challengeInfoMap[friend.playerId],
               onChallenge: () => _challengeFriend(friend),
               onViewProfile: () => _viewFriendProfile(friend),
+              onPlayChallenge: () {
+                final info = _challengeInfoMap[friend.playerId];
+                if (info != null) {
+                  _launchChallengeGameplay(
+                    info.opponentName,
+                    info.challenge.id,
+                  );
+                }
+              },
             ),
         ],
       ],
@@ -302,28 +319,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Friend request cancelled'),
-          backgroundColor: FlitColors.textMuted,
-        ),
-      );
-      _loadData();
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Challenge actions
-  // ---------------------------------------------------------------------------
-
-  void _acceptChallenge(Challenge challenge) {
-    _launchChallengeGameplay(challenge.challengerName, challenge.id);
-  }
-
-  Future<void> _declineChallenge(Challenge challenge) async {
-    final ok = await ChallengeService.instance.declineChallenge(challenge.id);
-    if (!mounted) return;
-    if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Challenge declined'),
           backgroundColor: FlitColors.textMuted,
         ),
       );
@@ -1319,7 +1314,7 @@ class _FriendRequestTile extends StatelessWidget {
                 ),
               ),
               Text(
-                '@$username',
+                '@$username \u2022 Invite Pending',
                 style: const TextStyle(
                   color: FlitColors.textSecondary,
                   fontSize: 12,
@@ -1331,10 +1326,12 @@ class _FriendRequestTile extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.check_circle, color: FlitColors.success),
           onPressed: onAccept,
+          tooltip: 'Accept',
         ),
         IconButton(
           icon: const Icon(Icons.cancel, color: FlitColors.error),
           onPressed: onDecline,
+          tooltip: 'Decline',
         ),
       ],
     ),
@@ -1378,7 +1375,7 @@ class _SentRequestTile extends StatelessWidget {
                 ),
               ),
               Text(
-                '@$username \u2022 Pending',
+                '@$username',
                 style: const TextStyle(
                   color: FlitColors.textSecondary,
                   fontSize: 12,
@@ -1387,84 +1384,30 @@ class _SentRequestTile extends StatelessWidget {
             ],
           ),
         ),
-        TextButton(
-          onPressed: onCancel,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: FlitColors.warning.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: FlitColors.warning.withOpacity(0.3)),
+          ),
           child: const Text(
-            'Cancel',
+            'Invite Pending',
             style: TextStyle(
-              color: FlitColors.error,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+              color: FlitColors.warning,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _IncomingChallengeTile extends StatelessWidget {
-  const _IncomingChallengeTile({
-    required this.challenge,
-    required this.onAccept,
-    required this.onDecline,
-  });
-
-  final Challenge challenge;
-  final VoidCallback onAccept;
-  final VoidCallback onDecline;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.warning.withOpacity(0.3)),
-    ),
-    child: Row(
-      children: [
-        const Icon(Icons.flight_takeoff, color: FlitColors.warning, size: 32),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${challenge.challengerName} challenged you!',
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                '${Challenge.totalRounds} rounds \u2022 Best of 5',
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-        ElevatedButton(
-          onPressed: onAccept,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: FlitColors.accent,
-            foregroundColor: FlitColors.textPrimary,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          child: const Text('Play'),
         ),
         const SizedBox(width: 4),
         IconButton(
-          icon: const Icon(Icons.close, color: FlitColors.textMuted),
-          onPressed: onDecline,
+          icon: const Icon(Icons.close, color: FlitColors.textMuted, size: 18),
+          onPressed: onCancel,
+          tooltip: 'Cancel request',
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
         ),
       ],
     ),
@@ -1586,134 +1529,161 @@ class _FriendTile extends StatelessWidget {
   const _FriendTile({
     required this.friend,
     this.h2h,
-    this.hasPendingChallenge = false,
+    this.challengeInfo,
     required this.onChallenge,
     required this.onViewProfile,
+    required this.onPlayChallenge,
   });
 
   final Friend friend;
   final HeadToHead? h2h;
-  final bool hasPendingChallenge;
+  final _FriendChallengeInfo? challengeInfo;
   final VoidCallback onChallenge;
   final VoidCallback onViewProfile;
+  final VoidCallback onPlayChallenge;
 
   @override
-  Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.cardBorder),
-    ),
-    child: InkWell(
-      onTap: onViewProfile,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Stack(
-              children: [
-                if (friend.avatarConfig != null)
-                  AvatarWidget(config: friend.avatarConfig!, size: 48)
-                else
-                  AvatarFromUrl(
-                    avatarUrl: friend.avatarUrl,
-                    name: friend.name,
-                    size: 48,
-                  ),
-                if (friend.isOnline)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: FlitColors.success,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: FlitColors.cardBackground,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) {
+    final hasH2H = h2h != null && h2h!.totalChallenges > 0;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: FlitColors.cardBorder),
+      ),
+      child: InkWell(
+        onTap: onViewProfile,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // Avatar with online indicator
+              Stack(
                 children: [
-                  Text(
-                    friend.name,
-                    style: const TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (h2h != null && h2h!.totalChallenges > 0)
-                    Text(
-                      'H2H: ${h2h!.record} (${h2h!.leadText})',
-                      style: const TextStyle(
-                        color: FlitColors.textSecondary,
-                        fontSize: 12,
-                      ),
-                    )
+                  if (friend.avatarConfig != null)
+                    AvatarWidget(config: friend.avatarConfig!, size: 48)
                   else
-                    const Text(
-                      'No challenges yet',
-                      style: TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 12,
+                    AvatarFromUrl(
+                      avatarUrl: friend.avatarUrl,
+                      name: friend.name,
+                      size: 48,
+                    ),
+                  if (friend.isOnline)
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: FlitColors.success,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: FlitColors.cardBackground,
+                            width: 2,
+                          ),
+                        ),
                       ),
                     ),
                 ],
               ),
-            ),
-            if (hasPendingChallenge)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+              const SizedBox(width: 12),
+              // Name, level, H2H info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Row 1: Name + friendship level
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            friend.name,
+                            style: const TextStyle(
+                              color: FlitColors.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (hasH2H) ...[
+                          const SizedBox(width: 8),
+                          _FriendshipLevelBadge(h2h: h2h!),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    // Row 2: H2H record + trend
+                    if (hasH2H)
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'H2H: ${h2h!.record}',
+                              style: const TextStyle(
+                                color: FlitColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' \u2022 ${h2h!.leadText}',
+                              style: const TextStyle(
+                                color: FlitColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                            if (h2h!.last10Total > 0) ...[
+                              TextSpan(
+                                text: ' \u2022 L10: ${h2h!.last10Record} ',
+                                style: const TextStyle(
+                                  color: FlitColors.textMuted,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              TextSpan(
+                                text: h2h!.trendArrow,
+                                style: TextStyle(
+                                  color: h2h!.recentTrend > 0
+                                      ? FlitColors.success
+                                      : h2h!.recentTrend < 0
+                                      ? FlitColors.error
+                                      : FlitColors.textMuted,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      )
+                    else
+                      const Text(
+                        'No challenges yet',
+                        style: TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                  ],
                 ),
-                decoration: BoxDecoration(
-                  color: FlitColors.gold.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: FlitColors.gold.withOpacity(0.3)),
-                ),
-                child: const Text(
-                  'Waiting...',
-                  style: TextStyle(
-                    color: FlitColors.gold,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              )
-            else
-              ElevatedButton(
-                onPressed: onChallenge,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FlitColors.accent,
-                  foregroundColor: FlitColors.textPrimary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('Challenge'),
               ),
-          ],
+              const SizedBox(width: 8),
+              // Challenge status badge
+              _ChallengeStatusBadge(
+                info: challengeInfo,
+                onChallenge: onChallenge,
+                onPlay: onPlayChallenge,
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _AddFriendDialog extends StatefulWidget {
@@ -1826,4 +1796,181 @@ class _EmptyState extends StatelessWidget {
       ],
     ),
   );
+}
+
+// =============================================================================
+// Challenge status types
+// =============================================================================
+
+/// Per-friend challenge status.
+enum _FriendChallengeStatus {
+  none, // No active challenge
+  sent, // You sent a pending challenge (waiting for them to accept)
+  received, // They sent you a pending challenge (tap to play)
+  yourTurn, // In-progress challenge, you need to play rounds
+  theirTurn, // In-progress challenge, waiting for them
+}
+
+/// Challenge info for a specific friend.
+class _FriendChallengeInfo {
+  const _FriendChallengeInfo({
+    required this.status,
+    required this.challenge,
+    required this.opponentName,
+  });
+
+  final _FriendChallengeStatus status;
+  final Challenge challenge;
+  final String opponentName;
+}
+
+// =============================================================================
+// Challenge status badge (tappable for "your turn" / "new challenge")
+// =============================================================================
+
+class _ChallengeStatusBadge extends StatelessWidget {
+  const _ChallengeStatusBadge({
+    this.info,
+    required this.onChallenge,
+    required this.onPlay,
+  });
+
+  final _FriendChallengeInfo? info;
+  final VoidCallback onChallenge;
+  final VoidCallback onPlay;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = info?.status ?? _FriendChallengeStatus.none;
+
+    switch (status) {
+      case _FriendChallengeStatus.yourTurn:
+        return _tappableBadge(
+          label: 'YOUR TURN',
+          icon: Icons.play_arrow_rounded,
+          color: FlitColors.success,
+          onTap: onPlay,
+        );
+      case _FriendChallengeStatus.received:
+        return _tappableBadge(
+          label: 'PLAY!',
+          icon: Icons.flight_takeoff,
+          color: FlitColors.accent,
+          onTap: onPlay,
+        );
+      case _FriendChallengeStatus.theirTurn:
+        return _staticBadge(label: 'THEIR TURN', color: FlitColors.gold);
+      case _FriendChallengeStatus.sent:
+        return _staticBadge(label: 'SENT', color: FlitColors.textMuted);
+      case _FriendChallengeStatus.none:
+        return _tappableBadge(
+          label: 'CHALLENGE',
+          icon: Icons.flash_on,
+          color: FlitColors.accent,
+          onTap: onChallenge,
+        );
+    }
+  }
+
+  Widget _tappableBadge({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withOpacity(0.4)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(icon, color: color, size: 14),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _staticBadge({required String label, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Friendship level badge
+// =============================================================================
+
+class _FriendshipLevelBadge extends StatelessWidget {
+  const _FriendshipLevelBadge({required this.h2h});
+
+  final HeadToHead h2h;
+
+  @override
+  Widget build(BuildContext context) {
+    final stars = h2h.friendshipStars;
+    if (stars == 0) return const SizedBox.shrink();
+
+    final color = _levelColor;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        '${'★' * stars} ${h2h.friendshipLevel}',
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+
+  Color get _levelColor {
+    final stars = h2h.friendshipStars;
+    if (stars >= 5) return FlitColors.gold;
+    if (stars >= 4) return FlitColors.error;
+    if (stars >= 3) return FlitColors.accent;
+    if (stars >= 2) return FlitColors.accentLight;
+    return FlitColors.textSecondary;
+  }
 }
