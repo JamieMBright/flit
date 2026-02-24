@@ -692,7 +692,9 @@ class AvatarConfig {
     feature,
     companion,
     Object.hashAll(extras.entries.map((e) => Object.hash(e.key, e.value))),
-    Object.hashAll(customColors.entries.map((e) => Object.hash(e.key, e.value))),
+    Object.hashAll(
+      customColors.entries.map((e) => Object.hash(e.key, e.value)),
+    ),
     Object.hashAll(
       equippedCustomColors.entries.map((e) => Object.hash(e.key, e.value)),
     ),

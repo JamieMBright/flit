@@ -253,7 +253,8 @@ class AdminScreen extends ConsumerWidget {
   }
 
   void _showSetStatDialog(
-    BuildContext context, {
+    BuildContext context,
+    WidgetRef ref, {
     required String title,
     required String statColumn,
     required String valueLabel,
@@ -301,6 +302,13 @@ class AdminScreen extends ConsumerWidget {
               }
 
               await _setStat(user['id'] as String, statColumn, targetValue);
+
+              // If admin set their own stat, force-refresh to bypass
+              // monotonic protection so the new value takes effect.
+              final currentUserId = ref.read(accountProvider).currentPlayer.id;
+              if (user['id'] == currentUserId) {
+                await ref.read(accountProvider.notifier).adminForceRefresh();
+              }
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
               _snack(context, 'Set $statColumn for @$username to $targetValue');
@@ -955,6 +963,7 @@ class AdminScreen extends ConsumerWidget {
             label: 'Set Coins',
             onTap: () => _showSetStatDialog(
               context,
+              ref,
               title: 'Set Coins',
               statColumn: 'coins',
               valueLabel: 'Coins total',
@@ -969,6 +978,7 @@ class AdminScreen extends ConsumerWidget {
             label: 'Set Level',
             onTap: () => _showSetStatDialog(
               context,
+              ref,
               title: 'Set Level',
               statColumn: 'level',
               valueLabel: 'Level',
@@ -983,6 +993,7 @@ class AdminScreen extends ConsumerWidget {
             label: 'Set Flights',
             onTap: () => _showSetStatDialog(
               context,
+              ref,
               title: 'Set Flights',
               statColumn: 'games_played',
               valueLabel: 'Flights',
@@ -1198,7 +1209,8 @@ class _CoinLedgerScreenState extends State<_CoinLedgerScreen> {
               final createdAt = DateTime.tryParse(
                 (entry['created_at'] as String?) ?? '',
               );
-              final time = createdAt?.toLocal().toString().split('.').first ?? '';
+              final time =
+                  createdAt?.toLocal().toString().split('.').first ?? '';
               return ListTile(
                 dense: true,
                 title: Text(

@@ -129,10 +129,14 @@ class FriendsService {
           return true;
         }
         if (existingStatus == 'declined') {
-          await _client
-              .from('friendships')
-              .update({'status': 'pending'})
-              .eq('id', existingId);
+          // RLS only allows the addressee to UPDATE, so delete the old row
+          // and insert a fresh pending request instead.
+          await _client.from('friendships').delete().eq('id', existingId);
+          await _client.from('friendships').insert({
+            'requester_id': _userId,
+            'addressee_id': addresseeId,
+            'status': 'pending',
+          });
           invalidateCache();
           return true;
         }
@@ -302,35 +306,35 @@ class FriendsService {
           .eq('status', 'pending');
 
       final expiredIds = <int>[];
-      final result = data.map((row) {
-        if (_isExpiredCreatedAt(row['created_at'] as String?)) {
-          expiredIds.add((row['id'] as num).toInt());
-          return null;
-        }
-        final profile = row['requester'] as Map<String, dynamic>;
-        return (
-          friendshipId: (row['id'] as num).toInt(),
-          requesterId: profile['id'] as String,
-          username: profile['username'] as String? ?? 'Unknown',
-          displayName: profile['display_name'] as String?,
-          avatarUrl: profile['avatar_url'] as String?,
-        );
-      }).whereType<
-        ({
-          int friendshipId,
-          String requesterId,
-          String username,
-          String? displayName,
-          String? avatarUrl,
-        })
-      >().toList();
+      final result = data
+          .map((row) {
+            if (_isExpiredCreatedAt(row['created_at'] as String?)) {
+              expiredIds.add((row['id'] as num).toInt());
+              return null;
+            }
+            final profile = row['requester'] as Map<String, dynamic>;
+            return (
+              friendshipId: (row['id'] as num).toInt(),
+              requesterId: profile['id'] as String,
+              username: profile['username'] as String? ?? 'Unknown',
+              displayName: profile['display_name'] as String?,
+              avatarUrl: profile['avatar_url'] as String?,
+            );
+          })
+          .whereType<
+            ({
+              int friendshipId,
+              String requesterId,
+              String username,
+              String? displayName,
+              String? avatarUrl,
+            })
+          >()
+          .toList();
 
       if (expiredIds.isNotEmpty) {
         try {
-          await _client
-              .from('friendships')
-              .delete()
-              .inFilter('id', expiredIds);
+          await _client.from('friendships').delete().inFilter('id', expiredIds);
         } catch (e) {
           debugPrint('[FriendsService] pending expiry cleanup failed: $e');
         }
@@ -374,35 +378,35 @@ class FriendsService {
           .eq('status', 'pending');
 
       final expiredIds = <int>[];
-      final result = data.map((row) {
-        if (_isExpiredCreatedAt(row['created_at'] as String?)) {
-          expiredIds.add((row['id'] as num).toInt());
-          return null;
-        }
-        final profile = row['addressee'] as Map<String, dynamic>;
-        return (
-          friendshipId: (row['id'] as num).toInt(),
-          addresseeId: profile['id'] as String,
-          username: profile['username'] as String? ?? 'Unknown',
-          displayName: profile['display_name'] as String?,
-          avatarUrl: profile['avatar_url'] as String?,
-        );
-      }).whereType<
-        ({
-          int friendshipId,
-          String addresseeId,
-          String username,
-          String? displayName,
-          String? avatarUrl,
-        })
-      >().toList();
+      final result = data
+          .map((row) {
+            if (_isExpiredCreatedAt(row['created_at'] as String?)) {
+              expiredIds.add((row['id'] as num).toInt());
+              return null;
+            }
+            final profile = row['addressee'] as Map<String, dynamic>;
+            return (
+              friendshipId: (row['id'] as num).toInt(),
+              addresseeId: profile['id'] as String,
+              username: profile['username'] as String? ?? 'Unknown',
+              displayName: profile['display_name'] as String?,
+              avatarUrl: profile['avatar_url'] as String?,
+            );
+          })
+          .whereType<
+            ({
+              int friendshipId,
+              String addresseeId,
+              String username,
+              String? displayName,
+              String? avatarUrl,
+            })
+          >()
+          .toList();
 
       if (expiredIds.isNotEmpty) {
         try {
-          await _client
-              .from('friendships')
-              .delete()
-              .inFilter('id', expiredIds);
+          await _client.from('friendships').delete().inFilter('id', expiredIds);
         } catch (e) {
           debugPrint('[FriendsService] sent expiry cleanup failed: $e');
         }

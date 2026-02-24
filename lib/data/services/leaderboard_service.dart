@@ -232,7 +232,9 @@ class LeaderboardService {
     try {
       final data = await _client
           .from('scores')
-          .select('score, time_ms, region, rounds_completed, created_at')
+          .select(
+            'score, time_ms, region, rounds_completed, round_emojis, created_at',
+          )
           .eq('user_id', userId)
           .order('created_at', ascending: false)
           .limit(limit);
@@ -357,6 +359,37 @@ class LeaderboardService {
     }
   }
 
+  /// Fetch daily streak leaderboard (ranked by current streak).
+  Future<List<LeaderboardEntry>> fetchStreaks({int limit = 50}) async {
+    const cacheKey = 'streaks';
+    final cached = _boardCache.get(cacheKey);
+    if (cached != null) return cached;
+
+    try {
+      final data = await _client
+          .from('daily_streak_leaderboard')
+          .select()
+          .limit(limit);
+
+      final result = data.asMap().entries.map((e) {
+        final row = e.value;
+        return LeaderboardEntry(
+          playerId: row['user_id'] as String? ?? '',
+          playerName: row['username'] as String? ?? 'Unknown',
+          score: row['current_streak'] as int? ?? 0,
+          time: Duration.zero,
+          rank: e.key + 1,
+        );
+      }).toList();
+
+      _boardCache.set(cacheKey, result);
+      return result;
+    } catch (e) {
+      debugPrint('[LeaderboardService] fetchStreaks failed: $e');
+      return [];
+    }
+  }
+
   /// Fetch a friends-only leaderboard for the given [userId].
   ///
   /// Joins scores with the `friendships` table to find accepted friends, then
@@ -456,6 +489,190 @@ class LeaderboardService {
     } catch (e) {
       debugPrint('[LeaderboardService] fetchPlayerRank failed: $e');
       return null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Mode-based leaderboard (Daily Scramble / Training Flight)
+  // ---------------------------------------------------------------------------
+
+  /// Fetch leaderboard entries filtered by game mode and timeframe.
+  ///
+  /// Daily Scramble entries have `region = 'daily'`; Training Flight entries
+  /// have any other region value. Results are deduplicated per player (best
+  /// score kept) and ranked by score descending, time ascending.
+  Future<List<LeaderboardEntry>> fetchModeLeaderboard({
+    required bool isDailyScramble,
+    required TimeframeTab timeframe,
+    int limit = 50,
+  }) async {
+    final cacheKey = 'mode_${isDailyScramble}_${timeframe.name}_$limit';
+    final cached = _boardCache.get(cacheKey);
+    if (cached != null) return cached;
+
+    try {
+      final query = _client
+          .from('scores')
+          .select(
+            'score, time_ms, region, round_emojis, created_at, '
+            'user_id, profiles!inner(username, avatar_url, level)',
+          );
+
+      // Filter by game mode.
+      PostgrestFilterBuilder<List<Map<String, dynamic>>> filtered;
+      if (isDailyScramble) {
+        filtered = query.eq('region', 'daily');
+      } else {
+        filtered = query.neq('region', 'daily');
+      }
+
+      // Filter by time period.
+      final now = DateTime.now().toUtc();
+      switch (timeframe) {
+        case TimeframeTab.today:
+          final startOfDay = DateTime.utc(now.year, now.month, now.day);
+          filtered = filtered.gte('created_at', startOfDay.toIso8601String());
+          break;
+        case TimeframeTab.lastMonth:
+          final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+          filtered = filtered.gte(
+            'created_at',
+            thirtyDaysAgo.toIso8601String(),
+          );
+          break;
+        case TimeframeTab.allTime:
+          break;
+      }
+
+      final data = await filtered
+          .order('score', ascending: false)
+          .order('time_ms', ascending: true)
+          .limit(limit * 2); // extra to account for per-player dedup
+
+      // Deduplicate: keep best score per player.
+      final seen = <String>{};
+      final entries = <LeaderboardEntry>[];
+      int rank = 0;
+      for (final row in data) {
+        final userId = row['user_id'] as String;
+        if (seen.contains(userId)) continue;
+        seen.add(userId);
+        rank++;
+        final profile = row['profiles'] as Map<String, dynamic>?;
+        entries.add(
+          LeaderboardEntry(
+            rank: rank,
+            playerId: userId,
+            playerName: profile?['username'] as String? ?? 'Unknown',
+            time: Duration(milliseconds: row['time_ms'] as int? ?? 0),
+            score: row['score'] as int? ?? 0,
+            avatarUrl: profile?['avatar_url'] as String?,
+            roundEmojis: row['round_emojis'] as String?,
+            level: profile?['level'] as int?,
+            timestamp: row['created_at'] != null
+                ? DateTime.tryParse(row['created_at'] as String)
+                : null,
+          ),
+        );
+        if (entries.length >= limit) break;
+      }
+
+      // Batch-fetch equipped plane IDs.
+      if (entries.isNotEmpty) {
+        final planeMap = await _fetchPlaneIds(
+          entries.map((e) => e.playerId).toList(),
+        );
+        for (var i = 0; i < entries.length; i++) {
+          final planeId = planeMap[entries[i].playerId];
+          if (planeId != null) {
+            entries[i] = entries[i].copyWith(equippedPlaneId: planeId);
+          }
+        }
+      }
+
+      _boardCache.set(cacheKey, entries);
+      return entries;
+    } catch (e) {
+      debugPrint('[LeaderboardService] fetchModeLeaderboard failed: $e');
+      return [];
+    }
+  }
+
+  /// Fetch the user's best score for daily scramble and training flight.
+  ///
+  /// Returns `{daily: {score, time_ms}, training: {score, time_ms}}`.
+  Future<Map<String, Map<String, int>?>> fetchBestScoresByMode(
+    String userId,
+  ) async {
+    final cacheKey = 'best_modes_$userId';
+    final cached = _historyCache.get(cacheKey);
+    if (cached != null) {
+      return {
+        'daily': cached.isNotEmpty ? cached[0] : null,
+        'training': cached.length > 1 ? cached[1] : null,
+      };
+    }
+
+    try {
+      // Best daily score.
+      final dailyData = await _client
+          .from('scores')
+          .select('score, time_ms')
+          .eq('user_id', userId)
+          .eq('region', 'daily')
+          .order('score', ascending: false)
+          .order('time_ms', ascending: true)
+          .limit(1)
+          .maybeSingle();
+
+      // Best training score.
+      final trainingData = await _client
+          .from('scores')
+          .select('score, time_ms')
+          .eq('user_id', userId)
+          .neq('region', 'daily')
+          .order('score', ascending: false)
+          .order('time_ms', ascending: true)
+          .limit(1)
+          .maybeSingle();
+
+      Map<String, int>? daily;
+      if (dailyData != null) {
+        daily = {
+          'score': dailyData['score'] as int? ?? 0,
+          'time_ms': dailyData['time_ms'] as int? ?? 0,
+        };
+      }
+      Map<String, int>? training;
+      if (trainingData != null) {
+        training = {
+          'score': trainingData['score'] as int? ?? 0,
+          'time_ms': trainingData['time_ms'] as int? ?? 0,
+        };
+      }
+
+      return {'daily': daily, 'training': training};
+    } catch (e) {
+      debugPrint('[LeaderboardService] fetchBestScoresByMode failed: $e');
+      return {'daily': null, 'training': null};
+    }
+  }
+
+  /// Batch-fetch equipped plane IDs for the given user IDs.
+  Future<Map<String, String>> _fetchPlaneIds(List<String> userIds) async {
+    try {
+      final data = await _client
+          .from('account_state')
+          .select('user_id, equipped_plane_id')
+          .inFilter('user_id', userIds);
+      return {
+        for (final row in data)
+          row['user_id'] as String:
+              row['equipped_plane_id'] as String? ?? 'plane_default',
+      };
+    } catch (e) {
+      debugPrint('[LeaderboardService] _fetchPlaneIds failed: $e');
+      return {};
     }
   }
 

@@ -60,12 +60,38 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _isRefreshingProfile = false;
+  int? _bestDailyScore;
+  Duration? _bestDailyTime;
+  int? _bestTrainingScore;
+  Duration? _bestTrainingTime;
 
   @override
   void initState() {
     super.initState();
     // Pull latest server state so profile stats are always current.
     ref.read(accountProvider.notifier).refreshFromServer();
+    _loadBestScores();
+  }
+
+  Future<void> _loadBestScores() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+    final best = await LeaderboardService.instance.fetchBestScoresByMode(
+      userId,
+    );
+    if (!mounted) return;
+    setState(() {
+      final daily = best['daily'];
+      if (daily != null) {
+        _bestDailyScore = daily['score'];
+        _bestDailyTime = Duration(milliseconds: daily['time_ms'] ?? 0);
+      }
+      final training = best['training'];
+      if (training != null) {
+        _bestTrainingScore = training['score'];
+        _bestTrainingTime = Duration(milliseconds: training['time_ms'] ?? 0);
+      }
+    });
   }
 
   void _openSettings() => showSettingsSheet(context);
@@ -671,7 +697,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _LevelProgress(player: player),
             const SizedBox(height: 24),
             // Stats grid
-            _StatsGrid(player: player),
+            _StatsGrid(
+              player: player,
+              bestDailyScore: _bestDailyScore,
+              bestDailyTime: _bestDailyTime,
+              bestTrainingScore: _bestTrainingScore,
+              bestTrainingTime: _bestTrainingTime,
+            ),
             const SizedBox(height: 24),
             // Quick links
             Row(
@@ -828,9 +860,19 @@ class _LevelProgress extends StatelessWidget {
 }
 
 class _StatsGrid extends StatelessWidget {
-  const _StatsGrid({required this.player});
+  const _StatsGrid({
+    required this.player,
+    this.bestDailyScore,
+    this.bestDailyTime,
+    this.bestTrainingScore,
+    this.bestTrainingTime,
+  });
 
   final Player player;
+  final int? bestDailyScore;
+  final Duration? bestDailyTime;
+  final int? bestTrainingScore;
+  final Duration? bestTrainingTime;
 
   static String _fmtBestScore(int? score, Duration? time) {
     if (score == null && time == null) return '--';
@@ -883,18 +925,34 @@ class _StatsGrid extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        // Bottom row: Best Time, Flight Time
+        // Middle row: Daily Best, Training Best
         Row(
           children: [
             Expanded(
               child: _StatCard(
-                icon: Icons.emoji_events,
+                icon: Icons.calendar_today,
                 iconColor: FlitColors.gold,
-                value: _fmtBestScore(player.bestScore, player.bestTime),
-                label: 'Best Score',
+                value: _fmtBestScore(bestDailyScore, bestDailyTime),
+                label: 'Daily Best',
+                valueSize: 13,
               ),
             ),
             const SizedBox(width: 12),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.emoji_events,
+                iconColor: FlitColors.accent,
+                value: _fmtBestScore(bestTrainingScore, bestTrainingTime),
+                label: 'Training Best',
+                valueSize: 13,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Bottom row: Air Time
+        Row(
+          children: [
             Expanded(
               child: _StatCard(
                 icon: Icons.flight,
@@ -916,12 +974,14 @@ class _StatCard extends StatelessWidget {
     required this.iconColor,
     required this.value,
     required this.label,
+    this.valueSize = 20,
   });
 
   final IconData icon;
   final Color iconColor;
   final String value;
   final String label;
+  final double valueSize;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -937,9 +997,10 @@ class _StatCard extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(
+          textAlign: TextAlign.center,
+          style: TextStyle(
             color: FlitColors.textPrimary,
-            fontSize: 20,
+            fontSize: valueSize,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -1925,6 +1986,7 @@ class _GameHistoryEntry {
     required this.score,
     required this.date,
     required this.roundsCompleted,
+    this.roundEmojis,
   });
 
   final String region;
@@ -1932,6 +1994,7 @@ class _GameHistoryEntry {
   final int score;
   final DateTime date;
   final int roundsCompleted;
+  final String? roundEmojis;
 
   /// Generate shareable result text for socials.
   String toShareText() {
@@ -1946,11 +2009,12 @@ class _GameHistoryEntry {
         'Rounds: $roundsCompleted';
   }
 
-  /// Decorative emoji row for history share text.
-  /// This does not encode actual clue types from the run.
+  /// Per-round performance emoji row (colored circles).
   String get clueEmojiRow {
+    if (roundEmojis != null && roundEmojis!.isNotEmpty) return roundEmojis!;
     if (roundsCompleted <= 0) return '';
-    return List.filled(roundsCompleted, '✈️').join();
+    // Fallback for old rows without stored emojis.
+    return List.filled(roundsCompleted, '\u{2B1C}').join();
   }
 
   static String _formatShareTime(Duration d) {
@@ -2014,6 +2078,7 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
             score: entry['score'] as int,
             date: DateTime.parse(entry['created_at'] as String),
             roundsCompleted: (entry['rounds_completed'] as int?) ?? 0,
+            roundEmojis: entry['round_emojis'] as String?,
           );
         }).toList();
         _loading = false;
@@ -2055,6 +2120,139 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
     return months[month - 1];
   }
 
+  void _showEntryDetail(BuildContext context, _GameHistoryEntry entry) {
+    final isDaily = entry.region.toLowerCase() == 'daily';
+    final rounds = entry.clueEmojiRow.runes
+        .map((r) => String.fromCharCode(r))
+        .toList();
+    int perfect = 0, hinted = 0, heavy = 0, failed = 0;
+    for (final r in rounds) {
+      if (r == '\u{1F7E2}')
+        perfect++;
+      else if (r == '\u{1F7E1}')
+        hinted++;
+      else if (r == '\u{1F7E0}')
+        heavy++;
+      else if (r == '\u{1F534}')
+        failed++;
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: FlitColors.backgroundMid,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: FlitColors.textMuted.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              isDaily ? 'DAILY SCRAMBLE' : entry.region.toUpperCase(),
+              style: const TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 2.0,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _formatDate(entry.date),
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Score + time
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '${entry.score}',
+                  style: const TextStyle(
+                    color: FlitColors.gold,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Text(
+                  'pts',
+                  style: TextStyle(color: FlitColors.textMuted, fontSize: 14),
+                ),
+                const SizedBox(width: 20),
+                Text(
+                  _formatDuration(entry.duration),
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 16,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Round breakdown
+            if (rounds.isNotEmpty)
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                alignment: WrapAlignment.center,
+                children: List.generate(rounds.length, (i) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'R${i + 1}',
+                        style: const TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(rounds[i], style: const TextStyle(fontSize: 22)),
+                    ],
+                  );
+                }),
+              ),
+            const SizedBox(height: 16),
+            // Legend
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: FlitColors.cardBackground,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: FlitColors.cardBorder),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _LegendItem('\u{1F7E2}', '$perfect', 'Perfect'),
+                  _LegendItem('\u{1F7E1}', '$hinted', '1-2 hints'),
+                  _LegendItem('\u{1F7E0}', '$heavy', '3+ hints'),
+                  _LegendItem('\u{1F534}', '$failed', 'Failed'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: FlitColors.backgroundDark,
@@ -2078,120 +2276,150 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final entry = _entries[index];
-              return Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: FlitColors.cardBackground,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: FlitColors.cardBorder),
-                ),
-                child: Row(
-                  children: [
-                    // Region icon
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: FlitColors.backgroundLight,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.public,
-                          color: FlitColors.accent,
-                          size: 24,
+              final isDaily = entry.region.toLowerCase() == 'daily';
+              return GestureDetector(
+                onTap: () => _showEntryDetail(context, entry),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: FlitColors.cardBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: FlitColors.cardBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      // Region icon
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: FlitColors.backgroundLight,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            isDaily ? Icons.calendar_today : Icons.public,
+                            color: isDaily
+                                ? FlitColors.gold
+                                : FlitColors.accent,
+                            size: 20,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 14),
-                    // Region and time
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(width: 12),
+                      // Region, time, emojis
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isDaily ? 'Daily Scramble' : entry.region,
+                              style: const TextStyle(
+                                color: FlitColors.textPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              '${_formatDuration(entry.duration)}  \u2022  ${_formatDate(entry.date)}',
+                              style: const TextStyle(
+                                color: FlitColors.textMuted,
+                                fontSize: 11,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              entry.clueEmojiRow,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Score
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            entry.region,
+                            entry.score.toString(),
                             style: const TextStyle(
-                              color: FlitColors.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                              color: FlitColors.gold,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 4),
                           Text(
-                            '${_formatDuration(entry.duration)}  •  ${_formatDate(entry.date)}',
-                            style: const TextStyle(
-                              color: FlitColors.textMuted,
-                              fontSize: 12,
+                            'pts',
+                            style: TextStyle(
+                              color: FlitColors.textMuted.withOpacity(0.7),
+                              fontSize: 10,
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                entry.clueEmojiRow,
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ],
                           ),
                         ],
                       ),
-                    ),
-                    // Score and share
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          entry.score.toString(),
-                          style: const TextStyle(
-                            color: FlitColors.gold,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                      const SizedBox(width: 8),
+                      // Share button
+                      GestureDetector(
+                        onTap: () {
+                          final text = entry.toShareText();
+                          Clipboard.setData(ClipboardData(text: text));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Result copied to clipboard!'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: FlitColors.backgroundLight,
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        ),
-                        const Text(
-                          'pts',
-                          style: TextStyle(
-                            color: FlitColors.textMuted,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 10),
-                    // Share button
-                    GestureDetector(
-                      onTap: () {
-                        final text = entry.toShareText();
-                        Clipboard.setData(ClipboardData(text: text));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Result copied to clipboard!'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: FlitColors.backgroundLight,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.share,
-                            color: FlitColors.textMuted,
-                            size: 18,
+                          child: const Center(
+                            child: Icon(
+                              Icons.share,
+                              color: FlitColors.textMuted,
+                              size: 16,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
           ),
+  );
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem(this.emoji, this.count, this.label);
+
+  final String emoji;
+  final String count;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(emoji, style: const TextStyle(fontSize: 14)),
+      const SizedBox(height: 2),
+      Text(
+        count,
+        style: const TextStyle(
+          color: FlitColors.textPrimary,
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      Text(
+        label,
+        style: const TextStyle(color: FlitColors.textMuted, fontSize: 9),
+      ),
+    ],
   );
 }

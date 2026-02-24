@@ -658,18 +658,58 @@ class _SpeedControls extends StatelessWidget {
   }
 }
 
-class _HintButton extends StatelessWidget {
+class _HintButton extends StatefulWidget {
   const _HintButton({required this.tier, this.onTap});
 
   final int tier;
   final VoidCallback? onTap;
 
+  /// Mirrors GameSession._hintTierPenalties — kept in sync manually.
+  static const List<int> tierPenalties = [500, 1000, 1500, 2500];
+
+  @override
+  State<_HintButton> createState() => _HintButtonState();
+}
+
+class _HintButtonState extends State<_HintButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _anim;
+  int? _lastPenalty;
+
+  @override
+  void initState() {
+    super.initState();
+    _anim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+  }
+
+  @override
+  void dispose() {
+    _anim.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    if (widget.onTap == null) return;
+    final tier = widget.tier.clamp(0, _HintButton.tierPenalties.length - 1);
+    _lastPenalty = _HintButton.tierPenalties[tier];
+    _anim.forward(from: 0);
+    widget.onTap!();
+  }
+
+  /// Yellow (low penalty) → red (high penalty).
+  Color _penaltyColor(int penalty) {
+    final t = ((penalty - 500) / 2000).clamp(0.0, 1.0);
+    return Color.lerp(FlitColors.gold, const Color(0xFFE53935), t)!;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Determine icon and label based on next tier
     final String icon;
     final String label;
-    switch (tier) {
+    switch (widget.tier) {
       case 0:
         icon = '💡';
         label = 'NEW CLUE';
@@ -693,33 +733,73 @@ class _HintButton extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: FlitColors.gold.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: FlitColors.gold.withOpacity(0.5),
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 14)),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: FlitColors.gold,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
+      onTap: _handleTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: FlitColors.gold.withOpacity(0.35),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: FlitColors.gold.withOpacity(0.8),
+                width: 1.5,
               ),
             ),
-          ],
-        ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(icon, style: const TextStyle(fontSize: 14)),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: FlitColors.gold,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Floating penalty text
+          AnimatedBuilder(
+            animation: _anim,
+            builder: (context, _) {
+              if (!_anim.isAnimating) {
+                return const SizedBox.shrink();
+              }
+              final penalty = _lastPenalty ?? 500;
+              final t = _anim.value;
+              // Ease-out float: fast start, slow finish
+              final offset = -30.0 * Curves.easeOut.transform(t);
+              // Fade out in the second half
+              final opacity = t < 0.5 ? 1.0 : (1.0 - (t - 0.5) * 2.0);
+              return Positioned(
+                top: offset - 20,
+                child: IgnorePointer(
+                  child: Opacity(
+                    opacity: opacity.clamp(0.0, 1.0),
+                    child: Text(
+                      '-${penalty}pts',
+                      style: TextStyle(
+                        color: _penaltyColor(penalty),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        shadows: const [
+                          Shadow(color: Colors.black54, blurRadius: 4),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
