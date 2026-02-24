@@ -40,7 +40,7 @@ class _PlanePreviewScreenState extends State<PlanePreviewScreen>
 
   @override
   Widget build(BuildContext context) {
-    final planes = CosmeticCatalog.planes;
+    const planes = CosmeticCatalog.planes;
 
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
@@ -111,11 +111,9 @@ class _PlaneCard extends StatelessWidget {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: FlitColors.backgroundMid,
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(11),
-              ),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(11)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

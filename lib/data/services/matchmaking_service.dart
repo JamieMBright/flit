@@ -147,7 +147,7 @@ class MatchmakingService {
           .eq('gameplay_version', _gameplayVersion)
           .isFilter('matched_at', null);
 
-      final poolSize = (countResponse as List).length;
+      final poolSize = countResponse.length;
       final bandWidth = calculateEloBand(elo: eloRating, poolSize: poolSize);
 
       // 2. Query unmatched entries within ELO band.

@@ -134,7 +134,7 @@ List<_AvatarPart> _earringsParts(int nNonNone) => [
       ),
 ];
 
-List<_AvatarPart> _featureParts(int nNonNone, {String label = 'Features'}) => [
+List<_AvatarPart> _featureParts(int nNonNone) => [
   _AvatarPart(id: 'feature_${AvatarFeature.none.name}', label: 'None'),
   ...AvatarFeature.values
       .skip(1)

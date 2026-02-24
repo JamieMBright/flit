@@ -264,7 +264,7 @@ class UserPreferencesService {
 
     try {
       // Parallel fetch — one round-trip per table, all concurrent.
-      final results = await Future.wait([
+      final results = await Future.wait<Map<String, dynamic>?>([
         _client.from('profiles').select().eq('id', userId).maybeSingle(),
         _client
             .from('user_settings')
@@ -278,9 +278,9 @@ class UserPreferencesService {
             .maybeSingle(),
       ]);
 
-      var profileData = results[0] as Map<String, dynamic>?;
-      var settingsData = results[1] as Map<String, dynamic>?;
-      var accountData = results[2] as Map<String, dynamic>?;
+      var profileData = results[0];
+      var settingsData = results[1];
+      var accountData = results[2];
 
       if (profileData == null) {
         debugPrint(

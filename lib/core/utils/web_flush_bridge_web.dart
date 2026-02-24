@@ -16,12 +16,12 @@ import 'dart:html' as html;
 ///
 /// A simple guard prevents concurrent flushes from overlapping.
 void registerBeforeUnloadFlush(Future<void> Function() flush) {
-  var _flushing = false;
+  var flushing = false;
 
   void safeFlush() {
-    if (_flushing) return;
-    _flushing = true;
-    flush().whenComplete(() => _flushing = false);
+    if (flushing) return;
+    flushing = true;
+    flush().whenComplete(() => flushing = false);
   }
 
   // pagehide: Apple's recommended lifecycle event for iOS Safari PWA.

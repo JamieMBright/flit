@@ -544,7 +544,7 @@ void main() {
 
   group('License persistence guard', () {
     test('toPilotLicense preserves saved license from valid account_state', () {
-      final license = const PilotLicense(
+      const license = PilotLicense(
         coinBoost: 12,
         clueChance: 7,
         fuelBoost: 22,

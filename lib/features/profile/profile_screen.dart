@@ -880,7 +880,7 @@ class _StatsGrid extends StatelessWidget {
     if (time == null) return '$pts pts';
     final s = time.inSeconds;
     final ms = (time.inMilliseconds % 1000) ~/ 10;
-    return '$pts pts\n${s}.${ms.toString().padLeft(2, '0')}s';
+    return '$pts pts\n$s.${ms.toString().padLeft(2, '0')}s';
   }
 
   static String _fmtFlightTime(Duration d) {
@@ -2127,14 +2127,15 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
         .toList();
     int perfect = 0, hinted = 0, heavy = 0, failed = 0;
     for (final r in rounds) {
-      if (r == '\u{1F7E2}')
+      if (r == '\u{1F7E2}') {
         perfect++;
-      else if (r == '\u{1F7E1}')
+      } else if (r == '\u{1F7E1}') {
         hinted++;
-      else if (r == '\u{1F7E0}')
+      } else if (r == '\u{1F7E0}') {
         heavy++;
-      else if (r == '\u{1F534}')
+      } else if (r == '\u{1F534}') {
         failed++;
+      }
     }
 
     showModalBottomSheet<void>(
