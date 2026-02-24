@@ -216,6 +216,17 @@ class UserPreferencesService {
   bool _settingsDirty = false;
   bool _accountStateDirty = false;
 
+  // Write-version counters — incremented on every save*() call.
+  // Used by _flush() to detect if a new mutation occurred during an in-flight
+  // network write. If the version has changed by the time the .then() callback
+  // fires, the dirty flag and pending data are NOT cleared — the next flush
+  // cycle will pick up the newer data. This prevents BUG 1 (silent data loss
+  // from overlapping mutations and flushes) and BUG 4 (crash-safe cache
+  // cleared while newer data exists).
+  int _profileWriteVersion = 0;
+  int _settingsWriteVersion = 0;
+  int _accountStateWriteVersion = 0;
+
   /// Whether there are any unsaved writes waiting to be flushed.
   bool get hasPendingWrites =>
       _profileDirty || _settingsDirty || _accountStateDirty;
@@ -234,6 +245,11 @@ class UserPreferencesService {
   // Offline write queue — survives app restarts via SharedPreferences.
   final _PendingWriteQueue _queue = _PendingWriteQueue();
   bool _queueInitialised = false;
+
+  // Flush mutex — prevents concurrent _flush() calls from racing.
+  // When non-null, a flush is in-flight. New callers await the existing
+  // flush before checking if another flush is needed.
+  Completer<void>? _flushLock;
 
   // ---------------------------------------------------------------------------
   // Queue initialisation
@@ -327,6 +343,7 @@ class UserPreferencesService {
 
   /// Mark the profiles table as dirty and queue a write.
   void saveProfile(Player player) {
+    _profileWriteVersion++;
     _profileDirty = true;
     _pendingProfile = {
       'id': _userId,
@@ -366,6 +383,7 @@ class UserPreferencesService {
     required bool notificationsEnabled,
     required bool hapticEnabled,
   }) {
+    _settingsWriteVersion++;
     _settingsDirty = true;
     _pendingSettings = {
       'user_id': _userId,
@@ -400,6 +418,7 @@ class UserPreferencesService {
     DailyStreak dailyStreak = const DailyStreak(),
     DailyResult? lastDailyResult,
   }) {
+    _accountStateWriteVersion++;
     _accountStateDirty = true;
     _pendingAccountState = {
       'user_id': _userId,
@@ -632,6 +651,11 @@ class UserPreferencesService {
     _pendingProfile = null;
     _pendingSettings = null;
     _pendingAccountState = null;
+    // Bump versions so any in-flight flush .then() callbacks from the old
+    // session won't clear the flags/data that belong to the new session.
+    _profileWriteVersion++;
+    _settingsWriteVersion++;
+    _accountStateWriteVersion++;
   }
 
   /// Clear cached user, cancel pending writes, and purge the offline queue.
@@ -741,88 +765,127 @@ class UserPreferencesService {
   }
 
   Future<void> _flush() async {
-    await _ensureQueueInitialised();
-
-    // Attempt to drain any previously failed writes before issuing new ones.
-    await retryPendingWrites();
-    final client = _clientOrNull;
-    if (client == null) {
-      debugPrint(
-        '[UserPreferencesService] flush: Supabase not initialized — skipping',
-      );
-      return;
+    // ── Flush mutex ──────────────────────────────────────────────────────
+    // Prevents concurrent _flush() calls from racing. If another flush is
+    // already in-flight (e.g. lifecycle flush + game-completion flush), we
+    // wait for it to finish, then re-check dirty flags. This eliminates the
+    // race amplification from multiple callers and ensures at most one
+    // Supabase write per table is in-flight at any time.
+    if (_flushLock != null) {
+      try {
+        await _flushLock!.future;
+      } catch (_) {
+        // The previous flush errored — we still need to try.
+      }
+      // After the previous flush completes, check if we still have dirty data.
+      if (!_profileDirty && !_settingsDirty && !_accountStateDirty) {
+        return;
+      }
     }
+    _flushLock = Completer<void>();
 
-    final futures = <Future<void>>[];
+    try {
+      await _ensureQueueInitialised();
 
-    if (_profileDirty && _pendingProfile != null) {
-      final payload = _pendingProfile!;
-      futures.add(
-        client
-            .from('profiles')
-            .upsert(payload)
-            .then((_) {
-              _profileDirty = false;
-              _pendingProfile = null;
-              _clearLocalCache(_kLocalProfile);
-              // Profile (including username) is now committed to the DB.
-              // Invalidate leaderboard caches so views immediately reflect the
-              // updated username rather than serving stale cached data.
-              LeaderboardService.instance.invalidateCache();
-            })
-            .catchError((Object e) async {
-              debugPrint(
-                '[UserPreferencesService] flush profiles failed, queuing: $e',
-              );
-              await _queue.enqueue('profiles', payload, 'upsert');
-            }),
-      );
-    }
+      // Attempt to drain any previously failed writes before issuing new ones.
+      await retryPendingWrites();
+      final client = _clientOrNull;
+      if (client == null) {
+        debugPrint(
+          '[UserPreferencesService] flush: Supabase not initialized — skipping',
+        );
+        return;
+      }
 
-    if (_settingsDirty && _pendingSettings != null) {
-      final payload = _pendingSettings!;
-      futures.add(
-        client
-            .from('user_settings')
-            .upsert(payload)
-            .then((_) {
-              _settingsDirty = false;
-              _pendingSettings = null;
-              _clearLocalCache(_kLocalSettings);
-            })
-            .catchError((Object e) async {
-              debugPrint(
-                '[UserPreferencesService] flush user_settings failed, queuing: $e',
-              );
-              await _queue.enqueue('user_settings', payload, 'upsert');
-            }),
-      );
-    }
+      final futures = <Future<void>>[];
 
-    if (_accountStateDirty && _pendingAccountState != null) {
-      final payload = _pendingAccountState!;
-      futures.add(
-        client
-            .from('account_state')
-            .upsert(payload)
-            .then((_) {
-              _accountStateDirty = false;
-              _pendingAccountState = null;
-              _clearLocalCache(_kLocalAccountState);
-            })
-            .catchError((Object e) async {
-              debugPrint(
-                '[UserPreferencesService] flush account_state failed, queuing: $e',
-              );
-              await _queue.enqueue('account_state', payload, 'upsert');
-            }),
-      );
-    }
+      // ── Version-guarded writes ───────────────────────────────────────
+      // Capture the write-version at flush start. In the .then() callback,
+      // only clear the dirty flag / pending data / crash-safe cache if no
+      // new mutation has occurred since we captured the payload. This
+      // prevents BUG 1 (silent data loss from overlapping mutations and
+      // flushes) and BUG 4 (crash-safe cache cleared while newer data
+      // exists in memory).
 
-    if (futures.isNotEmpty) {
-      // We intentionally don't wrap in try/catch here because each future
-      // already handles its own error via catchError above.
-      await Future.wait(futures);
+      if (_profileDirty && _pendingProfile != null) {
+        final payload = _pendingProfile!;
+        final versionAtFlush = _profileWriteVersion;
+        futures.add(
+          client
+              .from('profiles')
+              .upsert(payload)
+              .then((_) {
+                if (_profileWriteVersion == versionAtFlush) {
+                  _profileDirty = false;
+                  _pendingProfile = null;
+                  _clearLocalCache(_kLocalProfile);
+                }
+                // Always invalidate leaderboard cache — the write succeeded.
+                LeaderboardService.instance.invalidateCache();
+              })
+              .catchError((Object e) async {
+                debugPrint(
+                  '[UserPreferencesService] flush profiles failed, queuing: $e',
+                );
+                await _queue.enqueue('profiles', payload, 'upsert');
+              }),
+        );
+      }
+
+      if (_settingsDirty && _pendingSettings != null) {
+        final payload = _pendingSettings!;
+        final versionAtFlush = _settingsWriteVersion;
+        futures.add(
+          client
+              .from('user_settings')
+              .upsert(payload)
+              .then((_) {
+                if (_settingsWriteVersion == versionAtFlush) {
+                  _settingsDirty = false;
+                  _pendingSettings = null;
+                  _clearLocalCache(_kLocalSettings);
+                }
+              })
+              .catchError((Object e) async {
+                debugPrint(
+                  '[UserPreferencesService] flush user_settings failed, queuing: $e',
+                );
+                await _queue.enqueue('user_settings', payload, 'upsert');
+              }),
+        );
+      }
+
+      if (_accountStateDirty && _pendingAccountState != null) {
+        final payload = _pendingAccountState!;
+        final versionAtFlush = _accountStateWriteVersion;
+        futures.add(
+          client
+              .from('account_state')
+              .upsert(payload)
+              .then((_) {
+                if (_accountStateWriteVersion == versionAtFlush) {
+                  _accountStateDirty = false;
+                  _pendingAccountState = null;
+                  _clearLocalCache(_kLocalAccountState);
+                }
+              })
+              .catchError((Object e) async {
+                debugPrint(
+                  '[UserPreferencesService] flush account_state failed, queuing: $e',
+                );
+                await _queue.enqueue('account_state', payload, 'upsert');
+              }),
+        );
+      }
+
+      if (futures.isNotEmpty) {
+        // We intentionally don't wrap in try/catch here because each future
+        // already handles its own error via catchError above.
+        await Future.wait(futures);
+      }
+    } finally {
+      _flushLock!.complete();
+      _flushLock = null;
     }
   }
 }

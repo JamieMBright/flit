@@ -1107,26 +1107,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     // Compute per-clue-type correct counts and best streak.
     final clueStats = _computeClueStats();
 
-    // Record stats as a completed game (abort counts as a game played).
-    await ref
-        .read(accountProvider.notifier)
-        .recordGameCompletion(
-          elapsed: _cumulativeTime,
-          score: _totalScore,
-          roundsCompleted: _currentRound,
-          coinReward: 0, // No coin reward for aborted games.
-          region: widget.isDailyChallenge ? 'daily' : widget.region.name,
-          roundEmojis: roundEmojis,
-          flagsCorrect: clueStats.flags,
-          capitalsCorrect: clueStats.capitals,
-          outlinesCorrect: clueStats.outlines,
-          bordersCorrect: clueStats.borders,
-          statsCorrect: clueStats.stats,
-          consecutiveCorrect: clueStats.streak,
-        );
-    if (!mounted) return;
-
-    // Fire daily callbacks so the daily challenge is marked as used.
+    // Fire daily callbacks BEFORE recordGameCompletion() so their state
+    // changes (streak, daily result) are dirty before the flush() call
+    // inside recordGameCompletion(). This matches the ordering in
+    // _completeLanding() and ensures the daily streak data is included in
+    // the same flush cycle rather than relying on the 2-second debounce
+    // timer (which can be lost if the user closes the app quickly).
     if (widget.isDailyChallenge) {
       widget.onComplete?.call(_totalScore);
 
@@ -1153,6 +1139,27 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       );
       widget.onDailyComplete?.call(dailyResult);
     }
+
+    // Record stats as a completed game (abort counts as a game played).
+    // The flush() inside recordGameCompletion() will write both the profile
+    // stats AND the daily streak data marked dirty by the callbacks above.
+    await ref
+        .read(accountProvider.notifier)
+        .recordGameCompletion(
+          elapsed: _cumulativeTime,
+          score: _totalScore,
+          roundsCompleted: _currentRound,
+          coinReward: 0, // No coin reward for aborted games.
+          region: widget.isDailyChallenge ? 'daily' : widget.region.name,
+          roundEmojis: roundEmojis,
+          flagsCorrect: clueStats.flags,
+          capitalsCorrect: clueStats.capitals,
+          outlinesCorrect: clueStats.outlines,
+          bordersCorrect: clueStats.borders,
+          statsCorrect: clueStats.stats,
+          consecutiveCorrect: clueStats.streak,
+        );
+    if (!mounted) return;
 
     // Submit challenge abort if this is a H2H challenge.
     if (widget.challengeId != null) {
