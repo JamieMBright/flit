@@ -425,7 +425,7 @@ void main() {
       expect(b.state.isLoading, isFalse);
 
       // Trigger a local validation failure on only one service instance.
-      await a.signInWithEmail('invalid-email', 'password123');
+      await a.signInWithEmail(email: 'invalid-email', password: 'password123');
 
       expect(a.state.error, isNotNull);
       expect(b.state.error, isNull);
