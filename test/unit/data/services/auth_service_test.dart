@@ -417,11 +417,18 @@ void main() {
       expect(state.error, isNull);
     });
 
-    test('two separate AuthService instances each have their own state', () {
+    test('two separate AuthService instances each have their own state', () async {
       final a = AuthService();
       final b = AuthService();
 
-      expect(identical(a.state, b.state), isFalse);
+      expect(a.state.isLoading, isFalse);
+      expect(b.state.isLoading, isFalse);
+
+      // Trigger a local validation failure on only one service instance.
+      await a.signInWithEmail('invalid-email', 'password123');
+
+      expect(a.state.error, isNotNull);
+      expect(b.state.error, isNull);
     });
   });
 }

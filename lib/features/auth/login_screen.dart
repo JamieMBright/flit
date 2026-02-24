@@ -125,17 +125,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const _PrivacyLink(),
-                    const SizedBox(width: 16),
-                    const Text(
+                    _PrivacyLink(),
+                    SizedBox(width: 16),
+                    Text(
                       '|',
                       style: TextStyle(
                         color: FlitColors.textMuted,
                         fontSize: 11,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    const _TermsLink(),
+                    SizedBox(width: 16),
+                    _TermsLink(),
                   ],
                 ),
                 const SizedBox(height: 16),
