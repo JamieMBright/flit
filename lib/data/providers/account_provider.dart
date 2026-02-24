@@ -605,7 +605,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     required int roundsCompleted,
     int coinReward = 0,
     String region = 'world',
-  }) {
+  }) async {
     incrementGamesPlayed();
     updateBestScore(score);
     updateBestTime(elapsed);
