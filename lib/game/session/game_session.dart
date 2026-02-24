@@ -39,11 +39,20 @@ class GameSession {
   /// Time taken to complete (or current elapsed time)
   Duration get elapsed => (endTime ?? DateTime.now()).difference(startTime);
 
+  /// Per-tier hint penalties (non-linear, escalating).
+  ///
+  /// Tier 1 (new clue)      →  −500
+  /// Tier 2 (reveal country) →  −1,000
+  /// Tier 3 (wayline)        →  −1,500
+  /// Tier 4 (auto-navigate)  →  −2,500
+  static const List<int> _hintTierPenalties = [500, 1000, 1500, 2500];
+
   /// Score for this round.
   ///
   /// Formula:
   ///   base     = 10,000 per round
-  ///   hints    = −1,000 per hint used (0–4 hints)
+  ///   hints    = non-linear escalating penalty per tier (see [_hintTierPenalties])
+  ///             (0 hints = 0, all 4 = −5,500)
   ///   fuel     = −up to 5,000 scaled linearly by fuel burned
   ///             (100% fuel remaining = 0 penalty, 0% = −5,000)
   ///
@@ -51,7 +60,10 @@ class GameSession {
   int get score {
     if (!_completed) return 0;
     const int base = 10000;
-    final int hintPenalty = _hintsUsed * 1000;
+    int hintPenalty = 0;
+    for (int i = 0; i < _hintsUsed && i < _hintTierPenalties.length; i++) {
+      hintPenalty += _hintTierPenalties[i];
+    }
     final int fuelPenalty = ((1.0 - _fuelFraction) * 5000).round();
     return max(0, base - hintPenalty - fuelPenalty);
   }

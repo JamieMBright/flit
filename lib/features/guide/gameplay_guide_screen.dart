@@ -910,7 +910,7 @@ class _ScoringSection extends StatelessWidget {
             step: 2,
             color: FlitColors.gold,
             label: 'Hint Penalty',
-            detail: '-1,000 pts per hint used',
+            detail: '-500 / -1,000 / -1,500 / -2,500 per tier',
             icon: Icons.lightbulb_outline_rounded,
           ),
           SizedBox(height: 8),
