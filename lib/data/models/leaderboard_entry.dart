@@ -9,6 +9,9 @@ class LeaderboardEntry {
     this.avatarUrl,
     this.countryCode,
     this.timestamp,
+    this.roundEmojis,
+    this.equippedPlaneId,
+    this.level,
   });
 
   final int rank;
@@ -19,6 +22,24 @@ class LeaderboardEntry {
   final String? avatarUrl;
   final String? countryCode;
   final DateTime? timestamp;
+  final String? roundEmojis;
+  final String? equippedPlaneId;
+  final int? level;
+
+  LeaderboardEntry copyWith({int? rank, String? equippedPlaneId}) =>
+      LeaderboardEntry(
+        rank: rank ?? this.rank,
+        playerId: playerId,
+        playerName: playerName,
+        time: time,
+        score: score,
+        avatarUrl: avatarUrl,
+        countryCode: countryCode,
+        timestamp: timestamp,
+        roundEmojis: roundEmojis,
+        equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
+        level: level,
+      );
 
   Map<String, dynamic> toJson() => {
     'rank': rank,
@@ -29,6 +50,9 @@ class LeaderboardEntry {
     'avatar_url': avatarUrl,
     'country_code': countryCode,
     'timestamp': timestamp?.toIso8601String(),
+    'round_emojis': roundEmojis,
+    'equipped_plane_id': equippedPlaneId,
+    'level': level,
   };
 
   factory LeaderboardEntry.fromJson(Map<String, dynamic> json) =>
@@ -43,6 +67,9 @@ class LeaderboardEntry {
         timestamp: json['timestamp'] != null
             ? DateTime.parse(json['timestamp'] as String)
             : null,
+        roundEmojis: json['round_emojis'] as String?,
+        equippedPlaneId: json['equipped_plane_id'] as String?,
+        level: json['level'] as int?,
       );
 }
 
@@ -66,22 +93,32 @@ extension LeaderboardPeriodExtension on LeaderboardPeriod {
   }
 }
 
-/// Board type tabs shown on the leaderboard screen.
-///
-/// Each tab maps to a different SQL view or service method.
-enum LeaderboardTab { global, daily, regional, friends }
+/// Top-level game mode tab.
+enum GameModeTab { dailyScramble, trainingFlight }
 
-extension LeaderboardTabExtension on LeaderboardTab {
+extension GameModeTabExtension on GameModeTab {
   String get displayName {
     switch (this) {
-      case LeaderboardTab.global:
-        return 'All Time';
-      case LeaderboardTab.daily:
+      case GameModeTab.dailyScramble:
+        return 'Daily Scramble';
+      case GameModeTab.trainingFlight:
+        return 'Training Flight';
+    }
+  }
+}
+
+/// Time period sub-tab.
+enum TimeframeTab { today, lastMonth, allTime }
+
+extension TimeframeTabExtension on TimeframeTab {
+  String get displayName {
+    switch (this) {
+      case TimeframeTab.today:
         return 'Today';
-      case LeaderboardTab.regional:
-        return 'Streaks';
-      case LeaderboardTab.friends:
-        return 'Friends';
+      case TimeframeTab.lastMonth:
+        return 'Last Month';
+      case TimeframeTab.allTime:
+        return 'All Time';
     }
   }
 }

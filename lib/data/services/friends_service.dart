@@ -129,10 +129,14 @@ class FriendsService {
           return true;
         }
         if (existingStatus == 'declined') {
-          await _client
-              .from('friendships')
-              .update({'status': 'pending'})
-              .eq('id', existingId);
+          // RLS only allows the addressee to UPDATE, so delete the old row
+          // and insert a fresh pending request instead.
+          await _client.from('friendships').delete().eq('id', existingId);
+          await _client.from('friendships').insert({
+            'requester_id': _userId,
+            'addressee_id': addresseeId,
+            'status': 'pending',
+          });
           invalidateCache();
           return true;
         }
