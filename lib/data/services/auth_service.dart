@@ -170,6 +170,21 @@ class AuthService {
       );
 
       if (response.user != null) {
+        // Supabase returns a "fake" user with empty identities when email
+        // confirmation is enabled and the email is already registered (for
+        // security — to avoid revealing registered emails). Detect this and
+        // show a helpful error instead of a misleading "check your email".
+        final identities = response.user!.identities;
+        if (identities != null && identities.isEmpty) {
+          _state = _state.copyWith(
+            isLoading: false,
+            error:
+                'An account with this email may already exist. '
+                'Try signing in instead, or use a different email.',
+          );
+          return _state;
+        }
+
         // Update the profile row (created by trigger) with username.
         // This may fail if the user hasn't confirmed email yet and RLS
         // blocks unauthenticated writes — that's fine, we'll update on

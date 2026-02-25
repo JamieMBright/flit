@@ -221,8 +221,14 @@ class AvatarCompositor {
   // ---------------------------------------------------------------------------
 
   static String? _composeAdventurer(AvatarConfig config) {
-    final skinHex = config.colorOverride('skinColor', '#${config.skinColor.hex}');
-    final hairHex = config.colorOverride('hairColor', '#${config.hairColor.hex}');
+    final skinHex = config.colorOverride(
+      'skinColor',
+      '#${config.skinColor.hex}',
+    );
+    final hairHex = config.colorOverride(
+      'hairColor',
+      '#${config.hairColor.hex}',
+    );
 
     final base = adventurerBase.replaceAll('{{SKIN_COLOR}}', skinHex);
 
@@ -283,8 +289,14 @@ class AvatarCompositor {
   static String? _composeAvataaars(AvatarConfig config) {
     final sh = _stableHash(config);
     final strH = _structuralHash(config);
-    final skinHex = config.colorOverride('skinColor', '#${config.skinColor.hex}');
-    final hairHex = config.colorOverride('hairColor', '#${config.hairColor.hex}');
+    final skinHex = config.colorOverride(
+      'skinColor',
+      '#${config.skinColor.hex}',
+    );
+    final hairHex = config.colorOverride(
+      'hairColor',
+      '#${config.hairColor.hex}',
+    );
 
     final nose = _pick(avataaarsNose, strH, 1);
     final mouth = _pick(avataarsMouth, config.mouth.index, 2);
@@ -337,8 +349,14 @@ class AvatarCompositor {
   // ---------------------------------------------------------------------------
 
   static String? _composeBigEars(AvatarConfig config) {
-    final skinHex = config.colorOverride('skinColor', '#${config.skinColor.hex}');
-    final hairHex = config.colorOverride('hairColor', '#${config.hairColor.hex}');
+    final skinHex = config.colorOverride(
+      'skinColor',
+      '#${config.skinColor.hex}',
+    );
+    final hairHex = config.colorOverride(
+      'hairColor',
+      '#${config.hairColor.hex}',
+    );
     final strH = _structuralHash(config);
 
     final face = _pick(
@@ -433,8 +451,14 @@ class AvatarCompositor {
   static String? _composeLorelei(AvatarConfig config) {
     final sh = _stableHash(config);
     final strH = _structuralHash(config);
-    final skinHex = config.colorOverride('skinColor', '#${config.skinColor.hex}');
-    final hairHex = config.colorOverride('hairColor', '#${config.hairColor.hex}');
+    final skinHex = config.colorOverride(
+      'skinColor',
+      '#${config.skinColor.hex}',
+    );
+    final hairHex = config.colorOverride(
+      'hairColor',
+      '#${config.hairColor.hex}',
+    );
 
     final head = _pick(
       loreleiHead,
@@ -556,8 +580,14 @@ class AvatarCompositor {
 
   static String? _composeMicah(AvatarConfig config) {
     final strH = _structuralHash(config);
-    final skinHex = config.colorOverride('skinColor', '#${config.skinColor.hex}');
-    final hairHex = config.colorOverride('hairColor', '#${config.hairColor.hex}');
+    final skinHex = config.colorOverride(
+      'skinColor',
+      '#${config.skinColor.hex}',
+    );
+    final hairHex = config.colorOverride(
+      'hairColor',
+      '#${config.hairColor.hex}',
+    );
     // Pick a natural eye color that varies with the eyes selection only.
     final eyeColor = config.colorOverride(
       'eyesColor',
@@ -654,8 +684,14 @@ class AvatarCompositor {
   static String? _composePixelArt(AvatarConfig config) {
     final sh = _stableHash(config);
     final strH = _structuralHash(config);
-    final skinHex = config.colorOverride('skinColor', '#${config.skinColor.hex}');
-    final hairHex = config.colorOverride('hairColor', '#${config.hairColor.hex}');
+    final skinHex = config.colorOverride(
+      'skinColor',
+      '#${config.skinColor.hex}',
+    );
+    final hairHex = config.colorOverride(
+      'hairColor',
+      '#${config.hairColor.hex}',
+    );
     final eyeColor = config.colorOverride(
       'eyesColor',
       _hashColor(config.eyes.index * 41, 33),
@@ -843,7 +879,10 @@ class AvatarCompositor {
   static String? _composeOpenPeeps(AvatarConfig config) {
     final sh = _stableHash(config);
     final strH = _structuralHash(config);
-    final skinHex = config.colorOverride('skinColor', '#${config.skinColor.hex}');
+    final skinHex = config.colorOverride(
+      'skinColor',
+      '#${config.skinColor.hex}',
+    );
     final contrastHex = _darkenHex(skinHex, 0.8);
     final clothingColor = config.colorOverride(
       'clothingColor',
@@ -865,9 +904,7 @@ class AvatarCompositor {
         : _pick(openpeepsAccessories, config.glasses.index, 4);
     // Mask variant directly controlled via extras.
     final maskIdx = config.extra('mask');
-    final mask = maskIdx > 0
-        ? _pickDirect(openpeepsMask, maskIdx - 1)
-        : '';
+    final mask = maskIdx > 0 ? _pickDirect(openpeepsMask, maskIdx - 1) : '';
 
     // Open Peeps body base (bust silhouette).
     // Centered under the head at matrix(.99789 0 0 1 156 62).

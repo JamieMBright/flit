@@ -551,15 +551,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
     });
 
-    final result = await _authService.resetPassword(email: email);
+    try {
+      final result = await _authService.resetPassword(email: email);
 
-    if (mounted) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
 
-      if (result.error != null) {
-        setState(() => _error = result.error);
-      } else {
-        setState(() => _mode = _AuthMode.resetEmailSent);
+        if (result.error != null) {
+          setState(() => _error = result.error);
+        } else {
+          setState(() => _mode = _AuthMode.resetEmailSent);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Something went wrong. Please try again.';
+        });
       }
     }
   }
@@ -587,28 +596,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
     });
 
-    final result = await _authService.signUpWithEmail(
-      email: email,
-      password: password,
-      username: username,
-      displayName: _displayNameController.text.trim().isNotEmpty
-          ? _displayNameController.text.trim()
-          : null,
-    );
+    try {
+      final result = await _authService.signUpWithEmail(
+        email: email,
+        password: password,
+        username: username,
+        displayName: _displayNameController.text.trim().isNotEmpty
+            ? _displayNameController.text.trim()
+            : null,
+      );
 
-    if (mounted) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
 
-      if (result.needsEmailConfirmation) {
-        TextInput.finishAutofillContext();
-        setState(() => _mode = _AuthMode.confirmEmail);
-      } else if (result.isAuthenticated && result.player != null) {
-        TextInput.finishAutofillContext();
-        final notifier = ref.read(accountProvider.notifier);
-        await notifier.loadFromSupabase(result.player!.id);
-        if (mounted) _navigateToHome();
-      } else if (result.error != null) {
-        setState(() => _error = result.error);
+        if (result.needsEmailConfirmation) {
+          TextInput.finishAutofillContext();
+          setState(() => _mode = _AuthMode.confirmEmail);
+        } else if (result.isAuthenticated && result.player != null) {
+          TextInput.finishAutofillContext();
+          final notifier = ref.read(accountProvider.notifier);
+          await notifier.loadFromSupabase(result.player!.id);
+          if (mounted) _navigateToHome();
+        } else if (result.error != null) {
+          setState(() => _error = result.error);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Something went wrong. Please try again.';
+        });
       }
     }
   }
@@ -631,21 +649,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
     });
 
-    final result = await _authService.signInWithEmail(
-      email: email,
-      password: password,
-    );
+    try {
+      final result = await _authService.signInWithEmail(
+        email: email,
+        password: password,
+      );
 
-    if (mounted) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
 
-      if (result.isAuthenticated && result.player != null) {
-        TextInput.finishAutofillContext();
-        final notifier = ref.read(accountProvider.notifier);
-        await notifier.loadFromSupabase(result.player!.id);
-        if (mounted) _navigateToHome();
-      } else if (result.error != null) {
-        setState(() => _error = result.error);
+        if (result.isAuthenticated && result.player != null) {
+          TextInput.finishAutofillContext();
+          final notifier = ref.read(accountProvider.notifier);
+          await notifier.loadFromSupabase(result.player!.id);
+          if (mounted) _navigateToHome();
+        } else if (result.error != null) {
+          setState(() => _error = result.error);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Something went wrong. Please try again.';
+        });
       }
     }
   }
