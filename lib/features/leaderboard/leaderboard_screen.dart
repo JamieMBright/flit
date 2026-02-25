@@ -384,19 +384,25 @@ class _LeaderboardRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          // Tappable emoji result
-          if (entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty)
-            GestureDetector(
-              onTap: () => _showClueBreakdown(context),
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: Text(
-                  entry.roundEmojis!,
-                  style: const TextStyle(fontSize: 10, letterSpacing: -1),
-                ),
-              ),
+          // Tappable emoji result (always visible; shows placeholder if no
+          // round data so the breakdown sheet is always reachable).
+          GestureDetector(
+            onTap: () => _showClueBreakdown(context),
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty
+                  ? Text(
+                      entry.roundEmojis!,
+                      style: const TextStyle(fontSize: 10, letterSpacing: -1),
+                    )
+                  : const Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: FlitColors.textMuted,
+                    ),
             ),
+          ),
           const SizedBox(width: 6),
           // Score + time
           Column(
@@ -620,64 +626,76 @@ class _PilotCardSheetState extends State<_PilotCardSheet> {
             ),
           ),
           // Pilot license stats
-          if (_license != null) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: FlitColors.cardBackground,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: FlitColors.cardBorder),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: FlitColors.cardBackground,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: FlitColors.cardBorder),
+            ),
+            child: _license != null
+                ? Column(
                     children: [
-                      _StatColumn(
-                        label: 'COIN BOOST',
-                        value: '+${_license!.coinBoost}%',
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _StatColumn(
+                            label: 'COIN BOOST',
+                            value: '+${_license!.coinBoost}%',
+                          ),
+                          Container(
+                            width: 1,
+                            height: 32,
+                            color: FlitColors.cardBorder,
+                          ),
+                          _StatColumn(
+                            label: 'CLUE CHANCE',
+                            value: '+${_license!.clueChance}%',
+                          ),
+                          Container(
+                            width: 1,
+                            height: 32,
+                            color: FlitColors.cardBorder,
+                          ),
+                          _StatColumn(
+                            label: 'FUEL BOOST',
+                            value: '+${_license!.fuelBoost}%',
+                          ),
+                        ],
                       ),
-                      Container(
-                        width: 1,
-                        height: 32,
-                        color: FlitColors.cardBorder,
-                      ),
-                      _StatColumn(
-                        label: 'CLUE CHANCE',
-                        value: '+${_license!.clueChance}%',
-                      ),
-                      Container(
-                        width: 1,
-                        height: 32,
-                        color: FlitColors.cardBorder,
-                      ),
-                      _StatColumn(
-                        label: 'FUEL BOOST',
-                        value: '+${_license!.fuelBoost}%',
+                      const SizedBox(height: 8),
+                      Text(
+                        'Preferred: ${_license!.preferredClueType}',
+                        style: const TextStyle(
+                          color: FlitColors.textSecondary,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Preferred: ${_license!.preferredClueType}',
-                    style: const TextStyle(
-                      color: FlitColors.textSecondary,
-                      fontSize: 11,
+                  )
+                : const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      'No pilot license yet',
+                      style: TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ],
+          ),
           // Round emojis
-          if (entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text(
-              entry.roundEmojis!,
-              style: const TextStyle(fontSize: 18, letterSpacing: 2),
-            ),
-          ],
+          const SizedBox(height: 16),
+          entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty
+              ? Text(
+                  entry.roundEmojis!,
+                  style: const TextStyle(fontSize: 18, letterSpacing: 2),
+                )
+              : const Text(
+                  'No round data',
+                  style: TextStyle(color: FlitColors.textMuted, fontSize: 12),
+                ),
           // Milestone progression
           const SizedBox(height: 16),
           _MilestoneBar(score: entry.score),
@@ -889,7 +907,7 @@ class _ClueBreakdownSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          // Emoji circles large
+          // Emoji circles large (or placeholder when no round data)
           if (rounds.isNotEmpty)
             Wrap(
               spacing: 6,
@@ -912,6 +930,14 @@ class _ClueBreakdownSheet extends StatelessWidget {
                   ],
                 );
               }),
+            )
+          else
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'No round-by-round data available',
+                style: TextStyle(color: FlitColors.textMuted, fontSize: 12),
+              ),
             ),
           const SizedBox(height: 20),
           // Legend

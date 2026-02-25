@@ -65,7 +65,7 @@ class LeaderboardService {
           .from('scores')
           .select(
             'score, time_ms, region, rounds_completed, created_at, '
-            'user_id, profiles!inner(username, avatar_url)',
+            'user_id, profiles(username, avatar_url)',
           );
 
       // Apply time filter based on period.
@@ -130,7 +130,7 @@ class LeaderboardService {
           .from('scores')
           .select(
             'score, time_ms, user_id, '
-            'profiles!inner(username)',
+            'profiles(username)',
           )
           .eq('region', 'daily')
           .gte('created_at', startOfDay.toIso8601String())
@@ -177,7 +177,7 @@ class LeaderboardService {
           .from('scores')
           .select(
             'score, time_ms, created_at, user_id, '
-            'profiles!inner(username)',
+            'profiles(username)',
           )
           .eq('region', 'daily')
           .gte('created_at', startDate.toIso8601String())
@@ -515,7 +515,7 @@ class LeaderboardService {
           .from('scores')
           .select(
             'score, time_ms, region, round_emojis, created_at, '
-            'user_id, profiles!inner(username, avatar_url, level)',
+            'user_id, profiles(username, avatar_url, level)',
           );
 
       // Filter by game mode.
@@ -547,7 +547,7 @@ class LeaderboardService {
       final data = await filtered
           .order('score', ascending: false)
           .order('time_ms', ascending: true)
-          .limit(limit * 2); // extra to account for per-player dedup
+          .limit(limit * 5); // extra headroom for per-player dedup
 
       // Deduplicate: keep best score per player.
       final seen = <String>{};
