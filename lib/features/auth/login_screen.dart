@@ -49,14 +49,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (result.isAuthenticated && result.player != null) {
         final notifier = ref.read(accountProvider.notifier);
-        final loaded = await notifier.loadFromSupabase(result.player!.id);
-        if (!loaded) {
-          setState(
-            () => _error =
-                'Could not load your cloud save. Check your connection and try again.',
-          );
-          return;
-        }
+        await notifier.loadFromSupabase(result.player!.id);
         if (mounted) _navigateToHome();
       }
     }
@@ -612,14 +605,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       } else if (result.isAuthenticated && result.player != null) {
         TextInput.finishAutofillContext();
         final notifier = ref.read(accountProvider.notifier);
-        final loaded = await notifier.loadFromSupabase(result.player!.id);
-        if (!loaded) {
-          setState(
-            () => _error =
-                'Could not load your cloud save. Check your connection and try again.',
-          );
-          return;
-        }
+        await notifier.loadFromSupabase(result.player!.id);
         if (mounted) _navigateToHome();
       } else if (result.error != null) {
         setState(() => _error = result.error);
@@ -656,14 +642,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (result.isAuthenticated && result.player != null) {
         TextInput.finishAutofillContext();
         final notifier = ref.read(accountProvider.notifier);
-        final loaded = await notifier.loadFromSupabase(result.player!.id);
-        if (!loaded) {
-          setState(
-            () => _error =
-                'Could not load your cloud save. Check your connection and try again.',
-          );
-          return;
-        }
+        await notifier.loadFromSupabase(result.player!.id);
         if (mounted) _navigateToHome();
       } else if (result.error != null) {
         setState(() => _error = result.error);
