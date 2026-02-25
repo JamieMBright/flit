@@ -801,6 +801,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       return '\u{1F7E0}'; // orange
     }).join();
 
+    // Serialize per-round details for the leaderboard breakdown.
+    final roundDetails = _roundResults
+        .map(
+          (r) => {
+            'country_name': r.countryName,
+            'clue_type': r.clueType.name,
+            'time_ms': r.elapsed.inMilliseconds,
+            'score': r.score,
+            'hints_used': r.hintsUsed,
+            'completed': r.completed,
+          },
+        )
+        .toList();
+
     // Compute per-clue-type correct counts and best streak.
     final clueStats = _computeClueStats();
 
@@ -815,6 +829,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           coinReward: widget.coinReward,
           region: widget.isDailyChallenge ? 'daily' : widget.region.name,
           roundEmojis: roundEmojis,
+          roundDetails: roundDetails,
           flagsCorrect: clueStats.flags,
           capitalsCorrect: clueStats.capitals,
           outlinesCorrect: clueStats.outlines,
@@ -1104,6 +1119,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       return '\u{1F7E0}'; // orange
     }).join();
 
+    // Serialize per-round details for the leaderboard breakdown.
+    final roundDetails = _roundResults
+        .map(
+          (r) => {
+            'country_name': r.countryName,
+            'clue_type': r.clueType.name,
+            'time_ms': r.elapsed.inMilliseconds,
+            'score': r.score,
+            'hints_used': r.hintsUsed,
+            'completed': r.completed,
+          },
+        )
+        .toList();
+
     // Compute per-clue-type correct counts and best streak.
     final clueStats = _computeClueStats();
 
@@ -1152,6 +1181,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           coinReward: 0, // No coin reward for aborted games.
           region: widget.isDailyChallenge ? 'daily' : widget.region.name,
           roundEmojis: roundEmojis,
+          roundDetails: roundDetails,
           flagsCorrect: clueStats.flags,
           capitalsCorrect: clueStats.capitals,
           outlinesCorrect: clueStats.outlines,

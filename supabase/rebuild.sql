@@ -283,6 +283,7 @@ CREATE TABLE IF NOT EXISTS public.scores (
 );
 
 ALTER TABLE public.scores ADD COLUMN IF NOT EXISTS round_emojis TEXT;
+ALTER TABLE public.scores ADD COLUMN IF NOT EXISTS round_details JSONB;
 
 CREATE INDEX IF NOT EXISTS idx_scores_leaderboard
   ON public.scores (region, score DESC, created_at);

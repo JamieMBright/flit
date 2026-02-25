@@ -449,6 +449,7 @@ class UserPreferencesService {
     required String region,
     required int roundsCompleted,
     String? roundEmojis,
+    List<Map<String, dynamic>>? roundDetails,
   }) async {
     await _ensureQueueInitialised();
 
@@ -481,6 +482,7 @@ class UserPreferencesService {
       'region': region,
       'rounds_completed': roundsCompleted,
       if (roundEmojis != null) 'round_emojis': roundEmojis,
+      if (roundDetails != null) 'round_details': roundDetails,
     };
 
     final client = _clientOrNull;

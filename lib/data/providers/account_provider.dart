@@ -754,6 +754,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     int coinReward = 0,
     String region = 'world',
     String? roundEmojis,
+    List<Map<String, dynamic>>? roundDetails,
     int flagsCorrect = 0,
     int capitalsCorrect = 0,
     int outlinesCorrect = 0,
@@ -803,6 +804,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       region: region,
       roundsCompleted: roundsCompleted,
       roundEmojis: roundEmojis,
+      roundDetails: roundDetails,
     );
 
     // Flush all pending writes immediately — game completion is a critical
