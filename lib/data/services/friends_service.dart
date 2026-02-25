@@ -45,7 +45,7 @@ class FriendsService {
         >
       >(const Duration(seconds: 60));
   // Product rule: friend invites (incoming + sent pending) expire after 3 days.
-  static const Duration _inviteExpiry = Duration(days: 30);
+  static const Duration _inviteExpiry = Duration(days: 3);
 
   /// Drop cached friends/pending data. Called automatically after mutations.
   void invalidateCache() {
