@@ -324,12 +324,22 @@ CREATE INDEX IF NOT EXISTS idx_coin_activity_source_time
 
 ALTER TABLE public.coin_activity ENABLE ROW LEVEL SECURITY;
 
+-- Drop the old restrictive read policy if it exists, replace with public read.
 DO $$ BEGIN
-  IF NOT EXISTS (
+  IF EXISTS (
     SELECT 1 FROM pg_policies WHERE tablename = 'coin_activity' AND policyname = 'Users can read own coin activity'
   ) THEN
-    CREATE POLICY "Users can read own coin activity"
-      ON public.coin_activity FOR SELECT USING (auth.uid() = user_id);
+    DROP POLICY "Users can read own coin activity" ON public.coin_activity;
+  END IF;
+END $$;
+
+-- Public coin ledger: all authenticated users can read all coin activity.
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'coin_activity' AND policyname = 'Coin activity is publicly readable'
+  ) THEN
+    CREATE POLICY "Coin activity is publicly readable"
+      ON public.coin_activity FOR SELECT USING (true);
   END IF;
 END $$;
 
@@ -534,6 +544,68 @@ DO $$ BEGIN
       FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
   END IF;
 END $$;
+
+
+-- ---------------------------------------------------------------------------
+-- 8b. TRIGGER — protect monotonic profile stats from regression
+-- ---------------------------------------------------------------------------
+-- Safety net: even if a client writes stale data, the DB keeps the higher
+-- values for accumulator stats. Admin functions can bypass by setting the
+-- session variable 'app.skip_stat_protection' to 'true'.
+
+CREATE OR REPLACE FUNCTION public.protect_profile_stats()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  -- Allow admin functions to bypass (they set this session var).
+  IF current_setting('app.skip_stat_protection', true) = 'true' THEN
+    RETURN NEW;
+  END IF;
+
+  -- Monotonic counters: never decrease.
+  NEW.games_played       := GREATEST(COALESCE(OLD.games_played, 0),       COALESCE(NEW.games_played, 0));
+  NEW.countries_found    := GREATEST(COALESCE(OLD.countries_found, 0),    COALESCE(NEW.countries_found, 0));
+  NEW.total_flight_time_ms := GREATEST(COALESCE(OLD.total_flight_time_ms, 0), COALESCE(NEW.total_flight_time_ms, 0));
+  NEW.flags_correct      := GREATEST(COALESCE(OLD.flags_correct, 0),      COALESCE(NEW.flags_correct, 0));
+  NEW.capitals_correct   := GREATEST(COALESCE(OLD.capitals_correct, 0),   COALESCE(NEW.capitals_correct, 0));
+  NEW.outlines_correct   := GREATEST(COALESCE(OLD.outlines_correct, 0),   COALESCE(NEW.outlines_correct, 0));
+  NEW.borders_correct    := GREATEST(COALESCE(OLD.borders_correct, 0),    COALESCE(NEW.borders_correct, 0));
+  NEW.stats_correct      := GREATEST(COALESCE(OLD.stats_correct, 0),      COALESCE(NEW.stats_correct, 0));
+  NEW.best_streak        := GREATEST(COALESCE(OLD.best_streak, 0),        COALESCE(NEW.best_streak, 0));
+  NEW.level              := GREATEST(COALESCE(OLD.level, 1),              COALESCE(NEW.level, 1));
+
+  -- XP: take max within same level.
+  IF NEW.level = OLD.level THEN
+    NEW.xp := GREATEST(COALESCE(OLD.xp, 0), COALESCE(NEW.xp, 0));
+  END IF;
+
+  -- best_score: higher is better (nullable).
+  IF OLD.best_score IS NOT NULL THEN
+    IF NEW.best_score IS NULL OR NEW.best_score < OLD.best_score THEN
+      NEW.best_score := OLD.best_score;
+    END IF;
+  END IF;
+
+  -- best_time_ms: lower is better (nullable).
+  IF OLD.best_time_ms IS NOT NULL THEN
+    IF NEW.best_time_ms IS NULL OR NEW.best_time_ms > OLD.best_time_ms THEN
+      NEW.best_time_ms := OLD.best_time_ms;
+    END IF;
+  END IF;
+
+  -- Coins are server-authoritative (consumable) — no protection needed.
+
+  RETURN NEW;
+END;
+$$;
+
+-- Drop and recreate to ensure latest version.
+DROP TRIGGER IF EXISTS trg_protect_profile_stats ON public.profiles;
+CREATE TRIGGER trg_protect_profile_stats
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.protect_profile_stats();
 
 
 -- ---------------------------------------------------------------------------
@@ -743,6 +815,9 @@ BEGIN
     END IF;
   END IF;
 
+  -- Bypass the stat-protection trigger so admin decrements work.
+  PERFORM set_config('app.skip_stat_protection', 'true', true);
+
   -- Use dynamic SQL with the validated column name.
   EXECUTE format(
     'UPDATE public.profiles SET %I = %I + $1 WHERE id = $2',
@@ -805,6 +880,9 @@ BEGIN
   IF new_value < 0 THEN
     RAISE EXCEPTION 'Invalid stat value: must be >= 0';
   END IF;
+
+  -- Bypass the stat-protection trigger so admins can decrease stats.
+  PERFORM set_config('app.skip_stat_protection', 'true', true);
 
   EXECUTE format(
     'UPDATE public.profiles SET %I = $1 WHERE id = $2',

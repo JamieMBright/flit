@@ -609,8 +609,7 @@ class LeaderboardService {
     if (cached != null) {
       return {
         'daily': cached.isNotEmpty ? Map<String, int>.from(cached[0]) : null,
-        'training':
-            cached.length > 1 ? Map<String, int>.from(cached[1]) : null,
+        'training': cached.length > 1 ? Map<String, int>.from(cached[1]) : null,
       };
     }
 
