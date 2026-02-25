@@ -6,8 +6,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
 import '../../data/models/cosmetic.dart';
+import '../../data/models/economy_config.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
+import '../../data/services/economy_config_service.dart';
 import '../debug/avatar_preview_screen.dart';
 import '../debug/plane_preview_screen.dart';
 import 'admin_stats_screen.dart';
@@ -19,10 +21,43 @@ import 'admin_stats_screen.dart';
 /// - Gift gold / levels / flights to any user by username
 /// - Moderation: change any user's username
 /// - Game log viewer
-class AdminScreen extends ConsumerWidget {
+/// - Economy config editor (earnings, promotions, gold packages, price overrides)
+class AdminScreen extends ConsumerStatefulWidget {
   const AdminScreen({super.key});
 
+  @override
+  ConsumerState<AdminScreen> createState() => _AdminScreenState();
+}
+
+class _AdminScreenState extends ConsumerState<AdminScreen> {
   SupabaseClient get _client => Supabase.instance.client;
+
+  // ── Economy Config state ──
+  EconomyConfig? _economyConfig;
+  bool _economyConfigLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEconomyConfig();
+  }
+
+  Future<void> _loadEconomyConfig() async {
+    try {
+      final config = await EconomyConfigService.instance.getConfig();
+      if (!mounted) return;
+      setState(() {
+        _economyConfig = config;
+        _economyConfigLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _economyConfig = EconomyConfig.defaults();
+        _economyConfigLoading = false;
+      });
+    }
+  }
 
   // ── Supabase helpers ──
 
@@ -256,8 +291,7 @@ class AdminScreen extends ConsumerWidget {
   }
 
   void _showSetStatDialog(
-    BuildContext context,
-    WidgetRef ref, {
+    BuildContext context, {
     required String title,
     required String statColumn,
     required String valueLabel,
@@ -858,10 +892,180 @@ class AdminScreen extends ConsumerWidget {
     );
   }
 
+  // ── Economy Config dialogs ──
+
+  /// Earnings Config — 3 editable reward fields.
+  void _showEarningsConfigDialog(BuildContext context) {
+    final config = _economyConfig ?? EconomyConfig.defaults();
+    final scrambleCtl = TextEditingController(
+      text: '${config.earnings.dailyScrambleBaseReward}',
+    );
+    final perClueCtl = TextEditingController(
+      text: '${config.earnings.freeFlightPerClueReward}',
+    );
+    final dailyCapCtl = TextEditingController(
+      text: '${config.earnings.freeFlightDailyCap}',
+    );
+    String? error;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => _AdminDialog(
+          icon: Icons.monetization_on,
+          iconColor: FlitColors.gold,
+          title: 'Set Earnings',
+          subtitle: 'Configure gold rewards per game mode.',
+          error: error,
+          actionLabel: 'Save',
+          actionIcon: Icons.save,
+          actionColor: FlitColors.gold,
+          onCancel: () => Navigator.of(dialogCtx).pop(),
+          onAction: () async {
+            final scramble = int.tryParse(scrambleCtl.text.trim());
+            final perClue = int.tryParse(perClueCtl.text.trim());
+            final cap = int.tryParse(dailyCapCtl.text.trim());
+
+            if (scramble == null || scramble < 0) {
+              setDialogState(
+                () => error = 'Daily Scramble Reward must be >= 0',
+              );
+              return;
+            }
+            if (perClue == null || perClue < 0) {
+              setDialogState(
+                () => error = 'Free Flight Per-Clue Reward must be >= 0',
+              );
+              return;
+            }
+            if (cap == null || cap < 0) {
+              setDialogState(
+                () => error = 'Free Flight Daily Cap must be >= 0',
+              );
+              return;
+            }
+
+            try {
+              final updated = EconomyConfig(
+                earnings: EarningsConfig(
+                  dailyScrambleBaseReward: scramble,
+                  freeFlightPerClueReward: perClue,
+                  freeFlightDailyCap: cap,
+                ),
+                shopPriceOverrides: config.shopPriceOverrides,
+                promotions: config.promotions,
+                goldPackages: config.goldPackages,
+              );
+              await EconomyConfigService.instance.saveConfig(updated);
+              if (!mounted) return;
+              setState(() => _economyConfig = updated);
+              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!context.mounted) return;
+              _snack(context, 'Earnings config saved');
+            } catch (_) {
+              setDialogState(() => error = 'Failed to save config');
+            }
+          },
+          children: [
+            _AdminTextField(
+              controller: scrambleCtl,
+              label: 'Daily Scramble Base Reward',
+            ),
+            const SizedBox(height: 10),
+            _AdminTextField(
+              controller: perClueCtl,
+              label: 'Free Flight Per-Clue Reward',
+            ),
+            const SizedBox(height: 10),
+            _AdminTextField(
+              controller: dailyCapCtl,
+              label: 'Free Flight Daily Cap',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Promotions Manager — list, toggle, add, and delete promotions.
+  void _showPromotionsDialog(BuildContext context) {
+    final config = _economyConfig ?? EconomyConfig.defaults();
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => _PromotionsDialog(
+        initialPromotions: config.promotions,
+        onSave: (updatedPromotions) async {
+          final updated = EconomyConfig(
+            earnings: config.earnings,
+            shopPriceOverrides: config.shopPriceOverrides,
+            promotions: updatedPromotions,
+            goldPackages: config.goldPackages,
+          );
+          await EconomyConfigService.instance.saveConfig(updated);
+          if (!mounted) return;
+          setState(() => _economyConfig = updated);
+          if (!context.mounted) return;
+          _snack(context, 'Promotions saved');
+        },
+      ),
+    );
+  }
+
+  /// Gold Packages — edit promo prices per package.
+  void _showGoldPackagesDialog(BuildContext context) {
+    final config = _economyConfig ?? EconomyConfig.defaults();
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => _GoldPackagesDialog(
+        initialPackages: config.goldPackages,
+        onSave: (updatedPackages) async {
+          final updated = EconomyConfig(
+            earnings: config.earnings,
+            shopPriceOverrides: config.shopPriceOverrides,
+            promotions: config.promotions,
+            goldPackages: updatedPackages,
+          );
+          await EconomyConfigService.instance.saveConfig(updated);
+          if (!mounted) return;
+          setState(() => _economyConfig = updated);
+          if (!context.mounted) return;
+          _snack(context, 'Gold packages saved');
+        },
+      ),
+    );
+  }
+
+  /// Shop Price Overrides — per-cosmetic price overrides.
+  void _showShopPriceOverridesDialog(BuildContext context) {
+    final config = _economyConfig ?? EconomyConfig.defaults();
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => _ShopPriceOverridesDialog(
+        initialOverrides: config.shopPriceOverrides,
+        onSave: (updatedOverrides) async {
+          final updated = EconomyConfig(
+            earnings: config.earnings,
+            shopPriceOverrides: updatedOverrides,
+            promotions: config.promotions,
+            goldPackages: config.goldPackages,
+          );
+          await EconomyConfigService.instance.saveConfig(updated);
+          if (!mounted) return;
+          setState(() => _economyConfig = updated);
+          if (!context.mounted) return;
+          _snack(context, 'Price overrides saved');
+        },
+      ),
+    );
+  }
+
   // ── Build ──
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final state = ref.watch(accountProvider);
     final notifier = ref.read(accountProvider.notifier);
 
@@ -971,7 +1175,6 @@ class AdminScreen extends ConsumerWidget {
             label: 'Set Coins',
             onTap: () => _showSetStatDialog(
               context,
-              ref,
               title: 'Set Coins',
               statColumn: 'coins',
               valueLabel: 'Coins total',
@@ -986,7 +1189,6 @@ class AdminScreen extends ConsumerWidget {
             label: 'Set Level',
             onTap: () => _showSetStatDialog(
               context,
-              ref,
               title: 'Set Level',
               statColumn: 'level',
               valueLabel: 'Level',
@@ -1001,7 +1203,6 @@ class AdminScreen extends ConsumerWidget {
             label: 'Set Flights',
             onTap: () => _showSetStatDialog(
               context,
-              ref,
               title: 'Set Flights',
               statColumn: 'games_played',
               valueLabel: 'Flights',
@@ -1077,6 +1278,47 @@ class AdminScreen extends ConsumerWidget {
               ),
             ),
           ),
+          const SizedBox(height: 24),
+
+          // Economy Config
+          const _SectionHeader(title: 'Economy Config'),
+          const SizedBox(height: 8),
+          if (_economyConfigLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else ...[
+            _AdminActionCard(
+              icon: Icons.monetization_on,
+              iconColor: FlitColors.gold,
+              label: 'Set Earnings',
+              onTap: () => _showEarningsConfigDialog(context),
+            ),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.local_offer,
+              iconColor: FlitColors.accent,
+              label: 'Manage Promotions',
+              onTap: () => _showPromotionsDialog(context),
+            ),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.inventory_2,
+              iconColor: FlitColors.gold,
+              label: 'Edit Gold Packages',
+              onTap: () => _showGoldPackagesDialog(context),
+            ),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.price_change,
+              iconColor: FlitColors.oceanHighlight,
+              label: 'Shop Price Overrides',
+              onTap: () => _showShopPriceOverridesDialog(context),
+            ),
+          ],
           const SizedBox(height: 24),
 
           // Game Log
@@ -1883,5 +2125,1046 @@ class _LogEntryTileState extends State<_LogEntryTile> {
         ),
       ),
     );
+  }
+}
+
+// ── Economy Config dialog widgets ──
+
+/// A labelled text field used inside economy config dialogs.
+class _AdminTextField extends StatelessWidget {
+  const _AdminTextField({
+    required this.controller,
+    required this.label,
+    this.keyboardType = TextInputType.number,
+    this.hintText,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final TextInputType keyboardType;
+  final String? hintText;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(
+          color: FlitColors.textSecondary,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      const SizedBox(height: 4),
+      TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        style: const TextStyle(color: FlitColors.textPrimary),
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: const TextStyle(color: FlitColors.textMuted),
+          filled: true,
+          fillColor: FlitColors.backgroundMid,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 10,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+/// Dialog for managing promotions (list, add, toggle, delete).
+class _PromotionsDialog extends StatefulWidget {
+  const _PromotionsDialog({
+    required this.initialPromotions,
+    required this.onSave,
+  });
+
+  final List<Promotion> initialPromotions;
+  final Future<void> Function(List<Promotion> promotions) onSave;
+
+  @override
+  State<_PromotionsDialog> createState() => _PromotionsDialogState();
+}
+
+class _PromotionsDialogState extends State<_PromotionsDialog> {
+  late List<Promotion> _promotions;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _promotions = List.from(widget.initialPromotions);
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.onSave(_promotions);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to save promotions';
+        _saving = false;
+      });
+    }
+  }
+
+  void _showAddForm() {
+    final nameCtl = TextEditingController();
+    final multiplierCtl = TextEditingController(text: '1.5');
+    final discountCtl = TextEditingController(text: '20');
+    PromotionType selectedType = PromotionType.earningsBoost;
+    DateTime? startDate;
+    DateTime? endDate;
+    bool manualActive = false;
+    String? formError;
+
+    showDialog<void>(
+      context: context,
+      builder: (formCtx) => StatefulBuilder(
+        builder: (ctx, setFormState) => Dialog(
+          backgroundColor: FlitColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Add Promotion',
+                  style: TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (formError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      formError!,
+                      style: const TextStyle(
+                        color: FlitColors.error,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                _AdminTextField(
+                  controller: nameCtl,
+                  label: 'Name',
+                  keyboardType: TextInputType.text,
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Type',
+                  style: TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: FlitColors.backgroundMid,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButton<PromotionType>(
+                    value: selectedType,
+                    isExpanded: true,
+                    dropdownColor: FlitColors.cardBackground,
+                    style: const TextStyle(color: FlitColors.textPrimary),
+                    underline: const SizedBox.shrink(),
+                    items: const [
+                      DropdownMenuItem(
+                        value: PromotionType.earningsBoost,
+                        child: Text('Earnings Boost'),
+                      ),
+                      DropdownMenuItem(
+                        value: PromotionType.shopDiscount,
+                        child: Text('Shop Discount'),
+                      ),
+                      DropdownMenuItem(
+                        value: PromotionType.both,
+                        child: Text('Both'),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setFormState(() => selectedType = v);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (selectedType == PromotionType.earningsBoost ||
+                    selectedType == PromotionType.both) ...[
+                  _AdminTextField(
+                    controller: multiplierCtl,
+                    label: 'Earnings Multiplier (e.g. 1.5)',
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (selectedType == PromotionType.shopDiscount ||
+                    selectedType == PromotionType.both) ...[
+                  _AdminTextField(
+                    controller: discountCtl,
+                    label: 'Shop Discount % (e.g. 20)',
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                // Date pickers
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Start Date (optional)',
+                            style: TextStyle(
+                              color: FlitColors.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          GestureDetector(
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: ctx,
+                                initialDate: startDate ?? DateTime.now(),
+                                firstDate: DateTime(2024),
+                                lastDate: DateTime(2030),
+                              );
+                              if (picked != null) {
+                                setFormState(() => startDate = picked);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: FlitColors.backgroundMid,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                startDate != null
+                                    ? '${startDate!.year}-${startDate!.month.toString().padLeft(2, '0')}-${startDate!.day.toString().padLeft(2, '0')}'
+                                    : 'None',
+                                style: const TextStyle(
+                                  color: FlitColors.textPrimary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'End Date (optional)',
+                            style: TextStyle(
+                              color: FlitColors.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          GestureDetector(
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: ctx,
+                                initialDate: endDate ?? DateTime.now(),
+                                firstDate: DateTime(2024),
+                                lastDate: DateTime(2030),
+                              );
+                              if (picked != null) {
+                                setFormState(() => endDate = picked);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: FlitColors.backgroundMid,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                endDate != null
+                                    ? '${endDate!.year}-${endDate!.month.toString().padLeft(2, '0')}-${endDate!.day.toString().padLeft(2, '0')}'
+                                    : 'None',
+                                style: const TextStyle(
+                                  color: FlitColors.textPrimary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Manual Active',
+                      style: TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Switch(
+                      value: manualActive,
+                      activeColor: FlitColors.accent,
+                      onChanged: (v) => setFormState(() => manualActive = v),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(formCtx).pop(),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(color: FlitColors.textMuted),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        final name = nameCtl.text.trim();
+                        if (name.isEmpty) {
+                          setFormState(() => formError = 'Name is required');
+                          return;
+                        }
+                        final multiplier =
+                            (selectedType == PromotionType.earningsBoost ||
+                                selectedType == PromotionType.both)
+                            ? double.tryParse(multiplierCtl.text.trim()) ?? 1.0
+                            : 1.0;
+                        final discount =
+                            (selectedType == PromotionType.shopDiscount ||
+                                selectedType == PromotionType.both)
+                            ? int.tryParse(discountCtl.text.trim()) ?? 0
+                            : 0;
+
+                        final promo = Promotion(
+                          name: name,
+                          type: selectedType,
+                          earningsMultiplier: multiplier,
+                          shopDiscountPercent: discount,
+                          startDate: startDate,
+                          endDate: endDate,
+                          manualActive: manualActive,
+                        );
+
+                        setState(() => _promotions = [..._promotions, promo]);
+                        Navigator.of(formCtx).pop();
+                      },
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Add'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: FlitColors.accent,
+                        foregroundColor: FlitColors.backgroundDark,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _promotionStatusLabel(Promotion p) {
+    if (p.manualActive) return 'Active (Manual)';
+    final now = DateTime.now();
+    final afterStart = p.startDate == null || !now.isBefore(p.startDate!);
+    final beforeEnd = p.endDate == null || !now.isAfter(p.endDate!);
+    if (afterStart && beforeEnd) return 'Active';
+    if (p.startDate != null && now.isBefore(p.startDate!)) return 'Scheduled';
+    return 'Expired';
+  }
+
+  Color _statusColor(String label) {
+    if (label.startsWith('Active')) return FlitColors.success;
+    if (label == 'Scheduled') return FlitColors.gold;
+    return FlitColors.error;
+  }
+
+  @override
+  Widget build(BuildContext context) => Dialog(
+    backgroundColor: FlitColors.cardBackground,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.local_offer, color: FlitColors.accent, size: 28),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Manage Promotions',
+                  style: TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add, color: FlitColors.accent),
+                tooltip: 'Add Promotion',
+                onPressed: _showAddForm,
+              ),
+            ],
+          ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                _error!,
+                style: const TextStyle(color: FlitColors.error, fontSize: 12),
+              ),
+            ),
+          const SizedBox(height: 12),
+          if (_promotions.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Text(
+                  'No promotions. Tap + to add one.',
+                  style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
+                ),
+              ),
+            )
+          else
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 320),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: _promotions.length,
+                separatorBuilder: (_, __) =>
+                    const Divider(color: FlitColors.cardBorder, height: 1),
+                itemBuilder: (ctx, index) {
+                  final promo = _promotions[index];
+                  final statusLabel = _promotionStatusLabel(promo);
+                  final statusColor = _statusColor(statusLabel);
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                promo.name,
+                                style: const TextStyle(
+                                  color: FlitColors.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusColor.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                statusLabel,
+                                style: TextStyle(
+                                  color: statusColor,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Switch(
+                              value: promo.manualActive,
+                              activeColor: FlitColors.success,
+                              onChanged: (v) {
+                                final updated = Promotion(
+                                  name: promo.name,
+                                  type: promo.type,
+                                  earningsMultiplier: promo.earningsMultiplier,
+                                  shopDiscountPercent:
+                                      promo.shopDiscountPercent,
+                                  startDate: promo.startDate,
+                                  endDate: promo.endDate,
+                                  manualActive: v,
+                                );
+                                setState(() {
+                                  _promotions = [
+                                    ..._promotions.sublist(0, index),
+                                    updated,
+                                    ..._promotions.sublist(index + 1),
+                                  ];
+                                });
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: FlitColors.error,
+                                size: 18,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _promotions = [
+                                    ..._promotions.sublist(0, index),
+                                    ..._promotions.sublist(index + 1),
+                                  ];
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${promo.type.name} • '
+                          '${promo.earningsMultiplier}x earnings • '
+                          '${promo.shopDiscountPercent}% off shop',
+                          style: const TextStyle(
+                            color: FlitColors.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: FlitColors.textMuted),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: _saving ? null : _save,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: FlitColors.backgroundDark,
+                        ),
+                      )
+                    : const Icon(Icons.save, size: 16),
+                label: const Text('Save'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FlitColors.accent,
+                  foregroundColor: FlitColors.backgroundDark,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Dialog for editing gold package promo prices.
+class _GoldPackagesDialog extends StatefulWidget {
+  const _GoldPackagesDialog({
+    required this.initialPackages,
+    required this.onSave,
+  });
+
+  final List<GoldPackageConfig> initialPackages;
+  final Future<void> Function(List<GoldPackageConfig> packages) onSave;
+
+  @override
+  State<_GoldPackagesDialog> createState() => _GoldPackagesDialogState();
+}
+
+class _GoldPackagesDialogState extends State<_GoldPackagesDialog> {
+  late List<TextEditingController> _controllers;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllers = widget.initialPackages.map((p) {
+      return TextEditingController(
+        text: p.promoPrice != null ? '${p.promoPrice}' : '',
+      );
+    }).toList();
+  }
+
+  @override
+  void dispose() {
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final updated = widget.initialPackages.mapIndexed((i, pkg) {
+        final text = _controllers[i].text.trim();
+        final promoPrice = text.isEmpty ? null : double.tryParse(text);
+        return pkg.withPromoPrice(promoPrice);
+      }).toList();
+      await widget.onSave(updated);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to save packages';
+        _saving = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Dialog(
+    backgroundColor: FlitColors.cardBackground,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.inventory_2, color: FlitColors.gold, size: 28),
+              SizedBox(width: 10),
+              Text(
+                'Edit Gold Packages',
+                style: TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Set a promo price (leave blank for no promo).',
+            style: TextStyle(color: FlitColors.textSecondary, fontSize: 12),
+          ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                _error!,
+                style: const TextStyle(color: FlitColors.error, fontSize: 12),
+              ),
+            ),
+          const SizedBox(height: 16),
+          ...widget.initialPackages.mapIndexed(
+            (i, pkg) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${pkg.coins} coins',
+                          style: const TextStyle(
+                            color: FlitColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          'Base: \$${pkg.basePrice.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            color: FlitColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _controllers[i],
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      style: const TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 14,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Promo \$',
+                        hintStyle: const TextStyle(color: FlitColors.textMuted),
+                        filled: true,
+                        fillColor: FlitColors.backgroundMid,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: FlitColors.textMuted),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: _saving ? null : _save,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: FlitColors.backgroundDark,
+                        ),
+                      )
+                    : const Icon(Icons.save, size: 16),
+                label: const Text('Save'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FlitColors.gold,
+                  foregroundColor: FlitColors.backgroundDark,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Dialog for viewing and editing per-cosmetic price overrides.
+class _ShopPriceOverridesDialog extends StatefulWidget {
+  const _ShopPriceOverridesDialog({
+    required this.initialOverrides,
+    required this.onSave,
+  });
+
+  final Map<String, int> initialOverrides;
+  final Future<void> Function(Map<String, int> overrides) onSave;
+
+  @override
+  State<_ShopPriceOverridesDialog> createState() =>
+      _ShopPriceOverridesDialogState();
+}
+
+class _ShopPriceOverridesDialogState extends State<_ShopPriceOverridesDialog> {
+  late Map<String, TextEditingController> _controllers;
+  bool _saving = false;
+  String? _error;
+
+  static List<Cosmetic> get _allCosmetics => [
+    ...CosmeticCatalog.planes,
+    ...CosmeticCatalog.contrails,
+    ...CosmeticCatalog.companions,
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _controllers = {
+      for (final c in _allCosmetics)
+        c.id: TextEditingController(
+          text: widget.initialOverrides.containsKey(c.id)
+              ? '${widget.initialOverrides[c.id]}'
+              : '',
+        ),
+    };
+  }
+
+  @override
+  void dispose() {
+    for (final c in _controllers.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final overrides = <String, int>{};
+      for (final cosmetic in _allCosmetics) {
+        final text = _controllers[cosmetic.id]!.text.trim();
+        if (text.isNotEmpty) {
+          final value = int.tryParse(text);
+          if (value != null && value >= 0) {
+            overrides[cosmetic.id] = value;
+          }
+        }
+      }
+      await widget.onSave(overrides);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to save overrides';
+        _saving = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cosmetics = _allCosmetics;
+
+    return Dialog(
+      backgroundColor: FlitColors.cardBackground,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(
+                  Icons.price_change,
+                  color: FlitColors.oceanHighlight,
+                  size: 28,
+                ),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Shop Price Overrides',
+                    style: TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Leave blank to use catalog price. Overrides apply before promotions.',
+              style: TextStyle(color: FlitColors.textSecondary, fontSize: 12),
+            ),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: FlitColors.error, fontSize: 12),
+                ),
+              ),
+            const SizedBox(height: 16),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 360),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: cosmetics.length,
+                separatorBuilder: (_, __) =>
+                    const Divider(color: FlitColors.cardBorder, height: 1),
+                itemBuilder: (ctx, index) {
+                  final cosmetic = cosmetics[index];
+                  final ctl = _controllers[cosmetic.id]!;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                cosmetic.name,
+                                style: const TextStyle(
+                                  color: FlitColors.textPrimary,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                'Catalog: ${cosmetic.price}',
+                                style: const TextStyle(
+                                  color: FlitColors.textSecondary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 80,
+                          child: TextField(
+                            controller: ctl,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(
+                              color: FlitColors.textPrimary,
+                              fontSize: 13,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Override',
+                              hintStyle: const TextStyle(
+                                color: FlitColors.textMuted,
+                                fontSize: 11,
+                              ),
+                              filled: true,
+                              fillColor: FlitColors.backgroundMid,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 6,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.restart_alt,
+                            color: FlitColors.textMuted,
+                            size: 18,
+                          ),
+                          tooltip: 'Reset to default',
+                          onPressed: () => setState(() => ctl.text = ''),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: FlitColors.textMuted),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: _saving ? null : _save,
+                  icon: _saving
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: FlitColors.backgroundDark,
+                          ),
+                        )
+                      : const Icon(Icons.save, size: 16),
+                  label: const Text('Save'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FlitColors.oceanHighlight,
+                    foregroundColor: FlitColors.backgroundDark,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Extension to provide indexed map on List.
+extension _ListMapIndexed<T> on List<T> {
+  List<R> mapIndexed<R>(R Function(int index, T element) f) {
+    final result = <R>[];
+    for (var i = 0; i < length; i++) {
+      result.add(f(i, this[i]));
+    }
+    return result;
   }
 }

@@ -417,6 +417,8 @@ class UserPreferencesService {
     String? lastDailyChallengeDate,
     DailyStreak dailyStreak = const DailyStreak(),
     DailyResult? lastDailyResult,
+    int freeFlightCoinsToday = 0,
+    String? freeFlightCoinDate,
   }) {
     _accountStateWriteVersion++;
     _accountStateDirty = true;
@@ -434,6 +436,8 @@ class UserPreferencesService {
       'last_daily_challenge_date': lastDailyChallengeDate,
       'daily_streak_data': dailyStreak.toJson(),
       'last_daily_result': lastDailyResult?.toJson(),
+      'free_flight_coins_today': freeFlightCoinsToday,
+      'free_flight_coin_date': freeFlightCoinDate,
     };
     _cacheLocally(_kLocalAccountState, _pendingAccountState!);
     _scheduleSave();
@@ -1089,6 +1093,16 @@ class UserPreferencesSnapshot {
   String? get lastDailyChallengeDate {
     final data = accountState;
     return data?['last_daily_challenge_date'] as String?;
+  }
+
+  int get freeFlightCoinsToday {
+    final data = accountState;
+    return data?['free_flight_coins_today'] as int? ?? 0;
+  }
+
+  String? get freeFlightCoinDate {
+    final data = accountState;
+    return data?['free_flight_coin_date'] as String?;
   }
 
   DailyStreak toDailyStreak() {

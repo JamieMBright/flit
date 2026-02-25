@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/cosmetic.dart';
+import '../../data/models/economy_config.dart';
 import '../../data/providers/account_provider.dart';
+import '../../data/services/economy_config_service.dart';
 import '../../game/rendering/plane_renderer.dart';
 
 /// Shop screen for purchasing cosmetics and gold.
@@ -22,6 +24,7 @@ class ShopScreen extends ConsumerStatefulWidget {
 class _ShopScreenState extends ConsumerState<ShopScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  EconomyConfig _economyConfig = EconomyConfig.defaults();
 
   @override
   void initState() {
@@ -33,6 +36,10 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
     );
     // Pull latest server state so purchases made via RPC are reflected.
     ref.read(accountProvider.notifier).refreshFromServer();
+    // Fetch economy config for dynamic pricing and promotions.
+    EconomyConfigService.instance.getConfig().then((config) {
+      if (mounted) setState(() => _economyConfig = config);
+    });
   }
 
   @override
@@ -122,67 +129,79 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
           ),
         ],
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          Column(
-            children: [
-              _MysteryPlaneButton(
-                coins: coins,
-                ownedIds: ownedIds,
-                onReveal: (Cosmetic plane) {
-                  // Use purchaseCosmetic for atomic coins+cosmetic persistence.
-                  // Previously used two separate calls (spendCoins then
-                  // addOwnedCosmetic) which could lose coins on crash.
-                  ref
-                      .read(accountProvider.notifier)
-                      .purchaseCosmetic(plane.id, 10000);
-                  // Force a rebuild so the grid reflects the new ownership
-                  // immediately when the reveal dialog is dismissed.
-                  setState(() {});
-                },
-              ),
-              Expanded(
-                child: _CosmeticGrid(
-                  items: CosmeticCatalog.planes,
+          // Promo banner when shop discount is active.
+          if (_economyConfig.activePromotions.any(
+            (p) =>
+                p.type == PromotionType.shopDiscount ||
+                p.type == PromotionType.both,
+          ))
+            _PromoBanner(config: _economyConfig),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                Column(
+                  children: [
+                    _MysteryPlaneButton(
+                      coins: coins,
+                      ownedIds: ownedIds,
+                      onReveal: (Cosmetic plane) {
+                        ref
+                            .read(accountProvider.notifier)
+                            .purchaseCosmetic(plane.id, 10000);
+                        setState(() {});
+                      },
+                    ),
+                    Expanded(
+                      child: _CosmeticGrid(
+                        items: CosmeticCatalog.planes,
+                        ownedIds: ownedIds,
+                        equippedId: equippedPlane,
+                        coins: coins,
+                        level: level,
+                        onPurchase: _purchaseItem,
+                        onEquip: _equipPlane,
+                        economyConfig: _economyConfig,
+                      ),
+                    ),
+                  ],
+                ),
+                _CosmeticGrid(
+                  items: CosmeticCatalog.contrails,
                   ownedIds: ownedIds,
-                  equippedId: equippedPlane,
+                  equippedId: equippedContrail,
                   coins: coins,
                   level: level,
                   onPurchase: _purchaseItem,
-                  onEquip: _equipPlane,
+                  onEquip: _equipContrail,
+                  economyConfig: _economyConfig,
                 ),
-              ),
-            ],
+                _CosmeticGrid(
+                  items: CosmeticCatalog.companions,
+                  ownedIds: ownedIds,
+                  equippedId: equippedCompanion,
+                  coins: coins,
+                  level: level,
+                  onPurchase: _purchaseItem,
+                  onEquip: _equipCompanion,
+                  economyConfig: _economyConfig,
+                ),
+                _GoldShopTab(economyConfig: _economyConfig),
+              ],
+            ),
           ),
-          _CosmeticGrid(
-            items: CosmeticCatalog.contrails,
-            ownedIds: ownedIds,
-            equippedId: equippedContrail,
-            coins: coins,
-            level: level,
-            onPurchase: _purchaseItem,
-            onEquip: _equipContrail,
-          ),
-          _CosmeticGrid(
-            items: CosmeticCatalog.companions,
-            ownedIds: ownedIds,
-            equippedId: equippedCompanion,
-            coins: coins,
-            level: level,
-            onPurchase: _purchaseItem,
-            onEquip: _equipCompanion,
-          ),
-          const _GoldShopTab(),
         ],
       ),
     );
   }
 
   void _purchaseItem(Cosmetic item) {
+    final price = _economyConfig.effectivePrice(item.id, item.price);
     final success = ref
         .read(accountProvider.notifier)
-        .purchaseCosmetic(item.id, item.price);
+        .purchaseCosmetic(item.id, price);
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -240,189 +259,235 @@ String _rarityLabel(CosmeticRarity rarity) {
 // Gold Shop Tab  (IAP placeholder)
 // =============================================================================
 
-class _GoldPackage {
-  const _GoldPackage({
-    required this.coins,
-    required this.price,
-    this.isBestValue = false,
-  });
-
-  final int coins;
-  final double price;
-  final bool isBestValue;
-}
-
-const List<_GoldPackage> _goldPackages = [
-  _GoldPackage(coins: 450, price: 0.99),
-  _GoldPackage(coins: 2000, price: 3.99),
-  _GoldPackage(coins: 5000, price: 8.99),
-  _GoldPackage(coins: 15000, price: 19.99, isBestValue: true),
-];
-
 class _GoldShopTab extends StatelessWidget {
-  const _GoldShopTab();
+  const _GoldShopTab({required this.economyConfig});
+
+  final EconomyConfig economyConfig;
 
   @override
-  Widget build(BuildContext context) => ListView.builder(
-    padding: const EdgeInsets.all(16),
-    itemCount: _goldPackages.length + 1, // +1 for header
-    itemBuilder: (context, index) {
-      if (index == 0) {
-        return const Padding(
-          padding: EdgeInsets.only(bottom: 16),
-          child: Column(
-            children: [
-              Icon(Icons.monetization_on, color: FlitColors.warning, size: 48),
-              SizedBox(height: 8),
-              Text(
-                'Buy Gold',
-                style: TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+  Widget build(BuildContext context) {
+    final configPkgs = economyConfig.effectiveGoldPackages;
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: configPkgs.length + 1, // +1 for header
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return const Padding(
+            padding: EdgeInsets.only(bottom: 16),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.monetization_on,
+                  color: FlitColors.warning,
+                  size: 48,
                 ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Get coins to unlock planes and contrails',
-                style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
-              ),
-              SizedBox(height: 8),
-            ],
-          ),
-        );
-      }
+                SizedBox(height: 8),
+                Text(
+                  'Buy Gold',
+                  style: TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Get coins to unlock planes and contrails',
+                  style: TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(height: 8),
+              ],
+            ),
+          );
+        }
 
-      final pkg = _goldPackages[index - 1];
-      return _GoldPackageCard(package: pkg);
-    },
-  );
+        final pkg = configPkgs[index - 1];
+        return _GoldPackageCard(package: pkg);
+      },
+    );
+  }
 }
 
 class _GoldPackageCard extends StatelessWidget {
   const _GoldPackageCard({required this.package});
 
-  final _GoldPackage package;
+  final GoldPackageConfig package;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: FlitColors.cardBackground,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: package.isBestValue
-                  ? FlitColors.warning
-                  : FlitColors.cardBorder,
-              width: package.isBestValue ? 2 : 1,
+  Widget build(BuildContext context) {
+    final hasPromo =
+        package.promoPrice != null && package.promoPrice! < package.basePrice;
+    final displayPrice = hasPromo ? package.promoPrice! : package.basePrice;
+    final coinsPerDollar = displayPrice > 0
+        ? package.coins / displayPrice
+        : 0.0;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: FlitColors.cardBackground,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: package.isBestValue
+                    ? FlitColors.warning
+                    : (hasPromo ? FlitColors.success : FlitColors.cardBorder),
+                width: (package.isBestValue || hasPromo) ? 2 : 1,
+              ),
             ),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              // Coin icon stack
-              SizedBox(
-                width: 48,
-                height: 48,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Icon(
-                      Icons.monetization_on,
-                      color: FlitColors.warning.withOpacity(0.3),
-                      size: 48,
-                    ),
-                    const Icon(
-                      Icons.monetization_on,
-                      color: FlitColors.warning,
-                      size: 36,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Amount
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${package.coins} Coins',
-                      style: const TextStyle(
-                        color: FlitColors.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                // Coin icon stack
+                SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Icon(
+                        Icons.monetization_on,
+                        color: FlitColors.warning.withOpacity(0.3),
+                        size: 48,
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '\$${package.price.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        color: FlitColors.textSecondary,
-                        fontSize: 14,
+                      const Icon(
+                        Icons.monetization_on,
+                        color: FlitColors.warning,
+                        size: 36,
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${(package.coins / package.price).toStringAsFixed(0)} coins/\$',
-                      style: const TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Buy button
-              ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Coming Soon'),
-                      backgroundColor: FlitColors.backgroundMid,
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FlitColors.accent.withOpacity(0.4),
-                  foregroundColor: FlitColors.textSecondary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    ],
                   ),
                 ),
-                child: const Text('Coming Soon'),
-              ),
-            ],
+                const SizedBox(width: 16),
+                // Amount
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${package.coins} Coins',
+                        style: const TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          if (hasPromo) ...[
+                            Text(
+                              '\$${package.basePrice.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                color: FlitColors.textMuted,
+                                fontSize: 12,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                          Text(
+                            '\$${displayPrice.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              color: hasPromo
+                                  ? FlitColors.success
+                                  : FlitColors.textSecondary,
+                              fontSize: 14,
+                              fontWeight: hasPromo
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                          if (hasPromo) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: FlitColors.success.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '${((1 - displayPrice / package.basePrice) * 100).round()}% OFF',
+                                style: const TextStyle(
+                                  color: FlitColors.success,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${coinsPerDollar.toStringAsFixed(0)} coins/\$',
+                        style: const TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Buy button
+                ElevatedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Coming Soon'),
+                        backgroundColor: FlitColors.backgroundMid,
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FlitColors.accent.withOpacity(0.4),
+                    foregroundColor: FlitColors.textSecondary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Coming Soon'),
+                ),
+              ],
+            ),
           ),
-        ),
-        // Best Value badge
-        if (package.isBestValue)
-          Positioned(
-            top: -10,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: FlitColors.warning,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(
-                'BEST VALUE',
-                style: TextStyle(
-                  color: FlitColors.backgroundDark,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
+          // Best Value badge
+          if (package.isBestValue)
+            Positioned(
+              top: -10,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: FlitColors.warning,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'BEST VALUE',
+                  style: TextStyle(
+                    color: FlitColors.backgroundDark,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
-          ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 // =============================================================================
@@ -707,6 +772,7 @@ class _CosmeticGrid extends StatelessWidget {
     required this.level,
     required this.onPurchase,
     required this.onEquip,
+    required this.economyConfig,
   });
 
   final List<Cosmetic> items;
@@ -716,6 +782,7 @@ class _CosmeticGrid extends StatelessWidget {
   final int level;
   final void Function(Cosmetic) onPurchase;
   final void Function(String) onEquip;
+  final EconomyConfig economyConfig;
 
   @override
   Widget build(BuildContext context) => GridView.builder(
@@ -731,7 +798,8 @@ class _CosmeticGrid extends StatelessWidget {
       final item = items[index];
       final isOwned = ownedIds.contains(item.id);
       final isEquipped = equippedId == item.id;
-      final canAfford = coins >= item.price;
+      final effectivePrice = economyConfig.effectivePrice(item.id, item.price);
+      final canAfford = coins >= effectivePrice;
       final meetsLevel =
           item.requiredLevel == null || level >= item.requiredLevel!;
 
@@ -741,11 +809,12 @@ class _CosmeticGrid extends StatelessWidget {
         isEquipped: isEquipped,
         canAfford: canAfford,
         meetsLevel: meetsLevel,
+        effectivePrice: effectivePrice,
         onTap: () {
           if (isOwned) {
             _showOwnedDialog(context, item, isEquipped);
           } else if (meetsLevel) {
-            _showPurchaseDialog(context, item, canAfford);
+            _showPurchaseDialog(context, item, canAfford, effectivePrice);
           }
         },
       );
@@ -806,8 +875,10 @@ class _CosmeticGrid extends StatelessWidget {
     BuildContext context,
     Cosmetic item,
     bool canAfford,
+    int effectivePrice,
   ) {
-    final deficit = item.price - coins;
+    final deficit = effectivePrice - coins;
+    final isDiscounted = effectivePrice < item.price;
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
@@ -827,15 +898,52 @@ class _CosmeticGrid extends StatelessWidget {
                   color: canAfford ? FlitColors.warning : FlitColors.error,
                 ),
                 const SizedBox(width: 8),
+                if (isDiscounted) ...[
+                  Text(
+                    '${item.price}',
+                    style: const TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 14,
+                      decoration: TextDecoration.lineThrough,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
                 Text(
-                  '${item.price} coins',
+                  '$effectivePrice coins',
                   style: TextStyle(
                     color: canAfford
-                        ? FlitColors.textPrimary
+                        ? (isDiscounted
+                              ? FlitColors.success
+                              : FlitColors.textPrimary)
                         : FlitColors.error,
                     fontSize: 18,
+                    fontWeight: isDiscounted
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
+                if (isDiscounted) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: FlitColors.success.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '${((1 - effectivePrice / item.price) * 100).round()}% OFF',
+                      style: const TextStyle(
+                        color: FlitColors.success,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
             if (!canAfford) ...[
@@ -973,6 +1081,7 @@ class _CosmeticCard extends StatelessWidget {
     required this.canAfford,
     required this.meetsLevel,
     required this.onTap,
+    this.effectivePrice,
   });
 
   final Cosmetic item;
@@ -981,6 +1090,7 @@ class _CosmeticCard extends StatelessWidget {
   final bool canAfford;
   final bool meetsLevel;
   final VoidCallback onTap;
+  final int? effectivePrice;
 
   @override
   Widget build(BuildContext context) {
@@ -1114,7 +1224,11 @@ class _CosmeticCard extends StatelessWidget {
                       ),
                     )
                   else
-                    _PriceRow(item: item, canAfford: canAfford),
+                    _PriceRow(
+                      item: item,
+                      canAfford: canAfford,
+                      effectivePrice: effectivePrice,
+                    ),
                 ],
               ),
             ),
@@ -1262,36 +1376,120 @@ class _AttrBar extends StatelessWidget {
 // =============================================================================
 
 class _PriceRow extends StatelessWidget {
-  const _PriceRow({required this.item, required this.canAfford});
+  const _PriceRow({
+    required this.item,
+    required this.canAfford,
+    this.effectivePrice,
+  });
 
   final Cosmetic item;
   final bool canAfford;
+  final int? effectivePrice;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Row(
-        children: [
-          Icon(
-            Icons.monetization_on,
-            size: 14,
-            color: canAfford ? FlitColors.warning : FlitColors.error,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            item.price.toString(),
-            style: TextStyle(
+  Widget build(BuildContext context) {
+    final price = effectivePrice ?? item.price;
+    final isDiscounted = price < item.price;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.monetization_on,
+              size: 14,
               color: canAfford ? FlitColors.warning : FlitColors.error,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+            ),
+            const SizedBox(width: 4),
+            if (isDiscounted) ...[
+              Text(
+                item.price.toString(),
+                style: const TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 10,
+                  decoration: TextDecoration.lineThrough,
+                ),
+              ),
+              const SizedBox(width: 3),
+            ],
+            Text(
+              price.toString(),
+              style: TextStyle(
+                color: isDiscounted
+                    ? FlitColors.success
+                    : (canAfford ? FlitColors.warning : FlitColors.error),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (isDiscounted) ...[
+              const SizedBox(width: 3),
+              Text(
+                '-${((1 - price / item.price) * 100).round()}%',
+                style: const TextStyle(
+                  color: FlitColors.success,
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// =============================================================================
+// Promo Banner
+// =============================================================================
+
+class _PromoBanner extends StatelessWidget {
+  const _PromoBanner({required this.config});
+
+  final EconomyConfig config;
+
+  @override
+  Widget build(BuildContext context) {
+    final shopPromos = config.activePromotions.where(
+      (p) =>
+          p.type == PromotionType.shopDiscount || p.type == PromotionType.both,
+    );
+    if (shopPromos.isEmpty) return const SizedBox.shrink();
+    final bestDiscount = shopPromos
+        .map((p) => p.shopDiscountPercent)
+        .reduce((a, b) => a > b ? a : b);
+    final promoName = shopPromos.first.name;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            FlitColors.success.withOpacity(0.3),
+            FlitColors.accent.withOpacity(0.3),
+          ],
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.local_offer, color: FlitColors.success, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$promoName — $bestDiscount% off all items!',
+              style: const TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
       ),
-    ],
-  );
+    );
+  }
 }
 
 // =============================================================================

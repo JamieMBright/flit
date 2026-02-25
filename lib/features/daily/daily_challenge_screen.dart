@@ -8,7 +8,9 @@ import '../../data/models/daily_challenge.dart';
 import '../../data/models/daily_result.dart';
 import '../../data/models/daily_streak.dart';
 import '../../data/models/seasonal_theme.dart';
+import '../../data/models/economy_config.dart';
 import '../../data/providers/account_provider.dart';
+import '../../data/services/economy_config_service.dart';
 import '../../data/services/leaderboard_service.dart';
 import '../../game/map/region.dart';
 import '../play/play_screen.dart';
@@ -24,7 +26,8 @@ class DailyChallengeScreen extends ConsumerStatefulWidget {
 }
 
 class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
-  late final DailyChallenge _challenge;
+  late DailyChallenge _challenge;
+  EconomyConfig? _economyConfig;
   final SeasonalTheme? _seasonalTheme = SeasonalTheme.current();
   List<DailyLeaderboardEntry> _leaderboardEntries = [];
   List<Map<String, dynamic>> _hallOfFame = [];
@@ -48,12 +51,19 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
       service.fetchDailyLeaderboard(),
       service.fetchHallOfFame(),
       service.fetchDailyPlayerCount(),
+      EconomyConfigService.instance.getConfig(),
     ]);
     if (mounted) {
+      final config = results[3] as EconomyConfig;
       setState(() {
         _leaderboardEntries = results[0] as List<DailyLeaderboardEntry>;
         _hallOfFame = results[1] as List<Map<String, dynamic>>;
         _dailyPlayerCount = results[2] as int;
+        _economyConfig = config;
+        // Rebuild challenge with config-driven reward if available.
+        _challenge = DailyChallenge.forToday(
+          baseRewardOverride: config.earnings.dailyScrambleBaseReward,
+        );
         _loadingLeaderboard = false;
       });
     }
@@ -114,7 +124,9 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
   );
 
   Future<void> _onPlay() async {
-    final reward = _challenge.coinReward;
+    // Apply promo earnings multiplier to the daily challenge reward.
+    final promoMultiplier = _economyConfig?.earningsMultiplier ?? 1.0;
+    final reward = (_challenge.coinReward * promoMultiplier).round();
     final planeId = ref.read(equippedPlaneIdProvider);
     final plane = CosmeticCatalog.getById(planeId);
     final account = ref.read(accountProvider);
