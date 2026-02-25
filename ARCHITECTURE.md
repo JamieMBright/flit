@@ -219,7 +219,7 @@ graph LR
     end
 
     subgraph "Fallback"
-        Q["SharedPreferences<br/>pending_writes queue<br/>(max 50, 3 retries)"]
+        Q["SharedPreferences<br/>pending_writes queue<br/>(max 200, 5 retries)"]
     end
 
     A -->|mutation| B
@@ -267,8 +267,9 @@ sequenceDiagram
     ProfilesDB-->>AuthService: Player row (stats, coins, level...)
     AuthService-->>LoginScreen: AuthState(player, isAuthenticated)
 
-    LoginScreen->>AccountProvider: switchAccount(player)
     LoginScreen->>AccountProvider: loadFromSupabase(userId)
+
+    Note over AccountProvider: clearDirtyFlags() first,<br/>then _supabaseLoaded = false<br/>(blocks all writes until load completes)
 
     par Parallel fetch — 3 tables
         AccountProvider->>UserPrefsService: load(userId)
@@ -277,9 +278,11 @@ sequenceDiagram
         UserPrefsService->>AccountDB: SELECT * FROM account_state
     end
 
+    UserPrefsService->>UserPrefsService: _recoverLocalCache()<br/>(merge crash-safe SharedPreferences<br/>with monotonic max() protection)
     UserPrefsService-->>AccountProvider: UserPreferencesSnapshot
 
-    AccountProvider->>AccountProvider: _applySnapshot()<br/>(hydrate coins, xp, cosmetics,<br/>avatar, streak, etc.)
+    AccountProvider->>AccountProvider: _applySnapshot()<br/>(monotonic merge: max(local,server)<br/>for all stats except coins)
+    AccountProvider->>AccountProvider: _supabaseLoaded = true<br/>(writes now enabled)
     AccountProvider->>GameSettings: hydrateFrom(snapshot)<br/>(_hydrating=true, no write-back)
     AccountProvider->>AccountProvider: _startPeriodicRefresh()<br/>(every 5 min)
 
@@ -319,14 +322,16 @@ sequenceDiagram
         ProfilesDB-->>AuthService: Player row
         AuthService-->>LoginScreen: AuthState(isAuthenticated: true)
 
-        LoginScreen->>AccountProvider: switchAccount(player)
         LoginScreen->>AccountProvider: loadFromSupabase(userId)
+
+        Note over AccountProvider: clearDirtyFlags() → _supabaseLoaded = false<br/>Parallel fetch → crash-safe merge → _applySnapshot()
 
         par Parallel fetch — 3 tables
             AccountProvider->>UserPrefsService: load(userId)
             Note over UserPrefsService: profiles + user_settings + account_state
         end
 
+        AccountProvider->>AccountProvider: _applySnapshot() + _supabaseLoaded = true
         AccountProvider->>GameSettings: hydrateFrom(snapshot)
         LoginScreen->>LoginScreen: _navigateToHome()
     else No session
@@ -483,18 +488,24 @@ sequenceDiagram
     ShopScreen->>AccountProvider: purchaseCosmetic(itemId, price)
 
     AccountProvider->>AccountProvider: spendCoins(price)
-    Note over AccountProvider: state.coins -= price
+    Note over AccountProvider: state.coins -= price (optimistic)
 
     AccountProvider->>AccountState: ownedCosmetics.add(itemId)
 
     par Save to 2 tables (debounced)
         AccountProvider->>UserPrefsService: saveProfile(player)<br/>→ marks _profileDirty
-        Note over UserPrefsService: profiles.coins updated
+        Note over UserPrefsService: profiles.coins updated (SET coins = localBalance)
         AccountProvider->>UserPrefsService: saveAccountState(...)<br/>→ marks _accountDirty
         Note over UserPrefsService: account_state.owned_cosmetics updated
     end
 
     UserPrefsService->>UserPrefsService: _scheduleSave() → 2s timer
+
+    Note over AccountProvider: ⚠ BUG 6: Fire-and-forget RPC<br/>_serverValidatePurchase() also<br/>atomically deducts coins server-side.<br/>If debounce fires before RPC reads,<br/>coins are deducted TWICE.
+
+    AccountProvider->>ProfilesDB: RPC: purchase_cosmetic(userId, itemId, price)<br/>(fire-and-forget, async)
+    ProfilesDB-->>AccountProvider: {success, new_balance}
+    AccountProvider->>AccountProvider: Reconcile: state.coins = new_balance<br/>⚠ But does NOT call _syncProfile()
 
     Note over UserPrefsService: After 2s debounce...
 
@@ -925,215 +936,154 @@ sequenceDiagram
     end
 ```
 
-### Active Persistence Bugs (2026-02-24 Audit)
+### Resolved Persistence Bugs (2026-02-24 Audit — All Fixed)
 
-The following bugs were identified by tracing every database interaction through the complete game lifecycle. They explain why persistence is unreliable despite all the previous fixes.
+Bugs 1-4 were identified on 2026-02-24 and have been fixed. Retained here for reference.
 
-#### BUG 1 — CRITICAL: Flush `.then()` Race Condition Silently Drops Writes
+#### BUG 1 — ~~CRITICAL~~ FIXED: Flush `.then()` Race Condition
 
-**File:** `user_preferences_service.dart:758-820` (inside `_flush()`)
-
-**The problem:** When `_flush()` runs, it captures the current `_pendingProfile` (or `_pendingSettings` / `_pendingAccountState`) and starts an async Supabase upsert. The `.then()` callback unconditionally clears the dirty flag and nulls the pending data. But Dart's event loop allows other code to run during the `await` — so if a user action triggers `_syncProfile()` or `_syncAccountState()` while the network call is in-flight, the new mutation's dirty flag and pending payload are overwritten by the stale `.then()` callback.
-
-**Reproduction scenario:**
-```
-1. Game completes → recordGameCompletion() → flush()
-2. flush() captures _pendingProfile = {coins: 500, gamesPlayed: 10}
-3. Network upsert starts (async, ~200ms RTT)
-4. During await: user equips a new plane → _syncAccountState()
-   → _accountStateDirty = true, _pendingAccountState = {equippedPlaneId: 'jet'}
-   → _scheduleSave() starts 2s timer
-5. Network upsert completes → .then() fires:
-   → _accountStateDirty = false    ← OVERWRITES the true from step 4
-   → _pendingAccountState = null   ← DESTROYS the payload from step 4
-   → _clearLocalCache()            ← DELETES the crash-safe backup
-6. 2s timer fires → _flush() → _accountStateDirty is false → SKIP
-7. Equipped plane change is SILENTLY LOST
-```
-
-**Why it matters:** ANY state change that occurs during a flush is vulnerable. This includes:
-- Equipping items while score is being saved
-- Settings changes while lifecycle flush is running
-- Daily streak updates if the abort path (see BUG 2) triggers a debounced write that overlaps with the lifecycle flush
-
-**Fix:** Use write-version counters per table. In `.then()`, only clear the dirty flag and pending data if no new mutation has occurred since the flush started:
-```dart
-int _profileWriteVersion = 0;
-
-void saveProfile(Player player) {
-  _profileWriteVersion++;
-  _profileDirty = true;
-  _pendingProfile = { ... };
-  _cacheLocally(_kLocalProfile, _pendingProfile!);
-  _scheduleSave();
-}
-
-// In _flush():
-if (_profileDirty && _pendingProfile != null) {
-  final payload = _pendingProfile!;
-  final versionAtFlush = _profileWriteVersion;
-  futures.add(
-    client.from('profiles').upsert(payload).then((_) {
-      // Only clear if no new writes happened during the network call.
-      if (_profileWriteVersion == versionAtFlush) {
-        _profileDirty = false;
-        _pendingProfile = null;
-        _clearLocalCache(_kLocalProfile);
-      }
-      LeaderboardService.instance.invalidateCache();
-    }).catchError((Object e) async {
-      await _queue.enqueue('profiles', payload, 'upsert');
-    }),
-  );
-}
-```
-
-**Severity:** CRITICAL — silent data loss with no error, no warning, no crash-safe recovery.
+**Status:** FIXED via write-version counters (`_profileWriteVersion`, `_settingsWriteVersion`, `_accountStateWriteVersion` at `user_preferences_service.dart:226-228`). Each `.then()` callback checks version hasn't changed before clearing dirty flags.
 
 ---
 
-#### BUG 2 — HIGH: Abort Path Fires Daily Callbacks AFTER Flush
+#### BUG 2 — ~~HIGH~~ FIXED: Abort Path Daily Callback Ordering
 
-**File:** `play_screen.dart:1110-1154` (the `_onAbort` / quit code path)
-
-**The problem:** There are two code paths for game completion:
-
-- **Normal completion** (`_completeLanding`, line 684): fires `onComplete` and `onDailyComplete` callbacks BEFORE `recordGameCompletion()` → flush(). This is correct — daily streak data is dirty before the flush and gets written.
-
-- **Abort/quit path** (line ~1060): calls `recordGameCompletion()` with flush() FIRST (line 1111), THEN fires `onComplete` (line 1131) and `onDailyComplete` (line 1154) AFTER. The daily streak and daily result changes are marked dirty but never explicitly flushed — they rely on the 2-second debounce timer only.
-
-**Reproduction scenario:**
-```
-1. Player starts daily challenge, plays 2 of 5 rounds
-2. Player taps "Quit" → abort path
-3. recordGameCompletion() → flush() → writes profile (stats, coins) ✓
-4. onComplete fires → recordDailyChallengeCompletion() → _syncAccountState() → marks dirty
-5. onDailyComplete fires → recordDailyResult() → _syncAccountState() → marks dirty
-6. _scheduleSave() starts 2-second timer
-7. Navigator.pop() fires → user is back on DailyChallengeScreen
-8. Player closes app within 2 seconds
-9. daily_streak_data and last_daily_result are LOST
-10. Next session: daily challenge shows as NOT completed, streak may break
-```
-
-**Fix:** Add an explicit `flush()` call after the daily callbacks in the abort path, matching the normal completion path's ordering. Or better: reorder the abort path to fire daily callbacks BEFORE `recordGameCompletion()`, matching the normal path.
-
-**Severity:** HIGH — daily streak loss on abort, no crash-safe recovery because the lifecycle flush may not fire on web.
+**Status:** FIXED — `play_screen.dart:1110-1141` now fires daily callbacks BEFORE `recordGameCompletion()` in the abort path, matching the normal `_completeLanding()` ordering.
 
 ---
 
-#### BUG 3 — HIGH: No Flush Mutex Allows Concurrent Writes
+#### BUG 3 — ~~HIGH~~ FIXED: Flush Mutex
 
-**File:** `user_preferences_service.dart:616-620` (`flush()` method)
-
-**The problem:** `flush()` can be called concurrently from multiple sources:
-- `recordGameCompletion()` → `await flush()`
-- `AppLifecycleState.hidden` → `flush()` (fire-and-forget, no await)
-- `AppLifecycleState.paused` → `flush()` (fire-and-forget, no await)
-- Web `beforeunload` → `flush()` (fire-and-forget)
-- Debounce timer → `_flush()`
-- `refreshFromServer()` → `flush()` (if pending writes detected)
-
-If two flushes run concurrently:
-1. Both read `_profileDirty = true` and `_pendingProfile = {...}`
-2. Both start a Supabase upsert with the same payload
-3. First to complete clears dirty flags and nulls pending data
-4. Second's `.then()` also runs — harmlessly clears already-null data, BUT:
-5. If a NEW mutation happened between the two flushes' reads, the first flush's `.then()` has already cleared the dirty flag before the second flush saw it
-
-Combined with BUG 1, concurrent flushes amplify the race window.
-
-**Fix:** Add a Completer-based mutex to `_flush()`:
-```dart
-Completer<void>? _flushLock;
-
-Future<void> _flush() async {
-  if (_flushLock != null) {
-    // Another flush is in-flight. Wait for it, then check if we still need to flush.
-    await _flushLock!.future;
-    if (!_profileDirty && !_settingsDirty && !_accountStateDirty) return;
-  }
-  _flushLock = Completer<void>();
-  try {
-    // ... existing flush logic with version counters from BUG 1 fix ...
-  } finally {
-    _flushLock!.complete();
-    _flushLock = null;
-  }
-}
-```
-
-**Severity:** HIGH — amplifies BUG 1 race window; duplicate Supabase writes waste bandwidth.
+**Status:** FIXED via `Completer<void>? _flushLock` at `user_preferences_service.dart:252`. Concurrent `flush()` callers now await the in-flight flush, then re-check dirty flags before starting a new one.
 
 ---
 
-#### BUG 4 — MEDIUM: Crash-Safe Cache Can Regress Stats (Stale Overwrite)
+#### BUG 4 — ~~MEDIUM~~ FIXED: Crash-Safe Cache Stale Overwrite
 
-**File:** `user_preferences_service.dart:706-736` (`_recoverLocalCache()`)
-
-**The problem:** The crash-safe local cache is written immediately by `_cacheLocally()` on every `save*()` call, before the network flush. When loaded, `_recoverLocalCache()` merges using `{...serverData, ...localData}` — local data unconditionally overwrites server data. There is no timestamp or version comparison.
-
-**Reproduction scenario (multi-session):**
-```
-1. Session A: Player has coins=500 (server + local cache both have 500)
-2. Flush succeeds → local cache cleared ✓
-3. Player earns 100 coins → _cacheLocally writes coins=600 to SharedPreferences
-4. Flush succeeds → local cache cleared ✓ (coins=600 on server)
-5. Player earns 50 more coins → _cacheLocally writes coins=650 to SharedPreferences
-6. Flush FAILS (network error) → local cache persists with coins=650
-7. App crashes or user closes before retry
-8. Next session: server has coins=600 (last successful write)
-9. _recoverLocalCache: {server: coins=600, local: coins=650} → merged: coins=650 ✓
-   (This case is CORRECT — local is newer)
-```
-
-**But this scenario causes regression:**
-```
-1. Device A: Player has coins=600 (server + local)
-2. _cacheLocally writes coins=600 to Device A local storage
-3. Flush succeeds on Device A → local cache cleared ✓
-4. Player switches to Device B, plays, earns coins → server now has coins=800
-5. Player returns to Device A (stale local cache was cleared in step 3, so no issue)
-   → Actually fine in this case.
-```
-
-**The real regression risk is within a single session:**
-```
-1. _cacheLocally writes profile with coins=500
-2. Flush starts → captures payload {coins: 500}
-3. Player earns 100 coins → _cacheLocally writes coins=600
-4. Flush's .then() fires → _clearLocalCache() clears the crash-safe cache!
-   → The coins=600 local cache is DELETED even though it's newer than what was flushed
-5. App crashes before next debounced flush
-6. Next load: server has coins=500, no local cache to recover from
-7. 100 coins LOST
-```
-
-This is actually a variant of BUG 1 — the `.then()` callback clearing the local cache deletes crash-safe data that was written AFTER the flush payload was captured.
-
-**Fix:** The version-counter fix from BUG 1 also fixes this — only clear the local cache if no new writes happened during the flush.
-
-**Severity:** MEDIUM — causes coin/stat regression, but only when flush and mutation overlap (same race window as BUG 1).
+**Status:** FIXED by BUG 1's write-version counters. `.then()` callbacks only clear the local cache when the version hasn't changed since flush start, so newer crash-safe data is never deleted.
 
 ---
 
-#### BUG 5 — LOW: ARCHITECTURE.md Flow 8 Documents Wrong Callback Order
+#### BUG 5 — ~~LOW~~ FIXED: Flow 8 Callback Ordering Documentation
 
-**File:** `ARCHITECTURE.md` Flow 8 (On Completing Daily Challenge)
+**Status:** FIXED — Flow 8 diagram updated to show callbacks firing BEFORE `recordGameCompletion()`, matching the actual code in `_completeLanding()`. Abort path (BUG 2) also fixed to match.
 
-The Flow 8 diagram shows:
+---
+
+### Active Persistence Bugs (2026-02-25 Audit)
+
+New bugs identified on 2026-02-25. These are the likely remaining causes of stat/coin resets.
+
+#### BUG 6 — HIGH: Purchase Double-Deduction (Client + Server Both Deduct Coins)
+
+**Files:** `account_provider.dart:791-848`, `rebuild.sql:686` (`purchase_cosmetic` RPC)
+
+**The problem:** When a player buys a cosmetic, two independent coin deductions occur:
+1. **Client-side:** `purchaseCosmetic()` calls `spendCoins(price)` → `_syncProfile()` → debounced upsert with `coins = oldCoins - price`
+2. **Server-side:** `_serverValidatePurchase()` fires `purchase_cosmetic` RPC which atomically does `UPDATE profiles SET coins = coins - cost`
+
+If the debounced upsert fires BEFORE the RPC reads the row, the RPC sees already-deducted coins and deducts again. The RPC returns `new_balance` and the client reconciles to it, but only for the local `Player` object — `_syncProfile()` is NOT called after reconciliation, so the next debounce cycle may write the stale higher value back.
+
+**Reproduction:**
 ```
-PlayScreen → recordGameCompletion(flush) → ResultDialog → "Done" tap → DailyScreen → recordDailyChallengeCompletion
+1. Player has 500 coins, buys item costing 100
+2. spendCoins(100) → local coins = 400, _syncProfile() marks dirty
+3. Debounce fires within 2s → UPSERT profiles SET coins = 400 ✓
+4. _serverValidatePurchase() RPC → server reads coins=400, deducts 100 → coins=300
+5. RPC returns new_balance=300 → client sets _player.coins = 300
+6. But no _syncProfile() after reconciliation → dirty flag not set
+7. Next mutation triggers _syncProfile() with stale pending payload → could write coins=400 again
 ```
 
-But the actual code in `_completeLanding()` (lines 762-824) fires callbacks BEFORE `recordGameCompletion()`:
-```
-PlayScreen → onComplete(recordDailyChallengeCompletion) → onDailyComplete(recordDailyResult) → recordGameCompletion(flush)
-```
+**Net effect:** Player loses 200 coins instead of 100, OR coins oscillate between values.
 
-The ARCHITECTURE.md should be corrected to match the code. The risk matrix entry "Daily challenge → onComplete callback: Streak + daily result saved to account_state → Debounced 2s — not immediate → Risk" is WRONG for the normal completion path (it IS flushed immediately) but CORRECT for the abort path (BUG 2).
+**Fix:** Remove client-side `spendCoins()` from the purchase path entirely. Let the RPC be the sole deduction, reconcile from `new_balance`, then call `_syncProfile()` to persist the reconciled value.
 
-**Fix:** Update Flow 8 to show the correct callback ordering. Add a separate flow for the abort path.
+---
+
+#### BUG 7 — HIGH: sendCoins Ignores Server Balance Return
+
+**Files:** `friends_screen.dart:653-665`, `friends_service.dart` (`sendCoins` RPC), `rebuild.sql:1141`
+
+**The problem:** When sending coins to a friend:
+1. `sendCoins` RPC atomically transfers coins and returns `sender_balance`
+2. `friends_screen.dart` calls the RPC but only checks the boolean success flag
+3. Then calls `accountNotifier.spendCoins(amount)` — a second, independent deduction on the client
+
+Same pattern as BUG 6: double-deduction where client `spendCoins()` and server RPC both subtract.
+
+**Fix:** Remove `spendCoins()` call after `sendCoins` RPC. Instead, read the returned `sender_balance` and set coins directly, then call `_syncProfile()`.
+
+---
+
+#### BUG 8 — MEDIUM: _recoverLocalCache Has No account_state Monotonic Protection
+
+**File:** `user_preferences_service.dart:731-804` (`_recoverLocalCache()`)
+
+**The problem:** The crash-safe recovery merge (`{...serverData, ...localData}`) applies monotonic max() protection for `_kLocalProfile` keys (xp, total_score, games_played, etc.), but does NOT apply any protection for `_kLocalAccountState`. A stale local cache can overwrite newer server `account_state` values (daily streak, equipped items, owned cosmetics).
+
+**Risk scenario:** Player completes daily challenge on Device B (server updated), then opens Device A which has a stale `account_state` cache from before the challenge. The stale cache overwrites the server's newer daily streak data.
+
+**Fix:** Either add monotonic merge for account_state fields that should never regress (daily streak count, owned items sets), or skip local cache recovery for account_state entirely (it's less latency-critical than profile stats).
+
+---
+
+#### BUG 9 — LOW: _applySnapshot Unconditional account_state Overwrite
+
+**File:** `account_provider.dart:245` (`_applySnapshot()`)
+
+**The problem:** `_applySnapshot()` uses `math.max()` merge for profile stats (xp, score, games_played), but overwrites `account_state` unconditionally from the server snapshot. If the server snapshot is stale (e.g., from a failed write), equipped items or daily streak could regress.
+
+**Mitigated by:** The `hasPendingWrites` guard in `refreshFromServer()` prevents snapshots from being applied when local writes are pending. Risk is LOW because `_applySnapshot()` is only called after a fresh server read.
+
+---
+
+#### BUG 10 — HIGH: Crash-Safe Cache Coin Duplication
+
+**File:** `user_preferences_service.dart:761-795` (`_recoverLocalCache()`)
+
+**The problem:** Coins are excluded from monotonic protection (intentionally — they're consumable). But the crash-safe cache merge `{...serverData, ...localData}` means:
+1. Player has 500 coins, earns 100 → local cache writes 600
+2. Flush succeeds → server has 600, local cache cleared
+3. Player spends 50 → local cache writes 550
+4. App crashes before flush
+5. Next session: server has 600, local cache has 550
+6. Merge: `{server: 600, local: 550}` → local wins → coins = 550 ✓ (correct here)
+
+**But this scenario duplicates coins:**
+1. Player has 500 coins, earns 100 → local cache writes 600
+2. Flush FAILS → server still has 500, local cache has 600
+3. App crashes
+4. Next session: server has 500, local cache has 600
+5. Merge: local wins → coins = 600
+6. Player now has 600 coins locally, but only earned 100. Server later gets UPSERT with 600. Correct.
+7. BUT if between crash and restart, another device wrote coins=500 to server (no change), the merge is still correct.
+
+**The real risk:** If `_recoverLocalCache` runs AFTER `_applySnapshot` from server, the local cache value overwrites the max()-merged profile. Since coins have no max() protection, a stale local cache can set coins higher than the server value, effectively duplicating coins that were spent on another device.
+
+**Fix:** For coins specifically, use server value as authoritative and only apply local cache delta (local - lastFlushedLocal) rather than absolute override.
+
+---
+
+#### BUG 11 — HIGH: Backfill Script Destructive Without GREATEST()
+
+**File:** `supabase/backfill_profile_stats_from_scores.sql`
+
+**The problem:** The backfill script uses `UPDATE profiles SET total_score = computed, games_played = computed, ...` without `GREATEST(profiles.total_score, computed)`. If the computed values from the `scores` table are lower than the current profile values (e.g., some scores were deleted or the player earned stats through non-score paths), the script would REGRESS stats.
+
+**Note:** The `protect_profile_stats` DB trigger uses `GREATEST()` and would catch this on UPDATE. But if the script is run with `SET LOCAL app.skip_stat_protection = 'true'` (as admin scripts sometimes do), the trigger is bypassed and stats are destroyed.
+
+**Fix:** Add `GREATEST(profiles.column, computed_value)` to all SET clauses in the backfill script, OR remove the `skip_stat_protection` bypass from the script.
+
+---
+
+#### BUG 12 — LOW: Admin Rename Fails Silently Due to RLS
+
+**File:** `rebuild.sql` (RLS policies on `profiles` table)
+
+**The problem:** The `admin_rename_player` function runs as `SECURITY DEFINER` but the calling context still has the user's RLS context. If the admin function tries to update another player's profile, RLS may block it silently (returning 0 rows affected rather than an error).
+
+**Fix:** Ensure admin functions either use `SECURITY DEFINER` with explicit `SET search_path` and bypass RLS, or check `rows_affected` and raise an exception on 0.
 
 ---
 
@@ -1237,7 +1187,7 @@ Every Supabase read/write traced through the full game lifecycle. Use this to di
 | W3 | Game completion (normal) | `scores` | INSERT | Immediate | `saveGameResult()` awaited inline | `account_provider.dart:737` |
 | W4 | Game completion (normal) | `coin_activity` | INSERT | Fire-and-forget | Best effort, queued on failure | `account_provider.dart:524` |
 | W5 | **Game abort** | `profiles` | UPSERT | Debounced → **immediate flush** | Flush inside `recordGameCompletion()` | `play_screen.dart:1113` |
-| W6 | **Game abort** | `account_state` | UPSERT | Debounced 2s **ONLY** | **NO explicit flush** — daily callbacks fire AFTER flush (BUG 2) | `play_screen.dart:1131-1154` |
+| W6 | **Game abort** | `account_state` | UPSERT | Debounced → **immediate flush** | Daily callbacks now fire BEFORE flush (BUG 2 FIXED) | `play_screen.dart:1110-1161` |
 | W7 | **Game abort** | `scores` | INSERT | Immediate | Same as W3 | `play_screen.dart:1113` |
 | W8 | Setting changed | `user_settings` | UPSERT | Debounced 2s | Lifecycle flush on app pause/hide | `game_settings.dart:56-68` |
 | W9 | Setting changed (local) | SharedPreferences | SET | Immediate | `_saveToLocal()` awaited | `game_settings.dart:112-131` |
@@ -1295,75 +1245,97 @@ Every Supabase read/write traced through the full game lifecycle. Use this to di
 | Mechanism | What It Protects | Where Implemented | Limitation |
 |-----------|-----------------|-------------------|------------|
 | `_supabaseLoaded` guard | Prevents default `PilotLicense.random()` from being persisted before real data loads | `account_provider.dart:195,453,462` | Fragile — single boolean, no per-table granularity |
-| Monotonic stat merge | Prevents stale server data from resetting incremental counters | `account_provider.dart:252-301` | Does NOT protect coins (consumable), avatar, license, cosmetics, daily streak |
+| DB trigger `protect_profile_stats` | Server-side GREATEST() for all monotonic counters on every UPDATE to profiles | `rebuild.sql:556-608` | Does NOT protect coins (consumable); bypassable via `app.skip_stat_protection` session var |
+| Client monotonic stat merge | Prevents stale server data from resetting incremental counters during `_applySnapshot()` | `account_provider.dart:252-301` | Does NOT protect coins (consumable), avatar, license, cosmetics, daily streak |
+| Crash-safe monotonic merge | Prevents stale local cache from regressing server stats in `_recoverLocalCache()` | `user_preferences_service.dart:761-795` | Only protects `_kLocalProfile` key; **NO** monotonic protection for `account_state` (BUG 8) |
+| Write-version counters | Prevents `.then()` callback from clearing newer data written during flush | `user_preferences_service.dart:226-228` | Per-table granularity; correctly guards profile, settings, and account_state |
+| Flush mutex (`_flushLock`) | Serializes concurrent flush calls | `user_preferences_service.dart:252` | Completer-based; waiters re-check dirty flags after lock release |
 | `_hydrating` guard | Prevents `GameSettings.hydrateFrom()` from triggering a write-back to Supabase | `game_settings.dart:52,55,74,92,105` | Only protects settings; no equivalent for profile or account_state hydration |
-| Debounce batching | Coalesces rapid mutations into single write | `user_preferences_service.dart:738-741` | 2-second window where data exists only in memory |
+| `hasPendingWrites` guard | Prevents periodic refresh from overwriting dirty local state with stale server data | `account_provider.dart:381-389` | Correct; flushes first, then re-checks before applying snapshot |
+| Debounce batching | Coalesces rapid mutations into single write | `user_preferences_service.dart:806-809` | 2-second window where data exists only in memory |
 | Offline write queue | Retries failed Supabase writes | `user_preferences_service.dart:29-171` | Capped at 200 entries, 5 retries; dropped after max retries |
-| Crash-safe local cache | Recovers mutations from force-close | `user_preferences_service.dart:666-736` | Subject to BUG 4 (stale overwrite); cleared by successful flush even if newer data exists |
+| Crash-safe local cache | Recovers mutations from force-close | `user_preferences_service.dart:731-804` | BUG 10: coins not protected (stale local can duplicate coins); BUG 8: account_state not protected |
 | Lifecycle flush | Writes dirty data when app backgrounds | `main.dart:248-263` | Unreliable on iOS Safari PWA; `hidden` may not fire on tab close |
 | Web beforeunload flush | Last-chance write on web page unload | `main.dart:78-83` via `WebFlushBridge` | `beforeunload` not fired on iOS PWA swipe-away |
 
 ---
 
-## Fix Plan — Persistence Reliability (Priority Order)
+## Fix Plan — Persistence Reliability
 
-### Fix 1: Version-Guarded Flush (Fixes BUG 1 + BUG 4)
+### Completed Fixes (2026-02-24)
+
+| Fix | Bug | Status | Implementation |
+|-----|-----|--------|----------------|
+| Version-Guarded Flush | BUG 1 + BUG 4 | ✅ DONE | Write-version counters at `user_preferences_service.dart:226-228` |
+| Flush Mutex | BUG 3 | ✅ DONE | `Completer<void>? _flushLock` at `user_preferences_service.dart:252` |
+| Abort Path Reorder | BUG 2 | ✅ DONE | Daily callbacks before `recordGameCompletion()` at `play_screen.dart:1110-1141` |
+| Flow 8 Documentation | BUG 5 | ✅ DONE | ARCHITECTURE.md updated |
+
+### Active Fix Plan (2026-02-25 Audit — Priority Order)
+
+#### Fix A: RPC-Only Coin Deduction for Purchases (Fixes BUG 6)
+
+**Files:** `account_provider.dart:purchaseCosmetic()`, `purchaseAvatarPart()`
+
+**Changes:**
+1. Remove `spendCoins(price)` call from `purchaseCosmetic()` — the server RPC already deducts atomically
+2. After RPC returns `new_balance`, set `_player = _player.copyWith(coins: newBalance)` and call `_syncProfile()`
+3. If RPC fails, do NOT deduct coins locally — show error to user
+4. Same change for `purchaseAvatarPart()`
+
+**Impact:** Eliminates double-deduction on purchases. Server becomes sole authority for coin deduction on purchases.
+
+#### Fix B: RPC-Only Coin Deduction for sendCoins (Fixes BUG 7)
+
+**Files:** `friends_screen.dart:653-665`, `account_provider.dart`
+
+**Changes:**
+1. Remove `spendCoins(amount)` call after `sendCoins` RPC
+2. Read `sender_balance` from RPC response (already returned by server function)
+3. Set local coins to `sender_balance`, call `_syncProfile()`
+
+**Impact:** Eliminates double-deduction on friend coin transfers.
+
+#### Fix C: Monotonic Protection for account_state Recovery (Fixes BUG 8)
+
+**File:** `user_preferences_service.dart:_recoverLocalCache()`
+
+**Changes:**
+1. For `_kLocalAccountState` crash-safe merge, add max()-based protection for fields that should never regress:
+   - `daily_streak_data.current_streak` — use max of local vs server
+   - `owned_cosmetics`, `owned_planes`, `owned_companions` — use set union (never remove items)
+2. Leave equipped items and nationality as local-wins (these are user-preference choices, not progression)
+
+**Impact:** Prevents stale local cache from regressing daily streak or removing owned items.
+
+#### Fix D: Coin Delta Recovery Instead of Absolute Override (Fixes BUG 10)
+
+**File:** `user_preferences_service.dart:_recoverLocalCache()`
+
+**Changes:**
+1. When recovering coins from crash-safe cache, store the `lastFlushedCoins` value alongside the cached value
+2. On recovery, apply `serverCoins + (cachedCoins - lastFlushedCoins)` instead of just `cachedCoins`
+3. This correctly applies the unflushed delta without duplicating previously-flushed earnings
+
+**Impact:** Prevents coin duplication from crash-safe cache while still recovering unflushed coin changes.
+
+#### Fix E: Safe Backfill Script (Fixes BUG 11)
+
+**File:** `supabase/backfill_profile_stats_from_scores.sql`
+
+**Changes:**
+1. Add `GREATEST(profiles.total_score, computed)` to all SET clauses
+2. Remove any `SET LOCAL app.skip_stat_protection = 'true'` — let the DB trigger serve as a safety net
+3. Add a dry-run mode that SELECT-only compares computed vs current values before applying
+
+**Impact:** Backfill script can never regress stats, even if run carelessly.
+
+#### Fix F (Optional): Diagnostic Logging for Persistence Debugging
 
 **File:** `lib/data/services/user_preferences_service.dart`
 
 **Changes:**
-1. Add `int _profileWriteVersion = 0`, `_settingsWriteVersion`, `_accountStateWriteVersion`
-2. Increment the version counter in each `save*()` method
-3. In `_flush()`, capture the version at flush start
-4. In `.then()` callbacks, only clear dirty flag + pending data + local cache if the version hasn't changed
-5. If version HAS changed, leave dirty flag set and don't clear the local cache — the next flush cycle will pick it up
+1. Add `debugPrint` at key points: dirty flag set, flush start/end, version comparison, cache write/recover/clear
+2. Gate behind `kDebugMode` for zero release overhead
 
-**Impact:** Eliminates silent data loss from overlapping mutations and flushes. The crash-safe local cache is only cleared when we KNOW no newer data was written during the flush.
-
-### Fix 2: Flush Mutex (Fixes BUG 3)
-
-**File:** `lib/data/services/user_preferences_service.dart`
-
-**Changes:**
-1. Add `Completer<void>? _flushLock` field
-2. At the start of `_flush()`, if `_flushLock` is non-null, await it, then re-check dirty flags
-3. Create a new `Completer` at flush start, complete it in a `finally` block
-4. This serializes concurrent flush calls while allowing new mutations to accumulate during the wait
-
-**Impact:** Prevents duplicate Supabase writes and eliminates the race amplification from concurrent flushes.
-
-### Fix 3: Abort Path Callback Ordering (Fixes BUG 2)
-
-**File:** `lib/features/play/play_screen.dart`
-
-**Changes:**
-1. In the abort/quit code path (around line 1060-1170), move the daily callback block (lines 1129-1155) to BEFORE the `recordGameCompletion()` call (line 1111)
-2. This matches the ordering in the normal `_completeLanding()` path (lines 768-793 before 809)
-3. The daily streak and daily result will then be dirty before the flush, and included in the same flush cycle
-
-**Alternative:** Add an explicit `await _prefs.flush()` after the daily callbacks in the abort path. But reordering is cleaner and consistent with the normal path.
-
-**Impact:** Daily streak data is reliably persisted even when the player aborts a game.
-
-### Fix 4: Update ARCHITECTURE.md Flow 8 (Fixes BUG 5)
-
-**File:** `ARCHITECTURE.md`
-
-**Changes:**
-1. Correct Flow 8 diagram to show callbacks firing BEFORE `recordGameCompletion()`
-2. Add a new Flow 8b for the abort path showing the (fixed) ordering
-3. Update the risk matrix entry for daily challenge streak
-
-### Fix 5 (Optional): Diagnostic Logging for Persistence Debugging
-
-**File:** `lib/data/services/user_preferences_service.dart`
-
-**Changes:**
-1. Add `debugPrint` statements at key points:
-   - When a dirty flag is set (which table, write version)
-   - When `_flush()` starts (which tables are dirty, versions)
-   - When `.then()` fires (version comparison result: cleared vs skipped)
-   - When crash-safe cache is written, recovered, or cleared
-2. Gate all logging behind `kDebugMode` to ensure zero release overhead
-
-**Impact:** Future persistence bugs can be diagnosed from console output without code archaeology.
+**Impact:** Future persistence bugs diagnosable from console output.
