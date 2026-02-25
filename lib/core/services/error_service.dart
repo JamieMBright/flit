@@ -255,6 +255,15 @@ class ErrorService {
     ErrorSeverity severity = ErrorSeverity.error,
     Map<String, String>? context,
   }) {
+    // On Flutter web, JS null/undefined can bypass Dart's non-null type
+    // system. Guard .toString() to avoid a secondary crash.
+    String errorString;
+    try {
+      final dynamic e = error;
+      errorString = e == null ? 'Unknown error (null)' : e.toString() as String;
+    } catch (_) {
+      errorString = 'Error (toString failed)';
+    }
     final captured = CapturedError(
       timestamp: DateTime.now(),
       sessionId: _sessionId,
@@ -262,7 +271,7 @@ class ErrorService {
       platform: _detectPlatform(),
       deviceInfo: _detectDeviceInfo(),
       severity: severity,
-      error: error.toString(),
+      error: errorString,
       stackTrace: stackTrace?.toString(),
       context: context,
     );

@@ -29,11 +29,29 @@ const _flushInterval = Duration(seconds: 60);
 /// SVG parsing failures (from flutter_svg / DiceBear / flag package) are
 /// non-fatal — the affected widget shows a fallback, the game continues.
 bool _isNonFatalError(Object error) {
-  final msg = error.toString();
+  // On Flutter web (dart2js), JavaScript null/undefined can bypass Dart's
+  // non-null type system and arrive here as a null Object. Guard against it
+  // to prevent a secondary crash: "null is not an object (evaluating
+  // 'e.toString')".
+  final dynamic e = error;
+  if (e == null) return false;
+  final msg = e.toString() as String;
   return msg.contains('Invalid SVG') ||
       msg.contains('invalid svg') ||
       msg.contains('SVG data') ||
       msg.contains('SvgParser');
+}
+
+/// Safely converts an error to a display string.
+/// On web, the error object can be JS null despite Dart's type system.
+String _safeErrorString(Object error) {
+  final dynamic e = error;
+  if (e == null) return 'Unknown error (null)';
+  try {
+    return e.toString() as String;
+  } catch (_) {
+    return 'Error (toString failed)';
+  }
 }
 
 /// Global error message holder. When non-null, [ErrorWidget.builder] and
@@ -175,7 +193,8 @@ Future<void> main() async {
 
   // Capture async / platform errors that escape the framework.
   PlatformDispatcher.instance.onError = (error, stack) {
-    _log.error('platform', '$error', error: error, stackTrace: stack);
+    final errorMsg = _safeErrorString(error);
+    _log.error('platform', errorMsg, error: error, stackTrace: stack);
     if (_isNonFatalError(error)) {
       // SVG/parsing errors: log as warning, don't freeze the screen.
       errorService.reportWarning(
@@ -192,7 +211,7 @@ Future<void> main() async {
       stack,
       context: {'source': 'PlatformDispatcher.onError'},
     );
-    WebErrorBridge.show('[PlatformError] $error\n\n$stack');
+    WebErrorBridge.show('[PlatformError] $errorMsg\n\n$stack');
     return true; // prevent crash, keep app alive
   };
 
@@ -202,7 +221,8 @@ Future<void> main() async {
       runApp(const ProviderScope(child: FlitApp()));
     },
     (error, stack) {
-      _log.error('zone', '$error', error: error, stackTrace: stack);
+      final errorMsg = _safeErrorString(error);
+      _log.error('zone', errorMsg, error: error, stackTrace: stack);
       if (_isNonFatalError(error)) {
         // SVG/parsing errors: log as warning, don't freeze the screen.
         errorService.reportWarning(
@@ -219,7 +239,7 @@ Future<void> main() async {
         stack,
         context: {'source': 'runZonedGuarded'},
       );
-      WebErrorBridge.show('[ZoneError] $error\n\n$stack');
+      WebErrorBridge.show('[ZoneError] $errorMsg\n\n$stack');
     },
   );
 }
