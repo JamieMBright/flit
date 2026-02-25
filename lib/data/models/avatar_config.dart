@@ -25,7 +25,7 @@ enum AvatarStyle {
 }
 
 /// Avatar eyes variant. Maps to DiceBear Adventurer 'eyes' option.
-/// 26 variants available. First 13 are free, rest cost coins.
+/// 36 variants available. First 13 are free, rest cost coins.
 enum AvatarEyes {
   variant01,
   variant02,
@@ -52,7 +52,17 @@ enum AvatarEyes {
   variant23,
   variant24,
   variant25,
-  variant26;
+  variant26,
+  variant27,
+  variant28,
+  variant29,
+  variant30,
+  variant31,
+  variant32,
+  variant33,
+  variant34,
+  variant35,
+  variant36;
 
   String get apiValue => name;
 }
@@ -80,7 +90,7 @@ enum AvatarEyebrows {
 }
 
 /// Avatar mouth variant. Maps to DiceBear Adventurer 'mouth' option.
-/// 30 variants available. First 15 are free, rest cost coins.
+/// 38 variants available. First 15 are free, rest cost coins.
 enum AvatarMouth {
   variant01,
   variant02,
@@ -111,13 +121,21 @@ enum AvatarMouth {
   variant27,
   variant28,
   variant29,
-  variant30;
+  variant30,
+  variant31,
+  variant32,
+  variant33,
+  variant34,
+  variant35,
+  variant36,
+  variant37,
+  variant38;
 
   String get apiValue => name;
 }
 
 /// Avatar hair style. Maps to DiceBear Adventurer 'hair' option.
-/// 45 variants (19 short + 26 long) plus none.
+/// 64 variants (19 short + 45 long) plus none.
 /// [none] + first 5 short + first 5 long are free.
 enum AvatarHair {
   none,
@@ -165,7 +183,26 @@ enum AvatarHair {
   long23,
   long24,
   long25,
-  long26;
+  long26,
+  long27,
+  long28,
+  long29,
+  long30,
+  long31,
+  long32,
+  long33,
+  long34,
+  long35,
+  long36,
+  long37,
+  long38,
+  long39,
+  long40,
+  long41,
+  long42,
+  long43,
+  long44,
+  long45;
 
   String get apiValue => name;
 
@@ -222,7 +259,16 @@ enum AvatarGlasses {
   variant02,
   variant03,
   variant04,
-  variant05;
+  variant05,
+  variant06,
+  variant07,
+  variant08,
+  variant09,
+  variant10,
+  variant11,
+  variant12,
+  variant13,
+  variant14;
 
   String get apiValue => name;
 }
@@ -368,6 +414,39 @@ class AvatarConfig {
     return isHex ? '#$cleaned' : fallbackHex;
   }
 
+  /// Returns the equipped custom color for [key], or null if none equipped.
+  String? getColor(String key) {
+    final raw = equippedCustomColors[key];
+    if (raw == null) return null;
+    final cleaned = raw.toLowerCase().replaceAll('#', '');
+    if (cleaned.length != 6) return null;
+    return RegExp(r'^[0-9a-f]{6}$').hasMatch(cleaned) ? '#$cleaned' : null;
+  }
+
+  /// Returns a copy with [hex] added to both customColors and equippedCustomColors for [key].
+  AvatarConfig withCustomColor(String key, String hex) {
+    final cleaned = hex.toLowerCase().replaceAll('#', '');
+    return copyWith(
+      customColors: {...customColors, key: cleaned},
+      equippedCustomColors: {...equippedCustomColors, key: cleaned},
+    );
+  }
+
+  /// Returns a copy with the custom color for [key] toggled on or off.
+  AvatarConfig toggleCustomColor(String key, bool equipped) {
+    if (equipped) {
+      final hex = customColors[key];
+      if (hex == null) return this;
+      return copyWith(
+        equippedCustomColors: {...equippedCustomColors, key: hex},
+      );
+    } else {
+      final newEquipped = Map<String, String>.from(equippedCustomColors)
+        ..remove(key);
+      return copyWith(equippedCustomColors: newEquipped);
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // DiceBear URL builder
   // ---------------------------------------------------------------------------
@@ -438,6 +517,9 @@ class AvatarConfig {
   // Pricing helpers — returns 0 for free items
   // ---------------------------------------------------------------------------
 
+  /// Coin cost per custom color wheel use.
+  static const int customColorPrice = 750;
+
   /// Coin cost for the given [style].
   /// Adventurer, Avataaars, and Big Ears are free starter styles.
   static int stylePrice(AvatarStyle style) => switch (style) {
@@ -492,6 +574,15 @@ class AvatarConfig {
     AvatarGlasses.variant03 => 500,
     AvatarGlasses.variant04 => 800,
     AvatarGlasses.variant05 => 1000,
+    AvatarGlasses.variant06 => 500,
+    AvatarGlasses.variant07 => 500,
+    AvatarGlasses.variant08 => 500,
+    AvatarGlasses.variant09 => 500,
+    AvatarGlasses.variant10 => 500,
+    AvatarGlasses.variant11 => 500,
+    AvatarGlasses.variant12 => 500,
+    AvatarGlasses.variant13 => 500,
+    AvatarGlasses.variant14 => 500,
   };
 
   /// Coin cost for the given [earrings] variant.

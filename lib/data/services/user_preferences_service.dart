@@ -673,6 +673,7 @@ class UserPreferencesService {
     _pendingProfile = null;
     _pendingSettings = null;
     _pendingAccountState = null;
+    _pendingRecoveryKeys.clear();
     // Purge offline queue and crash-safe cache to prevent cross-user
     // contamination.
     if (_queueInitialised) {
@@ -720,6 +721,12 @@ class UserPreferencesService {
     } catch (_) {}
   }
 
+  /// Keys that had crash-safe data recovered during [load]. These are
+  /// retained until the recovered data is confirmed flushed to Supabase,
+  /// preventing data loss if the flush fails (e.g. network still down
+  /// after iOS force-close recovery).
+  final Set<String> _pendingRecoveryKeys = {};
+
   /// Recover locally cached data that was written but never flushed to
   /// Supabase (e.g. after an iOS force-close during the debounce window).
   ///
@@ -748,7 +755,10 @@ class UserPreferencesService {
       debugPrint(
         '[UserPreferencesService] recovered crash-safe $key for $userId',
       );
-      _clearLocalCache(key);
+
+      // Mark for deferred clearing — the cache is only cleared after the
+      // recovered data is successfully flushed to Supabase.
+      _pendingRecoveryKeys.add(key);
 
       // Local data takes priority — merge over server data.
       if (serverData != null) {
@@ -869,6 +879,7 @@ class UserPreferencesService {
                   _profileDirty = false;
                   _pendingProfile = null;
                   _clearLocalCache(_kLocalProfile);
+                  _pendingRecoveryKeys.remove(_kLocalProfile);
                 }
                 // Always invalidate leaderboard cache — the write succeeded.
                 LeaderboardService.instance.invalidateCache();
@@ -894,6 +905,7 @@ class UserPreferencesService {
                   _settingsDirty = false;
                   _pendingSettings = null;
                   _clearLocalCache(_kLocalSettings);
+                  _pendingRecoveryKeys.remove(_kLocalSettings);
                 }
               })
               .catchError((Object e) async {
@@ -917,6 +929,7 @@ class UserPreferencesService {
                   _accountStateDirty = false;
                   _pendingAccountState = null;
                   _clearLocalCache(_kLocalAccountState);
+                  _pendingRecoveryKeys.remove(_kLocalAccountState);
                 }
               })
               .catchError((Object e) async {

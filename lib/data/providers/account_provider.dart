@@ -184,6 +184,11 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// How often to refresh settings from the database.
   static const _refreshInterval = Duration(minutes: 5);
 
+  /// Shorter interval for the first retry after a failed initial load.
+  /// iOS Safari PWA cold starts often have transient network/auth issues
+  /// that resolve within seconds.
+  static const _quickRetryDelay = Duration(seconds: 10);
+
   /// The user ID for the current session (used by periodic refresh).
   String? _userId;
 
@@ -194,6 +199,11 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// the real data is loaded — causing the license stats reset bug.
   bool _supabaseLoaded = false;
 
+  /// Subscription to Supabase auth state changes (token refresh, etc.).
+  /// Used to trigger a fresh load when the auth token is refreshed after
+  /// a failed initial load (common on iOS Safari PWA cold start).
+  StreamSubscription<AuthState>? _authSubscription;
+
   /// Load full account state from Supabase and hydrate all providers.
   ///
   /// Called after auth completes. Clears any stale dirty flags from a
@@ -201,7 +211,14 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// user don't fire after the new user's data is loaded. Then loads
   /// profile, settings, avatar, license, cosmetics, and daily state in
   /// one parallel fetch. Also starts a periodic refresh timer.
-  Future<bool> loadFromSupabase(String userId) async {
+  ///
+  /// **Important:** The periodic refresh timer is started regardless of
+  /// whether the initial load succeeds. On iOS Safari PWA cold starts,
+  /// the Supabase access token may still be refreshing when the first
+  /// queries run, causing transient auth failures. The periodic refresh
+  /// (plus a quick 10-second retry) ensures settings are eventually
+  /// loaded even if the initial attempt fails.
+  Future<void> loadFromSupabase(String userId) async {
     // Clear stale dirty flags / pending payloads from a prior session.
     // This prevents a race where the old user's debounce timer fires
     // after the new user's data has been loaded.
@@ -223,17 +240,60 @@ class AccountNotifier extends StateNotifier<AccountState> {
       await Future<void>.delayed(Duration(seconds: 1 << attempt));
     }
 
-    if (snapshot == null) {
+    if (snapshot != null) {
+      await _applySnapshot(snapshot);
+    } else {
       debugPrint(
         '[AccountNotifier] loadFromSupabase: all retries failed for $userId '
-        '— aborting hydration',
+        '— scheduling quick retry and listening for auth token refresh',
       );
-      return false;
+
+      // Schedule a quick retry. iOS Safari PWA cold starts often have
+      // transient network/auth issues that resolve within seconds — the
+      // Supabase SDK may still be refreshing an expired access token.
+      final retryUserId = userId;
+      Future<void>.delayed(_quickRetryDelay, () {
+        if (_userId == retryUserId && !_supabaseLoaded) {
+          debugPrint(
+            '[AccountNotifier] executing quick retry for $retryUserId',
+          );
+          refreshFromServer();
+        }
+      });
+
+      // Listen for Supabase auth token refresh. When the SDK finishes
+      // refreshing an expired token (common after iOS force-close), this
+      // triggers an immediate reload so the user doesn't wait for the
+      // next periodic refresh cycle.
+      _listenForTokenRefresh(userId);
     }
 
-    await _applySnapshot(snapshot);
+    // Always start the periodic refresh — even when the initial load
+    // failed. Without this, a failed cold-start load on iOS Safari PWA
+    // left users stuck with stale/default settings for the entire session
+    // because no retry mechanism was ever started.
     _startPeriodicRefresh();
-    return true;
+  }
+
+  /// Listen for Supabase auth state changes that indicate the session
+  /// token has been refreshed. Triggers an immediate settings reload
+  /// when [_supabaseLoaded] is still false.
+  void _listenForTokenRefresh(String userId) {
+    _authSubscription?.cancel();
+    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
+      authState,
+    ) {
+      if (authState.event == AuthChangeEvent.tokenRefreshed &&
+          !_supabaseLoaded &&
+          _userId == userId) {
+        debugPrint(
+          '[AccountNotifier] auth token refreshed — triggering settings reload',
+        );
+        _authSubscription?.cancel();
+        _authSubscription = null;
+        refreshFromServer();
+      }
+    });
   }
 
   /// Apply a [UserPreferencesSnapshot] to in-memory state.
@@ -425,6 +485,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
   void clearPreferences() {
     _refreshTimer?.cancel();
     _refreshTimer = null;
+    _authSubscription?.cancel();
+    _authSubscription = null;
     _userId = null;
     _supabaseLoaded = false;
     _prefs.clear();
@@ -433,6 +495,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _authSubscription?.cancel();
     super.dispose();
   }
 
