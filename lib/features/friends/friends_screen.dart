@@ -57,6 +57,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   Future<void> _loadData() async {
     setState(() => _loading = true);
 
+    // Always invalidate caches before loading so the screen never shows
+    // stale data from a previous visit (e.g. pending invites that arrived
+    // between navigations would otherwise be hidden by the 60-second TTL).
+    FriendsService.instance.invalidateCache();
+
     final results = await Future.wait([
       FriendsService.instance.fetchFriends(),
       FriendsService.instance.fetchPendingRequests(),

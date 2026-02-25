@@ -2066,23 +2066,47 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
       setState(() => _loading = false);
       return;
     }
-    final data = await LeaderboardService.instance.fetchGameHistory(
-      userId: userId,
-    );
-    if (mounted) {
-      setState(() {
-        _entries = data.map((entry) {
-          return _GameHistoryEntry(
-            region: (entry['region'] as String?) ?? 'World',
-            duration: Duration(milliseconds: entry['time_ms'] as int),
-            score: entry['score'] as int,
-            date: DateTime.parse(entry['created_at'] as String),
-            roundsCompleted: (entry['rounds_completed'] as int?) ?? 0,
-            roundEmojis: entry['round_emojis'] as String?,
-          );
-        }).toList();
-        _loading = false;
-      });
+    try {
+      final data = await LeaderboardService.instance.fetchGameHistory(
+        userId: userId,
+        limit: 100,
+      );
+      if (mounted) {
+        final parsed = <_GameHistoryEntry>[];
+        for (final entry in data) {
+          try {
+            final timeMs = entry['time_ms'];
+            final score = entry['score'];
+            final createdAt = entry['created_at'];
+            // Skip entries with missing required fields instead of crashing.
+            if (timeMs == null || score == null || createdAt == null) continue;
+            parsed.add(
+              _GameHistoryEntry(
+                region: (entry['region'] as String?) ?? 'World',
+                duration: Duration(
+                  milliseconds: timeMs is int
+                      ? timeMs
+                      : (timeMs as num).toInt(),
+                ),
+                score: score is int ? score : (score as num).toInt(),
+                date: DateTime.parse(createdAt as String),
+                roundsCompleted: (entry['rounds_completed'] as int?) ?? 0,
+                roundEmojis: entry['round_emojis'] as String?,
+              ),
+            );
+          } catch (e) {
+            // Skip malformed entries rather than failing the entire list.
+            debugPrint('[GameHistory] skipping malformed entry: $e');
+          }
+        }
+        setState(() {
+          _entries = parsed;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('[GameHistory] _loadHistory failed: $e');
+      if (mounted) setState(() => _loading = false);
     }
   }
 

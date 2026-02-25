@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/leaderboard_entry.dart';
+import '../../data/models/pilot_license.dart';
 import '../../data/services/leaderboard_service.dart';
 import '../avatar/avatar_widget.dart';
 import '../license/license_screen.dart';
@@ -487,13 +488,46 @@ class _LeaderboardRow extends StatelessWidget {
 // Pilot card bottom sheet
 // =============================================================================
 
-class _PilotCardSheet extends StatelessWidget {
+class _PilotCardSheet extends StatefulWidget {
   const _PilotCardSheet({required this.entry});
 
   final LeaderboardEntry entry;
 
   @override
+  State<_PilotCardSheet> createState() => _PilotCardSheetState();
+}
+
+class _PilotCardSheetState extends State<_PilotCardSheet> {
+  PilotLicense? _license;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLicense();
+  }
+
+  Future<void> _fetchLicense() async {
+    try {
+      final data = await Supabase.instance.client
+          .from('account_state')
+          .select('license_data')
+          .eq('user_id', widget.entry.playerId)
+          .maybeSingle();
+      if (data != null && data['license_data'] != null && mounted) {
+        setState(() {
+          _license = PilotLicense.fromJson(
+            data['license_data'] as Map<String, dynamic>,
+          );
+        });
+      }
+    } catch (_) {
+      // License fetch is optional — fail silently.
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final entry = widget.entry;
     final planeId = entry.equippedPlaneId ?? 'plane_default';
     final level = entry.level ?? 1;
 
@@ -585,6 +619,57 @@ class _PilotCardSheet extends StatelessWidget {
               ],
             ),
           ),
+          // Pilot license stats
+          if (_license != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: FlitColors.cardBackground,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: FlitColors.cardBorder),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _StatColumn(
+                        label: 'COIN BOOST',
+                        value: '+${_license!.coinBoost}%',
+                      ),
+                      Container(
+                        width: 1,
+                        height: 32,
+                        color: FlitColors.cardBorder,
+                      ),
+                      _StatColumn(
+                        label: 'CLUE CHANCE',
+                        value: '+${_license!.clueChance}%',
+                      ),
+                      Container(
+                        width: 1,
+                        height: 32,
+                        color: FlitColors.cardBorder,
+                      ),
+                      _StatColumn(
+                        label: 'FUEL BOOST',
+                        value: '+${_license!.fuelBoost}%',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Preferred: ${_license!.preferredClueType}',
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           // Round emojis
           if (entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty) ...[
             const SizedBox(height: 16),

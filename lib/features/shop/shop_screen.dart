@@ -1088,7 +1088,7 @@ class _CosmeticCard extends StatelessWidget {
                       color: FlitColors.success,
                     ),
                     _AttrBar(
-                      label: 'Fuel Efficiency',
+                      label: 'Fuel Eff.',
                       value: item.fuelEfficiency,
                       color: FlitColors.warning,
                     ),
@@ -1217,17 +1217,21 @@ class _AttrBar extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(
-            width: 24,
+            width: 48,
             child: Text(
               label,
+              softWrap: false,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                color: FlitColors.textMuted,
-                fontSize: 8,
+                color: FlitColors.textSecondary,
+                fontSize: 7,
                 fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
+                letterSpacing: 0.3,
               ),
             ),
           ),
+          const SizedBox(width: 4),
           Expanded(
             child: Container(
               height: 4,

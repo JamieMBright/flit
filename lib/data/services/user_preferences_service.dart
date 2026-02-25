@@ -724,9 +724,10 @@ class UserPreferencesService {
   /// Supabase (e.g. after an iOS force-close during the debounce window).
   ///
   /// If found and belonging to [userId], the local data is merged over the
-  /// server data (local is newer since it was written after the last successful
-  /// Supabase sync). Returns the merged map, or the original server data if
-  /// nothing to recover.
+  /// server data. For profile data, monotonic stat fields use max(server,local)
+  /// to prevent regression when the local cache is stale (e.g. if another
+  /// device updated the server since this cache was written). For non-stat
+  /// fields, local still wins (more recent mutation intent).
   Map<String, dynamic>? _recoverLocalCache(
     String key,
     Map<String, dynamic>? serverData,
@@ -751,7 +752,50 @@ class UserPreferencesService {
 
       // Local data takes priority — merge over server data.
       if (serverData != null) {
-        return {...serverData, ...localData};
+        final merged = {...serverData, ...localData};
+
+        // For profile data, protect monotonic stats from regression.
+        // The local cache may be stale if another device updated the server
+        // since this cache was written (e.g. session crashed, then played on
+        // another device).
+        if (key == _kLocalProfile) {
+          const monotonicFields = [
+            'level',
+            'xp',
+            'games_played',
+            'countries_found',
+            'total_flight_time_ms',
+            'flags_correct',
+            'capitals_correct',
+            'outlines_correct',
+            'borders_correct',
+            'stats_correct',
+            'best_streak',
+          ];
+          for (final field in monotonicFields) {
+            final s = serverData[field] as int? ?? 0;
+            final l = localData[field] as int? ?? 0;
+            merged[field] = s > l ? s : l;
+          }
+          // best_score: higher is better (nullable).
+          final sBest = serverData['best_score'] as int?;
+          final lBest = localData['best_score'] as int?;
+          if (sBest != null && lBest != null) {
+            merged['best_score'] = sBest > lBest ? sBest : lBest;
+          } else {
+            merged['best_score'] = sBest ?? lBest;
+          }
+          // best_time_ms: lower is better (nullable).
+          final sTime = serverData['best_time_ms'] as int?;
+          final lTime = localData['best_time_ms'] as int?;
+          if (sTime != null && lTime != null) {
+            merged['best_time_ms'] = sTime < lTime ? sTime : lTime;
+          } else {
+            merged['best_time_ms'] = sTime ?? lTime;
+          }
+        }
+
+        return merged;
       }
       return localData;
     } catch (_) {
@@ -815,6 +859,12 @@ class UserPreferencesService {
               .from('profiles')
               .upsert(payload)
               .then((_) {
+                debugPrint(
+                  '[UserPreferencesService] flush profiles SUCCEEDED '
+                  '(games_played=${payload['games_played']}, '
+                  'best_score=${payload['best_score']}, '
+                  'coins=${payload['coins']})',
+                );
                 if (_profileWriteVersion == versionAtFlush) {
                   _profileDirty = false;
                   _pendingProfile = null;

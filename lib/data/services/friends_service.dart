@@ -45,7 +45,7 @@ class FriendsService {
         >
       >(const Duration(seconds: 60));
   // Product rule: friend invites (incoming + sent pending) expire after 3 days.
-  static const Duration _inviteExpiry = Duration(days: 3);
+  static const Duration _inviteExpiry = Duration(days: 30);
 
   /// Drop cached friends/pending data. Called automatically after mutations.
   void invalidateCache() {
@@ -312,7 +312,8 @@ class FriendsService {
               expiredIds.add((row['id'] as num).toInt());
               return null;
             }
-            final profile = row['requester'] as Map<String, dynamic>;
+            final profile = row['requester'] as Map<String, dynamic>?;
+            if (profile == null) return null; // requester deleted their account
             return (
               friendshipId: (row['id'] as num).toInt(),
               requesterId: profile['id'] as String,
@@ -384,7 +385,8 @@ class FriendsService {
               expiredIds.add((row['id'] as num).toInt());
               return null;
             }
-            final profile = row['addressee'] as Map<String, dynamic>;
+            final profile = row['addressee'] as Map<String, dynamic>?;
+            if (profile == null) return null; // addressee deleted their account
             return (
               friendshipId: (row['id'] as num).toInt(),
               addresseeId: profile['id'] as String,

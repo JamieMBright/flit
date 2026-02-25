@@ -1418,8 +1418,37 @@ class FlitGame extends FlameGame
   @override
   void onTapUp(TapUpInfo info) {
     if (!_isPlaying) return;
+    final tapX = info.eventPosition.widget.x;
     final tapY = info.eventPosition.widget.y;
-    final tapBlockTop = size.y * 0.82;
+    final w = size.x;
+    final h = size.y;
+
+    // Curved block region shaped like ---\_______/----
+    // Edges (turn button columns) block from 82%, center opens to 92%
+    // allowing waypoint taps above the fuel gauge.
+    final nx = w > 0 ? tapX / w : 0.5; // normalised X: 0=left, 1=right
+    const buttonZone = 0.22; // width fraction of each turn-button column
+    const transitionZone = 0.08; // width fraction of each angled transition
+    final edgeY = h * 0.82; // block threshold at edges (near turn buttons)
+    final centerY = h * 0.92; // block threshold in centre (above controls)
+
+    double tapBlockTop;
+    if (nx <= buttonZone || nx >= 1.0 - buttonZone) {
+      // Left/right turn-button columns: fully blocked from 82%.
+      tapBlockTop = edgeY;
+    } else if (nx < buttonZone + transitionZone) {
+      // Left transition: linear ramp from edge → centre threshold.
+      final t = (nx - buttonZone) / transitionZone;
+      tapBlockTop = edgeY + (centerY - edgeY) * t;
+    } else if (nx > 1.0 - buttonZone - transitionZone) {
+      // Right transition: linear ramp from centre → edge threshold.
+      final t = (1.0 - buttonZone - nx) / transitionZone;
+      tapBlockTop = edgeY + (centerY - edgeY) * t;
+    } else {
+      // Centre zone: allows taps further down (above fuel gauge / controls).
+      tapBlockTop = centerY;
+    }
+
     if (tapY >= tapBlockTop) return;
 
     // Convert screen tap to globe lat/lng.
