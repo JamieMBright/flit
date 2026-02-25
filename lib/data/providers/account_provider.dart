@@ -280,20 +280,32 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// when [_supabaseLoaded] is still false.
   void _listenForTokenRefresh(String userId) {
     _authSubscription?.cancel();
-    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
-      authState,
-    ) {
-      if (authState.event == AuthChangeEvent.tokenRefreshed &&
-          !_supabaseLoaded &&
-          _userId == userId) {
-        debugPrint(
-          '[AccountNotifier] auth token refreshed — triggering settings reload',
-        );
-        _authSubscription?.cancel();
-        _authSubscription = null;
-        refreshFromServer();
-      }
-    });
+    
+    // Guard against Supabase not being initialized (e.g., in tests).
+    // If Supabase isn't ready, we can't listen for auth changes, so
+    // we rely on the periodic refresh timer instead.
+    try {
+      _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
+        authState,
+      ) {
+        if (authState.event == AuthChangeEvent.tokenRefreshed &&
+            !_supabaseLoaded &&
+            _userId == userId) {
+          debugPrint(
+            '[AccountNotifier] auth token refreshed — triggering settings reload',
+          );
+          _authSubscription?.cancel();
+          _authSubscription = null;
+          refreshFromServer();
+        }
+      });
+    } on AssertionError {
+      // Supabase.instance not initialized (test environment).
+      _authSubscription = null;
+    } on StateError {
+      // Supabase.instance not initialized (alternate error path).
+      _authSubscription = null;
+    }
   }
 
   /// Apply a [UserPreferencesSnapshot] to in-memory state.
