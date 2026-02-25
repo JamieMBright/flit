@@ -163,7 +163,7 @@ List<_AvatarPart> _skinParts() => AvatarSkinColor.values
     )
     .toList();
 
-const _customColorWheelPrice = 800;
+const _customColorWheelPrice = AvatarConfig.customColorPrice;
 
 const Map<String, List<String>> _featureColorPresets = {
   'eyesColor': ['1f3a5f', '4a7c59', '6b4423'],
@@ -310,7 +310,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
       ],
 
       // -----------------------------------------------------------------------
-      // Avataaars — 12 eyes, 13 brows, 12 mouth, 33 top/hair
+      // Avataaars — 12 eyes, 13 brows, 12 mouth, 34 top/hair
       // -----------------------------------------------------------------------
       AvatarStyle.avataaars => [
         _AvatarCategory(
@@ -329,7 +329,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Hair',
           icon: Icons.content_cut,
           configKey: 'hair',
-          parts: _hairParts(33),
+          parts: _hairParts(34),
         ),
         _AvatarCategory(
           label: 'Hat Color',
@@ -386,13 +386,13 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Eyes',
           icon: Icons.visibility,
           configKey: 'eyes',
-          parts: _eyesParts(26),
+          parts: _eyesParts(32),
         ),
         _AvatarCategory(
           label: 'Mouth',
           icon: Icons.mood,
           configKey: 'mouth',
-          parts: _mouthParts(30),
+          parts: _mouthParts(38),
         ),
         _AvatarCategory(
           label: 'Cheek',
@@ -403,7 +403,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
       ],
 
       // -----------------------------------------------------------------------
-      // Lorelei — 24 eyes, 13 brows, 27 mouth, 45 hair, 5 glasses,
+      // Lorelei — 24 eyes, 13 brows, 27 mouth, 48 hair, 5 glasses,
       //   3 earrings, freckles/beard via features
       // -----------------------------------------------------------------------
       AvatarStyle.lorelei => [
@@ -423,7 +423,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Hair',
           icon: Icons.content_cut,
           configKey: 'hair',
-          parts: _hairParts(45),
+          parts: _hairParts(48),
         ),
         _AvatarCategory(
           label: 'Eyes',
@@ -500,8 +500,8 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
       ],
 
       // -----------------------------------------------------------------------
-      // Micah — 5 eyes, 4 brows, 8 mouth, 27 hair, 2 glasses, 2 earrings,
-      //   3 facial hair (feature key)
+      // Micah — 5 eyes, 4 brows, 8 mouth, 8 hair, 2 glasses, 2 earrings,
+      //   2 facial hair (feature key)
       // -----------------------------------------------------------------------
       AvatarStyle.micah => [
         _AvatarCategory(
@@ -520,7 +520,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Hair',
           icon: Icons.content_cut,
           configKey: 'hair',
-          parts: _hairParts(27),
+          parts: _hairParts(8),
         ),
         _AvatarCategory(
           label: 'Eyes',
@@ -592,13 +592,13 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Facial Hair',
           icon: Icons.auto_awesome,
           configKey: 'feature',
-          parts: _featureParts(3),
+          parts: _featureParts(2),
         ),
       ],
 
       // -----------------------------------------------------------------------
-      // Pixel Art — 12 eyes, 23 mouth, 45 hair, 14 glasses (enum capped
-      //   at 5), 4 accessories (earrings key), beard via features
+      // Pixel Art — 12 eyes, 23 mouth, 45 hair, 14 glasses, 4 accessories
+      //   (earrings key), beard via features
       // -----------------------------------------------------------------------
       AvatarStyle.pixelArt => [
         _AvatarCategory(
@@ -653,7 +653,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Glasses',
           icon: Icons.remove_red_eye,
           configKey: 'glasses',
-          parts: _glassesParts(5),
+          parts: _glassesParts(14),
         ),
         _AvatarCategory(
           label: 'Glasses Color',
@@ -706,7 +706,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
       ],
 
       // -----------------------------------------------------------------------
-      // Bottts — robot: 13 eyes, 9 mouth, 9 top (brows key), 7 sides
+      // Bottts — robot: 14 eyes, 9 mouth, 9 top (brows key), 7 sides
       //   (hair key, no 'none'), body colour (skin key). No hair/skin colours.
       // -----------------------------------------------------------------------
       AvatarStyle.bottts => [
@@ -720,7 +720,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Eyes',
           icon: Icons.visibility,
           configKey: 'eyes',
-          parts: _eyesParts(13),
+          parts: _eyesParts(14),
         ),
         _AvatarCategory(
           label: 'Mouth',
@@ -744,7 +744,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
 
       // -----------------------------------------------------------------------
       // Notionists — line-art style: no skin/hair colours. 5 eyes, 13 brows,
-      //   30 lips (mouth key), 63 hair, 11 glasses (enum 6), plus extras for
+      //   30 lips (mouth key), 64 hair, 11 glasses, plus extras for
       //   body (25), gesture (10), nose (20), beard (12+none).
       // -----------------------------------------------------------------------
       AvatarStyle.notionists => [
@@ -752,7 +752,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Hair',
           icon: Icons.content_cut,
           configKey: 'hair',
-          parts: _hairParts(45),
+          parts: _hairParts(64),
         ),
         _AvatarCategory(
           label: 'Eyes',
@@ -776,7 +776,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Glasses',
           icon: Icons.remove_red_eye,
           configKey: 'glasses',
-          parts: _glassesParts(5),
+          parts: _glassesParts(11),
         ),
         _AvatarCategory(
           label: 'Body',
@@ -828,30 +828,36 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Hair',
           icon: Icons.content_cut,
           configKey: 'hair',
-          parts: _hairParts(45),
+          parts: _hairParts(48),
         ),
         _AvatarCategory(
           label: 'Expression',
           icon: Icons.visibility,
           configKey: 'eyes',
-          parts: _eyesParts(26),
+          parts: _eyesParts(30),
         ),
         _AvatarCategory(
           label: 'Accessories',
           icon: Icons.remove_red_eye,
           configKey: 'glasses',
-          parts: _glassesParts(5),
+          parts: _glassesParts(8),
         ),
         _AvatarCategory(
           label: 'Facial Hair',
           icon: Icons.auto_awesome,
-          configKey: 'feature',
-          parts: _featureParts(2),
+          configKey: 'extras_facialHair',
+          parts: _extrasParts('facialHair', 16, hasNone: true),
+        ),
+        _AvatarCategory(
+          label: 'Mask',
+          icon: Icons.masks,
+          configKey: 'extras_mask',
+          parts: _extrasParts('mask', 2, hasNone: true),
         ),
       ],
 
       // -----------------------------------------------------------------------
-      // Thumbs — 36 eyes (26 enum), 5 mouth, 5 face (hair key, no none),
+      // Thumbs — 36 eyes, 5 mouth, 5 face (hair key, no none),
       //   body colour (skin key), accent colour (hair colour key)
       // -----------------------------------------------------------------------
       AvatarStyle.thumbs => [
@@ -871,7 +877,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Eyes',
           icon: Icons.visibility,
           configKey: 'eyes',
-          parts: _eyesParts(26),
+          parts: _eyesParts(36),
         ),
         _AvatarCategory(
           label: 'Mouth',

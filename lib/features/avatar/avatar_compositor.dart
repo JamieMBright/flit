@@ -221,8 +221,8 @@ class AvatarCompositor {
   // ---------------------------------------------------------------------------
 
   static String? _composeAdventurer(AvatarConfig config) {
-    final skinHex = '#${config.skinColor.hex}';
-    final hairHex = '#${config.hairColor.hex}';
+    final skinHex = config.colorOverride('skinColor', '#${config.skinColor.hex}');
+    final hairHex = config.colorOverride('hairColor', '#${config.hairColor.hex}');
 
     final base = adventurerBase.replaceAll('{{SKIN_COLOR}}', skinHex);
 
@@ -283,8 +283,8 @@ class AvatarCompositor {
   static String? _composeAvataaars(AvatarConfig config) {
     final sh = _stableHash(config);
     final strH = _structuralHash(config);
-    final skinHex = '#${config.skinColor.hex}';
-    final hairHex = '#${config.hairColor.hex}';
+    final skinHex = config.colorOverride('skinColor', '#${config.skinColor.hex}');
+    final hairHex = config.colorOverride('hairColor', '#${config.hairColor.hex}');
 
     final nose = _pick(avataaarsNose, strH, 1);
     final mouth = _pick(avataarsMouth, config.mouth.index, 2);
@@ -337,8 +337,8 @@ class AvatarCompositor {
   // ---------------------------------------------------------------------------
 
   static String? _composeBigEars(AvatarConfig config) {
-    final skinHex = '#${config.skinColor.hex}';
-    final hairHex = '#${config.hairColor.hex}';
+    final skinHex = config.colorOverride('skinColor', '#${config.skinColor.hex}');
+    final hairHex = config.colorOverride('hairColor', '#${config.hairColor.hex}');
     final strH = _structuralHash(config);
 
     final face = _pick(
@@ -359,7 +359,7 @@ class AvatarCompositor {
     // Cheek and nose vary with eyebrows and feature selections for more
     // user-controllable variation instead of being locked to the style hash.
     final cheek = _pick(bigearsCheek, config.eyebrows.index, 4);
-    final nose = _pick(bigearsNose, config.feature.index, 5);
+    final nose = _pick(bigearsNose, strH, 5);
     final mouth = _pick(bigearsMouth, config.mouth.index, 6);
     final eyes = _pick(bigearsEyes, config.eyes.index, 7);
     final frontHair = config.hair == AvatarHair.none
@@ -433,8 +433,8 @@ class AvatarCompositor {
   static String? _composeLorelei(AvatarConfig config) {
     final sh = _stableHash(config);
     final strH = _structuralHash(config);
-    final skinHex = '#${config.skinColor.hex}';
-    final hairHex = '#${config.hairColor.hex}';
+    final skinHex = config.colorOverride('skinColor', '#${config.skinColor.hex}');
+    final hairHex = config.colorOverride('hairColor', '#${config.hairColor.hex}');
 
     final head = _pick(
       loreleiHead,
@@ -556,8 +556,8 @@ class AvatarCompositor {
 
   static String? _composeMicah(AvatarConfig config) {
     final strH = _structuralHash(config);
-    final skinHex = '#${config.skinColor.hex}';
-    final hairHex = '#${config.hairColor.hex}';
+    final skinHex = config.colorOverride('skinColor', '#${config.skinColor.hex}');
+    final hairHex = config.colorOverride('hairColor', '#${config.hairColor.hex}');
     // Pick a natural eye color that varies with the eyes selection only.
     final eyeColor = config.colorOverride(
       'eyesColor',
@@ -654,8 +654,8 @@ class AvatarCompositor {
   static String? _composePixelArt(AvatarConfig config) {
     final sh = _stableHash(config);
     final strH = _structuralHash(config);
-    final skinHex = '#${config.skinColor.hex}';
-    final hairHex = '#${config.hairColor.hex}';
+    final skinHex = config.colorOverride('skinColor', '#${config.skinColor.hex}');
+    final hairHex = config.colorOverride('hairColor', '#${config.hairColor.hex}');
     final eyeColor = config.colorOverride(
       'eyesColor',
       _hashColor(config.eyes.index * 41, 33),
@@ -750,8 +750,10 @@ class AvatarCompositor {
     final sh = _stableHash(config);
     // Body color derived from a direct mapping so skin picker gives
     // predictable bot body colours (light grey → dark grey).
-    final baseColor =
-        _botttsSkinColors[config.skinColor.index % _botttsSkinColors.length];
+    final baseColor = config.colorOverride(
+      'baseColor',
+      _botttsSkinColors[config.skinColor.index % _botttsSkinColors.length],
+    );
 
     // Sides (arms/antenna) vary with hair selection for user control.
     final sides = _pick(botttsSides, config.hair.index, 1);
@@ -841,7 +843,7 @@ class AvatarCompositor {
   static String? _composeOpenPeeps(AvatarConfig config) {
     final sh = _stableHash(config);
     final strH = _structuralHash(config);
-    final skinHex = '#${config.skinColor.hex}';
+    final skinHex = config.colorOverride('skinColor', '#${config.skinColor.hex}');
     final contrastHex = _darkenHex(skinHex, 0.8);
     final clothingColor = config.colorOverride(
       'clothingColor',
@@ -853,16 +855,18 @@ class AvatarCompositor {
         .replaceAll('{{HEADCONTRAST_COLOR}}', contrastHex)
         .replaceAll('{{CLOTHING_COLOR}}', clothingColor);
     final face = _pick(openpeepsFace, config.eyes.index, 2);
-    // Facial hair only for mustache feature.
-    final facialHair = config.feature == AvatarFeature.mustache
-        ? _pick(openpeepsFacialHair, sh, 3)
+    // Facial hair variant directly controlled via extras.
+    final facialHairIdx = config.extra('facialHair');
+    final facialHair = facialHairIdx > 0
+        ? _pickDirect(openpeepsFacialHair, facialHairIdx - 1)
         : '';
     final accessories = config.glasses == AvatarGlasses.none
         ? ''
         : _pick(openpeepsAccessories, config.glasses.index, 4);
-    // Mask only shown when feature is 'blush' (repurposed for Peeps).
-    final mask = config.feature == AvatarFeature.blush
-        ? _pick(openpeepsMask, config.feature.index, 5)
+    // Mask variant directly controlled via extras.
+    final maskIdx = config.extra('mask');
+    final mask = maskIdx > 0
+        ? _pickDirect(openpeepsMask, maskIdx - 1)
         : '';
 
     // Open Peeps body base (bust silhouette).
@@ -917,8 +921,10 @@ class AvatarCompositor {
 
   static String? _composeThumbs(AvatarConfig config) {
     // Shape color: direct mapping from skin color only (no hair bleed).
-    final shapeColor =
-        _thumbsSkinColors[config.skinColor.index % _thumbsSkinColors.length];
+    final shapeColor = config.colorOverride(
+      'shapeColor',
+      _thumbsSkinColors[config.skinColor.index % _thumbsSkinColors.length],
+    );
     // Eye color varies with eyes selection only.
     final eyeColor = config.colorOverride(
       'eyesColor',
