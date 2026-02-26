@@ -955,6 +955,37 @@ GRANT EXECUTE ON FUNCTION public.admin_set_license(UUID, JSONB) TO authenticated
 GRANT EXECUTE ON FUNCTION public.admin_set_license(UUID, JSONB) TO service_role;
 
 
+-- Admin: set another player's avatar config (bypasses RLS on account_state).
+CREATE OR REPLACE FUNCTION public.admin_set_avatar(
+  target_user_id UUID,
+  p_avatar_config JSONB
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_caller_role TEXT;
+BEGIN
+  -- Only owner or moderator can set avatar config.
+  SELECT admin_role INTO v_caller_role
+  FROM public.profiles WHERE id = auth.uid();
+  IF v_caller_role IS NULL OR v_caller_role NOT IN ('owner', 'moderator') THEN
+    RAISE EXCEPTION 'Forbidden: must be owner or moderator';
+  END IF;
+
+  INSERT INTO public.account_state (user_id, avatar_config)
+  VALUES (target_user_id, p_avatar_config)
+  ON CONFLICT (user_id) DO UPDATE
+  SET avatar_config = p_avatar_config,
+      updated_at = NOW();
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_set_avatar(UUID, JSONB) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_set_avatar(UUID, JSONB) TO service_role;
+
+
 -- Admin: manage player roles (promote/demote moderators). Owner-only.
 CREATE OR REPLACE FUNCTION public.admin_set_role(
   target_user_id UUID,

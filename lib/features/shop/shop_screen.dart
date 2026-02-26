@@ -71,17 +71,23 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
     final equippedPlane = account.equippedPlaneId;
     final equippedContrail = account.equippedContrailId;
     final equippedCompanion = 'companion_${account.avatar.companion.name}';
+    final hasAnyPromo = _economyConfig.activePromotions.any(
+      (p) =>
+          p.type == PromotionType.shopDiscount || p.type == PromotionType.both,
+    );
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
       appBar: AppBar(
-        backgroundColor: FlitColors.backgroundMid,
-        title: const Text('Shop'),
+        backgroundColor: hasAnyPromo
+            ? const Color(0xFF2A2510)
+            : FlitColors.backgroundMid,
+        title: Text(hasAnyPromo ? 'Shop — SALE' : 'Shop'),
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
           tabAlignment: TabAlignment.center,
-          indicatorColor: FlitColors.accent,
+          indicatorColor: hasAnyPromo ? FlitColors.gold : FlitColors.accent,
           labelColor: FlitColors.textPrimary,
           unselectedLabelColor: FlitColors.textMuted,
           labelStyle: const TextStyle(
@@ -132,12 +138,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
       body: Column(
         children: [
           // Promo banner when shop discount is active.
-          if (_economyConfig.activePromotions.any(
-            (p) =>
-                p.type == PromotionType.shopDiscount ||
-                p.type == PromotionType.both,
-          ))
-            _PromoBanner(config: _economyConfig),
+          if (hasAnyPromo) _PromoBanner(config: _economyConfig),
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -198,7 +199,12 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
   }
 
   void _purchaseItem(Cosmetic item) {
-    final price = _economyConfig.effectivePrice(item.id, item.price);
+    final category = _categoryForType(item.type);
+    final price = _economyConfig.effectivePrice(
+      item.id,
+      item.price,
+      category: category,
+    );
     final success = ref
         .read(accountProvider.notifier)
         .purchaseCosmetic(item.id, price);
@@ -253,6 +259,41 @@ String _rarityLabel(CosmeticRarity rarity) {
     case CosmeticRarity.legendary:
       return 'LEGENDARY';
   }
+}
+
+// =============================================================================
+// Category helpers
+// =============================================================================
+
+/// Maps a [CosmeticType] to the promotion category string used by
+/// [EconomyConfig.effectivePrice] and [Promotion.appliesToCategory].
+String _categoryForType(CosmeticType type) {
+  switch (type) {
+    case CosmeticType.plane:
+      return 'planes';
+    case CosmeticType.contrail:
+      return 'contrails';
+    case CosmeticType.coPilot:
+      return 'companions';
+    default:
+      return 'all';
+  }
+}
+
+// =============================================================================
+// Sale theme colors  (gold-themed palette for items on promotion)
+// =============================================================================
+
+/// Sale-themed colors used when a promotion is active.
+abstract final class _SaleColors {
+  static const Color border = Color(0xFFD4A944);
+  static const Color borderGlow = Color(0x40D4A944);
+  static const Color cardGradientStart = Color(0x18D4A944);
+  static const Color cardGradientEnd = Color(0x08D4A944);
+  static const Color bannerStart = Color(0xFFD4A944);
+  static const Color bannerEnd = Color(0xFFE8C458);
+  static const Color strikethroughText = Color(0xFFB8A890);
+  static const Color strikethroughLine = Color(0xFFCC4444);
 }
 
 // =============================================================================
@@ -333,13 +374,32 @@ class _GoldPackageCard extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               color: FlitColors.cardBackground,
+              gradient: hasPromo
+                  ? const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        _SaleColors.cardGradientStart,
+                        _SaleColors.cardGradientEnd,
+                      ],
+                    )
+                  : null,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: package.isBestValue
                     ? FlitColors.warning
-                    : (hasPromo ? FlitColors.success : FlitColors.cardBorder),
-                width: (package.isBestValue || hasPromo) ? 2 : 1,
+                    : (hasPromo ? _SaleColors.border : FlitColors.cardBorder),
+                width: (package.isBestValue || hasPromo) ? 2.5 : 1,
               ),
+              boxShadow: hasPromo
+                  ? [
+                      BoxShadow(
+                        color: _SaleColors.borderGlow,
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      ),
+                    ]
+                  : null,
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
@@ -385,9 +445,11 @@ class _GoldPackageCard extends StatelessWidget {
                             Text(
                               '\$${package.basePrice.toStringAsFixed(2)}',
                               style: const TextStyle(
-                                color: FlitColors.textMuted,
-                                fontSize: 12,
+                                color: _SaleColors.strikethroughText,
+                                fontSize: 13,
                                 decoration: TextDecoration.lineThrough,
+                                decorationColor: _SaleColors.strikethroughLine,
+                                decorationThickness: 2.0,
                               ),
                             ),
                             const SizedBox(width: 6),
@@ -798,10 +860,16 @@ class _CosmeticGrid extends StatelessWidget {
       final item = items[index];
       final isOwned = ownedIds.contains(item.id);
       final isEquipped = equippedId == item.id;
-      final effectivePrice = economyConfig.effectivePrice(item.id, item.price);
+      final category = _categoryForType(item.type);
+      final effectivePrice = economyConfig.effectivePrice(
+        item.id,
+        item.price,
+        category: category,
+      );
       final canAfford = coins >= effectivePrice;
       final meetsLevel =
           item.requiredLevel == null || level >= item.requiredLevel!;
+      final isOnSale = !isOwned && meetsLevel && effectivePrice < item.price;
 
       return _CosmeticCard(
         item: item,
@@ -810,6 +878,7 @@ class _CosmeticGrid extends StatelessWidget {
         canAfford: canAfford,
         meetsLevel: meetsLevel,
         effectivePrice: effectivePrice,
+        isOnSale: isOnSale,
         onTap: () {
           if (isOwned) {
             _showOwnedDialog(context, item, isEquipped);
@@ -902,9 +971,11 @@ class _CosmeticGrid extends StatelessWidget {
                   Text(
                     '${item.price}',
                     style: const TextStyle(
-                      color: FlitColors.textMuted,
-                      fontSize: 14,
+                      color: _SaleColors.strikethroughText,
+                      fontSize: 15,
                       decoration: TextDecoration.lineThrough,
+                      decorationColor: _SaleColors.strikethroughLine,
+                      decorationThickness: 2.0,
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -1082,6 +1153,7 @@ class _CosmeticCard extends StatelessWidget {
     required this.meetsLevel,
     required this.onTap,
     this.effectivePrice,
+    this.isOnSale = false,
   });
 
   final Cosmetic item;
@@ -1091,6 +1163,7 @@ class _CosmeticCard extends StatelessWidget {
   final bool meetsLevel;
   final VoidCallback onTap;
   final int? effectivePrice;
+  final bool isOnSale;
 
   @override
   Widget build(BuildContext context) {
@@ -1102,15 +1175,36 @@ class _CosmeticCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: FlitColors.cardBackground,
+          gradient: isOnSale
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    _SaleColors.cardGradientStart,
+                    _SaleColors.cardGradientEnd,
+                  ],
+                )
+              : null,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isEquipped
                 ? FlitColors.success
+                : isOnSale
+                ? _SaleColors.border
                 : isLocked
                 ? FlitColors.textMuted
                 : FlitColors.cardBorder,
-            width: isEquipped ? 2 : 1,
+            width: isEquipped ? 2 : (isOnSale ? 2.5 : 1),
           ),
+          boxShadow: isOnSale
+              ? [
+                  BoxShadow(
+                    color: _SaleColors.borderGlow,
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
         ),
         child: Stack(
           children: [
@@ -1300,6 +1394,35 @@ class _CosmeticCard extends StatelessWidget {
                   ),
                 ),
               ),
+            // Sale badge
+            if (isOnSale)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [_SaleColors.bannerStart, _SaleColors.bannerEnd],
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: const [
+                      BoxShadow(color: _SaleColors.borderGlow, blurRadius: 4),
+                    ],
+                  ),
+                  child: Text(
+                    '-${((1 - (effectivePrice ?? item.price) / item.price) * 100).round()}%',
+                    style: const TextStyle(
+                      color: Color(0xFF1A1A1A),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -1406,12 +1529,14 @@ class _PriceRow extends StatelessWidget {
               Text(
                 item.price.toString(),
                 style: const TextStyle(
-                  color: FlitColors.textMuted,
-                  fontSize: 10,
+                  color: _SaleColors.strikethroughText,
+                  fontSize: 11,
                   decoration: TextDecoration.lineThrough,
+                  decorationColor: _SaleColors.strikethroughLine,
+                  decorationThickness: 2.0,
                 ),
               ),
-              const SizedBox(width: 3),
+              const SizedBox(width: 4),
             ],
             Text(
               price.toString(),
@@ -1419,21 +1544,10 @@ class _PriceRow extends StatelessWidget {
                 color: isDiscounted
                     ? FlitColors.success
                     : (canAfford ? FlitColors.warning : FlitColors.error),
-                fontSize: 12,
+                fontSize: isDiscounted ? 13 : 12,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            if (isDiscounted) ...[
-              const SizedBox(width: 3),
-              Text(
-                '-${((1 - price / item.price) * 100).round()}%',
-                style: const TextStyle(
-                  color: FlitColors.success,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
           ],
         ),
       ],
@@ -1450,6 +1564,26 @@ class _PromoBanner extends StatelessWidget {
 
   final EconomyConfig config;
 
+  String _categoryLabel(List<String> categories) {
+    if (categories.isEmpty || categories.contains('all')) return 'all items';
+    final labels = categories.map((c) {
+      switch (c) {
+        case 'planes':
+          return 'planes';
+        case 'contrails':
+          return 'contrails';
+        case 'companions':
+          return 'companions';
+        case 'gold':
+          return 'gold packages';
+        default:
+          return c;
+      }
+    }).toList();
+    if (labels.length == 1) return labels.first;
+    return '${labels.sublist(0, labels.length - 1).join(', ')} & ${labels.last}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final shopPromos = config.activePromotions.where(
@@ -1461,28 +1595,71 @@ class _PromoBanner extends StatelessWidget {
         .map((p) => p.shopDiscountPercent)
         .reduce((a, b) => a > b ? a : b);
     final promoName = shopPromos.first.name;
+    final categoryText = _categoryLabel(shopPromos.first.appliesTo);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            FlitColors.success.withOpacity(0.3),
-            FlitColors.accent.withOpacity(0.3),
+            Color(0xFF3D3015), // dark gold bg
+            Color(0xFF2A2510),
           ],
         ),
+        border: Border(bottom: BorderSide(color: _SaleColors.border, width: 1)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.local_offer, color: FlitColors.success, size: 20),
-          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: _SaleColors.border.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.local_offer,
+              color: _SaleColors.border,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  promoName,
+                  style: const TextStyle(
+                    color: _SaleColors.bannerEnd,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$bestDiscount% off $categoryText!',
+                  style: TextStyle(
+                    color: FlitColors.textPrimary.withOpacity(0.9),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [_SaleColors.bannerStart, _SaleColors.bannerEnd],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Text(
-              '$promoName — $bestDiscount% off all items!',
+              '$bestDiscount% OFF',
               style: const TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+                color: Color(0xFF1A1A1A),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),

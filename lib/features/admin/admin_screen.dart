@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
+import '../../data/models/avatar_config.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/economy_config.dart';
 import '../../data/models/pilot_license.dart';
@@ -744,6 +745,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
     final coinBoostCtl = TextEditingController();
     final clueChanceCtl = TextEditingController();
     final fuelBoostCtl = TextEditingController();
+    final nationalityCtl = TextEditingController();
     String selectedClueType = 'flag';
     String? error;
 
@@ -802,11 +804,13 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               }
 
               final userId = user['id'] as String;
+              final nationality = nationalityCtl.text.trim().toUpperCase();
               final licenseData = {
                 'coin_boost': coinB ?? PilotLicense.rollStat(),
                 'clue_chance': clueC ?? PilotLicense.rollStat(),
                 'fuel_boost': fuelB ?? PilotLicense.rollStat(),
                 'preferred_clue_type': selectedClueType,
+                if (nationality.isNotEmpty) 'nationality': nationality,
               };
 
               await _client.rpc(
@@ -883,6 +887,237 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                   if (value != null) {
                     setDialogState(() => selectedClueType = value);
                   }
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            _AmountField(
+              controller: nationalityCtl,
+              hint: 'Nationality (ISO e.g. GB, US)',
+              isNumeric: false,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Set Avatar ──
+
+  void _showSetAvatarDialog(BuildContext context) {
+    final usernameCtl = TextEditingController();
+    AvatarStyle selectedStyle = AvatarStyle.adventurer;
+    AvatarSkinColor selectedSkin = AvatarSkinColor.medium;
+    AvatarHairColor selectedHairColor = AvatarHairColor.brown;
+    AvatarHair selectedHair = AvatarHair.short01;
+    AvatarEyes selectedEyes = AvatarEyes.variant01;
+    AvatarMouth selectedMouth = AvatarMouth.variant01;
+    AvatarCompanion selectedCompanion = AvatarCompanion.none;
+    String? error;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => _AdminDialog(
+          icon: Icons.face,
+          iconColor: FlitColors.oceanHighlight,
+          title: 'Set Player Avatar',
+          subtitle: 'Override avatar config for a player.',
+          error: error,
+          actionLabel: 'Set Avatar',
+          actionIcon: Icons.face,
+          actionColor: FlitColors.oceanHighlight,
+          onAction: () async {
+            final username = usernameCtl.text.trim();
+            if (username.isEmpty) {
+              setDialogState(() => error = 'Enter a username');
+              return;
+            }
+
+            try {
+              final user = await _lookupUser(username);
+              if (user == null) {
+                setDialogState(() => error = 'User @$username not found');
+                return;
+              }
+
+              final userId = user['id'] as String;
+              final avatarConfig = AvatarConfig(
+                style: selectedStyle,
+                skinColor: selectedSkin,
+                hairColor: selectedHairColor,
+                hair: selectedHair,
+                eyes: selectedEyes,
+                mouth: selectedMouth,
+                companion: selectedCompanion,
+              );
+
+              await _client.rpc(
+                'admin_set_avatar',
+                params: {
+                  'target_user_id': userId,
+                  'p_avatar_config': avatarConfig.toJson(),
+                },
+              );
+
+              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!context.mounted) return;
+              _snack(
+                context,
+                'Avatar set for @$username: '
+                '${selectedStyle.name} / ${selectedSkin.name}',
+              );
+            } on PostgrestException catch (e) {
+              setDialogState(() => error = 'Failed: ${e.message}');
+            } catch (_) {
+              setDialogState(() => error = 'Something went wrong');
+            }
+          },
+          onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [
+            _UsernameField(controller: usernameCtl),
+            const SizedBox(height: 12),
+            // Style selector
+            const Text(
+              'Style',
+              style: TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: DropdownButton<AvatarStyle>(
+                value: selectedStyle,
+                isExpanded: true,
+                dropdownColor: FlitColors.cardBackground,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                underline: const SizedBox.shrink(),
+                items: AvatarStyle.values
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) setDialogState(() => selectedStyle = v);
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Skin color
+            const Text(
+              'Skin Color',
+              style: TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: DropdownButton<AvatarSkinColor>(
+                value: selectedSkin,
+                isExpanded: true,
+                dropdownColor: FlitColors.cardBackground,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                underline: const SizedBox.shrink(),
+                items: AvatarSkinColor.values
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) setDialogState(() => selectedSkin = v);
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Hair & hair color
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Hair Color',
+                        style: TextStyle(
+                          color: FlitColors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: FlitColors.backgroundMid,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: DropdownButton<AvatarHairColor>(
+                          value: selectedHairColor,
+                          isExpanded: true,
+                          dropdownColor: FlitColors.cardBackground,
+                          style: const TextStyle(
+                            color: FlitColors.textPrimary,
+                            fontSize: 13,
+                          ),
+                          underline: const SizedBox.shrink(),
+                          items: AvatarHairColor.values
+                              .map(
+                                (s) => DropdownMenuItem(
+                                  value: s,
+                                  child: Text(s.name),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (v) {
+                            if (v != null) {
+                              setDialogState(() => selectedHairColor = v);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Companion selector
+            const Text(
+              'Companion',
+              style: TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: DropdownButton<AvatarCompanion>(
+                value: selectedCompanion,
+                isExpanded: true,
+                dropdownColor: FlitColors.cardBackground,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                underline: const SizedBox.shrink(),
+                items: AvatarCompanion.values
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) setDialogState(() => selectedCompanion = v);
                 },
               ),
             ),
@@ -1223,6 +1458,13 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             iconColor: FlitColors.oceanHighlight,
             label: 'Set Player License',
             onTap: () => _showSetLicenseDialog(context),
+          ),
+          const SizedBox(height: 8),
+          _AdminActionCard(
+            icon: Icons.face,
+            iconColor: FlitColors.gold,
+            label: 'Set Player Avatar',
+            onTap: () => _showSetAvatarDialog(context),
           ),
           const SizedBox(height: 24),
 
@@ -1776,15 +2018,20 @@ class _UsernameField extends StatelessWidget {
 
 /// Numeric amount text field.
 class _AmountField extends StatelessWidget {
-  const _AmountField({required this.controller, required this.hint});
+  const _AmountField({
+    required this.controller,
+    required this.hint,
+    this.isNumeric = true,
+  });
 
   final TextEditingController controller;
   final String hint;
+  final bool isNumeric;
 
   @override
   Widget build(BuildContext context) => TextField(
     controller: controller,
-    keyboardType: TextInputType.number,
+    keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
     style: const TextStyle(color: FlitColors.textPrimary),
     decoration: InputDecoration(
       hintText: hint,
@@ -2231,6 +2478,7 @@ class _PromotionsDialogState extends State<_PromotionsDialog> {
     DateTime? startDate;
     DateTime? endDate;
     bool manualActive = false;
+    Set<String> selectedCategories = {'all'};
     String? formError;
 
     showDialog<void>(
@@ -2450,7 +2698,72 @@ class _PromotionsDialogState extends State<_PromotionsDialog> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
+                // Category selector
+                if (selectedType == PromotionType.shopDiscount ||
+                    selectedType == PromotionType.both) ...[
+                  const Text(
+                    'Applies To',
+                    style: TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final entry in {
+                        'all': 'All Items',
+                        'planes': 'Planes',
+                        'contrails': 'Contrails',
+                        'companions': 'Companions',
+                        'gold': 'Gold Packs',
+                      }.entries)
+                        FilterChip(
+                          label: Text(
+                            entry.value,
+                            style: TextStyle(
+                              color: selectedCategories.contains(entry.key)
+                                  ? FlitColors.backgroundDark
+                                  : FlitColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                          selected: selectedCategories.contains(entry.key),
+                          selectedColor: FlitColors.gold,
+                          backgroundColor: FlitColors.backgroundMid,
+                          checkmarkColor: FlitColors.backgroundDark,
+                          side: BorderSide(
+                            color: selectedCategories.contains(entry.key)
+                                ? FlitColors.gold
+                                : FlitColors.cardBorder,
+                          ),
+                          onSelected: (selected) {
+                            setFormState(() {
+                              if (entry.key == 'all') {
+                                selectedCategories = {'all'};
+                              } else {
+                                selectedCategories.remove('all');
+                                if (selected) {
+                                  selectedCategories.add(entry.key);
+                                } else {
+                                  selectedCategories.remove(entry.key);
+                                }
+                                if (selectedCategories.isEmpty) {
+                                  selectedCategories = {'all'};
+                                }
+                              }
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -2488,6 +2801,7 @@ class _PromotionsDialogState extends State<_PromotionsDialog> {
                           startDate: startDate,
                           endDate: endDate,
                           manualActive: manualActive,
+                          appliesTo: selectedCategories.toList(),
                         );
 
                         setState(() => _promotions = [..._promotions, promo]);
@@ -2638,6 +2952,7 @@ class _PromotionsDialogState extends State<_PromotionsDialog> {
                                   startDate: promo.startDate,
                                   endDate: promo.endDate,
                                   manualActive: v,
+                                  appliesTo: promo.appliesTo,
                                 );
                                 setState(() {
                                   _promotions = [
@@ -2669,7 +2984,8 @@ class _PromotionsDialogState extends State<_PromotionsDialog> {
                         Text(
                           '${promo.type.name} • '
                           '${promo.earningsMultiplier}x earnings • '
-                          '${promo.shopDiscountPercent}% off shop',
+                          '${promo.shopDiscountPercent}% off • '
+                          '${promo.appliesTo.contains('all') || promo.appliesTo.isEmpty ? 'all items' : promo.appliesTo.join(', ')}',
                           style: const TextStyle(
                             color: FlitColors.textSecondary,
                             fontSize: 11,
