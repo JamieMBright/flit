@@ -32,6 +32,8 @@ class AccountState {
     this.lastDailyChallengeDate,
     this.dailyStreak = const DailyStreak(),
     this.lastDailyResult,
+    this.freeFlightCoinsToday = 0,
+    this.freeFlightCoinDate,
   }) : avatar = avatar ?? const AvatarConfig(),
        license = license ?? PilotLicense.random();
 
@@ -81,6 +83,12 @@ class AccountState {
 
   /// Last completed daily challenge result (for sharing).
   final DailyResult? lastDailyResult;
+
+  /// Coins earned from free flight today (resets daily).
+  final int freeFlightCoinsToday;
+
+  /// YYYY-MM-DD date string for the free flight daily cap tracking.
+  final String? freeFlightCoinDate;
 
   static String _todayStr() {
     final today = DateTime.now().toUtc();
@@ -134,6 +142,8 @@ class AccountState {
     String? lastDailyChallengeDate,
     DailyStreak? dailyStreak,
     Object? lastDailyResult = _sentinel,
+    int? freeFlightCoinsToday,
+    Object? freeFlightCoinDate = _sentinel,
   }) => AccountState(
     currentPlayer: currentPlayer ?? this.currentPlayer,
     unlockedRegions: unlockedRegions ?? this.unlockedRegions,
@@ -153,6 +163,10 @@ class AccountState {
     lastDailyResult: lastDailyResult == _sentinel
         ? this.lastDailyResult
         : lastDailyResult as DailyResult?,
+    freeFlightCoinsToday: freeFlightCoinsToday ?? this.freeFlightCoinsToday,
+    freeFlightCoinDate: freeFlightCoinDate == _sentinel
+        ? this.freeFlightCoinDate
+        : freeFlightCoinDate as String?,
   );
 }
 
@@ -387,6 +401,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
       lastDailyChallengeDate: snapshot.lastDailyChallengeDate,
       dailyStreak: snapshot.toDailyStreak(),
       lastDailyResult: snapshot.toLastDailyResult(),
+      freeFlightCoinsToday: snapshot.freeFlightCoinsToday,
+      freeFlightCoinDate: snapshot.freeFlightCoinDate,
     );
 
     // Mark Supabase data as loaded — enables writes. Must happen AFTER
@@ -548,6 +564,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
       lastDailyChallengeDate: state.lastDailyChallengeDate,
       dailyStreak: state.dailyStreak,
       lastDailyResult: state.lastDailyResult,
+      freeFlightCoinsToday: state.freeFlightCoinsToday,
+      freeFlightCoinDate: state.freeFlightCoinDate,
     );
   }
 
@@ -634,6 +652,41 @@ class AccountNotifier extends StateNotifier<AccountState> {
       source: source,
       balanceAfter: state.currentPlayer.coins,
     );
+  }
+
+  /// Award coins for a correct find in free flight mode.
+  ///
+  /// Returns the actual coins awarded (0 if daily cap reached). Resets
+  /// the daily counter when the date changes. Applies license/level boost
+  /// and active promo earnings multiplier.
+  int awardFreeFlightClue({
+    required int perClueReward,
+    required int dailyCap,
+    double promoMultiplier = 1.0,
+  }) {
+    final todayStr = AccountState._todayStr();
+
+    // Reset counter if it's a new day.
+    var coinsToday = state.freeFlightCoinsToday;
+    if (state.freeFlightCoinDate != todayStr) {
+      coinsToday = 0;
+    }
+
+    if (coinsToday >= dailyCap) return 0;
+
+    // Clamp so we never exceed the daily cap.
+    final baseReward = (perClueReward * promoMultiplier).round();
+    final capped = baseReward.clamp(0, dailyCap - coinsToday);
+    if (capped <= 0) return 0;
+
+    final earned = addCoins(capped, source: 'free_flight_clue');
+
+    state = state.copyWith(
+      freeFlightCoinsToday: coinsToday + capped,
+      freeFlightCoinDate: todayStr,
+    );
+    _syncAccountState();
+    return earned;
   }
 
   /// Unlock a region with coins. Deducts the cost and marks the region
@@ -766,6 +819,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     int coinReward = 0,
     String region = 'world',
     String? roundEmojis,
+    List<Map<String, dynamic>>? roundDetails,
     int flagsCorrect = 0,
     int capitalsCorrect = 0,
     int outlinesCorrect = 0,
@@ -815,6 +869,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       region: region,
       roundsCompleted: roundsCompleted,
       roundEmojis: roundEmojis,
+      roundDetails: roundDetails,
     );
 
     // Flush all pending writes immediately — game completion is a critical

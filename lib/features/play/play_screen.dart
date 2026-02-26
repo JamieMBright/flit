@@ -16,8 +16,10 @@ import '../../core/utils/web_error_bridge.dart';
 import '../../core/widgets/settings_sheet.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/models/daily_result.dart';
+import '../../data/models/economy_config.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/models/challenge.dart';
+import '../../data/services/economy_config_service.dart';
 import '../../data/services/challenge_service.dart';
 import '../challenge/challenge_result_screen.dart';
 import '../../game/clues/clue_types.dart';
@@ -195,6 +197,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   final Random _sessionSeedRandom = Random();
   bool _isCheckingProximity = false;
 
+  /// Economy config (fetched on init for free flight earning).
+  EconomyConfig? _economyConfig;
+
+  /// Total coins earned from free flight clues this session.
+  int _freeFlightCoinsEarned = 0;
+
+  /// Whether this is a free flight session (earns per-clue coins).
+  bool get _isFreeFlightEarning =>
+      widget.coinReward == 0 && !widget.isDailyChallenge;
+
   @override
   void initState() {
     super.initState();
@@ -237,6 +249,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           });
         }
       });
+
+      // Fetch economy config for free flight earning (fire-and-forget).
+      if (_isFreeFlightEarning) {
+        EconomyConfigService.instance.getConfig().then((config) {
+          if (mounted) setState(() => _economyConfig = config);
+        });
+      }
     } catch (e, st) {
       _log.error(
         'screen',
@@ -595,6 +614,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       );
     }
 
+    // Award per-clue coins for free flight.
+    _awardFreeFlightClue();
+
     // Submit round result to Supabase for H2H challenges.
     if (widget.challengeId != null) {
       ChallengeService.instance
@@ -681,6 +703,22 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     });
   }
 
+  /// Award per-clue coins for free flight mode (if applicable).
+  void _awardFreeFlightClue() {
+    if (!_isFreeFlightEarning) return;
+    final config = _economyConfig ?? EconomyConfig.defaults();
+    final earned = ref
+        .read(accountProvider.notifier)
+        .awardFreeFlightClue(
+          perClueReward: config.earnings.freeFlightPerClueReward,
+          dailyCap: config.earnings.freeFlightDailyCap,
+          promoMultiplier: config.earningsMultiplier,
+        );
+    if (earned > 0) {
+      _freeFlightCoinsEarned += earned;
+    }
+  }
+
   Future<void> _completeLanding({bool fuelDepleted = false}) async {
     _timer?.cancel();
     final fuelFrac = fuelDepleted
@@ -703,6 +741,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           completed: !fuelDepleted,
         ),
       );
+    }
+
+    // Award per-clue coins for the final round (if completed, not fuel-depleted).
+    if (!fuelDepleted) {
+      _awardFreeFlightClue();
     }
 
     // Submit final round result and try to complete the challenge.
@@ -801,6 +844,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       return '\u{1F7E0}'; // orange
     }).join();
 
+    // Serialize per-round details for the leaderboard breakdown.
+    final roundDetails = _roundResults
+        .map(
+          (r) => {
+            'country_name': r.countryName,
+            'clue_type': r.clueType.name,
+            'time_ms': r.elapsed.inMilliseconds,
+            'score': r.score,
+            'hints_used': r.hintsUsed,
+            'completed': r.completed,
+          },
+        )
+        .toList();
+
     // Compute per-clue-type correct counts and best streak.
     final clueStats = _computeClueStats();
 
@@ -815,6 +872,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           coinReward: widget.coinReward,
           region: widget.isDailyChallenge ? 'daily' : widget.region.name,
           roundEmojis: roundEmojis,
+          roundDetails: roundDetails,
           flagsCorrect: clueStats.flags,
           capitalsCorrect: clueStats.capitals,
           outlinesCorrect: clueStats.outlines,
@@ -864,6 +922,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         coinReward: widget.coinReward,
         roundResults: _roundResults,
         fuelDepleted: fuelDepleted,
+        freeFlightCoinsEarned: _freeFlightCoinsEarned,
         dailyResult: dailyResultForDialog,
         onShare: dailyResultForDialog != null
             ? () {
@@ -1104,6 +1163,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       return '\u{1F7E0}'; // orange
     }).join();
 
+    // Serialize per-round details for the leaderboard breakdown.
+    final roundDetails = _roundResults
+        .map(
+          (r) => {
+            'country_name': r.countryName,
+            'clue_type': r.clueType.name,
+            'time_ms': r.elapsed.inMilliseconds,
+            'score': r.score,
+            'hints_used': r.hintsUsed,
+            'completed': r.completed,
+          },
+        )
+        .toList();
+
     // Compute per-clue-type correct counts and best streak.
     final clueStats = _computeClueStats();
 
@@ -1152,6 +1225,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           coinReward: 0, // No coin reward for aborted games.
           region: widget.isDailyChallenge ? 'daily' : widget.region.name,
           roundEmojis: roundEmojis,
+          roundDetails: roundDetails,
           flagsCorrect: clueStats.flags,
           capitalsCorrect: clueStats.capitals,
           outlinesCorrect: clueStats.outlines,
@@ -1647,6 +1721,7 @@ class _ResultDialog extends ConsumerWidget {
     this.fuelDepleted = false,
     this.dailyResult,
     this.onShare,
+    this.freeFlightCoinsEarned = 0,
   });
 
   final GameSession session;
@@ -1666,6 +1741,9 @@ class _ResultDialog extends ConsumerWidget {
 
   /// Called to share the daily result.
   final VoidCallback? onShare;
+
+  /// Coins earned from free flight per-clue rewards this session.
+  final int freeFlightCoinsEarned;
 
   static String _formatTime(Duration d) {
     final m = d.inMinutes;
@@ -1912,6 +1990,40 @@ class _ResultDialog extends ConsumerWidget {
                           textAlign: TextAlign.center,
                         ),
                       ],
+                    ],
+                  ),
+                ),
+              ],
+              // Free flight per-clue earnings display.
+              if (freeFlightCoinsEarned > 0) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: FlitColors.gold.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: FlitColors.gold.withOpacity(0.4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.monetization_on,
+                        color: FlitColors.gold,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '+$freeFlightCoinsEarned coins (free flight)',
+                        style: const TextStyle(
+                          color: FlitColors.gold,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),

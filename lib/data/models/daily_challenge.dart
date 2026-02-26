@@ -105,15 +105,26 @@ class DailyChallenge {
   // ── Factories ───────────────────────────────────────────────────────
 
   /// Build the daily challenge for today (UTC).
-  factory DailyChallenge.forToday() {
+  ///
+  /// When [baseRewardOverride] is non-null, it replaces the hardcoded per-theme
+  /// coin reward with the admin-configured base reward. Single-clue themes
+  /// still get a difficulty multiplier on top of the base.
+  factory DailyChallenge.forToday({int? baseRewardOverride}) {
     final now = DateTime.now().toUtc();
-    return DailyChallenge.forDate(DateTime.utc(now.year, now.month, now.day));
+    return DailyChallenge.forDate(
+      DateTime.utc(now.year, now.month, now.day),
+      baseRewardOverride: baseRewardOverride,
+    );
   }
 
   /// Build the daily challenge for a specific [date].
   ///
   /// Only the year, month and day components are used; time is ignored.
-  factory DailyChallenge.forDate(DateTime date) {
+  /// When [baseRewardOverride] is non-null, the admin-configured base reward
+  /// is used instead of hardcoded theme values. Theme difficulty multipliers
+  /// are preserved: "All Clues" = 1.0x, single-clue = 1.33x, duo = 1.17x,
+  /// triple = 1.07x.
+  factory DailyChallenge.forDate(DateTime date, {int? baseRewardOverride}) {
     final normalisedDate = DateTime.utc(date.year, date.month, date.day);
     final seed =
         normalisedDate.year * 10000 +
@@ -144,13 +155,34 @@ class DailyChallenge {
     ];
     final mapRegion = regions[rng.nextInt(regions.length)];
 
+    // Compute coin reward: use admin override with theme multiplier, or
+    // fall back to the hardcoded per-theme value.
+    int coinReward;
+    if (baseRewardOverride != null) {
+      // Theme difficulty multiplier based on number of clue types.
+      // Fewer clue types = harder = higher reward.
+      final double multiplier;
+      if (resolvedClueTypes.length == 1) {
+        multiplier = 1.33; // single-clue themes
+      } else if (resolvedClueTypes.length == 2) {
+        multiplier = 1.17; // duo
+      } else if (resolvedClueTypes.length == 3) {
+        multiplier = 1.07; // triple
+      } else {
+        multiplier = 1.0; // all clues
+      }
+      coinReward = (baseRewardOverride * multiplier).round();
+    } else {
+      coinReward = theme.coinReward;
+    }
+
     return DailyChallenge(
       date: normalisedDate,
       title: theme.title,
       description: theme.description,
       enabledClueTypes: resolvedClueTypes,
-      coinReward: theme.coinReward,
-      bonusCoinReward: theme.coinReward * 3,
+      coinReward: coinReward,
+      bonusCoinReward: coinReward * 3,
       seed: seed,
       mapRegion: mapRegion,
     );

@@ -65,7 +65,7 @@ class LeaderboardService {
           .from('scores')
           .select(
             'score, time_ms, region, rounds_completed, created_at, '
-            'user_id, profiles!inner(username, avatar_url)',
+            'user_id, profiles(username, avatar_url)',
           );
 
       // Apply time filter based on period.
@@ -130,7 +130,7 @@ class LeaderboardService {
           .from('scores')
           .select(
             'score, time_ms, user_id, '
-            'profiles!inner(username)',
+            'profiles(username)',
           )
           .eq('region', 'daily')
           .gte('created_at', startOfDay.toIso8601String())
@@ -177,7 +177,7 @@ class LeaderboardService {
           .from('scores')
           .select(
             'score, time_ms, created_at, user_id, '
-            'profiles!inner(username)',
+            'profiles(username)',
           )
           .eq('region', 'daily')
           .gte('created_at', startDate.toIso8601String())
@@ -514,8 +514,8 @@ class LeaderboardService {
       final query = _client
           .from('scores')
           .select(
-            'score, time_ms, region, round_emojis, created_at, '
-            'user_id, profiles!inner(username, avatar_url, level)',
+            'score, time_ms, region, round_emojis, round_details, created_at, '
+            'user_id, profiles(username, avatar_url, level)',
           );
 
       // Filter by game mode.
@@ -547,34 +547,30 @@ class LeaderboardService {
       final data = await filtered
           .order('score', ascending: false)
           .order('time_ms', ascending: true)
-          .limit(limit * 2); // extra to account for per-player dedup
+          .limit(limit);
 
-      // Deduplicate: keep best score per player.
-      final seen = <String>{};
+      // Map every score row to a leaderboard entry (no dedup — each flight
+      // is its own entry, even if the same player appears multiple times).
       final entries = <LeaderboardEntry>[];
-      int rank = 0;
-      for (final row in data) {
-        final userId = row['user_id'] as String;
-        if (seen.contains(userId)) continue;
-        seen.add(userId);
-        rank++;
+      for (int i = 0; i < data.length; i++) {
+        final row = data[i];
         final profile = row['profiles'] as Map<String, dynamic>?;
         entries.add(
           LeaderboardEntry(
-            rank: rank,
-            playerId: userId,
+            rank: i + 1,
+            playerId: row['user_id'] as String,
             playerName: profile?['username'] as String? ?? 'Unknown',
             time: Duration(milliseconds: row['time_ms'] as int? ?? 0),
             score: row['score'] as int? ?? 0,
             avatarUrl: profile?['avatar_url'] as String?,
             roundEmojis: row['round_emojis'] as String?,
+            roundDetails: row['round_details'] as List<dynamic>?,
             level: profile?['level'] as int?,
             timestamp: row['created_at'] != null
                 ? DateTime.tryParse(row['created_at'] as String)
                 : null,
           ),
         );
-        if (entries.length >= limit) break;
       }
 
       // Batch-fetch equipped plane IDs.

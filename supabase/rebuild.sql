@@ -283,6 +283,7 @@ CREATE TABLE IF NOT EXISTS public.scores (
 );
 
 ALTER TABLE public.scores ADD COLUMN IF NOT EXISTS round_emojis TEXT;
+ALTER TABLE public.scores ADD COLUMN IF NOT EXISTS round_details JSONB;
 
 CREATE INDEX IF NOT EXISTS idx_scores_leaderboard
   ON public.scores (region, score DESC, created_at);
@@ -1452,7 +1453,57 @@ WHERE 'plane_bryanair' = ANY(owned_cosmetics);
 
 
 -- ---------------------------------------------------------------------------
--- 14. SEED ADMIN ROLES
+-- 14. ECONOMY CONFIG — server-driven economy tuning
+-- ---------------------------------------------------------------------------
+-- Single-row table holding all economy parameters as JSONB.
+-- The client reads this on startup (TTL-cached) to drive coin rewards,
+-- shop pricing, and promotions. Admins update via RPC.
+
+CREATE TABLE IF NOT EXISTS public.economy_config (
+  id          INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  config      JSONB NOT NULL DEFAULT '{}',
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.economy_config ENABLE ROW LEVEL SECURITY;
+
+-- All authenticated users can read the economy config.
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'economy_config' AND policyname = 'Economy config is readable by all'
+  ) THEN
+    CREATE POLICY "Economy config is readable by all"
+      ON public.economy_config FOR SELECT USING (true);
+  END IF;
+END $$;
+
+-- Seed the default row if it doesn't exist.
+INSERT INTO public.economy_config (id, config)
+VALUES (1, '{}')
+ON CONFLICT (id) DO NOTHING;
+
+-- RPC: upsert economy config (owner-only, enforced by caller).
+CREATE OR REPLACE FUNCTION public.upsert_economy_config(new_config JSONB)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  INSERT INTO public.economy_config (id, config, updated_at)
+  VALUES (1, new_config, NOW())
+  ON CONFLICT (id) DO UPDATE SET config = new_config, updated_at = NOW();
+END;
+$$;
+
+-- Free-flight daily cap tracking columns on account_state.
+ALTER TABLE public.account_state
+  ADD COLUMN IF NOT EXISTS free_flight_coins_today INT NOT NULL DEFAULT 0;
+ALTER TABLE public.account_state
+  ADD COLUMN IF NOT EXISTS free_flight_coin_date TEXT;
+
+
+-- ---------------------------------------------------------------------------
+-- 15. SEED ADMIN ROLES
 -- ---------------------------------------------------------------------------
 -- Promote existing accounts by email. The auth trigger handles new signups,
 -- but this catches accounts created before admin_role existed.

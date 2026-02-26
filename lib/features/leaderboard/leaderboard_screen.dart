@@ -384,19 +384,25 @@ class _LeaderboardRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          // Tappable emoji result
-          if (entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty)
-            GestureDetector(
-              onTap: () => _showClueBreakdown(context),
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: Text(
-                  entry.roundEmojis!,
-                  style: const TextStyle(fontSize: 10, letterSpacing: -1),
-                ),
-              ),
+          // Tappable emoji result (always visible; shows placeholder if no
+          // round data so the breakdown sheet is always reachable).
+          GestureDetector(
+            onTap: () => _showClueBreakdown(context),
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty
+                  ? Text(
+                      entry.roundEmojis!,
+                      style: const TextStyle(fontSize: 10, letterSpacing: -1),
+                    )
+                  : const Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: FlitColors.textMuted,
+                    ),
             ),
+          ),
           const SizedBox(width: 6),
           // Score + time
           Column(
@@ -450,6 +456,10 @@ class _LeaderboardRow extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: FlitColors.backgroundMid,
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.75,
+      ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -620,64 +630,76 @@ class _PilotCardSheetState extends State<_PilotCardSheet> {
             ),
           ),
           // Pilot license stats
-          if (_license != null) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: FlitColors.cardBackground,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: FlitColors.cardBorder),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: FlitColors.cardBackground,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: FlitColors.cardBorder),
+            ),
+            child: _license != null
+                ? Column(
                     children: [
-                      _StatColumn(
-                        label: 'COIN BOOST',
-                        value: '+${_license!.coinBoost}%',
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _StatColumn(
+                            label: 'COIN BOOST',
+                            value: '+${_license!.coinBoost}%',
+                          ),
+                          Container(
+                            width: 1,
+                            height: 32,
+                            color: FlitColors.cardBorder,
+                          ),
+                          _StatColumn(
+                            label: 'CLUE CHANCE',
+                            value: '+${_license!.clueChance}%',
+                          ),
+                          Container(
+                            width: 1,
+                            height: 32,
+                            color: FlitColors.cardBorder,
+                          ),
+                          _StatColumn(
+                            label: 'FUEL BOOST',
+                            value: '+${_license!.fuelBoost}%',
+                          ),
+                        ],
                       ),
-                      Container(
-                        width: 1,
-                        height: 32,
-                        color: FlitColors.cardBorder,
-                      ),
-                      _StatColumn(
-                        label: 'CLUE CHANCE',
-                        value: '+${_license!.clueChance}%',
-                      ),
-                      Container(
-                        width: 1,
-                        height: 32,
-                        color: FlitColors.cardBorder,
-                      ),
-                      _StatColumn(
-                        label: 'FUEL BOOST',
-                        value: '+${_license!.fuelBoost}%',
+                      const SizedBox(height: 8),
+                      Text(
+                        'Preferred: ${_license!.preferredClueType}',
+                        style: const TextStyle(
+                          color: FlitColors.textSecondary,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Preferred: ${_license!.preferredClueType}',
-                    style: const TextStyle(
-                      color: FlitColors.textSecondary,
-                      fontSize: 11,
+                  )
+                : const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      'No pilot license yet',
+                      style: TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ],
+          ),
           // Round emojis
-          if (entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text(
-              entry.roundEmojis!,
-              style: const TextStyle(fontSize: 18, letterSpacing: 2),
-            ),
-          ],
+          const SizedBox(height: 16),
+          entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty
+              ? Text(
+                  entry.roundEmojis!,
+                  style: const TextStyle(fontSize: 18, letterSpacing: 2),
+                )
+              : const Text(
+                  'No round data',
+                  style: TextStyle(color: FlitColors.textMuted, fontSize: 12),
+                ),
           // Milestone progression
           const SizedBox(height: 16),
           _MilestoneBar(score: entry.score),
@@ -824,24 +846,24 @@ class _ClueBreakdownSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final emojis = entry.roundEmojis ?? '';
-    // Split Unicode emojis (each is a single code unit in the Characters class,
-    // but for these specific emojis we can split by rune).
-    final rounds = emojis.runes.map((r) => String.fromCharCode(r)).toList();
+    final emojiRunes = emojis.runes.map((r) => String.fromCharCode(r)).toList();
+    final details = entry.roundDetails;
+    final hasDetails = details != null && details.isNotEmpty;
 
-    // Count each type.
+    // Count each emoji type for the legend.
     int perfect = 0, hinted = 0, heavy = 0, failed = 0;
-    for (final r in rounds) {
+    for (final r in emojiRunes) {
       switch (r) {
-        case '\u{1F7E2}': // green
+        case '\u{1F7E2}':
           perfect++;
           break;
-        case '\u{1F7E1}': // yellow
+        case '\u{1F7E1}':
           hinted++;
           break;
-        case '\u{1F7E0}': // orange
+        case '\u{1F7E0}':
           heavy++;
           break;
-        case '\u{1F534}': // red
+        case '\u{1F534}':
           failed++;
           break;
       }
@@ -849,107 +871,262 @@ class _ClueBreakdownSheet extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle bar
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.only(bottom: 20),
-            decoration: BoxDecoration(
-              color: FlitColors.textMuted.withOpacity(0.4),
-              borderRadius: BorderRadius.circular(2),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: FlitColors.textMuted.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
-          const Text(
-            'ROUND BREAKDOWN',
-            style: TextStyle(
-              color: FlitColors.textMuted,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 2.0,
+            const Text(
+              'ROUND BREAKDOWN',
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 2.0,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          // Player name + score
-          Text(
-            entry.playerName,
-            style: const TextStyle(
-              color: FlitColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+            const SizedBox(height: 8),
+            // Player name + score
+            Text(
+              entry.playerName,
+              style: const TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          Text(
-            '${entry.score} pts  \u2022  ${_formatTime(entry.time)}',
-            style: const TextStyle(
-              color: FlitColors.textSecondary,
-              fontSize: 12,
+            Text(
+              '${entry.score} pts  \u2022  ${_formatTime(entry.time)}',
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 12,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          // Emoji circles large
-          if (rounds.isNotEmpty)
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              alignment: WrapAlignment.center,
-              children: List.generate(rounds.length, (i) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'R${i + 1}',
-                      style: const TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                      ),
+            const SizedBox(height: 20),
+
+            // Detailed round cards (when per-round data is available).
+            if (hasDetails)
+              ...List.generate(details.length, (i) {
+                final round = details[i] as Map<String, dynamic>;
+                final countryName =
+                    round['country_name'] as String? ?? 'Unknown';
+                final clueType = round['clue_type'] as String? ?? '?';
+                final timeMs = round['time_ms'] as int? ?? 0;
+                final roundScore = round['score'] as int? ?? 0;
+                final hintsUsed = round['hints_used'] as int? ?? 0;
+                final completed = round['completed'] as bool? ?? false;
+
+                final emoji = i < emojiRunes.length ? emojiRunes[i] : '';
+                final roundTime = Duration(milliseconds: timeMs);
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: FlitColors.cardBackground,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: completed
+                          ? FlitColors.cardBorder
+                          : const Color(0xFF8B0000).withOpacity(0.4),
                     ),
-                    const SizedBox(height: 2),
-                    Text(rounds[i], style: const TextStyle(fontSize: 24)),
-                  ],
+                  ),
+                  child: Row(
+                    children: [
+                      // Round number + emoji
+                      Column(
+                        children: [
+                          Text(
+                            'R${i + 1}',
+                            style: const TextStyle(
+                              color: FlitColors.textMuted,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(emoji, style: const TextStyle(fontSize: 20)),
+                        ],
+                      ),
+                      const SizedBox(width: 12),
+                      // Country + clue type
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              countryName,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: FlitColors.textPrimary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Text(
+                                  _clueTypeLabel(clueType),
+                                  style: const TextStyle(
+                                    color: FlitColors.textSecondary,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                                if (hintsUsed > 0) ...[
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '$hintsUsed hint${hintsUsed == 1 ? '' : 's'}',
+                                    style: TextStyle(
+                                      color: hintsUsed <= 2
+                                          ? FlitColors.textMuted
+                                          : const Color(0xFFCD7F32),
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                                if (!completed) ...[
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'FAILED',
+                                    style: TextStyle(
+                                      color: Color(0xFF8B0000),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Score + time
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '+$roundScore',
+                            style: const TextStyle(
+                              color: FlitColors.textPrimary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            _formatTime(roundTime),
+                            style: const TextStyle(
+                              color: FlitColors.textSecondary,
+                              fontSize: 10,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 );
-              }),
+              })
+            // Fallback: emoji circles only (legacy scores without details).
+            else if (emojiRunes.isNotEmpty)
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                alignment: WrapAlignment.center,
+                children: List.generate(emojiRunes.length, (i) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'R${i + 1}',
+                        style: const TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(emojiRunes[i], style: const TextStyle(fontSize: 24)),
+                    ],
+                  );
+                }),
+              )
+            // No data at all.
+            else
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'No round-by-round data available',
+                  style: TextStyle(color: FlitColors.textMuted, fontSize: 12),
+                ),
+              ),
+
+            const SizedBox(height: 20),
+            // Legend
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: FlitColors.cardBackground,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: FlitColors.cardBorder),
+              ),
+              child: Column(
+                children: [
+                  _LegendRow(
+                    emoji: '\u{1F7E2}',
+                    label: 'Perfect (no hints)',
+                    count: perfect,
+                  ),
+                  _LegendRow(
+                    emoji: '\u{1F7E1}',
+                    label: '1-2 hints used',
+                    count: hinted,
+                  ),
+                  _LegendRow(
+                    emoji: '\u{1F7E0}',
+                    label: '3+ hints used',
+                    count: heavy,
+                  ),
+                  _LegendRow(
+                    emoji: '\u{1F534}',
+                    label: 'Failed (fuel depleted)',
+                    count: failed,
+                  ),
+                ],
+              ),
             ),
-          const SizedBox(height: 20),
-          // Legend
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: FlitColors.cardBackground,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: FlitColors.cardBorder),
-            ),
-            child: Column(
-              children: [
-                _LegendRow(
-                  emoji: '\u{1F7E2}',
-                  label: 'Perfect (no hints)',
-                  count: perfect,
-                ),
-                _LegendRow(
-                  emoji: '\u{1F7E1}',
-                  label: '1-2 hints used',
-                  count: hinted,
-                ),
-                _LegendRow(
-                  emoji: '\u{1F7E0}',
-                  label: '3+ hints used',
-                  count: heavy,
-                ),
-                _LegendRow(
-                  emoji: '\u{1F534}',
-                  label: 'Failed (fuel depleted)',
-                  count: failed,
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  static String _clueTypeLabel(String clueType) {
+    switch (clueType) {
+      case 'flag':
+        return 'Flag';
+      case 'outline':
+        return 'Outline';
+      case 'borders':
+        return 'Borders';
+      case 'capital':
+        return 'Capital';
+      case 'stats':
+        return 'Stats';
+      default:
+        return clueType[0].toUpperCase() + clueType.substring(1);
+    }
   }
 }
 

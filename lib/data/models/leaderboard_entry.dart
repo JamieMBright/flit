@@ -10,6 +10,7 @@ class LeaderboardEntry {
     this.countryCode,
     this.timestamp,
     this.roundEmojis,
+    this.roundDetails,
     this.equippedPlaneId,
     this.level,
   });
@@ -23,6 +24,10 @@ class LeaderboardEntry {
   final String? countryCode;
   final DateTime? timestamp;
   final String? roundEmojis;
+
+  /// Per-round detail data stored as a JSON list. Each element contains:
+  /// `country_name`, `clue_type`, `time_ms`, `score`, `hints_used`, `completed`.
+  final List<dynamic>? roundDetails;
   final String? equippedPlaneId;
   final int? level;
 
@@ -37,6 +42,7 @@ class LeaderboardEntry {
         countryCode: countryCode,
         timestamp: timestamp,
         roundEmojis: roundEmojis,
+        roundDetails: roundDetails,
         equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
         level: level,
       );
@@ -51,6 +57,7 @@ class LeaderboardEntry {
     'country_code': countryCode,
     'timestamp': timestamp?.toIso8601String(),
     'round_emojis': roundEmojis,
+    'round_details': roundDetails,
     'equipped_plane_id': equippedPlaneId,
     'level': level,
   };
@@ -68,6 +75,7 @@ class LeaderboardEntry {
             ? DateTime.parse(json['timestamp'] as String)
             : null,
         roundEmojis: json['round_emojis'] as String?,
+        roundDetails: json['round_details'] as List<dynamic>?,
         equippedPlaneId: json['equipped_plane_id'] as String?,
         level: json['level'] as int?,
       );
