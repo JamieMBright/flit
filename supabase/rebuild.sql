@@ -285,6 +285,23 @@ CREATE TABLE IF NOT EXISTS public.scores (
 ALTER TABLE public.scores ADD COLUMN IF NOT EXISTS round_emojis TEXT;
 ALTER TABLE public.scores ADD COLUMN IF NOT EXISTS round_details JSONB;
 
+-- Direct FK from scores → profiles so PostgREST can resolve the embedded
+-- resource join `profiles(username, avatar_url, level)` without needing to
+-- traverse through auth.users.  Safe to add alongside the existing FK to
+-- auth.users — both point to the same UUID.
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'fk_scores_profiles'
+      AND table_schema = 'public'
+      AND table_name = 'scores'
+  ) THEN
+    ALTER TABLE public.scores
+      ADD CONSTRAINT fk_scores_profiles
+      FOREIGN KEY (user_id) REFERENCES public.profiles(id);
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_scores_leaderboard
   ON public.scores (region, score DESC, created_at);
 CREATE INDEX IF NOT EXISTS idx_scores_user
@@ -1402,32 +1419,54 @@ GRANT EXECUTE ON FUNCTION public.gift_avatar_part(UUID, UUID, TEXT, INT) TO serv
 -- 12. VIEWS
 -- ---------------------------------------------------------------------------
 
+-- Per-player dedup: only each player's best score appears on the board.
+-- Uses a subquery to pick the best score per user_id (highest score, fastest
+-- time as tiebreaker), then ranks the deduplicated results.
+
 CREATE OR REPLACE VIEW leaderboard_global AS
-SELECT s.user_id, p.username, p.level, p.avatar_url,
-       s.score, s.time_ms, s.region, s.created_at,
-       ROW_NUMBER() OVER (ORDER BY s.score DESC, s.time_ms ASC) as rank
-FROM scores s
-JOIN profiles p ON s.user_id = p.id
-WHERE s.region = 'daily'
-ORDER BY s.score DESC, s.time_ms ASC;
+SELECT ranked.user_id, ranked.username, ranked.level, ranked.avatar_url,
+       ranked.score, ranked.time_ms, ranked.region, ranked.created_at,
+       ROW_NUMBER() OVER (ORDER BY ranked.score DESC, ranked.time_ms ASC) as rank
+FROM (
+  SELECT DISTINCT ON (s.user_id)
+    s.user_id, p.username, p.level, p.avatar_url,
+    s.score, s.time_ms, s.region, s.created_at
+  FROM scores s
+  JOIN profiles p ON s.user_id = p.id
+  WHERE s.region = 'daily'
+  ORDER BY s.user_id, s.score DESC, s.time_ms ASC
+) ranked
+ORDER BY ranked.score DESC, ranked.time_ms ASC;
 
 CREATE OR REPLACE VIEW leaderboard_daily AS
-SELECT s.user_id, p.username, p.level, p.avatar_url,
-       s.score, s.time_ms, s.region, s.created_at,
-       ROW_NUMBER() OVER (ORDER BY s.score DESC, s.time_ms ASC) as rank
-FROM scores s
-JOIN profiles p ON s.user_id = p.id
-WHERE s.created_at >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date
-  AND s.region = 'daily'
-ORDER BY s.score DESC, s.time_ms ASC;
+SELECT ranked.user_id, ranked.username, ranked.level, ranked.avatar_url,
+       ranked.score, ranked.time_ms, ranked.region, ranked.created_at,
+       ROW_NUMBER() OVER (ORDER BY ranked.score DESC, ranked.time_ms ASC) as rank
+FROM (
+  SELECT DISTINCT ON (s.user_id)
+    s.user_id, p.username, p.level, p.avatar_url,
+    s.score, s.time_ms, s.region, s.created_at
+  FROM scores s
+  JOIN profiles p ON s.user_id = p.id
+  WHERE s.created_at >= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date
+    AND s.region = 'daily'
+  ORDER BY s.user_id, s.score DESC, s.time_ms ASC
+) ranked
+ORDER BY ranked.score DESC, ranked.time_ms ASC;
 
 CREATE OR REPLACE VIEW leaderboard_regional AS
-SELECT s.user_id, p.username, p.level, p.avatar_url,
-       s.score, s.time_ms, s.region, s.created_at,
-       ROW_NUMBER() OVER (PARTITION BY s.region ORDER BY s.score DESC, s.time_ms ASC) as rank
-FROM scores s
-JOIN profiles p ON s.user_id = p.id
-ORDER BY s.region, s.score DESC, s.time_ms ASC;
+SELECT ranked.user_id, ranked.username, ranked.level, ranked.avatar_url,
+       ranked.score, ranked.time_ms, ranked.region, ranked.created_at,
+       ROW_NUMBER() OVER (PARTITION BY ranked.region ORDER BY ranked.score DESC, ranked.time_ms ASC) as rank
+FROM (
+  SELECT DISTINCT ON (s.user_id, s.region)
+    s.user_id, p.username, p.level, p.avatar_url,
+    s.score, s.time_ms, s.region, s.created_at
+  FROM scores s
+  JOIN profiles p ON s.user_id = p.id
+  ORDER BY s.user_id, s.region, s.score DESC, s.time_ms ASC
+) ranked
+ORDER BY ranked.region, ranked.score DESC, ranked.time_ms ASC;
 
 CREATE OR REPLACE VIEW daily_streak_leaderboard AS
 SELECT

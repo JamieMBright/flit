@@ -7,8 +7,8 @@ import 'ttl_cache.dart';
 
 /// Service that fetches real leaderboard data from Supabase.
 ///
-/// Queries the `scores` table joined with `profiles` to build ranked lists.
-/// All queries use Supabase's PostgREST API — no raw SQL needed.
+/// Queries the `scores` table and `profiles` table separately (2-step fetch)
+/// to avoid depending on PostgREST FK resolution between scores and profiles.
 ///
 /// High-traffic read paths are backed by an in-memory [TtlCache] so that
 /// rapid screen opens (e.g. tab switching) don't each trigger a DB round-trip.
@@ -64,8 +64,7 @@ class LeaderboardService {
       final query = _client
           .from('scores')
           .select(
-            'score, time_ms, region, rounds_completed, created_at, '
-            'user_id, profiles(username, avatar_url)',
+            'score, time_ms, region, rounds_completed, created_at, user_id',
           );
 
       // Apply time filter based on period.
@@ -103,10 +102,15 @@ class LeaderboardService {
           .order('time_ms', ascending: true)
           .limit(limit);
 
-      return _mapToLeaderboardEntries(data);
+      // 2-step: batch-fetch profiles for all user IDs in the result set.
+      final profiles = await _fetchProfiles(
+        data.map((r) => r['user_id'] as String).toSet().toList(),
+      );
+
+      return _mapToLeaderboardEntries(data, profiles);
     } catch (e) {
       debugPrint('[LeaderboardService] fetchLeaderboard failed: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -128,19 +132,21 @@ class LeaderboardService {
 
       final data = await _client
           .from('scores')
-          .select(
-            'score, time_ms, user_id, '
-            'profiles(username)',
-          )
+          .select('score, time_ms, user_id')
           .eq('region', 'daily')
           .gte('created_at', startOfDay.toIso8601String())
           .order('score', ascending: false)
           .order('time_ms', ascending: true)
           .limit(limit);
 
+      // 2-step: batch-fetch profiles.
+      final profiles = await _fetchProfiles(
+        data.map((r) => r['user_id'] as String).toSet().toList(),
+      );
+
       final result = List<DailyLeaderboardEntry>.generate(data.length, (i) {
         final row = data[i];
-        final profile = row['profiles'] as Map<String, dynamic>?;
+        final profile = profiles[row['user_id'] as String];
         return DailyLeaderboardEntry(
           username: profile?['username'] as String? ?? 'Unknown',
           score: row['score'] as int? ?? 0,
@@ -153,7 +159,7 @@ class LeaderboardService {
       return result;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchDailyLeaderboard failed: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -175,10 +181,7 @@ class LeaderboardService {
 
       final data = await _client
           .from('scores')
-          .select(
-            'score, time_ms, created_at, user_id, '
-            'profiles(username)',
-          )
+          .select('score, time_ms, created_at, user_id')
           .eq('region', 'daily')
           .gte('created_at', startDate.toIso8601String())
           .order('score', ascending: false)
@@ -195,10 +198,18 @@ class LeaderboardService {
         byDate.putIfAbsent(dateKey, () => row);
       }
 
+      // 2-step: batch-fetch profiles for the winners.
+      final winnerIds = byDate.values
+          .map((r) => r['user_id'] as String)
+          .toSet()
+          .toList();
+      final profiles = await _fetchProfiles(winnerIds);
+
       final result =
           byDate.entries.map((e) {
             final row = e.value;
-            final profile = row['profiles'] as Map<String, dynamic>?;
+            final userId = row['user_id'] as String;
+            final profile = profiles[userId];
             return {
               'date': e.key,
               'winner': profile?['username'] as String? ?? 'Unknown',
@@ -212,7 +223,7 @@ class LeaderboardService {
       return result;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchHallOfFame failed: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -450,37 +461,102 @@ class LeaderboardService {
     }
   }
 
-  /// Fetch the current player's global rank.
+  /// Fetch the current player's rank for the given mode.
   ///
-  /// Returns the [LeaderboardEntry] for the player if found, or `null` if the
-  /// player has no scores.
-  Future<LeaderboardEntry?> fetchPlayerRank(String userId) async {
-    final cacheKey = 'rank_$userId';
-    // Note: _rankCache stores nullable values, so we check containment via get
-    // returning a sentinel would over-complicate things — just re-fetch on miss.
+  /// When [isDailyScramble] is true, computes rank among `region = 'daily'`
+  /// scores; otherwise among non-daily scores. Returns `null` if the player
+  /// has no scores in that mode.
+  Future<LeaderboardEntry?> fetchPlayerRank(
+    String userId, {
+    bool isDailyScramble = true,
+  }) async {
+    final cacheKey = 'rank_${userId}_$isDailyScramble';
     final cached = _rankCache.get(cacheKey);
     if (cached != null) return cached;
 
     try {
-      final data = await _client
-          .from('leaderboard_global')
-          .select()
+      // Compute rank from the scores table directly so we aren't limited to
+      // the daily-only leaderboard_global view.
+      PostgrestFilterBuilder<List<Map<String, dynamic>>> query;
+      if (isDailyScramble) {
+        query = _client
+            .from('scores')
+            .select('score, time_ms, user_id, created_at')
+            .eq('region', 'daily');
+      } else {
+        query = _client
+            .from('scores')
+            .select('score, time_ms, user_id, created_at')
+            .neq('region', 'daily');
+      }
+
+      // Get the player's best score in this mode.
+      final playerBest = await query
           .eq('user_id', userId)
-          .order('rank', ascending: true)
+          .order('score', ascending: false)
+          .order('time_ms', ascending: true)
           .limit(1)
           .maybeSingle();
 
-      if (data == null) return null;
+      if (playerBest == null) return null;
+
+      final bestScore = playerBest['score'] as int? ?? 0;
+      final bestTime = playerBest['time_ms'] as int? ?? 0;
+
+      // Count how many distinct scores rank above this one.
+      // A score ranks higher if it has a higher score, or the same score with
+      // a lower time.
+      PostgrestFilterBuilder<List<Map<String, dynamic>>> countQuery;
+      if (isDailyScramble) {
+        countQuery = _client
+            .from('scores')
+            .select('user_id')
+            .eq('region', 'daily');
+      } else {
+        countQuery = _client
+            .from('scores')
+            .select('user_id')
+            .neq('region', 'daily');
+      }
+      final aboveData = await countQuery.gt('score', bestScore).limit(1000);
+      // Also count those with same score but faster time.
+      PostgrestFilterBuilder<List<Map<String, dynamic>>> tieQuery;
+      if (isDailyScramble) {
+        tieQuery = _client
+            .from('scores')
+            .select('user_id')
+            .eq('region', 'daily');
+      } else {
+        tieQuery = _client
+            .from('scores')
+            .select('user_id')
+            .neq('region', 'daily');
+      }
+      final tieData = await tieQuery
+          .eq('score', bestScore)
+          .lt('time_ms', bestTime)
+          .limit(1000);
+
+      // Rank = number of distinct users above + 1.
+      final usersAbove = <String>{
+        ...aboveData.map((r) => r['user_id'] as String),
+        ...tieData.map((r) => r['user_id'] as String),
+      }..remove(userId);
+      final rank = usersAbove.length + 1;
+
+      // Fetch profile for this user.
+      final profiles = await _fetchProfiles([userId]);
+      final profile = profiles[userId];
 
       final result = LeaderboardEntry(
-        rank: data['rank'] as int? ?? 0,
-        playerId: data['user_id'] as String? ?? '',
-        playerName: data['username'] as String? ?? 'Unknown',
-        time: Duration(milliseconds: data['time_ms'] as int? ?? 0),
-        score: data['score'] as int? ?? 0,
-        avatarUrl: data['avatar_url'] as String?,
-        timestamp: data['created_at'] != null
-            ? DateTime.tryParse(data['created_at'] as String)
+        rank: rank,
+        playerId: userId,
+        playerName: profile?['username'] as String? ?? 'Unknown',
+        time: Duration(milliseconds: bestTime),
+        score: bestScore,
+        avatarUrl: profile?['avatar_url'] as String?,
+        timestamp: playerBest['created_at'] != null
+            ? DateTime.tryParse(playerBest['created_at'] as String)
             : null,
       );
 
@@ -499,8 +575,8 @@ class LeaderboardService {
   /// Fetch leaderboard entries filtered by game mode and timeframe.
   ///
   /// Daily Scramble entries have `region = 'daily'`; Training Flight entries
-  /// have any other region value. Results are deduplicated per player (best
-  /// score kept) and ranked by score descending, time ascending.
+  /// have any other region value. Each flight is its own entry — no
+  /// deduplication.
   Future<List<LeaderboardEntry>> fetchModeLeaderboard({
     required bool isDailyScramble,
     required TimeframeTab timeframe,
@@ -511,11 +587,12 @@ class LeaderboardService {
     if (cached != null) return cached;
 
     try {
+      // Step 1: Fetch scores (no embedded profile join).
       final query = _client
           .from('scores')
           .select(
-            'score, time_ms, region, round_emojis, round_details, created_at, '
-            'user_id, profiles(username, avatar_url, level)',
+            'score, time_ms, region, round_emojis, round_details, '
+            'created_at, user_id',
           );
 
       // Filter by game mode.
@@ -549,16 +626,20 @@ class LeaderboardService {
           .order('time_ms', ascending: true)
           .limit(limit);
 
-      // Map every score row to a leaderboard entry (no dedup — each flight
-      // is its own entry, even if the same player appears multiple times).
+      // Step 2: Batch-fetch profiles for all user IDs in the result.
+      final userIds = data.map((r) => r['user_id'] as String).toSet().toList();
+      final profiles = await _fetchProfiles(userIds);
+
+      // Step 3: Map every score row to a leaderboard entry.
       final entries = <LeaderboardEntry>[];
       for (int i = 0; i < data.length; i++) {
         final row = data[i];
-        final profile = row['profiles'] as Map<String, dynamic>?;
+        final userId = row['user_id'] as String;
+        final profile = profiles[userId];
         entries.add(
           LeaderboardEntry(
             rank: i + 1,
-            playerId: row['user_id'] as String,
+            playerId: userId,
             playerName: profile?['username'] as String? ?? 'Unknown',
             time: Duration(milliseconds: row['time_ms'] as int? ?? 0),
             score: row['score'] as int? ?? 0,
@@ -573,11 +654,9 @@ class LeaderboardService {
         );
       }
 
-      // Batch-fetch equipped plane IDs.
+      // Step 4: Batch-fetch equipped plane IDs.
       if (entries.isNotEmpty) {
-        final planeMap = await _fetchPlaneIds(
-          entries.map((e) => e.playerId).toList(),
-        );
+        final planeMap = await _fetchPlaneIds(userIds);
         for (var i = 0; i < entries.length; i++) {
           final planeId = planeMap[entries[i].playerId];
           if (planeId != null) {
@@ -590,7 +669,7 @@ class LeaderboardService {
       return entries;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchModeLeaderboard failed: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -654,8 +733,30 @@ class LeaderboardService {
     }
   }
 
+  /// Batch-fetch profile rows for the given user IDs.
+  ///
+  /// Returns a map of `userId → {username, avatar_url, level}`.
+  /// If the profiles query fails (e.g. RLS), returns an empty map so that
+  /// the leaderboard still renders with "Unknown" names.
+  Future<Map<String, Map<String, dynamic>>> _fetchProfiles(
+    List<String> userIds,
+  ) async {
+    if (userIds.isEmpty) return {};
+    try {
+      final data = await _client
+          .from('profiles')
+          .select('id, username, avatar_url, level')
+          .inFilter('id', userIds);
+      return {for (final row in data) row['id'] as String: row};
+    } catch (e) {
+      debugPrint('[LeaderboardService] _fetchProfiles failed: $e');
+      return {};
+    }
+  }
+
   /// Batch-fetch equipped plane IDs for the given user IDs.
   Future<Map<String, String>> _fetchPlaneIds(List<String> userIds) async {
+    if (userIds.isEmpty) return {};
     try {
       final data = await _client
           .from('account_state')
@@ -695,15 +796,18 @@ class LeaderboardService {
     }).toList();
   }
 
+  /// Map score rows + a separate profiles map into [LeaderboardEntry] objects.
   List<LeaderboardEntry> _mapToLeaderboardEntries(
     List<Map<String, dynamic>> data,
+    Map<String, Map<String, dynamic>> profiles,
   ) {
     return List<LeaderboardEntry>.generate(data.length, (i) {
       final row = data[i];
-      final profile = row['profiles'] as Map<String, dynamic>?;
+      final userId = row['user_id'] as String? ?? '';
+      final profile = profiles[userId];
       return LeaderboardEntry(
         rank: i + 1,
-        playerId: row['user_id'] as String? ?? '',
+        playerId: userId,
         playerName: profile?['username'] as String? ?? 'Unknown',
         time: Duration(milliseconds: row['time_ms'] as int? ?? 0),
         score: row['score'] as int? ?? 0,

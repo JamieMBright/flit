@@ -27,6 +27,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   late final TabController _modeTabController;
   TimeframeTab _timeframe = TimeframeTab.today;
   bool _loading = true;
+  String? _errorMessage;
   List<LeaderboardEntry> _entries = [];
   LeaderboardEntry? _playerRank;
 
@@ -60,29 +61,44 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   }
 
   Future<void> _loadData() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
 
-    final entries = await LeaderboardService.instance.fetchModeLeaderboard(
-      isDailyScramble: _isDailyScramble,
-      timeframe: _timeframe,
-    );
+    try {
+      final entries = await LeaderboardService.instance.fetchModeLeaderboard(
+        isDailyScramble: _isDailyScramble,
+        timeframe: _timeframe,
+      );
 
-    if (mounted) {
-      setState(() {
-        _entries = entries;
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _entries = entries;
+          _loading = false;
+        });
+      }
+
+      // Load player rank in parallel (mode-aware).
+      _loadPlayerRank();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _errorMessage = 'Failed to load leaderboard. Tap to retry.';
+        });
+      }
     }
-
-    // Load player rank in parallel.
-    _loadPlayerRank();
   }
 
   Future<void> _loadPlayerRank() async {
     final userId = _userId;
     if (userId == null) return;
 
-    final rank = await LeaderboardService.instance.fetchPlayerRank(userId);
+    final rank = await LeaderboardService.instance.fetchPlayerRank(
+      userId,
+      isDailyScramble: _isDailyScramble,
+    );
     if (mounted) {
       setState(() => _playerRank = rank);
     }
@@ -126,6 +142,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         Expanded(
           child: _loading
               ? const Center(child: CircularProgressIndicator())
+              : _errorMessage != null
+              ? _ErrorState(message: _errorMessage!, onRetry: _loadData)
               : _entries.isEmpty
               ? const _EmptyState()
               : ListView.builder(
@@ -1198,6 +1216,56 @@ class _EmptyState extends StatelessWidget {
           style: TextStyle(color: FlitColors.textMuted, fontSize: 14),
         ),
       ],
+    ),
+  );
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: GestureDetector(
+      onTap: onRetry,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.cloud_off_rounded,
+            size: 64,
+            color: FlitColors.textMuted.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+            decoration: BoxDecoration(
+              color: FlitColors.accent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text(
+              'Retry',
+              style: TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }
