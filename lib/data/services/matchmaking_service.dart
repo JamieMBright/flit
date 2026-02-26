@@ -123,8 +123,8 @@ class MatchmakingService {
   /// the oldest qualifying entry (FIFO).
   ///
   /// If a match is found:
-  /// 1. Both pool entries are marked as matched.
-  /// 2. A challenge is created between the two players.
+  /// 1. A challenge is created between the two players.
+  /// 2. Both pool entries are marked as matched.
   /// 3. Both players are auto-friended.
   ///
   /// Returns a [MatchResult] indicating whether a match was found.
@@ -188,11 +188,10 @@ class MatchmakingService {
           (profile['username'] as String?) ??
           'Challenger';
 
-      // 4. Create a challenge between the two players using the matched seed.
+      // 4. Create a challenge — CURRENT user must be challenger_id
+      //    (RLS requires auth.uid() = challenger_id for INSERT).
       final rng = Random();
       final challengeRounds = List.generate(Challenge.totalRounds, (i) {
-        // Use round data from the pool entry if available, otherwise
-        // generate new seeds based on the original seed.
         if (i < matchedRounds.length) {
           final poolRound = matchedRounds[i] as Map<String, dynamic>;
           return <String, dynamic>{
@@ -209,10 +208,10 @@ class MatchmakingService {
       final challengeData = await _client
           .from('challenges')
           .insert({
-            'challenger_id': matchedUserId,
-            'challenger_name': opponentName,
-            'challenged_id': _userId,
-            'challenged_name': playerName,
+            'challenger_id': _userId,
+            'challenger_name': playerName,
+            'challenged_id': matchedUserId,
+            'challenged_name': opponentName,
             'status': 'pending',
             'rounds': challengeRounds,
           })
@@ -223,6 +222,8 @@ class MatchmakingService {
 
       // 5. Mark both pool entries as matched.
       final now = DateTime.now().toUtc().toIso8601String();
+
+      // Mark our own entry first (RLS always allows user_id = auth.uid()).
       final myEntryId =
           myPoolEntryId ??
           (await _client
@@ -236,21 +237,6 @@ class MatchmakingService {
                   .limit(1)
                   .maybeSingle())?['id']
               as String?;
-      if (myEntryId == null) {
-        debugPrint(
-          '[MatchmakingService] findMatch warning: caller pool entry missing; '
-          'opponent entry will be marked matched only',
-        );
-      }
-
-      await _client
-          .from('matchmaking_pool')
-          .update({
-            'matched_at': now,
-            'matched_with': _userId,
-            'challenge_id': challengeId,
-          })
-          .eq('id', matchedEntryId);
 
       if (myEntryId != null) {
         await _client
@@ -262,6 +248,16 @@ class MatchmakingService {
             })
             .eq('id', myEntryId);
       }
+
+      // Mark the opponent's entry (RLS allows update when matched_at IS NULL).
+      await _client
+          .from('matchmaking_pool')
+          .update({
+            'matched_at': now,
+            'matched_with': _userId,
+            'challenge_id': challengeId,
+          })
+          .eq('id', matchedEntryId);
 
       // 6. Auto-friend both players (fire-and-forget, ignore if already friends).
       _autoFriend(matchedUserId);
@@ -276,6 +272,127 @@ class MatchmakingService {
     } catch (e) {
       debugPrint('[MatchmakingService] findMatch failed: $e');
       return const MatchResult(matched: false);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Check for existing matches (passive match detection)
+  // ---------------------------------------------------------------------------
+
+  /// Check if any of the current user's pool entries have been matched by
+  /// another player while they were away.
+  ///
+  /// Returns a [MatchResult] with the most recent match, or
+  /// `MatchResult(matched: false)` if no matches found.
+  Future<MatchResult> checkForExistingMatches() async {
+    if (_userId == null) return const MatchResult(matched: false);
+    try {
+      // Look for entries that were matched (matched_at != null) and have a
+      // challenge_id, ordered by most recent first.
+      final matched = await _client
+          .from('matchmaking_pool')
+          .select()
+          .eq('user_id', _userId!)
+          .not('matched_at', 'is', null)
+          .not('challenge_id', 'is', null)
+          .order('matched_at', ascending: false)
+          .limit(1);
+
+      if (matched.isEmpty) {
+        return const MatchResult(matched: false);
+      }
+
+      final entry = matched.first;
+      final challengeId = entry['challenge_id'] as String?;
+      final matchedWith = entry['matched_with'] as String?;
+
+      if (challengeId == null || matchedWith == null) {
+        return const MatchResult(matched: false);
+      }
+
+      // Check if the challenge is still actionable (pending or in_progress).
+      final challenge = await _client
+          .from('challenges')
+          .select('id, status')
+          .eq('id', challengeId)
+          .maybeSingle();
+
+      if (challenge == null) {
+        return const MatchResult(matched: false);
+      }
+
+      final status = challenge['status'] as String?;
+      if (status != 'pending' && status != 'in_progress') {
+        return const MatchResult(matched: false);
+      }
+
+      // Fetch the opponent's name.
+      final profile = await _client
+          .from('profiles')
+          .select('display_name, username')
+          .eq('id', matchedWith)
+          .maybeSingle();
+
+      final opponentName =
+          (profile?['display_name'] as String?) ??
+          (profile?['username'] as String?) ??
+          'Challenger';
+
+      return MatchResult(
+        matched: true,
+        opponentId: matchedWith,
+        opponentName: opponentName,
+        challengeId: challengeId,
+        poolEntryId: entry['id'] as String?,
+      );
+    } catch (e) {
+      debugPrint('[MatchmakingService] checkForExistingMatches failed: $e');
+      return const MatchResult(matched: false);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Cancel / remove pool entry
+  // ---------------------------------------------------------------------------
+
+  /// Cancel a matchmaking pool entry. Only unmatched entries can be cancelled.
+  ///
+  /// Returns true if the entry was successfully deleted.
+  Future<bool> cancelPoolEntry(String entryId) async {
+    if (_userId == null) return false;
+    try {
+      final deleted = await _client
+          .from('matchmaking_pool')
+          .delete()
+          .eq('id', entryId)
+          .eq('user_id', _userId!)
+          .isFilter('matched_at', null)
+          .select('id');
+
+      return deleted.isNotEmpty;
+    } catch (e) {
+      debugPrint('[MatchmakingService] cancelPoolEntry failed: $e');
+      return false;
+    }
+  }
+
+  /// Cancel ALL of the current user's unmatched pool entries.
+  ///
+  /// Returns the number of entries cancelled.
+  Future<int> cancelAllPoolEntries() async {
+    if (_userId == null) return 0;
+    try {
+      final deleted = await _client
+          .from('matchmaking_pool')
+          .delete()
+          .eq('user_id', _userId!)
+          .isFilter('matched_at', null)
+          .select('id');
+
+      return deleted.length;
+    } catch (e) {
+      debugPrint('[MatchmakingService] cancelAllPoolEntries failed: $e');
+      return 0;
     }
   }
 
@@ -353,9 +470,6 @@ class MatchmakingService {
   Future<void> _autoFriend(String otherUserId) async {
     try {
       await FriendsService.instance.sendFriendRequest(otherUserId);
-      // The other player will see a friend request. In a full implementation,
-      // we'd auto-accept on both sides, but for now a pending request is fine
-      // since both players will see each other in the challenge flow.
     } catch (e) {
       debugPrint('[MatchmakingService] autoFriend failed (non-critical): $e');
     }
