@@ -46,6 +46,11 @@ class Promotion {
   /// When true, the promotion is active regardless of the date range.
   final bool manualActive;
 
+  /// Categories this promotion applies to.
+  /// Empty list or containing 'all' means applies to everything.
+  /// Valid values: 'all', 'planes', 'contrails', 'companions', 'gold'.
+  final List<String> appliesTo;
+
   const Promotion({
     required this.name,
     required this.type,
@@ -54,7 +59,14 @@ class Promotion {
     this.startDate,
     this.endDate,
     this.manualActive = false,
+    this.appliesTo = const ['all'],
   });
+
+  /// Whether this promotion applies to the given [category].
+  bool appliesToCategory(String category) {
+    if (appliesTo.isEmpty || appliesTo.contains('all')) return true;
+    return appliesTo.contains(category);
+  }
 
   /// True if the promotion is currently active.
   ///
@@ -83,6 +95,11 @@ class Promotion {
           ? DateTime.tryParse(json['endDate'] as String)
           : null,
       manualActive: json['manualActive'] as bool? ?? false,
+      appliesTo:
+          (json['appliesTo'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const ['all'],
     );
   }
 
@@ -95,6 +112,7 @@ class Promotion {
       if (startDate != null) 'startDate': startDate!.toIso8601String(),
       if (endDate != null) 'endDate': endDate!.toIso8601String(),
       'manualActive': manualActive,
+      'appliesTo': appliesTo,
     };
   }
 }
@@ -309,7 +327,11 @@ class EconomyConfig {
   /// 1. If [shopPriceOverrides] contains [cosmeticId], use that value.
   /// 2. Otherwise, apply the best (largest) active shop discount to
   ///    [catalogPrice] and return the discounted price (minimum 0).
-  int effectivePrice(String cosmeticId, int catalogPrice) {
+  int effectivePrice(
+    String cosmeticId,
+    int catalogPrice, {
+    String category = 'all',
+  }) {
     if (shopPriceOverrides.containsKey(cosmeticId)) {
       return shopPriceOverrides[cosmeticId]!;
     }
@@ -317,8 +339,9 @@ class EconomyConfig {
     final discounts = activePromotions
         .where(
           (p) =>
-              p.type == PromotionType.shopDiscount ||
-              p.type == PromotionType.both,
+              (p.type == PromotionType.shopDiscount ||
+                  p.type == PromotionType.both) &&
+              p.appliesToCategory(category),
         )
         .map((p) => p.shopDiscountPercent);
 
@@ -338,8 +361,9 @@ class EconomyConfig {
     final discounts = activePromotions
         .where(
           (p) =>
-              p.type == PromotionType.shopDiscount ||
-              p.type == PromotionType.both,
+              (p.type == PromotionType.shopDiscount ||
+                  p.type == PromotionType.both) &&
+              p.appliesToCategory('gold'),
         )
         .map((p) => p.shopDiscountPercent);
 
@@ -355,5 +379,26 @@ class EconomyConfig {
       final rounded = (discountedPrice * 100).round() / 100.0;
       return g.withPromoPrice(rounded);
     }).toList();
+  }
+
+  /// Best active shop discount percentage for a given [category].
+  ///
+  /// Returns 0 when no applicable discount is active.
+  int bestDiscountForCategory(String category) {
+    final discounts = activePromotions
+        .where(
+          (p) =>
+              (p.type == PromotionType.shopDiscount ||
+                  p.type == PromotionType.both) &&
+              p.appliesToCategory(category),
+        )
+        .map((p) => p.shopDiscountPercent);
+    if (discounts.isEmpty) return 0;
+    return discounts.reduce((a, b) => a > b ? a : b);
+  }
+
+  /// Whether any shop discount promotion is currently active for [category].
+  bool hasActiveDiscountFor(String category) {
+    return bestDiscountForCategory(category) > 0;
   }
 }
