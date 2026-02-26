@@ -53,6 +53,7 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
   String? _errorMessage;
   List<Map<String, dynamic>> _poolEntries = [];
   late final AnimationController _pulseController;
+  bool _cancelling = false;
 
   @override
   void initState() {
@@ -73,7 +74,14 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
   Future<void> _loadPoolEntries() async {
     final entries = await MatchmakingService.instance.getMyPoolEntries();
     if (!mounted) return;
-    setState(() => _poolEntries = entries);
+    setState(() {
+      _poolEntries = entries;
+      // If there are existing pool entries and we're in "ready" state,
+      // switch to "waiting" so the user sees them and can check/cancel.
+      if (_poolEntries.isNotEmpty && _state == _MatchState.ready) {
+        _state = _MatchState.waiting;
+      }
+    });
   }
 
   Future<void> _findChallenger() async {
@@ -136,9 +144,27 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
     }
   }
 
+  /// Two-phase check:
+  /// 1. First see if someone already matched our pool entry (passive detection).
+  /// 2. If not, actively search for a new opponent.
   Future<void> _checkForMatches() async {
     setState(() => _state = _MatchState.searching);
 
+    // Phase 1: Check if someone already matched one of our entries.
+    final existingMatch = await MatchmakingService.instance
+        .checkForExistingMatches();
+
+    if (!mounted) return;
+
+    if (existingMatch.matched) {
+      setState(() {
+        _state = _MatchState.matched;
+        _matchResult = existingMatch;
+      });
+      return;
+    }
+
+    // Phase 2: Actively search for a new opponent.
     final account = ref.read(accountProvider);
     final player = account.currentPlayer;
     final elo = MatchmakingService.estimateElo(
@@ -165,6 +191,43 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
       await _loadPoolEntries();
       if (!mounted) return;
       setState(() => _state = _MatchState.waiting);
+    }
+  }
+
+  /// Cancel all pool entries and return to ready state.
+  Future<void> _cancelMatchmaking() async {
+    setState(() => _cancelling = true);
+    final count = await MatchmakingService.instance.cancelAllPoolEntries();
+    if (!mounted) return;
+
+    setState(() {
+      _cancelling = false;
+      _poolEntries = [];
+      _state = _MatchState.ready;
+    });
+
+    if (count > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Cancelled $count ${count == 1 ? 'submission' : 'submissions'}',
+          ),
+          backgroundColor: FlitColors.textMuted,
+        ),
+      );
+    }
+  }
+
+  /// Cancel a single pool entry.
+  Future<void> _cancelEntry(String entryId) async {
+    final ok = await MatchmakingService.instance.cancelPoolEntry(entryId);
+    if (!mounted) return;
+    if (ok) {
+      await _loadPoolEntries();
+      if (!mounted) return;
+      if (_poolEntries.isEmpty) {
+        setState(() => _state = _MatchState.ready);
+      }
     }
   }
 
@@ -260,6 +323,7 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
                 _PoolEntriesSection(
                   entries: _poolEntries,
                   onCheckMatch: _checkForMatches,
+                  onCancelEntry: _cancelEntry,
                 ),
               ],
               const SizedBox(height: 16),
@@ -279,7 +343,11 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
           message: 'Submitting to matchmaking pool...',
         );
       case _MatchState.searching:
-        return _SearchingContent(pulseController: _pulseController);
+        return _SearchingContent(
+          pulseController: _pulseController,
+          onCancel: _cancelMatchmaking,
+          cancelling: _cancelling,
+        );
       case _MatchState.matched:
         return _MatchedContent(
           matchResult: _matchResult!,
@@ -289,6 +357,8 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
         return _WaitingContent(
           entryCount: _poolEntries.length,
           onCheckAgain: _checkForMatches,
+          onCancel: _cancelMatchmaking,
+          cancelling: _cancelling,
         );
       case _MatchState.error:
         return _ErrorContent(
@@ -495,9 +565,15 @@ class _LoadingContent extends StatelessWidget {
 }
 
 class _SearchingContent extends StatelessWidget {
-  const _SearchingContent({required this.pulseController});
+  const _SearchingContent({
+    required this.pulseController,
+    required this.onCancel,
+    required this.cancelling,
+  });
 
   final AnimationController pulseController;
+  final VoidCallback onCancel;
+  final bool cancelling;
 
   @override
   Widget build(BuildContext context) => Center(
@@ -531,6 +607,22 @@ class _SearchingContent extends StatelessWidget {
         const Text(
           'Looking for a worthy opponent',
           style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+        ),
+        const SizedBox(height: 24),
+        TextButton.icon(
+          onPressed: cancelling ? null : onCancel,
+          icon: cancelling
+              ? const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: FlitColors.textMuted,
+                  ),
+                )
+              : const Icon(Icons.close, size: 16),
+          label: Text(cancelling ? 'CANCELLING...' : 'CANCEL'),
+          style: TextButton.styleFrom(foregroundColor: FlitColors.textMuted),
         ),
       ],
     ),
@@ -646,10 +738,17 @@ class _MatchedContent extends StatelessWidget {
 }
 
 class _WaitingContent extends StatelessWidget {
-  const _WaitingContent({required this.entryCount, required this.onCheckAgain});
+  const _WaitingContent({
+    required this.entryCount,
+    required this.onCheckAgain,
+    required this.onCancel,
+    required this.cancelling,
+  });
 
   final int entryCount;
   final VoidCallback onCheckAgain;
+  final VoidCallback onCancel;
+  final bool cancelling;
 
   @override
   Widget build(BuildContext context) => Center(
@@ -707,6 +806,32 @@ class _WaitingContent extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(width: 12),
+            OutlinedButton.icon(
+              onPressed: cancelling ? null : onCancel,
+              icon: cancelling
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: FlitColors.error,
+                      ),
+                    )
+                  : const Icon(Icons.close, size: 18),
+              label: Text(cancelling ? 'CANCELLING...' : 'CANCEL'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: FlitColors.error,
+                side: const BorderSide(color: FlitColors.error),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
           ],
         ),
       ],
@@ -750,10 +875,12 @@ class _PoolEntriesSection extends StatelessWidget {
   const _PoolEntriesSection({
     required this.entries,
     required this.onCheckMatch,
+    required this.onCancelEntry,
   });
 
   final List<Map<String, dynamic>> entries;
   final VoidCallback onCheckMatch;
+  final void Function(String entryId) onCancelEntry;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -802,6 +929,7 @@ class _PoolEntriesSection extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(width: 8),
           itemBuilder: (context, index) {
             final entry = entries[index];
+            final entryId = entry['id'] as String? ?? '';
             final createdAt = entry['created_at'] != null
                 ? DateTime.tryParse(entry['created_at'] as String)
                 : null;
@@ -811,7 +939,7 @@ class _PoolEntriesSection extends StatelessWidget {
             final elo = entry['elo_rating'] as int? ?? 0;
 
             return Container(
-              width: 140,
+              width: 160,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: FlitColors.backgroundMid,
@@ -836,6 +964,15 @@ class _PoolEntriesSection extends StatelessWidget {
                           color: FlitColors.textPrimary,
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => onCancelEntry(entryId),
+                        child: const Icon(
+                          Icons.close,
+                          color: FlitColors.textMuted,
+                          size: 16,
                         ),
                       ),
                     ],

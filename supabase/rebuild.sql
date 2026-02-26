@@ -479,9 +479,18 @@ DO $$ BEGIN
     CREATE POLICY "Users can read own or matched entries"
       ON public.matchmaking_pool FOR SELECT
       USING (auth.uid() = user_id OR auth.uid() = matched_with);
+    -- UPDATE: USING allows touching own rows or unmatched rows (so the matcher
+    -- can mark an opponent's entry). WITH CHECK (true) permits the new row
+    -- state after update (matched_at is now set, which would otherwise fail
+    -- the implicit USING re-check on the new row).
     CREATE POLICY "Users can update own entries on match"
       ON public.matchmaking_pool FOR UPDATE
-      USING (auth.uid() = user_id OR matched_at IS NULL);
+      USING (auth.uid() = user_id OR matched_at IS NULL)
+      WITH CHECK (true);
+    -- DELETE: owners can remove their own unmatched entries (cancel matchmaking).
+    CREATE POLICY "Users can delete own unmatched entries"
+      ON public.matchmaking_pool FOR DELETE
+      USING (auth.uid() = user_id AND matched_at IS NULL);
   END IF;
 END $$;
 

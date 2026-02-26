@@ -95,26 +95,39 @@ class FriendsService {
   Future<bool> sendFriendRequest(String addresseeId) async {
     if (_userId == null) return false;
     try {
-      // If they already sent us a pending request, auto-accept it so both
-      // players become friends immediately when they add each other.
-      final reversePending = await _client
+      // Check if they already sent us a request (any status).
+      final reverseExisting = await _client
           .from('friendships')
-          .select('id')
+          .select('id, status')
           .eq('requester_id', addresseeId)
           .eq('addressee_id', _userId!)
-          .eq('status', 'pending')
           .maybeSingle();
 
-      if (reversePending != null) {
-        await _client
-            .from('friendships')
-            .update({'status': 'accepted'})
-            .eq('id', reversePending['id'] as int);
-        await _deleteOwnPendingRequest(addresseeId);
-        invalidateCache();
-        return true;
+      if (reverseExisting != null) {
+        final reverseStatus = reverseExisting['status'] as String?;
+
+        // Already friends via their request — nothing to do.
+        if (reverseStatus == 'accepted') {
+          invalidateCache();
+          return true;
+        }
+
+        // They sent us a pending request — auto-accept it.
+        if (reverseStatus == 'pending') {
+          await _client
+              .from('friendships')
+              .update({'status': 'accepted'})
+              .eq('id', reverseExisting['id'] as int);
+          await _deleteOwnPendingRequest(addresseeId);
+          invalidateCache();
+          return true;
+        }
+
+        // They declined us or we declined them — this row belongs to them,
+        // so we skip it and fall through to check our own direction below.
       }
 
+      // Check our own direction for an existing row.
       final ownExisting = await _client
           .from('friendships')
           .select('id, status')
@@ -124,10 +137,19 @@ class FriendsService {
       if (ownExisting != null) {
         final existingStatus = ownExisting['status'] as String?;
         final existingId = (ownExisting['id'] as num).toInt();
+
+        // Already friends — nothing to do.
+        if (existingStatus == 'accepted') {
+          invalidateCache();
+          return true;
+        }
+
+        // Already pending — idempotent success.
         if (existingStatus == 'pending') {
           invalidateCache();
           return true;
         }
+
         if (existingStatus == 'declined') {
           // RLS only allows the addressee to UPDATE, so delete the old row
           // and insert a fresh pending request instead.
