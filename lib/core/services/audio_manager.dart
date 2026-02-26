@@ -175,10 +175,12 @@ class AudioManager {
 
       // Rocket roar
       case 'plane_rocket': // Rocket Ship
+      case 'plane_shuttle': // Challenger Shuttle
         return EngineType.rocket;
 
       // Just wind
       case 'plane_paper': // Paper Plane
+      case 'plane_hot_air_balloon': // Hot Air Balloon
         return EngineType.wind;
 
       // Smooth jet (default for all jets, concordes, etc.)

@@ -346,6 +346,45 @@ abstract class CosmeticCatalog {
       fuelEfficiency: 0.7,
     ),
 
+    // --- Comical / Novelty ---
+    Cosmetic(
+      id: 'plane_hot_air_balloon',
+      name: 'Hot Air Balloon',
+      type: CosmeticType.plane,
+      price: 1500,
+      rarity: CosmeticRarity.rare,
+      description:
+          'Gentle. Majestic. Painfully slow. Pack a lunch — and dinner.',
+      colorScheme: {
+        'primary': 0xFFE03030, // Red balloon envelope
+        'secondary': 0xFFF0C040, // Gold/yellow stripes
+        'detail': 0xFF6B3A1E, // Wicker basket brown
+      },
+      wingSpan: 40.0,
+      handling: 0.4,
+      speed: 0.3,
+      fuelEfficiency: 2.5,
+    ),
+    Cosmetic(
+      id: 'plane_shuttle',
+      name: 'Challenger Shuttle',
+      type: CosmeticType.plane,
+      price: 6000,
+      rarity: CosmeticRarity.rare,
+      requiredLevel: 8,
+      description:
+          'Orbital velocity. Steers like a brick. Fuel gauge is decorative.',
+      colorScheme: {
+        'primary': 0xFFF5F5F5, // NASA white
+        'secondary': 0xFF1A1A1A, // Heat shield black
+        'detail': 0xFF3366CC, // NASA blue
+      },
+      wingSpan: 24.0,
+      handling: 0.5,
+      speed: 5.0,
+      fuelEfficiency: 0.2,
+    ),
+
     // --- Epic (sorted by price) ---
     Cosmetic(
       id: 'plane_stealth',

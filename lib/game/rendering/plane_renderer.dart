@@ -295,6 +295,26 @@ class PlaneRenderer {
       case 'plane_platinum_eagle':
         _renderEagle(canvas, bankCos, bankSin, wingSpan, colorScheme, planeId);
         break;
+      case 'plane_hot_air_balloon':
+        _renderHotAirBalloon(
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          planeId,
+        );
+        break;
+      case 'plane_shuttle':
+        _renderShuttle(
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          planeId,
+        );
+        break;
       default:
         _renderBiPlane(
           canvas,
@@ -2329,6 +2349,359 @@ class PlaneRenderer {
         Paint()..color = detail.withOpacity(0.5),
       );
     }
+
+    canvas.restore(); // End body roll transform
+  }
+
+  // ─── Hot Air Balloon ────────────────────────────────────────────────
+
+  static void _renderHotAirBalloon(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+    String planeId,
+  ) {
+    final rng = _sketchRng(planeId);
+    final primary = _primary(colorScheme, 0xFFE03030); // Red envelope
+    final secondary = _secondary(colorScheme, 0xFFF0C040); // Yellow stripes
+    final detail = _detail(colorScheme, 0xFF6B3A1E); // Wicker brown
+
+    final bodyShift = bankSin * 0.8; // Balloons sway gently, not bank hard
+    final sway = bankSin * 2.5; // Basket sways more than the balloon
+
+    // --- Body group ---
+    canvas.save();
+    final rollScale = 0.7 + bankCos.abs() * 0.3; // Subtle roll
+    canvas.translate(bodyShift, 0);
+    canvas.scale(rollScale, 1.0);
+    canvas.translate(-bodyShift, 0);
+
+    // Suspension cables (behind envelope, from basket rim to envelope base)
+    final cablePaint = Paint()
+      ..color = _darken(detail, 0.2).withOpacity(0.7)
+      ..strokeWidth = 0.6
+      ..strokeCap = StrokeCap.round;
+    // Four cables from basket corners to balloon base
+    for (final dx in [-3.5, -1.5, 1.5, 3.5]) {
+      canvas.drawLine(
+        Offset(bodyShift + dx * 0.8, 4), // Balloon base attachment
+        Offset(bodyShift + sway * 0.15 + dx * 0.5, 14), // Basket rim
+        cablePaint,
+      );
+    }
+
+    // --- Balloon envelope (the big round part) ---
+    // Main envelope shape — a big upside-down teardrop
+    final envelopePath = Path()
+      ..moveTo(bodyShift, -22) // Crown (top)
+      ..quadraticBezierTo(
+        bodyShift + 14,
+        -18,
+        bodyShift + 13,
+        -6,
+      ) // Right bulge
+      ..quadraticBezierTo(
+        bodyShift + 11,
+        2,
+        bodyShift + 5,
+        5,
+      ) // Right taper to throat
+      ..lineTo(bodyShift - 5, 5) // Throat (bottom opening)
+      ..quadraticBezierTo(bodyShift - 11, 2, bodyShift - 13, -6) // Left taper
+      ..quadraticBezierTo(
+        bodyShift - 14,
+        -18,
+        bodyShift,
+        -22,
+      ) // Left bulge back to crown
+      ..close();
+    canvas.drawPath(envelopePath, Paint()..color = primary);
+
+    // Coloured gore stripes (vertical panels) — alternating secondary colour
+    canvas.save();
+    canvas.clipPath(envelopePath);
+    final stripePaint = Paint()..color = secondary;
+    // Draw vertical stripes across the balloon
+    for (var i = -2; i <= 2; i++) {
+      final x = bodyShift + i * 5.0;
+      final stripeRect = Rect.fromLTWH(x - 1.2, -23, 2.4, 29);
+      canvas.drawRect(stripeRect, stripePaint);
+    }
+    canvas.restore();
+
+    // Sketch outline on envelope
+    final envelopeSketchPaint = Paint()
+      ..color = _darken(primary, 0.40).withOpacity(0.45)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    _sketchPath(envelopePath, canvas, envelopeSketchPaint, rng, wobble: 0.35);
+
+    // Crown circle (reinforcement patch at top)
+    canvas.drawCircle(
+      Offset(bodyShift, -21.5),
+      2.0,
+      Paint()..color = _darken(primary, 0.15),
+    );
+
+    // Throat opening (dark circle at bottom of envelope)
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, 5), width: 10, height: 3),
+      Paint()..color = _darken(primary, 0.35),
+    );
+
+    // Burner flame (small orange glow beneath throat)
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, 6.5), width: 3, height: 4),
+      Paint()..color = const Color(0xFFFF8800).withOpacity(0.7),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, 6.0), width: 1.5, height: 2.5),
+      Paint()..color = const Color(0xFFFFDD44).withOpacity(0.8),
+    );
+
+    // --- Basket (wicker gondola) ---
+    final basketShift = bodyShift + sway * 0.15;
+
+    // Basket body (trapezoid — wider at top, narrower at bottom)
+    final basketPath = Path()
+      ..moveTo(basketShift - 4, 14) // Top left rim
+      ..lineTo(basketShift + 4, 14) // Top right rim
+      ..lineTo(basketShift + 3, 20) // Bottom right
+      ..lineTo(basketShift - 3, 20) // Bottom left
+      ..close();
+    canvas.drawPath(basketPath, Paint()..color = detail);
+
+    // Basket weave texture — horizontal lines
+    final weavePaint = Paint()
+      ..color = _darken(detail, 0.25).withOpacity(0.5)
+      ..strokeWidth = 0.5;
+    for (var y = 15.5; y < 20; y += 1.5) {
+      final t = (y - 14) / 6; // 0..1 from top to bottom
+      final halfW = 4 - t * 1.0; // Narrows toward bottom
+      canvas.drawLine(
+        Offset(basketShift - halfW, y),
+        Offset(basketShift + halfW, y),
+        weavePaint,
+      );
+    }
+
+    // Basket rim (dark ring at top)
+    canvas.drawLine(
+      Offset(basketShift - 4.5, 14),
+      Offset(basketShift + 4.5, 14),
+      Paint()
+        ..color = _darken(detail, 0.3)
+        ..strokeWidth = 1.2
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // Pencil outline on basket
+    _pencilOutline(basketPath, canvas, detail, strokeWidth: 0.9);
+
+    canvas.restore(); // End body roll transform
+  }
+
+  // ─── Space Shuttle (Challenger) ────────────────────────────────────
+
+  static void _renderShuttle(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+    String planeId,
+  ) {
+    final rng = _sketchRng(planeId);
+    final primary = _primary(colorScheme, 0xFFF5F5F5); // NASA white
+    final secondary = _secondary(colorScheme, 0xFF1A1A1A); // Heat shield
+    final detail = _detail(colorScheme, 0xFF3366CC); // NASA blue
+
+    final shade = -bankSin;
+    final bodyShift = bankSin * 1.5;
+    final dynamicWingSpan = wingSpan * bankCos.abs();
+    final wingDip = -bankSin * 3.0;
+
+    // Delta wings with black heat-shield underside
+    final leftWingColor = shade > 0
+        ? secondary
+        : Color.lerp(secondary, Colors.black, 0.3)!;
+    final rightWingColor = shade < 0
+        ? secondary
+        : Color.lerp(secondary, Colors.black, 0.3)!;
+
+    final leftSpan =
+        dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
+    // Stubby delta wings (shuttle has short wingspan relative to length)
+    final leftWing = Path()
+      ..moveTo(-3 + bodyShift, -2)
+      ..lineTo(-leftSpan, 6 + wingDip) // Wing tip (mid-body)
+      ..lineTo(-leftSpan + 2, 8 + wingDip) // Trailing edge tip
+      ..lineTo(-2 + bodyShift, 8) // Wing root trailing edge
+      ..close();
+    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 0.9);
+    _wingJointAO(canvas, Offset(-3 + bodyShift, 2), radius: 3.5);
+
+    final rightSpan =
+        dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
+    final rightWing = Path()
+      ..moveTo(3 + bodyShift, -2)
+      ..lineTo(rightSpan, 6 - wingDip)
+      ..lineTo(rightSpan - 2, 8 - wingDip)
+      ..lineTo(2 + bodyShift, 8)
+      ..close();
+    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 0.9);
+    _wingJointAO(canvas, Offset(3 + bodyShift, 2), radius: 3.5);
+
+    // --- Body group ---
+    canvas.save();
+    final rollScale = 0.55 + bankCos.abs() * 0.45;
+    canvas.translate(bodyShift, 0);
+    canvas.scale(rollScale, 1.0);
+    canvas.translate(-bodyShift, 0);
+
+    // Vertical stabilizer (tall tail fin)
+    final finPath = Path()
+      ..moveTo(bodyShift, 8)
+      ..quadraticBezierTo(bodyShift - 4, 12, bodyShift - 2, 18)
+      ..lineTo(bodyShift + 1, 18)
+      ..quadraticBezierTo(bodyShift + 1, 14, bodyShift, 8)
+      ..close();
+    canvas.drawPath(finPath, Paint()..color = primary);
+    _pencilOutline(finPath, canvas, primary, strokeWidth: 0.8);
+
+    // OMS pods (small bumps on either side of tail)
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift - 2.5, 14), width: 2, height: 4),
+      Paint()..color = primary,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift + 2.5, 14), width: 2, height: 4),
+      Paint()..color = primary,
+    );
+
+    // Fuselage — blunt nose, cylindrical body
+    final fuselagePath = Path()
+      ..moveTo(bodyShift, -20) // Nose tip
+      ..quadraticBezierTo(
+        bodyShift + 3,
+        -17,
+        bodyShift + 4,
+        -10,
+      ) // Right side of nose
+      ..lineTo(bodyShift + 3.5, 14) // Right side body
+      ..lineTo(bodyShift - 3.5, 14) // Left side body
+      ..lineTo(bodyShift - 4, -10) // Left side
+      ..quadraticBezierTo(
+        bodyShift - 3,
+        -17,
+        bodyShift,
+        -20,
+      ) // Left side of nose
+      ..close();
+    canvas.drawPath(fuselagePath, Paint()..color = primary);
+
+    // Sketch outline on fuselage
+    final fuselageSketchPaint = Paint()
+      ..color = _darken(primary, 0.35).withOpacity(0.45)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.3);
+
+    // Black heat-shield tiles on underside/nose
+    final heatShieldPath = Path()
+      ..moveTo(bodyShift, -20)
+      ..quadraticBezierTo(bodyShift + 2, -17, bodyShift + 2.5, -12)
+      ..lineTo(bodyShift - 2.5, -12)
+      ..quadraticBezierTo(bodyShift - 2, -17, bodyShift, -20)
+      ..close();
+    canvas.drawPath(heatShieldPath, Paint()..color = secondary);
+
+    // Payload bay doors (lines along body)
+    final doorPaint = Paint()
+      ..color = _darken(primary, 0.15).withOpacity(0.4)
+      ..strokeWidth = 0.5;
+    canvas.drawLine(Offset(bodyShift, -8), Offset(bodyShift, 8), doorPaint);
+    // Door hinge lines
+    canvas.drawLine(
+      Offset(bodyShift - 3.2, -6),
+      Offset(bodyShift - 3.2, 6),
+      doorPaint,
+    );
+    canvas.drawLine(
+      Offset(bodyShift + 3.2, -6),
+      Offset(bodyShift + 3.2, 6),
+      doorPaint,
+    );
+
+    // NASA "worm" accent stripe
+    canvas.drawLine(
+      Offset(bodyShift - 2, -9),
+      Offset(bodyShift - 2, 4),
+      Paint()
+        ..color = detail
+        ..strokeWidth = 1.5,
+    );
+
+    // "USA" flag accent (small rectangle)
+    canvas.drawRect(
+      Rect.fromLTWH(bodyShift + 1, -6, 2, 1.5),
+      Paint()..color = detail,
+    );
+
+    // Cockpit windows (row of small windows at nose)
+    final windowPaint = Paint()..color = const Color(0xFF4A90B8);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, -14), width: 4, height: 3),
+      windowPaint,
+    );
+    // Window frame
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, -14), width: 4, height: 3),
+      Paint()
+        ..color = _darken(primary, 0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.5,
+    );
+
+    // Main engine cluster (three SSME nozzles at the tail)
+    for (final dx in [-2.0, 0.0, 2.0]) {
+      // Nozzle
+      canvas.drawCircle(
+        Offset(bodyShift + dx, 15),
+        1.5,
+        Paint()..color = const Color(0xFF555555),
+      );
+    }
+
+    // Massive exhaust plume — multi-layer afterburner
+    // Outer yellow-white plume
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, 22), width: 10, height: 18),
+      Paint()..color = const Color(0xFFFFDD44).withOpacity(0.25),
+    );
+    // Orange flame core
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, 20), width: 7, height: 14),
+      Paint()..color = const Color(0xFFFF6600).withOpacity(0.45),
+    );
+    // White-hot inner core
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, 18), width: 4, height: 8),
+      Paint()..color = const Color(0xFFFFEECC).withOpacity(0.7),
+    );
+    // Bright center
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, 17), width: 2, height: 4),
+      Paint()..color = const Color(0xFFFFFFFF).withOpacity(0.8),
+    );
 
     canvas.restore(); // End body roll transform
   }
