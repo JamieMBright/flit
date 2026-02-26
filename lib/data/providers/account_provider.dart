@@ -294,7 +294,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// when [_supabaseLoaded] is still false.
   void _listenForTokenRefresh(String userId) {
     _authSubscription?.cancel();
-    
+
     // Guard against Supabase not being initialized (e.g., in tests).
     // If Supabase isn't ready, we can't listen for auth changes, so
     // we rely on the periodic refresh timer instead.
