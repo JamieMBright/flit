@@ -1,0 +1,1 @@
+{"timestamp":"2026-02-26T09:09:15.325Z","sessionId":"web-1772096955325-xdn7yoizv","appVersion":"v1.219","platform":"web","deviceInfo":"web-browser","severity":"critical","error":"[Async Error] [object PromiseRejectionEvent]","context":{"source":"js_error_handler","url":"https://jamiembright.github.io/flit/"},"_receivedAt":"2026-02-26T09:09:16.564Z","_id":"1772096956564-ju0wibwy"}
