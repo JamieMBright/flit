@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
+import '../../game/data/country_difficulty.dart';
+import '../../game/map/country_data.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/economy_config.dart';
@@ -1297,6 +1299,14 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
     );
   }
 
+  // ── Difficulty Editor ──
+
+  void _showDifficultyEditorDialog(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const _DifficultyEditorScreen()),
+    );
+  }
+
   // ── Build ──
 
   @override
@@ -1494,6 +1504,17 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             ),
             const SizedBox(height: 8),
           ],
+          const SizedBox(height: 24),
+
+          // Difficulty Ratings
+          const _SectionHeader(title: 'Difficulty Ratings'),
+          const SizedBox(height: 8),
+          _AdminActionCard(
+            icon: Icons.speed,
+            iconColor: const Color(0xFFFF9800),
+            label: 'View / Edit Country Difficulty',
+            onTap: () => _showDifficultyEditorDialog(context),
+          ),
           const SizedBox(height: 24),
 
           // Design Preview
@@ -3482,5 +3503,297 @@ extension _ListMapIndexed<T> on List<T> {
       result.add(f(i, this[i]));
     }
     return result;
+  }
+}
+
+// =============================================================================
+// Difficulty Editor Screen
+// =============================================================================
+
+/// Full-screen admin editor for viewing and filtering country difficulty ratings.
+///
+/// Shows all playable countries sorted by difficulty with search/filter.
+/// Admin can tap a country to see details. Future: admin overrides via Supabase.
+class _DifficultyEditorScreen extends StatefulWidget {
+  const _DifficultyEditorScreen();
+
+  @override
+  State<_DifficultyEditorScreen> createState() =>
+      _DifficultyEditorScreenState();
+}
+
+class _DifficultyEditorScreenState extends State<_DifficultyEditorScreen> {
+  String _search = '';
+  String _filterTier = 'all'; // all, easy, medium, hard, veryHard, extreme
+
+  static const _tierFilters = {
+    'all': 'All',
+    'veryEasy': 'Very Easy (0–15%)',
+    'easy': 'Easy (15–30%)',
+    'medium': 'Medium (30–50%)',
+    'hard': 'Hard (50–70%)',
+    'veryHard': 'Very Hard (70–85%)',
+    'extreme': 'Extreme (85–100%)',
+  };
+
+  List<_CountryDiffEntry> get _entries {
+    final defaults = defaultCountryDifficulty;
+    final countries = CountryData.playableCountries;
+    final entries = <_CountryDiffEntry>[];
+
+    for (final country in countries) {
+      final rating = defaults[country.code] ?? 0.55;
+      entries.add(
+        _CountryDiffEntry(
+          code: country.code,
+          name: country.name,
+          rating: rating,
+        ),
+      );
+    }
+
+    // Apply search filter
+    var filtered = entries.where((e) {
+      if (_search.isEmpty) return true;
+      final q = _search.toLowerCase();
+      return e.name.toLowerCase().contains(q) ||
+          e.code.toLowerCase().contains(q);
+    });
+
+    // Apply tier filter
+    if (_filterTier != 'all') {
+      filtered = filtered.where((e) {
+        switch (_filterTier) {
+          case 'veryEasy':
+            return e.rating <= 0.15;
+          case 'easy':
+            return e.rating > 0.15 && e.rating <= 0.30;
+          case 'medium':
+            return e.rating > 0.30 && e.rating <= 0.50;
+          case 'hard':
+            return e.rating > 0.50 && e.rating <= 0.70;
+          case 'veryHard':
+            return e.rating > 0.70 && e.rating <= 0.85;
+          case 'extreme':
+            return e.rating > 0.85;
+          default:
+            return true;
+        }
+      });
+    }
+
+    final list = filtered.toList()
+      ..sort((a, b) => a.rating.compareTo(b.rating));
+    return list;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = _entries;
+
+    return Scaffold(
+      backgroundColor: FlitColors.backgroundDark,
+      appBar: AppBar(
+        backgroundColor: FlitColors.backgroundMid,
+        title: Text('Country Difficulty (${entries.length})'),
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search by name or code...',
+                hintStyle: const TextStyle(color: FlitColors.textMuted),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: FlitColors.textMuted,
+                ),
+                filled: true,
+                fillColor: FlitColors.cardBackground,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+              style: const TextStyle(color: FlitColors.textPrimary),
+              onChanged: (v) => setState(() => _search = v),
+            ),
+          ),
+          // Tier filter chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: _tierFilters.entries.map((entry) {
+                final isActive = _filterTier == entry.key;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: FilterChip(
+                    label: Text(
+                      entry.value,
+                      style: TextStyle(
+                        color: isActive
+                            ? FlitColors.backgroundDark
+                            : FlitColors.textSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
+                    selected: isActive,
+                    selectedColor: FlitColors.accent,
+                    backgroundColor: FlitColors.cardBackground,
+                    onSelected: (_) => setState(() => _filterTier = entry.key),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Country list
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: entries.length,
+              itemBuilder: (context, index) {
+                final e = entries[index];
+                return _DifficultyRow(entry: e);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CountryDiffEntry {
+  const _CountryDiffEntry({
+    required this.code,
+    required this.name,
+    required this.rating,
+  });
+  final String code;
+  final String name;
+  final double rating;
+
+  int get percent => (rating * 100).round();
+  String get label => difficultyLabel(rating);
+}
+
+class _DifficultyRow extends StatelessWidget {
+  const _DifficultyRow({required this.entry});
+
+  final _CountryDiffEntry entry;
+
+  static const List<Color> _gradientColors = [
+    Color(0xFF4CAF50),
+    Color(0xFF8BC34A),
+    Color(0xFFFFEB3B),
+    Color(0xFFFFC107),
+    Color(0xFFFF9800),
+    Color(0xFFFF5722),
+    Color(0xFFF44336),
+  ];
+
+  Color get _barColor {
+    final idx = difficultyBandIndex(entry.rating);
+    return _gradientColors[idx.clamp(0, _gradientColors.length - 1)];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _barColor;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            // Country code badge
+            Container(
+              width: 36,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                entry.code,
+                style: const TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            // Country name
+            Expanded(
+              child: Text(
+                entry.name,
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 13,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // Difficulty bar
+            SizedBox(
+              width: 60,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  value: entry.rating,
+                  backgroundColor: FlitColors.backgroundMid,
+                  valueColor: AlwaysStoppedAnimation<Color>(color),
+                  minHeight: 6,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Percentage
+            SizedBox(
+              width: 32,
+              child: Text(
+                '${entry.percent}%',
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Label
+            SizedBox(
+              width: 70,
+              child: Text(
+                entry.label,
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  color: color.withOpacity(0.8),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

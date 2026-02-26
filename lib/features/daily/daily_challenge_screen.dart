@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../game/data/country_difficulty.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/daily_challenge.dart';
 import '../../data/models/daily_result.dart';
@@ -301,6 +302,12 @@ class _ChallengeHeader extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 8),
+          // Difficulty indicator
+          _DifficultyIndicator(
+            percent: challenge.difficultyPercent,
+            label: challenge.difficultyLabelText,
+          ),
           const SizedBox(height: 10),
           // Title
           Text(
@@ -361,6 +368,62 @@ class _ChallengeHeader extends StatelessWidget {
       'DEC',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+}
+
+// =============================================================================
+// Difficulty Indicator
+// =============================================================================
+
+class _DifficultyIndicator extends StatelessWidget {
+  const _DifficultyIndicator({required this.percent, required this.label});
+
+  final int percent;
+  final String label;
+
+  /// Gradient from green (easy) through yellow to red (hard).
+  static const List<Color> _gradientColors = [
+    Color(0xFF4CAF50), // green — Clear Skies
+    Color(0xFF8BC34A), // light green — Tailwind
+    Color(0xFFFFEB3B), // yellow — Fair Weather
+    Color(0xFFFFC107), // amber — Crosswinds
+    Color(0xFFFF9800), // orange — Turbulence
+    Color(0xFFFF5722), // deep orange — Storm Front
+    Color(0xFFF44336), // red — Cat-5 Headwind
+  ];
+
+  Color get _indicatorColor {
+    final index = difficultyBandIndex(percent / 100.0);
+    return _gradientColors[index.clamp(0, _gradientColors.length - 1)];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _indicatorColor;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.speed_rounded, color: color, size: 14),
+          const SizedBox(width: 6),
+          Text(
+            '$label  $percent%',
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
