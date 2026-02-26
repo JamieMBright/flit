@@ -596,16 +596,7 @@ class _DifficultyBar extends StatelessWidget {
     ),
   );
 
-  static String _label(GameDifficulty d) {
-    switch (d) {
-      case GameDifficulty.easy:
-        return 'EASY';
-      case GameDifficulty.normal:
-        return 'NORMAL';
-      case GameDifficulty.hard:
-        return 'HARD';
-    }
-  }
+  static String _label(GameDifficulty d) => d.displayName.toUpperCase();
 
   static Color _color(GameDifficulty d) {
     switch (d) {

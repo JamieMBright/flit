@@ -2,7 +2,9 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 
+import '../../core/services/game_settings.dart';
 import '../clues/clue_types.dart';
+import '../data/country_difficulty.dart';
 import '../map/country_data.dart';
 import '../map/region.dart';
 
@@ -121,6 +123,32 @@ class GameSession {
   /// Get the target name for display
   String get targetName => targetArea?.name ?? targetCountry.name;
 
+  /// Combined difficulty of this round (0.0–1.0).
+  ///
+  /// Combines the clue type weight with the country recognisability rating.
+  double get roundDifficultyScore =>
+      roundDifficulty(clue.type, targetCountry.code);
+
+  /// Countries filtered by difficulty tier for free-flight mode.
+  ///
+  /// [GameDifficulty.easy]   → countries with rating ≤ [easyThreshold]
+  /// [GameDifficulty.normal] → all playable countries
+  /// [GameDifficulty.hard]   → countries with rating ≥ [hardMinimum]
+  static List<CountryShape> _countriesForDifficulty(GameDifficulty diff) {
+    switch (diff) {
+      case GameDifficulty.easy:
+        return CountryData.playableCountries
+            .where((c) => countryDifficultyRating(c.code) <= easyThreshold)
+            .toList();
+      case GameDifficulty.normal:
+        return CountryData.playableCountries;
+      case GameDifficulty.hard:
+        return CountryData.playableCountries
+            .where((c) => countryDifficultyRating(c.code) >= hardMinimum)
+            .toList();
+    }
+  }
+
   /// Create a new random game session.
   ///
   /// When [allowedClueTypes] is provided (e.g. from a daily challenge
@@ -128,16 +156,23 @@ class GameSession {
   ///
   /// When [preferredClueType] is provided, the generated clue will favour
   /// the preferred type within the allowed set.
+  ///
+  /// When [difficulty] is provided, the country pool is filtered to match
+  /// the selected tier. Defaults to the current [GameSettings] difficulty.
   factory GameSession.random({
     GameRegion region = GameRegion.world,
     String? preferredClueType,
     Set<String>? allowedClueTypes,
+    GameDifficulty? difficulty,
   }) {
     final random = Random();
 
     if (region == GameRegion.world) {
-      // World mode: pick a random country
-      final country = CountryData.getRandomCountry();
+      // Filter country pool by difficulty tier
+      final diff = difficulty ?? GameSettings.instance.difficulty;
+      final pool = _countriesForDifficulty(diff);
+      final country = pool[random.nextInt(pool.length)];
+
       final clue = Clue.random(
         country.code,
         preferredClueType: preferredClueType,

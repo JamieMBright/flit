@@ -22,16 +22,44 @@ enum MapStyle {
   topo,
 }
 
-/// Game difficulty level — affects country selection and hint availability.
+/// Game difficulty level — affects country pool filtering and hint availability.
+///
+/// Each tier has a flight-themed display name and description. The thresholds
+/// that map these tiers to per-country difficulty ratings live in
+/// `lib/game/data/country_difficulty.dart`.
 enum GameDifficulty {
-  /// Well-known countries, extra hints, skip clue option.
+  /// Clear Skies — well-known countries, extra hints, skip clue option.
   easy,
 
-  /// Standard difficulty — balanced country pool, normal hints.
+  /// Crosswinds — balanced country pool, normal hints.
   normal,
 
-  /// Obscure countries, fewer hints, no skip.
-  hard,
+  /// Headwinds — obscure countries, fewer hints, no skip.
+  hard;
+
+  /// Flight-themed display name for the difficulty tier.
+  String get displayName {
+    switch (this) {
+      case GameDifficulty.easy:
+        return 'Clear Skies';
+      case GameDifficulty.normal:
+        return 'Crosswinds';
+      case GameDifficulty.hard:
+        return 'Headwinds';
+    }
+  }
+
+  /// Short flavour description shown in the UI.
+  String get description {
+    switch (this) {
+      case GameDifficulty.easy:
+        return 'Iconic nations, smooth navigation';
+      case GameDifficulty.normal:
+        return 'The full atlas — all nations in play';
+      case GameDifficulty.hard:
+        return 'Obscure territories, expert pilots only';
+    }
+  }
 }
 
 /// Singleton that holds user-configurable game settings.
@@ -302,17 +330,8 @@ class GameSettings extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Human-readable label for the current difficulty.
-  String get difficultyLabel {
-    switch (_difficulty) {
-      case GameDifficulty.easy:
-        return 'Easy';
-      case GameDifficulty.normal:
-        return 'Normal';
-      case GameDifficulty.hard:
-        return 'Hard';
-    }
-  }
+  /// Human-readable label for the current difficulty (flight-themed).
+  String get difficultyLabel => _difficulty.displayName;
 
   // ─── Audio & Feedback ─────────────────────────────────────────
 

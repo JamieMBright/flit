@@ -1,5 +1,9 @@
 import 'dart:math';
 
+import '../../game/clues/clue_types.dart';
+import '../../game/data/country_difficulty.dart';
+import '../../game/map/country_data.dart';
+
 /// Configuration for a single clue-type theme in the daily rotation.
 class _DailyTheme {
   const _DailyTheme({
@@ -29,6 +33,8 @@ class DailyChallenge {
     required this.bonusCoinReward,
     required this.seed,
     required this.mapRegion,
+    required this.difficultyPercent,
+    required this.difficultyLabelText,
   });
 
   final DateTime date;
@@ -39,6 +45,16 @@ class DailyChallenge {
   final int bonusCoinReward;
   final int seed;
   final String mapRegion;
+
+  /// Overall difficulty rating for this daily challenge (0–100).
+  ///
+  /// Computed as the average of each round's combined clue-type + country
+  /// difficulty. 0 = easiest possible (borders + USA), 100 = hardest
+  /// (outline + Nauru/Palau).
+  final int difficultyPercent;
+
+  /// Flight-themed label for the difficulty (e.g. "Clear Skies", "Turbulence").
+  final String difficultyLabelText;
 
   // ── Theme rotation ──────────────────────────────────────────────────
 
@@ -176,6 +192,10 @@ class DailyChallenge {
       coinReward = theme.coinReward;
     }
 
+    // Compute difficulty from simulated rounds.
+    final diffPercent = _computeDifficultyPercent(seed, resolvedClueTypes);
+    final diffLabel = difficultyLabel(diffPercent / 100.0);
+
     return DailyChallenge(
       date: normalisedDate,
       title: theme.title,
@@ -185,6 +205,8 @@ class DailyChallenge {
       bonusCoinReward: coinReward * 3,
       seed: seed,
       mapRegion: mapRegion,
+      difficultyPercent: diffPercent,
+      difficultyLabelText: diffLabel,
     );
   }
 
@@ -192,6 +214,64 @@ class DailyChallenge {
   static Set<String> _pickRandomClueTypes(Random rng, int count) {
     final pool = _allClueTypes.toList()..shuffle(rng);
     return pool.take(count).toSet();
+  }
+
+  /// Number of rounds in a daily challenge.
+  static const int roundCount = 5;
+
+  /// Per-round seed offset (must be prime to avoid collisions).
+  static const int _roundSeedStride = 7919;
+
+  /// Compute the average difficulty for a daily challenge.
+  ///
+  /// Simulates the same deterministic country/clue selection that
+  /// [GameSession.seeded] uses, so every client agrees on the rating.
+  static int _computeDifficultyPercent(int seed, Set<String> enabledClueTypes) {
+    final rounds = <(ClueType, String)>[];
+    final clueTypeList = enabledClueTypes.toList()..sort();
+    final playable = CountryData.playableCountries;
+
+    for (int i = 0; i < roundCount; i++) {
+      final roundSeed = seed + i * _roundSeedStride;
+      final rng = Random(roundSeed);
+
+      // Mirror GameSession.seeded country selection
+      final countryIndex = rng.nextInt(playable.length);
+      final country = playable[countryIndex];
+
+      // Mirror Clue.random type selection (picks from allowed pool)
+      final ClueType clueType;
+      if (clueTypeList.length == 1) {
+        clueType = ClueType.values.firstWhere(
+          (t) => t.name == clueTypeList.first,
+          orElse: () => ClueType.flag,
+        );
+      } else {
+        // Clue.random uses its own RNG internally, but the clue type pool is
+        // deterministic from the allowed set. For difficulty estimation we pick
+        // the middle-difficulty type from the allowed set as a representative.
+        final sorted =
+            clueTypeList
+                .map(
+                  (name) => ClueType.values.firstWhere(
+                    (t) => t.name == name,
+                    orElse: () => ClueType.flag,
+                  ),
+                )
+                .toList()
+              ..sort(
+                (a, b) => (clueTypeDifficulty[a] ?? 0.5).compareTo(
+                  clueTypeDifficulty[b] ?? 0.5,
+                ),
+              );
+        // Use seed-derived index to pick a clue type deterministically
+        clueType = sorted[rng.nextInt(sorted.length)];
+      }
+
+      rounds.add((clueType, country.code));
+    }
+
+    return dailyDifficultyPercent(rounds);
   }
 
   // ── Serialisation ───────────────────────────────────────────────────
@@ -205,20 +285,29 @@ class DailyChallenge {
     'bonus_coin_reward': bonusCoinReward,
     'seed': seed,
     'map_region': mapRegion,
+    'difficulty_percent': difficultyPercent,
+    'difficulty_label': difficultyLabelText,
   };
 
-  factory DailyChallenge.fromJson(Map<String, dynamic> json) => DailyChallenge(
-    date: DateTime.parse(json['date'] as String),
-    title: json['title'] as String,
-    description: json['description'] as String,
-    enabledClueTypes: (json['enabled_clue_types'] as List)
-        .map((e) => e as String)
-        .toSet(),
-    coinReward: json['coin_reward'] as int,
-    bonusCoinReward: json['bonus_coin_reward'] as int,
-    seed: json['seed'] as int,
-    mapRegion: json['map_region'] as String? ?? 'World',
-  );
+  factory DailyChallenge.fromJson(Map<String, dynamic> json) {
+    final diffPercent = json['difficulty_percent'] as int? ?? 50;
+    return DailyChallenge(
+      date: DateTime.parse(json['date'] as String),
+      title: json['title'] as String,
+      description: json['description'] as String,
+      enabledClueTypes: (json['enabled_clue_types'] as List)
+          .map((e) => e as String)
+          .toSet(),
+      coinReward: json['coin_reward'] as int,
+      bonusCoinReward: json['bonus_coin_reward'] as int,
+      seed: json['seed'] as int,
+      mapRegion: json['map_region'] as String? ?? 'World',
+      difficultyPercent: diffPercent,
+      difficultyLabelText:
+          json['difficulty_label'] as String? ??
+          difficultyLabel(diffPercent / 100.0),
+    );
+  }
 
   // ── Placeholder leaderboard ─────────────────────────────────────────
 
