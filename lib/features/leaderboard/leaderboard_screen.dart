@@ -1,13 +1,60 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/models/avatar_config.dart';
 import '../../data/models/leaderboard_entry.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/services/leaderboard_service.dart';
 import '../avatar/avatar_widget.dart';
 import '../license/license_screen.dart';
 import '../shop/shop_screen.dart';
+
+/// Font family fallback list for rendering emojis across platforms.
+///
+/// iOS/macOS use Apple Color Emoji, Windows uses Segoe UI Emoji, Android/Web
+/// use Noto Color Emoji. Providing all three ensures coloured emoji glyphs
+/// instead of outlined tofu boxes.
+const List<String> _emojiFontFallback = [
+  'Apple Color Emoji',
+  'Segoe UI Emoji',
+  'Noto Color Emoji',
+];
+
+/// Rarity colors (shared with license_screen).
+const Color _bronzeColor = Color(0xFFCD7F32);
+const Color _silverColor = Color(0xFFC0C0C0);
+const Color _goldColor = Color(0xFFFFD700);
+const Color _diamondColor = Color(0xFFB9F2FF);
+
+const List<Color> _perfectGradientColors = [
+  Color(0xFFFF0000),
+  Color(0xFFFF7F00),
+  Color(0xFFFFFF00),
+  Color(0xFF00FF00),
+  Color(0xFF0000FF),
+  Color(0xFF8B00FF),
+  Color(0xFFFF0000),
+];
+
+Color _colorForRarity(String rarityTier) {
+  switch (rarityTier) {
+    case 'Bronze':
+      return _bronzeColor;
+    case 'Silver':
+      return _silverColor;
+    case 'Gold':
+      return _goldColor;
+    case 'Diamond':
+      return _diamondColor;
+    case 'Perfect':
+      return _goldColor;
+    default:
+      return _bronzeColor;
+  }
+}
 
 /// Leaderboard screen with two top-level mode tabs (Daily Scramble and Training
 /// Flight), each with sub-tabs for Today / Last Month / All Time.
@@ -333,15 +380,24 @@ class _LeaderboardRow extends StatelessWidget {
           // Rank badge
           SizedBox(
             width: 30,
-            child: Text(
-              entry.rank <= 3 ? _rankEmoji : '#${entry.rank}',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: entry.rank <= 3 ? 20 : 13,
-                fontWeight: FontWeight.bold,
-                color: _rankColor,
-              ),
-            ),
+            child: entry.rank <= 3
+                ? Text(
+                    _rankEmoji,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontFamilyFallback: _emojiFontFallback,
+                    ),
+                  )
+                : Text(
+                    '#${entry.rank}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: _rankColor,
+                    ),
+                  ),
           ),
           const SizedBox(width: 6),
           // Tappable identity: avatar + plane + name/date
@@ -351,10 +407,13 @@ class _LeaderboardRow extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               child: Row(
                 children: [
-                  // Avatar
+                  // Avatar (offline composition preferred over URL fetch)
                   AvatarFromUrl(
                     avatarUrl: entry.avatarUrl,
                     name: entry.playerName,
+                    avatarConfig: entry.avatarConfigJson != null
+                        ? AvatarConfig.fromJson(entry.avatarConfigJson!)
+                        : null,
                     size: 32,
                   ),
                   const SizedBox(width: 4),
@@ -412,7 +471,11 @@ class _LeaderboardRow extends StatelessWidget {
               child: entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty
                   ? Text(
                       entry.roundEmojis!,
-                      style: const TextStyle(fontSize: 10, letterSpacing: -1),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        letterSpacing: -1,
+                        fontFamilyFallback: _emojiFontFallback,
+                      ),
                     )
                   : const Icon(
                       Icons.info_outline,
@@ -525,13 +588,25 @@ class _PilotCardSheet extends StatefulWidget {
   State<_PilotCardSheet> createState() => _PilotCardSheetState();
 }
 
-class _PilotCardSheetState extends State<_PilotCardSheet> {
+class _PilotCardSheetState extends State<_PilotCardSheet>
+    with SingleTickerProviderStateMixin {
   PilotLicense? _license;
+  late AnimationController _shimmerController;
 
   @override
   void initState() {
     super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
     _fetchLicense();
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchLicense() async {
@@ -558,6 +633,9 @@ class _PilotCardSheetState extends State<_PilotCardSheet> {
     final entry = widget.entry;
     final planeId = entry.equippedPlaneId ?? 'plane_default';
     final level = entry.level ?? 1;
+    final avatarConfig = entry.avatarConfigJson != null
+        ? AvatarConfig.fromJson(entry.avatarConfigJson!)
+        : null;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
@@ -574,61 +652,10 @@ class _PilotCardSheetState extends State<_PilotCardSheet> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          // Title
-          const Text(
-            'PILOT LICENSE',
-            style: TextStyle(
-              color: FlitColors.textMuted,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 2.0,
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Avatar + plane
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AvatarFromUrl(
-                avatarUrl: entry.avatarUrl,
-                name: entry.playerName,
-                size: 64,
-              ),
-              const SizedBox(width: 16),
-              SizedBox(
-                width: 56,
-                height: 56,
-                child: CustomPaint(painter: PlanePainter(planeId: planeId)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Username
-          Text(
-            entry.playerName,
-            style: const TextStyle(
-              color: FlitColors.textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          // Aviation rank
-          Text(
-            _aviationRankTitle(level),
-            style: const TextStyle(
-              color: FlitColors.gold,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
-          Text(
-            'Level $level',
-            style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
-          ),
-          const SizedBox(height: 20),
+          // Credit-card style license (matches LicenseScreen rendering)
+          _buildLicenseCard(entry, planeId, level, avatarConfig),
           // Stats row
+          const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -647,72 +674,16 @@ class _PilotCardSheetState extends State<_PilotCardSheet> {
               ],
             ),
           ),
-          // Pilot license stats
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: FlitColors.cardBackground,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: FlitColors.cardBorder),
-            ),
-            child: _license != null
-                ? Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _StatColumn(
-                            label: 'COIN BOOST',
-                            value: '+${_license!.coinBoost}%',
-                          ),
-                          Container(
-                            width: 1,
-                            height: 32,
-                            color: FlitColors.cardBorder,
-                          ),
-                          _StatColumn(
-                            label: 'CLUE CHANCE',
-                            value: '+${_license!.clueChance}%',
-                          ),
-                          Container(
-                            width: 1,
-                            height: 32,
-                            color: FlitColors.cardBorder,
-                          ),
-                          _StatColumn(
-                            label: 'FUEL BOOST',
-                            value: '+${_license!.fuelBoost}%',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Preferred: ${_license!.preferredClueType}',
-                        style: const TextStyle(
-                          color: FlitColors.textSecondary,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  )
-                : const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      'No pilot license yet',
-                      style: TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-          ),
           // Round emojis
           const SizedBox(height: 16),
           entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty
               ? Text(
                   entry.roundEmojis!,
-                  style: const TextStyle(fontSize: 18, letterSpacing: 2),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    letterSpacing: 2,
+                    fontFamilyFallback: _emojiFontFallback,
+                  ),
                 )
               : const Text(
                   'No round data',
@@ -723,6 +694,202 @@ class _PilotCardSheetState extends State<_PilotCardSheet> {
           _MilestoneBar(score: entry.score),
         ],
       ),
+    );
+  }
+
+  /// Credit-card style license card matching the LicenseScreen design.
+  Widget _buildLicenseCard(
+    LeaderboardEntry entry,
+    String planeId,
+    int level,
+    AvatarConfig? avatarConfig,
+  ) {
+    final rarity = _license?.rarityTier ?? 'Bronze';
+    final rarityColor = _colorForRarity(rarity);
+    final isPerfect = rarity == 'Perfect';
+
+    return AnimatedBuilder(
+      animation: _shimmerController,
+      builder: (context, child) {
+        final borderDecoration = isPerfect
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: SweepGradient(
+                  center: Alignment.center,
+                  startAngle: _shimmerController.value * 2 * math.pi,
+                  colors: _perfectGradientColors,
+                ),
+              )
+            : BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: rarityColor,
+              );
+
+        return Container(
+          decoration: borderDecoration,
+          padding: const EdgeInsets.all(2.5),
+          child: AspectRatio(
+            aspectRatio: 85.6 / 54.0, // credit card ratio
+            child: Container(
+              decoration: BoxDecoration(
+                color: FlitColors.cardBackground,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: rarityColor.withOpacity(0.3),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top row: title + rarity badge
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Flexible(
+                        child: Text(
+                          'FLIT PILOT LICENSE',
+                          style: TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                      ),
+                      if (_license != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: rarityColor.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: rarityColor.withOpacity(0.5),
+                            ),
+                          ),
+                          child: Text(
+                            rarity.toUpperCase(),
+                            style: TextStyle(
+                              color: rarityColor,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const Spacer(flex: 1),
+                  // Middle row: plane | name/rank/level | avatar
+                  Row(
+                    children: [
+                      // Equipped plane (left)
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: FlitColors.backgroundMid,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: CustomPaint(
+                          size: const Size(48, 48),
+                          painter: PlanePainter(planeId: planeId),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Name, rank, level (center)
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              entry.playerName,
+                              style: const TextStyle(
+                                color: FlitColors.textPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _aviationRankTitle(level),
+                              style: const TextStyle(
+                                color: FlitColors.gold,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              'Level $level',
+                              style: const TextStyle(
+                                color: FlitColors.textSecondary,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Avatar (right)
+                      AvatarFromUrl(
+                        avatarUrl: entry.avatarUrl,
+                        name: entry.playerName,
+                        avatarConfig: avatarConfig,
+                        size: 48,
+                      ),
+                    ],
+                  ),
+                  const Spacer(flex: 1),
+                  // Stat bars (license boosts)
+                  if (_license != null)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _LicenseStatBar(
+                            label: _license!.coinBoostLabel,
+                            value: _license!.coinBoost,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: _LicenseStatBar(
+                            label: _license!.clueChanceLabel,
+                            value: _license!.clueChance,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: _LicenseStatBar(
+                            label: _license!.fuelBoostLabel,
+                            value: _license!.fuelBoost,
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    const Center(
+                      child: Text(
+                        'No pilot license yet',
+                        style: TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -756,6 +923,59 @@ class _StatColumn extends StatelessWidget {
       ),
     ],
   );
+}
+
+/// Compact stat bar for the license card on the pilot card bottom sheet.
+class _LicenseStatBar extends StatelessWidget {
+  const _LicenseStatBar({required this.label, required this.value});
+
+  final String label;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _licenseStatColor(value);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.clip,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(2),
+          child: LinearProgressIndicator(
+            value: value / 25.0,
+            minHeight: 4,
+            backgroundColor: FlitColors.cardBorder,
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+Color _licenseStatColor(int value) {
+  if (value >= 25) return const Color(0xFFFFD700);
+  if (value >= 21) return const Color(0xFFFF8C00);
+  if (value >= 16) return const Color(0xFF9B59B6);
+  if (value >= 6) return const Color(0xFF4A90D9);
+  return const Color(0xFF6AAB5C);
 }
 
 /// Shows score milestone progression on the pilot card.
@@ -974,7 +1194,13 @@ class _ClueBreakdownSheet extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          Text(emoji, style: const TextStyle(fontSize: 20)),
+                          Text(
+                            emoji,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontFamilyFallback: _emojiFontFallback,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(width: 12),
@@ -1075,7 +1301,13 @@ class _ClueBreakdownSheet extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(emojiRunes[i], style: const TextStyle(fontSize: 24)),
+                      Text(
+                        emojiRunes[i],
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontFamilyFallback: _emojiFontFallback,
+                        ),
+                      ),
                     ],
                   );
                 }),
@@ -1164,7 +1396,13 @@ class _LegendRow extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: 3),
     child: Row(
       children: [
-        Text(emoji, style: const TextStyle(fontSize: 16)),
+        Text(
+          emoji,
+          style: const TextStyle(
+            fontSize: 16,
+            fontFamilyFallback: _emojiFontFallback,
+          ),
+        ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
