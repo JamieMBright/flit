@@ -2326,18 +2326,16 @@ CREATE TABLE IF NOT EXISTS public.iap_receipts (
 
 ALTER TABLE public.iap_receipts ENABLE ROW LEVEL SECURITY;
 
--- Users can read their own receipts
 DO $$ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies WHERE tablename = 'iap_receipts' AND policyname = 'Users read own receipts'
   ) THEN
     CREATE POLICY "Users read own receipts"
-      ON public.iap_receipts FOR SELECT
-      USING (auth.uid() = user_id);
+      ON public.iap_receipts FOR SELECT USING (auth.uid() = user_id);
   END IF;
 END $$;
 
--- Admins can read all receipts
+
 DO $$ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies WHERE tablename = 'iap_receipts' AND policyname = 'Admins read all receipts'
