@@ -28,8 +28,10 @@ import 'dart:typed_data';
 
 void main(List<String> args) {
   if (args.length < 2) {
-    print('Usage: dart run scripts/generate_shore_distance.dart '
-        '<input_heightmap> <output_png> [threshold]');
+    print(
+      'Usage: dart run scripts/generate_shore_distance.dart '
+      '<input_heightmap> <output_png> [threshold]',
+    );
     print('');
     print('  input_heightmap  Path to input heightmap PNG');
     print('  output_png       Path to output shore distance PNG');
@@ -148,8 +150,7 @@ void main(List<String> args) {
 /// Shore pixels are ocean pixels that are 4-connected to at least one
 /// land pixel. Returns a list of distances (one per pixel). Land pixels
 /// have distance 0. Ocean pixels far from land have large distances.
-List<double> _computeShoreDistance(
-    List<bool> isLand, int width, int height) {
+List<double> _computeShoreDistance(List<bool> isLand, int width, int height) {
   final n = width * height;
   final dist = List<double>.filled(n, double.infinity);
 
@@ -364,8 +365,7 @@ _RawImage? _decodePng(Uint8List bytes) {
 }
 
 /// Apply PNG row un-filtering in place.
-void _unfilterRow(
-    int filterType, Uint8List row, Uint8List prevRow, int bpp) {
+void _unfilterRow(int filterType, Uint8List row, Uint8List prevRow, int bpp) {
   switch (filterType) {
     case 0: // None
       break;
