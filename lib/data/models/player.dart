@@ -1,3 +1,5 @@
+import '../../core/config/admin_config.dart';
+
 /// Player profile model.
 class Player {
   const Player({
@@ -64,6 +66,10 @@ class Player {
 
   /// Whether this player has moderator access.
   bool get isModerator => adminRole == 'moderator';
+
+  /// Check if this player has a specific [AdminPermission].
+  bool hasPermission(AdminPermission permission) =>
+      AdminPermissions.hasPermission(adminRole, permission);
 
   final DateTime? createdAt;
 

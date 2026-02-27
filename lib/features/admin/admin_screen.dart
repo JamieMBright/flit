@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/config/admin_config.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
 import '../../game/data/country_difficulty.dart';
@@ -18,14 +19,29 @@ import '../debug/country_preview_screen.dart';
 import '../debug/plane_preview_screen.dart';
 import 'admin_stats_screen.dart';
 
-/// Admin panel — visible only to the admin email (jamiebright1@gmail.com).
+/// Admin panel — visible to users with a non-null `admin_role`.
 ///
-/// Features:
+/// Two-tier access controlled by [AdminPermission]:
+///
+/// **Moderator** (view + moderate):
+/// - Look up player profiles and stats
+/// - View game histories and recent scores
+/// - View coin ledger entries
+/// - Change usernames (profanity moderation)
+/// - View design previews (planes, avatars, flags, outlines)
+/// - View difficulty ratings (read-only)
+/// - View analytics dashboard
+/// - View game log
+///
+/// **Owner** (god mode — all of the above plus):
 /// - Self-service: unlimited gold, XP, flights
 /// - Gift gold / levels / flights to any user by username
-/// - Moderation: change any user's username
-/// - Game log viewer
+/// - Set exact stat values on any player
+/// - Gift cosmetic items, set licenses, set avatars
+/// - Unlock all items for a player
+/// - Manage moderator roles (promote / revoke)
 /// - Economy config editor (earnings, promotions, gold packages, price overrides)
+/// - Edit difficulty ratings
 class AdminScreen extends ConsumerStatefulWidget {
   const AdminScreen({super.key});
 
@@ -403,6 +419,62 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                   builder: (_) => _CoinLedgerScreen(
                     userId: user['id'] as String,
                     username: user['username'] as String? ?? username,
+                  ),
+                ),
+              );
+            } on PostgrestException catch (e) {
+              setDialogState(() => error = 'Failed: ${e.message}');
+            } catch (_) {
+              setDialogState(() => error = 'Something went wrong');
+            }
+          },
+          onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [_UsernameField(controller: usernameCtl)],
+        ),
+      ),
+    );
+  }
+
+  // ── User Lookup (moderator + owner) ──
+
+  void _showUserLookupDialog(BuildContext context) {
+    final usernameCtl = TextEditingController();
+    String? error;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => _AdminDialog(
+          icon: Icons.person_search,
+          iconColor: FlitColors.oceanHighlight,
+          title: 'Look Up Player',
+          subtitle: 'View profile, stats, and game history.',
+          error: error,
+          actionLabel: 'Look Up',
+          actionIcon: Icons.search,
+          actionColor: FlitColors.oceanHighlight,
+          onAction: () async {
+            final username = usernameCtl.text.trim();
+            if (username.isEmpty) {
+              setDialogState(() => error = 'Enter a username');
+              return;
+            }
+
+            try {
+              final user = await _lookupUser(username);
+              if (user == null) {
+                setDialogState(() => error = 'User @$username not found');
+                return;
+              }
+
+              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!context.mounted) return;
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => _UserDetailScreen(
+                    userId: user['id'] as String,
+                    username: user['username'] as String? ?? username,
+                    userData: user,
                   ),
                 ),
               );
@@ -1310,186 +1382,237 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
 
   // ── Build ──
 
+  /// Shorthand: does the current player have [perm]?
+  bool _can(AccountState state, AdminPermission perm) =>
+      state.currentPlayer.hasPermission(perm);
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(accountProvider);
     final notifier = ref.read(accountProvider.notifier);
+    final player = state.currentPlayer;
+    final roleName = player.isOwner
+        ? 'Owner'
+        : player.isModerator
+        ? 'Moderator'
+        : 'Admin';
 
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
       appBar: AppBar(
         backgroundColor: FlitColors.backgroundMid,
-        title: const Text('Admin Panel'),
+        title: Text('$roleName Panel'),
         centerTitle: true,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Current account info
+          // ── Current account info ──
           const _SectionHeader(title: 'Current Account'),
-          _AccountCard(player: state.currentPlayer),
+          _AccountCard(player: player),
           const SizedBox(height: 24),
 
-          // Usage Stats
-          const _SectionHeader(title: 'Analytics'),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.analytics,
-            iconColor: FlitColors.oceanHighlight,
-            label: 'Usage Stats',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const AdminStatsScreen()),
+          // ── Analytics (moderator + owner) ──
+          if (_can(state, AdminPermission.viewAnalytics)) ...[
+            const _SectionHeader(title: 'Analytics'),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.analytics,
+              iconColor: FlitColors.oceanHighlight,
+              label: 'Usage Stats',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const AdminStatsScreen(),
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.receipt_long,
-            iconColor: FlitColors.gold,
-            label: 'Coin Ledger Explorer',
-            onTap: () => _showCoinLedgerDialog(context),
-          ),
-          const SizedBox(height: 24),
-
-          // Quick self-actions
-          const _SectionHeader(title: 'Quick Actions (Self)'),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _ActionChip(
-                label: '+100 Gold',
-                onTap: () => notifier.addCoins(
-                  100,
-                  applyBoost: false,
-                  source: 'admin_grant',
-                ),
-              ),
-              _ActionChip(
-                label: '+1,000 Gold',
-                onTap: () => notifier.addCoins(
-                  1000,
-                  applyBoost: false,
-                  source: 'admin_grant',
-                ),
-              ),
-              _ActionChip(
-                label: '+999,999 Gold',
-                onTap: () => notifier.addCoins(
-                  999999,
-                  applyBoost: false,
-                  source: 'admin_grant',
-                ),
-              ),
-              _ActionChip(label: '+50 XP', onTap: () => notifier.addXp(50)),
-              _ActionChip(label: '+500 XP', onTap: () => notifier.addXp(500)),
-              _ActionChip(
-                label: '+1 Flight',
-                onTap: () => notifier.incrementGamesPlayed(),
+            if (_can(state, AdminPermission.viewCoinLedger)) ...[
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.receipt_long,
+                iconColor: FlitColors.gold,
+                label: 'Coin Ledger Explorer',
+                onTap: () => _showCoinLedgerDialog(context),
               ),
             ],
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
+          ],
 
-          // Admin gifting tools
-          const _SectionHeader(title: 'Gift to Player'),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.monetization_on,
-            iconColor: FlitColors.gold,
-            label: 'Gift Gold',
-            onTap: () => _showGiftGoldDialog(context),
-          ),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.arrow_upward,
-            iconColor: FlitColors.accent,
-            label: 'Gift Levels',
-            onTap: () => _showGiftLevelsDialog(context),
-          ),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.flight,
-            iconColor: FlitColors.oceanHighlight,
-            label: 'Gift Flights',
-            onTap: () => _showGiftFlightsDialog(context),
-          ),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.monetization_on_outlined,
-            iconColor: FlitColors.gold,
-            label: 'Set Coins',
-            onTap: () => _showSetStatDialog(
-              context,
-              title: 'Set Coins',
-              statColumn: 'coins',
-              valueLabel: 'Coins total',
+          // ── User Lookup (moderator + owner) ──
+          if (_can(state, AdminPermission.viewUserData)) ...[
+            const _SectionHeader(title: 'User Lookup'),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.person_search,
+              iconColor: FlitColors.oceanHighlight,
+              label: 'Look Up Player',
+              onTap: () => _showUserLookupDialog(context),
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          // ── Quick self-actions (owner only) ──
+          if (_can(state, AdminPermission.selfServiceActions)) ...[
+            const _SectionHeader(title: 'Quick Actions (Self)'),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _ActionChip(
+                  label: '+100 Gold',
+                  onTap: () => notifier.addCoins(
+                    100,
+                    applyBoost: false,
+                    source: 'admin_grant',
+                  ),
+                ),
+                _ActionChip(
+                  label: '+1,000 Gold',
+                  onTap: () => notifier.addCoins(
+                    1000,
+                    applyBoost: false,
+                    source: 'admin_grant',
+                  ),
+                ),
+                _ActionChip(
+                  label: '+999,999 Gold',
+                  onTap: () => notifier.addCoins(
+                    999999,
+                    applyBoost: false,
+                    source: 'admin_grant',
+                  ),
+                ),
+                _ActionChip(label: '+50 XP', onTap: () => notifier.addXp(50)),
+                _ActionChip(label: '+500 XP', onTap: () => notifier.addXp(500)),
+                _ActionChip(
+                  label: '+1 Flight',
+                  onTap: () => notifier.incrementGamesPlayed(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          // ── Gift to Player (owner only) ──
+          if (_can(state, AdminPermission.giftGold)) ...[
+            const _SectionHeader(title: 'Gift to Player'),
+            const SizedBox(height: 8),
+            _AdminActionCard(
               icon: Icons.monetization_on,
               iconColor: FlitColors.gold,
+              label: 'Gift Gold',
+              onTap: () => _showGiftGoldDialog(context),
             ),
-          ),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.trending_up,
-            iconColor: FlitColors.accent,
-            label: 'Set Level',
-            onTap: () => _showSetStatDialog(
-              context,
-              title: 'Set Level',
-              statColumn: 'level',
-              valueLabel: 'Level',
-              icon: Icons.trending_up,
-              iconColor: FlitColors.accent,
-            ),
-          ),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.flight_takeoff,
-            iconColor: FlitColors.oceanHighlight,
-            label: 'Set Flights',
-            onTap: () => _showSetStatDialog(
-              context,
-              title: 'Set Flights',
-              statColumn: 'games_played',
-              valueLabel: 'Flights',
-              icon: Icons.flight_takeoff,
-              iconColor: FlitColors.oceanHighlight,
-            ),
-          ),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.star,
-            iconColor: const Color(0xFF9B59B6),
-            label: 'Gift Cosmetic Item',
-            onTap: () => _showGiftCosmeticDialog(context),
-          ),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.badge,
-            iconColor: FlitColors.oceanHighlight,
-            label: 'Set Player License',
-            onTap: () => _showSetLicenseDialog(context),
-          ),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.face,
-            iconColor: FlitColors.gold,
-            label: 'Set Player Avatar',
-            onTap: () => _showSetAvatarDialog(context),
-          ),
-          const SizedBox(height: 24),
+            if (_can(state, AdminPermission.giftLevels)) ...[
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.arrow_upward,
+                iconColor: FlitColors.accent,
+                label: 'Gift Levels',
+                onTap: () => _showGiftLevelsDialog(context),
+              ),
+            ],
+            if (_can(state, AdminPermission.giftFlights)) ...[
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.flight,
+                iconColor: FlitColors.oceanHighlight,
+                label: 'Gift Flights',
+                onTap: () => _showGiftFlightsDialog(context),
+              ),
+            ],
+            if (_can(state, AdminPermission.setCoins)) ...[
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.monetization_on_outlined,
+                iconColor: FlitColors.gold,
+                label: 'Set Coins',
+                onTap: () => _showSetStatDialog(
+                  context,
+                  title: 'Set Coins',
+                  statColumn: 'coins',
+                  valueLabel: 'Coins total',
+                  icon: Icons.monetization_on,
+                  iconColor: FlitColors.gold,
+                ),
+              ),
+            ],
+            if (_can(state, AdminPermission.setLevel)) ...[
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.trending_up,
+                iconColor: FlitColors.accent,
+                label: 'Set Level',
+                onTap: () => _showSetStatDialog(
+                  context,
+                  title: 'Set Level',
+                  statColumn: 'level',
+                  valueLabel: 'Level',
+                  icon: Icons.trending_up,
+                  iconColor: FlitColors.accent,
+                ),
+              ),
+            ],
+            if (_can(state, AdminPermission.setFlights)) ...[
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.flight_takeoff,
+                iconColor: FlitColors.oceanHighlight,
+                label: 'Set Flights',
+                onTap: () => _showSetStatDialog(
+                  context,
+                  title: 'Set Flights',
+                  statColumn: 'games_played',
+                  valueLabel: 'Flights',
+                  icon: Icons.flight_takeoff,
+                  iconColor: FlitColors.oceanHighlight,
+                ),
+              ),
+            ],
+            if (_can(state, AdminPermission.giftCosmetic)) ...[
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.star,
+                iconColor: const Color(0xFF9B59B6),
+                label: 'Gift Cosmetic Item',
+                onTap: () => _showGiftCosmeticDialog(context),
+              ),
+            ],
+            if (_can(state, AdminPermission.setLicense)) ...[
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.badge,
+                iconColor: FlitColors.oceanHighlight,
+                label: 'Set Player License',
+                onTap: () => _showSetLicenseDialog(context),
+              ),
+            ],
+            if (_can(state, AdminPermission.setAvatar)) ...[
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.face,
+                iconColor: FlitColors.gold,
+                label: 'Set Player Avatar',
+                onTap: () => _showSetAvatarDialog(context),
+              ),
+            ],
+            const SizedBox(height: 24),
+          ],
 
-          // Moderation
-          const _SectionHeader(title: 'Moderation'),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.edit,
-            iconColor: FlitColors.warning,
-            label: 'Change Player Username',
-            onTap: () => _showChangeUsernameDialog(context),
-          ),
-          const SizedBox(height: 8),
-          if (state.currentPlayer.isOwner) ...[
+          // ── Moderation (moderator + owner) ──
+          if (_can(state, AdminPermission.changeUsername)) ...[
+            const _SectionHeader(title: 'Moderation'),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.edit,
+              iconColor: FlitColors.warning,
+              label: 'Change Player Username',
+              onTap: () => _showChangeUsernameDialog(context),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (_can(state, AdminPermission.manageRoles)) ...[
             _AdminActionCard(
               icon: Icons.shield,
               iconColor: FlitColors.accent,
@@ -1497,6 +1620,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               onTap: () => _showManageRoleDialog(context),
             ),
             const SizedBox(height: 8),
+          ],
+          if (_can(state, AdminPermission.unlockAll)) ...[
             _AdminActionCard(
               icon: Icons.lock_open,
               iconColor: FlitColors.success,
@@ -1505,111 +1630,130 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             ),
             const SizedBox(height: 8),
           ],
-          const SizedBox(height: 24),
+          if (_can(state, AdminPermission.changeUsername) ||
+              _can(state, AdminPermission.manageRoles))
+            const SizedBox(height: 24),
 
-          // Difficulty Ratings
-          const _SectionHeader(title: 'Difficulty Ratings'),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.speed,
-            iconColor: const Color(0xFFFF9800),
-            label: 'View / Edit Country Difficulty',
-            onTap: () => _showDifficultyEditorDialog(context),
-          ),
-          const SizedBox(height: 24),
-
-          // Design Preview
-          const _SectionHeader(title: 'Design Preview'),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.flight,
-            iconColor: FlitColors.accent,
-            label: 'Plane Preview (all variants)',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const PlanePreviewScreen(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.face,
-            iconColor: FlitColors.oceanHighlight,
-            label: 'Avatar Preview (all styles)',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const AvatarPreviewScreen(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.flag,
-            iconColor: FlitColors.landMassHighlight,
-            label: 'Country Preview (flags & outlines)',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const CountryPreviewScreen(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Economy Config
-          const _SectionHeader(title: 'Economy Config'),
-          const SizedBox(height: 8),
-          if (_economyConfigLoading)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: CircularProgressIndicator(),
-              ),
-            )
-          else ...[
-            _AdminActionCard(
-              icon: Icons.monetization_on,
-              iconColor: FlitColors.gold,
-              label: 'Set Earnings',
-              onTap: () => _showEarningsConfigDialog(context),
-            ),
+          // ── Difficulty Ratings (view: moderator + owner, edit: owner) ──
+          if (_can(state, AdminPermission.viewDifficulty)) ...[
+            const _SectionHeader(title: 'Difficulty Ratings'),
             const SizedBox(height: 8),
             _AdminActionCard(
-              icon: Icons.local_offer,
-              iconColor: FlitColors.accent,
-              label: 'Manage Promotions',
-              onTap: () => _showPromotionsDialog(context),
+              icon: Icons.speed,
+              iconColor: const Color(0xFFFF9800),
+              label: _can(state, AdminPermission.editDifficulty)
+                  ? 'View / Edit Country Difficulty'
+                  : 'View Country Difficulty',
+              onTap: () => _showDifficultyEditorDialog(context),
             ),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.inventory_2,
-              iconColor: FlitColors.gold,
-              label: 'Edit Gold Packages',
-              onTap: () => _showGoldPackagesDialog(context),
-            ),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.price_change,
-              iconColor: FlitColors.oceanHighlight,
-              label: 'Shop Price Overrides',
-              onTap: () => _showShopPriceOverridesDialog(context),
-            ),
+            const SizedBox(height: 24),
           ],
-          const SizedBox(height: 24),
 
-          // Game Log
-          const _SectionHeader(title: 'Game Log'),
-          const SizedBox(height: 8),
-          _AdminActionCard(
-            icon: Icons.bug_report,
-            iconColor: FlitColors.warning,
-            label: 'View Game Log (${GameLog.instance.entries.length} entries)',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const _GameLogScreen()),
+          // ── Design Preview (moderator + owner) ──
+          if (_can(state, AdminPermission.viewDesignPreviews)) ...[
+            const _SectionHeader(title: 'Design Preview'),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.flight,
+              iconColor: FlitColors.accent,
+              label: 'Plane Preview (all variants)',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const PlanePreviewScreen(),
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.face,
+              iconColor: FlitColors.oceanHighlight,
+              label: 'Avatar Preview (all styles)',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const AvatarPreviewScreen(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.flag,
+              iconColor: FlitColors.landMassHighlight,
+              label: 'Country Preview (flags & outlines)',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const CountryPreviewScreen(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
 
-          // Info footer
+          // ── Economy Config (owner only) ──
+          if (_can(state, AdminPermission.editEarnings)) ...[
+            const _SectionHeader(title: 'Economy Config'),
+            const SizedBox(height: 8),
+            if (_economyConfigLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else ...[
+              _AdminActionCard(
+                icon: Icons.monetization_on,
+                iconColor: FlitColors.gold,
+                label: 'Set Earnings',
+                onTap: () => _showEarningsConfigDialog(context),
+              ),
+              if (_can(state, AdminPermission.editPromotions)) ...[
+                const SizedBox(height: 8),
+                _AdminActionCard(
+                  icon: Icons.local_offer,
+                  iconColor: FlitColors.accent,
+                  label: 'Manage Promotions',
+                  onTap: () => _showPromotionsDialog(context),
+                ),
+              ],
+              if (_can(state, AdminPermission.editGoldPackages)) ...[
+                const SizedBox(height: 8),
+                _AdminActionCard(
+                  icon: Icons.inventory_2,
+                  iconColor: FlitColors.gold,
+                  label: 'Edit Gold Packages',
+                  onTap: () => _showGoldPackagesDialog(context),
+                ),
+              ],
+              if (_can(state, AdminPermission.editShopPrices)) ...[
+                const SizedBox(height: 8),
+                _AdminActionCard(
+                  icon: Icons.price_change,
+                  iconColor: FlitColors.oceanHighlight,
+                  label: 'Shop Price Overrides',
+                  onTap: () => _showShopPriceOverridesDialog(context),
+                ),
+              ],
+            ],
+            const SizedBox(height: 24),
+          ],
+
+          // ── Game Log (moderator + owner) ──
+          if (_can(state, AdminPermission.viewGameLog)) ...[
+            const _SectionHeader(title: 'Game Log'),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.bug_report,
+              iconColor: FlitColors.warning,
+              label:
+                  'View Game Log (${GameLog.instance.entries.length} entries)',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const _GameLogScreen()),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          // ── Info footer ──
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -1617,23 +1761,26 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: FlitColors.cardBorder),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Admin Only',
-                  style: TextStyle(
+                  '$roleName Panel',
+                  style: const TextStyle(
                     color: FlitColors.accent,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  'This panel is only visible to the admin account.\n'
-                  'Gift actions write directly to Supabase.\n'
-                  'Username changes enforce uniqueness.',
-                  style: TextStyle(
+                  player.isOwner
+                      ? 'Full owner access. Gift actions write directly to '
+                            'Supabase. Username changes enforce uniqueness.'
+                      : 'Moderator access. You can view player data, game '
+                            'designs, and rename offensive usernames. Economy '
+                            'and gifting tools are restricted to owners.',
+                  style: const TextStyle(
                     color: FlitColors.textSecondary,
                     fontSize: 14,
                   ),
@@ -1646,6 +1793,283 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User Detail Screen (moderator + owner)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _UserDetailScreen extends StatefulWidget {
+  const _UserDetailScreen({
+    required this.userId,
+    required this.username,
+    required this.userData,
+  });
+
+  final String userId;
+  final String username;
+  final Map<String, dynamic> userData;
+
+  @override
+  State<_UserDetailScreen> createState() => _UserDetailScreenState();
+}
+
+class _UserDetailScreenState extends State<_UserDetailScreen> {
+  SupabaseClient get _client => Supabase.instance.client;
+  List<Map<String, dynamic>> _recentGames = [];
+  bool _gamesLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecentGames();
+  }
+
+  Future<void> _loadRecentGames() async {
+    try {
+      final data = await _client
+          .from('scores')
+          .select('id, score, time_ms, region, game_mode, created_at')
+          .eq('user_id', widget.userId)
+          .order('created_at', ascending: false)
+          .limit(50);
+      if (!mounted) return;
+      setState(() {
+        _recentGames = List<Map<String, dynamic>>.from(data);
+        _gamesLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _gamesLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final u = widget.userData;
+    return Scaffold(
+      backgroundColor: FlitColors.backgroundDark,
+      appBar: AppBar(
+        backgroundColor: FlitColors.backgroundMid,
+        title: Text('@${widget.username}'),
+        centerTitle: true,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // ── Profile overview ──
+          _UserDetailSection(
+            title: 'Profile',
+            children: [
+              _DetailRow('Username', '@${u['username'] ?? '—'}'),
+              _DetailRow('Display Name', '${u['display_name'] ?? '—'}'),
+              _DetailRow('User ID', '${u['id'] ?? '—'}'),
+              _DetailRow('Admin Role', '${u['admin_role'] ?? 'regular'}'),
+              _DetailRow(
+                'Created',
+                u['created_at'] != null
+                    ? DateTime.tryParse(
+                            u['created_at'] as String,
+                          )?.toLocal().toString().split('.').first ??
+                          '—'
+                    : '—',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // ── Stats ──
+          _UserDetailSection(
+            title: 'Stats',
+            children: [
+              _DetailRow('Level', '${u['level'] ?? 0}'),
+              _DetailRow('XP', '${u['xp'] ?? 0}'),
+              _DetailRow('Coins', '${u['coins'] ?? 0}'),
+              _DetailRow('Games Played', '${u['games_played'] ?? 0}'),
+              _DetailRow('Best Score', '${u['best_score'] ?? '—'}'),
+              _DetailRow(
+                'Best Time',
+                u['best_time_ms'] != null
+                    ? '${(u['best_time_ms'] as int) / 1000}s'
+                    : '—',
+              ),
+              _DetailRow(
+                'Total Flight Time',
+                u['total_flight_time_ms'] != null
+                    ? '${((u['total_flight_time_ms'] as int) / 60000).toStringAsFixed(1)} min'
+                    : '—',
+              ),
+              _DetailRow('Countries Found', '${u['countries_found'] ?? 0}'),
+              _DetailRow('Flags Correct', '${u['flags_correct'] ?? 0}'),
+              _DetailRow('Capitals Correct', '${u['capitals_correct'] ?? 0}'),
+              _DetailRow('Outlines Correct', '${u['outlines_correct'] ?? 0}'),
+              _DetailRow('Borders Correct', '${u['borders_correct'] ?? 0}'),
+              _DetailRow('Stats Correct', '${u['stats_correct'] ?? 0}'),
+              _DetailRow('Best Streak', '${u['best_streak'] ?? 0}'),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // ── Recent Games ──
+          _UserDetailSection(
+            title: 'Recent Games (${_recentGames.length})',
+            children: [
+              if (_gamesLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_recentGames.isEmpty)
+                const Text(
+                  'No games found.',
+                  style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
+                )
+              else
+                ...(_recentGames.map((g) {
+                  final score = g['score'] as int? ?? 0;
+                  final timeMs = g['time_ms'] as int?;
+                  final region = g['region'] as String? ?? '—';
+                  final mode = g['game_mode'] as String? ?? '—';
+                  final date = g['created_at'] != null
+                      ? DateTime.tryParse(
+                              g['created_at'] as String,
+                            )?.toLocal().toString().split('.').first ??
+                            '—'
+                      : '—';
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            date,
+                            style: const TextStyle(
+                              color: FlitColors.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            mode,
+                            style: const TextStyle(
+                              color: FlitColors.textMuted,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            region,
+                            style: const TextStyle(
+                              color: FlitColors.textMuted,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 50,
+                          child: Text(
+                            '$score',
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              color: FlitColors.gold,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 50,
+                          child: Text(
+                            timeMs != null
+                                ? '${(timeMs / 1000).toStringAsFixed(1)}s'
+                                : '—',
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              color: FlitColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                })),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UserDetailSection extends StatelessWidget {
+  const _UserDetailSection({required this.title, required this.children});
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: FlitColors.cardBackground,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: FlitColors.cardBorder),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: FlitColors.accent,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...children,
+      ],
+    ),
+  );
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow(this.label, this.value);
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 3),
+    child: Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 3,
+          child: Text(
+            value,
+            style: const TextStyle(color: FlitColors.textPrimary, fontSize: 13),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Coin Ledger Screen
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _CoinLedgerScreen extends StatefulWidget {
   const _CoinLedgerScreen({required this.userId, required this.username});
