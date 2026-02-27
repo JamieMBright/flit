@@ -268,8 +268,8 @@ class FriendsService {
           .from('friendships')
           .select(
             'id, requester_id, addressee_id, status, created_at, '
-            'requester:profiles!friendships_requester_id_fkey(id, username, display_name, avatar_url), '
-            'addressee:profiles!friendships_addressee_id_fkey(id, username, display_name, avatar_url)',
+            'requester:profiles!fk_friendships_requester_profiles(id, username, display_name, avatar_url), '
+            'addressee:profiles!fk_friendships_addressee_profiles(id, username, display_name, avatar_url)',
           )
           .eq('status', 'accepted')
           .or('requester_id.eq.$_userId,addressee_id.eq.$_userId');
@@ -322,7 +322,7 @@ class FriendsService {
           .from('friendships')
           .select(
             'id, requester_id, created_at, '
-            'requester:profiles!friendships_requester_id_fkey(id, username, display_name, avatar_url)',
+            'requester:profiles!fk_friendships_requester_profiles(id, username, display_name, avatar_url)',
           )
           .eq('addressee_id', _userId!)
           .eq('status', 'pending');
@@ -395,7 +395,7 @@ class FriendsService {
           .from('friendships')
           .select(
             'id, addressee_id, created_at, '
-            'addressee:profiles!friendships_addressee_id_fkey(id, username, display_name, avatar_url)',
+            'addressee:profiles!fk_friendships_addressee_profiles(id, username, display_name, avatar_url)',
           )
           .eq('requester_id', _userId!)
           .eq('status', 'pending');
