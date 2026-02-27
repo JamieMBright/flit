@@ -191,13 +191,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // Secondary buttons in a 2x2 grid for variety
       Row(
         children: [
-          if (_leaderboardEnabled)
+          if (_shopEnabled)
             Expanded(
               child: _MenuTile(
-                label: 'Leaderboard',
-                icon: Icons.leaderboard_rounded,
-                onTap: () =>
-                    _navigateSafely(context, const LeaderboardScreen()),
+                label: 'Shop',
+                icon: Icons.storefront_rounded,
+                onTap: () => _navigateSafely(context, const ShopScreen()),
               ),
             )
           else
@@ -221,12 +220,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       const SizedBox(height: 10),
       Row(
         children: [
-          if (_shopEnabled)
+          if (_leaderboardEnabled)
             Expanded(
               child: _MenuTile(
-                label: 'Shop',
-                icon: Icons.storefront_rounded,
-                onTap: () => _navigateSafely(context, const ShopScreen()),
+                label: 'Leaderboard',
+                icon: Icons.leaderboard_rounded,
+                onTap: () =>
+                    _navigateSafely(context, const LeaderboardScreen()),
               ),
             )
           else
