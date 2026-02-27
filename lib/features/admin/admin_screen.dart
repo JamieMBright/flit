@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/config/admin_config.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
+import '../../game/clues/clue_types.dart';
 import '../../game/data/country_difficulty.dart';
 import '../../game/map/country_data.dart';
 import '../../data/models/avatar_config.dart';
@@ -4874,6 +4875,12 @@ class _DifficultyEditorScreen extends StatefulWidget {
 class _DifficultyEditorScreenState extends State<_DifficultyEditorScreen> {
   String _search = '';
   String _filterTier = 'all'; // all, easy, medium, hard, veryHard, extreme
+  bool _clueWeightsExpanded = false;
+
+  /// Mutable clue type weights — start with compiled-in defaults.
+  late final Map<ClueType, double> _clueWeights = {
+    for (final e in clueTypeDifficulty.entries) e.key: e.value,
+  };
 
   static const _tierFilters = {
     'all': 'All',
@@ -5003,6 +5010,23 @@ class _DifficultyEditorScreenState extends State<_DifficultyEditorScreen> {
             ),
           ),
           const SizedBox(height: 8),
+          // Clue type weights section
+          _ClueWeightsSection(
+            expanded: _clueWeightsExpanded,
+            onToggle: () =>
+                setState(() => _clueWeightsExpanded = !_clueWeightsExpanded),
+            weights: _clueWeights,
+            onWeightChanged: (type, value) {
+              setState(() => _clueWeights[type] = value);
+            },
+            onReset: () {
+              setState(() {
+                for (final e in clueTypeDifficulty.entries) {
+                  _clueWeights[e.key] = e.value;
+                }
+              });
+            },
+          ),
           // Country list
           Expanded(
             child: ListView.builder(
@@ -6594,7 +6618,6 @@ class _SuspiciousActivityPlaceholderState
                     )
                   : Column(
                       children: [
-                        // Header row
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -6675,7 +6698,6 @@ class _SuspiciousActivityPlaceholderState
                                   (row['best_score'] as num?)?.toInt() ?? 0;
                               final flags = _getFlags(row);
                               final severity = _severityColor(flags.length);
-
                               return InkWell(
                                 onTap: () => _showUserDialog(row),
                                 child: Container(
@@ -6776,6 +6798,244 @@ class _SuspiciousActivityPlaceholderState
                       ],
                     ),
             ),
+    );
+  }
+}
+
+/// Expandable section showing clue type difficulty weight sliders.
+class _ClueWeightsSection extends StatelessWidget {
+  const _ClueWeightsSection({
+    required this.expanded,
+    required this.onToggle,
+    required this.weights,
+    required this.onWeightChanged,
+    required this.onReset,
+  });
+
+  final bool expanded;
+  final VoidCallback onToggle;
+  final Map<ClueType, double> weights;
+  final void Function(ClueType, double) onWeightChanged;
+  final VoidCallback onReset;
+
+  /// The five main game clue types in difficulty order.
+  static const _clueTypes = [
+    ClueType.borders,
+    ClueType.flag,
+    ClueType.capital,
+    ClueType.stats,
+    ClueType.outline,
+  ];
+
+  static const _clueIcons = <ClueType, IconData>{
+    ClueType.borders: Icons.near_me,
+    ClueType.flag: Icons.flag,
+    ClueType.capital: Icons.location_city,
+    ClueType.stats: Icons.bar_chart,
+    ClueType.outline: Icons.crop_square,
+  };
+
+  static const List<Color> _gradientColors = [
+    Color(0xFF4CAF50),
+    Color(0xFF8BC34A),
+    Color(0xFFFFEB3B),
+    Color(0xFFFFC107),
+    Color(0xFFFF9800),
+    Color(0xFFFF5722),
+    Color(0xFFF44336),
+  ];
+
+  Color _colorForWeight(double w) {
+    final idx = (w * (_gradientColors.length - 1)).round();
+    return _gradientColors[idx.clamp(0, _gradientColors.length - 1)];
+  }
+
+  bool get _isModified {
+    for (final type in _clueTypes) {
+      if ((weights[type] ?? 0.5) != (clueTypeDifficulty[type] ?? 0.5)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: _isModified
+                ? FlitColors.accent.withOpacity(0.4)
+                : FlitColors.cardBorder,
+          ),
+        ),
+        child: Column(
+          children: [
+            // Header
+            InkWell(
+              onTap: onToggle,
+              borderRadius: BorderRadius.circular(10),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.tune, color: FlitColors.accent, size: 18),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Clue Type Weights',
+                        style: TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (_isModified)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: FlitColors.accent.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'modified',
+                          style: TextStyle(
+                            color: FlitColors.accent,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    Icon(
+                      expanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      color: FlitColors.textMuted,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Sliders
+            if (expanded) ...[
+              const Divider(color: FlitColors.cardBorder, height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                child: Column(
+                  children: _clueTypes.map((type) {
+                    final weight = weights[type] ?? 0.5;
+                    final defaultWeight = clueTypeDifficulty[type] ?? 0.5;
+                    final label = clueTypeDifficultyLabel[type] ?? type.name;
+                    final color = _colorForWeight(weight);
+                    final isChanged = (weight - defaultWeight).abs() > 0.005;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _clueIcons[type] ?? Icons.help_outline,
+                            color: color,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
+                          SizedBox(
+                            width: 64,
+                            child: Text(
+                              label,
+                              style: TextStyle(
+                                color: isChanged
+                                    ? FlitColors.textPrimary
+                                    : FlitColors.textSecondary,
+                                fontSize: 11,
+                                fontWeight: isChanged
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: SliderTheme(
+                              data: SliderThemeData(
+                                activeTrackColor: color,
+                                inactiveTrackColor: FlitColors.backgroundMid,
+                                thumbColor: color,
+                                overlayColor: color.withOpacity(0.15),
+                                trackHeight: 4,
+                                thumbShape: const RoundSliderThumbShape(
+                                  enabledThumbRadius: 7,
+                                ),
+                              ),
+                              child: Slider(
+                                value: weight,
+                                min: 0.0,
+                                max: 1.0,
+                                divisions: 20,
+                                onChanged: (v) => onWeightChanged(type, v),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 34,
+                            child: Text(
+                              '${(weight * 100).round()}%',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                color: color,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              // Reset button
+              if (_isModified)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      onPressed: onReset,
+                      icon: const Icon(
+                        Icons.restore,
+                        size: 14,
+                        color: FlitColors.textMuted,
+                      ),
+                      label: const Text(
+                        'Reset to defaults',
+                        style: TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 11,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
