@@ -14,6 +14,7 @@ import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/economy_config_service.dart';
 import '../debug/avatar_preview_screen.dart';
+import '../debug/country_preview_screen.dart';
 import '../debug/plane_preview_screen.dart';
 import 'admin_stats_screen.dart';
 
@@ -1538,6 +1539,17 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const AvatarPreviewScreen(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _AdminActionCard(
+            icon: Icons.flag,
+            iconColor: FlitColors.landMassHighlight,
+            label: 'Country Preview (flags & outlines)',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const CountryPreviewScreen(),
               ),
             ),
           ),
