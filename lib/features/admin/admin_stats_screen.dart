@@ -37,6 +37,14 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
   int _matchmakingPool = 0;
   int _totalFriendships = 0;
 
+  // Economy stats
+  int _totalCoins = 0;
+  double _avgCoins = 0;
+  double _medianCoins = 0;
+  int _maxCoins = 0;
+  int _playersWithCoins = 0;
+  List<Map<String, dynamic>> _topRichest = [];
+
   // Top players
   List<Map<String, dynamic>> _topPlayers = [];
 
@@ -136,6 +144,14 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
             .select('score, time_ms, region, rounds_completed, created_at')
             .order('created_at', ascending: false)
             .limit(15),
+        // 13: economy summary (RPC)
+        _client.rpc('admin_economy_summary'),
+        // 14: top 10 richest players
+        _client
+            .from('profiles')
+            .select('username, coins, level, games_played')
+            .order('coins', ascending: false)
+            .limit(10),
       ]);
 
       if (!mounted) return;
@@ -154,6 +170,19 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
         _totalFriendships = _extractCount(results[10]);
         _topPlayers = _extractList(results[11]);
         _recentGames = _extractList(results[12]);
+
+        // Economy summary
+        final econData = results[13];
+        if (econData is Map<String, dynamic>) {
+          _totalCoins = (econData['total_coins'] as num?)?.toInt() ?? 0;
+          _avgCoins = (econData['avg_coins'] as num?)?.toDouble() ?? 0;
+          _medianCoins = (econData['median_coins'] as num?)?.toDouble() ?? 0;
+          _maxCoins = (econData['max_coins'] as num?)?.toInt() ?? 0;
+          _playersWithCoins =
+              (econData['players_with_coins'] as num?)?.toInt() ?? 0;
+        }
+        _topRichest = _extractList(results[14]);
+
         _loading = false;
       });
     } catch (e) {
@@ -239,6 +268,10 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
                   const SizedBox(height: 16),
                   _buildSocialStats(),
                   const SizedBox(height: 16),
+                  _buildEconomyHealth(),
+                  const SizedBox(height: 16),
+                  _buildTopRichest(),
+                  const SizedBox(height: 16),
                   _buildTopPlayers(),
                   const SizedBox(height: 16),
                   _buildRecentGames(),
@@ -294,6 +327,101 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
         _StatRow('Active challenges', _activeChallenges.toString()),
         _StatRow('Matchmaking queue', _matchmakingPool.toString()),
         _StatRow('Total friendships', _totalFriendships.toString()),
+      ],
+    );
+  }
+
+  String _formatCoins(num value) {
+    if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(1)}M';
+    if (value >= 1000) return '${(value / 1000).toStringAsFixed(1)}K';
+    return value.toString();
+  }
+
+  Widget _buildEconomyHealth() {
+    final netPerPlayer = _totalPlayers > 0
+        ? (_totalCoins / _totalPlayers).toStringAsFixed(1)
+        : '0';
+    return _StatsCard(
+      title: 'Economy Health',
+      icon: Icons.account_balance,
+      iconColor: FlitColors.gold,
+      children: [
+        _StatRow(
+          'Total coins in circulation',
+          _formatCoins(_totalCoins),
+          highlight: true,
+        ),
+        _StatRow('Average coins/player', _formatCoins(_avgCoins)),
+        _StatRow('Median coins/player', _formatCoins(_medianCoins)),
+        _StatRow('Net coins/player', netPerPlayer),
+        _StatRow('Richest player', _formatCoins(_maxCoins)),
+        _StatRow('Players with coins', '$_playersWithCoins / $_totalPlayers'),
+      ],
+    );
+  }
+
+  Widget _buildTopRichest() {
+    return _StatsCard(
+      title: 'Top 10 Richest',
+      icon: Icons.monetization_on,
+      iconColor: FlitColors.gold,
+      children: [
+        if (_topRichest.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              'No data',
+              style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
+            ),
+          )
+        else
+          for (var i = 0; i < _topRichest.length; i++)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 24,
+                    child: Text(
+                      '#${i + 1}',
+                      style: TextStyle(
+                        color: i < 3 ? FlitColors.gold : FlitColors.textMuted,
+                        fontSize: 12,
+                        fontWeight: i < 3 ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '@${_topRichest[i]['username'] ?? '???'}',
+                      style: const TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    '${_formatCoins(_topRichest[i]['coins'] ?? 0)} coins',
+                    style: const TextStyle(
+                      color: FlitColors.gold,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Lv.${_topRichest[i]['level'] ?? 0}',
+                    style: const TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
       ],
     );
   }

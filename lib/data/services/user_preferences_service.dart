@@ -1002,6 +1002,13 @@ class UserPreferencesSnapshot {
       statsCorrect: p['stats_correct'] as int? ?? 0,
       bestStreak: p['best_streak'] as int? ?? 0,
       adminRole: p['admin_role'] as String?,
+      bannedAt: p['banned_at'] != null
+          ? DateTime.tryParse(p['banned_at'] as String)
+          : null,
+      banExpiresAt: p['ban_expires_at'] != null
+          ? DateTime.tryParse(p['ban_expires_at'] as String)
+          : null,
+      banReason: p['ban_reason'] as String?,
       createdAt: p['created_at'] != null
           ? DateTime.tryParse(p['created_at'] as String)
           : null,

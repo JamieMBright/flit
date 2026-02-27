@@ -21,6 +21,10 @@ graph TB
         FS["FriendsService"]
         ES["ErrorService"]
         AM["AudioManager"]
+        ACS["AdminConfigService<br/>(Ban, Reports, Flags)"]
+        RPS["ReportService"]
+        ANS["AnnouncementService"]
+        FFS["FeatureFlagService"]
     end
 
     subgraph "Backend — Supabase (PostgreSQL + Auth)"
@@ -51,6 +55,10 @@ graph TB
     MS --> DB
     FS --> DB
     ES --> VE
+    ACS --> DB
+    RPS --> DB
+    ANS --> DB
+    FFS --> DB
     VE --> GH
     VH -.->|cron ping| SA
     DB --> RLS
@@ -169,6 +177,68 @@ erDiagram
         timestamptz matched_at
         uuid matched_with
         uuid challenge_id FK
+    }
+
+    AUTH_USERS ||--o{ PLAYER_REPORTS : "reports"
+    AUTH_USERS ||--o{ ADMIN_AUDIT_LOG : "admin actions"
+
+    PROFILES {
+        timestamptz banned_at "nullable"
+        timestamptz ban_expires_at "nullable"
+        text ban_reason "nullable"
+        text admin_role "owner|moderator|null"
+    }
+
+    ADMIN_AUDIT_LOG {
+        bigint id PK
+        uuid actor_id FK
+        text action
+        uuid target_id FK
+        jsonb details
+        timestamptz created_at
+    }
+
+    PLAYER_REPORTS {
+        bigint id PK
+        uuid reporter_id FK
+        uuid reported_id FK
+        text reason
+        text details
+        text status "pending|resolved|dismissed"
+        uuid reviewed_by FK
+        timestamptz reviewed_at
+        text action_taken
+        timestamptz created_at
+    }
+
+    APP_CONFIG {
+        int id PK "singleton row"
+        text min_app_version
+        text recommended_version
+        boolean maintenance_mode
+        text maintenance_message
+        timestamptz updated_at
+    }
+
+    ANNOUNCEMENTS {
+        bigint id PK
+        text title
+        text body
+        text type "info|warning|event|maintenance"
+        int priority
+        boolean is_active
+        timestamptz starts_at
+        timestamptz expires_at
+        uuid created_by FK
+        timestamptz created_at
+    }
+
+    FEATURE_FLAGS {
+        text key PK
+        boolean enabled
+        text description
+        uuid updated_by FK
+        timestamptz updated_at
     }
 
     SCORES }|--|| LEADERBOARD_GLOBAL : "view"
@@ -1135,6 +1205,95 @@ flowchart TD
 
 ---
 
+## Admin & Moderation Architecture
+
+### Two-Tier RBAC
+
+Admin access is controlled by the `admin_role` column on `profiles` (`'owner'`, `'moderator'`, or `NULL`). The client resolves granular permissions via `AdminPermissions.forRole()` which returns a `Set<AdminPermission>`.
+
+```
+Owner  → ALL permissions (~40 enum values)
+Moderator → View + moderate subset (~20 enum values)
+NULL   → No admin access
+```
+
+**Server-side enforcement**: Every admin RPC is `SECURITY DEFINER` and checks `admin_role` internally. The client permission check is a UX convenience; the database is the true gate.
+
+### Permission Categories
+
+| Category | Moderator | Owner | Examples |
+|----------|-----------|-------|----------|
+| View data | ✅ | ✅ | User profiles, game history, coin ledger, error codes |
+| View designs | ✅ | ✅ | Clues, hints, flags, outlines, difficulty settings |
+| Moderate | ✅ | ✅ | Change usernames (profanity), resolve reports, temp-ban (≤30d) |
+| Economy write | ❌ | ✅ | Gift gold/levels/flights, edit earnings, promotions, shop prices |
+| System config | ❌ | ✅ | App config, feature flags, announcements, permanent bans |
+| Role management | ❌ | ✅ | Promote/demote moderators, view full audit log |
+
+### Admin Services
+
+| Service | Cache TTL | Offline Fallback | Purpose |
+|---------|-----------|------------------|---------|
+| `ReportService` | None | None | Submit, fetch, and resolve player reports |
+| `AnnouncementService` | 2 min | SharedPreferences (dismiss state) | Active announcements + MOTD banner |
+| `AppConfigService` | 5 min | None | Force update gate, maintenance mode |
+| `FeatureFlagService` | 2 min | SharedPreferences (last known flags) | Remote feature toggles |
+
+### Admin RPC Functions
+
+All RPCs call `_log_admin_action()` to insert into `admin_audit_log` for full traceability.
+
+| RPC | Min Role | Purpose |
+|-----|----------|---------|
+| `admin_ban_user` | moderator (≤30d) / owner (permanent) | Ban a player |
+| `admin_unban_user` | owner | Lift a ban |
+| `admin_resolve_report` | moderator | Resolve or dismiss a player report |
+| `admin_update_app_config` | owner | Set min version, maintenance mode |
+| `admin_upsert_announcement` | moderator (info only) / owner (all types) | Create/edit announcements |
+| `admin_set_feature_flag` | owner | Toggle feature flags |
+| `admin_search_users` | moderator | Fuzzy search by username/display_name/UUID |
+
+### Ban System Flow
+
+```mermaid
+sequenceDiagram
+    actor Admin
+    participant AdminScreen
+    participant Supabase as Supabase RPC
+    participant AuditLog as admin_audit_log
+
+    Admin->>AdminScreen: Ban user (reason, duration)
+    AdminScreen->>Supabase: admin_ban_user(target, reason, days)
+    Supabase->>Supabase: Check caller admin_role
+    Supabase->>Supabase: UPDATE profiles SET banned_at, ban_expires_at, ban_reason
+    Supabase->>AuditLog: INSERT log entry
+    Supabase-->>AdminScreen: Success
+
+    Note over AdminScreen: Next time banned user logs in:
+    participant LoginScreen
+    participant AuthService
+    LoginScreen->>AuthService: checkExistingAuth()
+    AuthService->>Supabase: SELECT * FROM profiles
+    AuthService-->>LoginScreen: Player with isBanned=true
+    LoginScreen->>LoginScreen: Navigate to BannedScreen
+```
+
+### App Startup Gates
+
+On login/session restore, the app checks three gates in order:
+
+1. **Ban check** — If `player.isBanned`, route to `BannedScreen` (no game access)
+2. **Maintenance check** — If `appConfig.maintenanceMode`, route to `MaintenanceScreen`
+3. **Version check** — If app version < `minAppVersion`, route to `UpdateRequiredScreen`
+
+### Database Views
+
+| View | Purpose |
+|------|---------|
+| `suspicious_activity` | Surfaces anomalies: >100 games/24h, >1500 coins/24h, best_score ≥99000 |
+
+---
+
 ## Vercel Serverless Endpoints
 
 | Endpoint | Method | Auth | Purpose |
@@ -1171,6 +1330,19 @@ The health endpoint is hit by a Vercel cron every 3 days to prevent Supabase's f
 | Error telemetry API | `api/errors/index.js` |
 | Health check API | `api/health/index.js` |
 | SQL migrations | `supabase/migrations/*.sql` |
+| Admin config + permissions | `lib/core/config/admin_config.dart` |
+| Admin panel | `lib/features/admin/admin_screen.dart` |
+| Admin stats screen | `lib/features/admin/admin_stats_screen.dart` |
+| Report service | `lib/data/services/report_service.dart` |
+| Announcement service | `lib/data/services/announcement_service.dart` |
+| App config service | `lib/data/services/app_config_service.dart` |
+| Feature flag service | `lib/data/services/feature_flag_service.dart` |
+| Player report model | `lib/data/models/player_report.dart` |
+| Announcement model | `lib/data/models/announcement.dart` |
+| App remote config model | `lib/data/models/app_remote_config.dart` |
+| Banned screen | `lib/features/auth/banned_screen.dart` |
+| Maintenance screen | `lib/features/auth/maintenance_screen.dart` |
+| Force update screen | `lib/features/auth/update_required_screen.dart` |
 
 ---
 

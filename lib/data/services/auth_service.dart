@@ -421,6 +421,13 @@ class AuthService {
           statsCorrect: data['stats_correct'] as int? ?? 0,
           bestStreak: data['best_streak'] as int? ?? 0,
           adminRole: data['admin_role'] as String?,
+          bannedAt: data['banned_at'] != null
+              ? DateTime.tryParse(data['banned_at'] as String)
+              : null,
+          banExpiresAt: data['ban_expires_at'] != null
+              ? DateTime.tryParse(data['ban_expires_at'] as String)
+              : null,
+          banReason: data['ban_reason'] as String?,
           createdAt: data['created_at'] != null
               ? DateTime.tryParse(data['created_at'] as String)
               : null,

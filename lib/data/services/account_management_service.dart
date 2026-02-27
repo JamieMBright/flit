@@ -209,19 +209,14 @@ class AccountManagementService {
   // Delete account
   // ---------------------------------------------------------------------------
 
-  /// Delete all user data from Supabase tables.
+  /// Delete all user data from Supabase tables, then remove the auth.users row
+  /// via the `delete-auth-user` Edge Function.
   ///
   /// Cascade order: friendships, challenges, scores, account_state,
-  /// user_settings, then profiles.
+  /// user_settings, profiles, then auth.users (via Edge Function).
   ///
   /// After deletion, the caller must sign out the Supabase auth session
   /// and navigate to the login screen.
-  ///
-  // TODO(account-deletion): Add a Supabase Edge Function to delete the auth
-  // user itself via `auth.admin.deleteUser()`. The client SDK cannot call
-  // admin endpoints. Until then, the auth row remains orphaned but all
-  // user-visible data is removed. The Edge Function should be called after
-  // table data is deleted.
   Future<void> deleteAccountData(String userId) async {
     try {
       // Delete in dependency order — child tables first, then profile last.
@@ -250,9 +245,38 @@ class AccountManagementService {
 
       // 6. Profile (last, since other tables may reference it).
       await _client.from('profiles').delete().eq('id', userId);
+
+      // 7. Delete auth.users row via Edge Function (requires service_role — server-side only).
+      try {
+        await _client.functions.invoke(
+          'delete-auth-user',
+          body: {'user_id': userId},
+        );
+      } catch (e) {
+        // Log but don't block — data tables are already deleted.
+        debugPrint('Warning: auth.users deletion failed: $e');
+      }
     } catch (e) {
       debugPrint('[AccountManagementService] deleteAccountData failed: $e');
       rethrow;
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // GDPR request tracking
+  // ---------------------------------------------------------------------------
+
+  /// Submit a GDPR request (export or delete) for tracking.
+  Future<void> submitGdprRequest({
+    required String requestType,
+    String? username,
+  }) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+    await _client.from('gdpr_requests').insert({
+      'user_id': userId,
+      'username': username,
+      'request_type': requestType,
+    });
   }
 }

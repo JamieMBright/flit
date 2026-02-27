@@ -3,8 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/models/app_remote_config.dart';
+import '../../data/models/player.dart';
 import '../../data/providers/account_provider.dart';
+import '../../data/services/app_config_service.dart';
 import '../../data/services/auth_service.dart';
+import '../auth/banned_screen.dart';
+import '../auth/maintenance_screen.dart';
+import '../auth/update_required_screen.dart';
 import '../home/home_screen.dart';
 
 /// Login/signup screen shown on first launch.
@@ -42,12 +48,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _checkExistingSession() async {
     setState(() => _isLoading = true);
 
+    // Check app config gates (maintenance mode, force update) before anything.
+    try {
+      final compat = await AppConfigService.instance.checkCompatibility();
+      if (!mounted) return;
+      if (compat == AppCompatibility.maintenance) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(builder: (_) => const MaintenanceScreen()),
+        );
+        return;
+      }
+      if (compat == AppCompatibility.updateRequired) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(builder: (_) => const UpdateRequiredScreen()),
+        );
+        return;
+      }
+    } catch (_) {
+      // If config check fails (network), continue to login — don't block the user.
+    }
+
     final result = await _authService.checkExistingAuth();
 
     if (mounted) {
       setState(() => _isLoading = false);
 
       if (result.isAuthenticated && result.player != null) {
+        if (result.player!.isBanned) {
+          if (!mounted) return;
+          _navigateToBanned(result.player!);
+          return;
+        }
         final notifier = ref.read(accountProvider.notifier);
         await notifier.loadFromSupabase(result.player!.id);
         if (mounted) _navigateToHome();
@@ -614,6 +645,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           setState(() => _mode = _AuthMode.confirmEmail);
         } else if (result.isAuthenticated && result.player != null) {
           TextInput.finishAutofillContext();
+          if (result.player!.isBanned) {
+            if (!mounted) return;
+            _navigateToBanned(result.player!);
+            return;
+          }
           final notifier = ref.read(accountProvider.notifier);
           await notifier.loadFromSupabase(result.player!.id);
           if (mounted) _navigateToHome();
@@ -660,6 +696,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
         if (result.isAuthenticated && result.player != null) {
           TextInput.finishAutofillContext();
+          if (result.player!.isBanned) {
+            if (!mounted) return;
+            _navigateToBanned(result.player!);
+            return;
+          }
           final notifier = ref.read(accountProvider.notifier);
           await notifier.loadFromSupabase(result.player!.id);
           if (mounted) _navigateToHome();
@@ -675,6 +716,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         });
       }
     }
+  }
+
+  void _navigateToBanned(Player player) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => BannedScreen(
+          banReason: player.banReason,
+          banExpiresAt: player.banExpiresAt,
+        ),
+      ),
+    );
   }
 
   void _navigateToHome() {

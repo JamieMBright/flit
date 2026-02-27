@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_version.dart';
 import '../../data/providers/account_provider.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../data/services/feature_flag_service.dart';
 import '../admin/admin_screen.dart';
 import '../daily/daily_challenge_screen.dart';
 import '../friends/friends_screen.dart';
@@ -16,6 +17,7 @@ import '../play/practice_screen.dart';
 import '../play/region_select_screen.dart';
 import '../profile/profile_screen.dart';
 import '../shop/shop_screen.dart';
+import 'announcement_banner.dart';
 
 /// Home screen with animated map background and menu overlay.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -29,6 +31,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animController;
 
+  bool _shopEnabled = true;
+  bool _leaderboardEnabled = true;
+  bool _matchmakingEnabled = true;
+  bool _dailyScrambleEnabled = true;
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +43,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       vsync: this,
       duration: const Duration(seconds: 20),
     )..repeat();
+    _loadFeatureFlags();
+  }
+
+  Future<void> _loadFeatureFlags() async {
+    try {
+      final flags = await Future.wait([
+        FeatureFlagService.instance.isEnabled('shop_enabled'),
+        FeatureFlagService.instance.isEnabled('leaderboard_enabled'),
+        FeatureFlagService.instance.isEnabled('matchmaking_enabled'),
+        FeatureFlagService.instance.isEnabled('daily_scramble_enabled'),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _shopEnabled = flags[0];
+        _leaderboardEnabled = flags[1];
+        _matchmakingEnabled = flags[2];
+        _dailyScrambleEnabled = flags[3];
+      });
+    } catch (_) {
+      // Default to all enabled on failure
+    }
   }
 
   @override
@@ -51,6 +79,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       children: [
         // Animated map background
         _AnimatedMapBackground(animation: _animController),
+
+        // Announcement banner — floats at the top of the safe area above the
+        // menu column, but below the globe so it feels part of the HUD layer.
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 12,
+          left: 16,
+          right: 16,
+          child: const AnnouncementBanner(),
+        ),
 
         // Menu overlay
         SafeArea(
@@ -152,13 +189,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // Secondary buttons in a 2x2 grid for variety
       Row(
         children: [
-          Expanded(
-            child: _MenuTile(
-              label: 'Leaderboard',
-              icon: Icons.leaderboard_rounded,
-              onTap: () => _navigateSafely(context, const LeaderboardScreen()),
-            ),
-          ),
+          if (_leaderboardEnabled)
+            Expanded(
+              child: _MenuTile(
+                label: 'Leaderboard',
+                icon: Icons.leaderboard_rounded,
+                onTap: () =>
+                    _navigateSafely(context, const LeaderboardScreen()),
+              ),
+            )
+          else
+            const Expanded(child: SizedBox()),
           const SizedBox(width: 10),
           Expanded(
             child: _MenuTile(
@@ -180,13 +221,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
           ),
           const SizedBox(width: 10),
-          Expanded(
-            child: _MenuTile(
-              label: 'Shop',
-              icon: Icons.storefront_rounded,
-              onTap: () => _navigateSafely(context, const ShopScreen()),
-            ),
-          ),
+          if (_shopEnabled)
+            Expanded(
+              child: _MenuTile(
+                label: 'Shop',
+                icon: Icons.storefront_rounded,
+                onTap: () => _navigateSafely(context, const ShopScreen()),
+              ),
+            )
+          else
+            const Expanded(child: SizedBox()),
         ],
       ),
       const SizedBox(height: 10),
@@ -286,15 +330,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               onTap: () => _closeSheetAndNavigate(ctx, const PracticeScreen()),
             ),
             const SizedBox(height: 10),
-            _GameModeCard(
-              title: 'Daily Scramble',
-              subtitle: "Today's challenge — compete for glory",
-              icon: Icons.today_rounded,
-              isHighlighted: true,
-              onTap: () =>
-                  _closeSheetAndNavigate(ctx, const DailyChallengeScreen()),
-            ),
-            const SizedBox(height: 10),
+            if (_dailyScrambleEnabled) ...[
+              _GameModeCard(
+                title: 'Daily Scramble',
+                subtitle: "Today's challenge — compete for glory",
+                icon: Icons.today_rounded,
+                isHighlighted: true,
+                onTap: () =>
+                    _closeSheetAndNavigate(ctx, const DailyChallengeScreen()),
+              ),
+              const SizedBox(height: 10),
+            ],
             _GameModeCard(
               title: 'Dogfight',
               subtitle: 'Challenge your friends head-to-head',
@@ -302,13 +348,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               onTap: () => _closeSheetAndNavigate(ctx, const FriendsScreen()),
             ),
             const SizedBox(height: 10),
-            _GameModeCard(
-              title: 'Find a Challenger',
-              subtitle: 'Matchmake against pilots at your level',
-              icon: Icons.radar,
-              onTap: () =>
-                  _closeSheetAndNavigate(ctx, const FindChallengerScreen()),
-            ),
+            if (_matchmakingEnabled) ...[
+              _GameModeCard(
+                title: 'Find a Challenger',
+                subtitle: 'Matchmake against pilots at your level',
+                icon: Icons.radar,
+                onTap: () =>
+                    _closeSheetAndNavigate(ctx, const FindChallengerScreen()),
+              ),
+              const SizedBox(height: 10),
+            ],
             const SizedBox(height: 16),
           ],
         ),
