@@ -49,6 +49,9 @@ class _CountryPreviewScreenState extends State<CountryPreviewScreen> {
   /// Only show countries with issues.
   bool _showIssuesOnly = false;
 
+  /// Whether the feedback export panel is expanded.
+  bool _feedbackExpanded = true;
+
   /// Codes known to be unsupported by the flag SVG package.
   static const _unsupportedFlagCodes = {
     'XK',
@@ -179,64 +182,30 @@ class _CountryPreviewScreenState extends State<CountryPreviewScreen> {
     );
   }
 
-  void _showJsonExport() {
+  void _copyJson() {
     final json = _buildJsonReport();
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: FlitColors.cardBackground,
-        title: Row(
-          children: [
-            const Text(
-              'Feedback JSON',
-              style: TextStyle(color: FlitColors.textPrimary, fontSize: 16),
-            ),
-            const Spacer(),
-            IconButton(
-              icon: const Icon(Icons.copy, color: FlitColors.accent, size: 20),
-              tooltip: 'Copy to clipboard',
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: json));
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(
-                    content: Text('Copied to clipboard'),
-                    backgroundColor: FlitColors.success,
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 400,
-          child: Stack(
-            children: [
-              SingleChildScrollView(
-                child: SelectableText(
-                  json,
-                  style: const TextStyle(
-                    color: FlitColors.textPrimary,
-                    fontSize: 11,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Close',
-              style: TextStyle(color: FlitColors.textSecondary),
-            ),
-          ),
-        ],
+    Clipboard.setData(ClipboardData(text: json));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Feedback JSON copied to clipboard'),
+        backgroundColor: FlitColors.success,
+        duration: Duration(seconds: 2),
       ),
     );
+  }
+
+  void _removeCountryIssues(String code) {
+    setState(() {
+      _issues.remove(code);
+      _notes.remove(code);
+    });
+  }
+
+  /// Countries that have at least one issue flagged, sorted by code.
+  List<MapEntry<String, Set<CountryIssue>>> get _flaggedEntries {
+    return _issues.entries.where((e) => e.value.isNotEmpty).toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
   }
 
   void _clearAll() {
@@ -260,7 +229,7 @@ class _CountryPreviewScreenState extends State<CountryPreviewScreen> {
         ),
         iconTheme: const IconThemeData(color: FlitColors.textPrimary),
         actions: [
-          if (_issueCount > 0)
+          if (_issueCount > 0) ...[
             Padding(
               padding: const EdgeInsets.only(right: 4),
               child: Center(
@@ -284,16 +253,12 @@ class _CountryPreviewScreenState extends State<CountryPreviewScreen> {
                 ),
               ),
             ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, size: 20),
-            tooltip: 'Clear all issues',
-            onPressed: _issueCount > 0 ? _clearAll : null,
-          ),
-          IconButton(
-            icon: const Icon(Icons.download, size: 20),
-            tooltip: 'Export feedback JSON',
-            onPressed: _issueCount > 0 ? _showJsonExport : null,
-          ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20),
+              tooltip: 'Clear all issues',
+              onPressed: _clearAll,
+            ),
+          ],
         ],
       ),
       body: Column(
@@ -351,6 +316,19 @@ class _CountryPreviewScreenState extends State<CountryPreviewScreen> {
             ),
           ),
 
+          // Feedback export panel (visible when issues exist)
+          if (_issueCount > 0)
+            _FeedbackPanel(
+              expanded: _feedbackExpanded,
+              onToggle: () =>
+                  setState(() => _feedbackExpanded = !_feedbackExpanded),
+              flaggedEntries: _flaggedEntries,
+              notes: _notes,
+              json: _buildJsonReport(),
+              onCopy: _copyJson,
+              onRemoveCountry: _removeCountryIssues,
+            ),
+
           // Summary bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -366,7 +344,8 @@ class _CountryPreviewScreenState extends State<CountryPreviewScreen> {
                 if (_issueCount > 0) ...[
                   const SizedBox(width: 8),
                   Text(
-                    '· $_issueCount issues flagged',
+                    '· $_issueCount issues across '
+                    '${_flaggedEntries.length} countries',
                     style: const TextStyle(
                       color: FlitColors.warning,
                       fontSize: 12,
@@ -398,6 +377,260 @@ class _CountryPreviewScreenState extends State<CountryPreviewScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Feedback export panel
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Collapsible panel at the top of the screen that shows all flagged issues
+/// as a summary list + the raw JSON, with a prominent copy button.
+class _FeedbackPanel extends StatelessWidget {
+  const _FeedbackPanel({
+    required this.expanded,
+    required this.onToggle,
+    required this.flaggedEntries,
+    required this.notes,
+    required this.json,
+    required this.onCopy,
+    required this.onRemoveCountry,
+  });
+
+  final bool expanded;
+  final VoidCallback onToggle;
+  final List<MapEntry<String, Set<CountryIssue>>> flaggedEntries;
+  final Map<String, String> notes;
+  final String json;
+  final VoidCallback onCopy;
+  final ValueChanged<String> onRemoveCountry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      child: Container(
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: FlitColors.warning.withOpacity(0.4)),
+        ),
+        child: Column(
+          children: [
+            // Header row — always visible
+            InkWell(
+              onTap: onToggle,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(10),
+                bottom: Radius.circular(10),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.assignment,
+                      color: FlitColors.warning,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Feedback (${flaggedEntries.length} countries)',
+                        style: const TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    // Copy button always accessible
+                    GestureDetector(
+                      onTap: onCopy,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: FlitColors.accent.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: FlitColors.accent.withOpacity(0.4),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.copy,
+                              size: 14,
+                              color: FlitColors.accent,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'Copy JSON',
+                              style: TextStyle(
+                                color: FlitColors.accent,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      expanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      color: FlitColors.textMuted,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Expanded content
+            if (expanded) ...[
+              const Divider(color: FlitColors.cardBorder, height: 1),
+
+              // Flagged country summary rows
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 160),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  itemCount: flaggedEntries.length,
+                  itemBuilder: (context, index) {
+                    final entry = flaggedEntries[index];
+                    final code = entry.key;
+                    final issues = entry.value;
+                    final country = CountryData.getCountry(code);
+                    final note = notes[code];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: FlitColors.backgroundMid,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          children: [
+                            // Country code
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: FlitColors.accent.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              child: Text(
+                                code,
+                                style: const TextStyle(
+                                  color: FlitColors.accent,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            // Name + issues
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    country?.name ?? code,
+                                    style: const TextStyle(
+                                      color: FlitColors.textPrimary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    issues.map((i) => i.label).join(', '),
+                                    style: const TextStyle(
+                                      color: FlitColors.warning,
+                                      fontSize: 10,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (note != null && note.isNotEmpty)
+                                    Text(
+                                      note,
+                                      style: const TextStyle(
+                                        color: FlitColors.textMuted,
+                                        fontSize: 9,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                ],
+                              ),
+                            ),
+                            // Remove button
+                            GestureDetector(
+                              onTap: () => onRemoveCountry(code),
+                              child: const Padding(
+                                padding: EdgeInsets.all(4),
+                                child: Icon(
+                                  Icons.close,
+                                  size: 14,
+                                  color: FlitColors.textMuted,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // JSON preview
+              const Divider(color: FlitColors.cardBorder, height: 1),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 200),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(10),
+                  child: SelectableText(
+                    json,
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 10,
+                      fontFamily: 'monospace',
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
