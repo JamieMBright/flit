@@ -14,6 +14,8 @@ import '../../data/models/economy_config.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/economy_config_service.dart';
+import '../../data/services/report_service.dart';
+import '../../data/services/feature_flag_service.dart';
 import '../debug/avatar_preview_screen.dart';
 import '../debug/country_preview_screen.dart';
 import '../debug/plane_preview_screen.dart';
@@ -56,10 +58,19 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
   EconomyConfig? _economyConfig;
   bool _economyConfigLoading = true;
 
+  // Report queue
+  int _pendingReportCount = 0;
+
+  // Feature flags
+  Map<String, bool> _featureFlags = {};
+  bool _featureFlagsLoading = true;
+
   @override
   void initState() {
     super.initState();
     _loadEconomyConfig();
+    _loadReportCount();
+    _loadFeatureFlags();
   }
 
   Future<void> _loadEconomyConfig() async {
@@ -76,6 +87,27 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
         _economyConfig = EconomyConfig.defaults();
         _economyConfigLoading = false;
       });
+    }
+  }
+
+  Future<void> _loadReportCount() async {
+    try {
+      final count = await ReportService.instance.countPending();
+      if (!mounted) return;
+      setState(() => _pendingReportCount = count);
+    } catch (_) {}
+  }
+
+  Future<void> _loadFeatureFlags() async {
+    try {
+      final flags = await FeatureFlagService.instance.fetchAll();
+      if (!mounted) return;
+      setState(() {
+        _featureFlags = flags;
+        _featureFlagsLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _featureFlagsLoading = false);
     }
   }
 
@@ -1380,6 +1412,162 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
     );
   }
 
+  // ── Ban Management ──
+
+  void _showBanUserDialog(BuildContext context) {
+    final usernameCtl = TextEditingController();
+    final reasonCtl = TextEditingController();
+    String selectedDuration = '7'; // days
+    String? error;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => _AdminDialog(
+          icon: Icons.gavel,
+          iconColor: FlitColors.error,
+          title: 'Ban Player',
+          subtitle: 'Suspend a player account.',
+          error: error,
+          actionLabel: 'Ban',
+          actionIcon: Icons.gavel,
+          actionColor: FlitColors.error,
+          onAction: () async {
+            final username = usernameCtl.text.trim();
+            final reason = reasonCtl.text.trim();
+            if (username.isEmpty) {
+              setDialogState(() => error = 'Enter a username');
+              return;
+            }
+            if (reason.isEmpty) {
+              setDialogState(() => error = 'Enter a reason');
+              return;
+            }
+
+            try {
+              final user = await _lookupUser(username);
+              if (user == null) {
+                setDialogState(() => error = 'User @$username not found');
+                return;
+              }
+
+              final days = selectedDuration == 'permanent'
+                  ? null
+                  : int.tryParse(selectedDuration);
+
+              await _client.rpc(
+                'admin_ban_user',
+                params: {
+                  'target_user_id': user['id'],
+                  'p_reason': reason,
+                  'p_duration_days': days,
+                },
+              );
+
+              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!context.mounted) return;
+              final label = days != null ? '$days day(s)' : 'permanently';
+              _snack(context, '@$username banned $label');
+            } on PostgrestException catch (e) {
+              setDialogState(() => error = 'Failed: ${e.message}');
+            } catch (_) {
+              setDialogState(() => error = 'Something went wrong');
+            }
+          },
+          onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [
+            _UsernameField(controller: usernameCtl),
+            const SizedBox(height: 12),
+            _AmountField(
+              controller: reasonCtl,
+              hint: 'Reason for ban',
+              isNumeric: false,
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: DropdownButton<String>(
+                value: selectedDuration,
+                isExpanded: true,
+                dropdownColor: FlitColors.cardBackground,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                underline: const SizedBox.shrink(),
+                items: const [
+                  DropdownMenuItem(value: '1', child: Text('1 day')),
+                  DropdownMenuItem(value: '7', child: Text('7 days')),
+                  DropdownMenuItem(value: '30', child: Text('30 days')),
+                  DropdownMenuItem(
+                    value: 'permanent',
+                    child: Text('Permanent'),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setDialogState(() => selectedDuration = value);
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUnbanUserDialog(BuildContext context) {
+    final usernameCtl = TextEditingController();
+    String? error;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => _AdminDialog(
+          icon: Icons.lock_open,
+          iconColor: FlitColors.success,
+          title: 'Unban Player',
+          error: error,
+          actionLabel: 'Unban',
+          actionIcon: Icons.lock_open,
+          actionColor: FlitColors.success,
+          onAction: () async {
+            final username = usernameCtl.text.trim();
+            if (username.isEmpty) {
+              setDialogState(() => error = 'Enter a username');
+              return;
+            }
+
+            try {
+              final user = await _lookupUser(username);
+              if (user == null) {
+                setDialogState(() => error = 'User @$username not found');
+                return;
+              }
+
+              await _client.rpc(
+                'admin_unban_user',
+                params: {'target_user_id': user['id']},
+              );
+
+              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!context.mounted) return;
+              _snack(context, '@$username unbanned');
+            } on PostgrestException catch (e) {
+              setDialogState(() => error = 'Failed: ${e.message}');
+            } catch (_) {
+              setDialogState(() => error = 'Something went wrong');
+            }
+          },
+          onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [_UsernameField(controller: usernameCtl)],
+        ),
+      ),
+    );
+  }
+
   // ── Build ──
 
   /// Shorthand: does the current player have [perm]?
@@ -1634,6 +1822,45 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               _can(state, AdminPermission.manageRoles))
             const SizedBox(height: 24),
 
+          // ── Ban Management (moderator + owner) ──
+          if (_can(state, AdminPermission.tempBanUser)) ...[
+            _AdminActionCard(
+              icon: Icons.gavel,
+              iconColor: FlitColors.error,
+              label: 'Ban Player',
+              onTap: () => _showBanUserDialog(context),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (_can(state, AdminPermission.unbanUser)) ...[
+            _AdminActionCard(
+              icon: Icons.lock_open,
+              iconColor: FlitColors.success,
+              label: 'Unban Player',
+              onTap: () => _showUnbanUserDialog(context),
+            ),
+            const SizedBox(height: 8),
+          ],
+
+          // ── Report Queue (moderator + owner) ──
+          if (_can(state, AdminPermission.viewReports)) ...[
+            const _SectionHeader(title: 'Reports'),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.flag,
+              iconColor: FlitColors.warning,
+              label: _pendingReportCount > 0
+                  ? 'Report Queue ($_pendingReportCount pending)'
+                  : 'Report Queue',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const _ReportQueuePlaceholder(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+
           // ── Difficulty Ratings (view: moderator + owner, edit: owner) ──
           if (_can(state, AdminPermission.viewDifficulty)) ...[
             const _SectionHeader(title: 'Difficulty Ratings'),
@@ -1734,6 +1961,142 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                 ),
               ],
             ],
+            const SizedBox(height: 24),
+          ],
+
+          // ── App Config (owner only) ──
+          if (_can(state, AdminPermission.editAppConfig)) ...[
+            const _SectionHeader(title: 'App Config'),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.system_update,
+              iconColor: FlitColors.accent,
+              label: 'Version Gate & Maintenance',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const _AppConfigPlaceholder(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          // ── Announcements (moderator + owner) ──
+          if (_can(state, AdminPermission.viewAnnouncements)) ...[
+            const _SectionHeader(title: 'Announcements'),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.campaign,
+              iconColor: FlitColors.gold,
+              label: 'Manage Announcements',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const _AnnouncementsPlaceholder(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          // ── Feature Flags (owner: edit, moderator: view) ──
+          if (_can(state, AdminPermission.viewFeatureFlags)) ...[
+            const _SectionHeader(title: 'Feature Flags'),
+            const SizedBox(height: 8),
+            if (_featureFlagsLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else
+              ...(_featureFlags.entries.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: FlitColors.cardBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: FlitColors.cardBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          entry.value ? Icons.toggle_on : Icons.toggle_off,
+                          color: entry.value
+                              ? FlitColors.success
+                              : FlitColors.textMuted,
+                          size: 28,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            entry.key,
+                            style: const TextStyle(
+                              color: FlitColors.textPrimary,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        if (_can(state, AdminPermission.editFeatureFlags))
+                          Switch(
+                            value: entry.value,
+                            activeColor: FlitColors.success,
+                            onChanged: (val) async {
+                              try {
+                                await FeatureFlagService.instance.setFlag(
+                                  flagKey: entry.key,
+                                  enabled: val,
+                                );
+                                _loadFeatureFlags();
+                              } catch (_) {
+                                if (context.mounted) {
+                                  _snack(
+                                    context,
+                                    'Failed to update flag',
+                                    isError: true,
+                                  );
+                                }
+                              }
+                            },
+                          )
+                        else
+                          Text(
+                            entry.value ? 'ON' : 'OFF',
+                            style: TextStyle(
+                              color: entry.value
+                                  ? FlitColors.success
+                                  : FlitColors.textMuted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              )),
+            const SizedBox(height: 24),
+          ],
+
+          // ── Suspicious Activity (moderator + owner) ──
+          if (_can(state, AdminPermission.viewSuspiciousActivity)) ...[
+            const _SectionHeader(title: 'Anomaly Detection'),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.warning_amber,
+              iconColor: FlitColors.error,
+              label: 'Suspicious Activity',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const _SuspiciousActivityPlaceholder(),
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
           ],
 
@@ -4105,6 +4468,78 @@ class _DifficultyEditorScreenState extends State<_DifficultyEditorScreen> {
       ),
     );
   }
+}
+
+class _ReportQueuePlaceholder extends StatelessWidget {
+  const _ReportQueuePlaceholder();
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: FlitColors.backgroundDark,
+    appBar: AppBar(
+      backgroundColor: FlitColors.backgroundMid,
+      title: const Text('Report Queue'),
+    ),
+    body: const Center(
+      child: Text(
+        'Report queue screen — coming soon',
+        style: TextStyle(color: FlitColors.textSecondary),
+      ),
+    ),
+  );
+}
+
+class _AppConfigPlaceholder extends StatelessWidget {
+  const _AppConfigPlaceholder();
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: FlitColors.backgroundDark,
+    appBar: AppBar(
+      backgroundColor: FlitColors.backgroundMid,
+      title: const Text('App Config'),
+    ),
+    body: const Center(
+      child: Text(
+        'App config screen — coming soon',
+        style: TextStyle(color: FlitColors.textSecondary),
+      ),
+    ),
+  );
+}
+
+class _AnnouncementsPlaceholder extends StatelessWidget {
+  const _AnnouncementsPlaceholder();
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: FlitColors.backgroundDark,
+    appBar: AppBar(
+      backgroundColor: FlitColors.backgroundMid,
+      title: const Text('Announcements'),
+    ),
+    body: const Center(
+      child: Text(
+        'Announcements manager — coming soon',
+        style: TextStyle(color: FlitColors.textSecondary),
+      ),
+    ),
+  );
+}
+
+class _SuspiciousActivityPlaceholder extends StatelessWidget {
+  const _SuspiciousActivityPlaceholder();
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: FlitColors.backgroundDark,
+    appBar: AppBar(
+      backgroundColor: FlitColors.backgroundMid,
+      title: const Text('Suspicious Activity'),
+    ),
+    body: const Center(
+      child: Text(
+        'Suspicious activity monitor — coming soon',
+        style: TextStyle(color: FlitColors.textSecondary),
+      ),
+    ),
+  );
 }
 
 class _CountryDiffEntry {

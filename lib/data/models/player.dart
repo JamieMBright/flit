@@ -22,6 +22,9 @@ class Player {
     this.statsCorrect = 0,
     this.bestStreak = 0,
     this.adminRole,
+    this.bannedAt,
+    this.banExpiresAt,
+    this.banReason,
     this.createdAt,
   });
 
@@ -71,6 +74,18 @@ class Player {
   bool hasPermission(AdminPermission permission) =>
       AdminPermissions.hasPermission(adminRole, permission);
 
+  /// Ban state.
+  final DateTime? bannedAt;
+  final DateTime? banExpiresAt;
+  final String? banReason;
+
+  /// Whether this player is currently banned.
+  bool get isBanned {
+    if (bannedAt == null) return false;
+    // Permanent ban (no expiry) or expiry is in the future.
+    return banExpiresAt == null || banExpiresAt!.isAfter(DateTime.now());
+  }
+
   final DateTime? createdAt;
 
   /// XP required for next level
@@ -102,6 +117,9 @@ class Player {
     int? statsCorrect,
     int? bestStreak,
     String? adminRole,
+    DateTime? bannedAt,
+    DateTime? banExpiresAt,
+    String? banReason,
     DateTime? createdAt,
   }) => Player(
     id: id ?? this.id,
@@ -123,6 +141,9 @@ class Player {
     statsCorrect: statsCorrect ?? this.statsCorrect,
     bestStreak: bestStreak ?? this.bestStreak,
     adminRole: adminRole ?? this.adminRole,
+    bannedAt: bannedAt ?? this.bannedAt,
+    banExpiresAt: banExpiresAt ?? this.banExpiresAt,
+    banReason: banReason ?? this.banReason,
     createdAt: createdAt ?? this.createdAt,
   );
 
@@ -146,6 +167,9 @@ class Player {
     'stats_correct': statsCorrect,
     'best_streak': bestStreak,
     'admin_role': adminRole,
+    'banned_at': bannedAt?.toIso8601String(),
+    'ban_expires_at': banExpiresAt?.toIso8601String(),
+    'ban_reason': banReason,
     'created_at': createdAt?.toIso8601String(),
   };
 
@@ -173,6 +197,13 @@ class Player {
     statsCorrect: json['stats_correct'] as int? ?? 0,
     bestStreak: json['best_streak'] as int? ?? 0,
     adminRole: json['admin_role'] as String?,
+    bannedAt: json['banned_at'] != null
+        ? DateTime.tryParse(json['banned_at'] as String)
+        : null,
+    banExpiresAt: json['ban_expires_at'] != null
+        ? DateTime.tryParse(json['ban_expires_at'] as String)
+        : null,
+    banReason: json['ban_reason'] as String?,
     createdAt: json['created_at'] != null
         ? DateTime.parse(json['created_at'] as String)
         : null,
