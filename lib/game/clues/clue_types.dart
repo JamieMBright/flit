@@ -96,6 +96,7 @@ class Clue {
     String countryCode, {
     String? preferredClueType,
     Set<String>? allowedTypes,
+    Random? random,
   }) {
     // Determine the pool of clue types to draw from.
     final List<ClueType> typePool;
@@ -108,7 +109,7 @@ class Clue {
     }
     // If the filter left nothing valid, fall back to all types.
     final types = typePool.isEmpty ? ClueType.values : typePool;
-    final random = Random();
+    final rng = random ?? Random();
     final triedTypes = <ClueType>{};
     const maxRetries = 10;
 
@@ -135,10 +136,10 @@ class Clue {
       // flat 25% chance of being picked directly.
       if (preferredType != null &&
           availableTypes.contains(preferredType) &&
-          random.nextInt(100) < 25) {
+          rng.nextInt(100) < 25) {
         randomType = preferredType;
       } else {
-        randomType = availableTypes[random.nextInt(availableTypes.length)];
+        randomType = availableTypes[rng.nextInt(availableTypes.length)];
       }
       triedTypes.add(randomType);
 

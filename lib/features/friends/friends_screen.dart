@@ -540,7 +540,19 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     _launchChallengeGameplay(friend.name, challengeId);
   }
 
-  void _launchChallengeGameplay(String opponentName, String challengeId) {
+  Future<void> _launchChallengeGameplay(
+    String opponentName,
+    String challengeId,
+  ) async {
+    // Fetch the challenge to get per-round seeds so both players get
+    // identical countries and clues.
+    final challenge = await ChallengeService.instance.fetchChallenge(
+      challengeId,
+    );
+    if (!mounted) return;
+
+    final seeds = challenge?.rounds.map((r) => r.seed).toList();
+
     final planeId = ref.read(equippedPlaneIdProvider);
     final plane = CosmeticCatalog.getById(planeId);
     final account = ref.read(accountProvider);
@@ -552,12 +564,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     final contrailPrimary = contrail?.colorScheme?['primary'];
     final contrailSecondary = contrail?.colorScheme?['secondary'];
 
+    if (!mounted) return;
     Navigator.of(context)
         .push(
           MaterialPageRoute<void>(
             builder: (context) => PlayScreen(
               challengeFriendName: opponentName,
               challengeId: challengeId,
+              challengeSeeds: seeds,
               totalRounds: Challenge.totalRounds,
               planeColorScheme: plane?.colorScheme,
               planeWingSpan: plane?.wingSpan,
