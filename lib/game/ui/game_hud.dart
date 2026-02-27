@@ -297,6 +297,8 @@ class _ClueCard extends StatelessWidget {
     // Codes known to be unsupported or problematic in the flag package v7
     const unsupportedCodes = {
       'XK', // Kosovo
+      'XC', // Northern Cyprus
+      'XS', // Somaliland
       'AN', // Netherlands Antilles (dissolved)
       'CS', // Serbia and Montenegro (dissolved)
       'EH', // Western Sahara
