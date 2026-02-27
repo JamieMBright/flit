@@ -2427,11 +2427,34 @@ class _LegendItem extends StatelessWidget {
   final String count;
   final String label;
 
+  /// Maps a round-result emoji to its display color (painted circle).
+  static Color _emojiColor(String emoji) {
+    switch (emoji) {
+      case '\u{1F7E2}':
+        return const Color(0xFF4CAF50);
+      case '\u{1F7E1}':
+        return const Color(0xFFFFD700);
+      case '\u{1F7E0}':
+        return const Color(0xFFFF9800);
+      case '\u{1F534}':
+        return const Color(0xFFCC4444);
+      default:
+        return const Color(0xFF666666);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      Text(emoji, style: const TextStyle(fontSize: 14)),
+      Container(
+        width: 14,
+        height: 14,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: _emojiColor(emoji),
+        ),
+      ),
       const SizedBox(height: 2),
       Text(
         count,

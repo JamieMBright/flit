@@ -23,6 +23,30 @@ const List<String> _emojiFontFallback = [
   'Noto Color Emoji',
 ];
 
+/// Maps a round-result emoji character to its display color.
+///
+/// Used to render painted circles (Container + BoxShape.circle) instead of text
+/// emojis, avoiding iOS rendering issues where Unicode colored circles appear
+/// monochrome/outlined rather than filled.
+Color _emojiToColor(String emoji) {
+  switch (emoji) {
+    case '\u{1F7E2}': // 🟢 green (perfect, no hints)
+      return const Color(0xFF4CAF50);
+    case '\u{1F7E1}': // 🟡 yellow (1-2 hints)
+      return const Color(0xFFFFD700);
+    case '\u{1F7E0}': // 🟠 orange (3+ hints)
+      return const Color(0xFFFF9800);
+    case '\u{1F534}': // 🔴 red (failed)
+      return const Color(0xFFCC4444);
+    default:
+      return const Color(0xFF666666);
+  }
+}
+
+/// Splits a round-emojis string into individual emoji characters.
+List<String> _splitEmojis(String emojis) =>
+    emojis.runes.map((r) => String.fromCharCode(r)).toList();
+
 /// Rarity colors (shared with license_screen).
 const Color _bronzeColor = Color(0xFFCD7F32);
 const Color _silverColor = Color(0xFFC0C0C0);
@@ -414,7 +438,7 @@ class _LeaderboardRow extends StatelessWidget {
                     avatarConfig: entry.avatarConfigJson != null
                         ? AvatarConfig.fromJson(entry.avatarConfigJson!)
                         : null,
-                    size: 32,
+                    size: 40,
                   ),
                   const SizedBox(width: 4),
                   // Tiny plane
@@ -461,21 +485,29 @@ class _LeaderboardRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          // Tappable emoji result (always visible; shows placeholder if no
-          // round data so the breakdown sheet is always reachable).
+          // Tappable emoji result — painted circles avoid iOS rendering
+          // issues with Unicode colored circles.
           GestureDetector(
             onTap: () => _showClueBreakdown(context),
             behavior: HitTestBehavior.opaque,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               child: entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty
-                  ? Text(
-                      entry.roundEmojis!,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        letterSpacing: -1,
-                        fontFamilyFallback: _emojiFontFallback,
-                      ),
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: _splitEmojis(entry.roundEmojis!).map((emoji) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _emojiToColor(emoji),
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     )
                   : const Icon(
                       Icons.info_outline,
@@ -674,16 +706,35 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
               ],
             ),
           ),
-          // Round emojis
+          // Round emojis — painted circles for iOS compatibility
           const SizedBox(height: 16),
           entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty
-              ? Text(
-                  entry.roundEmojis!,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    letterSpacing: 2,
-                    fontFamilyFallback: _emojiFontFallback,
-                  ),
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: _splitEmojis(entry.roundEmojis!).map((emoji) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              _emojiToColor(emoji),
+                              _emojiToColor(emoji).withOpacity(0.6),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _emojiToColor(emoji).withOpacity(0.4),
+                              blurRadius: 6,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 )
               : const Text(
                   'No round data',
@@ -792,14 +843,14 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
                     children: [
                       // Equipped plane (left)
                       Container(
-                        width: 48,
-                        height: 48,
+                        width: 56,
+                        height: 56,
                         decoration: BoxDecoration(
                           color: FlitColors.backgroundMid,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: CustomPaint(
-                          size: const Size(48, 48),
+                          size: const Size(56, 56),
                           painter: PlanePainter(planeId: planeId),
                         ),
                       ),
@@ -813,7 +864,7 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
                               entry.playerName,
                               style: const TextStyle(
                                 color: FlitColors.textPrimary,
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.bold,
                               ),
                               maxLines: 1,
@@ -824,7 +875,7 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
                               _aviationRankTitle(level),
                               style: const TextStyle(
                                 color: FlitColors.gold,
-                                fontSize: 10,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -832,7 +883,7 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
                               'Level $level',
                               style: const TextStyle(
                                 color: FlitColors.textSecondary,
-                                fontSize: 10,
+                                fontSize: 11,
                               ),
                             ),
                           ],
@@ -843,38 +894,65 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
                         avatarUrl: entry.avatarUrl,
                         name: entry.playerName,
                         avatarConfig: avatarConfig,
-                        size: 48,
+                        size: 56,
                       ),
                     ],
                   ),
                   const Spacer(flex: 1),
-                  // Stat bars (license boosts)
-                  if (_license != null)
+                  // Stat bars — matches LicenseScreen layout with icons,
+                  // segmented bars, value/25, clue type, and total boost.
+                  if (_license != null) ...[
+                    _BottomSheetStatBar(
+                      label: _license!.coinBoostLabel,
+                      icon: Icons.monetization_on,
+                      value: _license!.coinBoost,
+                    ),
+                    const SizedBox(height: 3),
+                    _BottomSheetStatBar(
+                      label: _license!.fuelBoostLabel,
+                      icon: Icons.local_gas_station,
+                      value: _license!.fuelBoost,
+                    ),
+                    const SizedBox(height: 3),
+                    _BottomSheetStatBar(
+                      label: _license!.clueChanceLabel,
+                      icon: Icons.casino,
+                      value: _license!.clueChance,
+                    ),
+                    const SizedBox(height: 3),
                     Row(
                       children: [
-                        Expanded(
-                          child: _LicenseStatBar(
-                            label: _license!.coinBoostLabel,
-                            value: _license!.coinBoost,
-                          ),
+                        const Icon(
+                          Icons.lightbulb_outline,
+                          color: FlitColors.accent,
+                          size: 11,
                         ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: _LicenseStatBar(
-                            label: _license!.clueChanceLabel,
-                            value: _license!.clueChance,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: _LicenseStatBar(
-                            label: _license!.fuelBoostLabel,
-                            value: _license!.fuelBoost,
+                        const SizedBox(width: 3),
+                        Text(
+                          'Preferred: ${_license!.preferredClueType[0].toUpperCase()}${_license!.preferredClueType.substring(1)}',
+                          style: const TextStyle(
+                            color: FlitColors.textSecondary,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
-                    )
-                  else
+                    ),
+                    const Spacer(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Total: +${_license!.totalBoost}%',
+                          style: TextStyle(
+                            color: _colorForRarity(_license!.rarityTier),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else
                     const Center(
                       child: Text(
                         'No pilot license yet',
@@ -925,11 +1003,19 @@ class _StatColumn extends StatelessWidget {
   );
 }
 
-/// Compact stat bar for the license card on the pilot card bottom sheet.
-class _LicenseStatBar extends StatelessWidget {
-  const _LicenseStatBar({required this.label, required this.value});
+/// Stat bar for the license card on the pilot card bottom sheet.
+///
+/// Uses segmented 25-bar display with icon and value/25 text to match the
+/// [LicenseScreen] design.
+class _BottomSheetStatBar extends StatelessWidget {
+  const _BottomSheetStatBar({
+    required this.label,
+    required this.icon,
+    required this.value,
+  });
 
   final String label;
+  final IconData icon;
   final int value;
 
   @override
@@ -941,28 +1027,49 @@ class _LicenseStatBar extends StatelessWidget {
       children: [
         Row(
           children: [
+            Icon(icon, color: color, size: 11),
+            const SizedBox(width: 3),
             Expanded(
               child: Text(
                 label,
                 style: const TextStyle(
                   color: FlitColors.textSecondary,
-                  fontSize: 8,
+                  fontSize: 9,
                   fontWeight: FontWeight.w500,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.clip,
               ),
             ),
+            Text(
+              '$value/25',
+              style: TextStyle(
+                color: color,
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 2),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: LinearProgressIndicator(
-            value: value / 25.0,
-            minHeight: 4,
-            backgroundColor: FlitColors.cardBorder,
-            valueColor: AlwaysStoppedAnimation<Color>(color),
+        SizedBox(
+          height: 6,
+          child: Row(
+            children: List.generate(25, (i) {
+              final filled = i < value;
+              return Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(right: i < 24 ? 0.5 : 0),
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: filled
+                        ? color
+                        : FlitColors.backgroundLight.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(1),
+                  ),
+                ),
+              );
+            }),
           ),
         ),
       ],
@@ -1183,7 +1290,7 @@ class _ClueBreakdownSheet extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      // Round number + emoji
+                      // Round number + painted circle
                       Column(
                         children: [
                           Text(
@@ -1194,11 +1301,24 @@ class _ClueBreakdownSheet extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          Text(
-                            emoji,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontFamilyFallback: _emojiFontFallback,
+                          const SizedBox(height: 4),
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  _emojiToColor(emoji),
+                                  _emojiToColor(emoji).withOpacity(0.6),
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _emojiToColor(emoji).withOpacity(0.4),
+                                  blurRadius: 4,
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -1282,13 +1402,22 @@ class _ClueBreakdownSheet extends StatelessWidget {
                   ),
                 );
               })
-            // Fallback: emoji circles only (legacy scores without details).
-            else if (emojiRunes.isNotEmpty)
+            // Fallback: painted circles (legacy scores without details).
+            else if (emojiRunes.isNotEmpty) ...[
+              const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: Text(
+                  'Detailed clue data is not available for this entry.',
+                  style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
+                  textAlign: TextAlign.center,
+                ),
+              ),
               Wrap(
-                spacing: 6,
+                spacing: 8,
                 runSpacing: 6,
                 alignment: WrapAlignment.center,
                 children: List.generate(emojiRunes.length, (i) {
+                  final color = _emojiToColor(emojiRunes[i]);
                   return Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -1300,18 +1429,28 @@ class _ClueBreakdownSheet extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        emojiRunes[i],
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontFamilyFallback: _emojiFontFallback,
+                      const SizedBox(height: 4),
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [color, color.withOpacity(0.6)],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: color.withOpacity(0.4),
+                              blurRadius: 6,
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   );
                 }),
-              )
+              ),
+            ]
             // No data at all.
             else
               const Padding(
@@ -1396,11 +1535,12 @@ class _LegendRow extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: 3),
     child: Row(
       children: [
-        Text(
-          emoji,
-          style: const TextStyle(
-            fontSize: 16,
-            fontFamilyFallback: _emojiFontFallback,
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: _emojiToColor(emoji),
           ),
         ),
         const SizedBox(width: 8),
