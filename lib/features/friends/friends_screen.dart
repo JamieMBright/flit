@@ -721,303 +721,35 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: FlitColors.cardBackground,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) {
-        final h2h = _h2hRecords[friend.playerId];
-        return Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: FlitColors.textMuted,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 20),
-              if (friend.avatarConfig != null)
-                AvatarWidget(config: friend.avatarConfig!, size: 64)
-              else
-                AvatarFromUrl(
-                  avatarUrl: friend.avatarUrl,
-                  name: friend.name,
-                  size: 64,
-                ),
-              const SizedBox(height: 12),
-              Text(
-                friend.name,
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                '@${friend.username}',
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // ── Head-to-head stats ──
-              if (h2h != null && h2h.totalChallenges > 0) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: FlitColors.backgroundMid,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    children: [
-                      // Lifetime record
-                      const Text(
-                        'LIFETIME',
-                        style: TextStyle(
-                          color: FlitColors.textMuted,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _MiniStat('W', '${h2h.wins}', FlitColors.success),
-                          _MiniStat('L', '${h2h.losses}', FlitColors.error),
-                          _MiniStat(
-                            'Total',
-                            '${h2h.totalChallenges}',
-                            FlitColors.textSecondary,
-                          ),
-                        ],
-                      ),
-                      if (h2h.last10Total > 0) ...[
-                        const SizedBox(height: 12),
-                        const Divider(color: FlitColors.cardBorder, height: 1),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            // Last 10 column
-                            Column(
-                              children: [
-                                const Text(
-                                  'LAST 10',
-                                  style: TextStyle(
-                                    color: FlitColors.textMuted,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  h2h.last10Record,
-                                  style: const TextStyle(
-                                    color: FlitColors.textPrimary,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            // Last game column
-                            Column(
-                              children: [
-                                const Text(
-                                  'LAST GAME',
-                                  style: TextStyle(
-                                    color: FlitColors.textMuted,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  h2h.lastGameText,
-                                  style: TextStyle(
-                                    color: h2h.lastGameWon == true
-                                        ? FlitColors.success
-                                        : h2h.lastGameWon == false
-                                        ? FlitColors.error
-                                        : FlitColors.textSecondary,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ] else
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: FlitColors.backgroundMid,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'No challenges yet \u2014 be the first!',
-                    style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
-                  ),
-                ),
-              const SizedBox(height: 20),
-              // ── Challenge button ──
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _challengeFriend(friend);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FlitColors.accent,
-                    foregroundColor: FlitColors.textPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'CHALLENGE',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                ),
-              ),
-              if (_giftingEnabled) ...[
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      _showSendCoinsDialog(friend);
-                    },
-                    icon: const Icon(
-                      Icons.monetization_on,
-                      size: 18,
-                      color: FlitColors.gold,
-                    ),
-                    label: const Text(
-                      'SEND COINS',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: FlitColors.gold,
-                      side: const BorderSide(color: FlitColors.gold),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      _showGiftMembershipDialog(friend);
-                    },
-                    icon: const Icon(
-                      Icons.card_giftcard,
-                      size: 18,
-                      color: FlitColors.accent,
-                    ),
-                    label: const Text(
-                      'GIFT MEMBERSHIP',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: FlitColors.accent,
-                      side: const BorderSide(color: FlitColors.accent),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 10),
-              // ── Remove friend + Report row ──
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      _confirmRemoveFriend(friend);
-                    },
-                    icon: const Icon(
-                      Icons.person_remove_outlined,
-                      size: 16,
-                      color: FlitColors.error,
-                    ),
-                    label: const Text(
-                      'REMOVE',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                    style: TextButton.styleFrom(
-                      foregroundColor: FlitColors.error,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      _showReportDialog(friend);
-                    },
-                    icon: const Icon(
-                      Icons.flag_outlined,
-                      size: 16,
-                      color: FlitColors.textMuted,
-                    ),
-                    label: const Text(
-                      'REPORT',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                    style: TextButton.styleFrom(
-                      foregroundColor: FlitColors.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-            ],
-          ),
-        );
-      },
+      builder: (sheetContext) => _FriendProfileSheet(
+        friend: friend,
+        h2h: _h2hRecords[friend.playerId],
+        giftingEnabled: _giftingEnabled,
+        onChallenge: () {
+          Navigator.of(sheetContext).pop();
+          _challengeFriend(friend);
+        },
+        onSendCoins: () {
+          Navigator.of(sheetContext).pop();
+          _showSendCoinsDialog(friend);
+        },
+        onGiftMembership: () {
+          Navigator.of(sheetContext).pop();
+          _showGiftMembershipDialog(friend);
+        },
+        onRemove: () {
+          Navigator.of(sheetContext).pop();
+          _confirmRemoveFriend(friend);
+        },
+        onReport: () {
+          Navigator.of(sheetContext).pop();
+          _showReportDialog(friend);
+        },
+      ),
     );
   }
 
@@ -1647,7 +1379,7 @@ class _FriendTile extends StatelessWidget {
                         TextSpan(
                           children: [
                             TextSpan(
-                              text: 'H2H: ${h2h!.record}',
+                              text: 'Matches: ${h2h!.record}',
                               style: const TextStyle(
                                 color: FlitColors.textSecondary,
                                 fontSize: 12,
@@ -1996,5 +1728,678 @@ class _FriendshipLevelBadge extends StatelessWidget {
     if (stars >= 3) return FlitColors.accent;
     if (stars >= 2) return FlitColors.accentLight;
     return FlitColors.textSecondary;
+  }
+}
+
+// =============================================================================
+// Friend Profile Bottom Sheet (stateful — loads match history)
+// =============================================================================
+
+class _FriendProfileSheet extends StatefulWidget {
+  const _FriendProfileSheet({
+    required this.friend,
+    required this.h2h,
+    required this.giftingEnabled,
+    required this.onChallenge,
+    required this.onSendCoins,
+    required this.onGiftMembership,
+    required this.onRemove,
+    required this.onReport,
+  });
+
+  final Friend friend;
+  final HeadToHead? h2h;
+  final bool giftingEnabled;
+  final VoidCallback onChallenge;
+  final VoidCallback onSendCoins;
+  final VoidCallback onGiftMembership;
+  final VoidCallback onRemove;
+  final VoidCallback onReport;
+
+  @override
+  State<_FriendProfileSheet> createState() => _FriendProfileSheetState();
+}
+
+class _FriendProfileSheetState extends State<_FriendProfileSheet> {
+  List<MatchSummary>? _matchHistory;
+  bool _loadingHistory = false;
+  int? _expandedMatchIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.h2h != null && widget.h2h!.totalChallenges > 0) {
+      _loadMatchHistory();
+    }
+  }
+
+  Future<void> _loadMatchHistory() async {
+    setState(() => _loadingHistory = true);
+    final history = await FriendsService.instance.fetchDetailedH2HHistory(
+      widget.friend.playerId,
+    );
+    if (!mounted) return;
+    setState(() {
+      _matchHistory = history;
+      _loadingHistory = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final h2h = widget.h2h;
+    final friend = widget.friend;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.92,
+      expand: false,
+      builder: (context, scrollController) => SingleChildScrollView(
+        controller: scrollController,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: FlitColors.textMuted,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            if (friend.avatarConfig != null)
+              AvatarWidget(config: friend.avatarConfig!, size: 64)
+            else
+              AvatarFromUrl(
+                avatarUrl: friend.avatarUrl,
+                name: friend.name,
+                size: 64,
+              ),
+            const SizedBox(height: 12),
+            Text(
+              friend.name,
+              style: const TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              '@${friend.username}',
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // ── Head-to-head summary stats ──
+            if (h2h != null && h2h.totalChallenges > 0) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: FlitColors.backgroundMid,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'MATCHES',
+                      style: TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _MiniStat('W', '${h2h.wins}', FlitColors.success),
+                        _MiniStat('L', '${h2h.losses}', FlitColors.error),
+                        if (h2h.draws > 0)
+                          _MiniStat(
+                            'D',
+                            '${h2h.draws}',
+                            FlitColors.textSecondary,
+                          ),
+                        _MiniStat(
+                          'Total',
+                          '${h2h.totalChallenges}',
+                          FlitColors.textSecondary,
+                        ),
+                      ],
+                    ),
+                    if (h2h.last10Total > 0) ...[
+                      const SizedBox(height: 12),
+                      const Divider(color: FlitColors.cardBorder, height: 1),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Column(
+                            children: [
+                              const Text(
+                                'LAST 10',
+                                style: TextStyle(
+                                  color: FlitColors.textMuted,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                h2h.last10Record,
+                                style: const TextStyle(
+                                  color: FlitColors.textPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              const Text(
+                                'LAST MATCH',
+                                style: TextStyle(
+                                  color: FlitColors.textMuted,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                h2h.lastGameText,
+                                style: TextStyle(
+                                  color: h2h.lastGameWon == true
+                                      ? FlitColors.success
+                                      : h2h.lastGameWon == false
+                                      ? FlitColors.error
+                                      : FlitColors.textSecondary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              const Text(
+                                'TREND',
+                                style: TextStyle(
+                                  color: FlitColors.textMuted,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                h2h.trendArrow,
+                                style: TextStyle(
+                                  color: h2h.recentTrend > 0
+                                      ? FlitColors.success
+                                      : h2h.recentTrend < 0
+                                      ? FlitColors.error
+                                      : FlitColors.textMuted,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // ── Match history with round details ──
+              if (_loadingHistory)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      color: FlitColors.accent,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                )
+              else if (_matchHistory != null && _matchHistory!.isNotEmpty) ...[
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'RECENT MATCHES',
+                    style: TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ..._matchHistory!.asMap().entries.map(
+                  (entry) => _MatchHistoryTile(
+                    match: entry.value,
+                    isExpanded: _expandedMatchIndex == entry.key,
+                    onTap: () {
+                      setState(() {
+                        _expandedMatchIndex = _expandedMatchIndex == entry.key
+                            ? null
+                            : entry.key;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ] else
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: FlitColors.backgroundMid,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'No challenges yet \u2014 be the first!',
+                  style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
+                ),
+              ),
+            const SizedBox(height: 20),
+            // ── Challenge button ──
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: widget.onChallenge,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FlitColors.accent,
+                  foregroundColor: FlitColors.textPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'CHALLENGE',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+            ),
+            if (widget.giftingEnabled) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: widget.onSendCoins,
+                  icon: const Icon(
+                    Icons.monetization_on,
+                    size: 18,
+                    color: FlitColors.gold,
+                  ),
+                  label: const Text(
+                    'SEND COINS',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: FlitColors.gold,
+                    side: const BorderSide(color: FlitColors.gold),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: widget.onGiftMembership,
+                  icon: const Icon(
+                    Icons.card_giftcard,
+                    size: 18,
+                    color: FlitColors.accent,
+                  ),
+                  label: const Text(
+                    'GIFT MEMBERSHIP',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: FlitColors.accent,
+                    side: const BorderSide(color: FlitColors.accent),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
+            // ── Remove friend + Report row ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton.icon(
+                  onPressed: widget.onRemove,
+                  icon: const Icon(
+                    Icons.person_remove_outlined,
+                    size: 16,
+                    color: FlitColors.error,
+                  ),
+                  label: const Text(
+                    'REMOVE',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: FlitColors.error,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: widget.onReport,
+                  icon: const Icon(
+                    Icons.flag_outlined,
+                    size: 16,
+                    color: FlitColors.textMuted,
+                  ),
+                  label: const Text(
+                    'REPORT',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: FlitColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Match History Tile (expandable to show per-round detail)
+// =============================================================================
+
+class _MatchHistoryTile extends StatelessWidget {
+  const _MatchHistoryTile({
+    required this.match,
+    required this.isExpanded,
+    required this.onTap,
+  });
+
+  final MatchSummary match;
+  final bool isExpanded;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final resultColor = match.youWon == true
+        ? FlitColors.success
+        : match.youWon == false
+        ? FlitColors.error
+        : FlitColors.textMuted;
+    final resultLabel = match.youWon == true
+        ? 'W'
+        : match.youWon == false
+        ? 'L'
+        : 'D';
+    final daysAgo = DateTime.now().difference(match.playedAt).inDays;
+    final dateLabel = daysAgo == 0
+        ? 'Today'
+        : daysAgo == 1
+        ? 'Yesterday'
+        : '$daysAgo days ago';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: FlitColors.backgroundMid,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isExpanded
+                  ? resultColor.withOpacity(0.4)
+                  : FlitColors.cardBorder,
+            ),
+          ),
+          child: Column(
+            children: [
+              // Summary row
+              Row(
+                children: [
+                  // Result badge
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: resultColor.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        resultLabel,
+                        style: TextStyle(
+                          color: resultColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Score
+                  Text(
+                    match.scoreText,
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                  const Spacer(),
+                  // Date
+                  Text(
+                    dateLabel,
+                    style: const TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: FlitColors.textMuted,
+                    size: 18,
+                  ),
+                ],
+              ),
+              // Expanded round details
+              if (isExpanded) ...[
+                const SizedBox(height: 10),
+                const Divider(color: FlitColors.cardBorder, height: 1),
+                const SizedBox(height: 8),
+                // Round header
+                const Row(
+                  children: [
+                    SizedBox(width: 32),
+                    Expanded(
+                      child: Text(
+                        'You',
+                        style: TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Them',
+                        style: TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ...match.rounds
+                    .where((r) => r.isComplete)
+                    .map((round) => _RoundOutcomeRow(round: round)),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RoundOutcomeRow extends StatelessWidget {
+  const _RoundOutcomeRow({required this.round});
+
+  final RoundOutcome round;
+
+  @override
+  Widget build(BuildContext context) {
+    final youWon = round.youWon;
+    final isDraw = youWon == null && round.isComplete;
+    final roundBadgeColor = youWon == true
+        ? FlitColors.success
+        : youWon == false
+        ? FlitColors.error
+        : FlitColors.textMuted;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          // Round number
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              color: roundBadgeColor.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                '${round.roundNumber}',
+                style: TextStyle(
+                  color: roundBadgeColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Your time
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 6),
+              decoration: BoxDecoration(
+                color: youWon == true
+                    ? FlitColors.success.withOpacity(0.1)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                _formatMs(round.yourTimeMs),
+                style: TextStyle(
+                  color: youWon == true
+                      ? FlitColors.success
+                      : FlitColors.textPrimary,
+                  fontSize: 12,
+                  fontWeight: youWon == true
+                      ? FontWeight.w600
+                      : FontWeight.normal,
+                  fontFamily: 'monospace',
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          // Their time
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 6),
+              decoration: BoxDecoration(
+                color: youWon == false
+                    ? FlitColors.error.withOpacity(0.1)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                _formatMs(round.theirTimeMs),
+                style: TextStyle(
+                  color: youWon == false
+                      ? FlitColors.error
+                      : isDraw
+                      ? FlitColors.textMuted
+                      : FlitColors.textPrimary,
+                  fontSize: 12,
+                  fontWeight: youWon == false
+                      ? FontWeight.w600
+                      : FontWeight.normal,
+                  fontFamily: 'monospace',
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _formatMs(int? ms) {
+    if (ms == null) return '--';
+    final seconds = ms ~/ 1000;
+    final centis = (ms % 1000) ~/ 10;
+    return '$seconds.${centis.toString().padLeft(2, '0')}s';
   }
 }

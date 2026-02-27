@@ -556,6 +556,89 @@ class FriendsService {
   }
 
   // ---------------------------------------------------------------------------
+  // Detailed match history
+  // ---------------------------------------------------------------------------
+
+  /// Fetch recent completed matches with round-level detail for the H2H view.
+  ///
+  /// Returns a list of [MatchSummary] objects (newest first, up to [limit]).
+  Future<List<MatchSummary>> fetchDetailedH2HHistory(
+    String friendId, {
+    int limit = 10,
+  }) async {
+    if (_userId == null) return [];
+    try {
+      final data = await _client
+          .from('challenges')
+          .select(
+            'id, winner_id, challenger_id, challenged_id, rounds, completed_at',
+          )
+          .eq('status', 'completed')
+          .or(
+            'and(challenger_id.eq.$_userId,challenged_id.eq.$friendId),'
+            'and(challenger_id.eq.$friendId,challenged_id.eq.$_userId)',
+          )
+          .order('completed_at', ascending: false)
+          .limit(limit);
+
+      return data.map<MatchSummary>((row) {
+        final isChallenger = row['challenger_id'] == _userId;
+        final winnerId = row['winner_id'] as String?;
+        final roundsList = row['rounds'] as List? ?? [];
+
+        bool? youWon;
+        if (winnerId == _userId) {
+          youWon = true;
+        } else if (winnerId != null) {
+          youWon = false;
+        }
+
+        var yourWins = 0;
+        var theirWins = 0;
+        final rounds = <RoundOutcome>[];
+
+        for (final r in roundsList) {
+          final round = r as Map<String, dynamic>;
+          final challengerMs = round['challenger_time_ms'] as int?;
+          final challengedMs = round['challenged_time_ms'] as int?;
+
+          final yourMs = isChallenger ? challengerMs : challengedMs;
+          final theirMs = isChallenger ? challengedMs : challengerMs;
+
+          final outcome = RoundOutcome(
+            roundNumber: round['round_number'] as int? ?? 0,
+            yourTimeMs: yourMs,
+            theirTimeMs: theirMs,
+          );
+          rounds.add(outcome);
+
+          if (outcome.isComplete) {
+            if (outcome.youWon == true) {
+              yourWins++;
+            } else if (outcome.youWon == false) {
+              theirWins++;
+            }
+          }
+        }
+
+        return MatchSummary(
+          challengeId: row['id'] as String,
+          playedAt: row['completed_at'] != null
+              ? DateTime.parse(row['completed_at'] as String)
+              : DateTime.now(),
+          yourRoundWins: yourWins,
+          theirRoundWins: theirWins,
+          youWon: youWon,
+          rounds: rounds,
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('[FriendsService] fetchDetailedH2HHistory failed: $e');
+      return [];
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Send coins
   // ---------------------------------------------------------------------------
 
