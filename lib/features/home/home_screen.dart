@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_version.dart';
 import '../../data/providers/account_provider.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../data/services/challenge_service.dart';
 import '../../data/services/feature_flag_service.dart';
+import '../../data/services/friends_service.dart';
 import '../admin/admin_screen.dart';
 import '../daily/daily_challenge_screen.dart';
 import '../friends/friends_screen.dart';
@@ -189,13 +191,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // Secondary buttons in a 2x2 grid for variety
       Row(
         children: [
-          if (_leaderboardEnabled)
+          if (_shopEnabled)
             Expanded(
               child: _MenuTile(
-                label: 'Leaderboard',
-                icon: Icons.leaderboard_rounded,
-                onTap: () =>
-                    _navigateSafely(context, const LeaderboardScreen()),
+                label: 'Shop',
+                icon: Icons.storefront_rounded,
+                onTap: () => _navigateSafely(context, const ShopScreen()),
               ),
             )
           else
@@ -211,31 +212,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ],
       ),
       const SizedBox(height: 10),
-      Row(
-        children: [
-          Expanded(
-            child: _MenuTile(
-              label: 'Friends',
-              icon: Icons.people_rounded,
-              onTap: () => _navigateSafely(context, const FriendsScreen()),
-            ),
-          ),
-          const SizedBox(width: 10),
-          if (_shopEnabled)
-            Expanded(
-              child: _MenuTile(
-                label: 'Shop',
-                icon: Icons.storefront_rounded,
-                onTap: () => _navigateSafely(context, const ShopScreen()),
-              ),
-            )
-          else
-            const Expanded(child: SizedBox()),
-        ],
+      // Friends button — full width (2 columns) with animated notification
+      // border when there are pending friend requests or incoming challenges.
+      _FriendsMenuTile(
+        onTap: () => _navigateSafely(context, const FriendsScreen()),
       ),
       const SizedBox(height: 10),
       Row(
         children: [
+          if (_leaderboardEnabled)
+            Expanded(
+              child: _MenuTile(
+                label: 'Leaderboard',
+                icon: Icons.leaderboard_rounded,
+                onTap: () =>
+                    _navigateSafely(context, const LeaderboardScreen()),
+              ),
+            )
+          else
+            const Expanded(child: SizedBox()),
+          const SizedBox(width: 10),
           Expanded(
             child: _MenuTile(
               label: 'How to Play',
@@ -244,8 +240,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   _navigateSafely(context, const GameplayGuideScreen()),
             ),
           ),
-          const SizedBox(width: 10),
-          const Expanded(child: SizedBox()),
         ],
       ),
       if (ref.watch(accountProvider).isAdmin) ...[
@@ -1058,6 +1052,160 @@ class _PlayButton extends StatelessWidget {
         ),
       ),
     ),
+  );
+}
+
+/// Full-width Friends button that fetches pending friend requests and incoming
+/// challenges. When notifications exist, the border animates with a pulsing
+/// gold glow to draw the player's attention.
+class _FriendsMenuTile extends StatefulWidget {
+  const _FriendsMenuTile({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  State<_FriendsMenuTile> createState() => _FriendsMenuTileState();
+}
+
+class _FriendsMenuTileState extends State<_FriendsMenuTile>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _glowController;
+  int _notificationCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    );
+    _fetchNotifications();
+  }
+
+  @override
+  void dispose() {
+    _glowController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchNotifications() async {
+    try {
+      final results = await Future.wait([
+        FriendsService.instance.fetchPendingRequests(),
+        ChallengeService.instance.fetchPendingChallenges(),
+      ]);
+      if (!mounted) return;
+      final pendingFriends = (results[0] as List).length;
+      final pendingChallenges = (results[1] as List).length;
+      final total = pendingFriends + pendingChallenges;
+      setState(() => _notificationCount = total);
+      if (total > 0 && !_glowController.isAnimating) {
+        _glowController.repeat(reverse: true);
+      } else if (total == 0 && _glowController.isAnimating) {
+        _glowController
+          ..stop()
+          ..value = 0;
+      }
+    } catch (_) {
+      // Silently fail — button still works, just no animation.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _glowController,
+    builder: (context, child) {
+      final hasNotifications = _notificationCount > 0;
+      final glowOpacity = hasNotifications ? _glowController.value : 0.0;
+
+      return Container(
+        decoration: hasNotifications
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: FlitColors.gold.withOpacity(0.3 * glowOpacity),
+                    blurRadius: 12 + 8 * glowOpacity,
+                    spreadRadius: 1 + 2 * glowOpacity,
+                  ),
+                ],
+              )
+            : null,
+        child: Material(
+          color: FlitColors.cardBackground.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: hasNotifications
+                      ? Color.lerp(
+                          FlitColors.gold.withOpacity(0.4),
+                          FlitColors.gold,
+                          glowOpacity,
+                        )!
+                      : FlitColors.cardBorder.withOpacity(0.5),
+                  width: hasNotifications ? 1.5 : 1.0,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.people_rounded,
+                    color: hasNotifications
+                        ? Color.lerp(
+                            FlitColors.textSecondary,
+                            FlitColors.gold,
+                            glowOpacity,
+                          )
+                        : FlitColors.textSecondary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'FRIENDS',
+                    style: TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  if (hasNotifications) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: FlitColors.gold.withOpacity(
+                          0.2 + 0.15 * glowOpacity,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '$_notificationCount',
+                        style: TextStyle(
+                          color: FlitColors.gold,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    },
   );
 }
 
