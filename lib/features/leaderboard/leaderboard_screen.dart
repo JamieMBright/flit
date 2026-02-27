@@ -7,7 +7,9 @@ import '../../core/theme/flit_colors.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/models/leaderboard_entry.dart';
 import '../../data/models/pilot_license.dart';
+import '../../data/models/player_report.dart';
 import '../../data/services/leaderboard_service.dart';
+import '../../data/services/report_service.dart';
 import '../avatar/avatar_widget.dart';
 import '../license/license_screen.dart';
 import '../shop/shop_screen.dart';
@@ -743,9 +745,175 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
           // Milestone progression
           const SizedBox(height: 16),
           _MilestoneBar(score: entry.score),
+          // Report button
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: () => _showReportDialog(entry),
+            icon: const Icon(
+              Icons.flag_outlined,
+              size: 16,
+              color: FlitColors.textMuted,
+            ),
+            label: const Text(
+              'Report Player',
+              style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
+            ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  void _showReportDialog(LeaderboardEntry entry) {
+    String? selectedReason;
+    final detailsController = TextEditingController();
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => Dialog(
+          backgroundColor: FlitColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.flag, color: FlitColors.warning, size: 36),
+                const SizedBox(height: 12),
+                Text(
+                  'Report @${entry.playerName}',
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ...ReportReason.all.map(
+                  (reason) => RadioListTile<String>(
+                    title: Text(
+                      ReportReason.label(reason),
+                      style: const TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 14,
+                      ),
+                    ),
+                    value: reason,
+                    groupValue: selectedReason,
+                    activeColor: FlitColors.accent,
+                    onChanged: (val) =>
+                        setDialogState(() => selectedReason = val),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                if (selectedReason == ReportReason.other) ...[
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: detailsController,
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 13,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Additional details (optional)',
+                      hintStyle: const TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 13,
+                      ),
+                      filled: true,
+                      fillColor: FlitColors.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: FlitColors.cardBorder,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: FlitColors.cardBorder,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(color: FlitColors.textMuted),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: selectedReason != null
+                          ? () async {
+                              final reason = selectedReason!;
+                              final details =
+                                  detailsController.text.trim().isEmpty
+                                  ? null
+                                  : detailsController.text.trim();
+                              Navigator.of(dialogContext).pop();
+                              try {
+                                await ReportService.instance.submitReport(
+                                  reportedUserId: entry.playerId,
+                                  reason: reason,
+                                  details: details,
+                                );
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Report submitted.'),
+                                      backgroundColor: FlitColors.success,
+                                    ),
+                                  );
+                                }
+                              } catch (_) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Failed to submit report. Please try again.',
+                                      ),
+                                      backgroundColor: FlitColors.error,
+                                    ),
+                                  );
+                                }
+                              }
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: FlitColors.accent,
+                        foregroundColor: FlitColors.textPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Submit'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ).then((_) => detailsController.dispose());
   }
 
   /// Credit-card style license card matching the LicenseScreen design.

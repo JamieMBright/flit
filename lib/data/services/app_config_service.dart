@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/app_version.dart';
@@ -82,8 +83,14 @@ class AppConfigService {
     _cacheTime = null;
   }
 
+  /// Clear the in-memory cache so the next [fetchConfig] hits the database.
+  void invalidateCache() {
+    _cache = null;
+    _cacheTime = null;
+  }
+
   /// Parse a version string like 'v1.228' into a comparable number.
-  /// Returns 1228 for 'v1.228', 0 for unparseable.
+  /// Returns 10228 for 'v1.228' (formula: major * 10000 + minor), 0 for unparseable.
   static int _versionToNumber(String version) {
     final cleaned = version.replaceAll(RegExp(r'[^0-9.]'), '');
     final parts = cleaned.split('.');
@@ -92,4 +99,9 @@ class AppConfigService {
     final minor = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
     return major * 10000 + minor;
   }
+
+  /// Exposed for unit tests only — wraps [_versionToNumber].
+  @visibleForTesting
+  static int versionToNumberForTest(String version) =>
+      _versionToNumber(version);
 }

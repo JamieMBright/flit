@@ -8,6 +8,7 @@ import '../../data/models/cosmetic.dart';
 import '../../data/models/friend.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/challenge_service.dart';
+import '../../data/services/feature_flag_service.dart';
 import '../../data/services/friends_service.dart';
 import '../avatar/avatar_widget.dart';
 import '../play/play_screen.dart';
@@ -44,6 +45,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   >
   _sentRequests = [];
   bool _loading = true;
+  bool _giftingEnabled = true;
 
   /// Per-friend challenge status derived from all active challenges.
   Map<String, _FriendChallengeInfo> _challengeInfoMap = {};
@@ -52,6 +54,21 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   void initState() {
     super.initState();
     _loadData();
+    _loadFeatureFlags();
+  }
+
+  Future<void> _loadFeatureFlags() async {
+    try {
+      final enabled = await FeatureFlagService.instance.isEnabled(
+        'gifting_enabled',
+      );
+      if (!mounted) return;
+      setState(() {
+        _giftingEnabled = enabled;
+      });
+    } catch (_) {
+      // Default to enabled on failure
+    }
   }
 
   Future<void> _loadData() async {
@@ -882,66 +899,68 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _showSendCoinsDialog(friend);
-                  },
-                  icon: const Icon(
-                    Icons.monetization_on,
-                    size: 18,
-                    color: FlitColors.gold,
-                  ),
-                  label: const Text(
-                    'SEND COINS',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.5,
+              if (_giftingEnabled) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _showSendCoinsDialog(friend);
+                    },
+                    icon: const Icon(
+                      Icons.monetization_on,
+                      size: 18,
+                      color: FlitColors.gold,
                     ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: FlitColors.gold,
-                    side: const BorderSide(color: FlitColors.gold),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                    label: const Text(
+                      'SEND COINS',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.5,
+                      ),
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _showGiftMembershipDialog(friend);
-                  },
-                  icon: const Icon(
-                    Icons.card_giftcard,
-                    size: 18,
-                    color: FlitColors.accent,
-                  ),
-                  label: const Text(
-                    'GIFT MEMBERSHIP',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: FlitColors.accent,
-                    side: const BorderSide(color: FlitColors.accent),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: FlitColors.gold,
+                      side: const BorderSide(color: FlitColors.gold),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _showGiftMembershipDialog(friend);
+                    },
+                    icon: const Icon(
+                      Icons.card_giftcard,
+                      size: 18,
+                      color: FlitColors.accent,
+                    ),
+                    label: const Text(
+                      'GIFT MEMBERSHIP',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: FlitColors.accent,
+                      side: const BorderSide(color: FlitColors.accent),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 10),
               // ── Remove friend + Report row ──
               Row(

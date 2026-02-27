@@ -14,6 +14,11 @@ import '../../data/models/economy_config.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/economy_config_service.dart';
+import '../../data/models/announcement.dart';
+import '../../data/models/app_remote_config.dart';
+import '../../data/models/player_report.dart';
+import '../../data/services/announcement_service.dart';
+import '../../data/services/app_config_service.dart';
 import '../../data/services/report_service.dart';
 import '../../data/services/feature_flag_service.dart';
 import '../debug/avatar_preview_screen.dart';
@@ -113,7 +118,17 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
 
   // ── Supabase helpers ──
 
-  /// Look up a profile row by username. Returns null if not found.
+  /// Fuzzy-search profiles by username, display name, or exact UUID.
+  /// Uses the `admin_search_users` RPC (pg_trgm fuzzy matching).
+  Future<List<Map<String, dynamic>>> _searchUsers(String query) async {
+    final result = await _client.rpc(
+      'admin_search_users',
+      params: {'search_query': query},
+    );
+    return List<Map<String, dynamic>>.from(result as List);
+  }
+
+  /// Exact-match lookup by username (used by action dialogs).
   Future<Map<String, dynamic>?> _lookupUser(String username) async {
     final data = await _client
         .from('profiles')
@@ -467,57 +482,331 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
     );
   }
 
-  // ── User Lookup (moderator + owner) ──
+  // ── User Lookup (moderator + owner) — fuzzy search ──
 
   void _showUserLookupDialog(BuildContext context) {
-    final usernameCtl = TextEditingController();
+    final searchCtl = TextEditingController();
     String? error;
+    List<Map<String, dynamic>> results = [];
+    bool searching = false;
 
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => _AdminDialog(
-          icon: Icons.person_search,
-          iconColor: FlitColors.oceanHighlight,
-          title: 'Look Up Player',
-          subtitle: 'View profile, stats, and game history.',
-          error: error,
-          actionLabel: 'Look Up',
-          actionIcon: Icons.search,
-          actionColor: FlitColors.oceanHighlight,
-          onAction: () async {
-            final username = usernameCtl.text.trim();
-            if (username.isEmpty) {
-              setDialogState(() => error = 'Enter a username');
-              return;
-            }
-
-            try {
-              final user = await _lookupUser(username);
-              if (user == null) {
-                setDialogState(() => error = 'User @$username not found');
-                return;
-              }
-
-              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
-              if (!context.mounted) return;
-              await Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => _UserDetailScreen(
-                    userId: user['id'] as String,
-                    username: user['username'] as String? ?? username,
-                    userData: user,
+        builder: (ctx, setDialogState) => Dialog(
+          backgroundColor: FlitColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.person_search,
+                  color: FlitColors.oceanHighlight,
+                  size: 36,
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Search Players',
+                  style: TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              );
-            } on PostgrestException catch (e) {
-              setDialogState(() => error = 'Failed: ${e.message}');
-            } catch (_) {
-              setDialogState(() => error = 'Something went wrong');
-            }
-          },
-          onCancel: () => Navigator.of(dialogCtx).pop(),
-          children: [_UsernameField(controller: usernameCtl)],
+                const SizedBox(height: 4),
+                const Text(
+                  'Search by username, display name, or paste a UUID.',
+                  style: TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 13,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: FlitColors.error.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: FlitColors.error,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            error!,
+                            style: const TextStyle(
+                              color: FlitColors.error,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                TextField(
+                  controller: searchCtl,
+                  style: const TextStyle(color: FlitColors.textPrimary),
+                  decoration: InputDecoration(
+                    hintText: 'Username, display name, or UUID',
+                    hintStyle: const TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 14,
+                    ),
+                    filled: true,
+                    fillColor: FlitColors.backgroundDark,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: FlitColors.textMuted,
+                      size: 20,
+                    ),
+                    suffixIcon: searching
+                        ? const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: FlitColors.textMuted,
+                              ),
+                            ),
+                          )
+                        : null,
+                  ),
+                  onSubmitted: (_) async {
+                    final query = searchCtl.text.trim();
+                    if (query.length < 2) {
+                      setDialogState(
+                        () => error = 'Enter at least 2 characters',
+                      );
+                      return;
+                    }
+                    setDialogState(() {
+                      searching = true;
+                      error = null;
+                    });
+                    try {
+                      final r = await _searchUsers(query);
+                      setDialogState(() {
+                        results = r;
+                        searching = false;
+                        if (r.isEmpty) error = 'No players found for "$query"';
+                      });
+                    } on PostgrestException catch (e) {
+                      setDialogState(() {
+                        searching = false;
+                        error = 'Search failed: ${e.message}';
+                      });
+                    } catch (_) {
+                      setDialogState(() {
+                        searching = false;
+                        error = 'Something went wrong';
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 8),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 300),
+                  child: results.isEmpty
+                      ? const SizedBox.shrink()
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: results.length,
+                          separatorBuilder: (_, __) => const Divider(
+                            color: FlitColors.backgroundDark,
+                            height: 1,
+                          ),
+                          itemBuilder: (_, i) {
+                            final user = results[i];
+                            final username =
+                                user['username'] as String? ?? '???';
+                            final displayName =
+                                user['display_name'] as String? ?? '';
+                            final role = user['admin_role'] as String?;
+                            final isBanned = user['banned_at'] != null;
+                            return ListTile(
+                              dense: true,
+                              leading: CircleAvatar(
+                                backgroundColor: FlitColors.backgroundDark,
+                                radius: 16,
+                                child: Text(
+                                  username.isNotEmpty
+                                      ? username[0].toUpperCase()
+                                      : '?',
+                                  style: const TextStyle(
+                                    color: FlitColors.textPrimary,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                              title: Row(
+                                children: [
+                                  Text(
+                                    '@$username',
+                                    style: const TextStyle(
+                                      color: FlitColors.textPrimary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (role != null) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: role == 'owner'
+                                            ? FlitColors.gold.withValues(
+                                                alpha: 0.2,
+                                              )
+                                            : FlitColors.oceanHighlight
+                                                  .withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        role,
+                                        style: TextStyle(
+                                          color: role == 'owner'
+                                              ? FlitColors.gold
+                                              : FlitColors.oceanHighlight,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  if (isBanned) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: FlitColors.error.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'BANNED',
+                                        style: TextStyle(
+                                          color: FlitColors.error,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              subtitle: displayName.isNotEmpty
+                                  ? Text(
+                                      displayName,
+                                      style: const TextStyle(
+                                        color: FlitColors.textSecondary,
+                                        fontSize: 12,
+                                      ),
+                                    )
+                                  : null,
+                              onTap: () async {
+                                Navigator.of(dialogCtx).pop();
+                                if (!context.mounted) return;
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => _UserDetailScreen(
+                                      userId: user['id'] as String,
+                                      username: username,
+                                      userData: user,
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogCtx).pop(),
+                      child: const Text(
+                        'Close',
+                        style: TextStyle(color: FlitColors.textMuted),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final query = searchCtl.text.trim();
+                        if (query.length < 2) {
+                          setDialogState(
+                            () => error = 'Enter at least 2 characters',
+                          );
+                          return;
+                        }
+                        setDialogState(() {
+                          searching = true;
+                          error = null;
+                        });
+                        try {
+                          final r = await _searchUsers(query);
+                          setDialogState(() {
+                            results = r;
+                            searching = false;
+                            if (r.isEmpty) {
+                              error = 'No players found for "$query"';
+                            }
+                          });
+                        } on PostgrestException catch (e) {
+                          setDialogState(() {
+                            searching = false;
+                            error = 'Search failed: ${e.message}';
+                          });
+                        } catch (_) {
+                          setDialogState(() {
+                            searching = false;
+                            error = 'Something went wrong';
+                          });
+                        }
+                      },
+                      icon: const Icon(Icons.search, size: 16),
+                      label: const Text('Search'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: FlitColors.oceanHighlight,
+                        foregroundColor: FlitColors.backgroundDark,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -2206,6 +2495,179 @@ class _UserDetailScreenState extends State<_UserDetailScreen> {
     }
   }
 
+  Future<void> _triggerPasswordReset(BuildContext context) async {
+    try {
+      await _client.functions.invoke(
+        'reset-user-password',
+        body: {'user_id': widget.userId},
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password reset email sent.'),
+          backgroundColor: FlitColors.success,
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed: $e'),
+          backgroundColor: FlitColors.error,
+        ),
+      );
+    }
+  }
+
+  void _showChangeEmailDialog(BuildContext context) {
+    final emailCtl = TextEditingController();
+    String? error;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Dialog(
+          backgroundColor: FlitColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.email_outlined,
+                  color: FlitColors.gold,
+                  size: 36,
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Change User Email',
+                  style: TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'For @${widget.username}',
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: FlitColors.error.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: FlitColors.error,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            error!,
+                            style: const TextStyle(
+                              color: FlitColors.error,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                TextField(
+                  controller: emailCtl,
+                  style: const TextStyle(color: FlitColors.textPrimary),
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    hintText: 'New email address',
+                    hintStyle: const TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 14,
+                    ),
+                    filled: true,
+                    fillColor: FlitColors.backgroundDark,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogCtx).pop(),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(color: FlitColors.textMuted),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final email = emailCtl.text.trim();
+                        if (email.isEmpty || !email.contains('@')) {
+                          setDialogState(() => error = 'Enter a valid email');
+                          return;
+                        }
+                        try {
+                          await _client.functions.invoke(
+                            'change-user-email',
+                            body: {
+                              'user_id': widget.userId,
+                              'new_email': email,
+                            },
+                          );
+                          if (dialogCtx.mounted) {
+                            Navigator.of(dialogCtx).pop();
+                          }
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Email updated.'),
+                                backgroundColor: FlitColors.success,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          setDialogState(() => error = 'Failed: $e');
+                        }
+                      },
+                      icon: const Icon(Icons.save, size: 16),
+                      label: const Text('Change Email'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: FlitColors.gold,
+                        foregroundColor: FlitColors.backgroundDark,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final u = widget.userData;
@@ -2268,6 +2730,94 @@ class _UserDetailScreenState extends State<_UserDetailScreen> {
               _DetailRow('Borders Correct', '${u['borders_correct'] ?? 0}'),
               _DetailRow('Stats Correct', '${u['stats_correct'] ?? 0}'),
               _DetailRow('Best Streak', '${u['best_streak'] ?? 0}'),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // ── Ban Status ──
+          _UserDetailSection(
+            title: 'Ban Status',
+            children: [
+              _DetailRow(
+                'Status',
+                u['banned_at'] != null
+                    ? (u['ban_expires_at'] != null &&
+                              DateTime.tryParse(
+                                    u['ban_expires_at'] as String,
+                                  )?.isBefore(DateTime.now()) ==
+                                  true)
+                          ? 'Expired'
+                          : 'BANNED'
+                    : 'Clean',
+              ),
+              if (u['banned_at'] != null) ...[
+                _DetailRow(
+                  'Banned At',
+                  DateTime.tryParse(
+                        u['banned_at'] as String,
+                      )?.toLocal().toString().split('.').first ??
+                      '—',
+                ),
+                _DetailRow(
+                  'Expires',
+                  u['ban_expires_at'] != null
+                      ? DateTime.tryParse(
+                              u['ban_expires_at'] as String,
+                            )?.toLocal().toString().split('.').first ??
+                            '—'
+                      : 'Permanent',
+                ),
+                _DetailRow('Reason', u['ban_reason'] as String? ?? '—'),
+              ],
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // ── Account Recovery Actions ──
+          _UserDetailSection(
+            title: 'Account Recovery',
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _triggerPasswordReset(context),
+                      icon: const Icon(Icons.lock_reset, size: 16),
+                      label: const Text(
+                        'Send Password Reset',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: FlitColors.oceanHighlight,
+                        side: const BorderSide(
+                          color: FlitColors.oceanHighlight,
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showChangeEmailDialog(context),
+                      icon: const Icon(Icons.email_outlined, size: 16),
+                      label: const Text(
+                        'Change Email (Owner)',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: FlitColors.gold,
+                        side: const BorderSide(color: FlitColors.gold),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -4470,74 +5020,1795 @@ class _DifficultyEditorScreenState extends State<_DifficultyEditorScreen> {
   }
 }
 
-class _ReportQueuePlaceholder extends StatelessWidget {
+class _ReportQueuePlaceholder extends StatefulWidget {
   const _ReportQueuePlaceholder();
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: FlitColors.backgroundDark,
-    appBar: AppBar(
-      backgroundColor: FlitColors.backgroundMid,
-      title: const Text('Report Queue'),
-    ),
-    body: const Center(
-      child: Text(
-        'Report queue screen — coming soon',
-        style: TextStyle(color: FlitColors.textSecondary),
-      ),
-    ),
-  );
+  State<_ReportQueuePlaceholder> createState() =>
+      _ReportQueuePlaceholderState();
 }
 
-class _AppConfigPlaceholder extends StatelessWidget {
+class _ReportQueuePlaceholderState extends State<_ReportQueuePlaceholder>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  List<PlayerReport> _pendingReports = [];
+  List<PlayerReport> _allReports = [];
+  bool _pendingLoading = true;
+  bool _allLoading = false;
+  bool _allLoaded = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_onTabChanged);
+    _loadPending();
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (_tabController.index == 1 && !_allLoaded && !_allLoading) {
+      _loadAll();
+    }
+  }
+
+  Future<void> _loadPending() async {
+    setState(() {
+      _pendingLoading = true;
+      _error = null;
+    });
+    try {
+      final reports = await ReportService.instance.fetchPendingReports();
+      if (!mounted) return;
+      setState(() {
+        _pendingReports = reports;
+        _pendingLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to load reports: $e';
+        _pendingLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadAll() async {
+    setState(() {
+      _allLoading = true;
+      _error = null;
+    });
+    try {
+      final reports = await ReportService.instance.fetchAllReports();
+      if (!mounted) return;
+      setState(() {
+        _allReports = reports;
+        _allLoading = false;
+        _allLoaded = true;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to load reports: $e';
+        _allLoading = false;
+      });
+    }
+  }
+
+  void _showResolveDialog(PlayerReport report) {
+    final actionCtl = TextEditingController();
+    String? dialogError;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => _AdminDialog(
+          icon: Icons.gavel,
+          iconColor: FlitColors.success,
+          title: 'Resolve Report',
+          subtitle:
+              '${report.reporterUsername ?? report.reporterId} reported '
+              '${report.reportedUsername ?? report.reportedId}',
+          error: dialogError,
+          actionLabel: 'Resolve',
+          actionIcon: Icons.check,
+          actionColor: FlitColors.success,
+          onAction: () async {
+            final action = actionCtl.text.trim();
+            if (action.isEmpty) {
+              setDialogState(() => dialogError = 'Describe the action taken');
+              return;
+            }
+            try {
+              await ReportService.instance.resolveReport(
+                reportId: report.id,
+                status: 'resolved',
+                actionTaken: action,
+              );
+              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Report resolved'),
+                  backgroundColor: FlitColors.success,
+                ),
+              );
+              _loadPending();
+              if (_allLoaded) _loadAll();
+            } catch (e) {
+              setDialogState(() => dialogError = 'Failed: $e');
+            }
+          },
+          onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [
+            TextField(
+              controller: actionCtl,
+              maxLines: 3,
+              style: const TextStyle(color: FlitColors.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Action taken (e.g. warned user, banned, etc.)',
+                hintStyle: const TextStyle(color: FlitColors.textMuted),
+                filled: true,
+                fillColor: FlitColors.backgroundDark,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: FlitColors.cardBorder),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: FlitColors.cardBorder),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _dismissReport(PlayerReport report) async {
+    try {
+      await ReportService.instance.resolveReport(
+        reportId: report.id,
+        status: 'dismissed',
+        actionTaken: 'Dismissed',
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Report dismissed'),
+          backgroundColor: FlitColors.success,
+        ),
+      );
+      _loadPending();
+      if (_allLoaded) _loadAll();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to dismiss: $e'),
+          backgroundColor: FlitColors.error,
+        ),
+      );
+    }
+  }
+
+  String _formatDate(DateTime? dt) {
+    if (dt == null) return '—';
+    final local = dt.toLocal();
+    return '${local.year}-${local.month.toString().padLeft(2, '0')}-'
+        '${local.day.toString().padLeft(2, '0')} '
+        '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildReportCard(PlayerReport report, {bool showActions = false}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: FlitColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.person,
+                color: FlitColors.textSecondary,
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '${report.reporterUsername ?? report.reporterId} '
+                  'reported ${report.reportedUsername ?? report.reportedId}',
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: FlitColors.accent.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              ReportReason.label(report.reason),
+              style: const TextStyle(
+                color: FlitColors.accent,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          if (report.details != null && report.details!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              report.details!,
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                _formatDate(report.createdAt),
+                style: const TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 11,
+                ),
+              ),
+              const Spacer(),
+              if (!report.isPending)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: report.status == 'resolved'
+                        ? FlitColors.success.withOpacity(0.15)
+                        : FlitColors.textMuted.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    report.status.toUpperCase(),
+                    style: TextStyle(
+                      color: report.status == 'resolved'
+                          ? FlitColors.success
+                          : FlitColors.textMuted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (report.actionTaken != null && report.actionTaken!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Action: ${report.actionTaken}',
+              style: const TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          if (showActions) ...[
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => _dismissReport(report),
+                  child: const Text(
+                    'Dismiss',
+                    style: TextStyle(color: FlitColors.textMuted),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: () => _showResolveDialog(report),
+                  icon: const Icon(Icons.gavel, size: 16),
+                  label: const Text('Resolve'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FlitColors.success,
+                    foregroundColor: FlitColors.backgroundDark,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: FlitColors.backgroundDark,
+      appBar: AppBar(
+        backgroundColor: FlitColors.backgroundMid,
+        title: const Text('Report Queue'),
+        centerTitle: true,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: FlitColors.accent,
+          labelColor: FlitColors.accent,
+          unselectedLabelColor: FlitColors.textMuted,
+          tabs: [
+            Tab(
+              text: _pendingReports.isEmpty
+                  ? 'Pending'
+                  : 'Pending (${_pendingReports.length})',
+            ),
+            const Tab(text: 'All'),
+          ],
+        ),
+      ),
+      body: _error != null && _tabController.index == 0 && _pendingLoading
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: FlitColors.error),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                // Pending tab
+                _pendingLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : RefreshIndicator(
+                        onRefresh: _loadPending,
+                        child: _pendingReports.isEmpty
+                            ? ListView(
+                                children: const [
+                                  SizedBox(height: 200),
+                                  Center(
+                                    child: Text(
+                                      'No pending reports',
+                                      style: TextStyle(
+                                        color: FlitColors.textSecondary,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                itemCount: _pendingReports.length,
+                                itemBuilder: (_, i) => _buildReportCard(
+                                  _pendingReports[i],
+                                  showActions: true,
+                                ),
+                              ),
+                      ),
+                // All tab
+                _allLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : RefreshIndicator(
+                        onRefresh: _loadAll,
+                        child: _allReports.isEmpty && _allLoaded
+                            ? ListView(
+                                children: const [
+                                  SizedBox(height: 200),
+                                  Center(
+                                    child: Text(
+                                      'No reports found',
+                                      style: TextStyle(
+                                        color: FlitColors.textSecondary,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                itemCount: _allReports.length,
+                                itemBuilder: (_, i) =>
+                                    _buildReportCard(_allReports[i]),
+                              ),
+                      ),
+              ],
+            ),
+    );
+  }
+}
+
+class _AppConfigPlaceholder extends StatefulWidget {
   const _AppConfigPlaceholder();
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: FlitColors.backgroundDark,
-    appBar: AppBar(
-      backgroundColor: FlitColors.backgroundMid,
-      title: const Text('App Config'),
-    ),
-    body: const Center(
-      child: Text(
-        'App config screen — coming soon',
-        style: TextStyle(color: FlitColors.textSecondary),
-      ),
-    ),
-  );
+  State<_AppConfigPlaceholder> createState() => _AppConfigPlaceholderState();
 }
 
-class _AnnouncementsPlaceholder extends StatelessWidget {
+class _AppConfigPlaceholderState extends State<_AppConfigPlaceholder> {
+  final _minVersionCtl = TextEditingController();
+  final _recommendedVersionCtl = TextEditingController();
+  final _maintenanceMessageCtl = TextEditingController();
+  bool _maintenanceMode = false;
+  bool _loading = true;
+  bool _saving = false;
+  String? _error;
+  AppRemoteConfig? _config;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConfig();
+  }
+
+  @override
+  void dispose() {
+    _minVersionCtl.dispose();
+    _recommendedVersionCtl.dispose();
+    _maintenanceMessageCtl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadConfig() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      // Invalidate cache so we always get fresh data in admin.
+      AppConfigService.instance.invalidateCache();
+      final config = await AppConfigService.instance.fetchConfig();
+      if (!mounted) return;
+      setState(() {
+        _config = config;
+        _minVersionCtl.text = config.minAppVersion;
+        _recommendedVersionCtl.text = config.recommendedVersion;
+        _maintenanceMode = config.maintenanceMode;
+        _maintenanceMessageCtl.text = config.maintenanceMessage ?? '';
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to load config: $e';
+        _loading = false;
+      });
+    }
+  }
+
+  void _confirmAndSave() {
+    if (_maintenanceMode && (_config == null || !_config!.maintenanceMode)) {
+      // Enabling maintenance mode — confirm first.
+      showDialog<void>(
+        context: context,
+        builder: (dialogCtx) => _AdminDialog(
+          icon: Icons.warning_amber,
+          iconColor: FlitColors.error,
+          title: 'Enable Maintenance Mode?',
+          subtitle:
+              'This will lock ALL users out of the app until maintenance '
+              'mode is disabled.',
+          error: null,
+          actionLabel: 'Enable',
+          actionIcon: Icons.power_settings_new,
+          actionColor: FlitColors.error,
+          onAction: () {
+            Navigator.of(dialogCtx).pop();
+            _save();
+          },
+          onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: const [],
+        ),
+      );
+    } else {
+      _save();
+    }
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await AppConfigService.instance.updateConfig(
+        minVersion: _minVersionCtl.text.trim(),
+        recommendedVersion: _recommendedVersionCtl.text.trim(),
+        maintenanceMode: _maintenanceMode,
+        maintenanceMessage: _maintenanceMessageCtl.text.trim().isEmpty
+            ? null
+            : _maintenanceMessageCtl.text.trim(),
+      );
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Config saved'),
+          backgroundColor: FlitColors.success,
+        ),
+      );
+      _loadConfig();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to save: $e';
+        _saving = false;
+      });
+    }
+  }
+
+  Widget _buildField({
+    required String label,
+    required TextEditingController controller,
+    int maxLines = 1,
+    String? hint,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: FlitColors.textSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          style: const TextStyle(color: FlitColors.textPrimary, fontSize: 14),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(color: FlitColors.textMuted),
+            filled: true,
+            fillColor: FlitColors.backgroundDark,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: FlitColors.cardBorder),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: FlitColors.cardBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: FlitColors.accent),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: FlitColors.backgroundDark,
+      appBar: AppBar(
+        backgroundColor: FlitColors.backgroundMid,
+        title: const Text('App Config'),
+        centerTitle: true,
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_error != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: FlitColors.error.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(
+                          color: FlitColors.error,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: FlitColors.cardBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: FlitColors.cardBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Version Gates',
+                          style: TextStyle(
+                            color: FlitColors.accent,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildField(
+                          label: 'Minimum App Version',
+                          controller: _minVersionCtl,
+                          hint: 'e.g. v1.0',
+                        ),
+                        const SizedBox(height: 16),
+                        _buildField(
+                          label: 'Recommended Version',
+                          controller: _recommendedVersionCtl,
+                          hint: 'e.g. v1.5',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: FlitColors.cardBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: FlitColors.cardBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Maintenance Mode',
+                          style: TextStyle(
+                            color: FlitColors.accent,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _maintenanceMode
+                                    ? 'Maintenance is ON — users are locked out'
+                                    : 'Maintenance is OFF',
+                                style: TextStyle(
+                                  color: _maintenanceMode
+                                      ? FlitColors.error
+                                      : FlitColors.success,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            Switch(
+                              value: _maintenanceMode,
+                              onChanged: (v) =>
+                                  setState(() => _maintenanceMode = v),
+                              activeColor: FlitColors.error,
+                              inactiveThumbColor: FlitColors.textMuted,
+                              inactiveTrackColor: FlitColors.backgroundLight,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        _buildField(
+                          label: 'Maintenance Message',
+                          controller: _maintenanceMessageCtl,
+                          maxLines: 3,
+                          hint: 'Message shown to users during maintenance',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: _saving ? null : _confirmAndSave,
+                      icon: _saving
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: FlitColors.backgroundDark,
+                              ),
+                            )
+                          : const Icon(Icons.save, size: 18),
+                      label: Text(_saving ? 'Saving...' : 'Save Config'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: FlitColors.accent,
+                        foregroundColor: FlitColors.backgroundDark,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+class _AnnouncementsPlaceholder extends StatefulWidget {
   const _AnnouncementsPlaceholder();
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: FlitColors.backgroundDark,
-    appBar: AppBar(
-      backgroundColor: FlitColors.backgroundMid,
-      title: const Text('Announcements'),
-    ),
-    body: const Center(
-      child: Text(
-        'Announcements manager — coming soon',
-        style: TextStyle(color: FlitColors.textSecondary),
-      ),
-    ),
-  );
+  State<_AnnouncementsPlaceholder> createState() =>
+      _AnnouncementsPlaceholderState();
 }
 
-class _SuspiciousActivityPlaceholder extends StatelessWidget {
-  const _SuspiciousActivityPlaceholder();
+class _AnnouncementsPlaceholderState extends State<_AnnouncementsPlaceholder> {
+  List<Announcement> _announcements = [];
+  bool _loading = true;
+  String? _error;
+
+  static const _typeColors = <String, Color>{
+    'info': FlitColors.accent,
+    'warning': FlitColors.warning,
+    'event': FlitColors.gold,
+    'maintenance': FlitColors.error,
+  };
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: FlitColors.backgroundDark,
-    appBar: AppBar(
-      backgroundColor: FlitColors.backgroundMid,
-      title: const Text('Suspicious Activity'),
-    ),
-    body: const Center(
-      child: Text(
-        'Suspicious activity monitor — coming soon',
-        style: TextStyle(color: FlitColors.textSecondary),
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final list = await AnnouncementService.instance.fetchAll();
+      if (!mounted) return;
+      // Sort by priority desc, then createdAt desc.
+      list.sort((a, b) {
+        final cmp = b.priority.compareTo(a.priority);
+        if (cmp != 0) return cmp;
+        final aDate = a.createdAt ?? DateTime(2000);
+        final bDate = b.createdAt ?? DateTime(2000);
+        return bDate.compareTo(aDate);
+      });
+      setState(() {
+        _announcements = list;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to load: $e';
+        _loading = false;
+      });
+    }
+  }
+
+  String _formatDate(DateTime? dt) {
+    if (dt == null) return '—';
+    final local = dt.toLocal();
+    return '${local.year}-${local.month.toString().padLeft(2, '0')}-'
+        '${local.day.toString().padLeft(2, '0')}';
+  }
+
+  void _showAnnouncementDialog({Announcement? existing}) {
+    final titleCtl = TextEditingController(text: existing?.title ?? '');
+    final bodyCtl = TextEditingController(text: existing?.body ?? '');
+    String type = existing?.type ?? 'info';
+    int priority = existing?.priority ?? 5;
+    bool isActive = existing?.isActive ?? true;
+    DateTime? startsAt = existing?.startsAt;
+    DateTime? expiresAt = existing?.expiresAt;
+    String? dialogError;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          return Dialog(
+            backgroundColor: FlitColors.cardBackground,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Icon(
+                      existing != null ? Icons.edit : Icons.campaign,
+                      color: FlitColors.gold,
+                      size: 36,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      existing != null
+                          ? 'Edit Announcement'
+                          : 'New Announcement',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (dialogError != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: FlitColors.error.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          dialogError!,
+                          style: const TextStyle(
+                            color: FlitColors.error,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    // Title
+                    TextField(
+                      controller: titleCtl,
+                      style: const TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 14,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Title',
+                        labelStyle: const TextStyle(
+                          color: FlitColors.textSecondary,
+                        ),
+                        filled: true,
+                        fillColor: FlitColors.backgroundDark,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: FlitColors.cardBorder,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: FlitColors.cardBorder,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Body
+                    TextField(
+                      controller: bodyCtl,
+                      maxLines: 3,
+                      style: const TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 14,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Body',
+                        labelStyle: const TextStyle(
+                          color: FlitColors.textSecondary,
+                        ),
+                        filled: true,
+                        fillColor: FlitColors.backgroundDark,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: FlitColors.cardBorder,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: FlitColors.cardBorder,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Type dropdown
+                    DropdownButtonFormField<String>(
+                      value: type,
+                      dropdownColor: FlitColors.backgroundMid,
+                      style: const TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 14,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Type',
+                        labelStyle: const TextStyle(
+                          color: FlitColors.textSecondary,
+                        ),
+                        filled: true,
+                        fillColor: FlitColors.backgroundDark,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: FlitColors.cardBorder,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: FlitColors.cardBorder,
+                          ),
+                        ),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'info', child: Text('Info')),
+                        DropdownMenuItem(
+                          value: 'warning',
+                          child: Text('Warning'),
+                        ),
+                        DropdownMenuItem(value: 'event', child: Text('Event')),
+                        DropdownMenuItem(
+                          value: 'maintenance',
+                          child: Text('Maintenance'),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        if (v != null) setDialogState(() => type = v);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    // Priority slider
+                    Row(
+                      children: [
+                        const Text(
+                          'Priority',
+                          style: TextStyle(
+                            color: FlitColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Expanded(
+                          child: Slider(
+                            value: priority.toDouble(),
+                            min: 1,
+                            max: 10,
+                            divisions: 9,
+                            label: '$priority',
+                            activeColor: FlitColors.accent,
+                            inactiveColor: FlitColors.backgroundLight,
+                            onChanged: (v) =>
+                                setDialogState(() => priority = v.round()),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 28,
+                          child: Text(
+                            '$priority',
+                            style: const TextStyle(
+                              color: FlitColors.textPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Active toggle
+                    Row(
+                      children: [
+                        const Text(
+                          'Active',
+                          style: TextStyle(
+                            color: FlitColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const Spacer(),
+                        Switch(
+                          value: isActive,
+                          onChanged: (v) => setDialogState(() => isActive = v),
+                          activeColor: FlitColors.success,
+                          inactiveThumbColor: FlitColors.textMuted,
+                          inactiveTrackColor: FlitColors.backgroundLight,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Date pickers
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: ctx,
+                                initialDate: startsAt ?? DateTime.now(),
+                                firstDate: DateTime(2024),
+                                lastDate: DateTime(2030),
+                              );
+                              if (picked != null) {
+                                setDialogState(() => startsAt = picked);
+                              }
+                            },
+                            icon: const Icon(Icons.calendar_today, size: 14),
+                            label: Text(
+                              startsAt != null
+                                  ? 'Starts: ${_formatDate(startsAt)}'
+                                  : 'Starts at...',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: FlitColors.textSecondary,
+                              side: const BorderSide(
+                                color: FlitColors.cardBorder,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: ctx,
+                                initialDate: expiresAt ?? DateTime.now(),
+                                firstDate: DateTime(2024),
+                                lastDate: DateTime(2030),
+                              );
+                              if (picked != null) {
+                                setDialogState(() => expiresAt = picked);
+                              }
+                            },
+                            icon: const Icon(Icons.calendar_today, size: 14),
+                            label: Text(
+                              expiresAt != null
+                                  ? 'Expires: ${_formatDate(expiresAt)}'
+                                  : 'Expires at...',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: FlitColors.textSecondary,
+                              side: const BorderSide(
+                                color: FlitColors.cardBorder,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    // Action buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.of(dialogCtx).pop(),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(color: FlitColors.textMuted),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            final title = titleCtl.text.trim();
+                            final body = bodyCtl.text.trim();
+                            if (title.isEmpty || body.isEmpty) {
+                              setDialogState(
+                                () =>
+                                    dialogError = 'Title and body are required',
+                              );
+                              return;
+                            }
+                            try {
+                              await AnnouncementService.instance.upsert(
+                                id: existing?.id,
+                                title: title,
+                                body: body,
+                                type: type,
+                                priority: priority,
+                                isActive: isActive,
+                                startsAt: startsAt,
+                                expiresAt: expiresAt,
+                              );
+                              if (dialogCtx.mounted) {
+                                Navigator.of(dialogCtx).pop();
+                              }
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    existing != null
+                                        ? 'Announcement updated'
+                                        : 'Announcement created',
+                                  ),
+                                  backgroundColor: FlitColors.success,
+                                ),
+                              );
+                              _load();
+                            } catch (e) {
+                              setDialogState(() => dialogError = 'Failed: $e');
+                            }
+                          },
+                          icon: const Icon(Icons.save, size: 16),
+                          label: const Text('Save'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: FlitColors.gold,
+                            foregroundColor: FlitColors.backgroundDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
+    );
+  }
+
+  Future<void> _toggleActive(Announcement a) async {
+    try {
+      await AnnouncementService.instance.upsert(
+        id: a.id,
+        title: a.title,
+        body: a.body,
+        type: a.type,
+        priority: a.priority,
+        isActive: !a.isActive,
+        startsAt: a.startsAt,
+        expiresAt: a.expiresAt,
+      );
+      if (!mounted) return;
+      _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to toggle: $e'),
+          backgroundColor: FlitColors.error,
+        ),
+      );
+    }
+  }
+
+  Widget _buildAnnouncementCard(Announcement a) {
+    final typeColor = _typeColors[a.type] ?? FlitColors.accent;
+
+    return GestureDetector(
+      onTap: () => _showAnnouncementDialog(existing: a),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: a.isActive
+                ? FlitColors.cardBorder
+                : FlitColors.textMuted.withOpacity(0.3),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    a.title,
+                    style: TextStyle(
+                      color: a.isActive
+                          ? FlitColors.textPrimary
+                          : FlitColors.textMuted,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Switch(
+                  value: a.isActive,
+                  onChanged: (_) => _toggleActive(a),
+                  activeColor: FlitColors.success,
+                  inactiveThumbColor: FlitColors.textMuted,
+                  inactiveTrackColor: FlitColors.backgroundLight,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              a.body,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: typeColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    a.type.toUpperCase(),
+                    style: TextStyle(
+                      color: typeColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: FlitColors.backgroundLight,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'Priority: ${a.priority}',
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (a.startsAt != null || a.expiresAt != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: FlitColors.backgroundLight,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '${_formatDate(a.startsAt)} → ${_formatDate(a.expiresAt)}',
+                      style: const TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Created: ${_formatDate(a.createdAt)}',
+              style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: FlitColors.backgroundDark,
+      appBar: AppBar(
+        backgroundColor: FlitColors.backgroundMid,
+        title: Text('Announcements (${_announcements.length})'),
+        centerTitle: true,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAnnouncementDialog(),
+        backgroundColor: FlitColors.gold,
+        child: const Icon(Icons.add, color: FlitColors.backgroundDark),
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: FlitColors.error),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: _announcements.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 200),
+                        Center(
+                          child: Text(
+                            'No announcements',
+                            style: TextStyle(
+                              color: FlitColors.textSecondary,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      itemCount: _announcements.length,
+                      itemBuilder: (_, i) =>
+                          _buildAnnouncementCard(_announcements[i]),
+                    ),
+            ),
+    );
+  }
+}
+
+class _SuspiciousActivityPlaceholder extends StatefulWidget {
+  const _SuspiciousActivityPlaceholder();
+
+  @override
+  State<_SuspiciousActivityPlaceholder> createState() =>
+      _SuspiciousActivityPlaceholderState();
+}
+
+class _SuspiciousActivityPlaceholderState
+    extends State<_SuspiciousActivityPlaceholder> {
+  List<Map<String, dynamic>> _rows = [];
+  bool _loading = true;
+  String? _error;
+
+  SupabaseClient get _client => Supabase.instance.client;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final data = await _client
+          .from('suspicious_activity')
+          .select()
+          .order('total_games_24h', ascending: false)
+          .limit(50);
+      if (!mounted) return;
+      setState(() {
+        _rows = List<Map<String, dynamic>>.from(data as List);
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to load: $e';
+        _loading = false;
+      });
+    }
+  }
+
+  List<String> _getFlags(Map<String, dynamic> row) {
+    final flags = <String>[];
+    final totalGames = (row['total_games_24h'] as num?)?.toInt() ?? 0;
+    final coinsEarned = (row['coins_earned_24h'] as num?)?.toInt() ?? 0;
+    final bestScore = (row['best_score'] as num?)?.toInt() ?? 0;
+
+    // Flag thresholds — these are heuristic. Adjust as needed.
+    if (totalGames > 100) flags.add('High game count ($totalGames)');
+    if (coinsEarned > 10000) flags.add('High coins ($coinsEarned)');
+    if (bestScore >= 5000) flags.add('Perfect score ($bestScore)');
+    return flags;
+  }
+
+  Color _severityColor(int flagCount) {
+    if (flagCount >= 2) return FlitColors.error;
+    if (flagCount == 1) return FlitColors.warning;
+    return FlitColors.textMuted;
+  }
+
+  void _showUserDialog(Map<String, dynamic> row) {
+    final username = row['username'] as String? ?? 'Unknown';
+    final userId = row['user_id'] as String? ?? '';
+    final totalGames = (row['total_games_24h'] as num?)?.toInt() ?? 0;
+    final coinsEarned = (row['coins_earned_24h'] as num?)?.toInt() ?? 0;
+    final bestScore = (row['best_score'] as num?)?.toInt() ?? 0;
+    final flags = _getFlags(row);
+    String? dialogError;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => _AdminDialog(
+          icon: Icons.person_search,
+          iconColor: _severityColor(flags.length),
+          title: '@$username',
+          subtitle: 'Suspicious activity details',
+          error: dialogError,
+          actionLabel: 'Ban User',
+          actionIcon: Icons.block,
+          actionColor: FlitColors.error,
+          onAction: () async {
+            try {
+              await _client.rpc(
+                'admin_ban_user',
+                params: {
+                  'target_user_id': userId,
+                  'p_reason': 'Suspicious activity — ${flags.join(', ')}',
+                  'p_duration_days': null,
+                },
+              );
+              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Banned @$username'),
+                  backgroundColor: FlitColors.success,
+                ),
+              );
+              _load();
+            } catch (e) {
+              setDialogState(() => dialogError = 'Failed: $e');
+            }
+          },
+          onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [
+            _SuspiciousDetailRow('Games (24h)', '$totalGames'),
+            _SuspiciousDetailRow('Coins earned (24h)', '$coinsEarned'),
+            _SuspiciousDetailRow('Best score', '$bestScore'),
+            if (flags.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Flags:',
+                style: TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              ...flags.map(
+                (f) => Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.flag,
+                        size: 14,
+                        color: _severityColor(flags.length),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        f,
+                        style: TextStyle(
+                          color: _severityColor(flags.length),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: FlitColors.backgroundDark,
+      appBar: AppBar(
+        backgroundColor: FlitColors.backgroundMid,
+        title: Text('Suspicious Activity (${_rows.length})'),
+        centerTitle: true,
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: FlitColors.error),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: _rows.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 200),
+                        Center(
+                          child: Text(
+                            'No suspicious activity detected',
+                            style: TextStyle(
+                              color: FlitColors.textSecondary,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        // Header row
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          color: FlitColors.backgroundMid,
+                          child: const Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  'USER',
+                                  style: TextStyle(
+                                    color: FlitColors.textMuted,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  'GAMES',
+                                  textAlign: TextAlign.right,
+                                  style: TextStyle(
+                                    color: FlitColors.textMuted,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  'COINS',
+                                  textAlign: TextAlign.right,
+                                  style: TextStyle(
+                                    color: FlitColors.textMuted,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  'BEST',
+                                  textAlign: TextAlign.right,
+                                  style: TextStyle(
+                                    color: FlitColors.textMuted,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 32),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: _rows.length,
+                            itemBuilder: (_, i) {
+                              final row = _rows[i];
+                              final username =
+                                  row['username'] as String? ?? '—';
+                              final totalGames =
+                                  (row['total_games_24h'] as num?)?.toInt() ??
+                                  0;
+                              final coinsEarned =
+                                  (row['coins_earned_24h'] as num?)?.toInt() ??
+                                  0;
+                              final bestScore =
+                                  (row['best_score'] as num?)?.toInt() ?? 0;
+                              final flags = _getFlags(row);
+                              final severity = _severityColor(flags.length);
+
+                              return InkWell(
+                                onTap: () => _showUserDialog(row),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: FlitColors.cardBorder
+                                            .withOpacity(0.3),
+                                      ),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 3,
+                                        child: Row(
+                                          children: [
+                                            if (flags.isNotEmpty)
+                                              Container(
+                                                width: 8,
+                                                height: 8,
+                                                margin: const EdgeInsets.only(
+                                                  right: 8,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: severity,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                            Flexible(
+                                              child: Text(
+                                                '@$username',
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  color:
+                                                      severity ==
+                                                          FlitColors.textMuted
+                                                      ? FlitColors.textPrimary
+                                                      : severity,
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          '$totalGames',
+                                          textAlign: TextAlign.right,
+                                          style: const TextStyle(
+                                            color: FlitColors.textPrimary,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          '$coinsEarned',
+                                          textAlign: TextAlign.right,
+                                          style: const TextStyle(
+                                            color: FlitColors.gold,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          '$bestScore',
+                                          textAlign: TextAlign.right,
+                                          style: const TextStyle(
+                                            color: FlitColors.textPrimary,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Icon(
+                                        Icons.chevron_right,
+                                        size: 20,
+                                        color: FlitColors.textMuted,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+    );
+  }
+}
+
+/// Simple key-value row for the suspicious activity detail dialog.
+class _SuspiciousDetailRow extends StatelessWidget {
+  const _SuspiciousDetailRow(this.label, this.value);
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 3),
+    child: Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 3,
+          child: Text(
+            value,
+            style: const TextStyle(color: FlitColors.textPrimary, fontSize: 13),
+          ),
+        ),
+      ],
     ),
   );
 }

@@ -2196,6 +2196,120 @@ WHERE
   OR p.best_score >= 99000;
 
 
+-- ────────────────────────────────────────────────────────────────
+-- 24. GDPR Request Tracking
+-- ────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.gdpr_requests (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id UUID NOT NULL,
+  username TEXT,
+  request_type TEXT NOT NULL CHECK (request_type IN ('export', 'delete')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at TIMESTAMPTZ,
+  processed_by UUID REFERENCES auth.users(id),
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.gdpr_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins can manage GDPR requests"
+  ON public.gdpr_requests FOR ALL
+  USING ((SELECT admin_role FROM public.profiles WHERE id = auth.uid()) IS NOT NULL);
+
+-- RPC: admin_process_gdpr_request
+CREATE OR REPLACE FUNCTION public.admin_process_gdpr_request(
+  p_request_id BIGINT,
+  p_status TEXT,
+  p_notes TEXT DEFAULT NULL
+)
+RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_role TEXT;
+BEGIN
+  SELECT admin_role INTO v_role FROM profiles WHERE id = auth.uid();
+  IF v_role != 'owner' THEN
+    RAISE EXCEPTION 'Only owners can process GDPR requests';
+  END IF;
+
+  UPDATE gdpr_requests SET
+    status = p_status,
+    completed_at = CASE WHEN p_status IN ('completed', 'failed') THEN NOW() ELSE NULL END,
+    processed_by = auth.uid(),
+    notes = COALESCE(p_notes, notes)
+  WHERE id = p_request_id;
+
+  PERFORM _log_admin_action('process_gdpr_request', (SELECT user_id FROM gdpr_requests WHERE id = p_request_id), jsonb_build_object('request_id', p_request_id, 'status', p_status));
+END;
+$$;
+
+
+-- ────────────────────────────────────────────────────────────────
+-- 25. Economy Health Dashboard RPC
+-- ────────────────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION public.admin_economy_summary()
+RETURNS JSON
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_role TEXT;
+  v_result JSON;
+BEGIN
+  SELECT admin_role INTO v_role FROM profiles WHERE id = auth.uid();
+  IF v_role IS NULL THEN
+    RAISE EXCEPTION 'Permission denied: not an admin';
+  END IF;
+
+  SELECT json_build_object(
+    'total_coins', COALESCE(SUM(coins), 0),
+    'avg_coins', COALESCE(ROUND(AVG(coins)::numeric, 1), 0),
+    'median_coins', COALESCE((SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY coins) FROM profiles), 0),
+    'max_coins', COALESCE(MAX(coins), 0),
+    'total_players', COUNT(*),
+    'players_with_coins', COUNT(*) FILTER (WHERE coins > 0)
+  ) INTO v_result FROM profiles;
+
+  RETURN v_result;
+END;
+$$;
+
+-- ────────────────────────────────────────────────────────────────
+-- 26. IAP Receipts (scaffolding)
+-- ────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.iap_receipts (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  product_id TEXT NOT NULL,
+  platform TEXT NOT NULL CHECK (platform IN ('ios', 'android', 'web')),
+  receipt_data TEXT,
+  is_valid BOOLEAN DEFAULT FALSE,
+  amount INT NOT NULL DEFAULT 0,
+  currency TEXT DEFAULT 'gold',
+  transaction_id TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.iap_receipts ENABLE ROW LEVEL SECURITY;
+
+-- Users can read their own receipts
+CREATE POLICY "Users read own receipts"
+  ON public.iap_receipts FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Admins can read all receipts
+CREATE POLICY "Admins read all receipts"
+  ON public.iap_receipts FOR SELECT
+  USING ((SELECT admin_role FROM public.profiles WHERE id = auth.uid()) IS NOT NULL);
+
+CREATE INDEX IF NOT EXISTS idx_iap_receipts_user ON public.iap_receipts (user_id);
+CREATE INDEX IF NOT EXISTS idx_iap_receipts_created ON public.iap_receipts (created_at DESC);
+
 -- ---------------------------------------------------------------------------
 -- DONE
 -- ---------------------------------------------------------------------------
