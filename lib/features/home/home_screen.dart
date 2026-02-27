@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_version.dart';
 import '../../data/providers/account_provider.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../data/models/challenge.dart';
 import '../../data/services/challenge_service.dart';
 import '../../data/services/feature_flag_service.dart';
 import '../../data/services/friends_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../admin/admin_screen.dart';
 import '../daily/daily_challenge_screen.dart';
 import '../friends/friends_screen.dart';
@@ -1093,11 +1095,29 @@ class _FriendsMenuTileState extends State<_FriendsMenuTile>
       final results = await Future.wait([
         FriendsService.instance.fetchPendingRequests(),
         ChallengeService.instance.fetchPendingChallenges(),
+        ChallengeService.instance.fetchAllActiveChallenges(),
       ]);
       if (!mounted) return;
       final pendingFriends = (results[0] as List).length;
       final pendingChallenges = (results[1] as List).length;
-      final total = pendingFriends + pendingChallenges;
+
+      // Count in-progress challenges where it's the user's turn.
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      var yourTurnCount = 0;
+      if (userId != null) {
+        final allActive = results[2] as List<Challenge>;
+        for (final c in allActive) {
+          if (c.status != ChallengeStatus.inProgress) continue;
+          final isChallenger = c.challengerId == userId;
+          final allMyRoundsDone = c.rounds.every((r) {
+            if (isChallenger) return r.challengerTime != null;
+            return r.challengedTime != null;
+          });
+          if (!allMyRoundsDone) yourTurnCount++;
+        }
+      }
+
+      final total = pendingFriends + pendingChallenges + yourTurnCount;
       setState(() => _notificationCount = total);
       if (total > 0 && !_glowController.isAnimating) {
         _glowController.repeat(reverse: true);
