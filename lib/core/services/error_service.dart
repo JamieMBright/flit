@@ -129,7 +129,7 @@ class ErrorService {
 
   /// Application version reported with every error payload.
   /// Defaults to the value from pubspec.yaml.
-  static const String appVersion = 'v1.226';
+  static const String appVersion = 'v1.227';
 
   // ---------------------------------------------------------------------------
   // Queue
