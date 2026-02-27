@@ -654,13 +654,23 @@ class LeaderboardService {
         );
       }
 
-      // Step 4: Batch-fetch equipped plane IDs.
+      // Step 4: Batch-fetch equipped plane IDs and avatar configs.
       if (entries.isNotEmpty) {
-        final planeMap = await _fetchPlaneIds(userIds);
+        final results = await Future.wait([
+          _fetchPlaneIds(userIds),
+          _fetchAvatarConfigs(userIds),
+        ]);
+        final planeMap = results[0] as Map<String, String>;
+        final avatarMap = results[1] as Map<String, Map<String, dynamic>>;
         for (var i = 0; i < entries.length; i++) {
-          final planeId = planeMap[entries[i].playerId];
-          if (planeId != null) {
-            entries[i] = entries[i].copyWith(equippedPlaneId: planeId);
+          final pid = entries[i].playerId;
+          final planeId = planeMap[pid];
+          final avatarCfg = avatarMap[pid];
+          if (planeId != null || avatarCfg != null) {
+            entries[i] = entries[i].copyWith(
+              equippedPlaneId: planeId,
+              avatarConfigJson: avatarCfg,
+            );
           }
         }
       }
@@ -769,6 +779,32 @@ class LeaderboardService {
       };
     } catch (e) {
       debugPrint('[LeaderboardService] _fetchPlaneIds failed: $e');
+      return {};
+    }
+  }
+
+  /// Batch-fetch avatar configs for the given user IDs.
+  ///
+  /// Returns a map of `userId → avatar_config` JSONB for offline composition.
+  Future<Map<String, Map<String, dynamic>>> _fetchAvatarConfigs(
+    List<String> userIds,
+  ) async {
+    if (userIds.isEmpty) return {};
+    try {
+      final data = await _client
+          .from('account_state')
+          .select('user_id, avatar_config')
+          .inFilter('user_id', userIds);
+      final result = <String, Map<String, dynamic>>{};
+      for (final row in data) {
+        final cfg = row['avatar_config'];
+        if (cfg is Map<String, dynamic> && cfg.isNotEmpty) {
+          result[row['user_id'] as String] = cfg;
+        }
+      }
+      return result;
+    } catch (e) {
+      debugPrint('[LeaderboardService] _fetchAvatarConfigs failed: $e');
       return {};
     }
   }
