@@ -535,7 +535,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: FlitColors.error.withValues(alpha: 0.15),
+                      color: FlitColors.error.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -680,11 +680,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: role == 'owner'
-                                            ? FlitColors.gold.withValues(
-                                                alpha: 0.2,
-                                              )
+                                            ? FlitColors.gold.withOpacity(0.2)
                                             : FlitColors.oceanHighlight
-                                                  .withValues(alpha: 0.2),
+                                                  .withOpacity(0.2),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
@@ -707,8 +705,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: FlitColors.error.withValues(
-                                          alpha: 0.2,
+                                        color: FlitColors.error.withOpacity(
+                                          0.2,
                                         ),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
@@ -2567,7 +2565,7 @@ class _UserDetailScreenState extends State<_UserDetailScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: FlitColors.error.withValues(alpha: 0.15),
+                      color: FlitColors.error.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(

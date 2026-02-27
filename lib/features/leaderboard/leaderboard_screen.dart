@@ -827,7 +827,7 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
                         fontSize: 13,
                       ),
                       filled: true,
-                      fillColor: FlitColors.background,
+                      fillColor: FlitColors.backgroundDark,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: const BorderSide(
