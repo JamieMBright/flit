@@ -114,7 +114,9 @@ abstract final class AdminPermissions {
   };
 
   /// Permissions granted to owners — everything.
-  static const Set<AdminPermission> owner = AdminPermission.values;
+  static final Set<AdminPermission> owner = Set<AdminPermission>.unmodifiable(
+    AdminPermission.values,
+  );
 
   /// Returns the permission set for the given [adminRole] string.
   ///
