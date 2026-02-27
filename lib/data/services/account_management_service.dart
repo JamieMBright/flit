@@ -144,8 +144,8 @@ class AccountManagementService {
           .from('friendships')
           .select(
             'status, created_at, '
-            'requester:profiles!friendships_requester_id_fkey(username, display_name), '
-            'addressee:profiles!friendships_addressee_id_fkey(username, display_name)',
+            'requester:profiles!fk_friendships_requester_profiles(username, display_name), '
+            'addressee:profiles!fk_friendships_addressee_profiles(username, display_name)',
           )
           .eq('status', 'accepted')
           .or('requester_id.eq.$userId,addressee_id.eq.$userId');

@@ -413,6 +413,35 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- Direct FKs from friendships → profiles so PostgREST can resolve embedded
+-- resource joins (e.g. profiles!fk_friendships_requester_profiles) without
+-- needing to traverse through auth.users.  Same pattern as fk_scores_profiles.
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'fk_friendships_requester_profiles'
+      AND table_schema = 'public'
+      AND table_name = 'friendships'
+  ) THEN
+    ALTER TABLE public.friendships
+      ADD CONSTRAINT fk_friendships_requester_profiles
+      FOREIGN KEY (requester_id) REFERENCES public.profiles(id);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'fk_friendships_addressee_profiles'
+      AND table_schema = 'public'
+      AND table_name = 'friendships'
+  ) THEN
+    ALTER TABLE public.friendships
+      ADD CONSTRAINT fk_friendships_addressee_profiles
+      FOREIGN KEY (addressee_id) REFERENCES public.profiles(id);
+  END IF;
+END $$;
+
 
 -- ---------------------------------------------------------------------------
 -- 7. CHALLENGES — H2H dogfight matches
