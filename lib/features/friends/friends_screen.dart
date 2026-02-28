@@ -2257,35 +2257,6 @@ class _MatchHistoryTile extends StatelessWidget {
                 const SizedBox(height: 10),
                 const Divider(color: FlitColors.cardBorder, height: 1),
                 const SizedBox(height: 8),
-                // Round header
-                const Row(
-                  children: [
-                    SizedBox(width: 32),
-                    Expanded(
-                      child: Text(
-                        'You',
-                        style: TextStyle(
-                          color: FlitColors.textMuted,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'Them',
-                        style: TextStyle(
-                          color: FlitColors.textMuted,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
                 ...match.rounds
                     .where((r) => r.isComplete)
                     .map((round) => _RoundOutcomeRow(round: round)),
@@ -2298,6 +2269,8 @@ class _MatchHistoryTile extends StatelessWidget {
   }
 }
 
+/// Round outcome row layout:
+/// `yourScore | yourEmoji | Clue (type) | theirEmoji | theirScore`
 class _RoundOutcomeRow extends StatelessWidget {
   const _RoundOutcomeRow({required this.round});
 
@@ -2306,94 +2279,107 @@ class _RoundOutcomeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final youWon = round.youWon;
-    final isDraw = youWon == null && round.isComplete;
-    final roundBadgeColor = youWon == true
-        ? FlitColors.success
-        : youWon == false
-        ? FlitColors.error
-        : FlitColors.textMuted;
+    final hasScores = round.yourScore != null && round.theirScore != null;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
-          // Round number
-          Container(
-            width: 22,
-            height: 22,
-            decoration: BoxDecoration(
-              color: roundBadgeColor.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                '${round.roundNumber}',
-                style: TextStyle(
-                  color: roundBadgeColor,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          // Your time
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 6),
-              decoration: BoxDecoration(
+          // Your score
+          SizedBox(
+            width: 48,
+            child: Text(
+              hasScores
+                  ? _formatScore(round.yourScore!)
+                  : _formatMs(round.yourTimeMs),
+              style: TextStyle(
                 color: youWon == true
-                    ? FlitColors.success.withOpacity(0.1)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(4),
+                    ? FlitColors.success
+                    : FlitColors.textPrimary,
+                fontSize: 11,
+                fontWeight: youWon == true
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+                fontFamily: 'monospace',
               ),
-              child: Text(
-                _formatMs(round.yourTimeMs),
-                style: TextStyle(
-                  color: youWon == true
-                      ? FlitColors.success
-                      : FlitColors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: youWon == true
-                      ? FontWeight.w600
-                      : FontWeight.normal,
-                  fontFamily: 'monospace',
-                ),
-                textAlign: TextAlign.center,
-              ),
+              textAlign: TextAlign.right,
             ),
           ),
-          // Their time
+          const SizedBox(width: 4),
+          // Your hint emoji
+          SizedBox(
+            width: 18,
+            child: Text(
+              round.yourHintEmoji,
+              style: const TextStyle(fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(width: 4),
+          // Clue label (country + type)
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 6),
-              decoration: BoxDecoration(
+            child: Text(
+              round.clueLabel.isNotEmpty
+                  ? round.clueLabel
+                  : 'Round ${round.roundNumber}',
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 10,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 4),
+          // Their hint emoji
+          SizedBox(
+            width: 18,
+            child: Text(
+              round.theirHintEmoji,
+              style: const TextStyle(fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(width: 4),
+          // Their score
+          SizedBox(
+            width: 48,
+            child: Text(
+              hasScores
+                  ? _formatScore(round.theirScore!)
+                  : _formatMs(round.theirTimeMs),
+              style: TextStyle(
                 color: youWon == false
-                    ? FlitColors.error.withOpacity(0.1)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(4),
+                    ? FlitColors.error
+                    : FlitColors.textPrimary,
+                fontSize: 11,
+                fontWeight: youWon == false
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+                fontFamily: 'monospace',
               ),
-              child: Text(
-                _formatMs(round.theirTimeMs),
-                style: TextStyle(
-                  color: youWon == false
-                      ? FlitColors.error
-                      : isDraw
-                      ? FlitColors.textMuted
-                      : FlitColors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: youWon == false
-                      ? FontWeight.w600
-                      : FontWeight.normal,
-                  fontFamily: 'monospace',
-                ),
-                textAlign: TextAlign.center,
-              ),
+              textAlign: TextAlign.left,
             ),
           ),
         ],
       ),
     );
+  }
+
+  static String _formatScore(int score) {
+    if (score >= 1000) {
+      final s = score.toString();
+      final buf = StringBuffer();
+      var count = 0;
+      for (var i = s.length - 1; i >= 0; i--) {
+        if (count > 0 && count % 3 == 0) buf.write(',');
+        buf.write(s[i]);
+        count++;
+      }
+      return buf.toString().split('').reversed.join();
+    }
+    return score.toString();
   }
 
   static String _formatMs(int? ms) {
