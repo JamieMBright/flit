@@ -965,12 +965,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           Navigator.of(dialogContext).pop(); // dismiss result dialog
           Navigator.of(context).pop(); // dismiss PlayScreen
         },
-        onSendChallenge: friendName != null
-            ? () {
-                Navigator.of(dialogContext).pop();
-                _showChallengeSentDialog(friendName);
-              }
-            : null,
+        // Challenge rounds are submitted in real-time via submitRoundResult,
+        // so no separate "send" action is needed.
       ),
     );
   }
@@ -1260,66 +1256,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       _game.pauseEngine();
     } catch (_) {}
     Navigator.of(context).pop();
-  }
-
-  void _showChallengeSentDialog(String friendName) {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => Dialog(
-        backgroundColor: FlitColors.cardBackground,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.send, color: FlitColors.success, size: 44),
-              const SizedBox(height: 16),
-              const Text(
-                'Challenge Sent!',
-                style: TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Waiting for $friendName to play...',
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 16,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  try {
-                    _game.pauseEngine();
-                  } catch (_) {}
-                  Navigator.of(dialogContext).pop(); // dismiss this dialog
-                  Navigator.of(context).pop(); // dismiss PlayScreen
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FlitColors.accent,
-                  foregroundColor: FlitColors.textPrimary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   /// Navigate to the full ChallengeResultScreen after a H2H challenge
@@ -1724,7 +1660,6 @@ class _ResultDialog extends ConsumerWidget {
     this.onPlayAgain,
     required this.onExit,
     this.challengeFriendName,
-    this.onSendChallenge,
     this.totalScore = 0,
     this.totalRounds = 1,
     this.cumulativeTime = Duration.zero,
@@ -1740,7 +1675,6 @@ class _ResultDialog extends ConsumerWidget {
   final VoidCallback? onPlayAgain;
   final VoidCallback onExit;
   final String? challengeFriendName;
-  final VoidCallback? onSendChallenge;
   final int totalScore;
   final int totalRounds;
   final Duration cumulativeTime;
@@ -2111,28 +2045,6 @@ class _ResultDialog extends ConsumerWidget {
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  if (isChallenge && onSendChallenge != null)
-                    ElevatedButton(
-                      onPressed: onSendChallenge,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: FlitColors.accent,
-                        foregroundColor: FlitColors.textPrimary,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 28,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'SEND CHALLENGE',
-                        style: TextStyle(
-                          letterSpacing: 1,
-                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
