@@ -402,10 +402,7 @@ class ChallengeService {
       challengerName: row['challenger_name'] as String,
       challengedId: row['challenged_id'] as String,
       challengedName: row['challenged_name'] as String,
-      status: ChallengeStatus.values.firstWhere(
-        (s) => s.name == row['status'],
-        orElse: () => ChallengeStatus.pending,
-      ),
+      status: ChallengeStatus.fromDb(row['status'] as String),
       rounds: rounds,
       winnerId: row['winner_id'] as String?,
       challengerCoins: row['challenger_coins'] as int? ?? 0,
