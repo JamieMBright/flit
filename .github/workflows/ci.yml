@@ -34,8 +34,17 @@ jobs:
 
       - name: Generate Flutter files
         run: |
-          flutter create --platform=web,android . --project-name=flit
+          flutter create --platform=web . --project-name=flit
           rm -f test/widget_test.dart
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
 
       - name: Get dependencies
         run: flutter pub get
@@ -52,7 +61,7 @@ jobs:
         run: flutter test --coverage
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: coverage/lcov.info
           fail_ci_if_error: false
@@ -82,6 +91,15 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
 
       - name: Generate Flutter files
         run: flutter create --platform=web . --project-name=flit
@@ -126,13 +144,6 @@ jobs:
           BUILD_SIZE=$(du -sh build/web | cut -f1)
           echo "Build size: ${BUILD_SIZE}"
 
-      - name: Upload web artifact (for deploy)
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-build
-          path: build/web
-          retention-days: 7
-
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
@@ -169,6 +180,15 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
       - name: Generate Flutter files
         run: flutter create --platform=android . --project-name=flit
 
@@ -204,24 +224,24 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for deployment propagation
-        run: sleep 15
-
       - name: Verify site is live
         run: |
           SITE_URL="https://${{ github.repository_owner }}.github.io/${GITHUB_REPOSITORY##*/}/"
-          HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" --max-time 30 "${SITE_URL}")
-          echo "HTTP status: ${HTTP_STATUS}"
-          if [ "$HTTP_STATUS" -ne 200 ]; then
-            echo "WARNING: Site returned HTTP ${HTTP_STATUS} (may still be propagating)"
-          else
-            echo "Site is live and returning 200 OK."
-          fi
+          for attempt in 1 2 3 4 5; do
+            HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" --max-time 10 "${SITE_URL}")
+            echo "Attempt ${attempt}: HTTP ${HTTP_STATUS}"
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "Site is live and returning 200 OK."
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          echo "WARNING: Site returned HTTP ${HTTP_STATUS} after 5 attempts (may still be propagating)"
 
   # ── Deploy to Vercel (only after CI passes on main) ──
   deploy-vercel:
     name: Deploy Vercel
-    needs: [build-web, build-android]
+    needs: [build-web]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
@@ -260,7 +280,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_COUNT=$(gh pr list --state merged --base main --limit 9999 --json number --jq 'length')
+          # Count merged PRs via search API (single request instead of fetching all PR records)
+          PR_COUNT=$(gh api -X GET "search/issues?q=repo:${{ github.repository }}+type:pr+is:merged+base:main&per_page=1" --jq '.total_count')
           echo "Merged PR count: ${PR_COUNT}"
 
           CURRENT_VERSION="v1.${PR_COUNT}"
