@@ -182,3 +182,53 @@ class HeadToHead {
         : null,
   );
 }
+
+/// Outcome of a single round within a match.
+class RoundOutcome {
+  const RoundOutcome({
+    required this.roundNumber,
+    required this.yourTimeMs,
+    required this.theirTimeMs,
+  });
+
+  final int roundNumber;
+
+  /// Null means this player hasn't completed the round yet.
+  final int? yourTimeMs;
+  final int? theirTimeMs;
+
+  bool get isComplete => yourTimeMs != null && theirTimeMs != null;
+
+  /// True if you won this round, false if they won, null if draw or incomplete.
+  bool? get youWon {
+    if (!isComplete) return null;
+    if (yourTimeMs! < theirTimeMs!) return true;
+    if (theirTimeMs! < yourTimeMs!) return false;
+    return null; // draw
+  }
+}
+
+/// Summary of a single completed match for display in match history.
+class MatchSummary {
+  const MatchSummary({
+    required this.challengeId,
+    required this.playedAt,
+    required this.yourRoundWins,
+    required this.theirRoundWins,
+    required this.youWon,
+    required this.rounds,
+  });
+
+  final String challengeId;
+  final DateTime playedAt;
+  final int yourRoundWins;
+  final int theirRoundWins;
+
+  /// True = you won the match, false = they won, null = draw.
+  final bool? youWon;
+
+  /// Per-round outcomes for this match.
+  final List<RoundOutcome> rounds;
+
+  String get scoreText => '$yourRoundWins - $theirRoundWins';
+}
