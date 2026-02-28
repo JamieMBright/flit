@@ -1,8 +1,9 @@
 name: Fetch Runtime Errors
 
 on:
-  push:
-    branches: [main]
+  schedule:
+    # Run every 6 hours to check for critical errors
+    - cron: '0 */6 * * *'
   workflow_dispatch:
     # Allow manual triggering from the Actions tab.
 
@@ -17,8 +18,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Fetch full history so we can push cleanly.
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Fetch critical errors and create/update GitHub issues
         env:
@@ -35,6 +35,7 @@ jobs:
           # 1. Fetch critical errors from Vercel endpoint
           # ---------------------------------------------------------------
           HTTP_CODE=$(curl -s -o /tmp/errors_response.json -w "%{http_code}" \
+            --max-time 30 --connect-timeout 10 \
             -H "X-API-Key: ${VERCEL_ERRORS_API_KEY}" \
             "${ERRORS_ENDPOINT}?severity=critical&limit=100" \
           ) || {
