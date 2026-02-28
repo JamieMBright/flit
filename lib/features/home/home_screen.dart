@@ -262,6 +262,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       await Navigator.of(
         context,
       ).push(MaterialPageRoute<void>(builder: (context) => destination));
+      // Reload feature flags in case they were changed (e.g. in admin).
+      FeatureFlagService.instance.invalidateCache();
+      _loadFeatureFlags();
     } catch (e, stackTrace) {
       debugPrint('Navigation error: $e\n$stackTrace');
       if (context.mounted) {

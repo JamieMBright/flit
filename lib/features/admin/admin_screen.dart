@@ -2300,6 +2300,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             else
               ...(_featureFlags.entries.map(
                 (entry) => Padding(
+                  key: ValueKey('ff_${entry.key}'),
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -2335,14 +2336,21 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                             value: entry.value,
                             activeColor: FlitColors.success,
                             onChanged: (val) async {
+                              // Optimistic local update — avoids a full
+                              // async reload that can reorder the list.
+                              final oldVal = entry.value;
+                              setState(() => _featureFlags[entry.key] = val);
                               try {
                                 await FeatureFlagService.instance.setFlag(
                                   flagKey: entry.key,
                                   enabled: val,
                                 );
-                                _loadFeatureFlags();
                               } catch (_) {
-                                if (context.mounted) {
+                                // Revert on failure.
+                                if (mounted) {
+                                  setState(
+                                    () => _featureFlags[entry.key] = oldVal,
+                                  );
                                   _snack(
                                     context,
                                     'Failed to update flag',
