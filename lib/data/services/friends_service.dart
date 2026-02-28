@@ -605,10 +605,21 @@ class FriendsService {
           final yourMs = isChallenger ? challengerMs : challengedMs;
           final theirMs = isChallenger ? challengedMs : challengerMs;
 
+          final challengerScore = round['challenger_score'] as int?;
+          final challengedScore = round['challenged_score'] as int?;
+          final challengerHints = round['challenger_hints_used'] as int?;
+          final challengedHints = round['challenged_hints_used'] as int?;
+
           final outcome = RoundOutcome(
             roundNumber: round['round_number'] as int? ?? 0,
             yourTimeMs: yourMs,
             theirTimeMs: theirMs,
+            yourScore: isChallenger ? challengerScore : challengedScore,
+            theirScore: isChallenger ? challengedScore : challengerScore,
+            yourHintsUsed: isChallenger ? challengerHints : challengedHints,
+            theirHintsUsed: isChallenger ? challengedHints : challengerHints,
+            countryName: round['country_name'] as String?,
+            clueType: round['clue_type'] as String?,
           );
           rounds.add(outcome);
 

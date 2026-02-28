@@ -19,8 +19,13 @@ class ChallengeRound {
     required this.clueType,
     required this.startLocation,
     required this.targetCountryCode,
+    this.countryName,
     this.challengerTime,
     this.challengedTime,
+    this.challengerScore,
+    this.challengedScore,
+    this.challengerHintsUsed,
+    this.challengedHintsUsed,
     this.challengerRoute,
     this.challengedRoute,
   });
@@ -30,18 +35,48 @@ class ChallengeRound {
   final ClueType clueType;
   final Vector2 startLocation;
   final String targetCountryCode;
+
+  /// Human-readable country name (e.g. "Brazil").
+  final String? countryName;
+
   final Duration? challengerTime;
   final Duration? challengedTime;
+
+  /// Round score (0-10000) factoring in hints and fuel usage.
+  final int? challengerScore;
+  final int? challengedScore;
+
+  /// Hint tiers used (0-4).
+  final int? challengerHintsUsed;
+  final int? challengedHintsUsed;
+
   final List<Vector2>? challengerRoute;
   final List<Vector2>? challengedRoute;
 
   bool get isComplete => challengerTime != null && challengedTime != null;
 
+  /// Determine round winner. Prefers score comparison; falls back to time.
   String? get winner {
     if (!isComplete) return null;
+    // Score-based comparison (higher score wins).
+    if (challengerScore != null && challengedScore != null) {
+      if (challengerScore! > challengedScore!) return 'challenger';
+      if (challengedScore! > challengerScore!) return 'challenged';
+      return 'draw';
+    }
+    // Fallback: time-based comparison (lower time wins).
     if (challengerTime! < challengedTime!) return 'challenger';
     if (challengedTime! < challengerTime!) return 'challenged';
     return 'draw';
+  }
+
+  /// Hint-usage emoji for a given hint count (matches daily challenge style).
+  static String hintEmoji(int? hintsUsed, {bool completed = true}) {
+    if (!completed) return '\u{1F534}'; // red
+    if (hintsUsed == null || hintsUsed == 0) return '\u{1F7E2}'; // green
+    if (hintsUsed <= 2) return '\u{1F7E1}'; // yellow
+    if (hintsUsed <= 4) return '\u{1F7E0}'; // orange
+    return '\u{1F534}'; // red
   }
 
   Map<String, dynamic> toJson() => {
@@ -50,8 +85,15 @@ class ChallengeRound {
     'clue_type': clueType.name,
     'start_location': [startLocation.x, startLocation.y],
     'target_country_code': targetCountryCode,
+    if (countryName != null) 'country_name': countryName,
     'challenger_time_ms': challengerTime?.inMilliseconds,
     'challenged_time_ms': challengedTime?.inMilliseconds,
+    if (challengerScore != null) 'challenger_score': challengerScore,
+    if (challengedScore != null) 'challenged_score': challengedScore,
+    if (challengerHintsUsed != null)
+      'challenger_hints_used': challengerHintsUsed,
+    if (challengedHintsUsed != null)
+      'challenged_hints_used': challengedHintsUsed,
   };
 
   factory ChallengeRound.fromJson(Map<String, dynamic> json) {
@@ -65,12 +107,17 @@ class ChallengeRound {
         (startLoc[1] as num).toDouble(),
       ),
       targetCountryCode: json['target_country_code'] as String,
+      countryName: json['country_name'] as String?,
       challengerTime: json['challenger_time_ms'] != null
           ? Duration(milliseconds: json['challenger_time_ms'] as int)
           : null,
       challengedTime: json['challenged_time_ms'] != null
           ? Duration(milliseconds: json['challenged_time_ms'] as int)
           : null,
+      challengerScore: json['challenger_score'] as int?,
+      challengedScore: json['challenged_score'] as int?,
+      challengerHintsUsed: json['challenger_hints_used'] as int?,
+      challengedHintsUsed: json['challenged_hints_used'] as int?,
     );
   }
 }

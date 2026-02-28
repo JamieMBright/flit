@@ -189,6 +189,12 @@ class RoundOutcome {
     required this.roundNumber,
     required this.yourTimeMs,
     required this.theirTimeMs,
+    this.yourScore,
+    this.theirScore,
+    this.yourHintsUsed,
+    this.theirHintsUsed,
+    this.countryName,
+    this.clueType,
   });
 
   final int roundNumber;
@@ -197,14 +203,53 @@ class RoundOutcome {
   final int? yourTimeMs;
   final int? theirTimeMs;
 
+  /// Round score (0-10000). Null for legacy rounds that only tracked time.
+  final int? yourScore;
+  final int? theirScore;
+
+  /// Hint tiers used (0-4). Null for legacy rounds.
+  final int? yourHintsUsed;
+  final int? theirHintsUsed;
+
+  /// Country name (e.g. "Brazil") and clue type (e.g. "borders").
+  final String? countryName;
+  final String? clueType;
+
   bool get isComplete => yourTimeMs != null && theirTimeMs != null;
 
   /// True if you won this round, false if they won, null if draw or incomplete.
+  /// Prefers score comparison; falls back to time.
   bool? get youWon {
     if (!isComplete) return null;
+    // Score-based (higher wins).
+    if (yourScore != null && theirScore != null) {
+      if (yourScore! > theirScore!) return true;
+      if (theirScore! > yourScore!) return false;
+      return null; // draw
+    }
+    // Fallback: time-based (lower wins).
     if (yourTimeMs! < theirTimeMs!) return true;
     if (theirTimeMs! < yourTimeMs!) return false;
     return null; // draw
+  }
+
+  /// Hint-usage emoji (matches daily challenge style).
+  String get yourHintEmoji => _hintEmoji(yourHintsUsed);
+  String get theirHintEmoji => _hintEmoji(theirHintsUsed);
+
+  static String _hintEmoji(int? hints) {
+    if (hints == null) return '';
+    if (hints == 0) return '\u{1F7E2}'; // green
+    if (hints <= 2) return '\u{1F7E1}'; // yellow
+    if (hints <= 4) return '\u{1F7E0}'; // orange
+    return '\u{1F534}'; // red
+  }
+
+  /// Formatted clue label e.g. "Brazil (borders)".
+  String get clueLabel {
+    if (countryName == null) return '';
+    if (clueType != null) return '$countryName ($clueType)';
+    return countryName!;
   }
 }
 

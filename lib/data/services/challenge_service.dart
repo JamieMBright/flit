@@ -168,6 +168,11 @@ class ChallengeService {
   /// Submit the result of a single round with exponential backoff retry.
   ///
   /// [roundIndex] is 0-based. [timeMs] is the player's completion time.
+  /// [score] is the round score (0-10000) factoring in hints and fuel.
+  /// [hintsUsed] is the number of hint tiers used (0-4).
+  /// [clueTypeName] and [countryName] are recorded once per round (by the
+  /// first player to submit) so the match history can display clue context.
+  ///
   /// The method reads the current rounds JSONB, updates the appropriate field,
   /// and writes it back. Retries up to [_maxRetries] times with exponential
   /// backoff (1s, 2s, 4s) on failure.
@@ -175,6 +180,10 @@ class ChallengeService {
     required String challengeId,
     required int roundIndex,
     required int timeMs,
+    int? score,
+    int? hintsUsed,
+    String? clueTypeName,
+    String? countryName,
   }) async {
     if (_userId == null) return false;
 
@@ -197,10 +206,20 @@ class ChallengeService {
         if (roundIndex < 0 || roundIndex >= rounds.length) return false;
 
         // Set the time for the appropriate player.
-        final timeKey = isChallenger
-            ? 'challenger_time_ms'
-            : 'challenged_time_ms';
-        rounds[roundIndex][timeKey] = timeMs;
+        final prefix = isChallenger ? 'challenger' : 'challenged';
+        rounds[roundIndex]['${prefix}_time_ms'] = timeMs;
+        if (score != null) rounds[roundIndex]['${prefix}_score'] = score;
+        if (hintsUsed != null) {
+          rounds[roundIndex]['${prefix}_hints_used'] = hintsUsed;
+        }
+
+        // Persist clue metadata once (first submitter writes it).
+        if (clueTypeName != null && rounds[roundIndex]['clue_type'] == null) {
+          rounds[roundIndex]['clue_type'] = clueTypeName;
+        }
+        if (countryName != null && rounds[roundIndex]['country_name'] == null) {
+          rounds[roundIndex]['country_name'] = countryName;
+        }
 
         // If the challenge was pending, move to in_progress.
         final newStatus = row['status'] == 'pending'
@@ -349,18 +368,31 @@ class ChallengeService {
     final roundsList = row['rounds'] as List? ?? [];
     final rounds = roundsList.map<ChallengeRound>((r) {
       final round = r as Map<String, dynamic>;
+      // Parse clue type if present, falling back to default.
+      final clueTypeStr = round['clue_type'] as String?;
+      final clueType = clueTypeStr != null
+          ? ClueType.values.firstWhere(
+              (t) => t.name == clueTypeStr,
+              orElse: () => _defaultClueType,
+            )
+          : _defaultClueType;
       return ChallengeRound(
         roundNumber: round['round_number'] as int? ?? 0,
         seed: round['seed'] as int? ?? 0,
-        clueType: _defaultClueType,
+        clueType: clueType,
         startLocation: _defaultLocation,
-        targetCountryCode: '',
+        targetCountryCode: round['target_country_code'] as String? ?? '',
+        countryName: round['country_name'] as String?,
         challengerTime: round['challenger_time_ms'] != null
             ? Duration(milliseconds: round['challenger_time_ms'] as int)
             : null,
         challengedTime: round['challenged_time_ms'] != null
             ? Duration(milliseconds: round['challenged_time_ms'] as int)
             : null,
+        challengerScore: round['challenger_score'] as int?,
+        challengedScore: round['challenged_score'] as int?,
+        challengerHintsUsed: round['challenger_hints_used'] as int?,
+        challengedHintsUsed: round['challenged_hints_used'] as int?,
       );
     }).toList();
 

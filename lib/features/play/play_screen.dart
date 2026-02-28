@@ -624,6 +624,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             challengeId: widget.challengeId!,
             roundIndex: _currentRound - 1,
             timeMs: _elapsed.inMilliseconds,
+            score: _session?.score,
+            hintsUsed: _hintTier,
+            clueTypeName: _session?.clue.type.name,
+            countryName: _session?.targetName,
           )
           .catchError((Object e) {
             _log.warning('challenge', 'Failed to submit round result: $e');
@@ -757,6 +761,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             challengeId: widget.challengeId!,
             roundIndex: _currentRound - 1,
             timeMs: _elapsed.inMilliseconds,
+            score: _session?.score,
+            hintsUsed: _hintTier,
+            clueTypeName: _session?.clue.type.name,
+            countryName: _session?.targetName,
           )
           .then(
             (_) => ChallengeService.instance.tryCompleteChallenge(
@@ -1241,6 +1249,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         challengeId: widget.challengeId!,
         roundIndex: _currentRound - 1,
         timeMs: _elapsed.inMilliseconds,
+        score: 0,
+        hintsUsed: _hintTier,
+        clueTypeName: _session?.clue.type.name,
+        countryName: _session?.targetName,
       );
     }
 

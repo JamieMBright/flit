@@ -501,7 +501,7 @@ class _ScoreDisplay extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Round Breakdown with Side-by-Side Times
+// Round Breakdown with Score, Emoji, and Clue
 // ---------------------------------------------------------------------------
 
 class _RoundBreakdown extends StatelessWidget {
@@ -537,11 +537,11 @@ class _RoundBreakdown extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        // Header row
+        // Header row: yourName | | Clue | | opponentName
         Row(
           children: [
-            const SizedBox(width: 36),
             Expanded(
+              flex: 2,
               child: Text(
                 yourName,
                 style: const TextStyle(
@@ -550,9 +550,26 @@ class _RoundBreakdown extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 4),
+            const Expanded(
+              flex: 3,
+              child: Text(
+                'Clue',
+                style: TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(width: 4),
             Expanded(
+              flex: 2,
               child: Text(
                 opponentName,
                 style: const TextStyle(
@@ -575,12 +592,12 @@ class _RoundBreakdown extends StatelessWidget {
             .map(
               (round) => _RoundRow(round: round, isChallenger: isChallenger),
             ),
-        // Total time row
+        // Total score row
         if (rounds.where((r) => r.isComplete).length > 1) ...[
           const SizedBox(height: 8),
           const Divider(color: FlitColors.cardBorder, height: 1),
           const SizedBox(height: 8),
-          _TotalTimeRow(
+          _TotalScoreRow(
             rounds: rounds.where((r) => r.isComplete).toList(),
             isChallenger: isChallenger,
           ),
@@ -598,6 +615,18 @@ class _RoundRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final yourScore = isChallenger
+        ? round.challengerScore
+        : round.challengedScore;
+    final theirScore = isChallenger
+        ? round.challengedScore
+        : round.challengerScore;
+    final yourHints = isChallenger
+        ? round.challengerHintsUsed
+        : round.challengedHintsUsed;
+    final theirHints = isChallenger
+        ? round.challengedHintsUsed
+        : round.challengerHintsUsed;
     final yourTime = isChallenger ? round.challengerTime : round.challengedTime;
     final theirTime = isChallenger
         ? round.challengedTime
@@ -605,83 +634,92 @@ class _RoundRow extends StatelessWidget {
     final youWon =
         (isChallenger && round.winner == 'challenger') ||
         (!isChallenger && round.winner == 'challenged');
-    final draw = round.winner == 'draw';
+    final theyWon =
+        (isChallenger && round.winner == 'challenged') ||
+        (!isChallenger && round.winner == 'challenger');
+
+    // Display score if available, otherwise fall back to time.
+    final yourDisplay = yourScore != null
+        ? yourScore.toString()
+        : _formatTime(yourTime);
+    final theirDisplay = theirScore != null
+        ? theirScore.toString()
+        : _formatTime(theirTime);
+
+    // Clue label: "Brazil (borders)" or just clue type name.
+    final clueLabel = round.countryName != null
+        ? '${round.countryName} (${round.clueType.name})'
+        : round.clueType.name;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          // Round number badge
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: draw
-                  ? FlitColors.textMuted
-                  : youWon
-                  ? FlitColors.success
-                  : FlitColors.error,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                round.roundNumber.toString(),
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+          // Your score + emoji
+          Expanded(
+            flex: 2,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  yourDisplay,
+                  style: TextStyle(
+                    color: youWon
+                        ? FlitColors.success
+                        : theyWon
+                        ? FlitColors.error
+                        : FlitColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: youWon ? FontWeight.w600 : FontWeight.normal,
+                    fontFamily: 'monospace',
+                  ),
                 ),
-              ),
+                const SizedBox(width: 4),
+                Text(
+                  ChallengeRound.hintEmoji(yourHints),
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 8),
-          // Your time
+          const SizedBox(width: 4),
+          // Clue label in center
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-              decoration: BoxDecoration(
-                color: youWon
-                    ? FlitColors.success.withOpacity(0.15)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                _formatTime(yourTime),
-                style: TextStyle(
-                  color: youWon ? FlitColors.success : FlitColors.textPrimary,
-                  fontSize: 14,
-                  fontWeight: youWon ? FontWeight.w600 : FontWeight.normal,
-                  fontFamily: 'monospace',
-                ),
-                textAlign: TextAlign.center,
-              ),
+            flex: 3,
+            child: Text(
+              clueLabel,
+              style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 8),
-          // Their time
+          const SizedBox(width: 4),
+          // Their emoji + score
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-              decoration: BoxDecoration(
-                color: !youWon && !draw
-                    ? FlitColors.error.withOpacity(0.15)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                _formatTime(theirTime),
-                style: TextStyle(
-                  color: !youWon && !draw
-                      ? FlitColors.error
-                      : FlitColors.textPrimary,
-                  fontSize: 14,
-                  fontWeight: !youWon && !draw
-                      ? FontWeight.w600
-                      : FontWeight.normal,
-                  fontFamily: 'monospace',
+            flex: 2,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  ChallengeRound.hintEmoji(theirHints),
+                  style: const TextStyle(fontSize: 12),
                 ),
-                textAlign: TextAlign.center,
-              ),
+                const SizedBox(width: 4),
+                Text(
+                  theirDisplay,
+                  style: TextStyle(
+                    color: theyWon
+                        ? FlitColors.success
+                        : youWon
+                        ? FlitColors.error
+                        : FlitColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: theyWon ? FontWeight.w600 : FontWeight.normal,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -697,45 +735,99 @@ class _RoundRow extends StatelessWidget {
   }
 }
 
-class _TotalTimeRow extends StatelessWidget {
-  const _TotalTimeRow({required this.rounds, required this.isChallenger});
+class _TotalScoreRow extends StatelessWidget {
+  const _TotalScoreRow({required this.rounds, required this.isChallenger});
 
   final List<ChallengeRound> rounds;
   final bool isChallenger;
 
   @override
   Widget build(BuildContext context) {
-    var yourTotalMs = 0;
-    var theirTotalMs = 0;
+    var yourTotal = 0;
+    var theirTotal = 0;
+    var hasScores = false;
     for (final r in rounds) {
-      final yourTime = isChallenger ? r.challengerTime : r.challengedTime;
-      final theirTime = isChallenger ? r.challengedTime : r.challengerTime;
-      if (yourTime != null) yourTotalMs += yourTime.inMilliseconds;
-      if (theirTime != null) theirTotalMs += theirTime.inMilliseconds;
+      final yourScore = isChallenger ? r.challengerScore : r.challengedScore;
+      final theirScore = isChallenger ? r.challengedScore : r.challengerScore;
+      if (yourScore != null) {
+        yourTotal += yourScore;
+        hasScores = true;
+      }
+      if (theirScore != null) theirTotal += theirScore;
     }
 
-    final yourTotal = Duration(milliseconds: yourTotalMs);
-    final theirTotal = Duration(milliseconds: theirTotalMs);
-    final youFaster = yourTotalMs < theirTotalMs;
+    // Fall back to total time if no scores recorded (legacy challenges).
+    if (!hasScores) {
+      var yourTotalMs = 0;
+      var theirTotalMs = 0;
+      for (final r in rounds) {
+        final yourTime = isChallenger ? r.challengerTime : r.challengedTime;
+        final theirTime = isChallenger ? r.challengedTime : r.challengerTime;
+        if (yourTime != null) yourTotalMs += yourTime.inMilliseconds;
+        if (theirTime != null) theirTotalMs += theirTime.inMilliseconds;
+      }
+      final youFaster = yourTotalMs < theirTotalMs;
+      return Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              _formatTotalTime(Duration(milliseconds: yourTotalMs)),
+              style: TextStyle(
+                color: youFaster ? FlitColors.success : FlitColors.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'monospace',
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(width: 4),
+          const Expanded(
+            flex: 3,
+            child: Text(
+              'Total',
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            flex: 2,
+            child: Text(
+              _formatTotalTime(Duration(milliseconds: theirTotalMs)),
+              style: TextStyle(
+                color: !youFaster ? FlitColors.error : FlitColors.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'monospace',
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      );
+    }
+
+    final youHigher = yourTotal > theirTotal;
+    final theyHigher = theirTotal > yourTotal;
 
     return Row(
       children: [
-        const SizedBox(
-          width: 36,
-          child: Text(
-            'Total',
-            style: TextStyle(
-              color: FlitColors.textMuted,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
         Expanded(
+          flex: 2,
           child: Text(
-            _formatTotalTime(yourTotal),
+            yourTotal.toString(),
             style: TextStyle(
-              color: youFaster ? FlitColors.success : FlitColors.textPrimary,
+              color: youHigher
+                  ? FlitColors.success
+                  : theyHigher
+                  ? FlitColors.error
+                  : FlitColors.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w600,
               fontFamily: 'monospace',
@@ -743,11 +835,30 @@ class _TotalTimeRow extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ),
-        Expanded(
+        const SizedBox(width: 4),
+        const Expanded(
+          flex: 3,
           child: Text(
-            _formatTotalTime(theirTotal),
+            'Total',
             style: TextStyle(
-              color: !youFaster ? FlitColors.error : FlitColors.textPrimary,
+              color: FlitColors.textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          flex: 2,
+          child: Text(
+            theirTotal.toString(),
+            style: TextStyle(
+              color: theyHigher
+                  ? FlitColors.success
+                  : youHigher
+                  ? FlitColors.error
+                  : FlitColors.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w600,
               fontFamily: 'monospace',
