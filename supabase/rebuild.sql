@@ -25,6 +25,13 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+-- Drop orphaned/redundant policies from earlier manual migrations.
+-- "Users can view own profile" is redundant with "Profiles are publicly readable".
+-- "Admin can read/update" used hardcoded email instead of admin_role column.
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Admin can read all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Admin can update any profile" ON public.profiles;
+
 DO $$ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Users can read own profile'
@@ -668,6 +675,17 @@ CREATE TRIGGER trg_protect_profile_stats
 -- 9. CONSTRAINTS
 -- ---------------------------------------------------------------------------
 
+-- Clean up legacy duplicate constraints from earlier migrations.
+-- These were superseded by the canonical check_* / chk_* names below.
+ALTER TABLE public.scores DROP CONSTRAINT IF EXISTS chk_score_range;
+ALTER TABLE public.scores DROP CONSTRAINT IF EXISTS chk_time_range;
+ALTER TABLE public.scores DROP CONSTRAINT IF EXISTS chk_rounds_range;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS chk_coins_non_neg;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS chk_level_positive;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS chk_xp_non_negative;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS chk_username_length;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS chk_username_chars;
+
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_score') THEN
     ALTER TABLE public.scores ADD CONSTRAINT chk_score
@@ -1018,6 +1036,7 @@ CREATE OR REPLACE FUNCTION public.admin_set_avatar(
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_caller_role TEXT;
@@ -1595,6 +1614,7 @@ CREATE OR REPLACE FUNCTION public.upsert_economy_config(new_config JSONB)
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   INSERT INTO public.economy_config (id, config, updated_at)
@@ -2195,6 +2215,8 @@ WHERE
      AND c.coin_amount > 0 AND c.created_at > NOW() - INTERVAL '24 hours') > 1500
   OR p.best_score >= 99000;
 
+ALTER VIEW suspicious_activity SET (security_invoker = on);
+
 
 -- ────────────────────────────────────────────────────────────────
 -- 24. GDPR Request Tracking
@@ -2215,9 +2237,15 @@ CREATE TABLE IF NOT EXISTS public.gdpr_requests (
 
 ALTER TABLE public.gdpr_requests ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Admins can manage GDPR requests"
-  ON public.gdpr_requests FOR ALL
-  USING ((SELECT admin_role FROM public.profiles WHERE id = auth.uid()) IS NOT NULL);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'gdpr_requests' AND policyname = 'Admins can manage GDPR requests'
+  ) THEN
+    CREATE POLICY "Admins can manage GDPR requests"
+      ON public.gdpr_requests FOR ALL
+      USING ((SELECT admin_role FROM public.profiles WHERE id = auth.uid()) IS NOT NULL);
+  END IF;
+END $$;
 
 -- RPC: admin_process_gdpr_request
 CREATE OR REPLACE FUNCTION public.admin_process_gdpr_request(
@@ -2298,14 +2326,26 @@ CREATE TABLE IF NOT EXISTS public.iap_receipts (
 ALTER TABLE public.iap_receipts ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their own receipts
-CREATE POLICY "Users read own receipts"
-  ON public.iap_receipts FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'iap_receipts' AND policyname = 'Users read own receipts'
+  ) THEN
+    CREATE POLICY "Users read own receipts"
+      ON public.iap_receipts FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Admins can read all receipts
-CREATE POLICY "Admins read all receipts"
-  ON public.iap_receipts FOR SELECT
-  USING ((SELECT admin_role FROM public.profiles WHERE id = auth.uid()) IS NOT NULL);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'iap_receipts' AND policyname = 'Admins read all receipts'
+  ) THEN
+    CREATE POLICY "Admins read all receipts"
+      ON public.iap_receipts FOR SELECT
+      USING ((SELECT admin_role FROM public.profiles WHERE id = auth.uid()) IS NOT NULL);
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_iap_receipts_user ON public.iap_receipts (user_id);
 CREATE INDEX IF NOT EXISTS idx_iap_receipts_created ON public.iap_receipts (created_at DESC);
