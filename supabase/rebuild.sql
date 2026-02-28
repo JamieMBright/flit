@@ -25,6 +25,13 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+-- Drop orphaned/redundant policies from earlier manual migrations.
+-- "Users can view own profile" is redundant with "Profiles are publicly readable".
+-- "Admin can read/update" used hardcoded email instead of admin_role column.
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Admin can read all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Admin can update any profile" ON public.profiles;
+
 DO $$ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Users can read own profile'
@@ -668,6 +675,17 @@ CREATE TRIGGER trg_protect_profile_stats
 -- 9. CONSTRAINTS
 -- ---------------------------------------------------------------------------
 
+-- Clean up legacy duplicate constraints from earlier migrations.
+-- These were superseded by the canonical check_* / chk_* names below.
+ALTER TABLE public.scores DROP CONSTRAINT IF EXISTS chk_score_range;
+ALTER TABLE public.scores DROP CONSTRAINT IF EXISTS chk_time_range;
+ALTER TABLE public.scores DROP CONSTRAINT IF EXISTS chk_rounds_range;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS chk_coins_non_neg;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS chk_level_positive;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS chk_xp_non_negative;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS chk_username_length;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS chk_username_chars;
+
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_score') THEN
     ALTER TABLE public.scores ADD CONSTRAINT chk_score
@@ -1018,6 +1036,7 @@ CREATE OR REPLACE FUNCTION public.admin_set_avatar(
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_caller_role TEXT;
@@ -1595,6 +1614,7 @@ CREATE OR REPLACE FUNCTION public.upsert_economy_config(new_config JSONB)
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   INSERT INTO public.economy_config (id, config, updated_at)
@@ -2194,6 +2214,8 @@ WHERE
   OR (SELECT COALESCE(SUM(c.coin_amount), 0) FROM coin_activity c WHERE c.user_id = p.id
      AND c.coin_amount > 0 AND c.created_at > NOW() - INTERVAL '24 hours') > 1500
   OR p.best_score >= 99000;
+
+ALTER VIEW suspicious_activity SET (security_invoker = on);
 
 
 -- ────────────────────────────────────────────────────────────────
