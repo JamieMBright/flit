@@ -2215,9 +2215,15 @@ CREATE TABLE IF NOT EXISTS public.gdpr_requests (
 
 ALTER TABLE public.gdpr_requests ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Admins can manage GDPR requests"
-  ON public.gdpr_requests FOR ALL
-  USING ((SELECT admin_role FROM public.profiles WHERE id = auth.uid()) IS NOT NULL);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'gdpr_requests' AND policyname = 'Admins can manage GDPR requests'
+  ) THEN
+    CREATE POLICY "Admins can manage GDPR requests"
+      ON public.gdpr_requests FOR ALL
+      USING ((SELECT admin_role FROM public.profiles WHERE id = auth.uid()) IS NOT NULL);
+  END IF;
+END $$;
 
 -- RPC: admin_process_gdpr_request
 CREATE OR REPLACE FUNCTION public.admin_process_gdpr_request(
@@ -2298,14 +2304,26 @@ CREATE TABLE IF NOT EXISTS public.iap_receipts (
 ALTER TABLE public.iap_receipts ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their own receipts
-CREATE POLICY "Users read own receipts"
-  ON public.iap_receipts FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'iap_receipts' AND policyname = 'Users read own receipts'
+  ) THEN
+    CREATE POLICY "Users read own receipts"
+      ON public.iap_receipts FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Admins can read all receipts
-CREATE POLICY "Admins read all receipts"
-  ON public.iap_receipts FOR SELECT
-  USING ((SELECT admin_role FROM public.profiles WHERE id = auth.uid()) IS NOT NULL);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'iap_receipts' AND policyname = 'Admins read all receipts'
+  ) THEN
+    CREATE POLICY "Admins read all receipts"
+      ON public.iap_receipts FOR SELECT
+      USING ((SELECT admin_role FROM public.profiles WHERE id = auth.uid()) IS NOT NULL);
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_iap_receipts_user ON public.iap_receipts (user_id);
 CREATE INDEX IF NOT EXISTS idx_iap_receipts_created ON public.iap_receipts (created_at DESC);
