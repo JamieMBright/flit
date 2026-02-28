@@ -3,12 +3,26 @@ import 'package:flame/components.dart';
 import '../../game/clues/clue_types.dart';
 
 /// Status of a challenge.
+///
+/// [dbName] is the snake_case value stored in Supabase.
 enum ChallengeStatus {
-  pending, // Waiting for challenged player
-  inProgress, // Both players playing
-  completed, // Challenge finished
-  expired, // Challenge timed out
-  declined, // Challenged player declined
+  pending('pending'),
+  inProgress('in_progress'),
+  completed('completed'),
+  expired('expired'),
+  declined('declined');
+
+  const ChallengeStatus(this.dbName);
+
+  /// The snake_case string stored in the database.
+  final String dbName;
+
+  /// Look up a [ChallengeStatus] from its DB string representation.
+  static ChallengeStatus fromDb(String value) =>
+      ChallengeStatus.values.firstWhere(
+        (s) => s.dbName == value,
+        orElse: () => ChallengeStatus.pending,
+      );
 }
 
 /// A single round in a challenge.
@@ -181,7 +195,7 @@ class Challenge {
     'challenger_name': challengerName,
     'challenged_id': challengedId,
     'challenged_name': challengedName,
-    'status': status.name,
+    'status': status.dbName,
     'rounds': rounds.map((r) => r.toJson()).toList(),
     'winner_id': winnerId,
     'challenger_coins': challengerCoins,
@@ -196,7 +210,7 @@ class Challenge {
     challengerName: json['challenger_name'] as String,
     challengedId: json['challenged_id'] as String,
     challengedName: json['challenged_name'] as String,
-    status: ChallengeStatus.values.firstWhere((s) => s.name == json['status']),
+    status: ChallengeStatus.fromDb(json['status'] as String),
     rounds: (json['rounds'] as List)
         .map((r) => ChallengeRound.fromJson(r as Map<String, dynamic>))
         .toList(),
