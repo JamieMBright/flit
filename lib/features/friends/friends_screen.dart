@@ -1609,7 +1609,7 @@ class _ChallengeStatusBadge extends StatelessWidget {
         );
       case _FriendChallengeStatus.received:
         return _tappableBadge(
-          label: 'PLAY!',
+          label: 'CHALLENGE',
           icon: Icons.flight_takeoff,
           color: FlitColors.accent,
           onTap: onPlay,
