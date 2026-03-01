@@ -892,9 +892,10 @@ class _ScoringSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _BodyText(
-            'Each round starts with 10,000 points. Using hints and burning '
-            'fuel costs you points. Land fast with fuel to spare and no '
-            'hints for the best score.',
+            'Each round starts with a base of 10,000 points. Using hints '
+            'and burning fuel costs you points, while harder countries '
+            'reward you with a higher score multiplier. Land quickly with '
+            'fuel to spare and no hints for the best score.',
           ),
           SizedBox(height: 16),
           // Step indicators
@@ -920,6 +921,26 @@ class _ScoringSection extends StatelessWidget {
             label: 'Fuel Penalty',
             detail: 'Up to -5,000 pts based on fuel burned',
             icon: Icons.local_gas_station_rounded,
+          ),
+          SizedBox(height: 8),
+          _ScoringStep(
+            step: 4,
+            color: FlitColors.accent,
+            label: 'Difficulty Bonus',
+            detail: 'Obscure countries multiply your score up to 2\u00d7',
+            icon: Icons.trending_up_rounded,
+          ),
+          SizedBox(height: 12),
+          _BodyText(
+            'Hint tiers escalate: a new clue (-500), reveal the country '
+            '(-1,000), show a wayline (-1,500), or auto-navigate (-2,500). '
+            'Using all four costs -5,500 total.',
+          ),
+          SizedBox(height: 12),
+          _BodyText(
+            'The difficulty multiplier ranges from \u00d70.5 for well-known '
+            'countries to nearly \u00d71.0 for obscure ones \u2014 finding '
+            'Tuvalu is worth far more than finding the USA.',
           ),
           SizedBox(height: 16),
           // Score bar illustration
@@ -1005,6 +1026,8 @@ class _ScoreBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Example: base 10,000 − 500 hints − 1,500 fuel = 8,000 raw
+    // Difficulty multiplier ×0.72 (medium country) → 5,760 final
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1016,7 +1039,7 @@ class _ScoreBar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'SCORE BREAKDOWN',
+            'EXAMPLE SCORE BREAKDOWN',
             style: TextStyle(
               color: FlitColors.textMuted,
               fontSize: 10,
@@ -1027,23 +1050,31 @@ class _ScoreBar extends StatelessWidget {
           SizedBox(height: 10),
           _ScoreBarRow(
             label: 'Base',
-            value: 1000,
-            max: 1500,
+            value: 10000,
+            max: 10000,
             color: FlitColors.success,
           ),
           SizedBox(height: 6),
           _ScoreBarRow(
-            label: 'Speed',
-            value: 380,
-            max: 500,
+            label: 'Hints',
+            value: -500,
+            max: 5500,
             color: FlitColors.gold,
           ),
           SizedBox(height: 6),
           _ScoreBarRow(
-            label: 'Clues',
-            value: -200,
-            max: 500,
+            label: 'Fuel',
+            value: -1500,
+            max: 5000,
+            color: FlitColors.oceanHighlight,
+          ),
+          SizedBox(height: 6),
+          _ScoreBarRow(
+            label: 'Diff.',
+            value: 72,
+            max: 100,
             color: FlitColors.accent,
+            displayOverride: '\u00d70.72',
           ),
           SizedBox(height: 10),
           Divider(color: FlitColors.cardBorder, height: 1),
@@ -1061,7 +1092,7 @@ class _ScoreBar extends StatelessWidget {
                 ),
               ),
               Text(
-                '1,180 pts',
+                '5,760 pts',
                 style: TextStyle(
                   color: FlitColors.gold,
                   fontSize: 15,
@@ -1082,12 +1113,16 @@ class _ScoreBarRow extends StatelessWidget {
     required this.value,
     required this.max,
     required this.color,
+    this.displayOverride,
   });
 
   final String label;
   final int value;
   final int max;
   final Color color;
+
+  /// Optional display string override (e.g. '\u00d70.72' for a multiplier).
+  final String? displayOverride;
 
   @override
   Widget build(BuildContext context) {
@@ -1125,7 +1160,7 @@ class _ScoreBarRow extends StatelessWidget {
         SizedBox(
           width: 54,
           child: Text(
-            '${isNegative ? '-' : '+'}${value.abs()}',
+            displayOverride ?? '${isNegative ? '-' : '+'}${value.abs()}',
             textAlign: TextAlign.right,
             style: TextStyle(
               color: color,

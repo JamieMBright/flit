@@ -1567,6 +1567,10 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
     var selected = Color(int.parse('FF$safeInitialHex', radix: 16));
     final coins = ref.read(currentCoinsProvider);
     final canAfford = coins >= _customColorWheelPrice;
+    final hexController = TextEditingController(text: safeInitialHex);
+    // Track whether the text field is being edited so slider changes
+    // don't fight with the user's typing.
+    var isEditingHex = false;
 
     showDialog<void>(
       context: context,
@@ -1579,6 +1583,10 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
               .substring(2);
           final isExisting = existing == selectedHex;
           final price = isExisting ? 0 : _customColorWheelPrice;
+          // Sync the text field when the slider drives the change.
+          if (!isEditingHex && hexController.text != selectedHex) {
+            hexController.text = selectedHex;
+          }
           return AlertDialog(
             backgroundColor: FlitColors.cardBackground,
             shape: RoundedRectangleBorder(
@@ -1612,6 +1620,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                     max: 360,
                     onChanged: (value) {
                       setDialogState(() {
+                        isEditingHex = false;
                         selected = hsv.withHue(value).toColor();
                       });
                     },
@@ -1622,6 +1631,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                     max: 1,
                     onChanged: (value) {
                       setDialogState(() {
+                        isEditingHex = false;
                         selected = hsv.withSaturation(value).toColor();
                       });
                     },
@@ -1632,13 +1642,90 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                     max: 1,
                     onChanged: (value) {
                       setDialogState(() {
+                        isEditingHex = false;
                         selected = hsv.withValue(value).toColor();
                       });
                     },
                   ),
-                  Text(
-                    '#$selectedHex',
-                    style: const TextStyle(color: FlitColors.textSecondary),
+                  const SizedBox(height: 4),
+                  // Editable hex input — type an exact colour reference.
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        '#',
+                        style: TextStyle(
+                          color: FlitColors.textSecondary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      SizedBox(
+                        width: 100,
+                        child: TextField(
+                          controller: hexController,
+                          maxLength: 6,
+                          style: const TextStyle(
+                            color: FlitColors.textPrimary,
+                            fontSize: 16,
+                            fontFamily: 'monospace',
+                            letterSpacing: 1.5,
+                          ),
+                          decoration: InputDecoration(
+                            counterText: '',
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 8,
+                            ),
+                            filled: true,
+                            fillColor: FlitColors.backgroundDark.withOpacity(
+                              0.6,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(6),
+                              borderSide: const BorderSide(
+                                color: FlitColors.cardBorder,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(6),
+                              borderSide: const BorderSide(
+                                color: FlitColors.cardBorder,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(6),
+                              borderSide: const BorderSide(
+                                color: FlitColors.accent,
+                              ),
+                            ),
+                            hintText: 'FF5733',
+                            hintStyle: TextStyle(
+                              color: FlitColors.textMuted.withOpacity(0.5),
+                              fontSize: 16,
+                              fontFamily: 'monospace',
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          textCapitalization: TextCapitalization.characters,
+                          onChanged: (value) {
+                            final cleaned = value
+                                .replaceAll('#', '')
+                                .toLowerCase();
+                            if (RegExp(r'^[0-9a-f]{6}$').hasMatch(cleaned)) {
+                              setDialogState(() {
+                                isEditingHex = true;
+                                selected = Color(
+                                  int.parse('FF$cleaned', radix: 16),
+                                );
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(
