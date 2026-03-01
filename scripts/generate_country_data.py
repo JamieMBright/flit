@@ -34,11 +34,14 @@ SIMPLIFY_TOLERANCE = 0.05
 # Barbados). Area thresholds in square degrees (1° ≈ 111 km at equator).
 SMALL_COUNTRY_AREA = 2.0       # < ~24,000 km² → use SMALL_TOLERANCE
 TINY_COUNTRY_AREA = 0.1        # < ~1,200 km²  → use TINY_TOLERANCE
+MICRO_COUNTRY_AREA = 0.005     # < ~60 km²     → use MICRO_TOLERANCE
 SMALL_TOLERANCE = 0.01         # ~1.1 km - 5x more detail
-TINY_TOLERANCE = 0.002         # ~0.2 km - 25x more detail for microstates/tiny islands
+TINY_TOLERANCE = 0.001         # ~0.1 km - 50x more detail for small islands
+MICRO_TOLERANCE = 0.0002       # ~0.02 km - 250x more detail for microstates
 
 # Minimum useful points per polygon for outline recognition.
-# Triangles (3 unique + closure = 4) are unrecognizable.
+# Triangles (3 unique + closure = 4) and quads (4 unique + closure = 5) are
+# unrecognizable as country shapes. Require at least 8 unique points.
 MIN_USEFUL_POINTS = 8
 
 # Territories to ensure are included, with manual ISO codes for disputed ones
@@ -190,7 +193,9 @@ def _pick_tolerance(geometry):
     except Exception:
         return SIMPLIFY_TOLERANCE
 
-    if area < TINY_COUNTRY_AREA:
+    if area < MICRO_COUNTRY_AREA:
+        return MICRO_TOLERANCE
+    elif area < TINY_COUNTRY_AREA:
         return TINY_TOLERANCE
     elif area < SMALL_COUNTRY_AREA:
         return SMALL_TOLERANCE
@@ -203,6 +208,10 @@ def extract_polygons(geometry):
     Applies Douglas-Peucker simplification to reduce point count while
     preserving topology. Uses adaptive tolerance: small countries get finer
     resolution so their outlines remain recognizable as game clues.
+
+    Polygons with fewer than MIN_USEFUL_POINTS are dropped as they produce
+    unrecognizable shapes (triangles/quads). If simplification reduces a
+    polygon below this threshold, it is retried with half the tolerance.
     """
     polygons = []
     if geometry is None:
@@ -210,18 +219,43 @@ def extract_polygons(geometry):
 
     # Adaptive simplification based on country size
     tolerance = _pick_tolerance(geometry)
-    if tolerance > 0:
-        geometry = geometry.simplify(tolerance, preserve_topology=True)
 
-    if isinstance(geometry, Polygon):
-        coords = list(geometry.exterior.coords)
-        if len(coords) >= MIN_POLYGON_POINTS:
-            polygons.append(coords)
-    elif isinstance(geometry, MultiPolygon):
-        for poly in geometry.geoms:
-            coords = list(poly.exterior.coords)
-            if len(coords) >= MIN_POLYGON_POINTS:
-                polygons.append(coords)
+    def _extract_from(geom):
+        """Extract coordinate rings from a simplified geometry."""
+        result = []
+        if isinstance(geom, Polygon):
+            coords = list(geom.exterior.coords)
+            if len(coords) >= MIN_USEFUL_POINTS:
+                result.append(coords)
+            elif len(coords) >= MIN_POLYGON_POINTS:
+                # Too few points but not degenerate — retry with finer tolerance
+                result.append(coords)  # keep as fallback, will be replaced below
+        elif isinstance(geom, MultiPolygon):
+            for poly in geom.geoms:
+                coords = list(poly.exterior.coords)
+                if len(coords) >= MIN_USEFUL_POINTS:
+                    result.append(coords)
+                elif len(coords) >= MIN_POLYGON_POINTS:
+                    result.append(coords)
+        return result
+
+    if tolerance > 0:
+        simplified = geometry.simplify(tolerance, preserve_topology=True)
+        polygons = _extract_from(simplified)
+
+        # Retry with finer tolerance if any polygon has too few points
+        needs_retry = any(len(p) < MIN_USEFUL_POINTS for p in polygons)
+        if needs_retry and tolerance > MICRO_TOLERANCE:
+            finer = max(tolerance / 4, MICRO_TOLERANCE)
+            simplified2 = geometry.simplify(finer, preserve_topology=True)
+            polygons2 = _extract_from(simplified2)
+            if polygons2:
+                polygons = polygons2
+    else:
+        polygons = _extract_from(geometry)
+
+    # Final filter: drop degenerate slivers
+    polygons = [p for p in polygons if len(p) >= MIN_POLYGON_POINTS]
     return polygons
 
 

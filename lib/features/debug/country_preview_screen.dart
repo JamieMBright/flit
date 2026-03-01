@@ -53,20 +53,13 @@ class _CountryPreviewScreenState extends State<CountryPreviewScreen> {
   bool _feedbackExpanded = true;
 
   /// Codes known to be unsupported by the flag SVG package.
+  /// Note: XK, EH, BQ, SX, CW, MF, BL, SS are now supported in flag v7.
   static const _unsupportedFlagCodes = {
-    'XK',
-    'XC',
-    'XS',
-    'AN',
-    'CS',
-    'EH',
-    'BQ',
-    'SX',
-    'CW',
-    'MF',
-    'BL',
-    'SS',
-    'TP',
+    'XC', // Northern Cyprus (custom code, no SVG)
+    'XS', // Somaliland (custom code, no SVG)
+    'AN', // Netherlands Antilles (dissolved)
+    'CS', // Serbia and Montenegro (dissolved)
+    'TP', // East Timor (old code, use TL)
   };
 
   List<CountryShape> get _filtered {

@@ -294,21 +294,14 @@ class _ClueCard extends StatelessWidget {
   /// Builds a flag widget with error handling for unsupported country codes.
   /// Falls back to the flag emoji text if the SVG flag can't be rendered.
   Widget _buildFlagWidget(String countryCode) {
-    // Codes known to be unsupported or problematic in the flag package v7
+    // Codes known to be unsupported or problematic in the flag package v7.
+    // Note: XK, EH, BQ, SX, CW, MF, BL, SS are now supported in flag v7.
     const unsupportedCodes = {
-      'XK', // Kosovo
-      'XC', // Northern Cyprus
-      'XS', // Somaliland
+      'XC', // Northern Cyprus (custom code, no SVG)
+      'XS', // Somaliland (custom code, no SVG)
       'AN', // Netherlands Antilles (dissolved)
       'CS', // Serbia and Montenegro (dissolved)
-      'EH', // Western Sahara
-      'BQ', // Caribbean Netherlands
-      'SX', // Sint Maarten
-      'CW', // Curaçao
-      'MF', // Saint Martin
-      'BL', // Saint Barthélemy
-      'SS', // South Sudan
-      'TP', // East Timor (old code)
+      'TP', // East Timor (old code, use TL)
     };
 
     final code = countryCode.toUpperCase();
