@@ -58,7 +58,8 @@ class Player {
   /// Longest streak of consecutive correct answers ever achieved.
   final int bestStreak;
 
-  /// Admin role: null = regular user, 'moderator' = limited admin, 'owner' = god mode.
+  /// Admin role: null = regular, 'moderator' = limited, 'collaborator' = trusted
+  /// game-design partner, 'owner' = god mode.
   final String? adminRole;
 
   /// Whether this player has any admin access.
@@ -66,6 +67,10 @@ class Player {
 
   /// Whether this player has owner (god mode) access.
   bool get isOwner => adminRole == 'owner';
+
+  /// Whether this player has collaborator access (game design + content, no
+  /// economy or destructive actions).
+  bool get isCollaborator => adminRole == 'collaborator';
 
   /// Whether this player has moderator access.
   bool get isModerator => adminRole == 'moderator';

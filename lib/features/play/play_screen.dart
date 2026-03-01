@@ -738,9 +738,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       _roundResults.add(
         _RoundResult(
           countryName: _session!.targetName,
+          countryCode: _session!.targetCountry.code,
           clueType: _session!.clue.type,
           elapsed: _elapsed,
           score: _session!.score,
+          rawScore: _session!.rawScore,
           hintsUsed: _hintTier,
           completed: !fuelDepleted,
         ),
@@ -857,9 +859,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         .map(
           (r) => {
             'country_name': r.countryName,
+            'country_code': r.countryCode,
             'clue_type': r.clueType.name,
             'time_ms': r.elapsed.inMilliseconds,
             'score': r.score,
+            'raw_score': r.rawScore,
             'hints_used': r.hintsUsed,
             'completed': r.completed,
           },
@@ -1126,9 +1130,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       _roundResults.add(
         _RoundResult(
           countryName: _session!.targetName,
+          countryCode: _session!.targetCountry.code,
           clueType: _session!.clue.type,
           elapsed: _elapsed,
           score: 0,
+          rawScore: 0,
           hintsUsed: _hintTier,
           completed: false,
         ),
@@ -1140,9 +1146,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       _roundResults.add(
         _RoundResult(
           countryName: 'Unseen',
+          countryCode: '',
           clueType: ClueType.values.first,
           elapsed: Duration.zero,
           score: 0,
+          rawScore: 0,
           hintsUsed: 0,
           completed: false,
         ),
@@ -1172,9 +1180,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         .map(
           (r) => {
             'country_name': r.countryName,
+            'country_code': r.countryCode,
             'clue_type': r.clueType.name,
             'time_ms': r.elapsed.inMilliseconds,
             'score': r.score,
+            'raw_score': r.rawScore,
             'hints_used': r.hintsUsed,
             'completed': r.completed,
           },
@@ -1635,17 +1645,23 @@ class _ClueStatsResult {
 class _RoundResult {
   const _RoundResult({
     required this.countryName,
+    required this.countryCode,
     required this.clueType,
     required this.elapsed,
     required this.score,
+    required this.rawScore,
     this.hintsUsed = 0,
     this.completed = true,
   });
 
   final String countryName;
+  final String countryCode;
   final ClueType clueType;
   final Duration elapsed;
   final int score;
+
+  /// Score before difficulty multiplier (base − penalties).
+  final int rawScore;
 
   /// Number of hint tiers used this round (0-4).
   final int hintsUsed;

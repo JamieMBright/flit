@@ -115,15 +115,75 @@ int dailyDifficultyPercent(List<(ClueType, String)> rounds) {
 
 /// Look up the difficulty rating for a country code.
 ///
-/// Returns the compiled-in default. Admin overrides are applied at the
-/// service layer (see [DifficultyService]).
+/// Checks admin overrides first (set via [setCountryDifficultyOverride] or
+/// [setCountryDifficultyOverrides]), then falls back to compiled-in defaults.
 double countryDifficultyRating(String code) {
-  return _defaultCountryDifficulty[code] ?? 0.55;
+  return _adminOverrides[code] ?? _defaultCountryDifficulty[code] ?? 0.55;
 }
 
 /// The full default difficulty map. Exposed for admin UI enumeration.
 Map<String, double> get defaultCountryDifficulty =>
     Map.unmodifiable(_defaultCountryDifficulty);
+
+// ─── Mutable admin overrides ──────────────────────────────────────────────
+
+/// Admin overrides — checked before compiled-in defaults.
+final Map<String, double> _adminOverrides = {};
+
+/// The current admin override map (read-only view).
+Map<String, double> get countryDifficultyOverrides =>
+    Map.unmodifiable(_adminOverrides);
+
+/// Replace all admin overrides (e.g. loaded from Supabase).
+void setCountryDifficultyOverrides(Map<String, double> overrides) {
+  _adminOverrides
+    ..clear()
+    ..addAll(overrides);
+}
+
+/// Set a single country override.
+void setCountryDifficultyOverride(String code, double rating) {
+  _adminOverrides[code] = rating.clamp(0.0, 1.0);
+}
+
+/// Clear all admin overrides, reverting to compiled-in defaults.
+void clearCountryDifficultyOverrides() {
+  _adminOverrides.clear();
+}
+
+/// The effective difficulty for every known country (overrides + defaults).
+Map<String, double> get effectiveCountryDifficulty {
+  return {..._defaultCountryDifficulty, ..._adminOverrides};
+}
+
+// ─── Difficulty-based score multiplier ────────────────────────────────────
+//
+// Harder countries yield higher multipliers so obscure nations are worth
+// more points than universally known ones.
+//
+// Formula:  multiplier = 0.5 + 0.5 × countryDifficulty
+//
+//   USA  (0.02) → 0.51×  →  max ~5,100
+//   BR   (0.06) → 0.53×  →  max ~5,300
+//   JE   (0.83) → 0.915× →  max ~9,150
+//   NR   (0.90) → 0.95×  →  max ~9,500
+
+/// Score multiplier for a country based on its difficulty rating.
+///
+/// Returns a value in [0.5, 1.0]. Easy countries halve the score; the
+/// hardest countries leave it nearly unchanged.
+double difficultyMultiplier(String countryCode) {
+  return 0.5 + 0.5 * countryDifficultyRating(countryCode);
+}
+
+/// Recalculate a single round's score by applying the difficulty multiplier.
+///
+/// [rawScore] is the score before any difficulty scaling (base − penalties).
+/// Returns `(rawScore × multiplier).round()`, clamped to `[0, 10000]`.
+int recalibrateRoundScore(int rawScore, String countryCode) {
+  final multiplier = difficultyMultiplier(countryCode);
+  return (rawScore * multiplier).round().clamp(0, 10000);
+}
 
 const Map<String, double> _defaultCountryDifficulty = {
   // ── Very Easy (0.00–0.15) — Iconic, universally known ──────────────

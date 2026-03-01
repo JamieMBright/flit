@@ -49,7 +49,7 @@ class GameSession {
   /// Tier 4 (auto-navigate)  →  −2,500
   static const List<int> _hintTierPenalties = [500, 1000, 1500, 2500];
 
-  /// Score for this round.
+  /// Raw score before difficulty multiplier (base − penalties).
   ///
   /// Formula:
   ///   base     = 10,000 per round
@@ -59,7 +59,7 @@ class GameSession {
   ///             (100% fuel remaining = 0 penalty, 0% = −5,000)
   ///
   /// Result is clamped to [0, 10000].
-  int get score {
+  int get rawScore {
     if (!_completed) return 0;
     const int base = 10000;
     int hintPenalty = 0;
@@ -68,6 +68,19 @@ class GameSession {
     }
     final int fuelPenalty = ((1.0 - _fuelFraction) * 5000).round();
     return max(0, base - hintPenalty - fuelPenalty);
+  }
+
+  /// Final score for this round, with difficulty multiplier applied.
+  ///
+  /// Harder countries yield higher scores: `rawScore × difficultyMultiplier`.
+  /// The multiplier is `0.5 + 0.5 × countryDifficulty` — easy countries
+  /// (e.g. Brazil 0.06) halve the score while obscure ones (e.g. Jersey 0.83)
+  /// preserve nearly all of it.
+  int get score {
+    final raw = rawScore;
+    if (raw == 0) return 0;
+    final multiplier = difficultyMultiplier(targetCountry.code);
+    return (raw * multiplier).round().clamp(0, 10000);
   }
 
   /// Mark the session as completed.
