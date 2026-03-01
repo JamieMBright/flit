@@ -32,7 +32,8 @@ class LeaderboardEntry {
   final String? roundEmojis;
 
   /// Per-round detail data stored as a JSON list. Each element contains:
-  /// `country_name`, `clue_type`, `time_ms`, `score`, `hints_used`, `completed`.
+  /// `country_name`, `country_code`, `clue_type`, `time_ms`, `score`,
+  /// `raw_score`, `hints_used`, `completed`.
   final List<dynamic>? roundDetails;
   final String? equippedPlaneId;
   final int? level;
