@@ -174,8 +174,10 @@ const Map<String, List<String>> _featureColorPresets = {
   'shirtColor': ['2563eb', '16a34a', 'dc2626'],
   'mouthColor': ['d2691e', 'b06a4f', '7a3d1a'],
   'clothingColor': ['2563eb', '16a34a', 'ef4444'],
+  'clothesColor': ['2563eb', '16a34a', 'ef4444'],
   'hatColor': ['0ea5e9', 'f59e0b', '8b5cf6'],
   'accessoriesColor': ['22c55e', 'f97316', 'eab308'],
+  'facialHairColor': ['0e0e0e', '562306', '6a4e35'],
 };
 
 List<_AvatarPart> _featureColorParts(String featureKey, {String? customHex}) {
@@ -260,16 +262,16 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           parts: _skinParts(),
         ),
         _AvatarCategory(
-          label: 'Hair Color',
-          icon: Icons.color_lens,
-          configKey: 'hairColor',
-          parts: _hairColorParts(),
-        ),
-        _AvatarCategory(
           label: 'Hair',
           icon: Icons.content_cut,
           configKey: 'hair',
           parts: _hairParts(45),
+        ),
+        _AvatarCategory(
+          label: 'Hair Color',
+          icon: Icons.color_lens,
+          configKey: 'hairColor',
+          parts: _hairColorParts(),
         ),
         _AvatarCategory(
           label: 'Eyes',
@@ -320,16 +322,16 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           parts: _skinParts(),
         ),
         _AvatarCategory(
-          label: 'Hair Color',
-          icon: Icons.color_lens,
-          configKey: 'hairColor',
-          parts: _hairColorParts(),
-        ),
-        _AvatarCategory(
           label: 'Hair',
           icon: Icons.content_cut,
           configKey: 'hair',
           parts: _hairParts(34),
+        ),
+        _AvatarCategory(
+          label: 'Hair Color',
+          icon: Icons.color_lens,
+          configKey: 'hairColor',
+          parts: _hairColorParts(),
         ),
         _AvatarCategory(
           label: 'Hat Color',
@@ -358,6 +360,51 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           configKey: 'mouth',
           parts: _mouthParts(12),
         ),
+        _AvatarCategory(
+          label: 'Facial Hair',
+          icon: Icons.face_retouching_natural,
+          configKey: 'extras_facialHair',
+          parts: _extrasParts('facialHair', 5, hasNone: true),
+        ),
+        _AvatarCategory(
+          label: 'Facial Hair Color',
+          icon: Icons.color_lens,
+          configKey: 'facialHairColor',
+          parts: _featureColorParts(
+            'facialHairColor',
+            customHex: config.customColors['facialHairColor'],
+          ),
+        ),
+        _AvatarCategory(
+          label: 'Glasses',
+          icon: Icons.remove_red_eye,
+          configKey: 'glasses',
+          parts: _glassesParts(5),
+        ),
+        _AvatarCategory(
+          label: 'Glasses Color',
+          icon: Icons.color_lens,
+          configKey: 'accessoriesColor',
+          parts: _featureColorParts(
+            'accessoriesColor',
+            customHex: config.customColors['accessoriesColor'],
+          ),
+        ),
+        _AvatarCategory(
+          label: 'Clothing',
+          icon: Icons.checkroom,
+          configKey: 'extras_clothing',
+          parts: _extrasParts('clothing', 9),
+        ),
+        _AvatarCategory(
+          label: 'Clothes Color',
+          icon: Icons.color_lens,
+          configKey: 'clothesColor',
+          parts: _featureColorParts(
+            'clothesColor',
+            customHex: config.customColors['clothesColor'],
+          ),
+        ),
       ],
 
       // -----------------------------------------------------------------------
@@ -371,16 +418,28 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           parts: _skinParts(),
         ),
         _AvatarCategory(
+          label: 'Hair',
+          icon: Icons.content_cut,
+          configKey: 'hair',
+          parts: _hairParts(12),
+        ),
+        _AvatarCategory(
           label: 'Hair Color',
           icon: Icons.color_lens,
           configKey: 'hairColor',
           parts: _hairColorParts(),
         ),
         _AvatarCategory(
-          label: 'Hair',
-          icon: Icons.content_cut,
-          configKey: 'hair',
-          parts: _hairParts(12),
+          label: 'Face',
+          icon: Icons.face,
+          configKey: 'extras_face',
+          parts: _extrasParts('face', 10),
+        ),
+        _AvatarCategory(
+          label: 'Ear',
+          icon: Icons.hearing,
+          configKey: 'extras_ear',
+          parts: _extrasParts('ear', 8),
         ),
         _AvatarCategory(
           label: 'Eyes',
@@ -389,16 +448,28 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           parts: _eyesParts(32),
         ),
         _AvatarCategory(
+          label: 'Nose',
+          icon: Icons.face,
+          configKey: 'extras_nose',
+          parts: _extrasParts('nose', 12),
+        ),
+        _AvatarCategory(
+          label: 'Cheek',
+          icon: Icons.blur_on,
+          configKey: 'extras_cheek',
+          parts: _extrasParts('cheek', 6),
+        ),
+        _AvatarCategory(
           label: 'Mouth',
           icon: Icons.mood,
           configKey: 'mouth',
           parts: _mouthParts(38),
         ),
         _AvatarCategory(
-          label: 'Cheek',
-          icon: Icons.blur_on,
-          configKey: 'eyebrows',
-          parts: _browsParts(6),
+          label: 'Sideburn',
+          icon: Icons.auto_awesome,
+          configKey: 'extras_sideburn',
+          parts: _extrasParts('sideburn', 7, hasNone: true),
         ),
       ],
 
@@ -414,16 +485,22 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           parts: _skinParts(),
         ),
         _AvatarCategory(
+          label: 'Hair',
+          icon: Icons.content_cut,
+          configKey: 'hair',
+          parts: _hairParts(48),
+        ),
+        _AvatarCategory(
           label: 'Hair Color',
           icon: Icons.color_lens,
           configKey: 'hairColor',
           parts: _hairColorParts(),
         ),
         _AvatarCategory(
-          label: 'Hair',
-          icon: Icons.content_cut,
-          configKey: 'hair',
-          parts: _hairParts(48),
+          label: 'Head',
+          icon: Icons.face,
+          configKey: 'extras_head',
+          parts: _extrasParts('head', 4),
         ),
         _AvatarCategory(
           label: 'Eyes',
@@ -447,10 +524,22 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           parts: _browsParts(13),
         ),
         _AvatarCategory(
+          label: 'Nose',
+          icon: Icons.face,
+          configKey: 'extras_nose',
+          parts: _extrasParts('nose', 6),
+        ),
+        _AvatarCategory(
           label: 'Mouth',
           icon: Icons.mood,
           configKey: 'mouth',
           parts: _mouthParts(27),
+        ),
+        _AvatarCategory(
+          label: 'Beard',
+          icon: Icons.face_retouching_natural,
+          configKey: 'extras_beard',
+          parts: _extrasParts('beard', 2, hasNone: true),
         ),
         _AvatarCategory(
           label: 'Glasses',
@@ -511,16 +600,16 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           parts: _skinParts(),
         ),
         _AvatarCategory(
-          label: 'Hair Color',
-          icon: Icons.color_lens,
-          configKey: 'hairColor',
-          parts: _hairColorParts(),
-        ),
-        _AvatarCategory(
           label: 'Hair',
           icon: Icons.content_cut,
           configKey: 'hair',
           parts: _hairParts(8),
+        ),
+        _AvatarCategory(
+          label: 'Hair Color',
+          icon: Icons.color_lens,
+          configKey: 'hairColor',
+          parts: _hairColorParts(),
         ),
         _AvatarCategory(
           label: 'Eyes',
@@ -542,6 +631,18 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           icon: Icons.remove,
           configKey: 'eyebrows',
           parts: _browsParts(4),
+        ),
+        _AvatarCategory(
+          label: 'Nose',
+          icon: Icons.face,
+          configKey: 'extras_nose',
+          parts: _extrasParts('nose', 3),
+        ),
+        _AvatarCategory(
+          label: 'Ears',
+          icon: Icons.hearing,
+          configKey: 'extras_ears',
+          parts: _extrasParts('ears', 2),
         ),
         _AvatarCategory(
           label: 'Mouth',
@@ -580,6 +681,12 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           ),
         ),
         _AvatarCategory(
+          label: 'Shirt',
+          icon: Icons.checkroom,
+          configKey: 'extras_shirt',
+          parts: _extrasParts('shirt', 3),
+        ),
+        _AvatarCategory(
           label: 'Shirt Color',
           icon: Icons.color_lens,
           configKey: 'shirtColor',
@@ -592,7 +699,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Facial Hair',
           icon: Icons.auto_awesome,
           configKey: 'feature',
-          parts: _featureParts(2),
+          parts: _featureParts(3),
         ),
       ],
 
@@ -608,16 +715,16 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           parts: _skinParts(),
         ),
         _AvatarCategory(
-          label: 'Hair Color',
-          icon: Icons.color_lens,
-          configKey: 'hairColor',
-          parts: _hairColorParts(),
-        ),
-        _AvatarCategory(
           label: 'Hair',
           icon: Icons.content_cut,
           configKey: 'hair',
           parts: _hairParts(45),
+        ),
+        _AvatarCategory(
+          label: 'Hair Color',
+          icon: Icons.color_lens,
+          configKey: 'hairColor',
+          parts: _hairColorParts(),
         ),
         _AvatarCategory(
           label: 'Eyes',
@@ -650,6 +757,12 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           ),
         ),
         _AvatarCategory(
+          label: 'Beard',
+          icon: Icons.face_retouching_natural,
+          configKey: 'extras_beard',
+          parts: _extrasParts('beard', 8, hasNone: true),
+        ),
+        _AvatarCategory(
           label: 'Glasses',
           icon: Icons.remove_red_eye,
           configKey: 'glasses',
@@ -680,6 +793,12 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           ),
         ),
         _AvatarCategory(
+          label: 'Clothing',
+          icon: Icons.checkroom,
+          configKey: 'extras_clothing',
+          parts: _extrasParts('clothing', 23),
+        ),
+        _AvatarCategory(
           label: 'Clothing Color',
           icon: Icons.color_lens,
           configKey: 'clothingColor',
@@ -689,6 +808,12 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           ),
         ),
         _AvatarCategory(
+          label: 'Hat',
+          icon: Icons.checkroom,
+          configKey: 'extras_hat',
+          parts: _extrasParts('hat', 10, hasNone: true),
+        ),
+        _AvatarCategory(
           label: 'Hat Color',
           icon: Icons.color_lens,
           configKey: 'hatColor',
@@ -696,12 +821,6 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
             'hatColor',
             customHex: config.customColors['hatColor'],
           ),
-        ),
-        _AvatarCategory(
-          label: 'Features',
-          icon: Icons.auto_awesome,
-          configKey: 'feature',
-          parts: _featureParts(4),
         ),
       ],
 
@@ -715,6 +834,12 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           icon: Icons.palette,
           configKey: 'skinColor',
           parts: _skinParts(),
+        ),
+        _AvatarCategory(
+          label: 'Face',
+          icon: Icons.face,
+          configKey: 'extras_face',
+          parts: _extrasParts('face', 6),
         ),
         _AvatarCategory(
           label: 'Eyes',
@@ -767,10 +892,22 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           parts: _browsParts(13),
         ),
         _AvatarCategory(
+          label: 'Nose',
+          icon: Icons.face,
+          configKey: 'extras_nose',
+          parts: _extrasParts('nose', 20),
+        ),
+        _AvatarCategory(
           label: 'Lips',
           icon: Icons.mood,
           configKey: 'mouth',
           parts: _mouthParts(30),
+        ),
+        _AvatarCategory(
+          label: 'Beard',
+          icon: Icons.auto_awesome,
+          configKey: 'extras_beard',
+          parts: _extrasParts('beard', 12, hasNone: true),
         ),
         _AvatarCategory(
           label: 'Glasses',
@@ -785,22 +922,16 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           parts: _extrasParts('body', 25),
         ),
         _AvatarCategory(
+          label: 'Body Icon',
+          icon: Icons.auto_awesome,
+          configKey: 'extras_bodyIcon',
+          parts: _extrasParts('bodyIcon', 3, hasNone: true),
+        ),
+        _AvatarCategory(
           label: 'Gesture',
           icon: Icons.waving_hand,
           configKey: 'extras_gesture',
           parts: _extrasParts('gesture', 10),
-        ),
-        _AvatarCategory(
-          label: 'Nose',
-          icon: Icons.face,
-          configKey: 'extras_nose',
-          parts: _extrasParts('nose', 20),
-        ),
-        _AvatarCategory(
-          label: 'Beard',
-          icon: Icons.auto_awesome,
-          configKey: 'extras_beard',
-          parts: _extrasParts('beard', 12, hasNone: true),
         ),
       ],
 
@@ -814,15 +945,6 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           icon: Icons.palette,
           configKey: 'skinColor',
           parts: _skinParts(),
-        ),
-        _AvatarCategory(
-          label: 'Clothing Color',
-          icon: Icons.color_lens,
-          configKey: 'clothingColor',
-          parts: _featureColorParts(
-            'clothingColor',
-            customHex: config.customColors['clothingColor'],
-          ),
         ),
         _AvatarCategory(
           label: 'Hair',
@@ -843,16 +965,25 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           parts: _glassesParts(8),
         ),
         _AvatarCategory(
+          label: 'Mask',
+          icon: Icons.masks,
+          configKey: 'extras_mask',
+          parts: _extrasParts('mask', 2, hasNone: true),
+        ),
+        _AvatarCategory(
           label: 'Facial Hair',
           icon: Icons.auto_awesome,
           configKey: 'extras_facialHair',
           parts: _extrasParts('facialHair', 16, hasNone: true),
         ),
         _AvatarCategory(
-          label: 'Mask',
-          icon: Icons.masks,
-          configKey: 'extras_mask',
-          parts: _extrasParts('mask', 2, hasNone: true),
+          label: 'Clothing Color',
+          icon: Icons.color_lens,
+          configKey: 'clothingColor',
+          parts: _featureColorParts(
+            'clothingColor',
+            customHex: config.customColors['clothingColor'],
+          ),
         ),
       ],
 
@@ -880,12 +1011,6 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           parts: _eyesParts(36),
         ),
         _AvatarCategory(
-          label: 'Mouth',
-          icon: Icons.mood,
-          configKey: 'mouth',
-          parts: _mouthParts(5),
-        ),
-        _AvatarCategory(
           label: 'Eyes Color',
           icon: Icons.color_lens,
           configKey: 'eyesColor',
@@ -893,6 +1018,12 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
             'eyesColor',
             customHex: config.customColors['eyesColor'],
           ),
+        ),
+        _AvatarCategory(
+          label: 'Mouth',
+          icon: Icons.mood,
+          configKey: 'mouth',
+          parts: _mouthParts(5),
         ),
         _AvatarCategory(
           label: 'Mouth Color',
@@ -1010,8 +1141,10 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
     'shirtColor',
     'mouthColor',
     'clothingColor',
+    'clothesColor',
     'hatColor',
     'accessoriesColor',
+    'facialHairColor',
   };
 
   bool _isFeatureColorCategory(String key) => _featureColorKeys.contains(key);
