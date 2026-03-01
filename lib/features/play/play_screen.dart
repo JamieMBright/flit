@@ -605,9 +605,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       _roundResults.add(
         _RoundResult(
           countryName: _session!.targetName,
+          countryCode: _session!.targetCountry.code,
           clueType: _session!.clue.type,
           elapsed: _elapsed,
           score: _session!.score,
+          rawScore: _session!.rawScore,
           hintsUsed: _hintTier,
           completed: true,
         ),
