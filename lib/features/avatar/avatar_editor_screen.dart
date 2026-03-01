@@ -142,31 +142,87 @@ List<_AvatarPart> _featureParts(int nNonNone) => [
       .map((f) => _AvatarPart(id: 'feature_${f.name}', label: f.label)),
 ];
 
-List<_AvatarPart> _hairColorParts() => AvatarHairColor.values
-    .map(
-      (c) => _AvatarPart(
-        id: 'hairColor_${c.name}',
-        label: c.label,
-        price: AvatarConfig.hairColorPrice(c),
-        colorHex: c.hex,
-      ),
-    )
-    .toList();
+List<_AvatarPart> _hairColorParts({String? customHex}) => [
+  ...AvatarHairColor.values.map(
+    (c) => _AvatarPart(
+      id: 'hairColor_${c.name}',
+      label: c.label,
+      price: AvatarConfig.hairColorPrice(c),
+      colorHex: c.hex,
+    ),
+  ),
+  if (customHex != null)
+    _AvatarPart(id: 'hairColor_custom', label: 'Custom', colorHex: customHex),
+  const _AvatarPart(
+    id: 'featureColor_picker',
+    label: 'Pick',
+    price: _customColorWheelPrice,
+    isCustomPicker: true,
+  ),
+];
 
-List<_AvatarPart> _skinParts() => AvatarSkinColor.values
-    .map(
-      (c) => _AvatarPart(
-        id: 'skinColor_${c.name}',
-        label: c.label,
-        colorHex: c.hex,
-      ),
-    )
-    .toList();
+List<_AvatarPart> _skinParts({String? customHex}) => [
+  ...AvatarSkinColor.values.map(
+    (c) =>
+        _AvatarPart(id: 'skinColor_${c.name}', label: c.label, colorHex: c.hex),
+  ),
+  if (customHex != null)
+    _AvatarPart(id: 'skinColor_custom', label: 'Custom', colorHex: customHex),
+  const _AvatarPart(
+    id: 'featureColor_picker',
+    label: 'Pick',
+    price: _customColorWheelPrice,
+    isCustomPicker: true,
+  ),
+];
 
 const _customColorWheelPrice = AvatarConfig.customColorPrice;
 
+/// Bottts robot-colour parts — maps to AvatarSkinColor enum values but
+/// displays vibrant robot colours instead of human skin tones.
+List<_AvatarPart> _botttsColorParts({String? customHex}) => [
+  const _AvatarPart(id: 'skinColor_light', label: 'Cyan', colorHex: '69D2E7'),
+  const _AvatarPart(
+    id: 'skinColor_mediumLight',
+    label: 'Purple',
+    colorHex: '9B59B6',
+  ),
+  const _AvatarPart(id: 'skinColor_medium', label: 'Red', colorHex: 'E74C3C'),
+  const _AvatarPart(id: 'skinColor_dark', label: 'Teal', colorHex: '1ABC9C'),
+  if (customHex != null)
+    _AvatarPart(id: 'skinColor_custom', label: 'Custom', colorHex: customHex),
+  const _AvatarPart(
+    id: 'featureColor_picker',
+    label: 'Pick',
+    price: _customColorWheelPrice,
+    isCustomPicker: true,
+  ),
+];
+
+/// Thumbs body-colour parts — maps to AvatarSkinColor enum values but
+/// displays the actual cartoon colours used by the Thumbs style.
+List<_AvatarPart> _thumbsColorParts({String? customHex}) => [
+  const _AvatarPart(id: 'skinColor_light', label: 'Yellow', colorHex: 'FFD93D'),
+  const _AvatarPart(
+    id: 'skinColor_mediumLight',
+    label: 'Orange',
+    colorHex: 'FFA94D',
+  ),
+  const _AvatarPart(id: 'skinColor_medium', label: 'Coral', colorHex: 'FF6B6B'),
+  const _AvatarPart(id: 'skinColor_dark', label: 'Purple', colorHex: 'C084FC'),
+  if (customHex != null)
+    _AvatarPart(id: 'skinColor_custom', label: 'Custom', colorHex: customHex),
+  const _AvatarPart(
+    id: 'featureColor_picker',
+    label: 'Pick',
+    price: _customColorWheelPrice,
+    isCustomPicker: true,
+  ),
+];
+
 const Map<String, List<String>> _featureColorPresets = {
   'eyesColor': ['1f3a5f', '4a7c59', '6b4423'],
+  'eyeShadowColor': ['d4a5a5', 'a0b2c6', 'b8a5c6'],
   'glassesColor': ['4a4a4a', '1f2933', '8b5e3c'],
   'earringsColor': ['d4af37', 'c0c0c0', 'cd7f32'],
   'earringColor': ['d4af37', 'c0c0c0', 'cd7f32'],
@@ -259,7 +315,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Skin',
           icon: Icons.palette,
           configKey: 'skinColor',
-          parts: _skinParts(),
+          parts: _skinParts(customHex: config.customColors['skinColor']),
         ),
         _AvatarCategory(
           label: 'Hair',
@@ -271,7 +327,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Hair Color',
           icon: Icons.color_lens,
           configKey: 'hairColor',
-          parts: _hairColorParts(),
+          parts: _hairColorParts(customHex: config.customColors['hairColor']),
         ),
         _AvatarCategory(
           label: 'Eyes',
@@ -319,7 +375,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Skin',
           icon: Icons.palette,
           configKey: 'skinColor',
-          parts: _skinParts(),
+          parts: _skinParts(customHex: config.customColors['skinColor']),
         ),
         _AvatarCategory(
           label: 'Hair',
@@ -331,7 +387,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Hair Color',
           icon: Icons.color_lens,
           configKey: 'hairColor',
-          parts: _hairColorParts(),
+          parts: _hairColorParts(customHex: config.customColors['hairColor']),
         ),
         _AvatarCategory(
           label: 'Hat Color',
@@ -415,7 +471,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Skin',
           icon: Icons.palette,
           configKey: 'skinColor',
-          parts: _skinParts(),
+          parts: _skinParts(customHex: config.customColors['skinColor']),
         ),
         _AvatarCategory(
           label: 'Hair',
@@ -427,7 +483,14 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Hair Color',
           icon: Icons.color_lens,
           configKey: 'hairColor',
-          parts: _hairColorParts(),
+          parts: _hairColorParts(customHex: config.customColors['hairColor']),
+        ),
+        // Sideburn promoted to directly after hair section.
+        _AvatarCategory(
+          label: 'Sideburn',
+          icon: Icons.auto_awesome,
+          configKey: 'extras_sideburn',
+          parts: _extrasParts('sideburn', 7, hasNone: true),
         ),
         _AvatarCategory(
           label: 'Face',
@@ -465,12 +528,6 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           configKey: 'mouth',
           parts: _mouthParts(38),
         ),
-        _AvatarCategory(
-          label: 'Sideburn',
-          icon: Icons.auto_awesome,
-          configKey: 'extras_sideburn',
-          parts: _extrasParts('sideburn', 7, hasNone: true),
-        ),
       ],
 
       // -----------------------------------------------------------------------
@@ -482,7 +539,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Skin',
           icon: Icons.palette,
           configKey: 'skinColor',
-          parts: _skinParts(),
+          parts: _skinParts(customHex: config.customColors['skinColor']),
         ),
         _AvatarCategory(
           label: 'Hair',
@@ -494,7 +551,22 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Hair Color',
           icon: Icons.color_lens,
           configKey: 'hairColor',
-          parts: _hairColorParts(),
+          parts: _hairColorParts(customHex: config.customColors['hairColor']),
+        ),
+        _AvatarCategory(
+          label: 'Hair Accessories',
+          icon: Icons.auto_awesome,
+          configKey: 'extras_hairAccessories',
+          parts: _extrasParts('hairAccessories', 1, hasNone: true),
+        ),
+        _AvatarCategory(
+          label: 'Hair Accessory Color',
+          icon: Icons.color_lens,
+          configKey: 'hairAccessoriesColor',
+          parts: _featureColorParts(
+            'hairAccessoriesColor',
+            customHex: config.customColors['hairAccessoriesColor'],
+          ),
         ),
         _AvatarCategory(
           label: 'Head',
@@ -572,15 +644,6 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           ),
         ),
         _AvatarCategory(
-          label: 'Hair Accessory Color',
-          icon: Icons.color_lens,
-          configKey: 'hairAccessoriesColor',
-          parts: _featureColorParts(
-            'hairAccessoriesColor',
-            customHex: config.customColors['hairAccessoriesColor'],
-          ),
-        ),
-        _AvatarCategory(
           label: 'Features',
           icon: Icons.auto_awesome,
           configKey: 'feature',
@@ -597,7 +660,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Skin',
           icon: Icons.palette,
           configKey: 'skinColor',
-          parts: _skinParts(),
+          parts: _skinParts(customHex: config.customColors['skinColor']),
         ),
         _AvatarCategory(
           label: 'Hair',
@@ -609,7 +672,14 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Hair Color',
           icon: Icons.color_lens,
           configKey: 'hairColor',
-          parts: _hairColorParts(),
+          parts: _hairColorParts(customHex: config.customColors['hairColor']),
+        ),
+        // Facial hair promoted to directly after hair section.
+        _AvatarCategory(
+          label: 'Facial Hair',
+          icon: Icons.auto_awesome,
+          configKey: 'feature',
+          parts: _featureParts(3),
         ),
         _AvatarCategory(
           label: 'Eyes',
@@ -624,6 +694,15 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           parts: _featureColorParts(
             'eyesColor',
             customHex: config.customColors['eyesColor'],
+          ),
+        ),
+        _AvatarCategory(
+          label: 'Eye Shadow',
+          icon: Icons.color_lens,
+          configKey: 'eyeShadowColor',
+          parts: _featureColorParts(
+            'eyeShadowColor',
+            customHex: config.customColors['eyeShadowColor'],
           ),
         ),
         _AvatarCategory(
@@ -695,12 +774,6 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
             customHex: config.customColors['shirtColor'],
           ),
         ),
-        _AvatarCategory(
-          label: 'Facial Hair',
-          icon: Icons.auto_awesome,
-          configKey: 'feature',
-          parts: _featureParts(3),
-        ),
       ],
 
       // -----------------------------------------------------------------------
@@ -712,7 +785,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Skin',
           icon: Icons.palette,
           configKey: 'skinColor',
-          parts: _skinParts(),
+          parts: _skinParts(customHex: config.customColors['skinColor']),
         ),
         _AvatarCategory(
           label: 'Hair',
@@ -724,7 +797,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Hair Color',
           icon: Icons.color_lens,
           configKey: 'hairColor',
-          parts: _hairColorParts(),
+          parts: _hairColorParts(customHex: config.customColors['hairColor']),
         ),
         _AvatarCategory(
           label: 'Eyes',
@@ -833,7 +906,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Color',
           icon: Icons.palette,
           configKey: 'skinColor',
-          parts: _skinParts(),
+          parts: _botttsColorParts(customHex: config.customColors['skinColor']),
         ),
         _AvatarCategory(
           label: 'Face',
@@ -944,13 +1017,20 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Skin',
           icon: Icons.palette,
           configKey: 'skinColor',
-          parts: _skinParts(),
+          parts: _skinParts(customHex: config.customColors['skinColor']),
         ),
         _AvatarCategory(
           label: 'Hair',
           icon: Icons.content_cut,
           configKey: 'hair',
           parts: _hairParts(48),
+        ),
+        // Facial hair promoted to directly after hair.
+        _AvatarCategory(
+          label: 'Facial Hair',
+          icon: Icons.face_retouching_natural,
+          configKey: 'extras_facialHair',
+          parts: _extrasParts('facialHair', 16, hasNone: true),
         ),
         _AvatarCategory(
           label: 'Expression',
@@ -962,19 +1042,13 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Accessories',
           icon: Icons.remove_red_eye,
           configKey: 'glasses',
-          parts: _glassesParts(8),
+          parts: _glassesParts(11),
         ),
         _AvatarCategory(
           label: 'Mask',
           icon: Icons.masks,
           configKey: 'extras_mask',
           parts: _extrasParts('mask', 2, hasNone: true),
-        ),
-        _AvatarCategory(
-          label: 'Facial Hair',
-          icon: Icons.auto_awesome,
-          configKey: 'extras_facialHair',
-          parts: _extrasParts('facialHair', 16, hasNone: true),
         ),
         _AvatarCategory(
           label: 'Clothing Color',
@@ -996,7 +1070,7 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
           label: 'Color',
           icon: Icons.palette,
           configKey: 'skinColor',
-          parts: _skinParts(),
+          parts: _thumbsColorParts(customHex: config.customColors['skinColor']),
         ),
         _AvatarCategory(
           label: 'Face',
@@ -1052,6 +1126,10 @@ AvatarConfig _previewConfig(
   String categoryKey,
   String partId,
 ) {
+  // Custom picker and custom swatch parts don't map to a specific enum.
+  if (partId == 'featureColor_picker' || partId.endsWith('_custom')) {
+    return base;
+  }
   // Extras: configKey = 'extras_body', partId = 'extras_body_5'.
   if (categoryKey.startsWith('extras_')) {
     final extrasKey = categoryKey.substring(7);
@@ -1134,6 +1212,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
 
   static const Set<String> _featureColorKeys = {
     'eyesColor',
+    'eyeShadowColor',
     'glassesColor',
     'earringsColor',
     'earringColor',
@@ -1179,8 +1258,14 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
       'eyebrows' => 'eyebrows_${_config.eyebrows.name}',
       'mouth' => 'mouth_${_config.mouth.name}',
       'hair' => 'hair_${_config.hair.name}',
-      'hairColor' => 'hairColor_${_config.hairColor.name}',
-      'skinColor' => 'skinColor_${_config.skinColor.name}',
+      'hairColor' =>
+        _config.equippedCustomColors.containsKey('hairColor')
+            ? 'hairColor_custom'
+            : 'hairColor_${_config.hairColor.name}',
+      'skinColor' =>
+        _config.equippedCustomColors.containsKey('skinColor')
+            ? 'skinColor_custom'
+            : 'skinColor_${_config.skinColor.name}',
       'glasses' => 'glasses_${_config.glasses.name}',
       'earrings' => 'earrings_${_config.earrings.name}',
       'feature' => 'feature_${_config.feature.name}',
@@ -1244,12 +1329,20 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
             hairColor: AvatarHairColor.values.firstWhere(
               (v) => v.name == suffix,
             ),
+            // Clear custom override so the enum preset takes effect.
+            equippedCustomColors: Map<String, String>.from(
+              _config.equippedCustomColors,
+            )..remove('hairColor'),
           );
         case 'skinColor':
           _config = _config.copyWith(
             skinColor: AvatarSkinColor.values.firstWhere(
               (v) => v.name == suffix,
             ),
+            // Clear custom override so the enum preset takes effect.
+            equippedCustomColors: Map<String, String>.from(
+              _config.equippedCustomColors,
+            )..remove('skinColor'),
           );
         case 'glasses':
           _config = _config.copyWith(
