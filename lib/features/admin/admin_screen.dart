@@ -4866,10 +4866,14 @@ extension _ListMapIndexed<T> on List<T> {
 // Difficulty Editor Screen
 // =============================================================================
 
-/// Full-screen admin editor for viewing and filtering country difficulty ratings.
+/// Full-screen admin editor for viewing and adjusting country difficulty ratings.
 ///
-/// Shows all playable countries sorted by difficulty with search/filter.
-/// Admin can tap a country to see details. Future: admin overrides via Supabase.
+/// Features:
+///   - Collapsible clue-type difficulty section
+///   - Per-country difficulty sliders for manual fine-tuning
+///   - No auto-sort while editing (work top-to-bottom)
+///   - Refresh button: re-sorts list + triggers retroactive score recalibration
+///   - Saves overrides to Supabase difficulty_config table
 class _DifficultyEditorScreen extends StatefulWidget {
   const _DifficultyEditorScreen();
 
@@ -4880,7 +4884,10 @@ class _DifficultyEditorScreen extends StatefulWidget {
 
 class _DifficultyEditorScreenState extends State<_DifficultyEditorScreen> {
   String _search = '';
-  String _filterTier = 'all'; // all, easy, medium, hard, veryHard, extreme
+  String _filterTier = 'all';
+  bool _clueWeightsExpanded = false;
+  bool _isRecalibrating = false;
+  int? _lastRecalibratedCount;
 
   /// Mutable clue type weights — start with compiled-in defaults.
   late final Map<ClueType, double> _clueWeights = {
@@ -4896,6 +4903,18 @@ class _DifficultyEditorScreenState extends State<_DifficultyEditorScreen> {
     ClueType.outline,
   ];
 
+  /// Mutable per-country difficulty overrides (local working copy).
+  /// Seeded from compiled-in defaults + any admin overrides already active.
+  late final Map<String, double> _countryRatings = {
+    ...effectiveCountryDifficulty,
+  };
+
+  /// Snapshot of the entries list. Rebuilt only on explicit refresh/sort.
+  late List<_CountryDiffEntry> _cachedEntries = _buildEntries(sorted: true);
+
+  /// Whether any slider has been changed since last save/refresh.
+  bool _isDirty = false;
+
   static const _tierFilters = {
     'all': 'All',
     'veryEasy': 'Very Easy (0–15%)',
@@ -4906,13 +4925,13 @@ class _DifficultyEditorScreenState extends State<_DifficultyEditorScreen> {
     'extreme': 'Extreme (85–100%)',
   };
 
-  List<_CountryDiffEntry> get _entries {
-    final defaults = defaultCountryDifficulty;
+  /// Build the entries list. When [sorted] is true, sort by rating.
+  List<_CountryDiffEntry> _buildEntries({bool sorted = false}) {
     final countries = CountryData.playableCountries;
     final entries = <_CountryDiffEntry>[];
 
     for (final country in countries) {
-      final rating = defaults[country.code] ?? 0.55;
+      final rating = _countryRatings[country.code] ?? 0.55;
       entries.add(
         _CountryDiffEntry(
           code: country.code,
@@ -4922,44 +4941,160 @@ class _DifficultyEditorScreenState extends State<_DifficultyEditorScreen> {
       );
     }
 
-    // Apply search filter
-    var filtered = entries.where((e) {
-      if (_search.isEmpty) return true;
-      final q = _search.toLowerCase();
-      return e.name.toLowerCase().contains(q) ||
-          e.code.toLowerCase().contains(q);
+    if (sorted) {
+      entries.sort((a, b) => a.rating.compareTo(b.rating));
+    }
+    return entries;
+  }
+
+  /// Get the filtered view of _cachedEntries (search + tier filter).
+  List<_CountryDiffEntry> get _filteredEntries {
+    var filtered = _cachedEntries.where((e) {
+      if (_search.isNotEmpty) {
+        final q = _search.toLowerCase();
+        if (!e.name.toLowerCase().contains(q) &&
+            !e.code.toLowerCase().contains(q)) {
+          return false;
+        }
+      }
+      if (_filterTier == 'all') return true;
+      switch (_filterTier) {
+        case 'veryEasy':
+          return e.rating <= 0.15;
+        case 'easy':
+          return e.rating > 0.15 && e.rating <= 0.30;
+        case 'medium':
+          return e.rating > 0.30 && e.rating <= 0.50;
+        case 'hard':
+          return e.rating > 0.50 && e.rating <= 0.70;
+        case 'veryHard':
+          return e.rating > 0.70 && e.rating <= 0.85;
+        case 'extreme':
+          return e.rating > 0.85;
+        default:
+          return true;
+      }
+    });
+    return filtered.toList();
+  }
+
+  void _onCountryRatingChanged(String code, double value) {
+    setState(() {
+      _countryRatings[code] = value;
+      // Update the entry in the cached list without re-sorting.
+      final idx = _cachedEntries.indexWhere((e) => e.code == code);
+      if (idx >= 0) {
+        _cachedEntries[idx] = _CountryDiffEntry(
+          code: code,
+          name: _cachedEntries[idx].name,
+          rating: value,
+        );
+      }
+      _isDirty = true;
+    });
+  }
+
+  /// Sort the list and persist overrides to Supabase, then recalibrate scores.
+  Future<void> _refreshSortAndRecalibrate() async {
+    // 1. Re-sort the list.
+    setState(() {
+      _cachedEntries = _buildEntries(sorted: true);
     });
 
-    // Apply tier filter
-    if (_filterTier != 'all') {
-      filtered = filtered.where((e) {
-        switch (_filterTier) {
-          case 'veryEasy':
-            return e.rating <= 0.15;
-          case 'easy':
-            return e.rating > 0.15 && e.rating <= 0.30;
-          case 'medium':
-            return e.rating > 0.30 && e.rating <= 0.50;
-          case 'hard':
-            return e.rating > 0.50 && e.rating <= 0.70;
-          case 'veryHard':
-            return e.rating > 0.70 && e.rating <= 0.85;
-          case 'extreme':
-            return e.rating > 0.85;
-          default:
-            return true;
-        }
-      });
+    // 2. Compute which countries differ from defaults.
+    final defaults = defaultCountryDifficulty;
+    final overrides = <String, double>{};
+    for (final entry in _countryRatings.entries) {
+      final defaultVal = defaults[entry.key] ?? 0.55;
+      if ((entry.value - defaultVal).abs() > 0.001) {
+        overrides[entry.key] = entry.value;
+      }
     }
 
-    final list = filtered.toList()
-      ..sort((a, b) => a.rating.compareTo(b.rating));
-    return list;
+    // 3. Apply overrides to the global state so scoring uses them.
+    setCountryDifficultyOverrides(overrides);
+
+    // 4. Save to Supabase.
+    try {
+      final client = Supabase.instance.client;
+      await client.rpc(
+        'upsert_difficulty_config',
+        params: {
+          'p_country_overrides': overrides.map(
+            (k, v) => MapEntry(k, double.parse(v.toStringAsFixed(3))),
+          ),
+          'p_clue_weights': _clueWeights.map(
+            (k, v) => MapEntry(k.name, double.parse(v.toStringAsFixed(3))),
+          ),
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save: $e'),
+            backgroundColor: FlitColors.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    // 5. Retroactive score recalibration.
+    await _recalibrateScores();
+
+    setState(() => _isDirty = false);
+  }
+
+  Future<void> _recalibrateScores() async {
+    setState(() => _isRecalibrating = true);
+
+    try {
+      // Build country_name → multiplier map for the RPC.
+      final countries = CountryData.playableCountries;
+      final multipliers = <String, double>{};
+      for (final c in countries) {
+        final rating = _countryRatings[c.code] ?? 0.55;
+        final mult = 0.5 + 0.5 * rating;
+        multipliers[c.name] = double.parse(mult.toStringAsFixed(4));
+      }
+
+      final client = Supabase.instance.client;
+      final result = await client.rpc(
+        'recalibrate_scores',
+        params: {'country_multipliers': multipliers},
+      );
+
+      final count = result is int ? result : 0;
+
+      if (mounted) {
+        setState(() {
+          _lastRecalibratedCount = count;
+          _isRecalibrating = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Recalibrated $count score records'),
+            backgroundColor: FlitColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isRecalibrating = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Recalibration failed: $e'),
+            backgroundColor: FlitColors.error,
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final entries = _entries;
+    final entries = _filteredEntries;
 
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
@@ -4967,6 +5102,31 @@ class _DifficultyEditorScreenState extends State<_DifficultyEditorScreen> {
         backgroundColor: FlitColors.backgroundMid,
         title: Text('Country Difficulty (${entries.length})'),
         centerTitle: true,
+        actions: [
+          if (_isRecalibrating)
+            const Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: FlitColors.accent,
+                  ),
+                ),
+              ),
+            )
+          else
+            IconButton(
+              icon: Icon(
+                Icons.refresh,
+                color: _isDirty ? FlitColors.accent : FlitColors.textMuted,
+              ),
+              tooltip: 'Sort & Recalibrate Scores',
+              onPressed: _refreshSortAndRecalibrate,
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -5024,12 +5184,19 @@ class _DifficultyEditorScreenState extends State<_DifficultyEditorScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          // Individual clue type difficulty sliders
+          // Collapsible clue type difficulty section
           _ClueWeightsSection(
             weights: _clueWeights,
             clueOrder: _clueOrder,
+            expanded: _clueWeightsExpanded,
+            onToggleExpanded: () {
+              setState(() => _clueWeightsExpanded = !_clueWeightsExpanded);
+            },
             onWeightChanged: (type, value) {
-              setState(() => _clueWeights[type] = value);
+              setState(() {
+                _clueWeights[type] = value;
+                _isDirty = true;
+              });
             },
             onReorder: (oldIndex, newIndex) {
               setState(() {
@@ -5048,14 +5215,57 @@ class _DifficultyEditorScreenState extends State<_DifficultyEditorScreen> {
               });
             },
           ),
-          // Country list
+          // Recalibration status banner
+          if (_lastRecalibratedCount != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: FlitColors.success.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: FlitColors.success.withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.check_circle,
+                      color: FlitColors.success,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Recalibrated $_lastRecalibratedCount score records',
+                      style: const TextStyle(
+                        color: FlitColors.success,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          // Country list with per-country sliders
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: entries.length,
               itemBuilder: (context, index) {
                 final e = entries[index];
-                return _DifficultyRow(entry: e);
+                return _DifficultyRow(
+                  entry: e,
+                  onRatingChanged: (value) {
+                    _onCountryRatingChanged(e.code, value);
+                  },
+                );
               },
             ),
           ),
@@ -6832,6 +7042,8 @@ class _ClueWeightsSection extends StatelessWidget {
   const _ClueWeightsSection({
     required this.weights,
     required this.clueOrder,
+    required this.expanded,
+    required this.onToggleExpanded,
     required this.onWeightChanged,
     required this.onReorder,
     required this.onSortLowToHigh,
@@ -6839,6 +7051,8 @@ class _ClueWeightsSection extends StatelessWidget {
 
   final Map<ClueType, double> weights;
   final List<ClueType> clueOrder;
+  final bool expanded;
+  final VoidCallback onToggleExpanded;
   final void Function(ClueType, double) onWeightChanged;
   final void Function(int oldIndex, int newIndex) onReorder;
   final VoidCallback onSortLowToHigh;
@@ -6866,7 +7080,7 @@ class _ClueWeightsSection extends StatelessWidget {
     return _gradientColors[idx.clamp(0, _gradientColors.length - 1)];
   }
 
-  /// True when the current order already matches low-to-high by weight.
+  /// True when the current order is not sorted low-to-high by weight.
   bool get _isSortedLowToHigh {
     for (var i = 1; i < clueOrder.length; i++) {
       final prev = weights[clueOrder[i - 1]] ?? 0.5;
@@ -6890,171 +7104,202 @@ class _ClueWeightsSection extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  const Icon(Icons.tune, color: FlitColors.accent, size: 18),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Clue Difficulty',
-                      style: TextStyle(
-                        color: FlitColors.textPrimary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+            // Collapsible header
+            GestureDetector(
+              onTap: onToggleExpanded,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.tune, color: FlitColors.accent, size: 18),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Clue Difficulty',
+                        style: TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                  // Sort Low → High button
-                  if (_isSortedLowToHigh)
-                    GestureDetector(
-                      onTap: onSortLowToHigh,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: FlitColors.accent.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: FlitColors.accent.withOpacity(0.3),
+                    // Sort Low → High button (only when expanded)
+                    if (expanded && _isSortedLowToHigh)
+                      GestureDetector(
+                        onTap: onSortLowToHigh,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: FlitColors.accent.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: FlitColors.accent.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(
+                                Icons.sort,
+                                size: 12,
+                                color: FlitColors.accent,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'Sort Low → High',
+                                style: TextStyle(
+                                  color: FlitColors.accent,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                      ),
+                    // Collapse/expand chevron
+                    AnimatedRotation(
+                      turns: expanded ? 0.5 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: const Icon(
+                        Icons.expand_more,
+                        color: FlitColors.textMuted,
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Collapsible body
+            AnimatedCrossFade(
+              firstChild: const SizedBox.shrink(),
+              secondChild: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Divider(color: FlitColors.cardBorder, height: 1),
+                  ReorderableListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    buildDefaultDragHandles: false,
+                    onReorder: onReorder,
+                    proxyDecorator: (child, index, animation) {
+                      return AnimatedBuilder(
+                        animation: animation,
+                        builder: (context, child) {
+                          final elevation = Tween<double>(
+                            begin: 0,
+                            end: 4,
+                          ).animate(animation).value;
+                          return Material(
+                            color: FlitColors.cardBackground,
+                            elevation: elevation,
+                            borderRadius: BorderRadius.circular(8),
+                            child: child,
+                          );
+                        },
+                        child: child,
+                      );
+                    },
+                    itemCount: clueOrder.length,
+                    itemBuilder: (context, index) {
+                      final type = clueOrder[index];
+                      final weight = weights[type] ?? 0.5;
+                      final label = clueTypeDifficultyLabel[type] ?? type.name;
+                      final color = _colorForWeight(weight);
+
+                      return Padding(
+                        key: ValueKey(type),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(
-                              Icons.sort,
-                              size: 12,
-                              color: FlitColors.accent,
+                          children: [
+                            ReorderableDragStartListener(
+                              index: index,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                child: Icon(
+                                  Icons.drag_indicator,
+                                  color: FlitColors.textMuted.withOpacity(0.5),
+                                  size: 16,
+                                ),
+                              ),
                             ),
-                            SizedBox(width: 4),
-                            Text(
-                              'Sort Low → High',
-                              style: TextStyle(
-                                color: FlitColors.accent,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
+                            Icon(
+                              _clueIcons[type] ?? Icons.help_outline,
+                              color: color,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            SizedBox(
+                              width: 64,
+                              child: Text(
+                                label,
+                                style: TextStyle(
+                                  color: FlitColors.textPrimary,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: SliderTheme(
+                                data: SliderThemeData(
+                                  activeTrackColor: color,
+                                  inactiveTrackColor: FlitColors.backgroundMid,
+                                  thumbColor: color,
+                                  overlayColor: color.withOpacity(0.15),
+                                  trackHeight: 4,
+                                  thumbShape: const RoundSliderThumbShape(
+                                    enabledThumbRadius: 7,
+                                  ),
+                                ),
+                                child: Slider(
+                                  value: weight,
+                                  min: 0.0,
+                                  max: 1.0,
+                                  divisions: 20,
+                                  onChanged: (v) => onWeightChanged(type, v),
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 34,
+                              child: Text(
+                                '${(weight * 100).round()}%',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: color,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 4),
                 ],
               ),
+              crossFadeState: expanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 250),
             ),
-            const Divider(color: FlitColors.cardBorder, height: 1),
-            // Reorderable slider list
-            ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              buildDefaultDragHandles: false,
-              onReorder: onReorder,
-              proxyDecorator: (child, index, animation) {
-                return AnimatedBuilder(
-                  animation: animation,
-                  builder: (context, child) {
-                    final elevation = Tween<double>(
-                      begin: 0,
-                      end: 4,
-                    ).animate(animation).value;
-                    return Material(
-                      color: FlitColors.cardBackground,
-                      elevation: elevation,
-                      borderRadius: BorderRadius.circular(8),
-                      child: child,
-                    );
-                  },
-                  child: child,
-                );
-              },
-              itemCount: clueOrder.length,
-              itemBuilder: (context, index) {
-                final type = clueOrder[index];
-                final weight = weights[type] ?? 0.5;
-                final label = clueTypeDifficultyLabel[type] ?? type.name;
-                final color = _colorForWeight(weight);
-
-                return Padding(
-                  key: ValueKey(type),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  child: Row(
-                    children: [
-                      // Drag handle
-                      ReorderableDragStartListener(
-                        index: index,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Icon(
-                            Icons.drag_indicator,
-                            color: FlitColors.textMuted.withOpacity(0.5),
-                            size: 16,
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        _clueIcons[type] ?? Icons.help_outline,
-                        color: color,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 6),
-                      SizedBox(
-                        width: 64,
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            color: FlitColors.textPrimary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: SliderTheme(
-                          data: SliderThemeData(
-                            activeTrackColor: color,
-                            inactiveTrackColor: FlitColors.backgroundMid,
-                            thumbColor: color,
-                            overlayColor: color.withOpacity(0.15),
-                            trackHeight: 4,
-                            thumbShape: const RoundSliderThumbShape(
-                              enabledThumbRadius: 7,
-                            ),
-                          ),
-                          child: Slider(
-                            value: weight,
-                            min: 0.0,
-                            max: 1.0,
-                            divisions: 20,
-                            onChanged: (v) => onWeightChanged(type, v),
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 34,
-                        child: Text(
-                          '${(weight * 100).round()}%',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            color: color,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 4),
           ],
         ),
       ),
@@ -7110,9 +7355,10 @@ class _CountryDiffEntry {
 }
 
 class _DifficultyRow extends StatelessWidget {
-  const _DifficultyRow({required this.entry});
+  const _DifficultyRow({required this.entry, required this.onRatingChanged});
 
   final _CountryDiffEntry entry;
+  final ValueChanged<double> onRatingChanged;
 
   static const List<Color> _gradientColors = [
     Color(0xFF4CAF50),
@@ -7135,84 +7381,94 @@ class _DifficultyRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: FlitColors.cardBackground,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Country code badge
-            Container(
-              width: 36,
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              decoration: BoxDecoration(
-                color: FlitColors.backgroundMid,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                entry.code,
-                style: const TextStyle(
-                  color: FlitColors.textMuted,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
+            // Top row: code, name, percentage, label
+            Row(
+              children: [
+                // Country code badge
+                Container(
+                  width: 36,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  decoration: BoxDecoration(
+                    color: FlitColors.backgroundMid,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    entry.code,
+                    style: const TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                // Country name
+                Expanded(
+                  child: Text(
+                    entry.name,
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 12,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                // Percentage
+                SizedBox(
+                  width: 34,
+                  child: Text(
+                    '${entry.percent}%',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                // Label
+                SizedBox(
+                  width: 68,
+                  child: Text(
+                    entry.label,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      color: color.withOpacity(0.8),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 10),
-            // Country name
-            Expanded(
-              child: Text(
-                entry.name,
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 13,
-                ),
-                overflow: TextOverflow.ellipsis,
+            // Difficulty slider
+            SliderTheme(
+              data: SliderThemeData(
+                activeTrackColor: color,
+                inactiveTrackColor: FlitColors.backgroundMid,
+                thumbColor: color,
+                overlayColor: color.withOpacity(0.15),
+                trackHeight: 4,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
               ),
-            ),
-            // Difficulty bar
-            SizedBox(
-              width: 60,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(3),
-                child: LinearProgressIndicator(
-                  value: entry.rating,
-                  backgroundColor: FlitColors.backgroundMid,
-                  valueColor: AlwaysStoppedAnimation<Color>(color),
-                  minHeight: 6,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Percentage
-            SizedBox(
-              width: 32,
-              child: Text(
-                '${entry.percent}%',
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Label
-            SizedBox(
-              width: 70,
-              child: Text(
-                entry.label,
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  color: color.withOpacity(0.8),
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                ),
-                overflow: TextOverflow.ellipsis,
+              child: Slider(
+                value: entry.rating,
+                min: 0.0,
+                max: 1.0,
+                divisions: 100,
+                onChanged: onRatingChanged,
               ),
             ),
           ],
