@@ -1660,6 +1660,8 @@ class _RoundResult {
   final String countryCode;
   final ClueType clueType;
   final Duration elapsed;
+
+  /// Difficulty-adjusted score for this round.
   final int score;
 
   /// Score before difficulty multiplier (base − penalties).
