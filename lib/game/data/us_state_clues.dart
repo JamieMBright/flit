@@ -14,6 +14,8 @@ abstract class UsStateClues {
       famousLandmark: 'USS Alabama Battleship Memorial Park',
       stateBird: 'Yellowhammer',
       stateFlower: 'Camellia',
+      celebrities: ['Rosa Parks', 'Hank Aaron', 'Harper Lee'],
+      filmSettings: ['Forrest Gump (1994)', 'Selma (2014)', 'Big Fish (2003)'],
     ),
     'AK': StateClueData(
       flag:
@@ -29,6 +31,12 @@ abstract class UsStateClues {
       famousLandmark: 'Denali (Mount McKinley)',
       stateBird: 'Willow Ptarmigan',
       stateFlower: 'Forget-me-not',
+      celebrities: ['Jewel', 'Curt Schilling', 'Mario Chalmers'],
+      filmSettings: [
+        'Into the Wild (2007)',
+        'The Grey (2011)',
+        'Insomnia (2002)',
+      ],
     ),
     'AZ': StateClueData(
       flag: 'Copper star with red and yellow rays on blue field',
@@ -43,6 +51,12 @@ abstract class UsStateClues {
       famousLandmark: 'Grand Canyon',
       stateBird: 'Cactus Wren',
       stateFlower: 'Saguaro Cactus Blossom',
+      celebrities: ['Emma Stone', 'Stevie Nicks', 'Linda Ronstadt'],
+      filmSettings: [
+        'Tombstone (1993)',
+        'Raising Arizona (1987)',
+        'Psycho (1960)',
+      ],
     ),
     'AR': StateClueData(
       flag:
@@ -58,6 +72,8 @@ abstract class UsStateClues {
       famousLandmark: 'Hot Springs National Park',
       stateBird: 'Northern Mockingbird',
       stateFlower: 'Apple Blossom',
+      celebrities: ['Johnny Cash', 'Bill Clinton', 'John Grisham'],
+      filmSettings: ['Mud (2012)', 'Sling Blade (1996)', 'True Grit (2010)'],
     ),
     'CA': StateClueData(
       flag:
@@ -73,6 +89,12 @@ abstract class UsStateClues {
       famousLandmark: 'Golden Gate Bridge',
       stateBird: 'California Quail',
       stateFlower: 'California Poppy',
+      celebrities: ['Marilyn Monroe', 'Steve Jobs', 'Serena Williams'],
+      filmSettings: [
+        'La La Land (2016)',
+        'Chinatown (1974)',
+        'Pulp Fiction (1994)',
+      ],
     ),
     'CO': StateClueData(
       flag:
@@ -88,6 +110,12 @@ abstract class UsStateClues {
       famousLandmark: 'Rocky Mountain National Park',
       stateBird: 'Lark Bunting',
       stateFlower: 'Rocky Mountain Columbine',
+      celebrities: ['Jack Dempsey', 'Tim Allen', 'Amy Adams'],
+      filmSettings: [
+        'The Shining (1980)',
+        'Dumb and Dumber (1994)',
+        'Hateful Eight (2015)',
+      ],
     ),
     'CT': StateClueData(
       flag:
@@ -103,6 +131,12 @@ abstract class UsStateClues {
       famousLandmark: 'Mark Twain House',
       stateBird: 'American Robin',
       stateFlower: 'Mountain Laurel',
+      celebrities: ['Katharine Hepburn', 'Michael Bolton', 'Seth MacFarlane'],
+      filmSettings: [
+        'The Stepford Wives (1975)',
+        'Revolutionary Road (2008)',
+        'Indiana Jones and the Kingdom of the Crystal Skull (2008)',
+      ],
     ),
     'DE': StateClueData(
       flag:
@@ -118,6 +152,12 @@ abstract class UsStateClues {
       famousLandmark: 'Rehoboth Beach Boardwalk',
       stateBird: 'Delaware Blue Hen',
       stateFlower: 'Peach Blossom',
+      celebrities: ['Joe Biden', 'Ryan Phillippe', 'Aubrey Plaza'],
+      filmSettings: [
+        'Dead Poets Society (1989)',
+        'Fight Club (1999)',
+        'Wayne\'s World (1992)',
+      ],
     ),
     'FL': StateClueData(
       flag:
@@ -133,6 +173,12 @@ abstract class UsStateClues {
       famousLandmark: 'Walt Disney World',
       stateBird: 'Northern Mockingbird',
       stateFlower: 'Orange Blossom',
+      celebrities: ['Jim Morrison', 'Faye Dunaway', 'Ariana Grande'],
+      filmSettings: [
+        'Scarface (1983)',
+        'Moonlight (2016)',
+        'Edward Scissorhands (1990)',
+      ],
     ),
     'GA': StateClueData(
       flag:
@@ -148,6 +194,12 @@ abstract class UsStateClues {
       famousLandmark: 'Stone Mountain',
       stateBird: 'Brown Thrasher',
       stateFlower: 'Cherokee Rose',
+      celebrities: ['Martin Luther King Jr.', 'Ray Charles', 'Julia Roberts'],
+      filmSettings: [
+        'Gone with the Wind (1939)',
+        'Deliverance (1972)',
+        'Driving Miss Daisy (1989)',
+      ],
     ),
     'HI': StateClueData(
       flag:
@@ -164,6 +216,12 @@ abstract class UsStateClues {
       famousLandmark: 'Pearl Harbor Memorial',
       stateBird: 'Nene (Hawaiian Goose)',
       stateFlower: 'Yellow Hibiscus',
+      celebrities: ['Bruno Mars', 'Jason Momoa', 'Nicole Kidman'],
+      filmSettings: [
+        'Jurassic Park (1993)',
+        'Pearl Harbor (2001)',
+        'Lilo & Stitch (2002)',
+      ],
     ),
     'ID': StateClueData(
       flag: 'Blue field with state seal featuring a miner, woman, and elk head',
@@ -178,6 +236,12 @@ abstract class UsStateClues {
       famousLandmark: 'Craters of the Moon National Monument',
       stateBird: 'Mountain Bluebird',
       stateFlower: 'Syringa',
+      celebrities: ['Picabo Street', 'Ezra Pound', 'Aaron Paul'],
+      filmSettings: [
+        'Napoleon Dynamite (2004)',
+        'Dante\'s Peak (1997)',
+        'Pale Rider (1985)',
+      ],
     ),
     'IL': StateClueData(
       flag:
@@ -193,6 +257,12 @@ abstract class UsStateClues {
       famousLandmark: 'Willis Tower (Sears Tower)',
       stateBird: 'Northern Cardinal',
       stateFlower: 'Violet',
+      celebrities: ['Barack Obama', 'Walt Disney', 'Michael Jordan'],
+      filmSettings: [
+        'The Blues Brothers (1980)',
+        'Ferris Bueller\'s Day Off (1986)',
+        'The Dark Knight (2008)',
+      ],
     ),
     'IN': StateClueData(
       flag: 'Blue field with gold torch surrounded by 19 stars',
@@ -207,6 +277,12 @@ abstract class UsStateClues {
       famousLandmark: 'Indianapolis Motor Speedway',
       stateBird: 'Northern Cardinal',
       stateFlower: 'Peony',
+      celebrities: ['Michael Jackson', 'David Letterman', 'Larry Bird'],
+      filmSettings: [
+        'Hoosiers (1986)',
+        'Breaking Away (1979)',
+        'A Christmas Story (1983)',
+      ],
     ),
     'IA': StateClueData(
       flag:
@@ -222,6 +298,12 @@ abstract class UsStateClues {
       famousLandmark: 'Field of Dreams Movie Site',
       stateBird: 'Eastern Goldfinch',
       stateFlower: 'Wild Rose',
+      celebrities: ['John Wayne', 'Ashton Kutcher', 'Elijah Wood'],
+      filmSettings: [
+        'Field of Dreams (1989)',
+        'The Bridges of Madison County (1995)',
+        'Twister (1996)',
+      ],
     ),
     'KS': StateClueData(
       flag: 'Dark blue field with state seal and sunflower',
@@ -236,6 +318,12 @@ abstract class UsStateClues {
       famousLandmark: 'Monument Rocks',
       stateBird: 'Western Meadowlark',
       stateFlower: 'Sunflower',
+      celebrities: ['Amelia Earhart', 'Dwight D. Eisenhower', 'Janelle Monae'],
+      filmSettings: [
+        'The Wizard of Oz (1939)',
+        'In Cold Blood (1967)',
+        'Paper Moon (1973)',
+      ],
     ),
     'KY': StateClueData(
       flag: 'Navy blue field with state seal featuring two men shaking hands',
@@ -250,6 +338,12 @@ abstract class UsStateClues {
       famousLandmark: 'Churchill Downs',
       stateBird: 'Northern Cardinal',
       stateFlower: 'Goldenrod',
+      celebrities: ['Muhammad Ali', 'Johnny Depp', 'George Clooney'],
+      filmSettings: [
+        'Goldfinger (1964)',
+        'Secretariat (2010)',
+        'Justified (2010)',
+      ],
     ),
     'LA': StateClueData(
       flag: 'Blue field with white pelican feeding three chicks in a nest',
@@ -264,6 +358,12 @@ abstract class UsStateClues {
       famousLandmark: 'French Quarter',
       stateBird: 'Brown Pelican',
       stateFlower: 'Magnolia',
+      celebrities: ['Louis Armstrong', 'Ellen DeGeneres', 'Lil Wayne'],
+      filmSettings: [
+        'The Big Easy (1986)',
+        'Interview with the Vampire (1994)',
+        '12 Years a Slave (2013)',
+      ],
     ),
     'ME': StateClueData(
       flag:
@@ -279,6 +379,12 @@ abstract class UsStateClues {
       famousLandmark: 'Acadia National Park',
       stateBird: 'Black-capped Chickadee',
       stateFlower: 'White Pine Cone and Tassel',
+      celebrities: ['Stephen King', 'Patrick Dempsey', 'Anna Kendrick'],
+      filmSettings: [
+        'The Shawshank Redemption (1994)',
+        'It (2017)',
+        'Pet Sematary (1989)',
+      ],
     ),
     'MD': StateClueData(
       flag:
@@ -294,6 +400,12 @@ abstract class UsStateClues {
       famousLandmark: 'Fort McHenry',
       stateBird: 'Baltimore Oriole',
       stateFlower: 'Black-eyed Susan',
+      celebrities: ['Babe Ruth', 'Jada Pinkett Smith', 'Michael Phelps'],
+      filmSettings: [
+        'The Wire (2002)',
+        'Sleepless in Seattle (1993)',
+        'Ladder 49 (2004)',
+      ],
     ),
     'MA': StateClueData(
       flag:
@@ -310,6 +422,12 @@ abstract class UsStateClues {
       famousLandmark: 'Freedom Trail',
       stateBird: 'Black-capped Chickadee',
       stateFlower: 'Mayflower',
+      celebrities: ['Matt Damon', 'Ben Affleck', 'Mark Wahlberg'],
+      filmSettings: [
+        'Good Will Hunting (1997)',
+        'The Departed (2006)',
+        'Jaws (1975)',
+      ],
     ),
     'MI': StateClueData(
       flag:
@@ -326,6 +444,8 @@ abstract class UsStateClues {
       famousLandmark: 'Mackinac Bridge',
       stateBird: 'American Robin',
       stateFlower: 'Apple Blossom',
+      celebrities: ['Madonna', 'Eminem', 'Stevie Wonder'],
+      filmSettings: ['8 Mile (2002)', 'RoboCop (1987)', 'Gran Torino (2008)'],
     ),
     'MN': StateClueData(
       flag:
@@ -341,6 +461,12 @@ abstract class UsStateClues {
       famousLandmark: 'Mall of America',
       stateBird: 'Common Loon',
       stateFlower: 'Pink and White Lady\'s Slipper',
+      celebrities: ['Prince', 'Bob Dylan', 'Judy Garland'],
+      filmSettings: [
+        'Fargo (1996)',
+        'Purple Rain (1984)',
+        'A Serious Man (2009)',
+      ],
     ),
     'MS': StateClueData(
       flag: 'Red, white, and blue stripes with magnolia flower and stars',
@@ -355,6 +481,12 @@ abstract class UsStateClues {
       famousLandmark: 'Vicksburg National Military Park',
       stateBird: 'Northern Mockingbird',
       stateFlower: 'Magnolia',
+      celebrities: ['Elvis Presley', 'Oprah Winfrey', 'B.B. King'],
+      filmSettings: [
+        'The Help (2011)',
+        'O Brother, Where Art Thou? (2000)',
+        'Mississippi Burning (1988)',
+      ],
     ),
     'MO': StateClueData(
       flag:
@@ -371,6 +503,12 @@ abstract class UsStateClues {
       famousLandmark: 'Gateway Arch',
       stateBird: 'Eastern Bluebird',
       stateFlower: 'White Hawthorn Blossom',
+      celebrities: ['Mark Twain', 'Brad Pitt', 'Maya Angelou'],
+      filmSettings: [
+        'Ozark (2017)',
+        'Gone Girl (2014)',
+        'Meet Me in St. Louis (1944)',
+      ],
     ),
     'MT': StateClueData(
       flag:
@@ -386,6 +524,12 @@ abstract class UsStateClues {
       famousLandmark: 'Glacier National Park',
       stateBird: 'Western Meadowlark',
       stateFlower: 'Bitterroot',
+      celebrities: ['Evel Knievel', 'Gary Cooper', 'Dana Carvey'],
+      filmSettings: [
+        'A River Runs Through It (1992)',
+        'Legends of the Fall (1994)',
+        'Yellowstone (2018)',
+      ],
     ),
     'NE': StateClueData(
       flag:
@@ -401,6 +545,12 @@ abstract class UsStateClues {
       famousLandmark: 'Chimney Rock',
       stateBird: 'Western Meadowlark',
       stateFlower: 'Goldenrod',
+      celebrities: ['Warren Buffett', 'Marlon Brando', 'Fred Astaire'],
+      filmSettings: [
+        'Nebraska (2013)',
+        'About Schmidt (2002)',
+        'Boys Town (1938)',
+      ],
     ),
     'NV': StateClueData(
       flag:
@@ -416,6 +566,12 @@ abstract class UsStateClues {
       famousLandmark: 'Hoover Dam',
       stateBird: 'Mountain Bluebird',
       stateFlower: 'Sagebrush',
+      celebrities: ['Andre Agassi', 'Jack Kramer', 'Brandon Flowers'],
+      filmSettings: [
+        'Casino (1995)',
+        'The Hangover (2009)',
+        'Ocean\'s Eleven (2001)',
+      ],
     ),
     'NH': StateClueData(
       flag: 'Blue field with state seal featuring the frigate Raleigh',
@@ -430,6 +586,12 @@ abstract class UsStateClues {
       famousLandmark: 'Mount Washington',
       stateBird: 'Purple Finch',
       stateFlower: 'Purple Lilac',
+      celebrities: ['Adam Sandler', 'Sarah Silverman', 'Mandy Moore'],
+      filmSettings: [
+        'On Golden Pond (1981)',
+        'Jumanji (1995)',
+        'The Good Son (1993)',
+      ],
     ),
     'NJ': StateClueData(
       flag:
@@ -445,6 +607,12 @@ abstract class UsStateClues {
       famousLandmark: 'Atlantic City Boardwalk',
       stateBird: 'Eastern Goldfinch',
       stateFlower: 'Purple Violet',
+      celebrities: ['Frank Sinatra', 'Bruce Springsteen', 'Meryl Streep'],
+      filmSettings: [
+        'The Sopranos (1999)',
+        'Jersey Shore (2009)',
+        'Garden State (2004)',
+      ],
     ),
     'NM': StateClueData(
       flag: 'Yellow field with red Zia sun symbol',
@@ -459,6 +627,12 @@ abstract class UsStateClues {
       famousLandmark: 'Carlsbad Caverns',
       stateBird: 'Greater Roadrunner',
       stateFlower: 'Yucca Flower',
+      celebrities: ['Neil Patrick Harris', 'Demi Moore', 'Jeff Bezos'],
+      filmSettings: [
+        'Breaking Bad (2008)',
+        'No Country for Old Men (2007)',
+        'Sicario (2015)',
+      ],
     ),
     'NY': StateClueData(
       flag:
@@ -474,6 +648,12 @@ abstract class UsStateClues {
       famousLandmark: 'Statue of Liberty',
       stateBird: 'Eastern Bluebird',
       stateFlower: 'Rose',
+      celebrities: ['Jay-Z', 'Robert De Niro', 'Lady Gaga'],
+      filmSettings: [
+        'Taxi Driver (1976)',
+        'Seinfeld (1989)',
+        'The Godfather (1972)',
+      ],
     ),
     'NC': StateClueData(
       flag:
@@ -489,6 +669,12 @@ abstract class UsStateClues {
       famousLandmark: 'Wright Brothers National Memorial',
       stateBird: 'Northern Cardinal',
       stateFlower: 'Flowering Dogwood',
+      celebrities: ['Michael Jordan', 'Ava Gardner', 'James Taylor'],
+      filmSettings: [
+        'The Hunger Games (2012)',
+        'Bull Durham (1988)',
+        'Dirty Dancing (1987)',
+      ],
     ),
     'ND': StateClueData(
       flag:
@@ -504,6 +690,12 @@ abstract class UsStateClues {
       famousLandmark: 'Theodore Roosevelt National Park',
       stateBird: 'Western Meadowlark',
       stateFlower: 'Wild Prairie Rose',
+      celebrities: ['Phil Jackson', 'Angie Dickinson', 'Josh Duhamel'],
+      filmSettings: [
+        'Fargo (1996)',
+        'Northern Lights (2009)',
+        'The Coen Brothers\' films',
+      ],
     ),
     'OH': StateClueData(
       flag:
@@ -519,6 +711,12 @@ abstract class UsStateClues {
       famousLandmark: 'Rock and Roll Hall of Fame',
       stateBird: 'Northern Cardinal',
       stateFlower: 'Scarlet Carnation',
+      celebrities: ['LeBron James', 'Neil Armstrong', 'Steven Spielberg'],
+      filmSettings: [
+        'The Shawshank Redemption (1994)',
+        'A Christmas Story (1983)',
+        'Rain Man (1988)',
+      ],
     ),
     'OK': StateClueData(
       flag:
@@ -534,6 +732,12 @@ abstract class UsStateClues {
       famousLandmark: 'Oklahoma City National Memorial',
       stateBird: 'Scissor-tailed Flycatcher',
       stateFlower: 'Oklahoma Rose',
+      celebrities: ['Brad Pitt', 'Carrie Underwood', 'Chuck Norris'],
+      filmSettings: [
+        'Oklahoma! (1955)',
+        'Twister (1996)',
+        'August: Osage County (2013)',
+      ],
     ),
     'OR': StateClueData(
       flag:
@@ -549,6 +753,12 @@ abstract class UsStateClues {
       famousLandmark: 'Crater Lake',
       stateBird: 'Western Meadowlark',
       stateFlower: 'Oregon Grape',
+      celebrities: ['Matt Groening', 'Tonya Harding', 'River Phoenix'],
+      filmSettings: [
+        'The Goonies (1985)',
+        'Stand by Me (1986)',
+        'Portlandia (2011)',
+      ],
     ),
     'PA': StateClueData(
       flag:
@@ -564,6 +774,12 @@ abstract class UsStateClues {
       famousLandmark: 'Liberty Bell',
       stateBird: 'Ruffed Grouse',
       stateFlower: 'Mountain Laurel',
+      celebrities: ['Will Smith', 'Taylor Swift', 'Andy Warhol'],
+      filmSettings: [
+        'Rocky (1976)',
+        'The Sixth Sense (1999)',
+        'Philadelphia (1993)',
+      ],
     ),
     'RI': StateClueData(
       flag:
@@ -579,6 +795,12 @@ abstract class UsStateClues {
       famousLandmark: 'The Breakers Mansion',
       stateBird: 'Rhode Island Red',
       stateFlower: 'Violet',
+      celebrities: ['H.P. Lovecraft', 'Mena Suvari', 'James Woods'],
+      filmSettings: [
+        'Family Guy (1999)',
+        'Moonrise Kingdom (2012)',
+        'Me, Myself & Irenes (2000)',
+      ],
     ),
     'SC': StateClueData(
       flag: 'Blue field with white palmetto tree and crescent moon',
@@ -593,6 +815,12 @@ abstract class UsStateClues {
       famousLandmark: 'Fort Sumter',
       stateBird: 'Carolina Wren',
       stateFlower: 'Yellow Jessamine',
+      celebrities: ['James Brown', 'Chris Rock', 'Darius Rucker'],
+      filmSettings: [
+        'The Notebook (2004)',
+        'The Patriot (2000)',
+        'Forrest Gump (1994)',
+      ],
     ),
     'SD': StateClueData(
       flag:
@@ -608,6 +836,12 @@ abstract class UsStateClues {
       famousLandmark: 'Mount Rushmore',
       stateBird: 'Ring-necked Pheasant',
       stateFlower: 'American Pasque Flower',
+      celebrities: ['Sitting Bull', 'Tom Brokaw', 'January Jones'],
+      filmSettings: [
+        'Dances with Wolves (1990)',
+        'North by Northwest (1959)',
+        'Badlands (1973)',
+      ],
     ),
     'TN': StateClueData(
       flag: 'Red field with blue stripe and three white stars in blue circle',
@@ -622,6 +856,12 @@ abstract class UsStateClues {
       famousLandmark: 'Great Smoky Mountains National Park',
       stateBird: 'Northern Mockingbird',
       stateFlower: 'Iris',
+      celebrities: ['Dolly Parton', 'Justin Timberlake', 'Morgan Freeman'],
+      filmSettings: [
+        'Walk the Line (2005)',
+        'Nashville (1975)',
+        'The Green Mile (1999)',
+      ],
     ),
     'TX': StateClueData(
       flag:
@@ -637,6 +877,12 @@ abstract class UsStateClues {
       famousLandmark: 'The Alamo',
       stateBird: 'Northern Mockingbird',
       stateFlower: 'Bluebonnet',
+      celebrities: ['Beyonce', 'Matthew McConaughey', 'Willie Nelson'],
+      filmSettings: [
+        'No Country for Old Men (2007)',
+        'Friday Night Lights (2004)',
+        'Dallas Buyers Club (2013)',
+      ],
     ),
     'UT': StateClueData(
       flag:
@@ -652,6 +898,12 @@ abstract class UsStateClues {
       famousLandmark: 'Arches National Park',
       stateBird: 'California Gull',
       stateFlower: 'Sego Lily',
+      celebrities: ['Donny Osmond', 'Jewel', 'Philo Farnsworth'],
+      filmSettings: [
+        '127 Hours (2010)',
+        'Butch Cassidy and the Sundance Kid (1969)',
+        'High School Musical (2006)',
+      ],
     ),
     'VT': StateClueData(
       flag:
@@ -667,6 +919,12 @@ abstract class UsStateClues {
       famousLandmark: 'Ben & Jerry\'s Factory',
       stateBird: 'Hermit Thrush',
       stateFlower: 'Red Clover',
+      celebrities: ['Bernie Sanders', 'Calvin Coolidge', 'Orson Bean'],
+      filmSettings: [
+        'Super Troopers (2001)',
+        'White Christmas (1954)',
+        'Beetlejuice (1988)',
+      ],
     ),
     'VA': StateClueData(
       flag:
@@ -682,6 +940,12 @@ abstract class UsStateClues {
       famousLandmark: 'Colonial Williamsburg',
       stateBird: 'Northern Cardinal',
       stateFlower: 'American Dogwood',
+      celebrities: ['Sandra Bullock', 'Pharrell Williams', 'Rob Lowe'],
+      filmSettings: [
+        'Lincoln (2012)',
+        'Remember the Titans (2000)',
+        'The Conjuring (2013)',
+      ],
     ),
     'WA': StateClueData(
       flag: 'Green field with state seal featuring George Washington',
@@ -696,6 +960,12 @@ abstract class UsStateClues {
       famousLandmark: 'Space Needle',
       stateBird: 'Willow Goldfinch',
       stateFlower: 'Coast Rhododendron',
+      celebrities: ['Jimi Hendrix', 'Kurt Cobain', 'Bill Gates'],
+      filmSettings: [
+        'Sleepless in Seattle (1993)',
+        'Twilight (2008)',
+        'Grey\'s Anatomy (2005)',
+      ],
     ),
     'WV': StateClueData(
       flag:
@@ -711,6 +981,12 @@ abstract class UsStateClues {
       famousLandmark: 'New River Gorge Bridge',
       stateBird: 'Northern Cardinal',
       stateFlower: 'Rhododendron',
+      celebrities: ['Chuck Yeager', 'Jerry West', 'Jennifer Garner'],
+      filmSettings: [
+        'October Sky (1999)',
+        'We Are Marshall (2006)',
+        'Wrong Turn (2003)',
+      ],
     ),
     'WI': StateClueData(
       flag:
@@ -726,6 +1002,12 @@ abstract class UsStateClues {
       famousLandmark: 'Wisconsin Dells',
       stateBird: 'American Robin',
       stateFlower: 'Wood Violet',
+      celebrities: ['Orson Welles', 'Willem Dafoe', 'Heather Graham'],
+      filmSettings: [
+        'That \'70s Show (1998)',
+        'Making a Murderer (2015)',
+        'Public Enemies (2009)',
+      ],
     ),
     'WY': StateClueData(
       flag: 'Blue field with white bison bearing state seal',
@@ -740,6 +1022,12 @@ abstract class UsStateClues {
       famousLandmark: 'Yellowstone National Park',
       stateBird: 'Western Meadowlark',
       stateFlower: 'Indian Paintbrush',
+      celebrities: ['Jackson Pollock', 'Dick Cheney', 'Curt Gowdy'],
+      filmSettings: [
+        'Brokeback Mountain (2005)',
+        'Django Unchained (2012)',
+        'Close Encounters of the Third Kind (1977)',
+      ],
     ),
   };
 }
@@ -755,6 +1043,8 @@ class StateClueData {
     required this.famousLandmark,
     required this.stateBird,
     required this.stateFlower,
+    this.celebrities = const [],
+    this.filmSettings = const [],
   });
 
   final String flag;
@@ -765,4 +1055,6 @@ class StateClueData {
   final String famousLandmark;
   final String stateBird;
   final String stateFlower;
+  final List<String> celebrities;
+  final List<String> filmSettings;
 }
