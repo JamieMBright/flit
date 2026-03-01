@@ -76,11 +76,14 @@ class Clue {
   }
 
   /// Create a stats clue
-  factory Clue.stats(String countryCode) {
+  ///
+  /// When [random] is provided (e.g. from a seeded H2H game), the same trio
+  /// of stats will be selected deterministically for both players.
+  factory Clue.stats(String countryCode, {Random? random}) {
     return Clue(
       type: ClueType.stats,
       targetCountryCode: countryCode,
-      displayData: _getCountryStats(countryCode),
+      displayData: _getCountryStats(countryCode, random: random),
     );
   }
 
@@ -158,7 +161,7 @@ class Clue {
           clue = Clue.capital(countryCode);
           break;
         case ClueType.stats:
-          clue = Clue.stats(countryCode);
+          clue = Clue.stats(countryCode, random: random);
           break;
         // Regional types fallback to stats for world mode
         case ClueType.sportsTeam:
@@ -166,7 +169,7 @@ class Clue {
         case ClueType.nickname:
         case ClueType.landmark:
         case ClueType.flagDescription:
-          clue = Clue.stats(countryCode);
+          clue = Clue.stats(countryCode, random: random);
           break;
       }
 
@@ -844,7 +847,10 @@ class Clue {
   }
 
   /// Full stats database for each country. A random trio is selected at runtime.
-  static Map<String, dynamic> _getCountryStats(String code) {
+  ///
+  /// When [random] is provided the selection is deterministic, ensuring both
+  /// H2H players see the same three facts.
+  static Map<String, dynamic> _getCountryStats(String code, {Random? random}) {
     const allStats = <String, Map<String, String>>{
       // ═══════════════════════════════════════════
       // NORTH AMERICA
@@ -1769,8 +1775,10 @@ class Clue {
     // Return empty map if country not found - caller should handle by picking different clue type
     if (countryStats == null) return <String, dynamic>{};
 
-    // Pick a random trio of stats from all available keys
-    final keys = countryStats.keys.toList()..shuffle(Random());
+    // Pick a random trio of stats from all available keys.
+    // Use the provided seeded RNG when available so H2H players see the same
+    // three facts; fall back to an unseeded Random for free-play.
+    final keys = countryStats.keys.toList()..shuffle(random ?? Random());
     final selectedKeys = keys.take(3).toList();
 
     final result = <String, dynamic>{};
