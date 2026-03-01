@@ -257,8 +257,9 @@ class ChallengeService {
 
   /// Check if the challenge is complete and determine the winner.
   ///
-  /// Call this after submitting the final round. If both players have
-  /// completed all rounds, sets winner, awards coins, and marks as completed.
+  /// Call this after submitting a round result. If either player has reached
+  /// [Challenge.winsRequired] wins (best-of-5 early victory), or all rounds
+  /// are complete, sets winner, awards coins, and marks as completed.
   /// Returns the updated challenge, or null if not yet complete. Retries up
   /// to [_maxRetries] times with exponential backoff on failure.
   Future<Challenge?> tryCompleteChallenge(String challengeId) async {
@@ -274,11 +275,14 @@ class ChallengeService {
 
         final challenge = _rowToChallenge(row);
 
-        // Check if all rounds are complete (both players submitted).
-        final completedRounds = challenge.rounds
-            .where((r) => r.isComplete)
-            .length;
-        if (completedRounds < Challenge.totalRounds) return null;
+        // Early victory: complete as soon as one player clinches enough wins
+        // (e.g. 3 wins in best-of-5). Also complete if all rounds are done.
+        if (!challenge.isComplete) {
+          final completedRounds = challenge.rounds
+              .where((r) => r.isComplete)
+              .length;
+          if (completedRounds < Challenge.totalRounds) return null;
+        }
 
         // Determine winner.
         String? winnerId;

@@ -64,6 +64,7 @@ class PlayScreen extends ConsumerStatefulWidget {
     this.onDailyComplete,
     this.dailyTheme = '',
     this.dailySeed,
+    this.challengeSeeds,
   });
 
   /// The region to play in.
@@ -74,6 +75,11 @@ class PlayScreen extends ConsumerStatefulWidget {
 
   /// The Supabase challenge ID (set when playing a real H2H challenge).
   final String? challengeId;
+
+  /// Per-round seeds from the challenge (one per round). When non-null,
+  /// [_createSession] uses these seeds so both players get identical countries
+  /// and clues.
+  final List<int>? challengeSeeds;
 
   /// Number of rounds to play back-to-back. 1 = single round.
   /// For Training Sortie this is 10.
@@ -440,6 +446,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// Create a GameSession for the current round, using the daily seed when
   /// available so all players get the same countries.
   GameSession _createSession() {
+    // H2H challenge: use the pre-generated round seed so both players get
+    // the exact same country and clue for each round.
+    if (widget.challengeSeeds != null &&
+        _currentRound - 1 < widget.challengeSeeds!.length) {
+      return GameSession.seeded(
+        widget.challengeSeeds![_currentRound - 1],
+        allowedClueTypes: widget.enabledClueTypes,
+        preferredClueType: widget.preferredClueType,
+      );
+    }
     if (widget.dailySeed != null) {
       // Derive a per-round seed from the daily seed so each round is different
       // but deterministic across all players.
@@ -620,6 +636,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     _awardFreeFlightClue();
 
     // Submit round result to Supabase for H2H challenges.
+    // Also check for early victory (e.g. 3 wins in best-of-5).
     if (widget.challengeId != null) {
       ChallengeService.instance
           .submitRoundResult(
@@ -631,9 +648,31 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             clueTypeName: _session?.clue.type.name,
             countryName: _session?.targetName,
           )
+          .then(
+            (_) => ChallengeService.instance.tryCompleteChallenge(
+              widget.challengeId!,
+            ),
+          )
+          .then((completedChallenge) {
+            if (completedChallenge != null && mounted) {
+              // Early victory — fetch final state and show result screen.
+              ChallengeService.instance
+                  .fetchChallenge(widget.challengeId!)
+                  .then((finalChallenge) {
+                    if (finalChallenge != null && mounted) {
+                      _navigateToChallengeResult(finalChallenge);
+                    }
+                  })
+                  .catchError((Object e) {
+                    _log.warning(
+                      'challenge',
+                      'Failed to fetch completed challenge: $e',
+                    );
+                  });
+            }
+          })
           .catchError((Object e) {
             _log.warning('challenge', 'Failed to submit round result: $e');
-            return false;
           });
     }
 

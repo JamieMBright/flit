@@ -251,11 +251,13 @@ class GameSession {
     final countryIndex = random.nextInt(CountryData.playableCountries.length);
     final country = CountryData.playableCountries[countryIndex];
 
-    // Use Clue.random() with the same filters as random mode
+    // Use Clue.random() with the seeded Random so clue type selection is
+    // deterministic — both challenge players get the same clue type.
     final clue = Clue.random(
       country.code,
       preferredClueType: preferredClueType,
       allowedTypes: allowedClueTypes,
+      random: random,
     );
 
     // Generate start position based on seed
