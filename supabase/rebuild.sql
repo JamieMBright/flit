@@ -165,11 +165,12 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- Admin role (added 2026-02-22).
--- NULL = regular user, 'moderator' = limited admin, 'owner' = god mode.
+-- Admin role (added 2026-02-22, collaborator added 2026-03-01).
+-- NULL = regular user, 'moderator' = limited admin,
+-- 'collaborator' = trusted game-design partner, 'owner' = god mode.
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS admin_role TEXT DEFAULT NULL
-    CHECK (admin_role IS NULL OR admin_role IN ('moderator', 'owner'));
+    CHECK (admin_role IS NULL OR admin_role IN ('moderator', 'collaborator', 'owner'));
 
 
 -- ---------------------------------------------------------------------------
@@ -1081,8 +1082,8 @@ BEGIN
   END IF;
 
   -- Validate role value.
-  IF p_role IS NOT NULL AND p_role NOT IN ('moderator', 'owner') THEN
-    RAISE EXCEPTION 'Invalid role: must be NULL, moderator, or owner';
+  IF p_role IS NOT NULL AND p_role NOT IN ('moderator', 'collaborator', 'owner') THEN
+    RAISE EXCEPTION 'Invalid role: must be NULL, moderator, collaborator, or owner';
   END IF;
 
   -- Prevent demoting self.

@@ -3,9 +3,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Admin access configuration.
 ///
 /// Admin roles are stored in the `profiles.admin_role` column:
-///   - `null`        → regular user
-///   - `'moderator'` → limited admin (view data, moderate usernames)
-///   - `'owner'`     → god mode (unlimited access)
+///   - `null`           → regular user
+///   - `'moderator'`    → limited admin (view data, moderate usernames)
+///   - `'collaborator'` → trusted collaborator (edit difficulty, flags,
+///                         announcements, app config — no economy or
+///                         destructive actions)
+///   - `'owner'`        → god mode (unlimited access)
 ///
 /// The primary check is [isCurrentUserAdmin] which uses the auth email
 /// as a client-side bootstrap (before DB data loads). Once the Player
@@ -113,6 +116,24 @@ abstract final class AdminPermissions {
     AdminPermission.createInfoAnnouncements,
   };
 
+  /// Permissions granted to collaborators — everything except economy and
+  /// destructive actions.
+  ///
+  /// Collaborators are trusted game-design partners. They can edit difficulty
+  /// ratings, feature flags, announcements, and app config, but cannot touch
+  /// the economy (gifting, pricing, earnings) or perform destructive actions
+  /// (perma-ban, unban, role management).
+  static final Set<AdminPermission> collaborator =
+      Set<AdminPermission>.unmodifiable({
+        ...moderator,
+        // ── Collaborator extras (game design + content) ──
+        AdminPermission.editDifficulty,
+        AdminPermission.editAnnouncements,
+        AdminPermission.editAppConfig,
+        AdminPermission.editFeatureFlags,
+        AdminPermission.viewAuditLog,
+      });
+
   /// Permissions granted to owners — everything.
   static final Set<AdminPermission> owner = Set<AdminPermission>.unmodifiable(
     AdminPermission.values,
@@ -125,6 +146,8 @@ abstract final class AdminPermissions {
     switch (adminRole) {
       case 'owner':
         return owner;
+      case 'collaborator':
+        return collaborator;
       case 'moderator':
         return moderator;
       default:

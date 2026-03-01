@@ -1002,7 +1002,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
           icon: Icons.shield,
           iconColor: FlitColors.accent,
           title: 'Manage Player Role',
-          subtitle: 'Promote to moderator or revoke access.',
+          subtitle: 'Set role: moderator, collaborator, or revoke.',
           error: error,
           actionLabel: 'Set Role',
           actionIcon: Icons.shield,
@@ -1059,6 +1059,10 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                   DropdownMenuItem(
                     value: 'moderator',
                     child: Text('Moderator'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'collaborator',
+                    child: Text('Collaborator'),
                   ),
                   DropdownMenuItem(
                     value: 'revoke',
