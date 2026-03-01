@@ -363,7 +363,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           final candidate = Clue.random(
             _session!.targetCountry.code,
             preferredClueType: widget.preferredClueType,
-
+            clueChance: widget.clueChance,
             allowedTypes: widget.enabledClueTypes,
           );
           if (candidate.type != previousType || i == 4) {
@@ -448,13 +448,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   GameSession _createSession() {
     // H2H challenge: use the pre-generated round seed so both players get
     // the exact same country and clue for each round.
+    // NOTE: preferredClueType is intentionally omitted here so the initial
+    // clue is purely seed-determined and identical for both players.
+    // License preferences (preferredClueType + clueChance) apply to hints
+    // instead — see _useHint() Tier 1.
     if (widget.challengeSeeds != null &&
         _currentRound - 1 < widget.challengeSeeds!.length) {
-      return GameSession.seeded(
-        widget.challengeSeeds![_currentRound - 1],
-        allowedClueTypes: widget.enabledClueTypes,
-        preferredClueType: widget.preferredClueType,
-      );
+      return GameSession.seeded(widget.challengeSeeds![_currentRound - 1]);
     }
     if (widget.dailySeed != null) {
       // Derive a per-round seed from the daily seed so each round is different

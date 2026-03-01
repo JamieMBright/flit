@@ -100,6 +100,7 @@ class Clue {
     String? preferredClueType,
     Set<String>? allowedTypes,
     Random? random,
+    int clueChance = 0,
   }) {
     // Determine the pool of clue types to draw from.
     final List<ClueType> typePool;
@@ -136,10 +137,12 @@ class Clue {
 
       ClueType randomType;
       // If we have a preferred type and it hasn't been tried, give it a
-      // flat 25% chance of being picked directly.
+      // base 25% chance of being picked directly, boosted by the pilot
+      // license's clueChance stat.
+      final preferredPct = (25 + clueChance).clamp(0, 100);
       if (preferredType != null &&
           availableTypes.contains(preferredType) &&
-          rng.nextInt(100) < 25) {
+          rng.nextInt(100) < preferredPct) {
         randomType = preferredType;
       } else {
         randomType = availableTypes[rng.nextInt(availableTypes.length)];
