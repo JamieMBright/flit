@@ -366,44 +366,6 @@ class AvatarConfig {
   /// Currently equipped color overrides keyed by feature.
   final Map<String, String> equippedCustomColors;
 
-  /// Coin cost per custom color wheel use.
-  static const int customColorPrice = 750;
-
-  // ---------------------------------------------------------------------------
-  // Color helpers
-  // ---------------------------------------------------------------------------
-
-  /// Returns the equipped custom color hex for [key], or `null` if none is
-  /// equipped. Compositor falls back to the default when this returns `null`.
-  String? getColor(String key) => equippedCustomColors[key];
-
-  /// Returns a copy with [hex] stored as the custom color for [key] in both
-  /// [customColors] (purchase record) and [equippedCustomColors] (active).
-  AvatarConfig withCustomColor(String key, String hex) => copyWith(
-    customColors: {...customColors, key: hex},
-    equippedCustomColors: {...equippedCustomColors, key: hex},
-  );
-
-  /// Returns a copy that equips or unequips the custom color for [key].
-  ///
-  /// When [equipped] is `true`, the stored custom color is moved into
-  /// [equippedCustomColors]. When `false`, the color is removed from
-  /// [equippedCustomColors] but kept in [customColors] so it can be
-  /// re-equipped without repurchasing.
-  AvatarConfig toggleCustomColor(String key, bool equipped) {
-    if (equipped) {
-      final hex = customColors[key];
-      if (hex == null) return this;
-      return copyWith(
-        equippedCustomColors: {...equippedCustomColors, key: hex},
-      );
-    } else {
-      final newEquipped = Map<String, String>.from(equippedCustomColors)
-        ..remove(key);
-      return copyWith(equippedCustomColors: newEquipped);
-    }
-  }
-
   // ---------------------------------------------------------------------------
   // Copy
   // ---------------------------------------------------------------------------
