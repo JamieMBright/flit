@@ -89,7 +89,7 @@ BEGIN
   INSERT INTO public.profiles (id, admin_role)
   VALUES (
     NEW.id,
-    CASE WHEN COALESCE(NEW.email, '') IN ('<owner-email>')
+    CASE WHEN COALESCE(NEW.email, '') IN ('jamiebright1@gmail.com')
          THEN 'owner' ELSE NULL END
   )
   ON CONFLICT (id) DO NOTHING;  -- never overwrite an existing profile
