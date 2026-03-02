@@ -89,15 +89,14 @@ class AppConfigService {
     _cacheTime = null;
   }
 
-  /// Parse a version string like 'v1.2.3' into a comparable number.
-  /// Returns major * 10000 + minor * 100 + patch, 0 for unparseable.
+  /// Parse a version string like 'v1.228' into a comparable number.
+  /// Returns major * 10000 + minor, 0 for unparseable.
   static int _versionToNumber(String version) {
     final cleaned = version.replaceAll(RegExp(r'[^0-9.]'), '');
     final parts = cleaned.split('.');
     final major = int.tryParse(parts.isNotEmpty ? parts[0] : '0') ?? 0;
     final minor = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
-    final patch = int.tryParse(parts.length > 2 ? parts[2] : '0') ?? 0;
-    return major * 10000 + minor * 100 + patch;
+    return major * 10000 + minor;
   }
 
   /// Exposed for unit tests only — wraps [_versionToNumber].
