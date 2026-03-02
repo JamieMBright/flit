@@ -461,7 +461,7 @@ void main() {
     });
 
     test('ownerEmails contains the known owner email', () {
-      expect(AdminConfig.ownerEmails, contains('jamiebright1@gmail.com'));
+      expect(AdminConfig.ownerEmails, contains('<owner-email>'));
     });
 
     test('ownerEmails does not contain empty string', () {
