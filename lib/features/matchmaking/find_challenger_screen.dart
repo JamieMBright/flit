@@ -5,6 +5,7 @@ import '../../core/theme/flit_colors.dart';
 import '../../data/models/challenge.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/providers/account_provider.dart';
+import '../../data/services/challenge_service.dart';
 import '../../data/services/matchmaking_service.dart';
 import '../play/play_screen.dart';
 
@@ -231,8 +232,17 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
     }
   }
 
-  void _launchChallenge() {
+  Future<void> _launchChallenge() async {
     if (_matchResult == null || _matchResult!.challengeId == null) return;
+
+    // Fetch the challenge to get per-round seeds so both players get
+    // identical countries and clues.
+    final challenge = await ChallengeService.instance.fetchChallenge(
+      _matchResult!.challengeId!,
+    );
+    if (!mounted) return;
+
+    final seeds = challenge?.rounds.map((r) => r.seed).toList();
 
     final planeId = ref.read(equippedPlaneIdProvider);
     final plane = CosmeticCatalog.getById(planeId);
@@ -251,6 +261,7 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
             builder: (context) => PlayScreen(
               challengeFriendName: _matchResult!.opponentName ?? 'Challenger',
               challengeId: _matchResult!.challengeId,
+              challengeSeeds: seeds,
               totalRounds: Challenge.totalRounds,
               planeColorScheme: plane?.colorScheme,
               planeWingSpan: plane?.wingSpan,
