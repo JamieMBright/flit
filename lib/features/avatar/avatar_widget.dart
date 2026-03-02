@@ -7,7 +7,12 @@ import '../../data/models/avatar_config.dart';
 import 'avatar_compositor.dart';
 
 /// In-memory cache for fetched DiceBear SVG strings.
+///
+/// Capped at [_svgCacheMaxSize] entries. When the limit is reached the oldest
+/// entry is evicted before inserting a new one (FIFO eviction via insertion
+/// order of a standard Dart [Map]).
 final Map<String, String> _svgCache = {};
+const int _svgCacheMaxSize = 100;
 
 /// Renders a DiceBear avatar as an SVG — fully offline.
 ///
@@ -149,6 +154,10 @@ class _AvatarFromUrlState extends State<_AvatarFromUrlStateful> {
       if (!mounted) return;
 
       if (response.statusCode == 200 && response.body.contains('<svg')) {
+        // Evict the oldest entry when the cache is at capacity.
+        if (_svgCache.length >= _svgCacheMaxSize) {
+          _svgCache.remove(_svgCache.keys.first);
+        }
         _svgCache[url] = response.body;
         setState(() {
           _svg = response.body;

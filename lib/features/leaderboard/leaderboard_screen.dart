@@ -1,9 +1,11 @@
 import 'dart:math' as math;
 
+import 'package:characters/characters.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/theme/rarity_colors.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/models/leaderboard_entry.dart';
 import '../../data/models/pilot_license.dart';
@@ -46,14 +48,7 @@ Color _emojiToColor(String emoji) {
 }
 
 /// Splits a round-emojis string into individual emoji characters.
-List<String> _splitEmojis(String emojis) =>
-    emojis.runes.map((r) => String.fromCharCode(r)).toList();
-
-/// Rarity colors (shared with license_screen).
-const Color _bronzeColor = Color(0xFFCD7F32);
-const Color _silverColor = Color(0xFFC0C0C0);
-const Color _goldColor = Color(0xFFFFD700);
-const Color _diamondColor = Color(0xFFB9F2FF);
+List<String> _splitEmojis(String emojis) => emojis.characters.toList();
 
 const List<Color> _perfectGradientColors = [
   Color(0xFFFF0000),
@@ -64,23 +59,6 @@ const List<Color> _perfectGradientColors = [
   Color(0xFF8B00FF),
   Color(0xFFFF0000),
 ];
-
-Color _colorForRarity(String rarityTier) {
-  switch (rarityTier) {
-    case 'Bronze':
-      return _bronzeColor;
-    case 'Silver':
-      return _silverColor;
-    case 'Gold':
-      return _goldColor;
-    case 'Diamond':
-      return _diamondColor;
-    case 'Perfect':
-      return _goldColor;
-    default:
-      return _bronzeColor;
-  }
-}
 
 /// Leaderboard screen with two top-level mode tabs (Daily Scramble and Training
 /// Flight), each with sub-tabs for Today / Last Month / All Time.
@@ -924,7 +902,7 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
     AvatarConfig? avatarConfig,
   ) {
     final rarity = _license?.rarityTier ?? 'Bronze';
-    final rarityColor = _colorForRarity(rarity);
+    final rarityColor = colorForRarity(rarity);
     final isPerfect = rarity == 'Perfect';
 
     return AnimatedBuilder(
@@ -1113,7 +1091,7 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
                         Text(
                           'Total: +${_license!.totalBoost}%',
                           style: TextStyle(
-                            color: _colorForRarity(_license!.rarityTier),
+                            color: colorForRarity(_license!.rarityTier),
                             fontSize: 12,
                             fontWeight: FontWeight.w900,
                           ),

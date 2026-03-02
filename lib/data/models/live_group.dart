@@ -446,12 +446,10 @@ class LiveGroupSession {
     required String hostUsername,
   }) {
     final now = DateTime.now().toUtc();
-    final seed =
-        now.year * 100000000 +
-        now.month * 1000000 +
-        now.day * 10000 +
-        now.hour * 100 +
-        now.minute;
+    // Include seconds and sub-second epoch to prevent identical seeds for
+    // sessions created in the same UTC minute. Using millisecondsSinceEpoch
+    // directly gives a unique value per session (also used as the session ID).
+    final seed = now.millisecondsSinceEpoch;
 
     return LiveGroupSession(
       id: 'lg_${now.millisecondsSinceEpoch}',
@@ -516,420 +514,58 @@ class LiveGroupSession {
     'invite_code': inviteCode,
   };
 
-  factory LiveGroupSession.fromJson(
-    Map<String, dynamic> json,
-  ) => LiveGroupSession(
-    id: json['id'] as String,
-    hostId: json['host_id'] as String,
-    hostUsername: json['host_username'] as String,
-    seed: json['seed'] as int,
-    status: LiveGroupStatus.values.firstWhere((s) => s.name == json['status']),
-    roundMode: LiveRoundMode.values.firstWhere(
-      (m) => m.name == json['round_mode'],
-      orElse: () => LiveRoundMode.standard,
-    ),
-    totalRounds: json['total_rounds'] as int? ?? 10,
-    currentRound: json['current_round'] as int? ?? 0,
-    enabledClueTypes:
-        (json['enabled_clue_types'] as List?)
-            ?.map((e) => e as String)
-            .toSet() ??
-        const {'flag', 'outline', 'borders', 'capital', 'stats'},
-    players:
-        (json['players'] as List?)
-            ?.map((p) => LiveGroupPlayer.fromJson(p as Map<String, dynamic>))
-            .toList() ??
-        const [],
-    rounds:
-        (json['rounds'] as List?)
-            ?.map((r) => LiveGroupRound.fromJson(r as Map<String, dynamic>))
-            .toList() ??
-        const [],
-    createdAt: DateTime.parse(json['created_at'] as String),
-    startedAt: json['started_at'] != null
-        ? DateTime.parse(json['started_at'] as String)
-        : null,
-    completedAt: json['completed_at'] != null
-        ? DateTime.parse(json['completed_at'] as String)
-        : null,
-    timeLimit: json['time_limit_ms'] != null
-        ? Duration(milliseconds: json['time_limit_ms'] as int)
-        : null,
-    inviteCode: json['invite_code'] as String?,
-  );
+  factory LiveGroupSession.fromJson(Map<String, dynamic> json) =>
+      LiveGroupSession(
+        id: json['id'] as String,
+        hostId: json['host_id'] as String,
+        hostUsername: json['host_username'] as String,
+        seed: json['seed'] as int,
+        status: LiveGroupStatus.values.firstWhere(
+          (s) => s.name == json['status'],
+          orElse: () => LiveGroupStatus.values.first,
+        ),
+        roundMode: LiveRoundMode.values.firstWhere(
+          (m) => m.name == json['round_mode'],
+          orElse: () => LiveRoundMode.standard,
+        ),
+        totalRounds: json['total_rounds'] as int? ?? 10,
+        currentRound: json['current_round'] as int? ?? 0,
+        enabledClueTypes:
+            (json['enabled_clue_types'] as List?)
+                ?.map((e) => e as String)
+                .toSet() ??
+            const {'flag', 'outline', 'borders', 'capital', 'stats'},
+        players:
+            (json['players'] as List?)
+                ?.map(
+                  (p) => LiveGroupPlayer.fromJson(p as Map<String, dynamic>),
+                )
+                .toList() ??
+            const [],
+        rounds:
+            (json['rounds'] as List?)
+                ?.map((r) => LiveGroupRound.fromJson(r as Map<String, dynamic>))
+                .toList() ??
+            const [],
+        createdAt: DateTime.parse(json['created_at'] as String),
+        startedAt: json['started_at'] != null
+            ? DateTime.parse(json['started_at'] as String)
+            : null,
+        completedAt: json['completed_at'] != null
+            ? DateTime.parse(json['completed_at'] as String)
+            : null,
+        timeLimit: json['time_limit_ms'] != null
+            ? Duration(milliseconds: json['time_limit_ms'] as int)
+            : null,
+        inviteCode: json['invite_code'] as String?,
+      );
 
-  // ── Placeholder data for UI development ──────────────────────────────
-
-  /// A sample mid-game session with 4 players for UI prototyping.
-  ///
-  /// The session is on round 6 of 10, using standard scoring with all
-  /// clue types enabled. Players have varying scores and progress to
-  /// exercise the streaming leaderboard layout.
-  factory LiveGroupSession.placeholder() {
-    final created = DateTime.utc(2025, 6, 15, 14, 0);
-    final started = DateTime.utc(2025, 6, 15, 14, 2);
-
-    const players = <LiveGroupPlayer>[
-      // Host -- leading the pack
-      LiveGroupPlayer(
-        id: 'player_host',
-        username: 'GlobeTrotter42',
-        isHost: true,
-        isSubscriber: true,
-        score: 5400,
-        roundsWon: 3,
-        currentRound: 6,
-        lastAnswerTime: Duration(seconds: 8, milliseconds: 320),
-        isFinished: false,
-      ),
-      // Strong competitor -- close behind
-      LiveGroupPlayer(
-        id: 'player_2',
-        username: 'AtlasAce',
-        isHost: false,
-        isSubscriber: true,
-        score: 5100,
-        roundsWon: 2,
-        currentRound: 6,
-        lastAnswerTime: Duration(seconds: 11, milliseconds: 750),
-        isFinished: false,
-      ),
-      // Invited non-subscriber -- mid-table
-      LiveGroupPlayer(
-        id: 'player_3',
-        username: 'MapNewbie',
-        isHost: false,
-        isSubscriber: false,
-        score: 3200,
-        roundsWon: 1,
-        currentRound: 5,
-        lastAnswerTime: Duration(seconds: 18, milliseconds: 400),
-        isFinished: false,
-      ),
-      // Slower player -- still on round 4
-      LiveGroupPlayer(
-        id: 'player_4',
-        username: 'WanderWiz',
-        isHost: false,
-        isSubscriber: true,
-        score: 2800,
-        roundsWon: 0,
-        currentRound: 4,
-        lastAnswerTime: Duration(seconds: 22, milliseconds: 100),
-        isFinished: false,
-      ),
-    ];
-
-    const rounds = <LiveGroupRound>[
-      LiveGroupRound(
-        roundNumber: 1,
-        countryAnswer: 'FR',
-        answers: {
-          'player_host': LiveGroupAnswer(
-            playerId: 'player_host',
-            answer: 'FR',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 6, milliseconds: 200),
-            pointsEarned: 1000,
-          ),
-          'player_2': LiveGroupAnswer(
-            playerId: 'player_2',
-            answer: 'FR',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 7, milliseconds: 800),
-            pointsEarned: 950,
-          ),
-          'player_3': LiveGroupAnswer(
-            playerId: 'player_3',
-            answer: 'DE',
-            isCorrect: false,
-            timeTaken: Duration(seconds: 14, milliseconds: 500),
-            pointsEarned: 0,
-          ),
-          'player_4': LiveGroupAnswer(
-            playerId: 'player_4',
-            answer: 'FR',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 19, milliseconds: 300),
-            pointsEarned: 800,
-          ),
-        },
-        firstCorrectPlayerId: 'player_host',
-        fastestTime: Duration(seconds: 6, milliseconds: 200),
-      ),
-      LiveGroupRound(
-        roundNumber: 2,
-        countryAnswer: 'BR',
-        answers: {
-          'player_host': LiveGroupAnswer(
-            playerId: 'player_host',
-            answer: 'BR',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 9, milliseconds: 100),
-            pointsEarned: 900,
-          ),
-          'player_2': LiveGroupAnswer(
-            playerId: 'player_2',
-            answer: 'BR',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 5, milliseconds: 400),
-            pointsEarned: 1000,
-          ),
-          'player_3': LiveGroupAnswer(
-            playerId: 'player_3',
-            answer: 'BR',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 16, milliseconds: 200),
-            pointsEarned: 750,
-          ),
-          'player_4': LiveGroupAnswer(
-            playerId: 'player_4',
-            answer: 'AR',
-            isCorrect: false,
-            timeTaken: Duration(seconds: 20, milliseconds: 700),
-            pointsEarned: 0,
-          ),
-        },
-        firstCorrectPlayerId: 'player_2',
-        fastestTime: Duration(seconds: 5, milliseconds: 400),
-      ),
-      LiveGroupRound(
-        roundNumber: 3,
-        countryAnswer: 'JP',
-        answers: {
-          'player_host': LiveGroupAnswer(
-            playerId: 'player_host',
-            answer: 'JP',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 4, milliseconds: 900),
-            pointsEarned: 1000,
-          ),
-          'player_2': LiveGroupAnswer(
-            playerId: 'player_2',
-            answer: 'JP',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 8, milliseconds: 300),
-            pointsEarned: 900,
-          ),
-          'player_3': LiveGroupAnswer(
-            playerId: 'player_3',
-            answer: 'JP',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 12, milliseconds: 600),
-            pointsEarned: 800,
-          ),
-          'player_4': LiveGroupAnswer(
-            playerId: 'player_4',
-            answer: 'JP',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 15, milliseconds: 800),
-            pointsEarned: 700,
-          ),
-        },
-        firstCorrectPlayerId: 'player_host',
-        fastestTime: Duration(seconds: 4, milliseconds: 900),
-      ),
-      LiveGroupRound(
-        roundNumber: 4,
-        countryAnswer: 'EG',
-        answers: {
-          'player_host': LiveGroupAnswer(
-            playerId: 'player_host',
-            answer: 'EG',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 10, milliseconds: 500),
-            pointsEarned: 850,
-          ),
-          'player_2': LiveGroupAnswer(
-            playerId: 'player_2',
-            answer: 'EG',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 9, milliseconds: 200),
-            pointsEarned: 900,
-          ),
-          'player_3': LiveGroupAnswer(
-            playerId: 'player_3',
-            answer: 'EG',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 18, milliseconds: 400),
-            pointsEarned: 650,
-          ),
-          'player_4': LiveGroupAnswer(
-            playerId: 'player_4',
-            answer: 'ZA',
-            isCorrect: false,
-            timeTaken: Duration(seconds: 25, milliseconds: 100),
-            pointsEarned: 0,
-          ),
-        },
-        firstCorrectPlayerId: 'player_2',
-        fastestTime: Duration(seconds: 9, milliseconds: 200),
-      ),
-      LiveGroupRound(
-        roundNumber: 5,
-        countryAnswer: 'AU',
-        answers: {
-          'player_host': LiveGroupAnswer(
-            playerId: 'player_host',
-            answer: 'AU',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 7, milliseconds: 700),
-            pointsEarned: 950,
-          ),
-          'player_2': LiveGroupAnswer(
-            playerId: 'player_2',
-            answer: 'AU',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 12, milliseconds: 100),
-            pointsEarned: 850,
-          ),
-          'player_3': LiveGroupAnswer(
-            playerId: 'player_3',
-            answer: 'AU',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 15, milliseconds: 900),
-            pointsEarned: 700,
-          ),
-          'player_4': LiveGroupAnswer(
-            playerId: 'player_4',
-            answer: 'AU',
-            isCorrect: true,
-            timeTaken: Duration(seconds: 20, milliseconds: 500),
-            pointsEarned: 600,
-          ),
-        },
-        firstCorrectPlayerId: 'player_host',
-        fastestTime: Duration(seconds: 7, milliseconds: 700),
-      ),
-    ];
-
-    return LiveGroupSession(
-      id: 'lg_placeholder_001',
-      hostId: 'player_host',
-      hostUsername: 'GlobeTrotter42',
-      seed: 20250615140200,
-      status: LiveGroupStatus.inProgress,
-      roundMode: LiveRoundMode.standard,
-      totalRounds: 10,
-      currentRound: 6,
-      enabledClueTypes: const {
-        'flag',
-        'outline',
-        'borders',
-        'capital',
-        'stats',
-      },
-      players: players,
-      rounds: rounds,
-      createdAt: created,
-      startedAt: started,
-      timeLimit: const Duration(seconds: 30),
-      inviteCode: 'FLTX7K',
-    );
-  }
-
-  /// A sample lobby session waiting for more players, for UI prototyping.
-  factory LiveGroupSession.placeholderLobby() {
-    final created = DateTime.utc(2025, 6, 15, 18, 30);
-
-    const players = <LiveGroupPlayer>[
-      LiveGroupPlayer(
-        id: 'player_host_2',
-        username: 'CartographyCat',
-        isHost: true,
-        isSubscriber: true,
-      ),
-      LiveGroupPlayer(
-        id: 'player_5',
-        username: 'MercatorMaven',
-        isHost: false,
-        isSubscriber: true,
-      ),
-    ];
-
-    return LiveGroupSession(
-      id: 'lg_placeholder_lobby',
-      hostId: 'player_host_2',
-      hostUsername: 'CartographyCat',
-      seed: 20250615183000,
-      status: LiveGroupStatus.lobby,
-      roundMode: LiveRoundMode.firstToAnswer,
-      totalRounds: 5,
-      currentRound: 0,
-      enabledClueTypes: const {'flag', 'capital'},
-      players: players,
-      rounds: const [],
-      createdAt: created,
-      timeLimit: const Duration(seconds: 20),
-      inviteCode: 'GEO2NR',
-    );
-  }
-
-  /// A sample completed session with final results, for UI prototyping.
-  factory LiveGroupSession.placeholderCompleted() {
-    final created = DateTime.utc(2025, 6, 15, 10, 0);
-    final started = DateTime.utc(2025, 6, 15, 10, 1);
-    final completed = DateTime.utc(2025, 6, 15, 10, 12);
-
-    const players = <LiveGroupPlayer>[
-      LiveGroupPlayer(
-        id: 'player_a',
-        username: 'EquatorExplorer',
-        isHost: true,
-        isSubscriber: true,
-        score: 8900,
-        roundsWon: 4,
-        currentRound: 10,
-        lastAnswerTime: Duration(seconds: 5, milliseconds: 100),
-        isFinished: true,
-      ),
-      LiveGroupPlayer(
-        id: 'player_b',
-        username: 'LatLongLegend',
-        isHost: false,
-        isSubscriber: true,
-        score: 7600,
-        roundsWon: 3,
-        currentRound: 10,
-        lastAnswerTime: Duration(seconds: 9, milliseconds: 800),
-        isFinished: true,
-      ),
-      LiveGroupPlayer(
-        id: 'player_c',
-        username: 'IslandHopper42',
-        isHost: false,
-        isSubscriber: false,
-        score: 6200,
-        roundsWon: 2,
-        currentRound: 10,
-        lastAnswerTime: Duration(seconds: 14, milliseconds: 300),
-        isFinished: true,
-      ),
-    ];
-
-    return LiveGroupSession(
-      id: 'lg_placeholder_done',
-      hostId: 'player_a',
-      hostUsername: 'EquatorExplorer',
-      seed: 20250615100100,
-      status: LiveGroupStatus.completed,
-      roundMode: LiveRoundMode.standard,
-      totalRounds: 10,
-      currentRound: 10,
-      enabledClueTypes: const {
-        'flag',
-        'outline',
-        'borders',
-        'capital',
-        'stats',
-      },
-      players: players,
-      rounds: const [],
-      createdAt: created,
-      startedAt: started,
-      completedAt: completed,
-      timeLimit: const Duration(seconds: 30),
-      inviteCode: 'ENDG4M',
-    );
-  }
+  // Placeholder factories removed — they were never called outside this file
+  // and contained hardcoded 2025 prototype data. Re-add via a dedicated test
+  // fixture if UI preview data is needed again.
+  //
+  // Removed:
+  //   LiveGroupSession.placeholder()
+  //   LiveGroupSession.placeholderLobby()
+  //   LiveGroupSession.placeholderCompleted()
 }

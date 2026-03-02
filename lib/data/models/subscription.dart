@@ -42,7 +42,7 @@ class Subscription {
       case SubscriptionTier.monthly:
       case SubscriptionTier.annual:
         if (expiresAt == null) return false;
-        return expiresAt!.isAfter(DateTime.now());
+        return expiresAt!.isAfter(DateTime.now().toUtc());
     }
   }
 

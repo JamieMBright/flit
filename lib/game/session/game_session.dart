@@ -47,13 +47,15 @@ class GameSession {
   /// Tier 2 (reveal country) →  −1,000
   /// Tier 3 (wayline)        →  −1,500
   /// Tier 4 (auto-navigate)  →  −2,500
-  static const List<int> _hintTierPenalties = [500, 1000, 1500, 2500];
+  /// Exposed publicly so the HUD can display the penalty for each tier
+  /// without duplicating the list.
+  static const List<int> hintTierPenalties = [500, 1000, 1500, 2500];
 
   /// Raw score before difficulty multiplier (base − penalties).
   ///
   /// Formula:
   ///   base     = 10,000 per round
-  ///   hints    = non-linear escalating penalty per tier (see [_hintTierPenalties])
+  ///   hints    = non-linear escalating penalty per tier (see [hintTierPenalties])
   ///             (0 hints = 0, all 4 = −5,500)
   ///   fuel     = −up to 5,000 scaled linearly by fuel burned
   ///             (100% fuel remaining = 0 penalty, 0% = −5,000)
@@ -63,8 +65,8 @@ class GameSession {
     if (!_completed) return 0;
     const int base = 10000;
     int hintPenalty = 0;
-    for (int i = 0; i < _hintsUsed && i < _hintTierPenalties.length; i++) {
-      hintPenalty += _hintTierPenalties[i];
+    for (int i = 0; i < _hintsUsed && i < hintTierPenalties.length; i++) {
+      hintPenalty += hintTierPenalties[i];
     }
     final int fuelPenalty = ((1.0 - _fuelFraction) * 5000).round();
     return max(0, base - hintPenalty - fuelPenalty);
@@ -104,7 +106,7 @@ class GameSession {
   /// Get the target position (capital city or center of area)
   Vector2 get targetPosition {
     // If we have a regional area, use its center
-    if (targetArea != null) {
+    if (targetArea != null && targetArea!.points.isNotEmpty) {
       var sumX = 0.0;
       var sumY = 0.0;
       for (final point in targetArea!.points) {
@@ -124,6 +126,7 @@ class GameSession {
     }
     // Fall back to center of country bounds
     final pts = targetCountry.allPoints;
+    if (pts.isEmpty) return Vector2.zero();
     var sumX = 0.0;
     var sumY = 0.0;
     for (final point in pts) {

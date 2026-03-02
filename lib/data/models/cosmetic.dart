@@ -107,7 +107,10 @@ class Cosmetic {
   factory Cosmetic.fromJson(Map<String, dynamic> json) => Cosmetic(
     id: json['id'] as String,
     name: json['name'] as String,
-    type: CosmeticType.values.firstWhere((t) => t.name == json['type']),
+    type: CosmeticType.values.firstWhere(
+      (t) => t.name == json['type'],
+      orElse: () => CosmeticType.values.first,
+    ),
     price: json['price'] as int,
     rarity: CosmeticRarity.values.firstWhere(
       (r) => r.name == json['rarity'],

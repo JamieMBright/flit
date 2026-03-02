@@ -73,7 +73,15 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     canvas.translate(offsetX, offsetY);
 
     // Rotate to match the plane heading relative to camera.
-    final visualHeading = delayedHeading - gameRef.heading;
+    // Wrap the difference to [-pi, pi] to prevent visual spinning during
+    // sharp turns where the raw delta crosses the ±pi boundary.
+    var visualHeading = delayedHeading - gameRef.heading;
+    while (visualHeading > pi) {
+      visualHeading -= 2 * pi;
+    }
+    while (visualHeading < -pi) {
+      visualHeading += 2 * pi;
+    }
     canvas.rotate(visualHeading);
 
     _renderCompanion(canvas);

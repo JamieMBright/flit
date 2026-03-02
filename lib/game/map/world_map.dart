@@ -78,10 +78,6 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
   void render(Canvas canvas) {
     super.render(canvas);
 
-    // In descent mode the OSM tile map provides the background.
-    // Skip the canvas globe so the game canvas stays transparent.
-    if (!gameRef.plane.isHighAltitude) return;
-
     final screenSize = gameRef.size;
     final center = Offset(
       screenSize.x * FlitGame.projectionCenterX,
@@ -89,26 +85,30 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     );
     final globeRadius = _globeScreenRadius(screenSize);
 
-    // 1. Dark sky/space background — always drawn, visible at high altitude.
-    _renderSkyBackground(canvas, screenSize);
+    final isHigh = gameRef.plane.isHighAltitude;
 
-    // 2. Ocean globe disc — smaller at high altitude to reveal horizon.
-    _renderOceanBackground(canvas, screenSize, center, globeRadius);
+    if (isHigh) {
+      // 1. Dark sky/space background
+      _renderSkyBackground(canvas, screenSize);
 
-    // 3. Atmospheric glow at globe edge (visible at high altitude).
-    _renderAtmosphereRing(canvas, center, globeRadius);
+      // 2. Ocean globe disc
+      _renderOceanBackground(canvas, screenSize, center, globeRadius);
 
-    // 4. Grid lines
-    _renderGrid(canvas, screenSize, globeRadius);
+      // 3. Atmospheric glow
+      _renderAtmosphereRing(canvas, center, globeRadius);
 
-    // 5. Countries
-    _renderCountries(canvas, screenSize, globeRadius);
+      // 4. Grid lines
+      _renderGrid(canvas, screenSize, globeRadius);
 
-    // 6. Coastline glow
-    _renderCoastlines(canvas, screenSize, globeRadius);
+      // 5. Countries
+      _renderCountries(canvas, screenSize, globeRadius);
+
+      // 6. Coastline glow
+      _renderCoastlines(canvas, screenSize, globeRadius);
+    }
 
     // 7. Cities (low altitude only)
-    if (!_isHighAltitude) {
+    if (!isHigh) {
       _renderCities(canvas, screenSize, globeRadius);
     }
   }

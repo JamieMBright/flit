@@ -4,6 +4,8 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
+import 'app_version.dart';
+
 /// Severity levels for reported errors.
 enum ErrorSeverity {
   warning,
@@ -128,8 +130,8 @@ class ErrorService {
   late final String _sessionId;
 
   /// Application version reported with every error payload.
-  /// Defaults to the value from pubspec.yaml.
-  static const String appVersion = 'v1.252';
+  /// Sourced from the single-source-of-truth in [kAppVersion].
+  static const String appVersion = kAppVersion;
 
   // ---------------------------------------------------------------------------
   // Queue
@@ -468,7 +470,13 @@ class ErrorService {
   // Platform detection
   // ---------------------------------------------------------------------------
 
-  String _detectPlatform() {
+  String _detectPlatform() => detectPlatform();
+  String _detectDeviceInfo() => detectDeviceInfo();
+
+  /// Returns a short platform identifier string (e.g. `'ios'`, `'android'`,
+  /// `'web'`). Exposed as a public static so other classes (e.g.
+  /// [ReportBugButton]) can reuse it without duplicating the logic.
+  static String detectPlatform() {
     if (kIsWeb) return 'web';
     switch (defaultTargetPlatform) {
       case TargetPlatform.iOS:
@@ -476,17 +484,20 @@ class ErrorService {
       case TargetPlatform.android:
         return 'android';
       case TargetPlatform.macOS:
-        return 'web'; // Desktop treated as web for telemetry.
+        return 'macos';
       case TargetPlatform.windows:
-        return 'web';
+        return 'windows';
       case TargetPlatform.linux:
-        return 'web';
+        return 'linux';
       case TargetPlatform.fuchsia:
         return 'android';
     }
   }
 
-  String _detectDeviceInfo() {
+  /// Returns a short device-info string (e.g. `'ios-device'`,
+  /// `'android-device'`, `'web-browser'`). Exposed as a public static so
+  /// other classes can reuse it without duplicating the logic.
+  static String detectDeviceInfo() {
     if (kIsWeb) return 'web-browser';
     switch (defaultTargetPlatform) {
       case TargetPlatform.iOS:

@@ -118,19 +118,22 @@ class GameSettings extends ChangeNotifier {
     required bool hapticEnabled,
   }) async {
     _hydrating = true;
-    this.turnSensitivity = turnSensitivity;
-    this.invertControls = invertControls;
-    this.enableNight = enableNight;
-    this.englishLabels = englishLabels;
-    this.mapStyle = mapStyle;
-    this.difficulty = difficulty;
-    this.soundEnabled = soundEnabled;
-    this.musicVolume = musicVolume;
-    this.effectsVolume = effectsVolume;
-    this.notificationsEnabled = notificationsEnabled;
-    this.hapticEnabled = hapticEnabled;
-    await _saveToLocal();
-    _hydrating = false;
+    try {
+      this.turnSensitivity = turnSensitivity;
+      this.invertControls = invertControls;
+      this.enableNight = enableNight;
+      this.englishLabels = englishLabels;
+      this.mapStyle = mapStyle;
+      this.difficulty = difficulty;
+      this.soundEnabled = soundEnabled;
+      this.musicVolume = musicVolume;
+      this.effectsVolume = effectsVolume;
+      this.notificationsEnabled = notificationsEnabled;
+      this.hapticEnabled = hapticEnabled;
+      await _saveToLocal();
+    } finally {
+      _hydrating = false;
+    }
   }
 
   // ─── Local Persistence ──────────────────────────────────────────

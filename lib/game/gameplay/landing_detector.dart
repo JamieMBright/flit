@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flame/game.dart';
 
+import '../../core/utils/math_utils.dart';
+
 /// How close the plane is to the landing target.
 enum LandingProximity {
   /// More than 30 degrees away.
@@ -95,9 +97,6 @@ class LandingDetector {
   /// (unlike the spherical law of cosines) and avoids the complexity
   /// of Vincenty's formula.
   static double greatCircleDistanceDeg(Vector2 a, Vector2 b) {
-    const deg2rad = pi / 180.0;
-    const rad2deg = 180.0 / pi;
-
     final lat1 = a.y * deg2rad;
     final lat2 = b.y * deg2rad;
     final dLat = (b.y - a.y) * deg2rad;

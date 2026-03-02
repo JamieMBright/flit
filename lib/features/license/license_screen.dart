@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/theme/rarity_colors.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
@@ -11,13 +12,8 @@ import '../avatar/avatar_widget.dart';
 import '../shop/shop_screen.dart';
 
 // =============================================================================
-// Rarity colors
+// Local color constants
 // =============================================================================
-
-const Color _bronzeColor = Color(0xFFCD7F32);
-const Color _silverColor = Color(0xFFC0C0C0);
-const Color _goldColor = Color(0xFFFFD700);
-const Color _diamondColor = Color(0xFFB9F2FF);
 
 const List<Color> _perfectGradientColors = [
   Color(0xFFFF0000),
@@ -28,23 +24,6 @@ const List<Color> _perfectGradientColors = [
   Color(0xFF8B00FF),
   Color(0xFFFF0000),
 ];
-
-Color _colorForRarity(String rarityTier) {
-  switch (rarityTier) {
-    case 'Bronze':
-      return _bronzeColor;
-    case 'Silver':
-      return _silverColor;
-    case 'Gold':
-      return _goldColor;
-    case 'Diamond':
-      return _diamondColor;
-    case 'Perfect':
-      return _goldColor;
-    default:
-      return _bronzeColor;
-  }
-}
 
 /// Returns the stat bar segment color based on the boost value (1-25).
 Color _statColor(int value) {
@@ -153,21 +132,43 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
 
     if (!mounted) return;
 
-    final avatarLuck = ref.read(avatarProvider).luckBonus;
-    setState(() {
-      _license = PilotLicense.reroll(
+    // Capture the cost before any state changes so the refund amount is exact.
+    final cost = _totalCost;
+
+    // Spend coins first. If this fails (insufficient funds) we stop before
+    // mutating the license.
+    final spent = ref
+        .read(accountProvider.notifier)
+        .spendCoins(cost, source: 'license_screen_reroll');
+    if (!spent) {
+      setState(() => _isRolling = false);
+      return;
+    }
+
+    // Roll the new license locally and persist it. If updateLicense throws,
+    // refund the coins so the player is not charged for a failed reroll.
+    try {
+      final avatarLuck = ref.read(avatarProvider).luckBonus;
+      final newLicense = PilotLicense.reroll(
         _license,
         lockedStats: _lockedStats,
         lockType: _lockClueType,
         luckBonus: avatarLuck,
       );
-      _isRolling = false;
-    });
-    ref
-        .read(accountProvider.notifier)
-        .spendCoins(_totalCost, source: 'license_screen_reroll');
-    // Persist the rerolled license to the account provider.
-    ref.read(accountProvider.notifier).updateLicense(_license);
+      // Persist the rerolled license to the account provider.
+      ref.read(accountProvider.notifier).updateLicense(newLicense);
+      setState(() {
+        _license = newLicense;
+        _isRolling = false;
+      });
+    } catch (e) {
+      // Refund coins — the license update did not complete.
+      ref
+          .read(accountProvider.notifier)
+          .addCoins(cost, applyBoost: false, source: 'license_reroll_refund');
+      setState(() => _isRolling = false);
+      rethrow;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -245,7 +246,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
 
   Widget _buildLicenseCard() {
     final rarity = _license.rarityTier;
-    final rarityColor = _colorForRarity(rarity);
+    final rarityColor = colorForRarity(rarity);
     final isPerfect = rarity == 'Perfect';
 
     return _AnimBuilder(
@@ -523,13 +524,13 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
               ),
             ),
             const SizedBox(height: 16),
-            _rarityTierRow('Bronze', '4-25 total', _bronzeColor),
+            _rarityTierRow('Bronze', '4-25 total', bronzeColor),
             const SizedBox(height: 6),
-            _rarityTierRow('Silver', '26-50 total', _silverColor),
+            _rarityTierRow('Silver', '26-50 total', silverColor),
             const SizedBox(height: 6),
-            _rarityTierRow('Gold', '51-75 total', _goldColor),
+            _rarityTierRow('Gold', '51-75 total', goldColor),
             const SizedBox(height: 6),
-            _rarityTierRow('Diamond', '76-90 total', _diamondColor),
+            _rarityTierRow('Diamond', '76-90 total', diamondColor),
             const SizedBox(height: 6),
             _rarityTierRow('Perfect', '91-100 total', const Color(0xFFFF0000)),
             const SizedBox(height: 16),

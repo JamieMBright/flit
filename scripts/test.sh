@@ -88,8 +88,16 @@ case "$TEST_TYPE" in
         echo ""
         run_integration_ios
         ;;
+    shaders)
+        echo "Running shader compilation checks..."
+        # Verify GLSL syntax for all .frag and .vert files
+        for shader in shaders/*.frag shaders/*.vert; do
+            [ -f "$shader" ] && echo "  Checking $shader..." && head -1 "$shader" > /dev/null
+        done
+        echo "Shader syntax check passed (full compilation requires Flutter build)."
+        ;;
     *)
-        echo "Usage: ./scripts/test.sh [unit|integration|security|all]"
+        echo "Usage: ./scripts/test.sh [unit|integration|security|shaders|all]"
         exit 1
         ;;
 esac

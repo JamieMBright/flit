@@ -154,50 +154,72 @@ async function appendToGitHub(newLines) {
     'User-Agent': 'flit-error-telemetry/1.0',
   };
 
-  try {
-    // 1. GET the current file to obtain its SHA (needed for updates).
-    let existingContent = '';
-    let sha = null;
+  // Retry up to 3 times to handle GitHub 409 SHA conflicts that occur when two
+  // concurrent requests race to update the same file. On a 409 we re-fetch the
+  // latest SHA and try again with a short back-off.
+  const MAX_ATTEMPTS = 3;
 
-    const getRes = await fetch(`${apiBase}?ref=${branch}`, { headers });
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    try {
+      // 1. GET the current file to obtain its SHA (needed for updates).
+      let existingContent = '';
+      let sha = null;
 
-    if (getRes.ok) {
-      const data = await getRes.json();
-      sha = data.sha;
-      existingContent = Buffer.from(data.content, 'base64').toString('utf-8');
-    } else if (getRes.status === 404) {
-      // File doesn't exist yet — will be created.
-      existingContent = '';
-      sha = null;
-    } else {
-      return { ok: false, reason: `github_get_failed_${getRes.status}` };
+      const getRes = await fetch(`${apiBase}?ref=${branch}`, { headers });
+
+      if (getRes.ok) {
+        const data = await getRes.json();
+        sha = data.sha;
+        existingContent = Buffer.from(data.content, 'base64').toString('utf-8');
+      } else if (getRes.status === 404) {
+        // File doesn't exist yet — will be created.
+        existingContent = '';
+        sha = null;
+      } else {
+        return { ok: false, reason: `github_get_failed_${getRes.status}` };
+      }
+
+      // 2. Append new JSONL lines.
+      const separator = existingContent.length > 0 && !existingContent.endsWith('\n') ? '\n' : '';
+      const updatedContent = existingContent + separator + newLines.join('\n') + '\n';
+
+      // 3. PUT the updated file.
+      const body = {
+        message: `chore: append ${newLines.length} error(s) from telemetry`,
+        content: Buffer.from(updatedContent).toString('base64'),
+        branch,
+      };
+      if (sha) body.sha = sha;
+
+      const putRes = await fetch(apiBase, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(body),
+      });
+
+      if (putRes.ok) {
+        return { ok: true, linesAppended: newLines.length };
+      }
+
+      // 409 Conflict means a concurrent write updated the SHA since our GET.
+      // Re-fetch on the next attempt with a short back-off.
+      if (putRes.status === 409 && attempt < MAX_ATTEMPTS - 1) {
+        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+        continue;
+      }
+
+      return { ok: false, reason: `github_put_failed_${putRes.status}` };
+    } catch (err) {
+      if (attempt < MAX_ATTEMPTS - 1) {
+        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+        continue;
+      }
+      return { ok: false, reason: `github_error_${err.message}` };
     }
-
-    // 2. Append new JSONL lines.
-    const separator = existingContent.length > 0 && !existingContent.endsWith('\n') ? '\n' : '';
-    const updatedContent = existingContent + separator + newLines.join('\n') + '\n';
-
-    // 3. PUT the updated file.
-    const body = {
-      message: `chore: append ${newLines.length} error(s) from telemetry`,
-      content: Buffer.from(updatedContent).toString('base64'),
-      branch,
-    };
-    if (sha) body.sha = sha;
-
-    const putRes = await fetch(apiBase, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify(body),
-    });
-
-    if (putRes.ok) {
-      return { ok: true, linesAppended: newLines.length };
-    }
-    return { ok: false, reason: `github_put_failed_${putRes.status}` };
-  } catch (err) {
-    return { ok: false, reason: `github_error_${err.message}` };
   }
+
+  // Should be unreachable — all paths inside the loop either return or continue.
+  return { ok: false, reason: 'github_max_retries_exceeded' };
 }
 
 // ---------------------------------------------------------------------------
@@ -299,13 +321,63 @@ async function handlePost(req, res) {
 }
 
 // ---------------------------------------------------------------------------
+// GitHub Contents API — read JSONL log file
+// ---------------------------------------------------------------------------
+
+// Reads errors from the persistent GitHub log file.
+// Returns an array of parsed error objects, or null if GitHub is not
+// configured or the file could not be fetched.
+async function readFromGitHub() {
+  const token = process.env.GITHUB_TOKEN;
+  const repo = process.env.GITHUB_REPO;
+  const filePath = process.env.GITHUB_LOG_PATH || 'logs/runtime-errors.jsonl';
+  const branch = process.env.GITHUB_BRANCH || 'main';
+
+  if (!token || !repo) return null;
+
+  const apiBase = `https://api.github.com/repos/${repo}/contents/${filePath}`;
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github.v3+json',
+    'User-Agent': 'flit-error-telemetry/1.0',
+  };
+
+  try {
+    const getRes = await fetch(`${apiBase}?ref=${branch}`, { headers });
+    if (!getRes.ok) return null;
+
+    const data = await getRes.json();
+    const content = Buffer.from(data.content, 'base64').toString('utf-8');
+
+    // Parse each non-empty JSONL line, skipping malformed lines.
+    const parsed = [];
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      try {
+        parsed.push(JSON.parse(trimmed));
+      } catch {
+        // Skip malformed lines.
+      }
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // GET handler
 // ---------------------------------------------------------------------------
 
-function handleGet(req, res) {
+async function handleGet(req, res) {
   const { since, limit: limitStr, severity } = req.query || {};
 
-  let filtered = [...errors];
+  // Always attempt to read from the persistent GitHub store so that errors
+  // are not lost after a cold start.  Fall back to the in-memory buffer when
+  // GitHub is not configured or the fetch fails.
+  const githubErrors = await readFromGitHub();
+  let allErrors = githubErrors !== null ? githubErrors : [...errors];
 
   if (since) {
     const sinceDate = new Date(since);
@@ -315,7 +387,7 @@ function handleGet(req, res) {
         message: 'Expected ISO 8601 timestamp',
       });
     }
-    filtered = filtered.filter((e) => new Date(e.timestamp) > sinceDate);
+    allErrors = allErrors.filter((e) => new Date(e.timestamp) > sinceDate);
   }
 
   if (severity) {
@@ -325,19 +397,20 @@ function handleGet(req, res) {
         message: `Expected one of: ${[...VALID_SEVERITIES].join(', ')}`,
       });
     }
-    filtered = filtered.filter((e) => e.severity === severity);
+    allErrors = allErrors.filter((e) => e.severity === severity);
   }
 
   let limit = parseInt(limitStr, 10);
   if (isNaN(limit) || limit < 1) limit = 100;
   limit = Math.min(limit, 500);
 
-  const result = filtered.slice(-limit).reverse();
+  const result = allErrors.slice(-limit).reverse();
 
   return res.status(200).json({
     count: result.length,
-    total: errors.length,
+    total: allErrors.length,
     errors: result,
+    source: githubErrors !== null ? 'github' : 'memory',
   });
 }
 

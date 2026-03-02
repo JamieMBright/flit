@@ -20,6 +20,10 @@ class EconomyConfigService {
 
   static const Duration _ttl = Duration(seconds: 30);
 
+  /// Short TTL used when caching an error fallback so the service retries
+  /// quickly rather than serving stale defaults for the full [_ttl] window.
+  static const Duration _errorTtl = Duration(seconds: 5);
+
   EconomyConfig? _cachedConfig;
   DateTime? _cacheTime;
 
@@ -58,7 +62,10 @@ class EconomyConfigService {
       debugPrint('[EconomyConfigService] getConfig failed: $e');
       final config = EconomyConfig.defaults();
       _cachedConfig = config;
-      _cacheTime = DateTime.now();
+      // Back-date the cache timestamp so the fallback expires after [_errorTtl]
+      // (5 s) rather than the full [_ttl] (30 s), allowing faster recovery when
+      // the database becomes reachable again.
+      _cacheTime = DateTime.now().subtract(_ttl - _errorTtl);
       return config;
     }
   }

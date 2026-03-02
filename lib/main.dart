@@ -109,8 +109,9 @@ Future<void> main() async {
   // it fires at the Flutter framework level, BEFORE the Navigator can
   // reset and dump the user back to the login screen.
   ErrorWidget.builder = (FlutterErrorDetails details) {
-    _fatalError ??=
-        '${details.exceptionAsString()}\n\n${details.stack ?? "no stack"}';
+    _fatalError ??= kReleaseMode
+        ? 'Something went wrong. Please restart the app.'
+        : '${details.exceptionAsString()}\n\n${details.stack ?? "no stack"}';
     return Material(
       color: const Color(0xFF0A0E1A),
       child: SafeArea(

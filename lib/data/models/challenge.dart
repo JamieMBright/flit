@@ -167,7 +167,10 @@ class ChallengeRound {
     return ChallengeRound(
       roundNumber: json['round_number'] as int,
       seed: json['seed'] as int,
-      clueType: ClueType.values.firstWhere((t) => t.name == json['clue_type']),
+      clueType: ClueType.values.firstWhere(
+        (t) => t.name == json['clue_type'],
+        orElse: () => ClueType.flag,
+      ),
       startLocation: Vector2(
         (startLoc[0] as num).toDouble(),
         (startLoc[1] as num).toDouble(),
@@ -251,7 +254,8 @@ class Challenge {
   int get challengedWins =>
       rounds.where((r) => r.isComplete && r.winner == 'challenged').length;
 
-  int get currentRound => rounds.where((r) => r.isComplete).length + 1;
+  int get currentRound =>
+      (rounds.where((r) => r.isComplete).length + 1).clamp(1, rounds.length);
 
   bool get isComplete =>
       challengerWins >= winsRequired || challengedWins >= winsRequired;

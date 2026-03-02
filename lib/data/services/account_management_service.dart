@@ -177,7 +177,7 @@ class AccountManagementService {
       final data = await _client
           .from('challenges')
           .select(
-            'challenger_name, challenged_name, status, winner_id, '
+            'challenger_id, challenger_name, challenged_name, status, winner_id, '
             'challenger_coins, challenged_coins, created_at, completed_at',
           )
           .or('challenger_id.eq.$userId,challenged_id.eq.$userId')
@@ -190,8 +190,11 @@ class AccountManagementService {
               'challenger': row['challenger_name'],
               'challenged': row['challenged_name'],
               'status': row['status'],
-              'coins_earned':
-                  row['challenger_coins'] ?? row['challenged_coins'],
+              // Show coins for the role the current user played:
+              // challenger_id rows → challenger_coins; challenged_id rows → challenged_coins.
+              'coins_earned': row['challenger_id'] == userId
+                  ? row['challenger_coins']
+                  : row['challenged_coins'],
               'played_at': row['created_at'],
               'completed_at': row['completed_at'],
             },
@@ -218,6 +221,17 @@ class AccountManagementService {
   /// After deletion, the caller must sign out the Supabase auth session
   /// and navigate to the login screen.
   Future<void> deleteAccountData(String userId) async {
+    // Track which steps have completed so that a failure mid-sequence can be
+    // diagnosed and retried or cleaned up manually.
+    final completed = <String>[];
+
+    void logStep(String step) {
+      completed.add(step);
+      debugPrint(
+        '[AccountManagementService] deleteAccountData: completed $step',
+      );
+    }
+
     try {
       // Delete in dependency order — child tables first, then profile last.
       // Each delete targets rows where the user is referenced.
@@ -227,37 +241,45 @@ class AccountManagementService {
           .from('friendships')
           .delete()
           .or('requester_id.eq.$userId,addressee_id.eq.$userId');
+      logStep('friendships');
 
       // 2. Challenges (user can be challenger or challenged).
       await _client
           .from('challenges')
           .delete()
           .or('challenger_id.eq.$userId,challenged_id.eq.$userId');
+      logStep('challenges');
 
       // 3. Scores.
       await _client.from('scores').delete().eq('user_id', userId);
+      logStep('scores');
 
       // 4. Account state.
       await _client.from('account_state').delete().eq('user_id', userId);
+      logStep('account_state');
 
       // 5. User settings.
       await _client.from('user_settings').delete().eq('user_id', userId);
+      logStep('user_settings');
 
       // 6. Profile (last, since other tables may reference it).
       await _client.from('profiles').delete().eq('id', userId);
+      logStep('profiles');
 
       // 7. Delete auth.users row via Edge Function (requires service_role — server-side only).
-      try {
-        await _client.functions.invoke(
-          'delete-auth-user',
-          body: {'user_id': userId},
-        );
-      } catch (e) {
-        // Log but don't block — data tables are already deleted.
-        debugPrint('Warning: auth.users deletion failed: $e');
-      }
+      // Not swallowed: if auth deletion fails the caller must be informed so the
+      // account can be fully removed. Data tables are already gone at this point,
+      // which is logged above to aid investigation.
+      await _client.functions.invoke(
+        'delete-auth-user',
+        body: {'user_id': userId},
+      );
+      logStep('auth_user');
     } catch (e) {
-      debugPrint('[AccountManagementService] deleteAccountData failed: $e');
+      debugPrint(
+        '[AccountManagementService] deleteAccountData failed after '
+        '[${completed.join(', ')}]: $e',
+      );
       rethrow;
     }
   }

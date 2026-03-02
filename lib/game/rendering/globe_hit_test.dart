@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flutter/painting.dart';
 
+import '../../core/utils/math_utils.dart';
 import 'camera_state.dart';
 
 /// Utility class for converting screen coordinates to globe (lat/lng)
@@ -150,7 +151,7 @@ class GlobeHitTest {
     final lng = atan2(hitZ, hitX);
 
     // Return as degrees: dx = longitude, dy = latitude.
-    return Offset(lng * 180.0 / pi, lat * 180.0 / pi);
+    return Offset(lng * rad2deg, lat * rad2deg);
   }
 
   /// Test whether a geographic point lies inside a polygon using the
@@ -226,9 +227,6 @@ class GlobeHitTest {
     double lat2,
     double lng2,
   ) {
-    const deg2rad = pi / 180.0;
-    const rad2deg = 180.0 / pi;
-
     final lat1r = lat1 * deg2rad;
     final lat2r = lat2 * deg2rad;
     final dLat = (lat2 - lat1) * deg2rad;

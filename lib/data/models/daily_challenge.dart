@@ -355,8 +355,13 @@ class DailyMedal {
 
   final int wins;
 
+  /// Whether the player has earned any medal yet.
+  bool get hasMedal => wins > 0;
+
   /// Current medal material based on total wins.
-  MedalMaterial get material {
+  /// Returns null when the player has 0 wins (no medal earned).
+  MedalMaterial? get material {
+    if (wins <= 0) return null;
     if (wins >= 16) return MedalMaterial.platinum;
     if (wins >= 11) return MedalMaterial.gold;
     if (wins >= 6) return MedalMaterial.silver;
@@ -364,13 +369,15 @@ class DailyMedal {
   }
 
   /// Stars within current tier (1-5).
-  int get stars {
+  /// Returns null when the player has 0 wins (no medal earned).
+  int? get stars {
+    if (wins <= 0) return null;
     if (wins >= 16) return (wins - 15).clamp(1, 5);
     if (wins >= 11) return (wins - 10).clamp(1, 5);
     if (wins >= 6) return (wins - 5).clamp(1, 5);
     return wins.clamp(1, 5);
   }
 
-  /// Total progression step (1-20).
-  int get step => wins.clamp(1, 20);
+  /// Total progression step (1-20). Returns 0 when no wins.
+  int get step => wins.clamp(0, 20);
 }

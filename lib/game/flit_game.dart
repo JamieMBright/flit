@@ -10,6 +10,7 @@ import '../core/services/error_service.dart';
 import '../core/services/game_settings.dart';
 import '../core/theme/flit_colors.dart';
 import '../core/utils/game_log.dart';
+import '../core/utils/math_utils.dart';
 import '../core/utils/web_error_bridge.dart';
 import '../data/models/avatar_config.dart';
 import 'components/city_label_overlay.dart';
@@ -27,12 +28,6 @@ import 'rendering/globe_renderer.dart';
 import 'rendering/shader_manager.dart';
 
 final _log = GameLog.instance;
-
-/// Degrees-to-radians constant.
-const double _deg2rad = pi / 180;
-
-/// Radians-to-degrees constant.
-const double _rad2deg = 180 / pi;
 
 /// Main game class for Flit.
 ///
@@ -116,8 +111,11 @@ class FlitGame extends FlameGame
   final AvatarCompanion companionType;
 
   /// Whether plane motion is enabled. When false, the plane stays stationary
-  /// and no movement/steering/input is processed. Used for Step 1 rebuild
-  /// to verify static camera + projection before adding motion.
+  /// and no movement/steering/input is processed.
+  ///
+  /// Defaults to true for all normal gameplay. Pass false to create a
+  /// camera-only instance (e.g. globe preview screens that show the world
+  /// without a flyable plane).
   final bool motionEnabled;
 
   /// Plane handling multiplier (from equipped plane attributes).
@@ -458,8 +456,8 @@ class FlitGame extends FlameGame
   /// Mirrors the perspective projection in globe.frag's cameraRayDir.
   Vector2 _shaderWorldToScreen(Vector2 lngLat) {
     final cam = _globeRenderer!.camera;
-    final latRad = lngLat.y * _deg2rad;
-    final lngRad = lngLat.x * _deg2rad;
+    final latRad = lngLat.y * deg2rad;
+    final lngRad = lngLat.x * deg2rad;
 
     // World point on unit sphere
     final px = cos(latRad) * cos(lngRad);
@@ -600,6 +598,7 @@ class FlitGame extends FlameGame
       if (isFlatMapMode) {
         // Regional flat map mode — static satellite view with boundaries.
         // The satellite tiles come from an OSM tile layer behind the game canvas.
+        FlatMapRenderer.clearCache();
         _flatMapRenderer = FlatMapRenderer(region: region);
         await add(_flatMapRenderer!);
         _shaderReady = false;
@@ -1012,8 +1011,8 @@ class FlitGame extends FlameGame
     if (angularDist < 1e-12) return; // Avoid division by zero when stationary
 
     // --- Convert current state to 3D ---
-    final latRad = _worldPosition.y * _deg2rad;
-    final lngRad = _worldPosition.x * _deg2rad;
+    final latRad = _worldPosition.y * deg2rad;
+    final lngRad = _worldPosition.x * deg2rad;
     final cosLat = cos(latRad);
     final sinLat = sin(latRad);
     final cosLng = cos(lngRad);
@@ -1054,8 +1053,8 @@ class FlitGame extends FlameGame
     final newLngRad = atan2(newPz, newPx);
 
     _worldPosition = Vector2(
-      _normalizeLng(newLngRad * _rad2deg),
-      newLatRad * _rad2deg, // No clamp — asin naturally limits to [-90°, 90°]
+      _normalizeLng(newLngRad * rad2deg),
+      newLatRad * rad2deg, // No clamp — asin naturally limits to [-90°, 90°]
     );
 
     // --- Update heading: project velocity onto new local tangent basis ---
@@ -1196,8 +1195,8 @@ class FlitGame extends FlameGame
     final camBearing = _cameraHeading + pi / 2;
 
     // Great-circle destination: move offsetRad ahead of the plane (for Canvas).
-    final planeLat = _worldPosition.y * _deg2rad;
-    final planeLng = _worldPosition.x * _deg2rad;
+    final planeLat = _worldPosition.y * deg2rad;
+    final planeLng = _worldPosition.x * deg2rad;
 
     final sinPLat = sin(planeLat);
     final cosPLat = cos(planeLat);
@@ -1218,8 +1217,8 @@ class FlitGame extends FlameGame
         );
 
     _cameraOffsetPosition = Vector2(
-      _normalizeLng(aheadLng * _rad2deg),
-      aheadLat * _rad2deg,
+      _normalizeLng(aheadLng * rad2deg),
+      aheadLat * rad2deg,
     );
 
     // Compute a point BEHIND the plane for the shader chase camera.
@@ -1240,8 +1239,8 @@ class FlitGame extends FlameGame
         );
 
     _shaderCameraPosition = Vector2(
-      _normalizeLng(behindLng * _rad2deg),
-      behindLat * _rad2deg,
+      _normalizeLng(behindLng * rad2deg),
+      behindLat * rad2deg,
     );
   }
 
@@ -1362,10 +1361,10 @@ class FlitGame extends FlameGame
     }
 
     // Compute initial bearing from plane to waymarker (great-circle).
-    final lat1 = _worldPosition.y * _deg2rad;
-    final lng1 = _worldPosition.x * _deg2rad;
-    final lat2 = _waymarker!.y * _deg2rad;
-    final lng2 = _waymarker!.x * _deg2rad;
+    final lat1 = _worldPosition.y * deg2rad;
+    final lng1 = _worldPosition.x * deg2rad;
+    final lat2 = _waymarker!.y * deg2rad;
+    final lng2 = _waymarker!.x * deg2rad;
     final dLng = lng2 - lng1;
 
     final y = sin(dLng) * cos(lat2);
@@ -1725,15 +1724,15 @@ class FlitGame extends FlameGame
 
   /// Great-circle angular distance between two (lng, lat) points, in degrees.
   double _greatCircleDistDeg(Vector2 a, Vector2 b) {
-    final lat1 = a.y * _deg2rad;
-    final lat2 = b.y * _deg2rad;
-    final dLat = (b.y - a.y) * _deg2rad;
-    final dLng = (b.x - a.x) * _deg2rad;
+    final lat1 = a.y * deg2rad;
+    final lat2 = b.y * deg2rad;
+    final dLat = (b.y - a.y) * deg2rad;
+    final dLng = (b.x - a.x) * deg2rad;
 
     final h =
         sin(dLat / 2) * sin(dLat / 2) +
         cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
     final c = 2 * atan2(sqrt(h), sqrt(1 - h));
-    return c * _rad2deg;
+    return c * rad2deg;
   }
 }

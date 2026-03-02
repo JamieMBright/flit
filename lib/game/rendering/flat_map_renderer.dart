@@ -151,6 +151,14 @@ class FlatMapRenderer extends Component with HasGameRef<FlitGame> {
 
   static final Map<String, TextPainter> _labelCache = {};
 
+  /// Clears the label painter cache.
+  ///
+  /// Call this whenever the active region changes so that stale entries from
+  /// the previous region do not accumulate in memory across region switches.
+  static void clearCache() {
+    _labelCache.clear();
+  }
+
   void _renderLabels(
     Canvas canvas,
     List<RegionalArea> areas,

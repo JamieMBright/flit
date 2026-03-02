@@ -11,12 +11,12 @@ class UpdateRequiredScreen extends StatelessWidget {
   const UpdateRequiredScreen({super.key});
 
   void _openStore() {
-    // Replace with actual App Store / Play Store URLs when published.
+    // TODO: Replace with actual App Store / Play Store URLs when app is published.
     final Uri storeUrl;
     if (kIsWeb) {
       return; // Web is always latest.
     } else if (Platform.isIOS) {
-      storeUrl = Uri.parse('https://apps.apple.com/app/flit/idXXXXXXXXXX');
+      storeUrl = Uri.parse('https://apps.apple.com/app/flit/id<app-id>');
     } else {
       storeUrl = Uri.parse(
         'https://play.google.com/store/apps/details?id=app.flit',

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../services/error_service.dart';
@@ -234,10 +233,9 @@ class ReportBugButton extends StatelessWidget {
               )
               .join(' | ');
 
-    // Detect platform and device info using ErrorService's own detection
-    // (accessible through the fields on CapturedError after report).
-    final platform = _detectPlatform();
-    final deviceInfo = _detectDeviceInfo();
+    // Delegate platform/device detection to ErrorService to avoid duplication.
+    final platform = ErrorService.detectPlatform();
+    final deviceInfo = ErrorService.detectDeviceInfo();
 
     errorService.reportCritical(
       'User bug report: $description',
@@ -251,35 +249,5 @@ class ReportBugButton extends StatelessWidget {
         'appVersion': ErrorService.appVersion,
       },
     );
-  }
-
-  /// Detect platform string (mirrors ErrorService logic).
-  static String _detectPlatform() {
-    if (kIsWeb) return 'web';
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.iOS:
-        return 'ios';
-      case TargetPlatform.android:
-        return 'android';
-      case TargetPlatform.macOS:
-      case TargetPlatform.windows:
-      case TargetPlatform.linux:
-        return 'desktop';
-      case TargetPlatform.fuchsia:
-        return 'android';
-    }
-  }
-
-  /// Detect device info string (mirrors ErrorService logic).
-  static String _detectDeviceInfo() {
-    if (kIsWeb) return 'web-browser';
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.iOS:
-        return 'ios-device';
-      case TargetPlatform.android:
-        return 'android-device';
-      default:
-        return 'desktop-${defaultTargetPlatform.name}';
-    }
   }
 }

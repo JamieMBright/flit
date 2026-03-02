@@ -122,6 +122,10 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
   static final Map<String, TextPainter> _seaLabelCache = {};
 
+  /// Tracks the last opacity value used to build each cached TextPainter so
+  /// we only re-layout when opacity changes by more than 1/255 (one alpha step).
+  static final Map<String, double> _seaLabelOpacityCache = {};
+
   void _renderSeaLabels(
     Canvas canvas,
     double alt,
@@ -149,7 +153,14 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
           screenPos.y > screenH)
         continue;
 
-      final painter = _seaLabelCache.putIfAbsent(sea.name, () {
+      // Build a new TextPainter only on first use or when opacity changes
+      // by more than one alpha step (1/255 ≈ 0.004). This avoids rebuilding
+      // the painter every frame while still reflecting fade transitions.
+      final cachedOpacity = _seaLabelOpacityCache[sea.name];
+      final needsRebuild =
+          cachedOpacity == null || (cachedOpacity - opacity).abs() > 0.004;
+
+      if (needsRebuild) {
         final tp = TextPainter(
           text: TextSpan(
             text: sea.name.toUpperCase(),
@@ -162,20 +173,11 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
           ),
           textDirection: TextDirection.ltr,
         )..layout();
-        return tp;
-      });
+        _seaLabelCache[sea.name] = tp;
+        _seaLabelOpacityCache[sea.name] = opacity;
+      }
 
-      // Update opacity each frame
-      painter.text = TextSpan(
-        text: sea.name.toUpperCase(),
-        style: TextStyle(
-          color: const Color(0xFF88AACC).withOpacity(opacity),
-          fontSize: 9,
-          fontWeight: FontWeight.w300,
-          letterSpacing: 2.0,
-        ),
-      );
-      painter.layout();
+      final painter = _seaLabelCache[sea.name]!;
 
       painter.paint(
         canvas,

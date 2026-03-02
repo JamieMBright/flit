@@ -94,7 +94,7 @@ run_sql() {
   local file="$2"
   echo -e "${YELLOW}Running $label...${NC}"
   echo "  File: $file"
-  if psql "$SUPABASE_DB_URL" -f "$file" 2>&1; then
+  if psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f "$file" 2>&1; then
     echo -e "${GREEN}$label completed successfully.${NC}"
   else
     echo -e "${RED}$label failed. Check the output above.${NC}"

@@ -26,6 +26,14 @@ enum ShaderLOD {
 /// Hysteresis is built in: the system requires a sustained period of
 /// frames above or below the threshold before switching, preventing
 /// distracting flip-flopping between quality levels.
+///
+/// TODO(integration): Wire [ShaderLODManager] into [ShaderManager] / the
+/// render loop. Each frame, call [recordFrameTime] with the delta time, then
+/// read [lodUniforms] and forward those values to the shader (e.g. cloud
+/// iterations, foam quality, atmosphere quality, city-lights toggle). The
+/// manager is fully implemented and ready to use — it just needs to be
+/// instantiated and connected to the per-frame paint/configure call in
+/// [GlobeRenderer].
 class ShaderLODManager {
   ShaderLODManager({
     this.windowSize = 60,

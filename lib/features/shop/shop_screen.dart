@@ -151,7 +151,10 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
                       onReveal: (Cosmetic plane) {
                         ref
                             .read(accountProvider.notifier)
-                            .purchaseCosmetic(plane.id, 10000);
+                            .purchaseCosmetic(
+                              plane.id,
+                              _MysteryPlaneButton._mysteryCost,
+                            );
                         setState(() {});
                       },
                     ),

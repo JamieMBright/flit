@@ -63,6 +63,7 @@ class SocialTitle {
     name: json['name'] as String,
     category: TitleCategory.values.firstWhere(
       (c) => c.name == json['category'],
+      orElse: () => TitleCategory.values.first,
     ),
     threshold: json['threshold'] as int,
     description: json['description'] as String,

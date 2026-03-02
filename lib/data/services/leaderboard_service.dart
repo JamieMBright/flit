@@ -272,13 +272,13 @@ class LeaderboardService {
       final now = DateTime.now().toUtc();
       final startOfDay = DateTime.utc(now.year, now.month, now.day);
 
-      final data = await _client
+      final response = await _client
           .from('scores')
-          .select('id')
+          .select('*', const FetchOptions(count: CountOption.exact, head: true))
           .eq('region', 'daily')
           .gte('created_at', startOfDay.toIso8601String());
 
-      final count = data.length;
+      final count = response.count ?? 0;
       _playerCountCache.set(cacheKey, count);
       return count;
     } catch (e) {
@@ -380,6 +380,7 @@ class LeaderboardService {
       final data = await _client
           .from('daily_streak_leaderboard')
           .select()
+          .order('current_streak', ascending: false)
           .limit(limit);
 
       final result = data.asMap().entries.map((e) {
@@ -518,7 +519,7 @@ class LeaderboardService {
             .select('user_id')
             .neq('region', 'daily');
       }
-      final aboveData = await countQuery.gt('score', bestScore).limit(1000);
+      final aboveData = await countQuery.gt('score', bestScore).limit(10000);
       // Also count those with same score but faster time.
       PostgrestFilterBuilder<List<Map<String, dynamic>>> tieQuery;
       if (isDailyScramble) {
@@ -535,7 +536,7 @@ class LeaderboardService {
       final tieData = await tieQuery
           .eq('score', bestScore)
           .lt('time_ms', bestTime)
-          .limit(1000);
+          .limit(10000);
 
       // Rank = number of distinct users above + 1.
       final usersAbove = <String>{
@@ -691,12 +692,7 @@ class LeaderboardService {
   ) async {
     final cacheKey = 'best_modes_$userId';
     final cached = _historyCache.get(cacheKey);
-    if (cached != null) {
-      return {
-        'daily': cached.isNotEmpty ? Map<String, int>.from(cached[0]) : null,
-        'training': cached.length > 1 ? Map<String, int>.from(cached[1]) : null,
-      };
-    }
+    if (cached != null) return Map<String, Map<String, int>?>.from(cached);
 
     try {
       // Best daily score.

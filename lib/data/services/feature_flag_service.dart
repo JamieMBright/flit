@@ -15,10 +15,10 @@ class FeatureFlagService {
   Map<String, bool>? _cache;
   DateTime? _cacheTime;
 
-  /// Whether a flag is enabled. Defaults to `true` if unknown.
+  /// Whether a flag is enabled. Defaults to `false` if unknown (fail-closed).
   Future<bool> isEnabled(String flagKey) async {
     final flags = await fetchAll();
-    return flags[flagKey] ?? true;
+    return flags[flagKey] ?? false;
   }
 
   /// Fetch all flags as a key→bool map.
