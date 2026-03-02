@@ -20,6 +20,7 @@ import '../matchmaking/find_challenger_screen.dart';
 import '../play/practice_screen.dart';
 import '../play/region_select_screen.dart';
 import '../profile/profile_screen.dart';
+import '../quiz/quiz_setup_screen.dart';
 import '../shop/shop_screen.dart';
 import 'announcement_banner.dart';
 
@@ -340,6 +341,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
               const SizedBox(height: 10),
             ],
+            _GameModeCard(
+              title: 'Flight School',
+              subtitle: 'Quiz yourself on states, capitals & more',
+              icon: Icons.quiz_rounded,
+              onTap: () => _closeSheetAndNavigate(ctx, const QuizSetupScreen()),
+            ),
+            const SizedBox(height: 10),
             _GameModeCard(
               title: 'Dogfight',
               subtitle: 'Challenge your friends head-to-head',
