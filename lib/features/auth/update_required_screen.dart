@@ -1,10 +1,10 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/platform_stub.dart'
+    if (dart.library.io) '../../core/utils/platform_native.dart';
 
 /// Full-screen gate shown when the app version is below the required minimum.
 class UpdateRequiredScreen extends StatelessWidget {
