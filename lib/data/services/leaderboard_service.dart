@@ -37,6 +37,9 @@ class LeaderboardService {
     const Duration(seconds: 30),
   );
   final _rankCache = TtlCache<LeaderboardEntry?>(const Duration(seconds: 30));
+  final _bestScoresCache = TtlCache<Map<String, Map<String, int>?>>(
+    const Duration(seconds: 30),
+  );
 
   /// Drop every cached result. Call after the current user submits a score.
   void invalidateCache() {
@@ -46,6 +49,7 @@ class LeaderboardService {
     _playerCountCache.invalidate();
     _historyCache.invalidate();
     _rankCache.invalidate();
+    _bestScoresCache.invalidate();
   }
 
   // ---------------------------------------------------------------------------
@@ -274,11 +278,12 @@ class LeaderboardService {
 
       final response = await _client
           .from('scores')
-          .select('*', const FetchOptions(count: CountOption.exact, head: true))
+          .select('*')
           .eq('region', 'daily')
-          .gte('created_at', startOfDay.toIso8601String());
+          .gte('created_at', startOfDay.toIso8601String())
+          .count(CountOption.exact);
 
-      final count = response.count ?? 0;
+      final count = response.count;
       _playerCountCache.set(cacheKey, count);
       return count;
     } catch (e) {
@@ -691,8 +696,8 @@ class LeaderboardService {
     String userId,
   ) async {
     final cacheKey = 'best_modes_$userId';
-    final cached = _historyCache.get(cacheKey);
-    if (cached != null) return Map<String, Map<String, int>?>.from(cached);
+    final cached = _bestScoresCache.get(cacheKey);
+    if (cached != null) return cached;
 
     try {
       // Best daily score.
@@ -732,7 +737,12 @@ class LeaderboardService {
         };
       }
 
-      return {'daily': daily, 'training': training};
+      final result = <String, Map<String, int>?>{
+        'daily': daily,
+        'training': training,
+      };
+      _bestScoresCache.set(cacheKey, result);
+      return result;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchBestScoresByMode failed: $e');
       return {'daily': null, 'training': null};
