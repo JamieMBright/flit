@@ -463,6 +463,10 @@ CREATE TABLE IF NOT EXISTS public.challenges (
   challenged_name  TEXT NOT NULL,
   status           TEXT NOT NULL DEFAULT 'pending'
                      CHECK (status IN ('pending', 'in_progress', 'completed', 'expired', 'declined')),
+  game_mode        TEXT NOT NULL DEFAULT 'flight'
+                     CHECK (game_mode IN ('flight', 'quiz')),
+  quiz_category    TEXT,
+  quiz_mode        TEXT,
   rounds           JSONB NOT NULL DEFAULT '[]',
   winner_id        UUID REFERENCES auth.users(id),
   challenger_coins INT NOT NULL DEFAULT 0,
@@ -505,6 +509,8 @@ CREATE TABLE IF NOT EXISTS public.matchmaking_pool (
   id                UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id           UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   region            TEXT NOT NULL DEFAULT 'world',
+  game_mode         TEXT NOT NULL DEFAULT 'flight'
+                      CHECK (game_mode IN ('flight', 'quiz')),
   seed              TEXT NOT NULL,
   rounds            JSONB NOT NULL DEFAULT '[]',
   elo_rating        INT NOT NULL,

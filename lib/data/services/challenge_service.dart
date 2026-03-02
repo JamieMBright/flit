@@ -6,8 +6,11 @@ import 'package:flame/components.dart';
 
 import '../models/challenge.dart';
 import '../../game/clues/clue_types.dart';
+import '../../game/quiz/quiz_category.dart';
 
-/// Service for managing H2H dogfight challenges via Supabase.
+/// Service for managing H2H challenges via Supabase.
+///
+/// Supports multiple game modes: flight (dogfight) and quiz (flight school).
 class ChallengeService {
   ChallengeService._();
 
@@ -24,33 +27,54 @@ class ChallengeService {
   ///
   /// Generates [Challenge.totalRounds] round seeds so both players play the
   /// same countries in the same order. Returns the challenge ID on success.
+  ///
+  /// For quiz challenges, [quizCategory] and [quizMode] specify the quiz
+  /// configuration that both players will use.
   Future<String?> createChallenge({
     required String challengedId,
     required String challengedName,
     required String challengerName,
+    ChallengeGameMode gameMode = ChallengeGameMode.flight,
+    QuizCategory? quizCategory,
+    QuizMode? quizMode,
   }) async {
     if (_userId == null) return null;
     try {
       final rng = Random();
+      // For quiz challenges we use a single round; for flight, best-of-5.
+      final roundCount = gameMode == ChallengeGameMode.quiz
+          ? 1
+          : Challenge.totalRounds;
+
       // Generate deterministic seeds for each round.
       final rounds = List.generate(
-        Challenge.totalRounds,
+        roundCount,
         (i) => <String, dynamic>{
           'round_number': i + 1,
           'seed': rng.nextInt(1 << 31),
         },
       );
 
+      final insertData = <String, dynamic>{
+        'challenger_id': _userId,
+        'challenger_name': challengerName,
+        'challenged_id': challengedId,
+        'challenged_name': challengedName,
+        'status': 'pending',
+        'game_mode': gameMode.dbName,
+        'rounds': rounds,
+      };
+
+      if (quizCategory != null) {
+        insertData['quiz_category'] = quizCategory.name;
+      }
+      if (quizMode != null) {
+        insertData['quiz_mode'] = quizMode.name;
+      }
+
       final data = await _client
           .from('challenges')
-          .insert({
-            'challenger_id': _userId,
-            'challenger_name': challengerName,
-            'challenged_id': challengedId,
-            'challenged_name': challengedName,
-            'status': 'pending',
-            'rounds': rounds,
-          })
+          .insert(insertData)
           .select('id')
           .single();
 
@@ -252,6 +276,70 @@ class ChallengeService {
   }
 
   // ---------------------------------------------------------------------------
+  // Submit quiz round result
+  // ---------------------------------------------------------------------------
+
+  /// Submit the result of a quiz round.
+  ///
+  /// Quiz challenges are single-round: both players play the same category
+  /// with the same seed, and the higher score wins.
+  Future<bool> submitQuizRoundResult({
+    required String challengeId,
+    required int score,
+    required int timeMs,
+    required int correctCount,
+    required int wrongCount,
+  }) async {
+    if (_userId == null) return false;
+
+    for (var attempt = 0; attempt <= _maxRetries; attempt++) {
+      try {
+        final row = await _client
+            .from('challenges')
+            .select('challenger_id, challenged_id, rounds, status')
+            .eq('id', challengeId)
+            .single();
+
+        final isChallenger = row['challenger_id'] == _userId;
+        final rounds = List<Map<String, dynamic>>.from(
+          (row['rounds'] as List).map(
+            (r) => Map<String, dynamic>.from(r as Map),
+          ),
+        );
+
+        if (rounds.isEmpty) return false;
+
+        // Quiz challenges use round 0 (single round).
+        final prefix = isChallenger ? 'challenger' : 'challenged';
+        rounds[0]['${prefix}_time_ms'] = timeMs;
+        rounds[0]['${prefix}_score'] = score;
+        rounds[0]['${prefix}_quiz_correct'] = correctCount;
+        rounds[0]['${prefix}_quiz_wrong'] = wrongCount;
+
+        final newStatus = row['status'] == 'pending'
+            ? 'in_progress'
+            : row['status'];
+
+        await _client
+            .from('challenges')
+            .update({'rounds': rounds, 'status': newStatus})
+            .eq('id', challengeId);
+
+        return true;
+      } catch (e) {
+        debugPrint(
+          '[ChallengeService] submitQuizRoundResult failed '
+          '(attempt ${attempt + 1}/${_maxRetries + 1}): $e',
+        );
+        if (attempt < _maxRetries) {
+          await Future<void>.delayed(Duration(seconds: 1 << attempt));
+        }
+      }
+    }
+    return false;
+  }
+
+  // ---------------------------------------------------------------------------
   // Complete challenge
   // ---------------------------------------------------------------------------
 
@@ -400,6 +488,10 @@ class ChallengeService {
       );
     }).toList();
 
+    // Parse quiz metadata if present.
+    final quizCatStr = row['quiz_category'] as String?;
+    final quizModeStr = row['quiz_mode'] as String?;
+
     return Challenge(
       id: row['id'] as String,
       challengerId: row['challenger_id'] as String,
@@ -407,7 +499,22 @@ class ChallengeService {
       challengedId: row['challenged_id'] as String,
       challengedName: row['challenged_name'] as String,
       status: ChallengeStatus.fromDb(row['status'] as String),
+      gameMode: ChallengeGameMode.fromDb(
+        row['game_mode'] as String? ?? 'flight',
+      ),
       rounds: rounds,
+      quizCategory: quizCatStr != null
+          ? QuizCategory.values.firstWhere(
+              (c) => c.name == quizCatStr,
+              orElse: () => QuizCategory.mixed,
+            )
+          : null,
+      quizMode: quizModeStr != null
+          ? QuizMode.values.firstWhere(
+              (m) => m.name == quizModeStr,
+              orElse: () => QuizMode.allStates,
+            )
+          : null,
       winnerId: row['winner_id'] as String?,
       challengerCoins: row['challenger_coins'] as int? ?? 0,
       challengedCoins: row['challenged_coins'] as int? ?? 0,

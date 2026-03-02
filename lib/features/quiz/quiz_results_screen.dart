@@ -14,9 +14,20 @@ import 'quiz_setup_screen.dart';
 /// - Best streak
 /// - Correct/Wrong breakdown
 class QuizResultsScreen extends StatefulWidget {
-  const QuizResultsScreen({super.key, required this.summary});
+  const QuizResultsScreen({
+    super.key,
+    required this.summary,
+    this.challengeId,
+    this.opponentName,
+  });
 
   final QuizSummary summary;
+
+  /// Non-null when this was an H2H challenge.
+  final String? challengeId;
+
+  /// Opponent name for challenge display.
+  final String? opponentName;
 
   @override
   State<QuizResultsScreen> createState() => _QuizResultsScreenState();
@@ -98,6 +109,30 @@ class _QuizResultsScreenState extends State<QuizResultsScreen>
                           fontSize: 14,
                         ),
                       ),
+                      if (widget.opponentName != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: FlitColors.accent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: FlitColors.accent.withOpacity(0.25),
+                            ),
+                          ),
+                          child: Text(
+                            'vs ${widget.opponentName}',
+                            style: const TextStyle(
+                              color: FlitColors.accent,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 28),
 
                       // Score card (big)

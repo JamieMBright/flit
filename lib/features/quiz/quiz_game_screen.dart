@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/services/challenge_service.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_map_widget.dart';
 import '../../game/quiz/quiz_session.dart';
@@ -13,17 +14,32 @@ import 'quiz_results_screen.dart';
 ///
 /// Shows an interactive USA map with a clue card at the top.
 /// Player taps states to answer. Provides real-time feedback.
+///
+/// When [challengeId] is non-null, results are submitted to the challenge
+/// system so both players can compare scores.
 class QuizGameScreen extends StatefulWidget {
   const QuizGameScreen({
     super.key,
     required this.mode,
     required this.category,
     this.region = GameRegion.usStates,
+    this.challengeId,
+    this.challengeOpponentName,
+    this.seed,
   });
 
   final QuizMode mode;
   final QuizCategory category;
   final GameRegion region;
+
+  /// When non-null, this quiz is part of an H2H challenge.
+  final String? challengeId;
+
+  /// Opponent name for display in challenge mode.
+  final String? challengeOpponentName;
+
+  /// Deterministic seed for challenge mode (both players get same questions).
+  final int? seed;
 
   @override
   State<QuizGameScreen> createState() => _QuizGameScreenState();
@@ -65,6 +81,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
       mode: widget.mode,
       category: widget.category,
       region: widget.region,
+      seed: widget.seed,
     );
 
     // Build initial visual state for all states
@@ -158,11 +175,30 @@ class _QuizGameScreenState extends State<QuizGameScreen>
     }
   }
 
-  void _navigateToResults() {
+  Future<void> _navigateToResults() async {
+    if (!mounted) return;
+
+    // Submit results to challenge system if this is an H2H quiz.
+    if (widget.challengeId != null) {
+      final summary = _session.summary;
+      await ChallengeService.instance.submitQuizRoundResult(
+        challengeId: widget.challengeId!,
+        score: summary.totalScore,
+        timeMs: summary.elapsedMs,
+        correctCount: summary.correctCount,
+        wrongCount: summary.wrongCount,
+      );
+      await ChallengeService.instance.tryCompleteChallenge(widget.challengeId!);
+    }
+
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
-        builder: (_) => QuizResultsScreen(summary: _session.summary),
+        builder: (_) => QuizResultsScreen(
+          summary: _session.summary,
+          challengeId: widget.challengeId,
+          opponentName: widget.challengeOpponentName,
+        ),
       ),
     );
   }

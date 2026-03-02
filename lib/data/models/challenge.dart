@@ -1,6 +1,38 @@
 import 'package:flame/components.dart';
 
 import '../../game/clues/clue_types.dart';
+import '../../game/quiz/quiz_category.dart';
+
+/// The game mode used for a challenge.
+///
+/// [dbName] is stored in Supabase. Defaults to [flight] for backwards
+/// compatibility with existing challenges that predate multi-mode support.
+enum ChallengeGameMode {
+  /// Classic flight mode — fly to the target country.
+  flight('flight'),
+
+  /// Flight School quiz — tap US states on a map.
+  quiz('quiz');
+
+  const ChallengeGameMode(this.dbName);
+
+  final String dbName;
+
+  String get displayName {
+    switch (this) {
+      case ChallengeGameMode.flight:
+        return 'Dogfight';
+      case ChallengeGameMode.quiz:
+        return 'Flight School';
+    }
+  }
+
+  static ChallengeGameMode fromDb(String value) =>
+      ChallengeGameMode.values.firstWhere(
+        (m) => m.dbName == value,
+        orElse: () => ChallengeGameMode.flight,
+      );
+}
 
 /// Status of a challenge.
 ///
@@ -42,6 +74,10 @@ class ChallengeRound {
     this.challengedHintsUsed,
     this.challengerRoute,
     this.challengedRoute,
+    this.challengerQuizCorrect,
+    this.challengedQuizCorrect,
+    this.challengerQuizWrong,
+    this.challengedQuizWrong,
   });
 
   final int roundNumber;
@@ -66,6 +102,14 @@ class ChallengeRound {
 
   final List<Vector2>? challengerRoute;
   final List<Vector2>? challengedRoute;
+
+  /// Quiz mode: correct answers count.
+  final int? challengerQuizCorrect;
+  final int? challengedQuizCorrect;
+
+  /// Quiz mode: wrong answers count.
+  final int? challengerQuizWrong;
+  final int? challengedQuizWrong;
 
   bool get isComplete => challengerTime != null && challengedTime != null;
 
@@ -108,6 +152,14 @@ class ChallengeRound {
       'challenger_hints_used': challengerHintsUsed,
     if (challengedHintsUsed != null)
       'challenged_hints_used': challengedHintsUsed,
+    if (challengerQuizCorrect != null)
+      'challenger_quiz_correct': challengerQuizCorrect,
+    if (challengedQuizCorrect != null)
+      'challenged_quiz_correct': challengedQuizCorrect,
+    if (challengerQuizWrong != null)
+      'challenger_quiz_wrong': challengerQuizWrong,
+    if (challengedQuizWrong != null)
+      'challenged_quiz_wrong': challengedQuizWrong,
   };
 
   factory ChallengeRound.fromJson(Map<String, dynamic> json) {
@@ -132,6 +184,10 @@ class ChallengeRound {
       challengedScore: json['challenged_score'] as int?,
       challengerHintsUsed: json['challenger_hints_used'] as int?,
       challengedHintsUsed: json['challenged_hints_used'] as int?,
+      challengerQuizCorrect: json['challenger_quiz_correct'] as int?,
+      challengedQuizCorrect: json['challenged_quiz_correct'] as int?,
+      challengerQuizWrong: json['challenger_quiz_wrong'] as int?,
+      challengedQuizWrong: json['challenged_quiz_wrong'] as int?,
     );
   }
 }
@@ -146,6 +202,9 @@ class Challenge {
     required this.challengedName,
     required this.status,
     required this.rounds,
+    this.gameMode = ChallengeGameMode.flight,
+    this.quizCategory,
+    this.quizMode,
     this.winnerId,
     this.challengerCoins = 0,
     this.challengedCoins = 0,
@@ -160,6 +219,16 @@ class Challenge {
   final String challengedName;
   final ChallengeStatus status;
   final List<ChallengeRound> rounds;
+
+  /// The game mode for this challenge.
+  final ChallengeGameMode gameMode;
+
+  /// For quiz challenges: the quiz category both players play.
+  final QuizCategory? quizCategory;
+
+  /// For quiz challenges: the quiz mode (allStates, timeTrial, rapidFire).
+  final QuizMode? quizMode;
+
   final String? winnerId;
   final int challengerCoins;
   final int challengedCoins;
@@ -196,7 +265,10 @@ class Challenge {
     'challenged_id': challengedId,
     'challenged_name': challengedName,
     'status': status.dbName,
+    'game_mode': gameMode.dbName,
     'rounds': rounds.map((r) => r.toJson()).toList(),
+    if (quizCategory != null) 'quiz_category': quizCategory!.name,
+    if (quizMode != null) 'quiz_mode': quizMode!.name,
     'winner_id': winnerId,
     'challenger_coins': challengerCoins,
     'challenged_coins': challengedCoins,
@@ -204,24 +276,43 @@ class Challenge {
     'completed_at': completedAt?.toIso8601String(),
   };
 
-  factory Challenge.fromJson(Map<String, dynamic> json) => Challenge(
-    id: json['id'] as String,
-    challengerId: json['challenger_id'] as String,
-    challengerName: json['challenger_name'] as String,
-    challengedId: json['challenged_id'] as String,
-    challengedName: json['challenged_name'] as String,
-    status: ChallengeStatus.fromDb(json['status'] as String),
-    rounds: (json['rounds'] as List)
-        .map((r) => ChallengeRound.fromJson(r as Map<String, dynamic>))
-        .toList(),
-    winnerId: json['winner_id'] as String?,
-    challengerCoins: json['challenger_coins'] as int? ?? 0,
-    challengedCoins: json['challenged_coins'] as int? ?? 0,
-    createdAt: json['created_at'] != null
-        ? DateTime.parse(json['created_at'] as String)
-        : null,
-    completedAt: json['completed_at'] != null
-        ? DateTime.parse(json['completed_at'] as String)
-        : null,
-  );
+  factory Challenge.fromJson(Map<String, dynamic> json) {
+    final quizCatStr = json['quiz_category'] as String?;
+    final quizModeStr = json['quiz_mode'] as String?;
+    return Challenge(
+      id: json['id'] as String,
+      challengerId: json['challenger_id'] as String,
+      challengerName: json['challenger_name'] as String,
+      challengedId: json['challenged_id'] as String,
+      challengedName: json['challenged_name'] as String,
+      status: ChallengeStatus.fromDb(json['status'] as String),
+      gameMode: ChallengeGameMode.fromDb(
+        json['game_mode'] as String? ?? 'flight',
+      ),
+      rounds: (json['rounds'] as List)
+          .map((r) => ChallengeRound.fromJson(r as Map<String, dynamic>))
+          .toList(),
+      quizCategory: quizCatStr != null
+          ? QuizCategory.values.firstWhere(
+              (c) => c.name == quizCatStr,
+              orElse: () => QuizCategory.mixed,
+            )
+          : null,
+      quizMode: quizModeStr != null
+          ? QuizMode.values.firstWhere(
+              (m) => m.name == quizModeStr,
+              orElse: () => QuizMode.allStates,
+            )
+          : null,
+      winnerId: json['winner_id'] as String?,
+      challengerCoins: json['challenger_coins'] as int? ?? 0,
+      challengedCoins: json['challenged_coins'] as int? ?? 0,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : null,
+      completedAt: json['completed_at'] != null
+          ? DateTime.parse(json['completed_at'] as String)
+          : null,
+    );
+  }
 }

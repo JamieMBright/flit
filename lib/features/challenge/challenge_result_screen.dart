@@ -109,7 +109,11 @@ class ChallengeResultScreen extends ConsumerWidget {
       backgroundColor: FlitColors.backgroundDark,
       appBar: AppBar(
         backgroundColor: FlitColors.backgroundMid,
-        title: const Text('Challenge Complete'),
+        title: Text(
+          challenge.gameMode == ChallengeGameMode.quiz
+              ? 'Flight School Complete'
+              : 'Challenge Complete',
+        ),
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),
@@ -132,16 +136,30 @@ class ChallengeResultScreen extends ConsumerWidget {
               isDraw: isDraw,
             ),
             const SizedBox(height: 24),
-            // Score display
-            _ScoreDisplay(yourWins: yourWins, theirWins: theirWins),
+            // Score display — quiz uses total score, flight uses round wins
+            if (challenge.gameMode == ChallengeGameMode.quiz)
+              _QuizScoreDisplay(
+                challenge: challenge,
+                isChallenger: isChallenger,
+              )
+            else
+              _ScoreDisplay(yourWins: yourWins, theirWins: theirWins),
             const SizedBox(height: 24),
-            // Per-round time comparison
-            _RoundBreakdown(
-              rounds: challenge.rounds,
-              isChallenger: isChallenger,
-              yourName: yourInfo.name,
-              opponentName: opponentInfo.name,
-            ),
+            // Per-round breakdown — quiz shows stats, flight shows clues
+            if (challenge.gameMode == ChallengeGameMode.quiz)
+              _QuizRoundBreakdown(
+                challenge: challenge,
+                isChallenger: isChallenger,
+                yourName: yourInfo.name,
+                opponentName: opponentInfo.name,
+              )
+            else
+              _RoundBreakdown(
+                rounds: challenge.rounds,
+                isChallenger: isChallenger,
+                yourName: yourInfo.name,
+                opponentName: opponentInfo.name,
+              ),
             const SizedBox(height: 24),
             // Coins earned
             _RewardsDisplay(coins: yourCoins),
@@ -197,6 +215,9 @@ class ChallengeResultScreen extends ConsumerWidget {
           challengedId: opponentId,
           challengedName: opponentName,
           challengerName: myName,
+          gameMode: challenge.gameMode,
+          quizCategory: challenge.quizCategory,
+          quizMode: challenge.quizMode,
         )
         .then((challengeId) {
           if (context.mounted) {
@@ -879,6 +900,350 @@ class _TotalScoreRow extends StatelessWidget {
           'm $s.${ms.toString().padLeft(2, '0')}s';
     }
     return '$s.${ms.toString().padLeft(2, '0')}s';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Quiz Score Display (total score comparison instead of round wins)
+// ---------------------------------------------------------------------------
+
+class _QuizScoreDisplay extends StatelessWidget {
+  const _QuizScoreDisplay({
+    required this.challenge,
+    required this.isChallenger,
+  });
+
+  final Challenge challenge;
+  final bool isChallenger;
+
+  @override
+  Widget build(BuildContext context) {
+    // For quiz, the round stores score in challengerScore/challengedScore.
+    final round = challenge.rounds.isNotEmpty ? challenge.rounds.first : null;
+    final yourScore = round != null
+        ? (isChallenger ? round.challengerScore : round.challengedScore)
+        : null;
+    final theirScore = round != null
+        ? (isChallenger ? round.challengedScore : round.challengerScore)
+        : null;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: FlitColors.cardBorder),
+      ),
+      child: Column(
+        children: [
+          // Game mode label
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: FlitColors.gold.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.quiz_rounded,
+                  color: FlitColors.gold,
+                  size: 14,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  challenge.quizCategory?.displayName ?? 'Mixed',
+                  style: const TextStyle(
+                    color: FlitColors.gold,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Score comparison
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _scoreColumn(
+                score: yourScore,
+                isHigher:
+                    yourScore != null &&
+                    theirScore != null &&
+                    yourScore > theirScore,
+                isLower:
+                    yourScore != null &&
+                    theirScore != null &&
+                    yourScore < theirScore,
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'vs',
+                  style: TextStyle(color: FlitColors.textMuted, fontSize: 18),
+                ),
+              ),
+              _scoreColumn(
+                score: theirScore,
+                isHigher:
+                    theirScore != null &&
+                    yourScore != null &&
+                    theirScore > yourScore,
+                isLower:
+                    theirScore != null &&
+                    yourScore != null &&
+                    theirScore < yourScore,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _scoreColumn({
+    required int? score,
+    required bool isHigher,
+    required bool isLower,
+  }) {
+    return Column(
+      children: [
+        Text(
+          score?.toString() ?? '...',
+          style: TextStyle(
+            color: isHigher
+                ? FlitColors.success
+                : isLower
+                ? FlitColors.error
+                : FlitColors.textPrimary,
+            fontSize: 42,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const Text(
+          'POINTS',
+          style: TextStyle(
+            color: FlitColors.textMuted,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Quiz Round Breakdown (correct/wrong/accuracy comparison)
+// ---------------------------------------------------------------------------
+
+class _QuizRoundBreakdown extends StatelessWidget {
+  const _QuizRoundBreakdown({
+    required this.challenge,
+    required this.isChallenger,
+    required this.yourName,
+    required this.opponentName,
+  });
+
+  final Challenge challenge;
+  final bool isChallenger;
+  final String yourName;
+  final String opponentName;
+
+  @override
+  Widget build(BuildContext context) {
+    final round = challenge.rounds.isNotEmpty ? challenge.rounds.first : null;
+    if (round == null) return const SizedBox.shrink();
+
+    final yourCorrect = isChallenger
+        ? round.challengerQuizCorrect
+        : round.challengedQuizCorrect;
+    final theirCorrect = isChallenger
+        ? round.challengedQuizCorrect
+        : round.challengerQuizCorrect;
+    final yourWrong = isChallenger
+        ? round.challengerQuizWrong
+        : round.challengedQuizWrong;
+    final theirWrong = isChallenger
+        ? round.challengedQuizWrong
+        : round.challengerQuizWrong;
+    final yourTime = isChallenger ? round.challengerTime : round.challengedTime;
+    final theirTime = isChallenger
+        ? round.challengedTime
+        : round.challengerTime;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: FlitColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Stats Comparison',
+            style: TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Header
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  yourName,
+                  style: const TextStyle(
+                    color: FlitColors.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const Expanded(
+                child: Text(
+                  'Stat',
+                  style: TextStyle(
+                    color: FlitColors.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  opponentName,
+                  style: const TextStyle(
+                    color: FlitColors.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Divider(color: FlitColors.cardBorder, height: 1),
+          const SizedBox(height: 8),
+          // Correct answers
+          _quizStatRow(
+            yourVal: yourCorrect?.toString() ?? '...',
+            theirVal: theirCorrect?.toString() ?? '...',
+            label: 'Correct',
+            yourBetter:
+                yourCorrect != null &&
+                theirCorrect != null &&
+                yourCorrect > theirCorrect,
+            theirBetter:
+                theirCorrect != null &&
+                yourCorrect != null &&
+                theirCorrect > yourCorrect,
+          ),
+          // Wrong answers (lower is better)
+          _quizStatRow(
+            yourVal: yourWrong?.toString() ?? '...',
+            theirVal: theirWrong?.toString() ?? '...',
+            label: 'Wrong',
+            yourBetter:
+                yourWrong != null &&
+                theirWrong != null &&
+                yourWrong < theirWrong,
+            theirBetter:
+                theirWrong != null &&
+                yourWrong != null &&
+                theirWrong < yourWrong,
+          ),
+          // Time
+          _quizStatRow(
+            yourVal: _formatQuizTime(yourTime),
+            theirVal: _formatQuizTime(theirTime),
+            label: 'Time',
+            yourBetter:
+                yourTime != null && theirTime != null && yourTime < theirTime,
+            theirBetter:
+                theirTime != null && yourTime != null && theirTime < yourTime,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quizStatRow({
+    required String yourVal,
+    required String theirVal,
+    required String label,
+    required bool yourBetter,
+    required bool theirBetter,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              yourVal,
+              style: TextStyle(
+                color: yourBetter
+                    ? FlitColors.success
+                    : theirBetter
+                    ? FlitColors.error
+                    : FlitColors.textPrimary,
+                fontSize: 14,
+                fontWeight: yourBetter ? FontWeight.w700 : FontWeight.normal,
+                fontFamily: 'monospace',
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              theirVal,
+              style: TextStyle(
+                color: theirBetter
+                    ? FlitColors.success
+                    : yourBetter
+                    ? FlitColors.error
+                    : FlitColors.textPrimary,
+                fontSize: 14,
+                fontWeight: theirBetter ? FontWeight.w700 : FontWeight.normal,
+                fontFamily: 'monospace',
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _formatQuizTime(Duration? time) {
+    if (time == null) return '...';
+    final seconds = time.inSeconds;
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '$minutes:${secs.toString().padLeft(2, '0')}';
   }
 }
 

@@ -84,11 +84,13 @@ class MatchmakingService {
   /// Submit a completed round to the matchmaking pool.
   ///
   /// Returns the pool entry ID on success, or null on failure.
+  /// [gameMode] defaults to 'flight' for backwards compatibility.
   Future<String?> submitToPool({
     required String seed,
     required List<Map<String, dynamic>> rounds,
     required int eloRating,
     String region = 'world',
+    String gameMode = 'flight',
   }) async {
     if (_userId == null) return null;
     try {
@@ -101,6 +103,7 @@ class MatchmakingService {
             'rounds': rounds,
             'elo_rating': eloRating,
             'gameplay_version': _gameplayVersion,
+            'game_mode': gameMode,
           })
           .select('id')
           .single();
@@ -132,6 +135,7 @@ class MatchmakingService {
     required int eloRating,
     required String playerName,
     String region = 'world',
+    String gameMode = 'flight',
     String? myPoolEntryId,
   }) async {
     if (_userId == null) {
@@ -144,6 +148,7 @@ class MatchmakingService {
           .from('matchmaking_pool')
           .select('id')
           .eq('region', region)
+          .eq('game_mode', gameMode)
           .eq('gameplay_version', _gameplayVersion)
           .isFilter('matched_at', null);
 
@@ -158,6 +163,7 @@ class MatchmakingService {
           .from('matchmaking_pool')
           .select('id, user_id, seed, rounds, elo_rating')
           .eq('region', region)
+          .eq('game_mode', gameMode)
           .eq('gameplay_version', _gameplayVersion)
           .isFilter('matched_at', null)
           .neq('user_id', _userId!)
@@ -213,6 +219,7 @@ class MatchmakingService {
             'challenged_id': matchedUserId,
             'challenged_name': opponentName,
             'status': 'pending',
+            'game_mode': gameMode,
             'rounds': challengeRounds,
           })
           .select('id')

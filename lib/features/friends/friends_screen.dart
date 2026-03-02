@@ -10,8 +10,10 @@ import '../../data/providers/account_provider.dart';
 import '../../data/services/challenge_service.dart';
 import '../../data/services/feature_flag_service.dart';
 import '../../data/services/friends_service.dart';
+import '../../game/quiz/quiz_category.dart';
 import '../avatar/avatar_widget.dart';
 import '../play/play_screen.dart';
+import '../quiz/quiz_game_screen.dart';
 
 /// Friends list screen with add friend and H2H records.
 class FriendsScreen extends ConsumerStatefulWidget {
@@ -283,10 +285,17 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               onPlayChallenge: () {
                 final info = _challengeInfoMap[friend.playerId];
                 if (info != null) {
-                  _launchChallengeGameplay(
-                    info.opponentName,
-                    info.challenge.id,
-                  );
+                  if (info.challenge.gameMode == ChallengeGameMode.quiz) {
+                    _launchQuizChallengeGameplay(
+                      info.opponentName,
+                      info.challenge.id,
+                    );
+                  } else {
+                    _launchChallengeGameplay(
+                      info.opponentName,
+                      info.challenge.id,
+                    );
+                  }
                 }
               },
             ),
@@ -401,120 +410,19 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   // ---------------------------------------------------------------------------
 
   void _challengeFriend(Friend friend) {
-    showDialog<bool>(
+    showDialog<ChallengeGameMode>(
       context: context,
-      builder: (dialogContext) => Dialog(
-        backgroundColor: FlitColors.cardBackground,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.flight_takeoff,
-                color: FlitColors.warning,
-                size: 36,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Challenge ${friend.name}?',
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'You only get one shot at the clues. Make sure '
-                'you have enough time to compete before starting.',
-                style: TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 14,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: FlitColors.warning.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: FlitColors.warning.withOpacity(0.3),
-                  ),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: FlitColors.warning,
-                      size: 14,
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      '5 rounds \u2022 No retries',
-                      style: TextStyle(
-                        color: FlitColors.warning,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(false),
-                    child: const Text(
-                      'NOT YET',
-                      style: TextStyle(color: FlitColors.textMuted),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: FlitColors.accent,
-                      foregroundColor: FlitColors.textPrimary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 10,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      "LET'S GO",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    ).then((confirmed) {
-      if (confirmed != true || !mounted) return;
-      _createAndLaunchChallenge(friend);
+      builder: (dialogContext) => _ChallengeModePicker(friendName: friend.name),
+    ).then((selectedMode) {
+      if (selectedMode == null || !mounted) return;
+      _createAndLaunchChallenge(friend, selectedMode);
     });
   }
 
-  Future<void> _createAndLaunchChallenge(Friend friend) async {
+  Future<void> _createAndLaunchChallenge(
+    Friend friend,
+    ChallengeGameMode gameMode,
+  ) async {
     final account = ref.read(accountProvider);
     final myName = account.currentPlayer.name.isNotEmpty
         ? account.currentPlayer.name
@@ -524,6 +432,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       challengedId: friend.playerId,
       challengedName: friend.name,
       challengerName: myName,
+      gameMode: gameMode,
+      quizCategory: gameMode == ChallengeGameMode.quiz
+          ? QuizCategory.mixed
+          : null,
+      quizMode: gameMode == ChallengeGameMode.quiz ? QuizMode.allStates : null,
     );
 
     if (!mounted) return;
@@ -537,7 +450,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       return;
     }
 
-    _launchChallengeGameplay(friend.name, challengeId);
+    if (gameMode == ChallengeGameMode.quiz) {
+      _launchQuizChallengeGameplay(friend.name, challengeId);
+    } else {
+      _launchChallengeGameplay(friend.name, challengeId);
+    }
   }
 
   Future<void> _launchChallengeGameplay(
@@ -591,6 +508,36 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               contrailSecondaryColor: contrailSecondary != null
                   ? Color(contrailSecondary)
                   : null,
+            ),
+          ),
+        )
+        .then((_) {
+          if (mounted) _loadData();
+        });
+  }
+
+  Future<void> _launchQuizChallengeGameplay(
+    String opponentName,
+    String challengeId,
+  ) async {
+    final challenge = await ChallengeService.instance.fetchChallenge(
+      challengeId,
+    );
+    if (!mounted || challenge == null) return;
+
+    final seed = challenge.rounds.isNotEmpty ? challenge.rounds.first.seed : 42;
+    final category = challenge.quizCategory ?? QuizCategory.mixed;
+    final quizMode = challenge.quizMode ?? QuizMode.allStates;
+
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute<void>(
+            builder: (_) => QuizGameScreen(
+              mode: quizMode,
+              category: category,
+              challengeId: challengeId,
+              challengeOpponentName: opponentName,
+              seed: seed,
             ),
           ),
         )
@@ -1609,37 +1556,69 @@ class _ChallengeStatusBadge extends StatelessWidget {
   final VoidCallback onChallenge;
   final VoidCallback onPlay;
 
+  /// Whether the active challenge is a quiz (Flight School) mode.
+  bool get _isQuizChallenge =>
+      info?.challenge.gameMode == ChallengeGameMode.quiz;
+
+  /// Icon appropriate for the challenge's game mode.
+  IconData get _modeIcon =>
+      _isQuizChallenge ? Icons.quiz_rounded : Icons.flight_takeoff;
+
+  /// Short label for the game mode.
+  String get _modeLabel => _isQuizChallenge ? 'Flight School' : 'Dogfight';
+
   @override
   Widget build(BuildContext context) {
     final status = info?.status ?? _FriendChallengeStatus.none;
+    final hasChallenge = status != _FriendChallengeStatus.none;
 
+    Widget badge;
     switch (status) {
       case _FriendChallengeStatus.yourTurn:
-        return _tappableBadge(
+        badge = _tappableBadge(
           label: 'YOUR TURN',
           icon: Icons.play_arrow_rounded,
           color: FlitColors.success,
           onTap: onPlay,
         );
       case _FriendChallengeStatus.received:
-        return _tappableBadge(
+        badge = _tappableBadge(
           label: 'CHALLENGE',
-          icon: Icons.flight_takeoff,
+          icon: _modeIcon,
           color: FlitColors.accent,
           onTap: onPlay,
         );
       case _FriendChallengeStatus.theirTurn:
-        return _staticBadge(label: 'THEIR TURN', color: FlitColors.gold);
+        badge = _staticBadge(label: 'THEIR TURN', color: FlitColors.gold);
       case _FriendChallengeStatus.sent:
-        return _staticBadge(label: 'SENT', color: FlitColors.textMuted);
+        badge = _staticBadge(label: 'SENT', color: FlitColors.textMuted);
       case _FriendChallengeStatus.none:
-        return _tappableBadge(
+        badge = _tappableBadge(
           label: 'CHALLENGE',
           icon: Icons.flash_on,
           color: FlitColors.accent,
           onTap: onChallenge,
         );
     }
+
+    if (!hasChallenge) return badge;
+
+    // Show game mode label under the status badge for active challenges.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        badge,
+        const SizedBox(height: 3),
+        Text(
+          _modeLabel,
+          style: TextStyle(
+            color: _isQuizChallenge ? FlitColors.gold : FlitColors.textMuted,
+            fontSize: 9,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _tappableBadge({
@@ -2401,5 +2380,146 @@ class _RoundOutcomeRow extends StatelessWidget {
     final seconds = ms ~/ 1000;
     final centis = (ms % 1000) ~/ 10;
     return '$seconds.${centis.toString().padLeft(2, '0')}s';
+  }
+}
+
+// =============================================================================
+// Challenge Mode Picker Dialog
+// =============================================================================
+
+/// Dialog that lets the user choose a game mode before sending a challenge.
+class _ChallengeModePicker extends StatelessWidget {
+  const _ChallengeModePicker({required this.friendName});
+
+  final String friendName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: FlitColors.cardBackground,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.sports_mma, color: FlitColors.accent, size: 36),
+            const SizedBox(height: 16),
+            Text(
+              'Challenge $friendName',
+              style: const TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Choose a game mode:',
+              style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+            ),
+            const SizedBox(height: 20),
+            // Dogfight (flight mode)
+            _ChallengeModeOption(
+              icon: Icons.flight_takeoff,
+              title: 'Dogfight',
+              subtitle: '5 rounds \u2022 Fly to countries',
+              color: FlitColors.accent,
+              onTap: () => Navigator.of(context).pop(ChallengeGameMode.flight),
+            ),
+            const SizedBox(height: 10),
+            // Flight School (quiz mode)
+            _ChallengeModeOption(
+              icon: Icons.quiz_rounded,
+              title: 'Flight School',
+              subtitle: 'Quiz \u2022 Tap US states',
+              color: FlitColors.gold,
+              onTap: () => Navigator.of(context).pop(ChallengeGameMode.quiz),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(null),
+              child: const Text(
+                'CANCEL',
+                style: TextStyle(color: FlitColors.textMuted),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChallengeModeOption extends StatelessWidget {
+  const _ChallengeModeOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: FlitColors.backgroundMid,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: color, size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
