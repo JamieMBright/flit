@@ -72,9 +72,11 @@ class MatchmakingService {
   /// - Pool 10-49 entries -> +/- 300 (moderate)
   /// - Pool 50+ entries   -> +/- 200 (tight, fair matches)
   static int calculateEloBand({required int elo, required int poolSize}) {
-    if (poolSize < 10) return 500;
-    if (poolSize < 50) return 300;
-    return 200;
+    // Widen band for small pools to improve match likelihood.
+    final baseBand = poolSize < 10 ? 500 : (poolSize < 50 ? 300 : 200);
+    // Widen band for extreme elo (very high/low players have fewer peers).
+    if (elo < 800 || elo > 1600) return baseBand + 100;
+    return baseBand;
   }
 
   // ---------------------------------------------------------------------------
@@ -207,7 +209,7 @@ class MatchmakingService {
         }
         return <String, dynamic>{
           'round_number': i + 1,
-          'seed': (matchedSeed.hashCode + i * 7919) & 0x7FFFFFFF,
+          'seed': (_stableHash(matchedSeed) + i * 7919) & 0x7FFFFFFF,
         };
       });
 
@@ -469,6 +471,20 @@ class MatchmakingService {
   // ---------------------------------------------------------------------------
   // Internal helpers
   // ---------------------------------------------------------------------------
+
+  /// Stable FNV-1a hash that produces the same int on all platforms.
+  ///
+  /// Dart's [String.hashCode] is not guaranteed to be stable across platforms
+  /// (VM vs web) or across process restarts, making it unsuitable for
+  /// reproducible round seeds. This implementation is deterministic everywhere.
+  static int _stableHash(String input) {
+    var hash = 0x811c9dc5; // FNV offset basis
+    for (var i = 0; i < input.length; i++) {
+      hash ^= input.codeUnitAt(i);
+      hash = (hash * 0x01000193) & 0xFFFFFFFF; // FNV prime, keep 32-bit
+    }
+    return hash;
+  }
 
   /// Auto-friend two players after a matchmaking pairing.
   ///

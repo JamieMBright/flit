@@ -161,13 +161,12 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     for (final type in _worldClueTypes) type: true,
   };
 
-  /// Placeholder clue progress data (correct answers per type).
+  /// Correct-answer counts per clue type, sourced from player progress data.
+  ///
+  // TODO(progress): populate from real player progress provider once the
+  // clue-progress persistence layer is wired up (see account_provider).
   final Map<ClueType, int> _clueProgress = {
-    ClueType.flag: 73,
-    ClueType.outline: 41,
-    ClueType.borders: 12,
-    ClueType.capital: 108,
-    ClueType.stats: 5,
+    for (final type in _worldClueTypes) type: 0,
   };
 
   // ---------------------------------------------------------------------------

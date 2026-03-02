@@ -3,6 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/config/supabase_config.dart';
 import '../models/player.dart';
 
+// Sentinel used by AuthState.copyWith to distinguish "not passed" from null.
+const Object _sentinel = Object();
+
 /// Authentication method used by the player.
 enum AuthMethod {
   /// Supabase email + password account
@@ -37,7 +40,7 @@ class AuthState {
     Player? player,
     AuthMethod? authMethod,
     String? email,
-    String? error,
+    Object? error = _sentinel,
     bool? needsEmailConfirmation,
   }) => AuthState(
     isAuthenticated: isAuthenticated ?? this.isAuthenticated,
@@ -45,7 +48,7 @@ class AuthState {
     player: player ?? this.player,
     authMethod: authMethod ?? this.authMethod,
     email: email ?? this.email,
-    error: error,
+    error: error == _sentinel ? this.error : error as String?,
     needsEmailConfirmation:
         needsEmailConfirmation ?? this.needsEmailConfirmation,
   );

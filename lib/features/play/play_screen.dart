@@ -200,7 +200,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
   /// Per-round results for the summary screen.
   final List<_RoundResult> _roundResults = [];
-  final Random _sessionSeedRandom = Random();
+  late final Random _sessionSeedRandom;
   bool _isCheckingProximity = false;
 
   /// Economy config (fetched on init for free flight earning).
@@ -216,6 +216,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   @override
   void initState() {
     super.initState();
+    _sessionSeedRandom = Random(widget.dailySeed);
     try {
       _log.info(
         'screen',
@@ -534,9 +535,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       _timer?.cancel();
       _timer = Timer.periodic(const Duration(milliseconds: 16), (_) async {
         if (mounted && _session != null && !_session!.isCompleted) {
-          setState(() {
-            _elapsed = _session!.elapsed;
-          });
+          final newElapsed = _session!.elapsed;
+          // Only rebuild when the displayed second (or centisecond) changes —
+          // avoids unconditional setState at 60 Hz for a value that updates ~10 Hz.
+          if (newElapsed.inMilliseconds ~/ 100 !=
+              _elapsed.inMilliseconds ~/ 100) {
+            setState(() {
+              _elapsed = newElapsed;
+            });
+          } else {
+            _elapsed = newElapsed;
+          }
 
           // Record flight path periodically
           if (_elapsed.inMilliseconds % 100 < 20) {

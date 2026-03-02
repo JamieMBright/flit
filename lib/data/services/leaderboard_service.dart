@@ -272,13 +272,13 @@ class LeaderboardService {
       final now = DateTime.now().toUtc();
       final startOfDay = DateTime.utc(now.year, now.month, now.day);
 
-      final data = await _client
+      final response = await _client
           .from('scores')
-          .select('id')
+          .select('*', const FetchOptions(count: CountOption.exact, head: true))
           .eq('region', 'daily')
           .gte('created_at', startOfDay.toIso8601String());
 
-      final count = data.length;
+      final count = response.count ?? 0;
       _playerCountCache.set(cacheKey, count);
       return count;
     } catch (e) {
@@ -380,6 +380,7 @@ class LeaderboardService {
       final data = await _client
           .from('daily_streak_leaderboard')
           .select()
+          .order('current_streak', ascending: false)
           .limit(limit);
 
       final result = data.asMap().entries.map((e) {

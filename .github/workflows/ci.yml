@@ -32,9 +32,11 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
-      - name: Generate Flutter files
+      - name: Ensure web platform files exist
         run: |
-          flutter create --platform=web . --project-name=flit
+          if [ ! -d web ]; then
+            flutter create --platform=web . --project-name=flit
+          fi
           rm -f test/widget_test.dart
 
       - name: Cache pub dependencies
@@ -101,8 +103,11 @@ jobs:
           key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-${{ runner.os }}-
 
-      - name: Generate Flutter files
-        run: flutter create --platform=web . --project-name=flit
+      - name: Ensure web platform files exist
+        run: |
+          if [ ! -d web ]; then
+            flutter create --platform=web . --project-name=flit
+          fi
 
       - name: Get dependencies
         run: flutter pub get
@@ -189,8 +194,11 @@ jobs:
           key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-${{ runner.os }}-
 
-      - name: Generate Flutter files
-        run: flutter create --platform=android . --project-name=flit
+      - name: Ensure android platform files exist
+        run: |
+          if [ ! -d android ]; then
+            flutter create --platform=android . --project-name=flit
+          fi
 
       - name: Get dependencies
         run: flutter pub get

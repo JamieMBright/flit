@@ -488,13 +488,13 @@ class FriendsService {
       // Fetch all completed challenges between the two players (newest first).
       final data = await _client
           .from('challenges')
-          .select('winner_id, created_at')
+          .select('winner_id, completed_at, created_at')
           .eq('status', 'completed')
           .or(
             'and(challenger_id.eq.$_userId,challenged_id.eq.$friendId),'
             'and(challenger_id.eq.$friendId,challenged_id.eq.$_userId)',
           )
-          .order('created_at', ascending: false);
+          .order('completed_at', ascending: false);
 
       var wins = 0;
       var losses = 0;
@@ -505,8 +505,9 @@ class FriendsService {
 
       for (var i = 0; i < data.length; i++) {
         final row = data[i];
-        if (lastPlayed == null && row['created_at'] != null) {
-          lastPlayed = DateTime.tryParse(row['created_at'] as String);
+        if (lastPlayed == null) {
+          final ts = (row['completed_at'] ?? row['created_at']) as String?;
+          if (ts != null) lastPlayed = DateTime.tryParse(ts);
         }
         final winnerId = row['winner_id'] as String?;
         final isWin = winnerId == _userId;
@@ -658,12 +659,19 @@ class FriendsService {
   /// Uses the atomic `send_coins` DB function to prevent race conditions
   /// (double-spend, negative balances). Both deduction and credit happen
   /// in a single transaction with row-level locks.
+  ///
+  /// Ordering guarantee: the server-side transfer is the sole source of truth.
+  /// Local coin balance state is NOT updated here — callers must refresh the
+  /// player profile / wallet after a successful return to reflect the new
+  /// balance. This ensures local state is only updated after the server
+  /// confirms the transfer, preventing optimistic-update inconsistencies.
   Future<bool> sendCoins({
     required String recipientId,
     required int amount,
   }) async {
     if (_userId == null || amount <= 0) return false;
     try {
+      // Server-first: perform the atomic transfer before touching any local state.
       final result = await _client.rpc(
         'send_coins',
         params: {
@@ -673,6 +681,7 @@ class FriendsService {
         },
       );
 
+      // Only report success when the server explicitly confirms it.
       if (result is Map<String, dynamic>) {
         return result['success'] as bool? ?? false;
       }

@@ -97,7 +97,7 @@ class Player {
   int get xpForNextLevel => level * 100;
 
   /// Progress to next level (0.0 to 1.0)
-  double get levelProgress => xp / xpForNextLevel;
+  double get levelProgress => (xp / xpForNextLevel).clamp(0.0, 1.0);
 
   /// Primary display name used in UI; currently always equal to [username].
   String get name => username;

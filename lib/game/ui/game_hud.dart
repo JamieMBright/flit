@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/flit_colors.dart';
 import '../clues/clue_types.dart';
 import '../flit_game.dart';
+import '../session/game_session.dart';
 
 /// Game HUD overlay showing clues, timer, altitude indicator, speed controls,
 /// and exit button. Styled with a vintage atlas / lo-fi pop art aesthetic.
@@ -659,8 +660,8 @@ class _HintButton extends StatefulWidget {
   final int tier;
   final VoidCallback? onTap;
 
-  /// Mirrors GameSession._hintTierPenalties — kept in sync manually.
-  static const List<int> tierPenalties = [500, 1000, 1500, 2500];
+  /// Sourced from GameSession.hintTierPenalties — single source of truth.
+  static List<int> get tierPenalties => GameSession.hintTierPenalties;
 
   @override
   State<_HintButton> createState() => _HintButtonState();

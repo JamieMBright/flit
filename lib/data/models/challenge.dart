@@ -254,7 +254,8 @@ class Challenge {
   int get challengedWins =>
       rounds.where((r) => r.isComplete && r.winner == 'challenged').length;
 
-  int get currentRound => rounds.where((r) => r.isComplete).length + 1;
+  int get currentRound =>
+      (rounds.where((r) => r.isComplete).length + 1).clamp(1, rounds.length);
 
   bool get isComplete =>
       challengerWins >= winsRequired || challengedWins >= winsRequired;

@@ -159,10 +159,15 @@ abstract class RegionCameraPresets {
       preset.centerLat + preset.maxBoundsLat,
     );
 
-    // Handle longitude wrapping
+    // Handle longitude wrapping: normalise to [-180, 180] first so that
+    // positions crossing the date-line (±180°) are clamped correctly.
+    var lon = lng;
+    if (lon > 180) lon -= 360;
+    if (lon < -180) lon += 360;
+
     final minLng = preset.centerLng - preset.maxBoundsLng;
     final maxLng = preset.centerLng + preset.maxBoundsLng;
-    final clampedLng = lng.clamp(minLng, maxLng);
+    final clampedLng = lon.clamp(minLng, maxLng);
 
     return [clampedLat, clampedLng];
   }

@@ -97,7 +97,7 @@ class HeadToHead {
 
   final DateTime? lastPlayed;
 
-  int get draws => totalChallenges - wins - losses;
+  int get draws => (totalChallenges - wins - losses).clamp(0, totalChallenges);
 
   String get record => '$wins - $losses';
 
