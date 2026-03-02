@@ -11,7 +11,7 @@ Player _basePlayer() => const Player(id: 'uid-001', username: 'pilot_ace');
 Player _permanentlyBannedPlayer() => Player(
   id: 'uid-002',
   username: 'bad_actor',
-  bannedAt: DateTime(2026, 1, 1),
+  bannedAt: DateTime.now().subtract(const Duration(days: 90)),
   banExpiresAt: null,
   banReason: 'Repeated cheating.',
 );
@@ -19,7 +19,7 @@ Player _permanentlyBannedPlayer() => Player(
 Player _temporarilyBannedPlayer() => Player(
   id: 'uid-003',
   username: 'temp_offender',
-  bannedAt: DateTime(2026, 2, 1),
+  bannedAt: DateTime.now().subtract(const Duration(days: 5)),
   banExpiresAt: DateTime.now().add(const Duration(days: 7)),
   banReason: 'Offensive username.',
 );
@@ -27,8 +27,8 @@ Player _temporarilyBannedPlayer() => Player(
 Player _expiredBanPlayer() => Player(
   id: 'uid-004',
   username: 'reformed_player',
-  bannedAt: DateTime(2025, 12, 1),
-  banExpiresAt: DateTime(2026, 1, 1), // already in the past
+  bannedAt: DateTime.now().subtract(const Duration(days: 30)),
+  banExpiresAt: DateTime.now().subtract(const Duration(days: 1)),
   banReason: 'Harassment.',
 );
 
@@ -38,29 +38,40 @@ Player _ownerPlayer() =>
 Player _moderatorPlayer() =>
     const Player(id: 'uid-mod', username: 'mod_user', adminRole: 'moderator');
 
-Map<String, dynamic> _bannedPlayerJson() => {
-  'id': 'uid-ban-json',
-  'username': 'banned_via_json',
-  'banned_at': '2026-01-15T00:00:00.000Z',
-  'ban_expires_at': null,
-  'ban_reason': 'Persistent cheating.',
-};
+Map<String, dynamic> _bannedPlayerJson() {
+  final bannedAt = DateTime.now().subtract(const Duration(days: 45));
+  return {
+    'id': 'uid-ban-json',
+    'username': 'banned_via_json',
+    'banned_at': bannedAt.toUtc().toIso8601String(),
+    'ban_expires_at': null,
+    'ban_reason': 'Persistent cheating.',
+  };
+}
 
-Map<String, dynamic> _tempBannedPlayerJson() => {
-  'id': 'uid-temp-json',
-  'username': 'temp_via_json',
-  'banned_at': '2026-02-01T00:00:00.000Z',
-  'ban_expires_at': '2099-12-31T23:59:59.000Z',
-  'ban_reason': 'Offensive chat.',
-};
+Map<String, dynamic> _tempBannedPlayerJson() {
+  final bannedAt = DateTime.now().subtract(const Duration(days: 30));
+  final expiresAt = DateTime.now().add(const Duration(days: 365 * 70)); // Far future
+  return {
+    'id': 'uid-temp-json',
+    'username': 'temp_via_json',
+    'banned_at': bannedAt.toUtc().toIso8601String(),
+    'ban_expires_at': expiresAt.toUtc().toIso8601String(),
+    'ban_reason': 'Offensive chat.',
+  };
+}
 
-Map<String, dynamic> _expiredBanPlayerJson() => {
-  'id': 'uid-expired-json',
-  'username': 'expired_via_json',
-  'banned_at': '2025-11-01T00:00:00.000Z',
-  'ban_expires_at': '2026-01-01T00:00:00.000Z',
-  'ban_reason': 'Spam.',
-};
+Map<String, dynamic> _expiredBanPlayerJson() {
+  final bannedAt = DateTime.now().subtract(const Duration(days: 60));
+  final expiresAt = DateTime.now().subtract(const Duration(days: 1));
+  return {
+    'id': 'uid-expired-json',
+    'username': 'expired_via_json',
+    'banned_at': bannedAt.toUtc().toIso8601String(),
+    'ban_expires_at': expiresAt.toUtc().toIso8601String(),
+    'ban_reason': 'Spam.',
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Tests
