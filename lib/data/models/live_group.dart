@@ -516,47 +516,51 @@ class LiveGroupSession {
     'invite_code': inviteCode,
   };
 
-  factory LiveGroupSession.fromJson(
-    Map<String, dynamic> json,
-  ) => LiveGroupSession(
-    id: json['id'] as String,
-    hostId: json['host_id'] as String,
-    hostUsername: json['host_username'] as String,
-    seed: json['seed'] as int,
-    status: LiveGroupStatus.values.firstWhere((s) => s.name == json['status']),
-    roundMode: LiveRoundMode.values.firstWhere(
-      (m) => m.name == json['round_mode'],
-      orElse: () => LiveRoundMode.standard,
-    ),
-    totalRounds: json['total_rounds'] as int? ?? 10,
-    currentRound: json['current_round'] as int? ?? 0,
-    enabledClueTypes:
-        (json['enabled_clue_types'] as List?)
-            ?.map((e) => e as String)
-            .toSet() ??
-        const {'flag', 'outline', 'borders', 'capital', 'stats'},
-    players:
-        (json['players'] as List?)
-            ?.map((p) => LiveGroupPlayer.fromJson(p as Map<String, dynamic>))
-            .toList() ??
-        const [],
-    rounds:
-        (json['rounds'] as List?)
-            ?.map((r) => LiveGroupRound.fromJson(r as Map<String, dynamic>))
-            .toList() ??
-        const [],
-    createdAt: DateTime.parse(json['created_at'] as String),
-    startedAt: json['started_at'] != null
-        ? DateTime.parse(json['started_at'] as String)
-        : null,
-    completedAt: json['completed_at'] != null
-        ? DateTime.parse(json['completed_at'] as String)
-        : null,
-    timeLimit: json['time_limit_ms'] != null
-        ? Duration(milliseconds: json['time_limit_ms'] as int)
-        : null,
-    inviteCode: json['invite_code'] as String?,
-  );
+  factory LiveGroupSession.fromJson(Map<String, dynamic> json) =>
+      LiveGroupSession(
+        id: json['id'] as String,
+        hostId: json['host_id'] as String,
+        hostUsername: json['host_username'] as String,
+        seed: json['seed'] as int,
+        status: LiveGroupStatus.values.firstWhere(
+          (s) => s.name == json['status'],
+          orElse: () => LiveGroupStatus.values.first,
+        ),
+        roundMode: LiveRoundMode.values.firstWhere(
+          (m) => m.name == json['round_mode'],
+          orElse: () => LiveRoundMode.standard,
+        ),
+        totalRounds: json['total_rounds'] as int? ?? 10,
+        currentRound: json['current_round'] as int? ?? 0,
+        enabledClueTypes:
+            (json['enabled_clue_types'] as List?)
+                ?.map((e) => e as String)
+                .toSet() ??
+            const {'flag', 'outline', 'borders', 'capital', 'stats'},
+        players:
+            (json['players'] as List?)
+                ?.map(
+                  (p) => LiveGroupPlayer.fromJson(p as Map<String, dynamic>),
+                )
+                .toList() ??
+            const [],
+        rounds:
+            (json['rounds'] as List?)
+                ?.map((r) => LiveGroupRound.fromJson(r as Map<String, dynamic>))
+                .toList() ??
+            const [],
+        createdAt: DateTime.parse(json['created_at'] as String),
+        startedAt: json['started_at'] != null
+            ? DateTime.parse(json['started_at'] as String)
+            : null,
+        completedAt: json['completed_at'] != null
+            ? DateTime.parse(json['completed_at'] as String)
+            : null,
+        timeLimit: json['time_limit_ms'] != null
+            ? Duration(milliseconds: json['time_limit_ms'] as int)
+            : null,
+        inviteCode: json['invite_code'] as String?,
+      );
 
   // ── Placeholder data for UI development ──────────────────────────────
 

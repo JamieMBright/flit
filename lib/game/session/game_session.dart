@@ -104,7 +104,7 @@ class GameSession {
   /// Get the target position (capital city or center of area)
   Vector2 get targetPosition {
     // If we have a regional area, use its center
-    if (targetArea != null) {
+    if (targetArea != null && targetArea!.points.isNotEmpty) {
       var sumX = 0.0;
       var sumY = 0.0;
       for (final point in targetArea!.points) {
@@ -124,6 +124,7 @@ class GameSession {
     }
     // Fall back to center of country bounds
     final pts = targetCountry.allPoints;
+    if (pts.isEmpty) return Vector2.zero();
     var sumX = 0.0;
     var sumY = 0.0;
     for (final point in pts) {

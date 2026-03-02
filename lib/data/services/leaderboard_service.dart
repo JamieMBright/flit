@@ -518,7 +518,7 @@ class LeaderboardService {
             .select('user_id')
             .neq('region', 'daily');
       }
-      final aboveData = await countQuery.gt('score', bestScore).limit(1000);
+      final aboveData = await countQuery.gt('score', bestScore).limit(10000);
       // Also count those with same score but faster time.
       PostgrestFilterBuilder<List<Map<String, dynamic>>> tieQuery;
       if (isDailyScramble) {
@@ -535,7 +535,7 @@ class LeaderboardService {
       final tieData = await tieQuery
           .eq('score', bestScore)
           .lt('time_ms', bestTime)
-          .limit(1000);
+          .limit(10000);
 
       // Rank = number of distinct users above + 1.
       final usersAbove = <String>{
@@ -691,12 +691,7 @@ class LeaderboardService {
   ) async {
     final cacheKey = 'best_modes_$userId';
     final cached = _historyCache.get(cacheKey);
-    if (cached != null) {
-      return {
-        'daily': cached.isNotEmpty ? Map<String, int>.from(cached[0]) : null,
-        'training': cached.length > 1 ? Map<String, int>.from(cached[1]) : null,
-      };
-    }
+    if (cached != null) return Map<String, Map<String, int>?>.from(cached);
 
     try {
       // Best daily score.

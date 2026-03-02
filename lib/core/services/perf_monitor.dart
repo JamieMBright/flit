@@ -1,7 +1,8 @@
 import 'dart:collection';
-import 'dart:io' show ProcessInfo;
 
 import 'package:flutter/foundation.dart';
+import 'perf_monitor_memory_stub.dart'
+    if (dart.library.io) 'perf_monitor_memory_native.dart';
 
 /// Lightweight performance monitor singleton for Flit.
 ///
@@ -116,7 +117,7 @@ class PerfMonitor {
   void recordMemorySnapshot() {
     if (kReleaseMode) return;
     try {
-      _lastHeapBytes = ProcessInfo.currentRss;
+      _lastHeapBytes = getNativeRss();
     } catch (_) {
       _lastHeapBytes = 0;
     }

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:characters/characters.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -46,8 +47,7 @@ Color _emojiToColor(String emoji) {
 }
 
 /// Splits a round-emojis string into individual emoji characters.
-List<String> _splitEmojis(String emojis) =>
-    emojis.runes.map((r) => String.fromCharCode(r)).toList();
+List<String> _splitEmojis(String emojis) => emojis.characters.toList();
 
 /// Rarity colors (shared with license_screen).
 const Color _bronzeColor = Color(0xFFCD7F32);

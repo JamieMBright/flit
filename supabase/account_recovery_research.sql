@@ -6,12 +6,12 @@
 --   2) Reconstruct deducible gameplay stats from scores/challenges data.
 --   3) Highlight gaps that cannot be reconstructed (notably coin balance).
 --
--- Replace jamieb01 in the `params` CTE for username-filtered queries if needed.
+-- Replace <username> in the `params` CTE for username-filtered queries if needed.
 -- =============================================================================
 
 -- 1) Current authoritative rows used by app login hydration.
 with params as (
-  select 'jamieb01'::text as username
+  select '<username>'::text as username
 ),
 target as (
   select id, username
@@ -58,7 +58,7 @@ left join public.account_state ac on ac.user_id = t.id;
 -- 2) Rebuild what can be inferred from game logs (scores/challenges).
 -- NOTE: this can recover best score/time and total rounds played from scores.
 with params as (
-  select 'jamieb01'::text as username
+  select '<username>'::text as username
 ),
 target as (
   select id
@@ -120,7 +120,7 @@ order by table_name, ordinal_position;
 -- 5) Challenge-coin audit using discovered columns.
 -- Interprets challenger_coins/challenged_coins as post-match coin deltas.
 with params as (
-  select 'jamieb01'::text as username
+  select '<username>'::text as username
 ),
 target as (
   select id, username, coins

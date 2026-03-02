@@ -85,10 +85,11 @@ AS $$
 BEGIN
   -- Create profiles row (foundation — must exist for FK joins).
   -- Auto-promote known owner emails on signup.
+  -- TODO: Move hardcoded owner email to environment variable or config table.
   INSERT INTO public.profiles (id, admin_role)
   VALUES (
     NEW.id,
-    CASE WHEN COALESCE(NEW.email, '') IN ('jamiebright1@gmail.com')
+    CASE WHEN COALESCE(NEW.email, '') IN ('<owner-email>')
          THEN 'owner' ELSE NULL END
   )
   ON CONFLICT (id) DO NOTHING;  -- never overwrite an existing profile

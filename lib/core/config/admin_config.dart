@@ -17,7 +17,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 abstract final class AdminConfig {
   /// Known owner emails — used as a client-side bootstrap before DB loads.
   /// The server-side `admin_role` column is the real source of truth.
-  static const Set<String> ownerEmails = {'jamiebright1@gmail.com'};
+  /// TODO: Move to environment variable or config table for production.
+  static const Set<String> ownerEmails = {'<owner-email>'};
 
   /// Whether the currently authenticated Supabase user is a known owner
   /// by email. Use this only as a pre-hydration fallback; prefer
