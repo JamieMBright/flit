@@ -185,8 +185,8 @@ class ShaderManager {
     // textures if any fail to load.
     final textureResults = await Future.wait<Map<String, dynamic>>([
       _loadImageWithFallback(
-            'assets/textures/blue_marble.jpg',
             'assets/textures/blue_marble.png',
+            'assets/textures/blue_marble.jpg',
           )
           .then((img) => <String, dynamic>{'name': 'satellite', 'image': img})
           .catchError(
