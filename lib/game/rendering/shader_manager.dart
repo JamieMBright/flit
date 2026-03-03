@@ -80,9 +80,16 @@ class ShaderManager {
   /// Load the fragment shader program and all texture images.
   ///
   /// Safe to call multiple times; subsequent calls are no-ops if already
-  /// initialized or currently loading.
+  /// initialized or currently loading. If a previous attempt left [_loading]
+  /// stuck true (e.g. the widget was disposed mid-init), the flag is reset
+  /// so this attempt can proceed.
   Future<void> initialize() async {
-    if (_initialized || _loading) return;
+    if (_initialized) return;
+    if (_loading) {
+      // Previous init may have stalled — reset and retry.
+      _log.warning('shader', 'ShaderManager._loading stuck true, resetting');
+      _loading = false;
+    }
     _loading = true;
 
     _log.info('shader', 'ShaderManager.initialize() starting');

@@ -217,8 +217,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   @override
   void initState() {
     super.initState();
-    _sessionSeedRandom = Random(widget.dailySeed);
     try {
+      _sessionSeedRandom = Random(widget.dailySeed);
       _log.info(
         'screen',
         'PlayScreen.initState',
@@ -1530,9 +1530,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                     'region': widget.region.name,
                   },
                 );
-                // Schedule state update so the error-only build path takes
-                // over on the next frame, completely removing the GameWidget.
-                SchedulerBinding.instance.addPostFrameCallback((_) {
+                // Use Future.microtask instead of addPostFrameCallback — it
+                // fires before the next frame and doesn't depend on the
+                // scheduler state. addPostFrameCallback can be skipped if the
+                // widget unmounts between now and the next frame, leaving the
+                // user on a permanent black screen.
+                Future.microtask(() {
                   if (mounted && _error == null) {
                     setState(() {
                       _error = 'Game engine failed to load.\n\nError: $err';

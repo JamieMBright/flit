@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/app_remote_config.dart';
 import '../../data/services/app_config_service.dart';
+import 'login_screen.dart';
 
 /// Full-screen display when the server is in maintenance mode.
 class MaintenanceScreen extends StatefulWidget {
@@ -24,8 +25,12 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
       if (!mounted) return;
       if (compat == AppCompatibility.ok ||
           compat == AppCompatibility.updateRecommended) {
-        // Maintenance is over — pop back to let the auth flow continue.
-        Navigator.of(context).pop();
+        // Maintenance is over — navigate back to login to restart the
+        // auth flow. (LoginScreen was replaced via pushReplacement, so
+        // pop() would crash with an empty navigator stack.)
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+        );
       } else {
         setState(() => _checking = false);
       }

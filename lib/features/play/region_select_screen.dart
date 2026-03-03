@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/services/error_service.dart';
 import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/game_log.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/map/region.dart';
 import 'play_screen.dart';
+
+final _log = GameLog.instance;
 
 /// Screen for selecting which region to play.
 class RegionSelectScreen extends ConsumerWidget {
@@ -27,6 +31,59 @@ class RegionSelectScreen extends ConsumerWidget {
         return 2000; // Level 7
       case GameRegion.ireland:
         return 5000; // Level 10
+    }
+  }
+
+  /// Read cosmetic/account state and launch PlayScreen for [region].
+  ///
+  /// Wrapped in try/catch so a corrupt provider state doesn't silently
+  /// kill the navigation (the exception was previously lost in Flutter's
+  /// gesture error handler with no visible feedback).
+  void _launchPlay(BuildContext context, WidgetRef ref, GameRegion region) {
+    try {
+      final planeId = ref.read(equippedPlaneIdProvider);
+      final plane = CosmeticCatalog.getById(planeId);
+      final account = ref.read(accountProvider);
+      final companion = account.avatar.companion;
+      final fuelBoost = ref.read(accountProvider.notifier).fuelBoostMultiplier;
+      final license = account.license;
+      final contrailId = ref.read(accountProvider).equippedContrailId;
+      final contrail = CosmeticCatalog.getById(contrailId);
+      final contrailPrimary = contrail?.colorScheme?['primary'];
+      final contrailSecondary = contrail?.colorScheme?['secondary'];
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (context) => PlayScreen(
+            region: region,
+            planeColorScheme: plane?.colorScheme,
+            planeWingSpan: plane?.wingSpan,
+            equippedPlaneId: planeId,
+            companionType: companion,
+            fuelBoostMultiplier: fuelBoost,
+            clueChance: license.clueChance,
+            preferredClueType: license.preferredClueType,
+            planeHandling: plane?.handling ?? 1.0,
+            planeSpeed: plane?.speed ?? 1.0,
+            planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
+            contrailPrimaryColor: contrailPrimary != null
+                ? Color(contrailPrimary)
+                : null,
+            contrailSecondaryColor: contrailSecondary != null
+                ? Color(contrailSecondary)
+                : null,
+          ),
+        ),
+      );
+    } catch (e, st) {
+      _log.error('screen', 'Failed to launch play', error: e, stackTrace: st);
+      ErrorService.instance.reportCritical(
+        e,
+        st,
+        context: {'screen': 'RegionSelectScreen', 'region': region.name},
+      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to start game: $e')));
     }
   }
 
@@ -108,50 +165,7 @@ class RegionSelectScreen extends ConsumerWidget {
                 if (isAdmin) {
                   // Admin: full existing behaviour.
                   tapHandler = isUnlocked
-                      ? () {
-                          final planeId = ref.read(equippedPlaneIdProvider);
-                          final plane = CosmeticCatalog.getById(planeId);
-                          final account = ref.read(accountProvider);
-                          final companion = account.avatar.companion;
-                          final fuelBoost = ref
-                              .read(accountProvider.notifier)
-                              .fuelBoostMultiplier;
-                          final license = account.license;
-                          final contrailId = ref
-                              .read(accountProvider)
-                              .equippedContrailId;
-                          final contrail = CosmeticCatalog.getById(contrailId);
-                          final contrailPrimary =
-                              contrail?.colorScheme?['primary'];
-                          final contrailSecondary =
-                              contrail?.colorScheme?['secondary'];
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute<void>(
-                              builder: (context) => PlayScreen(
-                                region: region,
-                                planeColorScheme: plane?.colorScheme,
-                                planeWingSpan: plane?.wingSpan,
-                                equippedPlaneId: planeId,
-                                companionType: companion,
-                                fuelBoostMultiplier: fuelBoost,
-
-                                clueChance: license.clueChance,
-                                preferredClueType: license.preferredClueType,
-                                planeHandling: plane?.handling ?? 1.0,
-                                planeSpeed: plane?.speed ?? 1.0,
-                                planeFuelEfficiency:
-                                    plane?.fuelEfficiency ?? 1.0,
-                                contrailPrimaryColor: contrailPrimary != null
-                                    ? Color(contrailPrimary)
-                                    : null,
-                                contrailSecondaryColor:
-                                    contrailSecondary != null
-                                    ? Color(contrailSecondary)
-                                    : null,
-                              ),
-                            ),
-                          );
-                        }
+                      ? () => _launchPlay(context, ref, region)
                       : null;
                   buyHandler = (!isUnlocked && canAfford)
                       ? () => _showUnlockDialog(context, ref, region, cost)
@@ -159,50 +173,7 @@ class RegionSelectScreen extends ConsumerWidget {
                 } else if (isWorld) {
                   // Regular user, World region: normal play flow (always unlocked).
                   tapHandler = isUnlocked
-                      ? () {
-                          final planeId = ref.read(equippedPlaneIdProvider);
-                          final plane = CosmeticCatalog.getById(planeId);
-                          final account = ref.read(accountProvider);
-                          final companion = account.avatar.companion;
-                          final fuelBoost = ref
-                              .read(accountProvider.notifier)
-                              .fuelBoostMultiplier;
-                          final license = account.license;
-                          final contrailId = ref
-                              .read(accountProvider)
-                              .equippedContrailId;
-                          final contrail = CosmeticCatalog.getById(contrailId);
-                          final contrailPrimary =
-                              contrail?.colorScheme?['primary'];
-                          final contrailSecondary =
-                              contrail?.colorScheme?['secondary'];
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute<void>(
-                              builder: (context) => PlayScreen(
-                                region: region,
-                                planeColorScheme: plane?.colorScheme,
-                                planeWingSpan: plane?.wingSpan,
-                                equippedPlaneId: planeId,
-                                companionType: companion,
-                                fuelBoostMultiplier: fuelBoost,
-
-                                clueChance: license.clueChance,
-                                preferredClueType: license.preferredClueType,
-                                planeHandling: plane?.handling ?? 1.0,
-                                planeSpeed: plane?.speed ?? 1.0,
-                                planeFuelEfficiency:
-                                    plane?.fuelEfficiency ?? 1.0,
-                                contrailPrimaryColor: contrailPrimary != null
-                                    ? Color(contrailPrimary)
-                                    : null,
-                                contrailSecondaryColor:
-                                    contrailSecondary != null
-                                    ? Color(contrailSecondary)
-                                    : null,
-                              ),
-                            ),
-                          );
-                        }
+                      ? () => _launchPlay(context, ref, region)
                       : null;
                   // World is always unlocked so buyHandler stays null.
                 } else {

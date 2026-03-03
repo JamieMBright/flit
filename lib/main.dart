@@ -60,26 +60,37 @@ String? _fatalError;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  _log.info('app', 'Flit starting up');
 
   // Load cached settings immediately (before Supabase, which may be slow).
   // This ensures the user sees their real settings on the first frame even
   // when the network is unavailable or the Supabase response is delayed.
+  _log.info('app', 'Loading cached settings...');
   await GameSettings.instance.loadFromLocal();
+  _log.info('app', 'Settings loaded');
 
   // Initialize Supabase (auth session auto-restores from local storage).
+  _log.info('app', 'Initializing Supabase...');
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
+  _log.info('app', 'Supabase initialized');
 
   // Initialize the error telemetry service (V0).
   final errorService = ErrorService.instance;
+  final apiKey = const String.fromEnvironment('VERCEL_ERRORS_API_KEY');
   errorService.initialize(
     apiEndpoint: const String.fromEnvironment(
       'ERROR_ENDPOINT',
       defaultValue: 'https://flit-olive.vercel.app/api/errors',
     ),
-    apiKey: const String.fromEnvironment('VERCEL_ERRORS_API_KEY'),
+    apiKey: apiKey,
+  );
+  _log.info(
+    'app',
+    'ErrorService initialized',
+    data: {'hasApiKey': apiKey.isNotEmpty},
   );
 
   // Register the cross-platform HTTP sender so flush() can POST errors.
@@ -89,7 +100,9 @@ Future<void> main() async {
   Timer.periodic(_flushInterval, (_) => errorService.flush());
 
   // Initialize audio system (fire-and-forget; errors handled internally).
+  _log.info('app', 'Initializing audio...');
   AudioManager.instance.initialize();
+  _log.info('audio', 'AudioManager initialized');
 
   // Register beforeunload flush for web — last-chance safety net for iOS
   // Safari PWA kills where AppLifecycleState.hidden never fires.
@@ -100,7 +113,7 @@ Future<void> main() async {
     ]);
   });
 
-  _log.info('app', 'Flit starting up');
+  _log.info('app', 'Startup init complete, launching UI');
 
   // ── NUCLEAR ERROR BOUNDARY ──
   // Override ErrorWidget.builder so that ANY widget build failure shows a
