@@ -114,7 +114,7 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
       pulseValue: 0,
     );
 
-    final code = painter.hitTest(position, size);
+    final code = painter.hitTestState(position, size);
     if (code != null) {
       widget.onStateTapped(code);
     }
@@ -434,7 +434,7 @@ class _UsaMapPainter extends CustomPainter {
   }
 
   /// Hit test: returns the state code at the given canvas position, or null.
-  String? hitTest(Offset position, Size size) {
+  String? hitTestState(Offset position, Size size) {
     final areas = RegionalData.getAreas(GameRegion.usStates);
 
     // Check Alaska inset first (on top)

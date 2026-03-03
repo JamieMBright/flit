@@ -51,7 +51,9 @@ Map<String, dynamic> _bannedPlayerJson() {
 
 Map<String, dynamic> _tempBannedPlayerJson() {
   final bannedAt = DateTime.now().subtract(const Duration(days: 30));
-  final expiresAt = DateTime.now().add(const Duration(days: 365 * 70)); // Far future
+  final expiresAt = DateTime.now().add(
+    const Duration(days: 365 * 70),
+  ); // Far future
   return {
     'id': 'uid-temp-json',
     'username': 'temp_via_json',
