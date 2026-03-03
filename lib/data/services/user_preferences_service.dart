@@ -374,6 +374,7 @@ class UserPreferencesService {
     required double turnSensitivity,
     required bool invertControls,
     required bool enableNight,
+    required bool enableClouds,
     required String mapStyle,
     required bool englishLabels,
     required String difficulty,
@@ -390,6 +391,7 @@ class UserPreferencesService {
       'turn_sensitivity': turnSensitivity,
       'invert_controls': invertControls,
       'enable_night': enableNight,
+      'enable_clouds': enableClouds,
       'map_style': mapStyle,
       'english_labels': englishLabels,
       'difficulty': difficulty,
@@ -1152,6 +1154,10 @@ class UserPreferencesSnapshot {
 
   bool get enableNight {
     return settings?['enable_night'] as bool? ?? true;
+  }
+
+  bool get enableClouds {
+    return settings?['enable_clouds'] as bool? ?? true;
   }
 
   String get mapStyle {

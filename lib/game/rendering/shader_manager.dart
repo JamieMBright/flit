@@ -30,6 +30,7 @@ final _log = GameLog.instance;
 /// Index 14  : uFOV (field of view radians)
 /// Index 15  : uEnableShading (0.0 = raw texture, 1.0 = full shading)
 /// Index 16  : uEnableNight   (0.0 = always day,  1.0 = day/night cycle)
+/// Index 17  : uEnableClouds  (0.0 = no clouds,   1.0 = clouds on)
 /// ```
 /// Plus 4 image samplers: uSatellite, uHeightmap, uShoreDist, uCityLights
 class ShaderManager {
@@ -183,7 +184,10 @@ class ShaderManager {
     // All textures are optional - the game will run with black fallback
     // textures if any fail to load.
     final textureResults = await Future.wait<Map<String, dynamic>>([
-      _loadImage('assets/textures/blue_marble.png')
+      _loadImageWithFallback(
+            'assets/textures/blue_marble.jpg',
+            'assets/textures/blue_marble.png',
+          )
           .then((img) => <String, dynamic>{'name': 'satellite', 'image': img})
           .catchError(
             (e, st) => <String, dynamic>{
@@ -212,7 +216,10 @@ class ShaderManager {
               'stack': st,
             },
           ),
-      _loadImage('assets/textures/city_lights.png')
+      _loadImageWithFallback(
+            'assets/textures/city_lights.jpg',
+            'assets/textures/city_lights.png',
+          )
           .then((img) => <String, dynamic>{'name': 'city_lights', 'image': img})
           .catchError(
             (e, st) => <String, dynamic>{
@@ -410,6 +417,9 @@ class ShaderManager {
       // uEnableNight (0.0 = always day, 1.0 = day/night cycle)
       s.setFloat(16, GameSettings.instance.enableNight ? 1.0 : 0.0);
 
+      // uEnableClouds (0.0 = no clouds, 1.0 = clouds on)
+      s.setFloat(17, GameSettings.instance.enableClouds ? 1.0 : 0.0);
+
       // -- Image samplers (indices 0-3) --
       // Always bind all 4 samplers to prevent shader errors on platforms that
       // require all declared samplers to be bound. Each uses an appropriate
@@ -513,6 +523,23 @@ class ShaderManager {
         '- Unsupported image format\n'
         '- iOS Safari storage quota exceeded',
       );
+    }
+  }
+
+  /// Try loading an image from [primaryPath], falling back to [fallbackPath]
+  /// if the primary fails (e.g., .jpg vs .png).
+  Future<ui.Image> _loadImageWithFallback(
+    String primaryPath,
+    String fallbackPath,
+  ) async {
+    try {
+      return await _loadImage(primaryPath);
+    } catch (_) {
+      _log.debug(
+        'shader',
+        'Primary texture $primaryPath failed, trying fallback $fallbackPath',
+      );
+      return _loadImage(fallbackPath);
     }
   }
 

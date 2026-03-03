@@ -38,14 +38,13 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
   /// Elapsed time in seconds, fed to the shader for animations.
   double _time = 0.0;
 
-  /// Current sun direction (normalized), rotated slowly for day/night cycle.
+  /// Current sun direction (normalized), computed from real UTC time.
   double _sunDirX = 1.0;
   double _sunDirY = 0.3;
   double _sunDirZ = 0.0;
 
-  /// Rate at which the sun rotates around the globe (radians per second).
-  /// One full day/night cycle every ~120 seconds of game time.
-  static const double _sunRotationRate = 2 * pi / 120.0;
+  /// Earth's axial tilt in radians (23.44 degrees).
+  static const double _axialTilt = 23.44 * pi / 180.0;
 
   /// Cached screen size from the last render pass.
   Size _lastSize = Size.zero;
@@ -101,11 +100,26 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
       altitudeFraction: plane.continuousAltitude,
     );
 
-    // -- Rotate the sun direction for day/night cycle --
-    final sunAngle = _time * _sunRotationRate;
-    _sunDirX = cos(sunAngle);
-    _sunDirY = 0.3; // slight tilt above the equatorial plane
-    _sunDirZ = sin(sunAngle);
+    // -- Compute sun direction from real UTC time --
+    // The subsolar point (where the sun is directly overhead) moves with
+    // Earth's rotation. At UTC 12:00 it sits over the Prime Meridian (0°).
+    final now = DateTime.now().toUtc();
+    final utcHours = now.hour + now.minute / 60.0 + now.second / 3600.0;
+
+    // Subsolar longitude (radians). At UTC 12:00 → 0° (Prime Meridian).
+    final subSolarLonRad = pi - utcHours * pi / 12.0;
+
+    // Day of year (1-based) for solar declination.
+    final dayOfYear = now.difference(DateTime.utc(now.year, 1, 1)).inDays + 1;
+
+    // Solar declination — Earth's axial tilt creates seasonal variation.
+    // ≈ +23.44° at June solstice, −23.44° at December solstice.
+    final declinationRad = -_axialTilt * cos(2 * pi / 365.0 * (dayOfYear + 10));
+
+    // Convert subsolar point to shader world-space direction.
+    _sunDirX = cos(declinationRad) * cos(subSolarLonRad);
+    _sunDirY = sin(declinationRad);
+    _sunDirZ = cos(declinationRad) * sin(subSolarLonRad);
 
     // Normalize the sun direction vector.
     final sunLen = sqrt(
