@@ -7,6 +7,7 @@ import '../../data/models/challenge.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/challenge_service.dart';
+import '../../game/quiz/quiz_category.dart';
 
 /// Data class holding pilot info for display on the result screen.
 class PilotInfo {
