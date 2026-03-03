@@ -4,7 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
-import 'app_version.dart';
+import '../app_version.dart';
 
 /// Severity levels for reported errors.
 enum ErrorSeverity {
@@ -130,8 +130,8 @@ class ErrorService {
   late final String _sessionId;
 
   /// Application version reported with every error payload.
-  /// Sourced from the single-source-of-truth in [kAppVersion].
-  static const String appVersion = kAppVersion;
+  /// Sourced from the canonical [appVersion] in `core/app_version.dart`.
+  static String get errorAppVersion => appVersion;
 
   // ---------------------------------------------------------------------------
   // Queue

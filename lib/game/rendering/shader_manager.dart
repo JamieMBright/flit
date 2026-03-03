@@ -484,16 +484,37 @@ class ShaderManager {
     }
   }
 
+  /// Per-texture load timeout to prevent stalled network/decode from
+  /// hanging the entire shader initialization (and thus the game).
+  static const _textureTimeout = Duration(seconds: 15);
+
   /// Load an image from the asset bundle, decode it, and return the first
-  /// frame as a [ui.Image].
+  /// frame as a [ui.Image]. Times out after [_textureTimeout] to avoid
+  /// hanging the game if a network request or decode stalls.
   Future<ui.Image> _loadImage(String assetPath) async {
     _log.debug('shader', 'Loading texture: $assetPath');
     try {
-      final data = await rootBundle.load(assetPath);
+      final data = await rootBundle
+          .load(assetPath)
+          .timeout(
+            _textureTimeout,
+            onTimeout: () => throw TimeoutException(
+              'Texture load timed out: $assetPath',
+              _textureTimeout,
+            ),
+          );
       final sizeBytes = data.lengthInBytes;
       _log.debug('shader', 'Texture loaded: $assetPath ($sizeBytes bytes)');
 
-      final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+      final codec = await ui
+          .instantiateImageCodec(data.buffer.asUint8List())
+          .timeout(
+            _textureTimeout,
+            onTimeout: () => throw TimeoutException(
+              'Texture decode timed out: $assetPath',
+              _textureTimeout,
+            ),
+          );
       final frame = await codec.getNextFrame();
       final image = frame.image;
 
@@ -521,7 +542,8 @@ class ShaderManager {
         '- Network failure (web platform)\n'
         '- Corrupted image file\n'
         '- Unsupported image format\n'
-        '- iOS Safari storage quota exceeded',
+        '- iOS Safari storage quota exceeded\n'
+        '- Load/decode timed out',
       );
     }
   }

@@ -246,7 +246,7 @@ class ReportBugButton extends StatelessWidget {
         'recentErrors': recentErrorsSummary,
         'platform': platform,
         'deviceInfo': deviceInfo,
-        'appVersion': ErrorService.appVersion,
+        'appVersion': ErrorService.errorAppVersion,
       },
     );
   }
