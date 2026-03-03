@@ -100,9 +100,9 @@ Future<void> main() async {
   Timer.periodic(_flushInterval, (_) => errorService.flush());
 
   // Initialize audio system (fire-and-forget; errors handled internally).
+  // AudioManager logs its own 'AudioManager initialized' when done.
   _log.info('app', 'Initializing audio...');
   AudioManager.instance.initialize();
-  _log.info('audio', 'AudioManager initialized');
 
   // Register beforeunload flush for web — last-chance safety net for iOS
   // Safari PWA kills where AppLifecycleState.hidden never fires.
