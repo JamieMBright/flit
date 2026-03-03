@@ -23,6 +23,7 @@ import '../../data/services/economy_config_service.dart';
 import '../../data/services/challenge_service.dart';
 import '../challenge/challenge_result_screen.dart';
 import '../../game/clues/clue_types.dart';
+import '../../game/data/country_difficulty.dart';
 import '../../game/flit_game.dart';
 import '../../game/map/descent_map_view.dart';
 import '../../game/map/region.dart';
@@ -637,6 +638,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           rawScore: _session!.rawScore,
           hintsUsed: _hintTier,
           completed: true,
+          fuelFraction: fuelFrac,
         ),
       );
     }
@@ -795,6 +797,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           rawScore: _session!.rawScore,
           hintsUsed: _hintTier,
           completed: !fuelDepleted,
+          fuelFraction: fuelFrac,
         ),
       );
     }
@@ -1702,6 +1705,7 @@ class _RoundResult {
     required this.rawScore,
     this.hintsUsed = 0,
     this.completed = true,
+    this.fuelFraction = 1.0,
   });
 
   final String countryName;
@@ -1720,6 +1724,250 @@ class _RoundResult {
 
   /// Whether the player found the target (false = fuel depleted).
   final bool completed;
+
+  /// Fuel remaining as a fraction (0.0–1.0) when the round ended.
+  final double fuelFraction;
+
+  /// Hint penalty computed from [hintsUsed] and tier penalties.
+  int get hintPenalty {
+    int penalty = 0;
+    for (
+      int i = 0;
+      i < hintsUsed && i < GameSession.hintTierPenalties.length;
+      i++
+    ) {
+      penalty += GameSession.hintTierPenalties[i];
+    }
+    return penalty;
+  }
+
+  /// Fuel penalty computed from [fuelFraction].
+  int get fuelPenalty => ((1.0 - fuelFraction) * 5000).round();
+
+  /// Difficulty multiplier for this country.
+  double get diffMultiplier => difficultyMultiplier(countryCode);
+}
+
+/// Expandable row showing a round result with score breakdown.
+class _RoundBreakdownRow extends StatefulWidget {
+  const _RoundBreakdownRow({
+    required this.index,
+    required this.result,
+    required this.clueIcon,
+    required this.formatTime,
+  });
+
+  final int index;
+  final _RoundResult result;
+  final IconData clueIcon;
+  final String Function(Duration) formatTime;
+
+  @override
+  State<_RoundBreakdownRow> createState() => _RoundBreakdownRowState();
+}
+
+class _RoundBreakdownRowState extends State<_RoundBreakdownRow> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final r = widget.result;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Main row — tappable to expand/collapse.
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: r.completed
+              ? () => setState(() => _expanded = !_expanded)
+              : null,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 24,
+                child: Text(
+                  '${widget.index + 1}.',
+                  style: const TextStyle(
+                    color: FlitColors.textMuted,
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  r.countryName,
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 13,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Tooltip(
+                message: 'Clue type: ${r.clueType.name}',
+                child: Semantics(
+                  label: 'Clue type: ${r.clueType.name}',
+                  child: Icon(
+                    widget.clueIcon,
+                    color: FlitColors.textMuted,
+                    size: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 62,
+                child: Text(
+                  widget.formatTime(r.elapsed),
+                  style: const TextStyle(
+                    color: FlitColors.accent,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 44,
+                child: Text(
+                  r.completed ? '${r.score}' : '--',
+                  style: TextStyle(
+                    color: r.completed
+                        ? FlitColors.textPrimary
+                        : FlitColors.textMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'monospace',
+                  ),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+              if (r.completed) ...[
+                const SizedBox(width: 4),
+                Icon(
+                  _expanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  color: FlitColors.textMuted,
+                  size: 16,
+                ),
+              ],
+            ],
+          ),
+        ),
+        // Expanded breakdown.
+        if (_expanded && r.completed) _ScoreBreakdown(result: r),
+      ],
+    );
+  }
+}
+
+/// Compact score breakdown card shown under an expanded round row.
+class _ScoreBreakdown extends StatelessWidget {
+  const _ScoreBreakdown({required this.result});
+
+  final _RoundResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final r = result;
+    final fuelPct = (r.fuelFraction * 100).round();
+    final mult = r.diffMultiplier;
+
+    return Container(
+      margin: const EdgeInsets.only(left: 24, top: 4, bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: FlitColors.backgroundDark.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: FlitColors.cardBorder.withOpacity(0.5)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _breakdownLine('Base', '10,000'),
+          if (r.hintPenalty > 0)
+            _breakdownLine(
+              'Hints (${r.hintsUsed})',
+              '-${_formatNum(r.hintPenalty)}',
+              valueColor: FlitColors.error,
+            ),
+          if (r.fuelPenalty > 0)
+            _breakdownLine(
+              'Fuel ($fuelPct%)',
+              '-${_formatNum(r.fuelPenalty)}',
+              valueColor: FlitColors.warning,
+            ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 3),
+            child: Divider(color: FlitColors.cardBorder, height: 1),
+          ),
+          _breakdownLine('Raw', _formatNum(r.rawScore)),
+          _breakdownLine(
+            'Difficulty',
+            '\u00d7${mult.toStringAsFixed(2)}',
+            valueColor: FlitColors.accent,
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 3),
+            child: Divider(color: FlitColors.cardBorder, height: 1),
+          ),
+          _breakdownLine(
+            'Final',
+            _formatNum(r.score),
+            labelBold: true,
+            valueBold: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _breakdownLine(
+    String label,
+    String value, {
+    Color valueColor = FlitColors.textSecondary,
+    bool labelBold = false,
+    bool valueBold = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: FlitColors.textMuted,
+              fontSize: 11,
+              fontWeight: labelBold ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: valueColor,
+              fontSize: 11,
+              fontFamily: 'monospace',
+              fontWeight: valueBold ? FontWeight.w700 : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _formatNum(int n) {
+    if (n >= 1000) {
+      final thousands = n ~/ 1000;
+      final remainder = n % 1000;
+      return '$thousands,${remainder.toString().padLeft(3, '0')}';
+    }
+    return '$n';
+  }
 }
 
 class _ResultDialog extends ConsumerWidget {
@@ -1881,6 +2129,13 @@ class _ResultDialog extends ConsumerWidget {
                   fontSize: 14,
                 ),
               ),
+              // Single-round score breakdown.
+              if (!isMultiRound &&
+                  roundResults.isNotEmpty &&
+                  roundResults.first.completed) ...[
+                const SizedBox(height: 8),
+                _ScoreBreakdown(result: roundResults.first),
+              ],
               // Per-round summary table for multi-round modes.
               if (isMultiRound && roundResults.isNotEmpty) ...[
                 const SizedBox(height: 16),
@@ -1895,6 +2150,11 @@ class _ResultDialog extends ConsumerWidget {
                     letterSpacing: 1.5,
                   ),
                 ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Tap a round for score breakdown',
+                  style: TextStyle(color: FlitColors.textMuted, fontSize: 9),
+                ),
                 const SizedBox(height: 8),
                 Flexible(
                   child: ListView.separated(
@@ -1903,52 +2163,11 @@ class _ResultDialog extends ConsumerWidget {
                     itemCount: roundResults.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 6),
                     itemBuilder: (_, i) {
-                      final r = roundResults[i];
-                      return Row(
-                        children: [
-                          SizedBox(
-                            width: 24,
-                            child: Text(
-                              '${i + 1}.',
-                              style: const TextStyle(
-                                color: FlitColors.textMuted,
-                                fontSize: 12,
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              r.countryName,
-                              style: const TextStyle(
-                                color: FlitColors.textPrimary,
-                                fontSize: 13,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Tooltip(
-                            message: 'Clue type: ${r.clueType.name}',
-                            child: Semantics(
-                              label: 'Clue type: ${r.clueType.name}',
-                              child: Icon(
-                                _clueIcon(r.clueType),
-                                color: FlitColors.textMuted,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            _formatTime(r.elapsed),
-                            style: const TextStyle(
-                              color: FlitColors.accent,
-                              fontSize: 12,
-                              fontFamily: 'monospace',
-                            ),
-                          ),
-                        ],
+                      return _RoundBreakdownRow(
+                        index: i,
+                        result: roundResults[i],
+                        clueIcon: _clueIcon(roundResults[i].clueType),
+                        formatTime: _formatTime,
                       );
                     },
                   ),
