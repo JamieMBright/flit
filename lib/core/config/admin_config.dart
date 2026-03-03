@@ -18,7 +18,7 @@ abstract final class AdminConfig {
   /// Known owner emails — used as a client-side bootstrap before DB loads.
   /// The server-side `admin_role` column is the real source of truth.
   /// TODO: Move to environment variable or config table for production.
-  static const Set<String> ownerEmails = {'<owner-email>'};
+  static const Set<String> ownerEmails = {'jamiebright1@gmail.com'};
 
   /// Whether the currently authenticated Supabase user is a known owner
   /// by email. Use this only as a pre-hydration fallback; prefer
