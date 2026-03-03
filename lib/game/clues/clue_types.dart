@@ -182,8 +182,36 @@ class Clue {
       }
     }
 
-    // Fallback: if all retries failed, return flag clue (most reliable)
+    // Fallback: try each allowed type in order (flag is most reliable).
+    // If allowedTypes restricts the pool, try those first before flag.
+    for (final fallbackType in types) {
+      final fallbackClue = _buildClue(fallbackType, countryCode, random);
+      if (_isValidClue(fallbackClue)) return fallbackClue;
+    }
+    // Absolute last resort.
     return Clue.flag(countryCode);
+  }
+
+  /// Build a [Clue] from a [ClueType] for the given country.
+  static Clue _buildClue(ClueType type, String code, Random? random) {
+    switch (type) {
+      case ClueType.flag:
+        return Clue.flag(code);
+      case ClueType.outline:
+        return Clue.outline(code);
+      case ClueType.borders:
+        return Clue.borders(code);
+      case ClueType.capital:
+        return Clue.capital(code);
+      case ClueType.stats:
+        return Clue.stats(code, random: random);
+      case ClueType.sportsTeam:
+      case ClueType.leader:
+      case ClueType.nickname:
+      case ClueType.landmark:
+      case ClueType.flagDescription:
+        return Clue.stats(code, random: random);
+    }
   }
 
   /// Create a clue for a regional area (state, county, island).
