@@ -7,6 +7,7 @@ import '../../core/app_version.dart';
 import '../../data/providers/account_provider.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/challenge.dart';
+import '../../data/services/app_config_service.dart';
 import '../../data/services/challenge_service.dart';
 import '../../data/services/feature_flag_service.dart';
 import '../../data/services/friends_service.dart';
@@ -41,6 +42,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   bool _matchmakingEnabled = true;
   bool _dailyScrambleEnabled = true;
 
+  /// Whether the server is currently in maintenance mode. Admins bypass the
+  /// gate but this banner warns them it's still on.
+  bool _maintenanceMode = false;
+  String? _maintenanceMessage;
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +55,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       duration: const Duration(seconds: 20),
     )..repeat();
     _loadFeatureFlags();
+    _checkMaintenanceMode();
+  }
+
+  Future<void> _checkMaintenanceMode() async {
+    try {
+      final config = await AppConfigService.instance.fetchConfig();
+      if (!mounted) return;
+      setState(() {
+        _maintenanceMode = config.maintenanceMode;
+        _maintenanceMessage = config.maintenanceMessage;
+      });
+    } catch (_) {
+      // Network failure — assume not in maintenance.
+    }
   }
 
   Future<void> _loadFeatureFlags() async {
@@ -85,10 +105,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         // Animated map background
         _AnimatedMapBackground(animation: _animController),
 
+        // Maintenance mode admin banner — red alert at the very top so the
+        // admin knows maintenance is active (they bypassed the gate).
+        if (_maintenanceMode && ref.watch(accountProvider).isAdmin)
+          Positioned(
+            top: MediaQuery.of(context).padding.top,
+            left: 0,
+            right: 0,
+            child: Material(
+              color: FlitColors.error,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _maintenanceMessage != null &&
+                                _maintenanceMessage!.isNotEmpty
+                            ? 'MAINTENANCE ON: $_maintenanceMessage'
+                            : 'MAINTENANCE MODE IS ON — players are locked out',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
         // Announcement banner — floats at the top of the safe area above the
         // menu column, but below the globe so it feels part of the HUD layer.
         Positioned(
-          top: MediaQuery.of(context).padding.top + 12,
+          top:
+              MediaQuery.of(context).padding.top +
+              12 +
+              (_maintenanceMode && ref.watch(accountProvider).isAdmin ? 36 : 0),
           left: 16,
           right: 16,
           child: const AnnouncementBanner(),

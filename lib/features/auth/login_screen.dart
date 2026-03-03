@@ -50,11 +50,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     // Check app config gates (maintenance mode, force update) before anything.
     try {
+      // Fetch config first so we can pass the maintenance message to the screen.
+      final config = await AppConfigService.instance.fetchConfig();
       final compat = await AppConfigService.instance.checkCompatibility();
       if (!mounted) return;
       if (compat == AppCompatibility.maintenance) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute<void>(builder: (_) => const MaintenanceScreen()),
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                MaintenanceScreen(message: config.maintenanceMessage),
+          ),
         );
         return;
       }

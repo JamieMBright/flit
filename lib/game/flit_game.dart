@@ -736,7 +736,11 @@ class FlitGame extends FlameGame
         st,
         context: {'source': 'FlitGame', 'action': 'onLoad'},
       );
-      rethrow;
+      // Surface the error to PlayScreen via the onError callback instead of
+      // rethrowing. Flame's errorBuilder path is unreliable — the scheduled
+      // setState can be skipped if the widget unmounts before the next frame,
+      // resulting in a permanent black screen with no error shown.
+      onError?.call(e, st);
     }
   }
 
