@@ -85,6 +85,7 @@ class GameSettings extends ChangeNotifier {
       turnSensitivity: _turnSensitivity,
       invertControls: _invertControls,
       enableNight: _enableNight,
+      enableClouds: _enableClouds,
       mapStyle: _mapStyle.name,
       englishLabels: _englishLabels,
       difficulty: _difficulty.name,
@@ -108,6 +109,7 @@ class GameSettings extends ChangeNotifier {
     required double turnSensitivity,
     required bool invertControls,
     required bool enableNight,
+    required bool enableClouds,
     required bool englishLabels,
     required MapStyle mapStyle,
     required GameDifficulty difficulty,
@@ -122,6 +124,7 @@ class GameSettings extends ChangeNotifier {
       this.turnSensitivity = turnSensitivity;
       this.invertControls = invertControls;
       this.enableNight = enableNight;
+      this.enableClouds = enableClouds;
       this.englishLabels = englishLabels;
       this.mapStyle = mapStyle;
       this.difficulty = difficulty;
@@ -147,6 +150,7 @@ class GameSettings extends ChangeNotifier {
         'turn_sensitivity': _turnSensitivity,
         'invert_controls': _invertControls,
         'enable_night': _enableNight,
+        'enable_clouds': _enableClouds,
         'map_style': _mapStyle.name,
         'english_labels': _englishLabels,
         'difficulty': _difficulty.name,
@@ -180,6 +184,7 @@ class GameSettings extends ChangeNotifier {
           (data['turn_sensitivity'] as num?)?.toDouble() ?? _turnSensitivity;
       _invertControls = data['invert_controls'] as bool? ?? _invertControls;
       _enableNight = data['enable_night'] as bool? ?? _enableNight;
+      _enableClouds = data['enable_clouds'] as bool? ?? _enableClouds;
       final mapStyleName = data['map_style'] as String?;
       if (mapStyleName != null) {
         _mapStyle = MapStyle.values.firstWhere(
@@ -263,6 +268,16 @@ class GameSettings extends ChangeNotifier {
 
   set enableNight(bool value) {
     _enableNight = value;
+    notifyListeners();
+  }
+
+  /// Whether procedural clouds are rendered on the globe.
+  bool _enableClouds = true;
+
+  bool get enableClouds => _enableClouds;
+
+  set enableClouds(bool value) {
+    _enableClouds = value;
     notifyListeners();
   }
 

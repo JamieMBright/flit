@@ -164,6 +164,16 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
       ),
       const Divider(color: FlitColors.cardBorder, height: 1),
       _SettingsToggle(
+        label: 'Clouds',
+        icon: Icons.cloud_outlined,
+        value: GameSettings.instance.enableClouds,
+        onChanged: (value) {
+          GameSettings.instance.enableClouds = value;
+          setState(() {});
+        },
+      ),
+      const Divider(color: FlitColors.cardBorder, height: 1),
+      _SettingsToggle(
         label: 'English Labels',
         icon: Icons.translate,
         value: GameSettings.instance.englishLabels,

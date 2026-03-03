@@ -29,6 +29,7 @@ uniform float uCloudRadius;  // Index 13:   cloud shell radius (> globe)
 uniform float uFOV;          // Index 14:   field of view (radians)
 uniform float uEnableShading; // Index 15:  0.0 = raw texture, 1.0 = full shading
 uniform float uEnableNight;   // Index 16:  0.0 = always day,  1.0 = day/night cycle
+uniform float uEnableClouds;  // Index 17:  0.0 = no clouds,   1.0 = clouds on
 
 // ---------------------------------------------------------------------------
 // Samplers — maximum 4 per shader pass
@@ -81,13 +82,25 @@ const float ATMO_THICKNESS     = 0.05;
 const float RIM_INTENSITY      = 0.35;
 const float HAZE_STRENGTH      = 0.15;
 
-// Clouds
-const float CLOUD_COVERAGE     = 0.42;
-const float CLOUD_SOFTNESS     = 0.25;
-const float CLOUD_DRIFT_SPEED  = 0.008;
+// Clouds — multi-layer organic
+const float CLOUD_DRIFT_SPEED  = 0.006;
 const float CLOUD_BRIGHTNESS   = 1.0;
-const float CLOUD_SHADOW_STR   = 0.15;
+const float CLOUD_SHADOW_STR   = 0.08;
 const int   FBM_OCTAVES        = 4;
+
+// Cirrus (high, thin, wispy streaks)
+const float CIRRUS_THRESHOLD   = 0.48;
+const float CIRRUS_OPACITY     = 0.15;
+
+// Cumulus / stratus (mid-level, puffy patches)
+const float CUMULUS_COVERAGE    = 0.56;
+const float CUMULUS_SOFTNESS    = 0.12;
+const float CUMULUS_OPACITY     = 0.45;
+
+// Cumulonimbus (isolated dramatic towers)
+const float CB_THRESHOLD        = 0.72;
+const float CB_SOFTNESS         = 0.08;
+const float CB_OPACITY          = 0.65;
 
 // Day/night cycle
 const float TERMINATOR_SOFT    = -0.1;
@@ -488,7 +501,10 @@ void main() {
     bool isOcean = heightVal < SEA_LEVEL;
 
     // ----- Diffuse lighting ------------------------------------------------
-    float NdotL    = dot(normal, uSunDir);
+    // When night is disabled, force full lighting everywhere (no dark side).
+    float NdotL    = uEnableNight > 0.5
+        ? dot(normal, uSunDir)
+        : 1.0;
     float diffuse  = max(NdotL, 0.0);
 
     // =======================================================================
@@ -643,10 +659,10 @@ void main() {
     }
 
     // =======================================================================
-    // V5: CLOUD LAYER
+    // V5: CLOUD LAYER — multi-layer organic clouds
     // =======================================================================
 
-    {
+    if (uEnableClouds > 0.5) {
         // Intersect the cloud shell
         float tC = tCloud;
         // If tCloud is behind the globe surface, skip
@@ -655,45 +671,92 @@ void main() {
             vec3 cloudNormal = normalize(cloudHit - GLOBE_ORIGIN);
             vec2 cloudUV = equirectangularUV(cloudHit);
 
-            // Animate cloud drift
-            vec3 cloudSamplePos = cloudHit * 3.0;
+            // ── Weather system: large-scale pattern creating clear/cloudy zones ──
+            // Slowly drifting 2D noise makes some regions clear, others cloudy
+            float weatherNoise = noise(cloudUV * 2.5 + uTime * 0.0008);
+            float weatherPattern = smoothstep(0.32, 0.68, weatherNoise);
+
+            // ── Base FBM density (shared by cumulus + cumulonimbus) ──
+            vec3 cloudSamplePos = cloudHit * 3.5;
             cloudSamplePos.x += uTime * CLOUD_DRIFT_SPEED;
             cloudSamplePos.z += uTime * CLOUD_DRIFT_SPEED * 0.7;
+            float baseDensity = fbm(cloudSamplePos);
 
-            // FBM for cloud density
-            float density = fbm(cloudSamplePos);
+            // ── Cirrus: thin wispy streaks (cheap 2D noise, stretched) ──
+            vec2 cirrusUV = cloudUV * 18.0;
+            cirrusUV.x *= 3.0; // stretch horizontally for streaky appearance
+            cirrusUV += uTime * vec2(0.004, 0.001);
+            float cirrusDensity = noise(cirrusUV);
+            float cirrusMask = smoothstep(CIRRUS_THRESHOLD, CIRRUS_THRESHOLD + 0.18, cirrusDensity)
+                             * weatherPattern;
 
-            // Coverage threshold with smooth edges
-            float cloudMask = smoothstep(CLOUD_COVERAGE - CLOUD_SOFTNESS, CLOUD_COVERAGE + CLOUD_SOFTNESS, density);
+            // ── Cumulus / stratus: puffy patches ──
+            float cumulusMask = smoothstep(
+                CUMULUS_COVERAGE - CUMULUS_SOFTNESS,
+                CUMULUS_COVERAGE + CUMULUS_SOFTNESS,
+                baseDensity
+            ) * weatherPattern;
 
-            if (cloudMask > 0.01) {
-                // Cloud lighting from sun direction (bright tops, dark bottoms)
-                float cloudNdotL = dot(cloudNormal, uSunDir);
+            // ── Cumulonimbus: isolated dramatic towers (sparse) ──
+            float cbMask = smoothstep(
+                CB_THRESHOLD - CB_SOFTNESS,
+                CB_THRESHOLD + CB_SOFTNESS,
+                baseDensity
+            ) * step(0.55, weatherPattern);
+
+            // ── Combine layers by weighted opacity ──
+            float totalAlpha = 1.0 - (1.0 - cirrusMask * CIRRUS_OPACITY)
+                                   * (1.0 - cumulusMask * CUMULUS_OPACITY)
+                                   * (1.0 - cbMask * CB_OPACITY);
+
+            if (totalAlpha > 0.01) {
+                // Cloud lighting from sun direction
+                float cloudNdotL = uEnableNight > 0.5
+                    ? dot(cloudNormal, uSunDir)
+                    : 1.0;
                 float cloudLight = smoothstep(-0.3, 1.0, cloudNdotL);
-                float cloudDayFactor = smoothstep(TERMINATOR_SOFT, TERMINATOR_HARD, cloudNdotL);
+                float cloudDayFactor = uEnableNight > 0.5
+                    ? smoothstep(TERMINATOR_SOFT, TERMINATOR_HARD, cloudNdotL)
+                    : 1.0;
 
                 // Cloud colour: bright white in sun, grey in shadow
-                vec3 cloudColor = mix(vec3(0.25, 0.27, 0.35), vec3(CLOUD_BRIGHTNESS), cloudLight);
+                vec3 cloudColor = mix(vec3(0.30, 0.32, 0.40), vec3(CLOUD_BRIGHTNESS), cloudLight);
 
-                // Night-side clouds are faintly visible (moonlight)
+                // Night-side clouds: faintly visible (moonlight)
                 cloudColor = mix(vec3(0.03, 0.04, 0.06), cloudColor, max(cloudDayFactor, 0.05));
 
                 // Terminator warm glow on clouds
-                float cloudTerminator = smoothstep(-0.15, 0.0, cloudNdotL) * smoothstep(0.25, 0.05, cloudNdotL);
+                float cloudTerminator = smoothstep(-0.15, 0.0, cloudNdotL)
+                                      * smoothstep(0.25, 0.05, cloudNdotL);
                 cloudColor += TERMINATOR_WARM * cloudTerminator * 0.3;
 
-                // Blend cloud on top of surface
-                surfaceColor = mix(surfaceColor, cloudColor, cloudMask * 0.9);
+                // Cumulonimbus are brighter (towering white tops)
+                vec3 cbColor = mix(cloudColor, vec3(CLOUD_BRIGHTNESS) * cloudLight, 0.3);
+                // Weighted blend of cloud types
+                float cbWeight = cbMask * CB_OPACITY;
+                float cuWeight = cumulusMask * CUMULUS_OPACITY;
+                float ciWeight = cirrusMask * CIRRUS_OPACITY;
+                float totalWeight = cbWeight + cuWeight + ciWeight + 0.001;
+                vec3 blendedCloud = (cbColor * cbWeight + cloudColor * cuWeight + cloudColor * ciWeight)
+                                  / totalWeight;
+
+                // Composite cloud over surface
+                surfaceColor = mix(surfaceColor, blendedCloud, totalAlpha);
             }
         }
 
-        // Cloud shadows on terrain (approximate — darken terrain where clouds would be overhead)
-        // Uses the globe normal as an approximation of "looking up" to the cloud layer
-        vec3 shadowSamplePos = hitPoint * 3.0;
+        // Cloud shadows on terrain (approximate)
+        vec3 shadowSamplePos = hitPoint * 3.5;
         shadowSamplePos.x += uTime * CLOUD_DRIFT_SPEED;
         shadowSamplePos.z += uTime * CLOUD_DRIFT_SPEED * 0.7;
         float shadowDensity = fbm(shadowSamplePos);
-        float shadowMask = smoothstep(CLOUD_COVERAGE - CLOUD_SOFTNESS, CLOUD_COVERAGE + CLOUD_SOFTNESS, shadowDensity);
+        float shadowWeather = noise(equirectangularUV(hitPoint) * 2.5 + uTime * 0.0008);
+        float shadowPattern = smoothstep(0.32, 0.68, shadowWeather);
+        float shadowMask = smoothstep(
+            CUMULUS_COVERAGE - CUMULUS_SOFTNESS,
+            CUMULUS_COVERAGE + CUMULUS_SOFTNESS,
+            shadowDensity
+        ) * shadowPattern;
         surfaceColor *= 1.0 - shadowMask * CLOUD_SHADOW_STR * dayFactor;
     }
 

@@ -642,6 +642,10 @@ void main() {
       expect(snapshotNoSettings.enableNight, isTrue);
     });
 
+    test('enableClouds defaults to true when no settings', () {
+      expect(snapshotNoSettings.enableClouds, isTrue);
+    });
+
     test('mapStyle defaults to "standard" when no settings', () {
       expect(snapshotNoSettings.mapStyle, equals('standard'));
     });
@@ -669,6 +673,7 @@ void main() {
           'turn_sensitivity': 0.8,
           'invert_controls': true,
           'enable_night': false,
+          'enable_clouds': false,
           'map_style': 'satellite',
           'english_labels': false,
           'difficulty': 'hard',
@@ -681,6 +686,7 @@ void main() {
       expect(snapshot.turnSensitivity, closeTo(0.8, 0.001));
       expect(snapshot.invertControls, isTrue);
       expect(snapshot.enableNight, isFalse);
+      expect(snapshot.enableClouds, isFalse);
       expect(snapshot.mapStyle, equals('satellite'));
       expect(snapshot.englishLabels, isFalse);
       expect(snapshot.difficulty, equals('hard'));
