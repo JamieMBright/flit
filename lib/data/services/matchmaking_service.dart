@@ -51,7 +51,7 @@ class MatchmakingService {
   /// Current gameplay version — tied to the app version from ErrorService.
   /// When mechanics change (scoring, flight speed, clues), bump this to
   /// invalidate stale pool entries.
-  String get _gameplayVersion => ErrorService.appVersion;
+  String get _gameplayVersion => ErrorService.errorAppVersion;
 
   // ---------------------------------------------------------------------------
   // ELO estimation

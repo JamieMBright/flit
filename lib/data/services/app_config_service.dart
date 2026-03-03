@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/app_version.dart';
+import '../../core/config/admin_config.dart';
 import '../models/app_remote_config.dart';
 
 /// Fetches and caches the remote app configuration.
@@ -43,10 +44,13 @@ class AppConfigService {
   }
 
   /// Check if the current app version is compatible.
+  ///
+  /// Admins (by email bootstrap) bypass maintenance mode so they can
+  /// access the admin panel and toggle it off.
   Future<AppCompatibility> checkCompatibility() async {
     final config = await fetchConfig();
 
-    if (config.maintenanceMode) {
+    if (config.maintenanceMode && !AdminConfig.isCurrentUserAdmin) {
       return AppCompatibility.maintenance;
     }
 

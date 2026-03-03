@@ -129,11 +129,17 @@ jobs:
         run: test -f shaders/globe.frag && echo "globe.frag OK"
 
       - name: Build web release
+        env:
+          VERCEL_ERRORS_API_KEY: ${{ secrets.VERCEL_ERRORS_API_KEY }}
         run: |
           set -o pipefail
+          DART_DEFINES=""
+          if [ -n "$VERCEL_ERRORS_API_KEY" ]; then
+            DART_DEFINES="--dart-define=VERCEL_ERRORS_API_KEY=$VERCEL_ERRORS_API_KEY"
+          fi
           for attempt in 1 2; do
             echo "Build web attempt ${attempt}/2"
-            if flutter build web --release --dart2js-optimization=O2 --base-href "/flit/" 2>&1 | tee flutter-build.log; then
+            if flutter build web --release --dart2js-optimization=O2 --base-href "/flit/" $DART_DEFINES 2>&1 | tee flutter-build.log; then
               break
             fi
             if [ "$attempt" -eq 2 ]; then
@@ -204,7 +210,14 @@ jobs:
         run: flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release
+        env:
+          VERCEL_ERRORS_API_KEY: ${{ secrets.VERCEL_ERRORS_API_KEY }}
+        run: |
+          DART_DEFINES=""
+          if [ -n "$VERCEL_ERRORS_API_KEY" ]; then
+            DART_DEFINES="--dart-define=VERCEL_ERRORS_API_KEY=$VERCEL_ERRORS_API_KEY"
+          fi
+          flutter build apk --release $DART_DEFINES
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

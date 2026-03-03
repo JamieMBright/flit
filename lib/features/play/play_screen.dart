@@ -249,7 +249,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       // spinning forever. The timer is cancelled in _onGameReady or dispose.
       _gameReadyTimeout = Timer(const Duration(seconds: 20), () {
         if (mounted && !_gameReady && _error == null) {
-          _log.error('screen', 'Game ready timeout (20s)');
+          const msg = 'Game engine failed to start (20s timeout)';
+          _log.error('screen', msg);
+          ErrorService.instance.reportCritical(
+            msg,
+            StackTrace.current,
+            context: {
+              'screen': 'PlayScreen',
+              'action': 'gameReadyTimeout',
+              'region': widget.region.name,
+            },
+          );
           setState(() {
             _error =
                 'Game engine failed to start.\n\nPlease go back and try '
@@ -318,6 +328,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     setState(() {
       _gameReady = true;
     });
+    // Start background music (fire-and-forget; safe if disabled or on web
+    // before user gesture).
+    AudioManager.instance.startMusic();
     // Start the game session on the next frame so it is decoupled from the
     // Flame onLoad() future – any exception here won't break the engine.
     SchedulerBinding.instance.addPostFrameCallback((_) {
