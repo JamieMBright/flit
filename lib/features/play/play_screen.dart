@@ -358,15 +358,36 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
       if (_hintTier == 1) {
         // Tier 1: Cycle to a different clue type.
-        // Try up to 5 times to get a different type than the current one.
+        //
+        // Strategy:
+        //  1. If the session has multiple enabled types, pick from the
+        //     remaining unused types (exclude current clue's type).
+        //  2. If only one type was enabled (or none remain), expand to
+        //     ALL clue types and apply license preference boost.
         final previousType = _currentClue?.type;
+        final enabled = widget.enabledClueTypes;
+
+        // Determine remaining types from the session's pool.
+        Set<String>? remainingTypes;
+        if (enabled != null && enabled.length > 1) {
+          final remaining = enabled
+              .where((t) => t != previousType?.name)
+              .toSet();
+          if (remaining.isNotEmpty) {
+            remainingTypes = remaining;
+          }
+        }
+
+        // If no remaining types in session pool, open to all types with
+        // license preference (but exclude the current type via retries).
+        final hintAllowed = remainingTypes; // null = all types
         Clue? newClue;
         for (var i = 0; i < 5; i++) {
           final candidate = Clue.random(
             _session!.targetCountry.code,
             preferredClueType: widget.preferredClueType,
             clueChance: widget.clueChance,
-            allowedTypes: widget.enabledClueTypes,
+            allowedTypes: hintAllowed,
           );
           if (candidate.type != previousType || i == 4) {
             newClue = candidate;
@@ -381,15 +402,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             data: {
               'target': _session!.targetName,
               'newClueType': _currentClue!.type.name,
+              'fromPool': remainingTypes != null ? 'session' : 'all',
             },
           );
         } else {
-          // Only one clue type available — skip directly to tier 2 (reveal).
+          // Couldn't find a different type — skip directly to tier 2 (reveal).
           _hintTier = 2;
           _revealedCountry = _session!.targetName;
           _log.info(
             'hint',
-            'Tier 1 skipped to Tier 2: only one clue type',
+            'Tier 1 skipped to Tier 2: no different clue available',
             data: {'target': _session!.targetName},
           );
         }
