@@ -11,6 +11,7 @@ import '../../data/services/challenge_service.dart';
 import '../../data/services/feature_flag_service.dart';
 import '../../data/services/friends_service.dart';
 import '../../game/quiz/quiz_category.dart';
+import '../../game/quiz/quiz_session.dart';
 import '../avatar/avatar_widget.dart';
 import '../play/play_screen.dart';
 import '../quiz/quiz_game_screen.dart';

@@ -7,6 +7,7 @@ import 'package:flame/components.dart';
 import '../models/challenge.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/quiz/quiz_category.dart';
+import '../../game/quiz/quiz_session.dart';
 
 /// Service for managing H2H challenges via Supabase.
 ///

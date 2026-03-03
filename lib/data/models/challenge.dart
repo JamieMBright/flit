@@ -2,6 +2,7 @@ import 'package:flame/components.dart';
 
 import '../../game/clues/clue_types.dart';
 import '../../game/quiz/quiz_category.dart';
+import '../../game/quiz/quiz_session.dart';
 
 /// The game mode used for a challenge.
 ///

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_session.dart';
 import 'quiz_setup_screen.dart';
 
