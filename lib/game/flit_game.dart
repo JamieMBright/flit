@@ -699,13 +699,6 @@ class FlitGame extends FlameGame
       _worldPosition = isFlatMapMode ? region.center : Vector2(0, 0);
       _heading = -pi / 2; // north
 
-      // Start engine sound for equipped plane (fire-and-forget, safe if missing).
-      try {
-        AudioManager.instance.startEngine(equippedPlaneId);
-      } catch (e) {
-        _log.warning('game', 'Engine sound start failed', error: e);
-      }
-
       _log.info('game', 'FlitGame.onLoad complete');
 
       try {
@@ -959,9 +952,6 @@ class FlitGame extends FlameGame
     // Feed world state to plane for world-space contrail spawning.
     _plane.worldPos = _worldPosition.clone();
     _plane.worldHeading = _heading;
-
-    // Modulate engine volume with turn intensity.
-    AudioManager.instance.updateEngineVolume(_plane.turnDirection.abs());
 
     // Compute per-frame screen correction so worldToScreen aligns with
     // the plane sprite. Must run AFTER chase camera and motion updates

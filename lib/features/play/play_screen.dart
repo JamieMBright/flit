@@ -302,7 +302,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     _timer?.cancel();
     _autoHintTimer?.cancel();
     _gameReadyTimeout?.cancel();
-    AudioManager.instance.stopEngine();
     // Detach the Flame game to stop its loop and release resources.
     // Without this, the game loop can outlive the widget and crash when
     // the user navigates to a different game mode.
