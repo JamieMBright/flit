@@ -180,7 +180,7 @@ vec2 equirectangularUV(vec3 p) {
 vec3 cameraRayDir(vec2 fragCoord, vec2 resolution, vec3 camPos, vec3 camUp, float fov) {
     vec2 uv = (fragCoord - 0.5 * resolution) / resolution.y;
     uv.y = -uv.y;
-    const float tiltDown = 0.25;
+    const float tiltDown = 0.35;
     uv.y += tiltDown;
 
     float halfFov = tan(fov * 0.5);
