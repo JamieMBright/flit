@@ -111,22 +111,11 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         final dxWrapped = dx > 180 ? 360 - dx : dx;
         if (dxWrapped > visRadius || dy > visRadius) continue;
 
-        // Skip tiny polygons (small islands) that add visual noise.
-        // At high altitude, only show polygons spanning > 1° in any axis.
-        // At medium altitude, show polygons > 0.3°.
-        final minSpan = continuousAlt > 0.6 ? 1.0 : 0.3;
-        if (polygon.length < 20) {
-          var pMinX = polygon[0].x, pMaxX = polygon[0].x;
-          var pMinY = polygon[0].y, pMaxY = polygon[0].y;
-          for (var j = 1; j < polygon.length; j++) {
-            final v = polygon[j];
-            if (v.x < pMinX) pMinX = v.x;
-            if (v.x > pMaxX) pMaxX = v.x;
-            if (v.y < pMinY) pMinY = v.y;
-            if (v.y > pMaxY) pMaxY = v.y;
-          }
-          if ((pMaxX - pMinX) < minSpan && (pMaxY - pMinY) < minSpan) continue;
-        }
+        // For countries with many polygons (e.g., Canada, Indonesia), skip
+        // tiny sub-polygons (small island fragments) at high altitude to
+        // reduce visual clutter. Countries with few polygons are kept as-is
+        // since they may be small island nations that are clue answers.
+        if (country.polygons.length > 10 && polygon.length < 15) continue;
 
         final stride = polygon.length > maxPointsPerPoly
             ? (polygon.length / maxPointsPerPoly).ceil()
@@ -210,20 +199,8 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
     for (final polygon in activeCountry.polygons) {
       if (polygon.length < 3) continue;
 
-      // Skip tiny polygons (small islands) at high altitude.
-      final minSpan = continuousAlt > 0.6 ? 1.0 : 0.3;
-      if (polygon.length < 20) {
-        var pMinX = polygon[0].x, pMaxX = polygon[0].x;
-        var pMinY = polygon[0].y, pMaxY = polygon[0].y;
-        for (var j = 1; j < polygon.length; j++) {
-          final v = polygon[j];
-          if (v.x < pMinX) pMinX = v.x;
-          if (v.x > pMaxX) pMaxX = v.x;
-          if (v.y < pMinY) pMinY = v.y;
-          if (v.y > pMaxY) pMaxY = v.y;
-        }
-        if ((pMaxX - pMinX) < minSpan && (pMaxY - pMinY) < minSpan) continue;
-      }
+      // For countries with many sub-polygons, skip tiny fragments.
+      if (activeCountry.polygons.length > 10 && polygon.length < 15) continue;
 
       final stride = polygon.length > maxPointsPerPoly
           ? (polygon.length / maxPointsPerPoly).ceil()
