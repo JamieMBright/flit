@@ -881,7 +881,23 @@ class Clue {
   ///
   /// When [random] is provided the selection is deterministic, ensuring both
   /// H2H players see the same three facts.
-  static Map<String, dynamic> _getCountryStats(String code, {Random? random}) {
+  /// Returns **all** stats for a country (not a random trio).
+  /// Used by the Country Clues browser so players can see every fact.
+  static Map<String, String> getAllCountryStats(String code) {
+    final stats = _getCountryStats(code, returnAll: true);
+    return stats.map((k, v) => MapEntry(k, v.toString()));
+  }
+
+  /// Returns all neighboring country names for a given code.
+  static List<String> getNeighbors(String code) {
+    return _getNeighboringCountries(code);
+  }
+
+  static Map<String, dynamic> _getCountryStats(
+    String code, {
+    Random? random,
+    bool returnAll = false,
+  }) {
     const allStats = <String, Map<String, String>>{
       // ═══════════════════════════════════════════
       // NORTH AMERICA
@@ -1805,6 +1821,9 @@ class Clue {
     final countryStats = allStats[code];
     // Return empty map if country not found - caller should handle by picking different clue type
     if (countryStats == null) return <String, dynamic>{};
+
+    // Return all stats when requested (e.g. for the clues browser).
+    if (returnAll) return Map<String, dynamic>.from(countryStats);
 
     // Pick a random trio of stats from all available keys.
     // Use the provided seeded RNG when available so H2H players see the same
