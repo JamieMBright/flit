@@ -43,10 +43,7 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
   double _sunDirY = 0.5;
   double _sunDirZ = 0.0;
 
-  /// Cached shader Paint — reused every frame to avoid per-frame allocation.
-  final Paint _shaderPaint = Paint();
-
-  /// Cached fallback Paint — reused every frame to avoid per-frame allocation.
+  /// Cached fallback Paint.
   static final Paint _fallbackPaint = Paint()..color = FlitColors.space;
 
   /// Cached screen size from the last render pass.
@@ -148,7 +145,7 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
       final shaderOpacity = alt >= 0.6
           ? 1.0
           : ((alt - 0.3) / 0.3).clamp(0.0, 1.0);
-      _shaderPaint.shader = shader;
+      final paint = Paint()..shader = shader;
       if (shaderOpacity < 1.0) {
         canvas.saveLayer(
           Rect.fromLTWH(0, 0, _lastSize.width, _lastSize.height),
@@ -157,7 +154,7 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
       }
       canvas.drawRect(
         Rect.fromLTWH(0, 0, _lastSize.width, _lastSize.height),
-        _shaderPaint,
+        paint,
       );
       if (shaderOpacity < 1.0) {
         canvas.restore();

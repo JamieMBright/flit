@@ -44,7 +44,6 @@ class ShaderManager {
   // -- Cached assets --
 
   ui.FragmentProgram? _program;
-  ui.FragmentShader? _cachedShader;
   ui.Image? _satelliteTexture;
   ui.Image? _cityLightsTexture;
 
@@ -318,8 +317,7 @@ class ShaderManager {
     if (!_initialized || _program == null) return null;
 
     try {
-      _cachedShader ??= _program!.fragmentShader();
-      final s = _cachedShader!;
+      final s = _program!.fragmentShader();
 
       // -- Float uniforms (indices 0-14) --
       // uResolution (vec2)
@@ -526,7 +524,6 @@ class ShaderManager {
     _satelliteTexture = null;
     _cityLightsTexture = null;
     _blackTexture = null;
-    _cachedShader = null;
     _program = null;
     _initialized = false;
     _loading = false;

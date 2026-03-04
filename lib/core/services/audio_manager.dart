@@ -105,6 +105,11 @@ class AudioManager {
   /// Constant engine rumble volume (no turn modulation — just a steady hum).
   static const double _engineBaseVolume = 0.06;
 
+  /// Last volume actually applied to the engine player. Tracked to avoid
+  /// redundant setVolume() calls every frame, which causes audio jitter
+  /// on web/Safari from the underlying player re-interpolating volume.
+  double _lastAppliedEngineVolume = -1.0;
+
   /// Default background music volume.
   static const double _defaultMusicVolume = 0.25;
 
@@ -137,6 +142,7 @@ class AudioManager {
 
   set effectsVolume(double value) {
     _effectsVolume = value.clamp(0.0, 1.0);
+    _lastAppliedEngineVolume = -1.0; // Force next updateEngineVolume to apply
     // Immediately update the playing engine volume.
     if (_enabled && _currentEngine != null) {
       _applyEngineVolume();
@@ -343,6 +349,7 @@ class AudioManager {
     if (_failedAssets.contains(asset)) return;
 
     _currentEngine = type;
+    _lastAppliedEngineVolume = -1.0; // Force volume apply on next update
 
     try {
       await _enginePlayer.stop();
@@ -360,6 +367,7 @@ class AudioManager {
   Future<void> stopEngine() async {
     _currentEngine = null;
     _lastPlaneId = null;
+    _lastAppliedEngineVolume = -1.0;
     await _enginePlayer.stop();
   }
 
@@ -368,10 +376,19 @@ class AudioManager {
   /// Call this every frame from the game update loop.
   /// [turnAmount] is accepted for API compatibility but ignored — the engine
   /// plays at a constant low volume for an unobtrusive ambient hum.
+  ///
+  /// Skips the actual setVolume() call if the volume hasn't changed since
+  /// the last application. Calling setVolume() 60 times per second with the
+  /// same value causes audio jitter on web/Safari.
   Future<void> updateEngineVolume(double turnAmount) async {
     if (!_enabled || _currentEngine == null) return;
 
     final volume = (_engineBaseVolume * _effectsVolume).clamp(0.0, 1.0);
+
+    // Skip if volume hasn't meaningfully changed (avoids 60x/sec setVolume
+    // calls that cause audio jitter on web platforms).
+    if ((volume - _lastAppliedEngineVolume).abs() < 0.001) return;
+    _lastAppliedEngineVolume = volume;
 
     try {
       await _enginePlayer.setVolume(volume);
