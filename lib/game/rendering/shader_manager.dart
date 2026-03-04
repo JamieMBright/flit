@@ -45,9 +45,9 @@ class ShaderManager {
 
   ui.FragmentProgram? _program;
   ui.Image? _satelliteTexture;
+  ui.Image? _cityLightsTexture;
 
   // Fallback 1x1 black texture for missing optional samplers.
-  // Used for city lights sampler (no city_lights texture shipped yet).
   ui.Image? _blackTexture;
 
   bool _initialized = false;
@@ -162,34 +162,55 @@ class ShaderManager {
       return;
     }
 
-    // Load the satellite texture (the only required texture).
-    // City lights texture is not yet shipped — the shader uses a black
-    // fallback for sampler 1, so night-side city lights are simply off.
-    try {
-      _satelliteTexture = await _loadImage('assets/textures/blue_marble.png');
+    // Load textures in parallel. Satellite is required; city lights is
+    // optional (falls back to black if missing or fails to load).
+    final results = await Future.wait([
+      _loadImage(
+        'assets/textures/blue_marble.png',
+      ).then<ui.Image?>((img) => img).catchError((Object e, StackTrace st) {
+        _log.error(
+          'shader',
+          'Failed to load satellite texture',
+          error: e,
+          stackTrace: st,
+        );
+        ErrorService.instance.reportError(
+          'Satellite texture failed to load.\nError: $e',
+          st,
+          severity: ErrorSeverity.error,
+          context: {
+            'source': 'ShaderManager',
+            'action': 'loadTexture',
+            'texture': 'satellite',
+          },
+        );
+        return null;
+      }),
+      _loadImage(
+        'assets/textures/city_lights.png',
+      ).then<ui.Image?>((img) => img).catchError((Object e, StackTrace st) {
+        _log.warning(
+          'shader',
+          'City lights texture not found — using black fallback',
+          error: e,
+        );
+        return null;
+      }),
+    ]);
+
+    _satelliteTexture = results[0];
+    _cityLightsTexture = results[1];
+
+    if (_satelliteTexture != null) {
       _log.info(
         'shader',
-        'Loaded satellite texture (${_satelliteTexture!.width}x${_satelliteTexture!.height})',
+        'Loaded satellite (${_satelliteTexture!.width}x${_satelliteTexture!.height})',
       );
-    } catch (e, st) {
-      _log.error(
+    }
+    if (_cityLightsTexture != null) {
+      _log.info(
         'shader',
-        'Failed to load satellite texture',
-        error: e,
-        stackTrace: st,
-      );
-      ErrorService.instance.reportError(
-        'Satellite texture failed to load.\n'
-        'Error: $e\n'
-        'The globe will fall back to Canvas rendering.',
-        st,
-        severity: ErrorSeverity.error,
-        context: {
-          'source': 'ShaderManager',
-          'action': 'loadTexture',
-          'texture': 'satellite',
-          'assetPath': 'assets/textures/blue_marble.png',
-        },
+        'Loaded city lights (${_cityLightsTexture!.width}x${_cityLightsTexture!.height})',
       );
     }
 
@@ -296,10 +317,9 @@ class ShaderManager {
 
       // -- Image samplers (indices 0-1) --
       // Always bind all 2 samplers to prevent shader errors on platforms that
-      // require all declared samplers to be bound. City lights texture is not
-      // shipped yet, so sampler 1 always gets a black 1x1 fallback.
+      // require all declared samplers to be bound.
       s.setImageSampler(0, _satelliteTexture ?? _blackTexture!);
-      s.setImageSampler(1, _blackTexture!);
+      s.setImageSampler(1, _cityLightsTexture ?? _blackTexture!);
 
       return s;
     } catch (e, st) {
@@ -442,8 +462,10 @@ class ShaderManager {
   /// Release all cached resources. Primarily useful for testing.
   void dispose() {
     _satelliteTexture?.dispose();
+    _cityLightsTexture?.dispose();
     _blackTexture?.dispose();
     _satelliteTexture = null;
+    _cityLightsTexture = null;
     _blackTexture = null;
     _program = null;
     _initialized = false;
