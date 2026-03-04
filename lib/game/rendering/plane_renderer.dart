@@ -345,7 +345,7 @@ class PlaneRenderer {
     final secondary = _secondary(colorScheme, 0xFFC0392B);
     final detail = _detail(colorScheme, 0xFF8B4513);
 
-    final shade = -bankSin;
+    final shade = bankSin;
     final leftWingColor = shade > 0
         ? _lighten(detail, shade)
         : _darken(detail, -shade * 0.4);
@@ -359,7 +359,7 @@ class PlaneRenderer {
     final undersidePaint = Paint()..color = _darken(primary, 0.35);
 
     final dynamicWingSpan = wingSpan * bankCos.abs();
-    final wingDip = -bankSin * 4.0;
+    final wingDip = bankSin * 4.0;
     final bodyShift = bankSin * 1.5;
 
     // --- Propeller (behind everything) ---
@@ -755,10 +755,10 @@ class PlaneRenderer {
     final secondary = _secondary(colorScheme, 0xFFE0E0E0);
     final detail = _detail(colorScheme, 0xFFCCCCCC);
 
-    final shade = -bankSin;
+    final shade = bankSin;
     final bodyShift = bankSin * 1.5;
     final dynamicWingSpan = wingSpan * bankCos.abs();
-    final wingDip = -bankSin * 4.0;
+    final wingDip = bankSin * 4.0;
 
     // Paper planes are a single folded shape — wings ARE the body.
     // Draw as unified triangular form with fold line, not separate parts.
@@ -909,7 +909,7 @@ class PlaneRenderer {
     final secondary = _secondary(colorScheme, 0xFF4A90B8);
     final detail = _detail(colorScheme, 0xFF808080);
 
-    final shade = -bankSin;
+    final shade = bankSin;
     final bodyShift = bankSin * 1.5;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 3.0;
@@ -1079,7 +1079,7 @@ class PlaneRenderer {
     final secondary = _secondary(colorScheme, 0xFF1A1A1A);
     final detail = _detail(colorScheme, 0xFF444444);
 
-    final shade = -bankSin;
+    final shade = bankSin;
     final bodyShift = bankSin * 1.0;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 2.0;
@@ -1200,7 +1200,7 @@ class PlaneRenderer {
     final secondary = _secondary(colorScheme, 0xFF8B0000);
     final detail = _detail(colorScheme, 0xFF1A1A1A);
 
-    final shade = -bankSin;
+    final shade = bankSin;
     final bodyShift = bankSin * 1.5;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 3.0;
@@ -1428,7 +1428,7 @@ class PlaneRenderer {
     final secondary = _secondary(colorScheme, 0xFF1A3A5C);
     final detail = _detail(colorScheme, 0xFFCC3333);
 
-    final shade = -bankSin;
+    final shade = bankSin;
     final bodyShift = bankSin * 1.0;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 2.5;
@@ -1594,7 +1594,7 @@ class PlaneRenderer {
 
     final bodyShift = bankSin * 1.5;
     final dynamicWingSpan = wingSpan * bankCos.abs();
-    final wingDip = -bankSin * 4.0;
+    final wingDip = bankSin * 4.0;
 
     // Hull-shaped floats with step (real seaplanes have boat-hull shaped pontoons)
     final pontoonPaint = Paint()..color = detail;
@@ -1701,7 +1701,7 @@ class PlaneRenderer {
     final secondary = _secondary(colorScheme, 0xFF169B62);
     final detail = _detail(colorScheme, 0xFFFF883E);
 
-    final shade = -bankSin;
+    final shade = bankSin;
     final bodyShift = bankSin * 1.0;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 2.0;
@@ -1900,7 +1900,7 @@ class PlaneRenderer {
     final secondary = _secondary(colorScheme, 0xFF1A3A5C);
     final detail = _detail(colorScheme, 0xFFD4A944);
 
-    final shade = -bankSin;
+    final shade = bankSin;
     final bodyShift = bankSin * 1.0;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 2.0;
@@ -2165,7 +2165,7 @@ class PlaneRenderer {
     final secondary = _secondary(colorScheme, 0xFF6A0DAD);
     final detail = _detail(colorScheme, 0xFFC0C0C0);
 
-    final shade = -bankSin;
+    final shade = bankSin;
     final bodyShift = bankSin * 1.0;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 3.0;
@@ -2520,7 +2520,7 @@ class PlaneRenderer {
     final secondary = _secondary(colorScheme, 0xFF1A1A1A); // Heat shield
     final detail = _detail(colorScheme, 0xFF3366CC); // NASA blue
 
-    final shade = -bankSin;
+    final shade = bankSin;
     final bodyShift = bankSin * 1.5;
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 3.0;

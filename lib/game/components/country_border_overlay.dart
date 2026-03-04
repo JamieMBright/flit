@@ -5,23 +5,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/services/error_service.dart';
-import '../../core/theme/flit_colors.dart';
 import '../../core/utils/game_log.dart';
-import '../data/osm_features.dart';
 import '../flit_game.dart';
 import '../map/country_data.dart';
 
-/// Renders geographic feature overlays and highlights the country the plane
-/// is currently flying over at high altitude.
-///
-/// Features rendered (from OSM / public domain data):
-/// - Major rivers (simplified polylines)
-/// - Major lakes (filled circles)
-/// - Mountain peaks (triangle markers)
-/// - Airports (dot markers with IATA codes)
-/// - Sea/ocean labels
-/// - Volcanoes (diamond markers)
-/// - Active country border highlight
+/// Renders country border overlays on the shader globe:
+/// - White country outlines (all countries, visible at altitude)
+/// - Red flash highlight for the country the plane is currently in
 class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
   @override
   void render(Canvas canvas) {
@@ -38,16 +28,14 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       final screenW = gameRef.size.x;
       final screenH = gameRef.size.y;
 
-      // --- Geographic feature overlays ---
-      // Rivers removed — low resolution data created visual artifacts.
-      _renderLakes(canvas, continuousAlt, screenW, screenH);
-      _renderSeaLabels(canvas, continuousAlt, screenW, screenH);
-      _renderMountains(canvas, continuousAlt, screenW, screenH);
-      _renderVolcanoes(canvas, continuousAlt, screenW, screenH);
-      _renderAirports(canvas, continuousAlt, screenW, screenH);
+      // --- Country outlines (all countries, faint white) ---
+      _renderAllCountryOutlines(canvas, continuousAlt, screenW, screenH);
 
-      // --- Active country highlight ---
-      _renderCountryBorders(canvas, continuousAlt, screenW, screenH);
+      // --- Active country highlight (red flash) ---
+      _renderActiveCountryHighlight(canvas, continuousAlt, screenW, screenH);
+
+      // Sea labels and airport markers removed — caused visual artifacts
+      // on the globe at high altitude.
     } catch (e, st) {
       final log = GameLog.instance;
       log.error(
@@ -76,321 +64,107 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
   }
 
   // -----------------------------------------------------------------------
-  // Lakes — filled circles at lake centers
+  // All country outlines — faint white borders on the globe surface
   // -----------------------------------------------------------------------
 
-  void _renderLakes(Canvas canvas, double alt, double screenW, double screenH) {
-    final opacity = (alt * 0.5).clamp(0.0, 0.4);
-    if (opacity < 0.05) return;
-
-    final fillPaint = Paint()
-      ..color = const Color(0xFF3366AA).withOpacity(opacity)
-      ..style = PaintingStyle.fill;
-
-    final playerPos = gameRef.worldPosition;
-    final visRadius = alt < 0.5 ? 40.0 : 90.0;
-
-    for (final lake in OsmFeatures.lakes) {
-      if ((lake.center.x - playerPos.x).abs() > visRadius ||
-          (lake.center.y - playerPos.y).abs() > visRadius)
-        continue;
-
-      final screenPos = gameRef.worldToScreenGlobe(lake.center);
-      if (screenPos.x < -500 || screenPos.y < -500) continue;
-      if (screenPos.x < -50 ||
-          screenPos.x > screenW + 50 ||
-          screenPos.y < -50 ||
-          screenPos.y > screenH + 50)
-        continue;
-
-      // Scale radius based on altitude and lake size
-      final screenRadius = (lake.radiusDegrees * 8.0 / (alt + 0.3)).clamp(
-        2.0,
-        15.0,
-      );
-      canvas.drawCircle(
-        Offset(screenPos.x, screenPos.y),
-        screenRadius,
-        fillPaint,
-      );
-    }
-  }
-
-  // -----------------------------------------------------------------------
-  // Sea/Ocean labels — text labels at ocean centers
-  // -----------------------------------------------------------------------
-
-  static final Map<String, TextPainter> _seaLabelCache = {};
-
-  /// Tracks the last opacity value used to build each cached TextPainter so
-  /// we only re-layout when opacity changes by more than 1/255 (one alpha step).
-  static final Map<String, double> _seaLabelOpacityCache = {};
-
-  void _renderSeaLabels(
-    Canvas canvas,
-    double alt,
-    double screenW,
-    double screenH,
-  ) {
-    // Only show at high altitude
-    if (alt < 0.6) return;
-
-    final opacity = ((alt - 0.6) * 2.0).clamp(0.0, 0.3);
-    if (opacity < 0.05) return;
-
-    final playerPos = gameRef.worldPosition;
-
-    for (final sea in OsmFeatures.seas) {
-      if ((sea.center.x - playerPos.x).abs() > 90 ||
-          (sea.center.y - playerPos.y).abs() > 90)
-        continue;
-
-      final screenPos = gameRef.worldToScreenGlobe(sea.center);
-      if (screenPos.x < -500 || screenPos.y < -500) continue;
-      if (screenPos.x < 0 ||
-          screenPos.x > screenW ||
-          screenPos.y < 0 ||
-          screenPos.y > screenH)
-        continue;
-
-      // Build a new TextPainter only on first use or when opacity changes
-      // by more than one alpha step (1/255 ≈ 0.004). This avoids rebuilding
-      // the painter every frame while still reflecting fade transitions.
-      final cachedOpacity = _seaLabelOpacityCache[sea.name];
-      final needsRebuild =
-          cachedOpacity == null || (cachedOpacity - opacity).abs() > 0.004;
-
-      if (needsRebuild) {
-        final tp = TextPainter(
-          text: TextSpan(
-            text: sea.name.toUpperCase(),
-            style: TextStyle(
-              color: const Color(0xFF88AACC).withOpacity(opacity),
-              fontSize: 9,
-              fontWeight: FontWeight.w300,
-              letterSpacing: 2.0,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout();
-        _seaLabelCache[sea.name] = tp;
-        _seaLabelOpacityCache[sea.name] = opacity;
-      }
-
-      final painter = _seaLabelCache[sea.name]!;
-
-      painter.paint(
-        canvas,
-        Offset(
-          screenPos.x - painter.width / 2,
-          screenPos.y - painter.height / 2,
-        ),
-      );
-    }
-  }
-
-  // -----------------------------------------------------------------------
-  // Mountain peaks — small triangle markers
-  // -----------------------------------------------------------------------
-
-  void _renderMountains(
-    Canvas canvas,
-    double alt,
-    double screenW,
-    double screenH,
-  ) {
-    if (alt < 0.3) return;
-
-    final opacity = ((alt - 0.3) * 0.8).clamp(0.0, 0.5);
-    if (opacity < 0.05) return;
-
-    final paint = Paint()
-      ..color = const Color(0xFFCC8844).withOpacity(opacity)
-      ..style = PaintingStyle.fill;
-
-    final playerPos = gameRef.worldPosition;
-    final visRadius = alt < 0.5 ? 30.0 : 70.0;
-    const maxPeaks = kIsWeb ? 8 : 15;
-    var drawn = 0;
-
-    for (final peak in OsmFeatures.peaks) {
-      if (drawn >= maxPeaks) break;
-      if ((peak.location.x - playerPos.x).abs() > visRadius ||
-          (peak.location.y - playerPos.y).abs() > visRadius)
-        continue;
-
-      final screenPos = gameRef.worldToScreenGlobe(peak.location);
-      if (screenPos.x < -500 || screenPos.y < -500) continue;
-      if (screenPos.x < -20 ||
-          screenPos.x > screenW + 20 ||
-          screenPos.y < -20 ||
-          screenPos.y > screenH + 20)
-        continue;
-
-      // Small triangle marker
-      const size = 4.0;
-      final path = ui.Path()
-        ..moveTo(screenPos.x, screenPos.y - size)
-        ..lineTo(screenPos.x - size * 0.7, screenPos.y + size * 0.5)
-        ..lineTo(screenPos.x + size * 0.7, screenPos.y + size * 0.5)
-        ..close();
-
-      canvas.drawPath(path, paint);
-      drawn++;
-    }
-  }
-
-  // -----------------------------------------------------------------------
-  // Volcanoes — small diamond markers
-  // -----------------------------------------------------------------------
-
-  void _renderVolcanoes(
-    Canvas canvas,
-    double alt,
-    double screenW,
-    double screenH,
-  ) {
-    if (alt < 0.4) return;
-
-    final opacity = ((alt - 0.4) * 0.7).clamp(0.0, 0.4);
-    if (opacity < 0.05) return;
-
-    final playerPos = gameRef.worldPosition;
-    final visRadius = alt < 0.5 ? 30.0 : 70.0;
-    const maxVolcanoes = kIsWeb ? 6 : 12;
-    var drawn = 0;
-
-    for (final volcano in OsmFeatures.volcanoes) {
-      if (drawn >= maxVolcanoes) break;
-      if ((volcano.location.x - playerPos.x).abs() > visRadius ||
-          (volcano.location.y - playerPos.y).abs() > visRadius)
-        continue;
-
-      final screenPos = gameRef.worldToScreenGlobe(volcano.location);
-      if (screenPos.x < -500 || screenPos.y < -500) continue;
-      if (screenPos.x < -20 ||
-          screenPos.x > screenW + 20 ||
-          screenPos.y < -20 ||
-          screenPos.y > screenH + 20)
-        continue;
-
-      final color = volcano.isActive
-          ? const Color(0xFFDD4422).withOpacity(opacity)
-          : const Color(0xFF886644).withOpacity(opacity * 0.7);
-
-      final paint = Paint()
-        ..color = color
-        ..style = PaintingStyle.fill;
-
-      // Diamond marker
-      const size = 3.5;
-      final path = ui.Path()
-        ..moveTo(screenPos.x, screenPos.y - size)
-        ..lineTo(screenPos.x + size * 0.6, screenPos.y)
-        ..lineTo(screenPos.x, screenPos.y + size)
-        ..lineTo(screenPos.x - size * 0.6, screenPos.y)
-        ..close();
-
-      canvas.drawPath(path, paint);
-      drawn++;
-    }
-  }
-
-  // -----------------------------------------------------------------------
-  // Airports — dot markers with IATA code labels
-  // -----------------------------------------------------------------------
-
-  static final Map<String, TextPainter> _airportLabelCache = {};
-
-  void _renderAirports(
-    Canvas canvas,
-    double alt,
-    double screenW,
-    double screenH,
-  ) {
-    // Airports visible at mid altitude
-    if (alt < 0.3 || alt > 0.8) return;
-
-    final opacity = alt < 0.5
-        ? ((alt - 0.3) * 2.5).clamp(0.0, 0.5)
-        : ((0.8 - alt) * 2.5).clamp(0.0, 0.5);
-    if (opacity < 0.05) return;
-
-    final dotPaint = Paint()
-      ..color = const Color(0xFFEEEEEE).withOpacity(opacity)
-      ..style = PaintingStyle.fill;
-
-    final playerPos = gameRef.worldPosition;
-    const visRadius = 50.0;
-    const maxAirports = kIsWeb ? 6 : 12;
-    var drawn = 0;
-
-    for (final airport in OsmFeatures.airports) {
-      if (drawn >= maxAirports) break;
-      if ((airport.location.x - playerPos.x).abs() > visRadius ||
-          (airport.location.y - playerPos.y).abs() > visRadius)
-        continue;
-
-      final screenPos = gameRef.worldToScreenGlobe(airport.location);
-      if (screenPos.x < -500 || screenPos.y < -500) continue;
-      if (screenPos.x < 0 ||
-          screenPos.x > screenW ||
-          screenPos.y < 0 ||
-          screenPos.y > screenH)
-        continue;
-
-      // Small dot
-      canvas.drawCircle(Offset(screenPos.x, screenPos.y), 2.0, dotPaint);
-
-      // IATA code label
-      final painter = _airportLabelCache.putIfAbsent(airport.iataCode, () {
-        return TextPainter(
-          text: TextSpan(
-            text: airport.iataCode,
-            style: TextStyle(
-              color: const Color(0xFFCCCCCC).withOpacity(opacity),
-              fontSize: 7,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout();
-      });
-
-      painter.text = TextSpan(
-        text: airport.iataCode,
-        style: TextStyle(
-          color: const Color(0xFFCCCCCC).withOpacity(opacity),
-          fontSize: 7,
-          fontWeight: FontWeight.w500,
-        ),
-      );
-      painter.layout();
-
-      painter.paint(
-        canvas,
-        Offset(screenPos.x + 4, screenPos.y - painter.height / 2),
-      );
-      drawn++;
-    }
-  }
-
-  // -----------------------------------------------------------------------
-  // Active country highlight only — country borders are rendered by the
-  // Canvas-based WorldMap overlay (fill + stroke on country polygons).
-  // -----------------------------------------------------------------------
-
-  void _renderCountryBorders(
+  void _renderAllCountryOutlines(
     Canvas canvas,
     double continuousAlt,
     double screenW,
     double screenH,
   ) {
-    // Only draw the active (hovered) country highlight
+    // Fade in with altitude — visible at high alt, invisible at ground level.
+    // Ramps up from 0 at ground to 0.35 at cruise altitude and stays there.
+    final opacity = (0.35 * (continuousAlt / 0.6)).clamp(0.0, 0.35);
+    if (opacity < 0.02) return;
+
+    final outlinePaint = Paint()
+      ..color = Colors.white.withOpacity(opacity)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true;
+
+    // Point budget per polygon — use all available points for accurate borders.
+    const maxPointsPerPoly = kIsWeb ? 200 : 400;
+
+    final playerPos = gameRef.worldPosition;
+
+    // Visibility radius in degrees — only render countries near the player
+    // to avoid projecting the entire globe every frame.
+    final visRadius = continuousAlt < 0.5 ? 50.0 : 100.0;
+
+    final activeCountryName = gameRef.currentCountryName;
+
+    for (final country in CountryData.countries) {
+      // Skip the active country — it gets the red highlight instead.
+      if (country.name == activeCountryName) continue;
+
+      for (final polygon in country.polygons) {
+        if (polygon.length < 3) continue;
+
+        // Quick center-of-polygon check for visibility culling.
+        final center = polygon[polygon.length ~/ 2];
+        final dx = (center.x - playerPos.x).abs();
+        final dy = (center.y - playerPos.y).abs();
+        // Handle antimeridian wrapping.
+        final dxWrapped = dx > 180 ? 360 - dx : dx;
+        if (dxWrapped > visRadius || dy > visRadius) continue;
+
+        final stride = polygon.length > maxPointsPerPoly
+            ? (polygon.length / maxPointsPerPoly).ceil()
+            : 1;
+
+        final path = ui.Path();
+        var started = false;
+        var anyVisible = false;
+
+        for (var i = 0; i < polygon.length; i += stride) {
+          final screenPos = gameRef.worldToScreenGlobe(polygon[i]);
+
+          // Occluded (far side of globe)
+          if (screenPos.x < -500 || screenPos.y < -500) {
+            started = false;
+            continue;
+          }
+
+          if (screenPos.x > -50 &&
+              screenPos.x < screenW + 50 &&
+              screenPos.y > -50 &&
+              screenPos.y < screenH + 50) {
+            anyVisible = true;
+          }
+
+          if (!started) {
+            path.moveTo(screenPos.x, screenPos.y);
+            started = true;
+          } else {
+            path.lineTo(screenPos.x, screenPos.y);
+          }
+        }
+
+        if (anyVisible && started) {
+          path.close();
+          canvas.drawPath(path, outlinePaint);
+        }
+      }
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Active country highlight — red flash when plane enters a country
+  // -----------------------------------------------------------------------
+
+  void _renderActiveCountryHighlight(
+    Canvas canvas,
+    double continuousAlt,
+    double screenW,
+    double screenH,
+  ) {
     final activeCountryName = gameRef.currentCountryName;
     if (activeCountryName == null) return;
 
-    // Find the active country
+    // Find the active country.
     CountryShape? activeCountry;
     for (final country in CountryData.countries) {
       if (country.name == activeCountryName) {
@@ -400,22 +174,21 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
     }
     if (activeCountry == null) return;
 
-    final borderOpacity = continuousAlt >= 0.6
-        ? (0.5 * (1.0 - (continuousAlt - 0.6) / 0.4)).clamp(0.15, 0.5)
-        : (0.5 + 0.5 * (1.0 - continuousAlt / 0.6)).clamp(0.0, 1.0);
+    final borderOpacity = (0.6 * (continuousAlt / 0.6)).clamp(0.0, 0.6);
 
     if (borderOpacity < 0.01) return;
 
+    // Red highlight for the active country border.
     final highlightPaint = Paint()
-      ..color = FlitColors.accent.withOpacity(
-        (borderOpacity * 1.0).clamp(0.4, 1.0),
-      )
+      ..color = const Color(
+        0xFFFF3333,
+      ).withOpacity((borderOpacity * 1.0).clamp(0.4, 1.0))
       ..style = PaintingStyle.stroke
-      ..strokeWidth = continuousAlt >= 0.6 ? 2.5 : 3.5
+      ..strokeWidth = continuousAlt >= 0.6 ? 2.0 : 2.5
       ..strokeJoin = StrokeJoin.round;
 
-    // Point budget per polygon (web is tighter)
-    const maxPointsPerPoly = kIsWeb ? 30 : 60;
+    // Higher point budget for the active highlight — needs to look crisp.
+    const maxPointsPerPoly = kIsWeb ? 300 : 600;
 
     for (final polygon in activeCountry.polygons) {
       if (polygon.length < 3) continue;
