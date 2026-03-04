@@ -26,7 +26,6 @@ void main() {
     test('lodUniforms returns high-quality values by default', () {
       final uniforms = manager.lodUniforms;
       expect(uniforms['cloudIterations'], equals(8.0));
-      expect(uniforms['foamQuality'], equals(1.0));
       expect(uniforms['atmosphereQuality'], equals(1.0));
       expect(uniforms['cityLightsEnabled'], equals(1.0));
     });
@@ -222,21 +221,18 @@ void main() {
       manager.forceLevel(ShaderLOD.medium);
       final uniforms = manager.lodUniforms;
       expect(uniforms['cloudIterations'], equals(4.0));
-      expect(uniforms['foamQuality'], equals(0.0));
     });
 
-    test('low LOD has no clouds and no foam', () {
+    test('low LOD has no clouds', () {
       manager.forceLevel(ShaderLOD.low);
       final uniforms = manager.lodUniforms;
       expect(uniforms['cloudIterations'], equals(0.0));
-      expect(uniforms['foamQuality'], equals(0.0));
       expect(uniforms['cityLightsEnabled'], equals(0.0));
     });
 
     test('all LOD levels have all required uniform keys', () {
       const requiredKeys = [
         'cloudIterations',
-        'foamQuality',
         'atmosphereQuality',
         'cityLightsEnabled',
       ];

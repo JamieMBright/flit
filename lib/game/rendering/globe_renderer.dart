@@ -22,7 +22,7 @@ final _log = GameLog.instance;
 ///
 /// Replaces the Canvas-based [WorldMap] with a single full-screen quad
 /// drawn with a [FragmentShader] paint. The shader handles all visual
-/// layers: satellite terrain, ocean, foam, atmosphere, clouds, city lights,
+/// layers: satellite terrain, ocean, atmosphere, clouds, city lights,
 /// and day/night terminator.
 ///
 /// Falls back to a solid dark color if the shader has not yet loaded.

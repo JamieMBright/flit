@@ -13,7 +13,6 @@ import '../core/utils/game_log.dart';
 import '../core/utils/math_utils.dart';
 import '../core/utils/web_error_bridge.dart';
 import '../data/models/avatar_config.dart';
-import 'components/city_label_overlay.dart';
 import 'components/country_border_overlay.dart';
 import 'components/companion_renderer.dart';
 import 'components/contrail_renderer.dart';
@@ -670,11 +669,6 @@ class FlitGame extends FlameGame
 
       // Country border overlay — renders border outlines when shader is active.
       await add(CountryBorderOverlay());
-
-      // City label overlay — renders city names at low altitude.
-      // Works with both shader and canvas renderers (WorldMap renders its own
-      // cities at low altitude, so the overlay skips when WorldMap is active).
-      await add(CityLabelOverlay());
 
       _plane = PlaneComponent(
         onAltitudeChanged: (isHigh) {

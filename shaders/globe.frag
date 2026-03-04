@@ -3,8 +3,7 @@
 //
 // Renders a photorealistic Earth globe with:
 //   V1: Ray-sphere globe with satellite texture + diffuse lighting
-//   V2: Depth-based ocean coloring, animated waves, specular, fresnel
-//   V3: Coastline foam from shore distance field
+//   V2: Depth-based ocean coloring, specular, fresnel
 //   V4: Atmospheric scattering, rim glow, sky gradient, sun disc
 //   V5: Procedural volumetric clouds on a shell above the globe
 //   V6: Day/night cycle, city lights, star field, terminator glow
@@ -61,20 +60,10 @@ const vec3  OCEAN_COASTAL      = vec3(0.15, 0.50, 0.55);
 const float SEA_LEVEL          = 0.15;
 
 // Ocean surface
-const float WAVE_AMPLITUDE     = 0.012;
-const float WAVE_FREQUENCY     = 18.0;
-const float WAVE_SPEED         = 1.2;
 const float SPECULAR_POWER     = 256.0;
 const float SPECULAR_INTENSITY = 1.8;
 const float FRESNEL_POWER      = 5.0;
 const float FRESNEL_BIAS       = 0.04;
-
-// Coastline foam
-const float FOAM_SHORE_WIDTH   = 0.02;
-const float FOAM_RING_FREQ     = 80.0;
-const float FOAM_RING_SPEED    = 2.5;
-const float FOAM_FADE_DIST     = 0.12;
-const float FOAM_NOISE_SCALE   = 40.0;
 
 // Atmosphere
 const vec3  RAYLEIGH_COEFF     = vec3(5.8e-3, 1.35e-2, 3.31e-2);
@@ -340,29 +329,6 @@ vec3 sunDisc(vec3 rayDir, vec3 sunDir) {
 }
 
 // ===========================================================================
-// WAVE NORMAL PERTURBATION (V2) — multi-octave sin waves
-// ===========================================================================
-
-vec3 waveNormal(vec3 normal, vec3 hitPoint, float time) {
-    vec2 uv = equirectangularUV(hitPoint) * WAVE_FREQUENCY;
-    float t = time * WAVE_SPEED;
-
-    // Multi-directional wave offsets
-    float wave1 = sin(uv.x * 3.7 + t * 0.9) * sin(uv.y * 2.3 + t * 0.7);
-    float wave2 = sin(uv.x * 5.1 - t * 1.1) * sin(uv.y * 4.7 + t * 0.5);
-    float wave3 = sin(uv.x * 1.3 + uv.y * 6.1 + t * 1.3);
-
-    float dx = (wave1 * 0.5 + wave2 * 0.3 + wave3 * 0.2) * WAVE_AMPLITUDE;
-    float dy = (wave1 * 0.3 + wave2 * 0.5 + wave3 * 0.2) * WAVE_AMPLITUDE;
-
-    // Perturb the normal in the tangent plane
-    vec3 tangentU = normalize(cross(normal, vec3(0.0, 1.0, 0.001)));
-    vec3 tangentV = cross(normal, tangentU);
-
-    return normalize(normal + tangentU * dx + tangentV * dy);
-}
-
-// ===========================================================================
 // MAIN FRAGMENT ENTRY POINT
 // ===========================================================================
 
@@ -455,7 +421,6 @@ void main() {
     vec2 uv         = equirectangularUV(hitPoint);
     vec4 satColor   = texture(uSatellite, uv);
     float heightVal = texture(uHeightmap, uv).r;
-    float shoreDist = texture(uShoreDist, uv).r;
 
     // Compute surface contribution fade for smooth limb transition
     float surfaceFade = smoothstep(atmosphereOnlyThreshold, fullSurfaceThreshold, viewAngle);
@@ -549,21 +514,18 @@ void main() {
             oceanColor = mix(OCEAN_SHALLOW, OCEAN_COASTAL, (depthNorm - 0.6) / 0.4);
         }
 
-        // Animated wave normal perturbation
-        vec3 waveN = waveNormal(normal, hitPoint, uTime);
-
-        // Diffuse lighting with wave normal
-        float oceanDiffuse = max(dot(waveN, uSunDir), 0.0);
+        // Diffuse lighting
+        float oceanDiffuse = max(dot(normal, uSunDir), 0.0);
         float ambientOcean = 0.06;
         oceanColor *= (oceanDiffuse * 0.85 + ambientOcean);
 
         // Specular sun reflection (Gaussian model)
-        float spec = gaussianSpecular(waveN, viewDir, uSunDir, 0.06);
+        float spec = gaussianSpecular(normal, viewDir, uSunDir, 0.06);
         vec3 specColor = vec3(1.0, 0.95, 0.85) * spec * SPECULAR_INTENSITY * dayFactor;
         oceanColor += specColor;
 
         // Fresnel rim effect — brighter at glancing angles
-        float f = fresnel(viewDir, waveN, FRESNEL_BIAS, FRESNEL_POWER);
+        float f = fresnel(viewDir, normal, FRESNEL_BIAS, FRESNEL_POWER);
         vec3 fresnelColor = mix(vec3(0.1, 0.3, 0.5), vec3(0.3, 0.6, 0.8), f);
         oceanColor = mix(oceanColor, fresnelColor, f * 0.4 * dayFactor);
 
@@ -571,36 +533,6 @@ void main() {
         oceanColor += terminatorGlow * 0.25;
 
         surfaceColor = oceanColor;
-    }
-
-    // =======================================================================
-    // V3: COASTLINE FOAM
-    // =======================================================================
-
-    {
-        float d = shoreDist;
-
-        // Solid white shore edge
-        float shoreEdge = smoothstep(FOAM_SHORE_WIDTH, 0.0, d);
-
-        // Animated concentric foam rings
-        float noiseVal = noise(uv * FOAM_NOISE_SCALE);
-        float rings = sin(d * FOAM_RING_FREQ - uTime * FOAM_RING_SPEED + noiseVal * 6.0);
-        rings = smoothstep(0.3, 0.8, rings);
-
-        // Distance-based fade — foam disappears far from shore
-        float distFade = 1.0 - smoothstep(0.0, FOAM_FADE_DIST, d);
-
-        // Noise mask for organic breakup
-        float noiseMask = smoothstep(0.3, 0.6, noise(uv * FOAM_NOISE_SCALE * 2.0 + uTime * 0.1));
-
-        // Combine foam layers
-        float foam = max(shoreEdge, rings * distFade * noiseMask * 0.7);
-        foam *= dayFactor; // Foam not visible on the night side
-
-        // Blend foam into surface (white, lit by sun)
-        vec3 foamColor = vec3(0.9, 0.93, 0.95) * (diffuse * 0.7 + 0.3);
-        surfaceColor = mix(surfaceColor, foamColor, foam * 0.8);
     }
 
     // =======================================================================

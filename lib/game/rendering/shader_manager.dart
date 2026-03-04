@@ -353,7 +353,7 @@ class ShaderManager {
   /// samplers set, ready to be used as a [Paint.shader].
   ///
   /// Returns null if the shader program is not loaded or if shader
-  /// configuration fails. Optional textures (shore_distance, city_lights)
+  /// configuration fails. Optional textures (city_lights)
   /// are skipped if not loaded, allowing graceful degradation.
   ///
   /// [size] - viewport dimensions.

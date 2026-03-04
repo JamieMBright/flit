@@ -5,11 +5,11 @@ import 'dart:collection';
 /// Each level disables progressively more visual features to maintain
 /// acceptable frame rates on lower-end hardware.
 enum ShaderLOD {
-  /// All features enabled: full cloud octaves, foam noise, atmospheric
+  /// All features enabled: full cloud octaves, atmospheric
   /// scattering, city lights, etc.
   high,
 
-  /// Reduced cloud octaves (4 instead of 8), no foam noise,
+  /// Reduced cloud octaves (4 instead of 8),
   /// simplified atmospheric scattering.
   medium,
 
@@ -30,7 +30,7 @@ enum ShaderLOD {
 /// TODO(integration): Wire [ShaderLODManager] into [ShaderManager] / the
 /// render loop. Each frame, call [recordFrameTime] with the delta time, then
 /// read [lodUniforms] and forward those values to the shader (e.g. cloud
-/// iterations, foam quality, atmosphere quality, city-lights toggle). The
+/// iterations, atmosphere quality, city-lights toggle). The
 /// manager is fully implemented and ready to use — it just needs to be
 /// instantiated and connected to the per-frame paint/configure call in
 /// [GlobeRenderer].
@@ -110,7 +110,6 @@ class ShaderLODManager {
   ///
   /// Keys correspond to shader uniform names (without the `u` prefix):
   /// - `cloudIterations`  : number of noise octaves for clouds
-  /// - `foamQuality`      : 0.0 = off, 1.0 = full
   /// - `atmosphereQuality`: 0.0 = minimal, 1.0 = full scattering
   /// - `cityLightsEnabled`: 0.0 = off, 1.0 = on
   Map<String, double> get lodUniforms {
@@ -118,21 +117,18 @@ class ShaderLODManager {
       case ShaderLOD.high:
         return const {
           'cloudIterations': 8.0,
-          'foamQuality': 1.0,
           'atmosphereQuality': 1.0,
           'cityLightsEnabled': 1.0,
         };
       case ShaderLOD.medium:
         return const {
           'cloudIterations': 4.0,
-          'foamQuality': 0.0,
           'atmosphereQuality': 0.6,
           'cityLightsEnabled': 1.0,
         };
       case ShaderLOD.low:
         return const {
           'cloudIterations': 0.0,
-          'foamQuality': 0.0,
           'atmosphereQuality': 0.3,
           'cityLightsEnabled': 0.0,
         };
