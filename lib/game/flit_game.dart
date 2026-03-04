@@ -558,9 +558,9 @@ class FlitGame extends FlameGame
   }
 
   /// Where on screen the plane sprite is rendered (proportional).
-  /// Centered horizontally, 20% from the bottom of the screen (80% from top).
+  /// Centered horizontally, 10% from the bottom of the screen (90% from top).
   /// This position is FIXED — the world scrolls underneath, the plane stays put.
-  static const double planeScreenY = 0.80;
+  static const double planeScreenY = 0.90;
   static const double planeScreenX = 0.50;
 
   /// Where the Canvas (WorldMap) renderer centers its projection on screen.
@@ -785,8 +785,24 @@ class FlitGame extends FlameGame
       return Rect.fromLTRB(minLng, minLat, maxLng, maxLat);
     });
 
-    final lng = _worldPosition.x;
-    final lat = _worldPosition.y;
+    // In globe mode, use the visual position under the plane sprite rather
+    // than _worldPosition. The camera's behind-the-plane offset means the
+    // geographic point visually under the sprite is ~1-2° ahead of
+    // _worldPosition, which causes wrong country detection near borders.
+    double lng = _worldPosition.x;
+    double lat = _worldPosition.y;
+    if (_globeRenderer != null && _globeRenderer!.camera.cameraX != 0) {
+      final planeScreen = Offset(size.x * planeScreenX, size.y * planeScreenY);
+      final visualPos = _hitTest.screenToLatLng(
+        planeScreen,
+        Size(size.x, size.y),
+        _globeRenderer!.camera,
+      );
+      if (visualPos != null) {
+        lng = visualPos.dx;
+        lat = visualPos.dy;
+      }
+    }
 
     for (var ci = 0; ci < countries.length; ci++) {
       // Fast bounding-box reject (skips ~95% of countries).
@@ -851,7 +867,7 @@ class FlitGame extends FlameGame
       // Ease-out cubic for smooth deceleration into final position.
       final eased = 1.0 - pow(1.0 - t, 3);
       final startY = size.y * 1.3; // Below screen
-      final endY = size.y * planeScreenY; // Final position (80%)
+      final endY = size.y * planeScreenY; // Final position (90%)
       _plane.position = Vector2(
         size.x * planeScreenX,
         startY + (endY - startY) * eased,
@@ -1161,19 +1177,19 @@ class FlitGame extends FlameGame
 
     // --- Dynamic camera offset ---
     // Compute the angular offset behind the plane that makes
-    // worldToScreen(_worldPosition) land at planeScreenY (80%).
+    // worldToScreen(_worldPosition) land at planeScreenY (90%).
     //
     // From the projection math:
     //   screenY/resY = tiltDown - uvY + 0.5
     //   uvY = sin(δ) / ((d - cos(δ)) * tan(fov/2))
     //
-    // For planeScreenY = 0.80:
-    //   uvY = tiltDown - 0.30 = 0.05
+    // For planeScreenY = 0.90:
+    //   uvY = tiltDown - 0.40 = -0.05
     //
     // Small-angle approximation (δ < 3°):
     //   δ ≈ uvY * (d - R) * tan(fov/2)
     // where d = camera distance from center, R = globe radius.
-    const desiredUvY = 0.05; // tiltDown(0.35) - (planeScreenY(0.80) - 0.50)
+    const desiredUvY = -0.05; // tiltDown(0.35) - (planeScreenY(0.90) - 0.50)
     final d = cameraDistance;
     final fov = _globeRenderer?.camera.fov ?? CameraState.fovNarrow;
     final halfFovTan = tan(fov / 2);

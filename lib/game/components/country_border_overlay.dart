@@ -85,8 +85,10 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       ..strokeJoin = StrokeJoin.round
       ..isAntiAlias = true;
 
-    // Point budget per polygon — use all available points for accurate borders.
-    const maxPointsPerPoly = kIsWeb ? 200 : 400;
+    // Per-country vertex budget — minimum 50, distributed proportionally
+    // to polygon size so larger landmasses get more detail than tiny islands.
+    const countryBudget = kIsWeb ? 400 : 800;
+    const minCountryBudget = 50;
 
     final playerPos = gameRef.worldPosition;
 
@@ -100,6 +102,15 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       // Skip the active country — it gets the red highlight instead.
       if (country.name == activeCountryName) continue;
 
+      // Compute total vertices across all polygons for proportional allocation.
+      var totalVerts = 0;
+      for (final polygon in country.polygons) {
+        totalVerts += polygon.length;
+      }
+      final budget = totalVerts < minCountryBudget
+          ? totalVerts
+          : countryBudget.clamp(minCountryBudget, totalVerts);
+
       for (final polygon in country.polygons) {
         if (polygon.length < 3) continue;
 
@@ -111,8 +122,14 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         final dxWrapped = dx > 180 ? 360 - dx : dx;
         if (dxWrapped > visRadius || dy > visRadius) continue;
 
-        final stride = polygon.length > maxPointsPerPoly
-            ? (polygon.length / maxPointsPerPoly).ceil()
+        // Allocate vertices proportionally to polygon size.
+        // Larger polygons (mainland) get more points than tiny islands.
+        final polyBudget = (budget * polygon.length / totalVerts).ceil().clamp(
+          3,
+          polygon.length,
+        );
+        final stride = polygon.length > polyBudget
+            ? (polygon.length / polyBudget).ceil()
             : 1;
 
         final path = ui.Path();
@@ -187,14 +204,26 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       ..strokeWidth = continuousAlt >= 0.6 ? 2.0 : 2.5
       ..strokeJoin = StrokeJoin.round;
 
-    // Higher point budget for the active highlight — needs to look crisp.
-    const maxPointsPerPoly = kIsWeb ? 300 : 600;
+    // Per-country vertex budget for active highlight — higher for crisp look.
+    const activeBudget = kIsWeb ? 600 : 1200;
+    const minActiveBudget = 50;
+    var activeTotalVerts = 0;
+    for (final polygon in activeCountry.polygons) {
+      activeTotalVerts += polygon.length;
+    }
+    final aBudget = activeTotalVerts < minActiveBudget
+        ? activeTotalVerts
+        : activeBudget.clamp(minActiveBudget, activeTotalVerts);
 
     for (final polygon in activeCountry.polygons) {
       if (polygon.length < 3) continue;
 
-      final stride = polygon.length > maxPointsPerPoly
-          ? (polygon.length / maxPointsPerPoly).ceil()
+      // Allocate vertices proportionally — larger polygons get more detail.
+      final polyBudget = (aBudget * polygon.length / activeTotalVerts)
+          .ceil()
+          .clamp(3, polygon.length);
+      final stride = polygon.length > polyBudget
+          ? (polygon.length / polyBudget).ceil()
           : 1;
 
       final path = ui.Path();
