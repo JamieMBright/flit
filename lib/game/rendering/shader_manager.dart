@@ -189,10 +189,10 @@ class ShaderManager {
       _loadImage(
         'assets/textures/city_lights.png',
       ).then<ui.Image?>((img) => img).catchError((Object e, StackTrace st) {
-        _log.warning(
+        // City lights is optional — log at info, not warning/error.
+        _log.info(
           'shader',
-          'City lights texture not found — using black fallback',
-          error: e,
+          'City lights texture unavailable — using black fallback',
         );
         return null;
       }),
@@ -416,13 +416,8 @@ class ShaderManager {
 
       return image;
     } catch (e, st) {
-      // Add detailed error context for better debugging
-      _log.error(
-        'shader',
-        'Failed to load/decode texture: $assetPath',
-        error: e,
-        stackTrace: st,
-      );
+      // Log at debug level — callers decide severity for required vs optional.
+      _log.debug('shader', 'Failed to load/decode texture: $assetPath ($e)');
 
       // Re-throw with enhanced context for caller to handle
       throw Exception(

@@ -210,6 +210,10 @@ class AudioManager {
       await _musicPlayer.setVolume(_defaultMusicVolume * _musicVolume);
       await _musicPlayer.play(AssetSource(asset));
     } catch (e) {
+      final msg = e.toString();
+      if (msg.contains('NotAllowedError') || msg.contains('not allowed')) {
+        return; // Temporary — clears after user gesture.
+      }
       _log.warning('audio', 'Music track failed: $asset', error: e);
       _failedAssets.add(asset);
     }
@@ -246,6 +250,12 @@ class AudioManager {
       await player.setVolume(_defaultSfxVolume * _effectsVolume);
       await player.play(AssetSource(asset));
     } catch (e) {
+      // Don't blacklist on NotAllowedError — this is a temporary browser
+      // autoplay restriction that clears after the first user gesture.
+      final msg = e.toString();
+      if (msg.contains('NotAllowedError') || msg.contains('not allowed')) {
+        return;
+      }
       _log.warning('audio', 'SFX failed: $asset', error: e);
       _failedAssets.add(asset);
     }
