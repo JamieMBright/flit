@@ -418,6 +418,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
         invertControls: snapshot.invertControls,
         enableNight: snapshot.enableNight,
         enableClouds: snapshot.enableClouds,
+        cloudCoverage: snapshot.cloudCoverage,
+        cloudOpacity: snapshot.cloudOpacity,
         englishLabels: snapshot.englishLabels,
         mapStyle: MapStyle.values.firstWhere(
           (s) => s.name == snapshot.mapStyle,

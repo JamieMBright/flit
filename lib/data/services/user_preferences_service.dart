@@ -375,6 +375,8 @@ class UserPreferencesService {
     required bool invertControls,
     required bool enableNight,
     required bool enableClouds,
+    double? cloudCoverage,
+    double? cloudOpacity,
     required String mapStyle,
     required bool englishLabels,
     required String difficulty,
@@ -392,6 +394,8 @@ class UserPreferencesService {
       'invert_controls': invertControls,
       'enable_night': enableNight,
       'enable_clouds': enableClouds,
+      if (cloudCoverage != null) 'cloud_coverage': cloudCoverage,
+      if (cloudOpacity != null) 'cloud_opacity': cloudOpacity,
       'map_style': mapStyle,
       'english_labels': englishLabels,
       'difficulty': difficulty,
@@ -1158,6 +1162,14 @@ class UserPreferencesSnapshot {
 
   bool get enableClouds {
     return settings?['enable_clouds'] as bool? ?? true;
+  }
+
+  double get cloudCoverage {
+    return (settings?['cloud_coverage'] as num?)?.toDouble() ?? 0.42;
+  }
+
+  double get cloudOpacity {
+    return (settings?['cloud_opacity'] as num?)?.toDouble() ?? 0.9;
   }
 
   String get mapStyle {

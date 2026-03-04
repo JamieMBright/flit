@@ -76,6 +76,11 @@ class AudioManager {
       _failedAssets.clear();
       // Restart background music if it was previously playing.
       startMusic();
+      // Restart engine if we were in-game when audio was toggled off.
+      if (_lastPlaneId != null) {
+        _currentEngine = null; // Force re-start
+        startEngine(_lastPlaneId!);
+      }
     }
   }
 
@@ -93,11 +98,12 @@ class AudioManager {
   /// Currently active engine type (null = none playing).
   EngineType? _currentEngine;
 
-  /// Base volume for the engine (before turn modulation).
-  static const double _engineBaseVolume = 0.12;
+  /// Last plane ID passed to [startEngine], used to restart the engine
+  /// when audio is re-enabled mid-game.
+  String? _lastPlaneId;
 
-  /// Maximum additional volume added during full turn.
-  static const double _engineTurnBoost = 0.08;
+  /// Constant engine rumble volume (no turn modulation — just a steady hum).
+  static const double _engineBaseVolume = 0.06;
 
   /// Default background music volume.
   static const double _defaultMusicVolume = 0.25;
@@ -323,6 +329,7 @@ class AudioManager {
   /// Automatically selects the correct engine sound based on [planeId].
   /// If an engine is already playing for a different type, crossfades.
   Future<void> startEngine(String planeId) async {
+    _lastPlaneId = planeId;
     if (!_enabled) return;
 
     final type = engineTypeForPlane(planeId);
@@ -352,21 +359,19 @@ class AudioManager {
   /// Stop the engine loop.
   Future<void> stopEngine() async {
     _currentEngine = null;
+    _lastPlaneId = null;
     await _enginePlayer.stop();
   }
 
-  /// Update engine volume based on turn intensity.
+  /// Update engine volume (constant low rumble).
   ///
   /// Call this every frame from the game update loop.
-  /// [turnAmount] should be the absolute value of the turn direction (0..1).
+  /// [turnAmount] is accepted for API compatibility but ignored — the engine
+  /// plays at a constant low volume for an unobtrusive ambient hum.
   Future<void> updateEngineVolume(double turnAmount) async {
     if (!_enabled || _currentEngine == null) return;
 
-    final volume =
-        ((_engineBaseVolume +
-                    _engineTurnBoost * turnAmount.abs().clamp(0.0, 1.0)) *
-                _effectsVolume)
-            .clamp(0.0, 1.0);
+    final volume = (_engineBaseVolume * _effectsVolume).clamp(0.0, 1.0);
 
     try {
       await _enginePlayer.setVolume(volume);

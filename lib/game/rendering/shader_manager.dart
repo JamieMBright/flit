@@ -30,6 +30,9 @@ final _log = GameLog.instance;
 /// Index 14  : uFOV (field of view radians)
 /// Index 15  : uEnableShading (0.0 = raw texture, 1.0 = full shading)
 /// Index 16  : uEnableNight   (0.0 = always day,  1.0 = day/night cycle)
+/// Index 17  : uEnableClouds  (0.0 = no clouds,   1.0 = clouds on)
+/// Index 18  : uCloudCoverage (cloud coverage threshold, 0.0–1.0)
+/// Index 19  : uCloudOpacity  (cloud blend opacity, 0.0–1.0)
 /// ```
 /// Plus 4 image samplers: uSatellite, uHeightmap, uShoreDist, uCityLights
 class ShaderManager {
@@ -409,6 +412,15 @@ class ShaderManager {
 
       // uEnableNight (0.0 = always day, 1.0 = day/night cycle)
       s.setFloat(16, GameSettings.instance.enableNight ? 1.0 : 0.0);
+
+      // uEnableClouds (0.0 = no clouds, 1.0 = clouds on)
+      s.setFloat(17, GameSettings.instance.enableClouds ? 1.0 : 0.0);
+
+      // uCloudCoverage (cloud coverage threshold, 0.0–1.0)
+      s.setFloat(18, GameSettings.instance.cloudCoverage);
+
+      // uCloudOpacity (cloud blend opacity, 0.0–1.0)
+      s.setFloat(19, GameSettings.instance.cloudOpacity);
 
       // -- Image samplers (indices 0-3) --
       // Always bind all 4 samplers to prevent shader errors on platforms that
