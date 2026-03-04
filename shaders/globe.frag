@@ -29,6 +29,9 @@ uniform float uCloudRadius;  // Index 13:   cloud shell radius (> globe)
 uniform float uFOV;          // Index 14:   field of view (radians)
 uniform float uEnableShading; // Index 15:  0.0 = raw texture, 1.0 = full shading
 uniform float uEnableNight;   // Index 16:  0.0 = always day,  1.0 = day/night cycle
+uniform float uEnableClouds;  // Index 17:  0.0 = no clouds,   1.0 = clouds on
+uniform float uCloudCoverage; // Index 18:  cloud coverage threshold (0.0–1.0)
+uniform float uCloudOpacity;  // Index 19:  cloud blend opacity (0.0–1.0)
 
 // ---------------------------------------------------------------------------
 // Samplers — maximum 4 per shader pass
@@ -643,10 +646,10 @@ void main() {
     }
 
     // =======================================================================
-    // V5: CLOUD LAYER
+    // V5: CLOUD LAYER (gated by uEnableClouds)
     // =======================================================================
 
-    {
+    if (uEnableClouds > 0.5) {
         // Intersect the cloud shell
         float tC = tCloud;
         // If tCloud is behind the globe surface, skip
@@ -663,8 +666,8 @@ void main() {
             // FBM for cloud density
             float density = fbm(cloudSamplePos);
 
-            // Coverage threshold with smooth edges
-            float cloudMask = smoothstep(CLOUD_COVERAGE - CLOUD_SOFTNESS, CLOUD_COVERAGE + CLOUD_SOFTNESS, density);
+            // Coverage threshold with smooth edges (driven by uCloudCoverage)
+            float cloudMask = smoothstep(uCloudCoverage - CLOUD_SOFTNESS, uCloudCoverage + CLOUD_SOFTNESS, density);
 
             if (cloudMask > 0.01) {
                 // Cloud lighting from sun direction (bright tops, dark bottoms)
@@ -682,18 +685,17 @@ void main() {
                 float cloudTerminator = smoothstep(-0.15, 0.0, cloudNdotL) * smoothstep(0.25, 0.05, cloudNdotL);
                 cloudColor += TERMINATOR_WARM * cloudTerminator * 0.3;
 
-                // Blend cloud on top of surface
-                surfaceColor = mix(surfaceColor, cloudColor, cloudMask * 0.9);
+                // Blend cloud on top of surface (opacity driven by uCloudOpacity)
+                surfaceColor = mix(surfaceColor, cloudColor, cloudMask * uCloudOpacity);
             }
         }
 
         // Cloud shadows on terrain (approximate — darken terrain where clouds would be overhead)
-        // Uses the globe normal as an approximation of "looking up" to the cloud layer
         vec3 shadowSamplePos = hitPoint * 3.0;
         shadowSamplePos.x += uTime * CLOUD_DRIFT_SPEED;
         shadowSamplePos.z += uTime * CLOUD_DRIFT_SPEED * 0.7;
         float shadowDensity = fbm(shadowSamplePos);
-        float shadowMask = smoothstep(CLOUD_COVERAGE - CLOUD_SOFTNESS, CLOUD_COVERAGE + CLOUD_SOFTNESS, shadowDensity);
+        float shadowMask = smoothstep(uCloudCoverage - CLOUD_SOFTNESS, uCloudCoverage + CLOUD_SOFTNESS, shadowDensity);
         surfaceColor *= 1.0 - shadowMask * CLOUD_SHADOW_STR * dayFactor;
     }
 

@@ -86,6 +86,8 @@ class GameSettings extends ChangeNotifier {
       invertControls: _invertControls,
       enableNight: _enableNight,
       enableClouds: _enableClouds,
+      cloudCoverage: _cloudCoverage,
+      cloudOpacity: _cloudOpacity,
       mapStyle: _mapStyle.name,
       englishLabels: _englishLabels,
       difficulty: _difficulty.name,
@@ -110,6 +112,8 @@ class GameSettings extends ChangeNotifier {
     required bool invertControls,
     required bool enableNight,
     required bool enableClouds,
+    double? cloudCoverage,
+    double? cloudOpacity,
     required bool englishLabels,
     required MapStyle mapStyle,
     required GameDifficulty difficulty,
@@ -125,6 +129,8 @@ class GameSettings extends ChangeNotifier {
       this.invertControls = invertControls;
       this.enableNight = enableNight;
       this.enableClouds = enableClouds;
+      if (cloudCoverage != null) this.cloudCoverage = cloudCoverage;
+      if (cloudOpacity != null) this.cloudOpacity = cloudOpacity;
       this.englishLabels = englishLabels;
       this.mapStyle = mapStyle;
       this.difficulty = difficulty;
@@ -151,6 +157,8 @@ class GameSettings extends ChangeNotifier {
         'invert_controls': _invertControls,
         'enable_night': _enableNight,
         'enable_clouds': _enableClouds,
+        'cloud_coverage': _cloudCoverage,
+        'cloud_opacity': _cloudOpacity,
         'map_style': _mapStyle.name,
         'english_labels': _englishLabels,
         'difficulty': _difficulty.name,
@@ -185,6 +193,10 @@ class GameSettings extends ChangeNotifier {
       _invertControls = data['invert_controls'] as bool? ?? _invertControls;
       _enableNight = data['enable_night'] as bool? ?? _enableNight;
       _enableClouds = data['enable_clouds'] as bool? ?? _enableClouds;
+      _cloudCoverage =
+          (data['cloud_coverage'] as num?)?.toDouble() ?? _cloudCoverage;
+      _cloudOpacity =
+          (data['cloud_opacity'] as num?)?.toDouble() ?? _cloudOpacity;
       final mapStyleName = data['map_style'] as String?;
       if (mapStyleName != null) {
         _mapStyle = MapStyle.values.firstWhere(
@@ -280,6 +292,34 @@ class GameSettings extends ChangeNotifier {
     _enableClouds = value;
     notifyListeners();
   }
+
+  /// Cloud coverage threshold (0.0 = fully covered, 1.0 = clear sky).
+  /// Higher values mean fewer clouds. Default 0.42.
+  double _cloudCoverage = 0.42;
+
+  double get cloudCoverage => _cloudCoverage;
+
+  set cloudCoverage(double value) {
+    _cloudCoverage = value.clamp(0.0, 1.0);
+    notifyListeners();
+  }
+
+  /// Human-readable label for the cloud coverage slider.
+  String get cloudCoverageLabel => '${((_cloudCoverage) * 100).round()}%';
+
+  /// Cloud blend opacity (0.0 = transparent, 1.0 = fully opaque).
+  /// Default 0.9 (90% opaque).
+  double _cloudOpacity = 0.9;
+
+  double get cloudOpacity => _cloudOpacity;
+
+  set cloudOpacity(double value) {
+    _cloudOpacity = value.clamp(0.0, 1.0);
+    notifyListeners();
+  }
+
+  /// Human-readable label for the cloud opacity slider.
+  String get cloudOpacityLabel => '${(_cloudOpacity * 100).round()}%';
 
   /// Map tile style for descent mode (OSM, dark, voyager, topo).
   MapStyle _mapStyle = MapStyle.standard;

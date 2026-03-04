@@ -172,6 +172,34 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
           setState(() {});
         },
       ),
+      if (GameSettings.instance.enableClouds) ...[
+        const Divider(color: FlitColors.cardBorder, height: 1),
+        _SettingsSlider(
+          label: 'Cloud Coverage',
+          icon: Icons.cloud_queue_outlined,
+          value: GameSettings.instance.cloudCoverage,
+          min: 0.1,
+          max: 0.8,
+          valueLabel: GameSettings.instance.cloudCoverageLabel,
+          onChanged: (value) {
+            GameSettings.instance.cloudCoverage = value;
+            setState(() {});
+          },
+        ),
+        const Divider(color: FlitColors.cardBorder, height: 1),
+        _SettingsSlider(
+          label: 'Cloud Opacity',
+          icon: Icons.opacity,
+          value: GameSettings.instance.cloudOpacity,
+          min: 0.1,
+          max: 1.0,
+          valueLabel: GameSettings.instance.cloudOpacityLabel,
+          onChanged: (value) {
+            GameSettings.instance.cloudOpacity = value;
+            setState(() {});
+          },
+        ),
+      ],
       const Divider(color: FlitColors.cardBorder, height: 1),
       _SettingsToggle(
         label: 'English Labels',
