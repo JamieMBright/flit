@@ -45,13 +45,33 @@ class AudioManager {
     final wasDisabled = !_enabled;
     _enabled = value;
     if (!value) {
-      _stopAll();
+      _setEnabledAsync(false);
     } else if (wasDisabled) {
-      // Re-enabling audio — clear the failed-asset blacklist so tracks that
-      // failed before the web audio context was unlocked get another chance.
+      _setEnabledAsync(true);
+    }
+  }
+
+  /// Serialise enable/disable operations so stop() completes before play().
+  Future<void>? _pendingToggle;
+
+  Future<void> _setEnabledAsync(bool enabling) async {
+    // Wait for any previous toggle to finish before starting a new one.
+    final prev = _pendingToggle;
+    final future = _doSetEnabled(enabling, prev);
+    _pendingToggle = future;
+    await future;
+  }
+
+  Future<void> _doSetEnabled(bool enabling, Future<void>? prev) async {
+    try {
+      await prev;
+    } catch (_) {}
+    if (enabling) {
+      if (!_enabled) return; // User toggled off again while we waited.
       _failedAssets.clear();
-      // Restart background music if it was previously playing.
-      startMusic();
+      await startMusic();
+    } else {
+      await _stopAll();
     }
   }
 
@@ -95,6 +115,9 @@ class AudioManager {
 
   set effectsVolume(double value) {
     _effectsVolume = value.clamp(0.0, 1.0);
+    // Note: On iOS Safari, programmatic volume control is ignored by the
+    // browser — only the hardware volume buttons affect audio. This is a
+    // WebKit limitation and cannot be worked around.
   }
 
   /// Whether [initialize] has been called.
