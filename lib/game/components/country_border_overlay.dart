@@ -376,8 +376,8 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
   }
 
   // -----------------------------------------------------------------------
-  // Active country highlight only — all border lines are now rendered by
-  // the globe shader (V7) from the distance field in uShoreDist green channel.
+  // Active country highlight only — country borders are rendered by the
+  // Canvas-based WorldMap overlay (fill + stroke on country polygons).
   // -----------------------------------------------------------------------
 
   void _renderCountryBorders(

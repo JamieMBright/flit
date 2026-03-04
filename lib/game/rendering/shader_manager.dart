@@ -14,9 +14,8 @@ final _log = GameLog.instance;
 /// Singleton that loads, caches, and configures the globe fragment shader.
 ///
 /// Handles loading the [FragmentProgram] from the asset bundle, decoding
-/// the four texture samplers (satellite, heightmap, shore distance, city
-/// lights), and setting all uniforms each frame according to the shader
-/// uniform contract.
+/// the two texture samplers (satellite, city lights), and setting all
+/// uniforms each frame according to the shader uniform contract.
 ///
 /// Uniform layout (must match shaders/globe.frag):
 /// ```
@@ -33,8 +32,9 @@ final _log = GameLog.instance;
 /// Index 17  : uEnableClouds  (0.0 = no clouds,   1.0 = clouds on)
 /// Index 18  : uCloudCoverage (cloud coverage threshold, 0.0–1.0)
 /// Index 19  : uCloudOpacity  (cloud blend opacity, 0.0–1.0)
+/// Index 20  : uCameraDist (camera distance from globe center)
 /// ```
-/// Plus 4 image samplers: uSatellite, uHeightmap, uShoreDist, uCityLights
+/// 2 image samplers: uSatellite, uCityLights
 class ShaderManager {
   ShaderManager._();
 
@@ -44,19 +44,13 @@ class ShaderManager {
   // -- Cached assets --
 
   ui.FragmentProgram? _program;
+  ui.FragmentShader? _cachedShader;
   ui.Image? _satelliteTexture;
-  ui.Image? _heightmapTexture;
-  ui.Image? _shoreDistTexture;
   ui.Image? _cityLightsTexture;
 
-  // Fallback 1x1 textures for missing optional samplers.
-  // Each fallback uses a value that produces sensible shader output:
-  //   - Black (0): for city lights (no lights when missing)
-  //   - Gray (128 ≈ 0.5): for heightmap (above SEA_LEVEL, renders as land)
-  //   - White (255 ≈ 1.0): for shore distance (far from shore, no foam)
+  // Fallback 1x1 black texture for missing optional samplers.
+  // Black (0): for city lights (no lights when missing).
   ui.Image? _blackTexture;
-  ui.Image? _grayTexture;
-  ui.Image? _whiteTexture;
 
   bool _initialized = false;
   bool _loading = false;
@@ -66,12 +60,6 @@ class ShaderManager {
 
   /// The cached satellite texture, or null if not yet loaded.
   ui.Image? get satelliteTexture => _satelliteTexture;
-
-  /// The cached heightmap texture, or null if not yet loaded.
-  ui.Image? get heightmapTexture => _heightmapTexture;
-
-  /// The cached shore distance texture, or null if not yet loaded.
-  ui.Image? get shoreDistTexture => _shoreDistTexture;
 
   /// The cached city lights texture, or null if not yet loaded.
   ui.Image? get cityLightsTexture => _cityLightsTexture;
@@ -94,9 +82,7 @@ class ShaderManager {
     // fail to load, preventing shader errors on strict platforms.
     try {
       _blackTexture = await _createSolidTexture(0, 0, 0);
-      _grayTexture = await _createSolidTexture(128, 128, 128);
-      _whiteTexture = await _createSolidTexture(255, 255, 255);
-      _log.debug('shader', 'Created fallback textures (black, gray, white)');
+      _log.debug('shader', 'Created fallback texture (black)');
     } catch (e, st) {
       _log.error(
         'shader',
@@ -195,26 +181,6 @@ class ShaderManager {
               'stack': st,
             },
           ),
-      _loadImage('assets/textures/heightmap.png')
-          .then((img) => <String, dynamic>{'name': 'heightmap', 'image': img})
-          .catchError(
-            (e, st) => <String, dynamic>{
-              'name': 'heightmap',
-              'error': e,
-              'stack': st,
-            },
-          ),
-      _loadImage('assets/textures/shore_distance.png')
-          .then(
-            (img) => <String, dynamic>{'name': 'shore_distance', 'image': img},
-          )
-          .catchError(
-            (e, st) => <String, dynamic>{
-              'name': 'shore_distance',
-              'error': e,
-              'stack': st,
-            },
-          ),
       _loadImage('assets/textures/city_lights.png')
           .then((img) => <String, dynamic>{'name': 'city_lights', 'image': img})
           .catchError(
@@ -241,20 +207,6 @@ class ShaderManager {
               'Loaded texture: $name (${image.width}x${image.height})',
             );
             break;
-          case 'heightmap':
-            _heightmapTexture = image;
-            _log.info(
-              'shader',
-              'Loaded texture: $name (${image.width}x${image.height})',
-            );
-            break;
-          case 'shore_distance':
-            _shoreDistTexture = image;
-            _log.info(
-              'shader',
-              'Loaded texture: $name (${image.width}x${image.height})',
-            );
-            break;
           case 'city_lights':
             _cityLightsTexture = image;
             _log.info(
@@ -271,10 +223,6 @@ class ShaderManager {
         final errorStr = error.toString();
         final assetPath = name == 'satellite'
             ? 'assets/textures/blue_marble.png'
-            : name == 'heightmap'
-            ? 'assets/textures/heightmap.png'
-            : name == 'shore_distance'
-            ? 'assets/textures/shore_distance.png'
             : 'assets/textures/city_lights.png';
 
         // Log the error (all textures are now treated as optional)
@@ -319,11 +267,9 @@ class ShaderManager {
     // Log summary of loaded textures.
     final loadedCount = [
       _satelliteTexture,
-      _heightmapTexture,
-      _shoreDistTexture,
       _cityLightsTexture,
     ].where((t) => t != null).length;
-    _log.info('shader', 'Textures loaded: $loadedCount/4');
+    _log.info('shader', 'Textures loaded: $loadedCount/2');
 
     // Only mark as initialized if we have at least the satellite texture.
     // Without it, the shader renders as all black, so we should fall back
@@ -353,7 +299,7 @@ class ShaderManager {
   /// samplers set, ready to be used as a [Paint.shader].
   ///
   /// Returns null if the shader program is not loaded or if shader
-  /// configuration fails. Optional textures (shore_distance, city_lights)
+  /// configuration fails. Optional textures (city_lights)
   /// are skipped if not loaded, allowing graceful degradation.
   ///
   /// [size] - viewport dimensions.
@@ -367,11 +313,13 @@ class ShaderManager {
     required double sunDirY,
     required double sunDirZ,
     required double time,
+    required double cameraDist,
   }) {
     if (!_initialized || _program == null) return null;
 
     try {
-      final s = _program!.fragmentShader();
+      _cachedShader ??= _program!.fragmentShader();
+      final s = _cachedShader!;
 
       // -- Float uniforms (indices 0-14) --
       // uResolution (vec2)
@@ -422,15 +370,15 @@ class ShaderManager {
       // uCloudOpacity (cloud blend opacity, 0.0–1.0)
       s.setFloat(19, GameSettings.instance.cloudOpacity);
 
-      // -- Image samplers (indices 0-3) --
-      // Always bind all 4 samplers to prevent shader errors on platforms that
-      // require all declared samplers to be bound. Each uses an appropriate
-      // fallback: gray for heightmap (renders as land, not ocean), white for
-      // shore distance (far from shore, no foam), black for city lights (none).
+      // uCameraDist (camera distance from globe center)
+      s.setFloat(20, cameraDist);
+
+      // -- Image samplers (indices 0-1) --
+      // Always bind all 2 samplers to prevent shader errors on platforms that
+      // require all declared samplers to be bound. Black fallback for city
+      // lights (no lights when missing).
       s.setImageSampler(0, _satelliteTexture ?? _blackTexture!);
-      s.setImageSampler(1, _heightmapTexture ?? _grayTexture!);
-      s.setImageSampler(2, _shoreDistTexture ?? _whiteTexture!);
-      s.setImageSampler(3, _cityLightsTexture ?? _blackTexture!);
+      s.setImageSampler(1, _cityLightsTexture ?? _blackTexture!);
 
       return s;
     } catch (e, st) {
@@ -573,19 +521,12 @@ class ShaderManager {
   /// Release all cached resources. Primarily useful for testing.
   void dispose() {
     _satelliteTexture?.dispose();
-    _heightmapTexture?.dispose();
-    _shoreDistTexture?.dispose();
     _cityLightsTexture?.dispose();
     _blackTexture?.dispose();
-    _grayTexture?.dispose();
-    _whiteTexture?.dispose();
     _satelliteTexture = null;
-    _heightmapTexture = null;
-    _shoreDistTexture = null;
     _cityLightsTexture = null;
     _blackTexture = null;
-    _grayTexture = null;
-    _whiteTexture = null;
+    _cachedShader = null;
     _program = null;
     _initialized = false;
     _loading = false;
