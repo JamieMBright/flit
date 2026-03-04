@@ -58,7 +58,7 @@ class _ErrorOverlayManagerState extends State<ErrorOverlayManager> {
 
     switch (event.severity) {
       case ErrorSeverity.error:
-        ErrorToast.show(context);
+        ErrorToast.show(context, message: event.error.error);
 
       case ErrorSeverity.critical:
         if (!_dialogVisible) {
