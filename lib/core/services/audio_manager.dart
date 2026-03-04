@@ -6,27 +6,6 @@ import '../utils/game_log.dart';
 
 final _log = GameLog.instance;
 
-/// Engine sound category — each plane maps to one of these.
-enum EngineType {
-  /// Chuttering propeller (Classic Bi-Plane, Red Baron Triplane)
-  biplane,
-
-  /// Smooth propeller drone (Prop Plane, Warbird, Island Hopper)
-  prop,
-
-  /// Low heavy drone (Night Raider, Stealth Bomber)
-  bomber,
-
-  /// Smooth jet engine (Sleek Jet, Concorde, Padraigaer, Presidential, etc.)
-  jet,
-
-  /// Rocket roar (Rocket Ship)
-  rocket,
-
-  /// Just wind (Paper Plane)
-  wind,
-}
-
 /// One-shot sound effect identifiers.
 enum SfxType {
   /// Simple modern click when a clue pops up.
@@ -48,13 +27,10 @@ enum SfxType {
   boostStart,
 }
 
-/// Manages all game audio: background music, engine loops, and SFX.
+/// Manages all game audio: background music and one-shot SFX.
 ///
 /// Singleton — use [AudioManager.instance]. Call [initialize] once at startup.
 /// The manager respects the user's sound toggle via [enabled].
-///
-/// Engine sounds loop continuously during gameplay. Volume responds to the
-/// plane's turn intensity: louder when banking, quieter when flying straight.
 class AudioManager {
   AudioManager._();
 
@@ -76,39 +52,16 @@ class AudioManager {
       _failedAssets.clear();
       // Restart background music if it was previously playing.
       startMusic();
-      // Restart engine if we were in-game when audio was toggled off.
-      if (_lastPlaneId != null) {
-        _currentEngine = null; // Force re-start
-        startEngine(_lastPlaneId!);
-      }
     }
   }
 
   /// Background music player.
   final AudioPlayer _musicPlayer = AudioPlayer();
 
-  /// Engine loop player.
-  final AudioPlayer _enginePlayer = AudioPlayer();
-
   /// Pool of SFX players (avoid creating per-play).
   final List<AudioPlayer> _sfxPool = List.generate(4, (_) => AudioPlayer());
 
   int _sfxPoolIndex = 0;
-
-  /// Currently active engine type (null = none playing).
-  EngineType? _currentEngine;
-
-  /// Last plane ID passed to [startEngine], used to restart the engine
-  /// when audio is re-enabled mid-game.
-  String? _lastPlaneId;
-
-  /// Constant engine rumble volume (no turn modulation — just a steady hum).
-  static const double _engineBaseVolume = 0.06;
-
-  /// Last volume actually applied to the engine player. Tracked to avoid
-  /// redundant setVolume() calls every frame, which causes audio jitter
-  /// on web/Safari from the underlying player re-interpolating volume.
-  double _lastAppliedEngineVolume = -1.0;
 
   /// Default background music volume.
   static const double _defaultMusicVolume = 0.25;
@@ -135,23 +88,13 @@ class AudioManager {
   }
 
   /// User-configurable effects volume multiplier (0.0 = silent, 1.0 = full).
-  /// Applies to both engine sounds and one-shot SFX.
+  /// Applies to one-shot SFX.
   double _effectsVolume = 1.0;
 
   double get effectsVolume => _effectsVolume;
 
   set effectsVolume(double value) {
     _effectsVolume = value.clamp(0.0, 1.0);
-    _lastAppliedEngineVolume = -1.0; // Force next updateEngineVolume to apply
-    // Immediately update the playing engine volume.
-    if (_enabled && _currentEngine != null) {
-      _applyEngineVolume();
-    }
-  }
-
-  /// Apply the current effects volume to the engine player.
-  Future<void> _applyEngineVolume() async {
-    await _enginePlayer.setVolume(_engineBaseVolume * _effectsVolume);
   }
 
   /// Whether [initialize] has been called.
@@ -161,70 +104,6 @@ class AudioManager {
   /// future attempts to avoid repeated errors (especially on Safari where
   /// MEDIA_ELEMENT_ERROR from missing files can destabilise the audio context).
   final Set<String> _failedAssets = {};
-
-  // -----------------------------------------------------------------
-  // Plane ID → Engine type mapping
-  // -----------------------------------------------------------------
-
-  /// Maps a cosmetic plane ID to its engine sound category.
-  static EngineType engineTypeForPlane(String planeId) {
-    switch (planeId) {
-      // Chuttering propeller
-      case 'plane_default': // Classic Bi-Plane
-      case 'plane_red_baron': // Red Baron Triplane
-        return EngineType.biplane;
-
-      // Smooth propeller
-      case 'plane_prop': // Prop Plane
-      case 'plane_warbird': // Warbird
-      case 'plane_seaplane': // Island Hopper
-        return EngineType.prop;
-
-      // Low drone
-      case 'plane_night_raider': // Night Raider
-      case 'plane_stealth': // Stealth Bomber
-        return EngineType.bomber;
-
-      // Rocket roar
-      case 'plane_rocket': // Rocket Ship
-      case 'plane_shuttle': // Challenger Shuttle
-        return EngineType.rocket;
-
-      // Just wind
-      case 'plane_paper': // Paper Plane
-      case 'plane_hot_air_balloon': // Hot Air Balloon
-        return EngineType.wind;
-
-      // Smooth jet (default for all jets, concordes, etc.)
-      case 'plane_jet': // Sleek Jet
-      case 'plane_padraigaer': // Padraigaer
-      case 'plane_concorde_classic': // Concorde Classic
-      case 'plane_presidential': // Presidential
-      case 'plane_golden_jet': // Golden Private Jet
-      case 'plane_diamond_concorde': // Diamond Concorde
-      case 'plane_platinum_eagle': // Platinum Eagle
-      default:
-        return EngineType.jet;
-    }
-  }
-
-  /// Asset path for an engine sound.
-  static String _engineAsset(EngineType type) {
-    switch (type) {
-      case EngineType.biplane:
-        return 'audio/engines/biplane_engine.mp3';
-      case EngineType.prop:
-        return 'audio/engines/prop_engine.mp3';
-      case EngineType.bomber:
-        return 'audio/engines/bomber_engine.mp3';
-      case EngineType.jet:
-        return 'audio/engines/jet_engine.mp3';
-      case EngineType.rocket:
-        return 'audio/engines/rocket_engine.mp3';
-      case EngineType.wind:
-        return 'audio/engines/wind.mp3';
-    }
-  }
 
   /// Asset path for a sound effect.
   static String _sfxAsset(SfxType type) {
@@ -256,7 +135,6 @@ class AudioManager {
     try {
       // Set default release mode for all players.
       await _musicPlayer.setReleaseMode(ReleaseMode.loop);
-      await _enginePlayer.setReleaseMode(ReleaseMode.loop);
       for (final p in _sfxPool) {
         await p.setReleaseMode(ReleaseMode.release);
       }
@@ -269,7 +147,6 @@ class AudioManager {
   /// Release all players. Call on app dispose.
   Future<void> dispose() async {
     await _musicPlayer.dispose();
-    await _enginePlayer.dispose();
     for (final p in _sfxPool) {
       await p.dispose();
     }
@@ -327,77 +204,6 @@ class AudioManager {
   }
 
   // -----------------------------------------------------------------
-  // Engine Sound
-  // -----------------------------------------------------------------
-
-  /// Start the engine loop for a given plane.
-  ///
-  /// Automatically selects the correct engine sound based on [planeId].
-  /// If an engine is already playing for a different type, crossfades.
-  Future<void> startEngine(String planeId) async {
-    _lastPlaneId = planeId;
-    if (!_enabled) return;
-
-    final type = engineTypeForPlane(planeId);
-
-    // Already playing this engine type — no-op.
-    if (_currentEngine == type) return;
-
-    final asset = _engineAsset(type);
-
-    // Skip assets that have already failed (avoids repeated errors on Safari).
-    if (_failedAssets.contains(asset)) return;
-
-    _currentEngine = type;
-    _lastAppliedEngineVolume = -1.0; // Force volume apply on next update
-
-    try {
-      await _enginePlayer.stop();
-      await _enginePlayer.setVolume(_engineBaseVolume * _effectsVolume);
-      await _enginePlayer.play(AssetSource(asset));
-    } catch (e) {
-      _log.warning('audio', 'Engine sound failed: $asset', error: e);
-      _failedAssets.add(asset);
-      _currentEngine =
-          null; // Prevent updateEngineVolume from firing every frame
-    }
-  }
-
-  /// Stop the engine loop.
-  Future<void> stopEngine() async {
-    _currentEngine = null;
-    _lastPlaneId = null;
-    _lastAppliedEngineVolume = -1.0;
-    await _enginePlayer.stop();
-  }
-
-  /// Update engine volume (constant low rumble).
-  ///
-  /// Call this every frame from the game update loop.
-  /// [turnAmount] is accepted for API compatibility but ignored — the engine
-  /// plays at a constant low volume for an unobtrusive ambient hum.
-  ///
-  /// Skips the actual setVolume() call if the volume hasn't changed since
-  /// the last application. Calling setVolume() 60 times per second with the
-  /// same value causes audio jitter on web/Safari.
-  Future<void> updateEngineVolume(double turnAmount) async {
-    if (!_enabled || _currentEngine == null) return;
-
-    final volume = (_engineBaseVolume * _effectsVolume).clamp(0.0, 1.0);
-
-    // Skip if volume hasn't meaningfully changed (avoids 60x/sec setVolume
-    // calls that cause audio jitter on web platforms).
-    if ((volume - _lastAppliedEngineVolume).abs() < 0.001) return;
-    _lastAppliedEngineVolume = volume;
-
-    try {
-      await _enginePlayer.setVolume(volume);
-    } catch (e) {
-      _log.warning('audio', 'Engine volume update failed', error: e);
-    }
-  }
-
-  // -----------------------------------------------------------------
   // Sound Effects
   // -----------------------------------------------------------------
 
@@ -428,10 +234,8 @@ class AudioManager {
 
   Future<void> _stopAll() async {
     await _musicPlayer.stop();
-    await _enginePlayer.stop();
     for (final p in _sfxPool) {
       await p.stop();
     }
-    _currentEngine = null;
   }
 }

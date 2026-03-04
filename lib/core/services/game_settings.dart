@@ -421,7 +421,7 @@ class GameSettings extends ChangeNotifier {
   String get musicVolumeLabel => '${(_musicVolume * 100).round()}%';
 
   /// Game effects volume (0.0 = silent, 1.0 = full).
-  /// Applies to engine sounds and one-shot SFX.
+  /// Applies to one-shot SFX.
   double _effectsVolume = 1.0;
 
   double get effectsVolume => _effectsVolume;
