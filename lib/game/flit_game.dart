@@ -785,8 +785,24 @@ class FlitGame extends FlameGame
       return Rect.fromLTRB(minLng, minLat, maxLng, maxLat);
     });
 
-    final lng = _worldPosition.x;
-    final lat = _worldPosition.y;
+    // In globe mode, use the visual position under the plane sprite rather
+    // than _worldPosition. The camera's behind-the-plane offset means the
+    // geographic point visually under the sprite is ~1-2° ahead of
+    // _worldPosition, which causes wrong country detection near borders.
+    double lng = _worldPosition.x;
+    double lat = _worldPosition.y;
+    if (_globeRenderer != null && _globeRenderer!.camera.cameraX != 0) {
+      final planeScreen = Offset(size.x * planeScreenX, size.y * planeScreenY);
+      final visualPos = _hitTest.screenToLatLng(
+        planeScreen,
+        Size(size.x, size.y),
+        _globeRenderer!.camera,
+      );
+      if (visualPos != null) {
+        lng = visualPos.dx;
+        lat = visualPos.dy;
+      }
+    }
 
     for (var ci = 0; ci < countries.length; ci++) {
       // Fast bounding-box reject (skips ~95% of countries).
