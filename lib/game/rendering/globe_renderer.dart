@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
@@ -38,14 +36,18 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
   /// Elapsed time in seconds, fed to the shader for animations.
   double _time = 0.0;
 
-  /// Current sun direction (normalized), rotated slowly for day/night cycle.
-  double _sunDirX = 1.0;
-  double _sunDirY = 0.3;
+  /// Sun direction (normalized, static — computed once at initialization).
+  /// Sun at ~30 degrees above the equatorial plane, slightly to the right.
+  /// Already normalized: sqrt(0.866^2 + 0.5^2 + 0.0^2) = sqrt(0.75+0.25) = 1.0
+  double _sunDirX = 0.866;
+  double _sunDirY = 0.5;
   double _sunDirZ = 0.0;
 
-  /// Rate at which the sun rotates around the globe (radians per second).
-  /// One full day/night cycle every ~120 seconds of game time.
-  static const double _sunRotationRate = 2 * pi / 120.0;
+  /// Cached shader Paint — reused every frame to avoid per-frame allocation.
+  final Paint _shaderPaint = Paint();
+
+  /// Cached fallback Paint — reused every frame to avoid per-frame allocation.
+  static final Paint _fallbackPaint = Paint()..color = FlitColors.space;
 
   /// Cached screen size from the last render pass.
   Size _lastSize = Size.zero;
@@ -100,22 +102,6 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
       headingRad: gameRef.cameraHeadingBearing,
       altitudeFraction: plane.continuousAltitude,
     );
-
-    // -- Rotate the sun direction for day/night cycle --
-    final sunAngle = _time * _sunRotationRate;
-    _sunDirX = cos(sunAngle);
-    _sunDirY = 0.3; // slight tilt above the equatorial plane
-    _sunDirZ = sin(sunAngle);
-
-    // Normalize the sun direction vector.
-    final sunLen = sqrt(
-      _sunDirX * _sunDirX + _sunDirY * _sunDirY + _sunDirZ * _sunDirZ,
-    );
-    if (sunLen > 0.0001) {
-      _sunDirX /= sunLen;
-      _sunDirY /= sunLen;
-      _sunDirZ /= sunLen;
-    }
   }
 
   @override
@@ -130,7 +116,9 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
 
     try {
       final screenSize = gameRef.size;
-      _lastSize = Size(screenSize.x, screenSize.y);
+      if (screenSize.x != _lastSize.width || screenSize.y != _lastSize.height) {
+        _lastSize = Size(screenSize.x, screenSize.y);
+      }
 
       final shaderManager = ShaderManager.instance;
 
@@ -147,6 +135,7 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
         sunDirY: _sunDirY,
         sunDirZ: _sunDirZ,
         time: _time,
+        cameraDist: _camera.currentDistance,
       );
 
       if (shader == null) {
@@ -159,7 +148,7 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
       final shaderOpacity = alt >= 0.6
           ? 1.0
           : ((alt - 0.3) / 0.3).clamp(0.0, 1.0);
-      final paint = Paint()..shader = shader;
+      _shaderPaint.shader = shader;
       if (shaderOpacity < 1.0) {
         canvas.saveLayer(
           Rect.fromLTWH(0, 0, _lastSize.width, _lastSize.height),
@@ -168,7 +157,7 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
       }
       canvas.drawRect(
         Rect.fromLTWH(0, 0, _lastSize.width, _lastSize.height),
-        paint,
+        _shaderPaint,
       );
       if (shaderOpacity < 1.0) {
         canvas.restore();
@@ -237,7 +226,7 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
   void _renderFallback(Canvas canvas, Size size) {
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()..color = FlitColors.space,
+      _fallbackPaint,
     );
   }
 
