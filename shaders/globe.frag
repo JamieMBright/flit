@@ -83,7 +83,7 @@ const float CLOUD_MIN_DISTANCE = 1.5;
 const float TERMINATOR_SOFT    = -0.1;
 const float TERMINATOR_HARD    = 0.2;
 const vec3  TERMINATOR_WARM    = vec3(1.0, 0.45, 0.15);
-const float CITY_LIGHT_BOOST   = 2.5;
+const float CITY_LIGHT_BOOST   = 1.8;
 const float NIGHT_RIM_STRENGTH = 0.3;
 
 // Night-side dark overlay — darkens the Blue Marble on the unlit hemisphere
@@ -523,17 +523,15 @@ void main() {
     {
         float nightFactor = 1.0 - dayFactor;
         if (uEnableNight > 0.5 && nightFactor > 0.01) {
-            // Sample the procedural city-lights texture (glow dots).
+            // Sample the NASA Earth-at-Night texture directly.
             vec3 cityRaw = texture(uCityLights, uv).rgb;
 
-            // Amplify and apply warm amber tint for a game-friendly look.
-            float luminance = dot(cityRaw, vec3(0.3, 0.5, 0.2));
-            float glowStrength = luminance * CITY_LIGHT_BOOST;
+            // Use the real texture colors — they already have realistic detail.
+            // Apply a gentle warm shift and boost for visibility.
+            vec3 cityLights = cityRaw * CITY_LIGHT_BOOST;
 
-            // Soft bloom: brighter core with a warm outer glow.
-            vec3 coreColor = vec3(1.0, 0.9, 0.65) * glowStrength;
-            vec3 outerGlow = vec3(1.0, 0.6, 0.25) * glowStrength * 0.4;
-            vec3 cityLights = coreColor + outerGlow;
+            // Slight warm tint so lights feel amber/golden, not grey.
+            cityLights *= vec3(1.0, 0.85, 0.65);
 
             // Additive blend onto the dark night surface.
             surfaceColor += cityLights * nightFactor;
