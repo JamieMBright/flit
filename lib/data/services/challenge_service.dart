@@ -44,9 +44,8 @@ class ChallengeService {
     try {
       final rng = Random();
       // For quiz challenges we use a single round; for flight, best-of-5.
-      final roundCount = gameMode == ChallengeGameMode.quiz
-          ? 1
-          : Challenge.totalRounds;
+      final roundCount =
+          gameMode == ChallengeGameMode.quiz ? 1 : Challenge.totalRounds;
 
       // Generate deterministic seeds for each round.
       final rounds = List.generate(
@@ -103,8 +102,8 @@ class ChallengeService {
           .from('challenges')
           .select()
           .or('challenger_id.eq.$_userId,challenged_id.eq.$_userId')
-          .inFilter('status', ['pending', 'in_progress'])
-          .order('created_at', ascending: false);
+          .inFilter('status', ['pending', 'in_progress']).order('created_at',
+              ascending: false);
 
       return data.map((row) => _rowToChallenge(row)).toList();
     } catch (e) {
@@ -139,8 +138,8 @@ class ChallengeService {
           .from('challenges')
           .select()
           .eq('challenger_id', _userId!)
-          .inFilter('status', ['pending', 'in_progress'])
-          .order('created_at', ascending: false);
+          .inFilter('status', ['pending', 'in_progress']).order('created_at',
+              ascending: false);
 
       return data.map((row) => _rowToChallenge(row)).toList();
     } catch (e) {
@@ -248,14 +247,11 @@ class ChallengeService {
         }
 
         // If the challenge was pending, move to in_progress.
-        final newStatus = row['status'] == 'pending'
-            ? 'in_progress'
-            : row['status'];
+        final newStatus =
+            row['status'] == 'pending' ? 'in_progress' : row['status'];
 
-        await _client
-            .from('challenges')
-            .update({'rounds': rounds, 'status': newStatus})
-            .eq('id', challengeId);
+        await _client.from('challenges').update(
+            {'rounds': rounds, 'status': newStatus}).eq('id', challengeId);
 
         return true;
       } catch (e) {
@@ -318,14 +314,11 @@ class ChallengeService {
         rounds[0]['${prefix}_quiz_correct'] = correctCount;
         rounds[0]['${prefix}_quiz_wrong'] = wrongCount;
 
-        final newStatus = row['status'] == 'pending'
-            ? 'in_progress'
-            : row['status'];
+        final newStatus =
+            row['status'] == 'pending' ? 'in_progress' : row['status'];
 
-        await _client
-            .from('challenges')
-            .update({'rounds': rounds, 'status': newStatus})
-            .eq('id', challengeId);
+        await _client.from('challenges').update(
+            {'rounds': rounds, 'status': newStatus}).eq('id', challengeId);
 
         return true;
       } catch (e) {
@@ -368,9 +361,8 @@ class ChallengeService {
         // Early victory: complete as soon as one player clinches enough wins
         // (e.g. 3 wins in best-of-5). Also complete if all rounds are done.
         if (!challenge.isComplete) {
-          final completedRounds = challenge.rounds
-              .where((r) => r.isComplete)
-              .length;
+          final completedRounds =
+              challenge.rounds.where((r) => r.isComplete).length;
           if (completedRounds < Challenge.totalRounds) return null;
         }
 
@@ -395,16 +387,13 @@ class ChallengeService {
           isDraw: winnerId == null,
         );
 
-        await _client
-            .from('challenges')
-            .update({
-              'status': 'completed',
-              'winner_id': winnerId,
-              'challenger_coins': challengerCoins,
-              'challenged_coins': challengedCoins,
-              'completed_at': DateTime.now().toUtc().toIso8601String(),
-            })
-            .eq('id', challengeId);
+        await _client.from('challenges').update({
+          'status': 'completed',
+          'winner_id': winnerId,
+          'challenger_coins': challengerCoins,
+          'challenged_coins': challengedCoins,
+          'completed_at': DateTime.now().toUtc().toIso8601String(),
+        }).eq('id', challengeId);
 
         return challenge;
       } catch (e) {
@@ -430,8 +419,7 @@ class ChallengeService {
     try {
       await _client
           .from('challenges')
-          .update({'status': 'declined'})
-          .eq('id', challengeId);
+          .update({'status': 'declined'}).eq('id', challengeId);
       return true;
     } catch (e) {
       debugPrint('[ChallengeService] declineChallenge failed: $e');
@@ -487,8 +475,7 @@ class ChallengeService {
       if (profile == null) return null;
 
       final challengedId = profile['id'] as String;
-      final challengedName =
-          (profile['display_name'] as String?) ??
+      final challengedName = (profile['display_name'] as String?) ??
           (profile['username'] as String? ?? '');
 
       final roundsJson = rounds.map((r) => r.toJson()).toList();
@@ -585,14 +572,11 @@ class ChallengeService {
         rounds[roundIndex]['${prefix}_wrong'] = wrongCount;
 
         // Move to in_progress if still pending.
-        final newStatus = row['status'] == 'pending'
-            ? 'in_progress'
-            : row['status'];
+        final newStatus =
+            row['status'] == 'pending' ? 'in_progress' : row['status'];
 
-        await _client
-            .from('h2h_challenges')
-            .update({'rounds': rounds, 'status': newStatus})
-            .eq('id', challengeId);
+        await _client.from('h2h_challenges').update(
+            {'rounds': rounds, 'status': newStatus}).eq('id', challengeId);
 
         return true;
       } catch (e) {
@@ -634,14 +618,11 @@ class ChallengeService {
           winnerId = challenge.challengedId;
         }
 
-        await _client
-            .from('h2h_challenges')
-            .update({
-              'status': 'completed',
-              'winner_id': winnerId,
-              'completed_at': DateTime.now().toUtc().toIso8601String(),
-            })
-            .eq('id', challengeId);
+        await _client.from('h2h_challenges').update({
+          'status': 'completed',
+          'winner_id': winnerId,
+          'completed_at': DateTime.now().toUtc().toIso8601String(),
+        }).eq('id', challengeId);
 
         return challenge.copyWith(
           status: H2HStatus.completed,

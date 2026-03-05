@@ -153,11 +153,11 @@ class _PlaneCard extends StatelessWidget {
   }
 
   static Color _rarityColor(CosmeticRarity rarity) => switch (rarity) {
-    CosmeticRarity.common => FlitColors.textSecondary,
-    CosmeticRarity.rare => FlitColors.oceanHighlight,
-    CosmeticRarity.epic => const Color(0xFF9B59B6),
-    CosmeticRarity.legendary => FlitColors.gold,
-  };
+        CosmeticRarity.common => FlitColors.textSecondary,
+        CosmeticRarity.rare => FlitColors.oceanHighlight,
+        CosmeticRarity.epic => const Color(0xFF9B59B6),
+        CosmeticRarity.legendary => FlitColors.gold,
+      };
 }
 
 class _PlanePreviewPainter extends CustomPainter {

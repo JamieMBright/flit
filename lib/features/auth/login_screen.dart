@@ -102,475 +102,455 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: Stack(
-      fit: StackFit.expand,
-      children: [
-        const _AuthBackground(),
-        SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              children: [
-                SizedBox(height: MediaQuery.of(context).size.height * 0.12),
-                const Text(
-                  'FLIT',
-                  style: TextStyle(
-                    color: FlitColors.textPrimary,
-                    fontSize: 64,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 16,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'A GEOGRAPHICAL ADVENTURE',
-                  style: TextStyle(
-                    color: FlitColors.gold,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 3,
-                  ),
-                ),
-                const SizedBox(height: 48),
-
-                if (_mode == _AuthMode.welcome) _buildWelcome(),
-                if (_mode == _AuthMode.signUp) _buildSignUp(),
-                if (_mode == _AuthMode.signIn) _buildSignIn(),
-                if (_mode == _AuthMode.confirmEmail) _buildConfirmEmail(),
-                if (_mode == _AuthMode.forgotPassword) _buildForgotPassword(),
-                if (_mode == _AuthMode.resetEmailSent) _buildResetEmailSent(),
-
-                if (_error != null) ...[
-                  const SizedBox(height: 16),
-                  _ErrorBanner(message: _error!),
-                ],
-
-                if (_isLoading) ...[
-                  const SizedBox(height: 24),
-                  const CircularProgressIndicator(color: FlitColors.accent),
-                ],
-
-                const SizedBox(height: 40),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            const _AuthBackground(),
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Column(
                   children: [
-                    _PrivacyLink(),
-                    SizedBox(width: 16),
-                    Text(
-                      '|',
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.12),
+                    const Text(
+                      'FLIT',
                       style: TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 11,
+                        color: FlitColors.textPrimary,
+                        fontSize: 64,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 16,
                       ),
                     ),
-                    SizedBox(width: 16),
-                    _TermsLink(),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'A GEOGRAPHICAL ADVENTURE',
+                      style: TextStyle(
+                        color: FlitColors.gold,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 3,
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+                    if (_mode == _AuthMode.welcome) _buildWelcome(),
+                    if (_mode == _AuthMode.signUp) _buildSignUp(),
+                    if (_mode == _AuthMode.signIn) _buildSignIn(),
+                    if (_mode == _AuthMode.confirmEmail) _buildConfirmEmail(),
+                    if (_mode == _AuthMode.forgotPassword)
+                      _buildForgotPassword(),
+                    if (_mode == _AuthMode.resetEmailSent)
+                      _buildResetEmailSent(),
+                    if (_error != null) ...[
+                      const SizedBox(height: 16),
+                      _ErrorBanner(message: _error!),
+                    ],
+                    if (_isLoading) ...[
+                      const SizedBox(height: 24),
+                      const CircularProgressIndicator(color: FlitColors.accent),
+                    ],
+                    const SizedBox(height: 40),
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _PrivacyLink(),
+                        SizedBox(width: 16),
+                        Text(
+                          '|',
+                          style: TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 11,
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        _TermsLink(),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                   ],
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  // ── Welcome screen ──
-
-  Widget _buildWelcome() => Column(
-    children: [
-      const Text(
-        'Welcome, Pilot',
-        style: TextStyle(
-          color: FlitColors.textPrimary,
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      const SizedBox(height: 8),
-      const Text(
-        'Create an account or sign in to start exploring.',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
-      ),
-      const SizedBox(height: 32),
-
-      _AuthButton(
-        label: 'SIGN UP',
-        isPrimary: true,
-        icon: Icons.person_add_outlined,
-        onTap: () => setState(() {
-          _mode = _AuthMode.signUp;
-          _error = null;
-        }),
-      ),
-      const SizedBox(height: 12),
-
-      _AuthButton(
-        label: 'SIGN IN',
-        icon: Icons.login,
-        onTap: () => setState(() {
-          _mode = _AuthMode.signIn;
-          _error = null;
-        }),
-      ),
-
-      const SizedBox(height: 24),
-      Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground.withOpacity(0.6),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Row(
-          children: [
-            Icon(Icons.shield_outlined, color: FlitColors.gold, size: 18),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Your progress is saved to your account. '
-                'Sign in on any device to pick up where you left off.',
-                style: TextStyle(
-                  color: FlitColors.textMuted,
-                  fontSize: 11,
-                  height: 1.4,
                 ),
               ),
             ),
           ],
         ),
-      ),
-    ],
-  );
+      );
+
+  // ── Welcome screen ──
+
+  Widget _buildWelcome() => Column(
+        children: [
+          const Text(
+            'Welcome, Pilot',
+            style: TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Create an account or sign in to start exploring.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+          ),
+          const SizedBox(height: 32),
+          _AuthButton(
+            label: 'SIGN UP',
+            isPrimary: true,
+            icon: Icons.person_add_outlined,
+            onTap: () => setState(() {
+              _mode = _AuthMode.signUp;
+              _error = null;
+            }),
+          ),
+          const SizedBox(height: 12),
+          _AuthButton(
+            label: 'SIGN IN',
+            icon: Icons.login,
+            onTap: () => setState(() {
+              _mode = _AuthMode.signIn;
+              _error = null;
+            }),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: FlitColors.cardBackground.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.shield_outlined, color: FlitColors.gold, size: 18),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Your progress is saved to your account. '
+                    'Sign in on any device to pick up where you left off.',
+                    style: TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 11,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
 
   // ── Sign Up form ──
 
   Widget _buildSignUp() => AutofillGroup(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _BackButton(
-          onTap: () => setState(() {
-            _mode = _AuthMode.welcome;
-            _error = null;
-          }),
-        ),
-        const SizedBox(height: 16),
-
-        const Text(
-          'Create your account',
-          style: TextStyle(
-            color: FlitColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Choose a pilot name and set your password.',
-          style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
-        ),
-        const SizedBox(height: 24),
-
-        _AuthTextField(
-          controller: _emailController,
-          label: 'Email',
-          hint: 'pilot@example.com',
-          keyboardType: TextInputType.emailAddress,
-          autofillHints: const [AutofillHints.email],
-        ),
-        const SizedBox(height: 12),
-
-        _AuthTextField(
-          controller: _passwordController,
-          label: 'Password',
-          hint: 'At least 6 characters',
-          obscureText: _obscurePassword,
-          autofillHints: const [AutofillHints.newPassword],
-          suffixIcon: IconButton(
-            icon: Icon(
-              _obscurePassword ? Icons.visibility_off : Icons.visibility,
-              color: FlitColors.textMuted,
-              size: 20,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _BackButton(
+              onTap: () => setState(() {
+                _mode = _AuthMode.welcome;
+                _error = null;
+              }),
             ),
-            onPressed: () =>
-                setState(() => _obscurePassword = !_obscurePassword),
-          ),
+            const SizedBox(height: 16),
+            const Text(
+              'Create your account',
+              style: TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Choose a pilot name and set your password.',
+              style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 24),
+            _AuthTextField(
+              controller: _emailController,
+              label: 'Email',
+              hint: 'pilot@example.com',
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+            ),
+            const SizedBox(height: 12),
+            _AuthTextField(
+              controller: _passwordController,
+              label: 'Password',
+              hint: 'At least 6 characters',
+              obscureText: _obscurePassword,
+              autofillHints: const [AutofillHints.newPassword],
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: FlitColors.textMuted,
+                  size: 20,
+                ),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _AuthTextField(
+              controller: _usernameController,
+              label: 'Username',
+              hint: 'e.g. SkyPilot42',
+              prefix: '@',
+              autofillHints: const [AutofillHints.username],
+            ),
+            const SizedBox(height: 12),
+            _AuthTextField(
+              controller: _displayNameController,
+              label: 'Display Name (optional)',
+              hint: 'Your visible name',
+              autofillHints: const [AutofillHints.name],
+            ),
+            const SizedBox(height: 24),
+            _AuthButton(
+              label: 'CREATE ACCOUNT',
+              isPrimary: true,
+              icon: Icons.flight_takeoff,
+              onTap: _signUp,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'We only store your email for account recovery. '
+              'No spam, no sharing.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
-
-        _AuthTextField(
-          controller: _usernameController,
-          label: 'Username',
-          hint: 'e.g. SkyPilot42',
-          prefix: '@',
-          autofillHints: const [AutofillHints.username],
-        ),
-        const SizedBox(height: 12),
-
-        _AuthTextField(
-          controller: _displayNameController,
-          label: 'Display Name (optional)',
-          hint: 'Your visible name',
-          autofillHints: const [AutofillHints.name],
-        ),
-        const SizedBox(height: 24),
-
-        _AuthButton(
-          label: 'CREATE ACCOUNT',
-          isPrimary: true,
-          icon: Icons.flight_takeoff,
-          onTap: _signUp,
-        ),
-
-        const SizedBox(height: 16),
-        const Text(
-          'We only store your email for account recovery. '
-          'No spam, no sharing.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
-        ),
-      ],
-    ),
-  );
+      );
 
   // ── Sign In form ──
 
   Widget _buildSignIn() => AutofillGroup(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _BackButton(
-          onTap: () => setState(() {
-            _mode = _AuthMode.welcome;
-            _error = null;
-          }),
-        ),
-        const SizedBox(height: 16),
-
-        const Text(
-          'Welcome back',
-          style: TextStyle(
-            color: FlitColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Sign in to continue your adventure.',
-          style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
-        ),
-        const SizedBox(height: 24),
-
-        _AuthTextField(
-          controller: _emailController,
-          label: 'Email',
-          hint: 'pilot@example.com',
-          keyboardType: TextInputType.emailAddress,
-          autofillHints: const [AutofillHints.email],
-          textInputAction: TextInputAction.next,
-        ),
-        const SizedBox(height: 12),
-
-        _AuthTextField(
-          controller: _passwordController,
-          label: 'Password',
-          hint: 'Your password',
-          obscureText: _obscurePassword,
-          autofillHints: const [AutofillHints.password],
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => _signIn(),
-          suffixIcon: IconButton(
-            icon: Icon(
-              _obscurePassword ? Icons.visibility_off : Icons.visibility,
-              color: FlitColors.textMuted,
-              size: 20,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _BackButton(
+              onTap: () => setState(() {
+                _mode = _AuthMode.welcome;
+                _error = null;
+              }),
             ),
-            onPressed: () =>
-                setState(() => _obscurePassword = !_obscurePassword),
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        Align(
-          alignment: Alignment.centerRight,
-          child: GestureDetector(
-            onTap: () => setState(() {
-              _mode = _AuthMode.forgotPassword;
-              _error = null;
-            }),
-            child: const Text(
-              'Forgot password?',
+            const SizedBox(height: 16),
+            const Text(
+              'Welcome back',
               style: TextStyle(
-                color: FlitColors.accent,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+                color: FlitColors.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
+            const SizedBox(height: 8),
+            const Text(
+              'Sign in to continue your adventure.',
+              style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 24),
+            _AuthTextField(
+              controller: _emailController,
+              label: 'Email',
+              hint: 'pilot@example.com',
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+            _AuthTextField(
+              controller: _passwordController,
+              label: 'Password',
+              hint: 'Your password',
+              obscureText: _obscurePassword,
+              autofillHints: const [AutofillHints.password],
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _signIn(),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: FlitColors.textMuted,
+                  size: 20,
+                ),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
+                onTap: () => setState(() {
+                  _mode = _AuthMode.forgotPassword;
+                  _error = null;
+                }),
+                child: const Text(
+                  'Forgot password?',
+                  style: TextStyle(
+                    color: FlitColors.accent,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _AuthButton(
+              label: 'SIGN IN',
+              isPrimary: true,
+              icon: Icons.login,
+              onTap: _signIn,
+            ),
+          ],
         ),
-        const SizedBox(height: 20),
-
-        _AuthButton(
-          label: 'SIGN IN',
-          isPrimary: true,
-          icon: Icons.login,
-          onTap: _signIn,
-        ),
-      ],
-    ),
-  );
+      );
 
   // ── Email confirmation screen ──
 
   Widget _buildConfirmEmail() => Column(
-    children: [
-      const Icon(
-        Icons.mark_email_read_outlined,
-        color: FlitColors.gold,
-        size: 64,
-      ),
-      const SizedBox(height: 24),
-      const Text(
-        'Check your email',
-        style: TextStyle(
-          color: FlitColors.textPrimary,
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      const SizedBox(height: 12),
-      Text(
-        'We sent a confirmation link to\n${_emailController.text.trim()}',
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: FlitColors.textSecondary,
-          fontSize: 14,
-          height: 1.5,
-        ),
-      ),
-      const SizedBox(height: 8),
-      const Text(
-        'Click the link in your email, then come back and sign in.',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
-      ),
-      const SizedBox(height: 32),
-      _AuthButton(
-        label: 'SIGN IN',
-        isPrimary: true,
-        icon: Icons.login,
-        onTap: () => setState(() {
-          _mode = _AuthMode.signIn;
-          _error = null;
-        }),
-      ),
-      const SizedBox(height: 12),
-      _AuthButton(
-        label: 'BACK TO START',
-        icon: Icons.arrow_back,
-        onTap: () => setState(() {
-          _mode = _AuthMode.welcome;
-          _error = null;
-        }),
-      ),
-    ],
-  );
+        children: [
+          const Icon(
+            Icons.mark_email_read_outlined,
+            color: FlitColors.gold,
+            size: 64,
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Check your email',
+            style: TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'We sent a confirmation link to\n${_emailController.text.trim()}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Click the link in your email, then come back and sign in.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
+          ),
+          const SizedBox(height: 32),
+          _AuthButton(
+            label: 'SIGN IN',
+            isPrimary: true,
+            icon: Icons.login,
+            onTap: () => setState(() {
+              _mode = _AuthMode.signIn;
+              _error = null;
+            }),
+          ),
+          const SizedBox(height: 12),
+          _AuthButton(
+            label: 'BACK TO START',
+            icon: Icons.arrow_back,
+            onTap: () => setState(() {
+              _mode = _AuthMode.welcome;
+              _error = null;
+            }),
+          ),
+        ],
+      );
 
   // ── Forgot password form ──
 
   Widget _buildForgotPassword() => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      _BackButton(
-        onTap: () => setState(() {
-          _mode = _AuthMode.signIn;
-          _error = null;
-        }),
-      ),
-      const SizedBox(height: 16),
-
-      const Text(
-        'Reset your password',
-        style: TextStyle(
-          color: FlitColors.textPrimary,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      const SizedBox(height: 8),
-      const Text(
-        "Enter your email and we'll send you a link to reset your password.",
-        style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
-      ),
-      const SizedBox(height: 24),
-
-      _AuthTextField(
-        controller: _emailController,
-        label: 'Email',
-        hint: 'pilot@example.com',
-        keyboardType: TextInputType.emailAddress,
-      ),
-      const SizedBox(height: 24),
-
-      _AuthButton(
-        label: 'SEND RESET LINK',
-        isPrimary: true,
-        icon: Icons.email_outlined,
-        onTap: _resetPassword,
-      ),
-    ],
-  );
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _BackButton(
+            onTap: () => setState(() {
+              _mode = _AuthMode.signIn;
+              _error = null;
+            }),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Reset your password',
+            style: TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "Enter your email and we'll send you a link to reset your password.",
+            style: TextStyle(color: FlitColors.textSecondary, fontSize: 13),
+          ),
+          const SizedBox(height: 24),
+          _AuthTextField(
+            controller: _emailController,
+            label: 'Email',
+            hint: 'pilot@example.com',
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 24),
+          _AuthButton(
+            label: 'SEND RESET LINK',
+            isPrimary: true,
+            icon: Icons.email_outlined,
+            onTap: _resetPassword,
+          ),
+        ],
+      );
 
   // ── Reset email sent confirmation ──
 
   Widget _buildResetEmailSent() => Column(
-    children: [
-      const Icon(
-        Icons.mark_email_read_outlined,
-        color: FlitColors.gold,
-        size: 64,
-      ),
-      const SizedBox(height: 24),
-      const Text(
-        'Check your email',
-        style: TextStyle(
-          color: FlitColors.textPrimary,
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      const SizedBox(height: 12),
-      Text(
-        'We sent a password reset link to\n${_emailController.text.trim()}',
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: FlitColors.textSecondary,
-          fontSize: 14,
-          height: 1.5,
-        ),
-      ),
-      const SizedBox(height: 8),
-      const Text(
-        'Click the link in your email to set a new password, '
-        'then come back and sign in.',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
-      ),
-      const SizedBox(height: 32),
-      _AuthButton(
-        label: 'BACK TO SIGN IN',
-        isPrimary: true,
-        icon: Icons.login,
-        onTap: () => setState(() {
-          _mode = _AuthMode.signIn;
-          _error = null;
-        }),
-      ),
-    ],
-  );
+        children: [
+          const Icon(
+            Icons.mark_email_read_outlined,
+            color: FlitColors.gold,
+            size: 64,
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Check your email',
+            style: TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'We sent a password reset link to\n${_emailController.text.trim()}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Click the link in your email to set a new password, '
+            'then come back and sign in.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
+          ),
+          const SizedBox(height: 32),
+          _AuthButton(
+            label: 'BACK TO SIGN IN',
+            isPrimary: true,
+            icon: Icons.login,
+            onTap: () => setState(() {
+              _mode = _AuthMode.signIn;
+              _error = null;
+            }),
+          ),
+        ],
+      );
 
   // ── Actions ──
 
@@ -757,19 +737,19 @@ class _AuthBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          FlitColors.oceanDeep,
-          FlitColors.backgroundDark,
-          FlitColors.oceanDeep,
-        ],
-        stops: [0.0, 0.5, 1.0],
-      ),
-    ),
-  );
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              FlitColors.oceanDeep,
+              FlitColors.backgroundDark,
+              FlitColors.oceanDeep,
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ),
+        ),
+      );
 }
 
 class _BackButton extends StatelessWidget {
@@ -779,22 +759,22 @@ class _BackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Align(
-    alignment: Alignment.centerLeft,
-    child: GestureDetector(
-      onTap: onTap,
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.arrow_back, color: FlitColors.textSecondary, size: 18),
-          SizedBox(width: 4),
-          Text(
-            'Back',
-            style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+        alignment: Alignment.centerLeft,
+        child: GestureDetector(
+          onTap: onTap,
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.arrow_back, color: FlitColors.textSecondary, size: 18),
+              SizedBox(width: 4),
+              Text(
+                'Back',
+                style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+              ),
+            ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 class _ErrorBanner extends StatelessWidget {
@@ -804,25 +784,25 @@ class _ErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: FlitColors.error.withOpacity(0.15),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: FlitColors.error.withOpacity(0.3)),
-    ),
-    child: Row(
-      children: [
-        const Icon(Icons.error_outline, color: FlitColors.error, size: 18),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            message,
-            style: const TextStyle(color: FlitColors.error, fontSize: 13),
-          ),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: FlitColors.error.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: FlitColors.error.withOpacity(0.3)),
         ),
-      ],
-    ),
-  );
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: FlitColors.error, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(color: FlitColors.error, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+      );
 }
 
 class _AuthTextField extends StatelessWidget {
@@ -852,57 +832,58 @@ class _AuthTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: const TextStyle(
-          color: FlitColors.textSecondary,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-        ),
-      ),
-      const SizedBox(height: 6),
-      TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        autofillHints: autofillHints,
-        textInputAction: textInputAction,
-        onSubmitted: onSubmitted,
-        style: const TextStyle(color: FlitColors.textPrimary, fontSize: 16),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: FlitColors.textMuted),
-          prefixText: prefix,
-          prefixStyle: const TextStyle(
-            color: FlitColors.textSecondary,
-            fontSize: 16,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
           ),
-          suffixIcon: suffixIcon,
-          filled: true,
-          fillColor: FlitColors.cardBackground,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
+          const SizedBox(height: 6),
+          TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            obscureText: obscureText,
+            autofillHints: autofillHints,
+            textInputAction: textInputAction,
+            onSubmitted: onSubmitted,
+            style: const TextStyle(color: FlitColors.textPrimary, fontSize: 16),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: const TextStyle(color: FlitColors.textMuted),
+              prefixText: prefix,
+              prefixStyle: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 16,
+              ),
+              suffixIcon: suffixIcon,
+              filled: true,
+              fillColor: FlitColors.cardBackground,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: FlitColors.cardBorder),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: FlitColors.cardBorder),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide:
+                    const BorderSide(color: FlitColors.accent, width: 1.5),
+              ),
+            ),
           ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: FlitColors.cardBorder),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: FlitColors.cardBorder),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: FlitColors.accent, width: 1.5),
-          ),
-        ),
-      ),
-    ],
-  );
+        ],
+      );
 }
 
 class _AuthButton extends StatelessWidget {
@@ -1037,17 +1018,17 @@ class _PrivacyLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: () => _showPrivacyDialog(context),
-    child: const Text(
-      'Privacy Policy',
-      style: TextStyle(
-        color: FlitColors.textMuted,
-        fontSize: 11,
-        decoration: TextDecoration.underline,
-        decorationColor: FlitColors.textMuted,
-      ),
-    ),
-  );
+        onTap: () => _showPrivacyDialog(context),
+        child: const Text(
+          'Privacy Policy',
+          style: TextStyle(
+            color: FlitColors.textMuted,
+            fontSize: 11,
+            decoration: TextDecoration.underline,
+            decorationColor: FlitColors.textMuted,
+          ),
+        ),
+      );
 }
 
 /// Tappable "Terms of Service" footer link.
@@ -1124,15 +1105,15 @@ class _TermsLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: () => _showTermsDialog(context),
-    child: const Text(
-      'Terms of Service',
-      style: TextStyle(
-        color: FlitColors.textMuted,
-        fontSize: 11,
-        decoration: TextDecoration.underline,
-        decorationColor: FlitColors.textMuted,
-      ),
-    ),
-  );
+        onTap: () => _showTermsDialog(context),
+        child: const Text(
+          'Terms of Service',
+          style: TextStyle(
+            color: FlitColors.textMuted,
+            fontSize: 11,
+            decoration: TextDecoration.underline,
+            decorationColor: FlitColors.textMuted,
+          ),
+        ),
+      );
 }

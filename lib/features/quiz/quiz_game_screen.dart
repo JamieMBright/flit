@@ -452,9 +452,8 @@ class _QuizGameScreenState extends State<QuizGameScreen>
 
   Widget _buildTimer(int? remainingMs) {
     final isCountdown = remainingMs != null;
-    final displayTime = isCountdown
-        ? _formatMs(remainingMs)
-        : _session.elapsedFormatted;
+    final displayTime =
+        isCountdown ? _formatMs(remainingMs) : _session.elapsedFormatted;
     final isUrgent = isCountdown && remainingMs < 10000;
 
     return Container(

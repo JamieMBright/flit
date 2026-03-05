@@ -83,8 +83,13 @@ const float CLOUD_MIN_DISTANCE = 1.5;
 const float TERMINATOR_SOFT    = -0.1;
 const float TERMINATOR_HARD    = 0.2;
 const vec3  TERMINATOR_WARM    = vec3(1.0, 0.45, 0.15);
-const float CITY_LIGHT_BOOST   = 2.0;
+const float CITY_LIGHT_BOOST   = 2.5;
 const float NIGHT_RIM_STRENGTH = 0.3;
+
+// Night-side dark overlay — darkens the Blue Marble on the unlit hemisphere
+// so the night side looks distinctly dark, not just dimly lit.
+const float NIGHT_DARKEN       = 0.02;  // multiply factor for night surface
+const vec3  NIGHT_TINT         = vec3(0.06, 0.07, 0.12); // deep blue-black
 
 // Sky / stars
 const float SUN_DISC_SIZE      = 0.9995;
@@ -425,13 +430,18 @@ void main() {
 
     vec3 surfaceColor;
 
+    // Night-side darkness factor: how dark the surface gets on the unlit side.
+    float nightDark = mix(NIGHT_DARKEN, 1.0, dayFactor);
+
     if (!isOcean) {
         // Land — satellite texture with diffuse lighting
         vec3 landColor = satColor.rgb;
-        // Night-side ambient is near-black (0.01) so the surface is dark
-        // enough for city lights to stand out. Day-side ambient is 0.06.
-        float ambientLand = mix(0.01, 0.06, dayFactor);
+        float ambientLand = mix(0.0, 0.06, dayFactor);
         landColor *= (diffuse * 0.9 + ambientLand);
+
+        // Dark overlay: crush the night side toward deep blue-black
+        landColor = mix(NIGHT_TINT * landColor, landColor, nightDark);
+
         landColor += terminatorGlow * 0.4;
         surfaceColor = landColor;
     } else {
@@ -439,8 +449,7 @@ void main() {
         vec3 oceanColor = satColor.rgb * vec3(0.8, 0.9, 1.1);
 
         float oceanDiffuse = max(dot(normal, uSunDir), 0.0);
-        // Near-black ambient on night-side ocean to eliminate blue hue.
-        float ambientOcean = mix(0.01, 0.06, dayFactor);
+        float ambientOcean = mix(0.0, 0.06, dayFactor);
         oceanColor *= (oceanDiffuse * 0.85 + ambientOcean);
 
         // Blinn-Phong specular (cheaper than gaussian)
@@ -452,6 +461,9 @@ void main() {
         float f = fresnel(viewDir, normal);
         vec3 fresnelColor = mix(vec3(0.1, 0.3, 0.5), vec3(0.3, 0.6, 0.8), f);
         oceanColor = mix(oceanColor, fresnelColor, f * 0.4 * dayFactor);
+
+        // Dark overlay: crush the night-side ocean to near-black
+        oceanColor = mix(NIGHT_TINT * 0.5 * oceanColor, oceanColor, nightDark);
 
         oceanColor += terminatorGlow * 0.25;
         surfaceColor = oceanColor;
@@ -511,10 +523,19 @@ void main() {
     {
         float nightFactor = 1.0 - dayFactor;
         if (uEnableNight > 0.5 && nightFactor > 0.01) {
-            vec3 cityLights = texture(uCityLights, uv).rgb;
-            cityLights *= CITY_LIGHT_BOOST;
-            vec3 lightTint = vec3(1.0, 0.85, 0.6);
-            cityLights *= lightTint;
+            // Sample the procedural city-lights texture (glow dots).
+            vec3 cityRaw = texture(uCityLights, uv).rgb;
+
+            // Amplify and apply warm amber tint for a game-friendly look.
+            float luminance = dot(cityRaw, vec3(0.3, 0.5, 0.2));
+            float glowStrength = luminance * CITY_LIGHT_BOOST;
+
+            // Soft bloom: brighter core with a warm outer glow.
+            vec3 coreColor = vec3(1.0, 0.9, 0.65) * glowStrength;
+            vec3 outerGlow = vec3(1.0, 0.6, 0.25) * glowStrength * 0.4;
+            vec3 cityLights = coreColor + outerGlow;
+
+            // Additive blend onto the dark night surface.
             surfaceColor += cityLights * nightFactor;
         }
     }

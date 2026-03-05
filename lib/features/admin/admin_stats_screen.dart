@@ -113,11 +113,8 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
             .gte('created_at', d7)
             .count(CountOption.exact),
         // 8: active challenges
-        _client
-            .from('challenges')
-            .select('id')
-            .inFilter('status', ['pending', 'in_progress'])
-            .count(CountOption.exact),
+        _client.from('challenges').select('id').inFilter(
+            'status', ['pending', 'in_progress']).count(CountOption.exact),
         // 9: matchmaking pool (unmatched)
         _client
             .from('matchmaking_pool')
@@ -230,55 +227,55 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
               child: CircularProgressIndicator(color: FlitColors.accent),
             )
           : _error != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: FlitColors.error,
-                      size: 48,
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: FlitColors.error,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _error!,
+                          style: const TextStyle(color: FlitColors.textMuted),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadStats,
+                          child: const Text('Retry'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _error!,
-                      style: const TextStyle(color: FlitColors.textMuted),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _loadStats,
-                      child: const Text('Retry'),
-                    ),
-                  ],
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadStats,
+                  color: FlitColors.accent,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      _buildPlayerStats(),
+                      const SizedBox(height: 16),
+                      _buildGameActivity(),
+                      const SizedBox(height: 16),
+                      _buildSocialStats(),
+                      const SizedBox(height: 16),
+                      _buildEconomyHealth(),
+                      const SizedBox(height: 16),
+                      _buildTopRichest(),
+                      const SizedBox(height: 16),
+                      _buildTopPlayers(),
+                      const SizedBox(height: 16),
+                      _buildRecentGames(),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _loadStats,
-              color: FlitColors.accent,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildPlayerStats(),
-                  const SizedBox(height: 16),
-                  _buildGameActivity(),
-                  const SizedBox(height: 16),
-                  _buildSocialStats(),
-                  const SizedBox(height: 16),
-                  _buildEconomyHealth(),
-                  const SizedBox(height: 16),
-                  _buildTopRichest(),
-                  const SizedBox(height: 16),
-                  _buildTopPlayers(),
-                  const SizedBox(height: 16),
-                  _buildRecentGames(),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
     );
   }
 

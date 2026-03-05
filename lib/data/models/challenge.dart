@@ -139,29 +139,29 @@ class ChallengeRound {
   }
 
   Map<String, dynamic> toJson() => {
-    'round_number': roundNumber,
-    'seed': seed,
-    'clue_type': clueType.name,
-    'start_location': [startLocation.x, startLocation.y],
-    'target_country_code': targetCountryCode,
-    if (countryName != null) 'country_name': countryName,
-    'challenger_time_ms': challengerTime?.inMilliseconds,
-    'challenged_time_ms': challengedTime?.inMilliseconds,
-    if (challengerScore != null) 'challenger_score': challengerScore,
-    if (challengedScore != null) 'challenged_score': challengedScore,
-    if (challengerHintsUsed != null)
-      'challenger_hints_used': challengerHintsUsed,
-    if (challengedHintsUsed != null)
-      'challenged_hints_used': challengedHintsUsed,
-    if (challengerQuizCorrect != null)
-      'challenger_quiz_correct': challengerQuizCorrect,
-    if (challengedQuizCorrect != null)
-      'challenged_quiz_correct': challengedQuizCorrect,
-    if (challengerQuizWrong != null)
-      'challenger_quiz_wrong': challengerQuizWrong,
-    if (challengedQuizWrong != null)
-      'challenged_quiz_wrong': challengedQuizWrong,
-  };
+        'round_number': roundNumber,
+        'seed': seed,
+        'clue_type': clueType.name,
+        'start_location': [startLocation.x, startLocation.y],
+        'target_country_code': targetCountryCode,
+        if (countryName != null) 'country_name': countryName,
+        'challenger_time_ms': challengerTime?.inMilliseconds,
+        'challenged_time_ms': challengedTime?.inMilliseconds,
+        if (challengerScore != null) 'challenger_score': challengerScore,
+        if (challengedScore != null) 'challenged_score': challengedScore,
+        if (challengerHintsUsed != null)
+          'challenger_hints_used': challengerHintsUsed,
+        if (challengedHintsUsed != null)
+          'challenged_hints_used': challengedHintsUsed,
+        if (challengerQuizCorrect != null)
+          'challenger_quiz_correct': challengerQuizCorrect,
+        if (challengedQuizCorrect != null)
+          'challenged_quiz_correct': challengedQuizCorrect,
+        if (challengerQuizWrong != null)
+          'challenger_quiz_wrong': challengerQuizWrong,
+        if (challengedQuizWrong != null)
+          'challenged_quiz_wrong': challengedQuizWrong,
+      };
 
   factory ChallengeRound.fromJson(Map<String, dynamic> json) {
     final startLoc = json['start_location'] as List;
@@ -264,22 +264,22 @@ class Challenge {
   String get scoreText => '$challengerWins - $challengedWins';
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'challenger_id': challengerId,
-    'challenger_name': challengerName,
-    'challenged_id': challengedId,
-    'challenged_name': challengedName,
-    'status': status.dbName,
-    'game_mode': gameMode.dbName,
-    'rounds': rounds.map((r) => r.toJson()).toList(),
-    if (quizCategory != null) 'quiz_category': quizCategory!.name,
-    if (quizMode != null) 'quiz_mode': quizMode!.name,
-    'winner_id': winnerId,
-    'challenger_coins': challengerCoins,
-    'challenged_coins': challengedCoins,
-    'created_at': createdAt?.toIso8601String(),
-    'completed_at': completedAt?.toIso8601String(),
-  };
+        'id': id,
+        'challenger_id': challengerId,
+        'challenger_name': challengerName,
+        'challenged_id': challengedId,
+        'challenged_name': challengedName,
+        'status': status.dbName,
+        'game_mode': gameMode.dbName,
+        'rounds': rounds.map((r) => r.toJson()).toList(),
+        if (quizCategory != null) 'quiz_category': quizCategory!.name,
+        if (quizMode != null) 'quiz_mode': quizMode!.name,
+        'winner_id': winnerId,
+        'challenger_coins': challengerCoins,
+        'challenged_coins': challengedCoins,
+        'created_at': createdAt?.toIso8601String(),
+        'completed_at': completedAt?.toIso8601String(),
+      };
 
   factory Challenge.fromJson(Map<String, dynamic> json) {
     final quizCatStr = json['quiz_category'] as String?;

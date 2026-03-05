@@ -95,8 +95,7 @@ class Promotion {
           ? DateTime.tryParse(json['endDate'] as String)
           : null,
       manualActive: json['manualActive'] as bool? ?? false,
-      appliesTo:
-          (json['appliesTo'] as List<dynamic>?)
+      appliesTo: (json['appliesTo'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           const ['all'],
@@ -266,17 +265,17 @@ class EconomyConfig {
     final promotionsJson = json['promotions'] as List<dynamic>?;
     final promotions = promotionsJson != null
         ? promotionsJson
-              .whereType<Map<String, dynamic>>()
-              .map(Promotion.fromJson)
-              .toList()
+            .whereType<Map<String, dynamic>>()
+            .map(Promotion.fromJson)
+            .toList()
         : defaults.promotions;
 
     final packagesJson = json['goldPackages'] as List<dynamic>?;
     final goldPackages = packagesJson != null
         ? packagesJson
-              .whereType<Map<String, dynamic>>()
-              .map(GoldPackageConfig.fromJson)
-              .toList()
+            .whereType<Map<String, dynamic>>()
+            .map(GoldPackageConfig.fromJson)
+            .toList()
         : defaults.goldPackages;
 
     return EconomyConfig(

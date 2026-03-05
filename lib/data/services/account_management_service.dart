@@ -87,12 +87,11 @@ class AccountManagementService {
           'games_played':
               currentPlayer?.gamesPlayed ?? profileData?['games_played'],
           'best_score': currentPlayer?.bestScore ?? profileData?['best_score'],
-          'best_time_ms':
-              currentPlayer?.bestTime?.inMilliseconds ??
+          'best_time_ms': currentPlayer?.bestTime?.inMilliseconds ??
               profileData?['best_time_ms'],
           'total_flight_time_ms':
               currentPlayer?.totalFlightTime.inMilliseconds ??
-              profileData?['total_flight_time_ms'],
+                  profileData?['total_flight_time_ms'],
           'countries_found':
               currentPlayer?.countriesFound ?? profileData?['countries_found'],
         },

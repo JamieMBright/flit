@@ -162,12 +162,20 @@ flutter test --coverage
 - Lint before commit when possible, but formatting and lint issues are **advisory, not blocking**
 - CI reports formatting and lint warnings but does not fail the build on them
 - Use project flutter_lints config
+- **Zero-warning policy** — Do not leave existing warnings unresolved. When you see warnings in hook output or CI logs, fix them. A clean log is a healthy codebase.
 
 ```bash
 ./scripts/lint.sh            # Check linting
 dart format lib/ test/ --fix # Auto-fix formatting
-flutter analyze              # Static analysis
+flutter analyze              # Static analysis (authoritative for prefer_const_constructors etc.)
 ```
+
+### Warning & Log File Management
+- **Always check hook/CI output for warnings** — treat them as bugs to fix, not noise to ignore
+- After resolving warnings, verify they no longer appear in the output
+- The `lint-noflutter.sh` script provides lightweight heuristic checks; `flutter analyze` is the authoritative source
+- **Pre-push hooks only scan changed files** — they compare against the merge base with `origin/main`, so only your changes are validated
+- Do not commit code that introduces new warnings — fix them before pushing
 
 ### Style
 - Prefer composition over inheritance
@@ -282,11 +290,15 @@ gh workflow run fetch-errors.yml
 7. Commit with descriptive message
 8. Push after tests pass (formatting/lint warnings are acceptable)
 
-### Installing Dart SDK (no-Flutter environments)
-If `dart` is not available, install the SDK:
+### Flutter SDK (Claude Code web sessions)
+The SessionStart hook automatically installs Flutter SDK (including Dart) at `/tmp/flutter`.
+Both `flutter` and `dart` commands are available on PATH after session start.
+
+If manual install is needed:
 ```bash
-curl -fsSL https://storage.googleapis.com/dart-archive/channels/stable/release/latest/sdk/dartsdk-linux-x64-release.zip -o /tmp/dart.zip && unzip -qo /tmp/dart.zip -d /tmp/
-export PATH="/tmp/dart-sdk/bin:$PATH"
+curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.29.3-stable.tar.xz -o /tmp/flutter.tar.xz
+tar -xf /tmp/flutter.tar.xz -C /tmp/ && rm -f /tmp/flutter.tar.xz
+export PATH="/tmp/flutter/bin:/tmp/flutter/bin/cache/dart-sdk/bin:$PATH"
 ```
 
 ### Pre-Commit Hook
@@ -294,7 +306,6 @@ The project includes a pre-commit hook that auto-checks `dart format`. Install i
 ```bash
 bash scripts/setup-hooks.sh
 ```
-The hook runs `dart format --set-exit-if-changed lib/ test/` even in no-Flutter mode.
 
 ---
 
@@ -313,19 +324,22 @@ User is on iOS Claude Code app - they need the direct link to merge.
 
 ---
 
-## Pre-Push Validation (No Flutter Locally)
+## Pre-Push Validation
 
-Since Flutter isn't available in this environment, do these checks before committing:
+With Flutter available, run the full test suite before pushing:
 
-1. **Syntax** - Verify all brackets, parentheses, semicolons balanced
-2. **Imports** - Check all import paths exist and are spelled correctly
-3. **File references** - Verify referenced files exist
-4. **Shader syntax** - Verify GLSL syntax (matching braces, valid types, no undefined vars)
-5. **Known patterns** - Avoid APIs that don't work on web (SystemChrome, etc.)
-6. **Lint rules** - Only use lint rules known to exist in flutter_lints
-7. **Dependencies** - Only add packages known to work on web
-8. **Sampler count** - Never exceed 4 samplers per shader pass
-9. **Asset paths** - Verify all texture/shader asset paths in pubspec.yaml
+```bash
+flutter test                 # Unit tests
+flutter analyze              # Static analysis
+dart format lib/ test/       # Format check
+```
+
+Additionally verify:
+1. **Shader syntax** - Verify GLSL syntax (matching braces, valid types, no undefined vars)
+2. **Known patterns** - Avoid APIs that don't work on web (SystemChrome, etc.)
+3. **Dependencies** - Only add packages known to work on web
+4. **Sampler count** - Never exceed 4 samplers per shader pass
+5. **Asset paths** - Verify all texture/shader asset paths in pubspec.yaml
 
 CI is the final gate, but minimize round-trips by being careful.
 

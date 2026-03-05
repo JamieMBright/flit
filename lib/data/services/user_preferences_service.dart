@@ -716,16 +716,14 @@ class UserPreferencesService {
         // Eagerly initialise if the queue hasn't been set up yet. The
         // getInstance() Future resolves almost instantly on iOS/Android
         // (in-process cache after the first call).
-        SharedPreferences.getInstance()
-            .then((prefs) {
-              _localPrefs = prefs;
-              try {
-                prefs.setString(key, jsonEncode(payload));
-              } catch (_) {}
-            })
-            .catchError((_) {
-              // Binding not initialised (e.g. in unit tests) — silently skip.
-            });
+        SharedPreferences.getInstance().then((prefs) {
+          _localPrefs = prefs;
+          try {
+            prefs.setString(key, jsonEncode(payload));
+          } catch (_) {}
+        }).catchError((_) {
+          // Binding not initialised (e.g. in unit tests) — silently skip.
+        });
         return;
       }
       _localPrefs!.setString(key, jsonEncode(payload));
@@ -882,31 +880,27 @@ class UserPreferencesService {
         final payload = _pendingProfile!;
         final versionAtFlush = _profileWriteVersion;
         futures.add(
-          client
-              .from('profiles')
-              .upsert(payload)
-              .then((_) {
-                debugPrint(
-                  '[UserPreferencesService] flush profiles SUCCEEDED '
-                  '(games_played=${payload['games_played']}, '
-                  'best_score=${payload['best_score']}, '
-                  'coins=${payload['coins']})',
-                );
-                if (_profileWriteVersion == versionAtFlush) {
-                  _profileDirty = false;
-                  _pendingProfile = null;
-                  _clearLocalCache(_kLocalProfile);
-                  _pendingRecoveryKeys.remove(_kLocalProfile);
-                }
-                // Always invalidate leaderboard cache — the write succeeded.
-                LeaderboardService.instance.invalidateCache();
-              })
-              .catchError((Object e) async {
-                debugPrint(
-                  '[UserPreferencesService] flush profiles failed, queuing: $e',
-                );
-                await _queue.enqueue('profiles', payload, 'upsert');
-              }),
+          client.from('profiles').upsert(payload).then((_) {
+            debugPrint(
+              '[UserPreferencesService] flush profiles SUCCEEDED '
+              '(games_played=${payload['games_played']}, '
+              'best_score=${payload['best_score']}, '
+              'coins=${payload['coins']})',
+            );
+            if (_profileWriteVersion == versionAtFlush) {
+              _profileDirty = false;
+              _pendingProfile = null;
+              _clearLocalCache(_kLocalProfile);
+              _pendingRecoveryKeys.remove(_kLocalProfile);
+            }
+            // Always invalidate leaderboard cache — the write succeeded.
+            LeaderboardService.instance.invalidateCache();
+          }).catchError((Object e) async {
+            debugPrint(
+              '[UserPreferencesService] flush profiles failed, queuing: $e',
+            );
+            await _queue.enqueue('profiles', payload, 'upsert');
+          }),
         );
       }
 
@@ -914,23 +908,19 @@ class UserPreferencesService {
         final payload = _pendingSettings!;
         final versionAtFlush = _settingsWriteVersion;
         futures.add(
-          client
-              .from('user_settings')
-              .upsert(payload)
-              .then((_) {
-                if (_settingsWriteVersion == versionAtFlush) {
-                  _settingsDirty = false;
-                  _pendingSettings = null;
-                  _clearLocalCache(_kLocalSettings);
-                  _pendingRecoveryKeys.remove(_kLocalSettings);
-                }
-              })
-              .catchError((Object e) async {
-                debugPrint(
-                  '[UserPreferencesService] flush user_settings failed, queuing: $e',
-                );
-                await _queue.enqueue('user_settings', payload, 'upsert');
-              }),
+          client.from('user_settings').upsert(payload).then((_) {
+            if (_settingsWriteVersion == versionAtFlush) {
+              _settingsDirty = false;
+              _pendingSettings = null;
+              _clearLocalCache(_kLocalSettings);
+              _pendingRecoveryKeys.remove(_kLocalSettings);
+            }
+          }).catchError((Object e) async {
+            debugPrint(
+              '[UserPreferencesService] flush user_settings failed, queuing: $e',
+            );
+            await _queue.enqueue('user_settings', payload, 'upsert');
+          }),
         );
       }
 
@@ -938,23 +928,19 @@ class UserPreferencesService {
         final payload = _pendingAccountState!;
         final versionAtFlush = _accountStateWriteVersion;
         futures.add(
-          client
-              .from('account_state')
-              .upsert(payload)
-              .then((_) {
-                if (_accountStateWriteVersion == versionAtFlush) {
-                  _accountStateDirty = false;
-                  _pendingAccountState = null;
-                  _clearLocalCache(_kLocalAccountState);
-                  _pendingRecoveryKeys.remove(_kLocalAccountState);
-                }
-              })
-              .catchError((Object e) async {
-                debugPrint(
-                  '[UserPreferencesService] flush account_state failed, queuing: $e',
-                );
-                await _queue.enqueue('account_state', payload, 'upsert');
-              }),
+          client.from('account_state').upsert(payload).then((_) {
+            if (_accountStateWriteVersion == versionAtFlush) {
+              _accountStateDirty = false;
+              _pendingAccountState = null;
+              _clearLocalCache(_kLocalAccountState);
+              _pendingRecoveryKeys.remove(_kLocalAccountState);
+            }
+          }).catchError((Object e) async {
+            debugPrint(
+              '[UserPreferencesService] flush account_state failed, queuing: $e',
+            );
+            await _queue.enqueue('account_state', payload, 'upsert');
+          }),
         );
       }
 

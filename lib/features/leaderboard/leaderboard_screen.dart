@@ -157,59 +157,61 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: FlitColors.backgroundDark,
-    appBar: AppBar(
-      backgroundColor: FlitColors.backgroundMid,
-      title: const Text('Leaderboard'),
-      centerTitle: true,
-      bottom: TabBar(
-        controller: _modeTabController,
-        indicatorColor: FlitColors.accent,
-        labelColor: FlitColors.textPrimary,
-        unselectedLabelColor: FlitColors.textSecondary,
-        labelStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
+        backgroundColor: FlitColors.backgroundDark,
+        appBar: AppBar(
+          backgroundColor: FlitColors.backgroundMid,
+          title: const Text('Leaderboard'),
+          centerTitle: true,
+          bottom: TabBar(
+            controller: _modeTabController,
+            indicatorColor: FlitColors.accent,
+            labelColor: FlitColors.textPrimary,
+            unselectedLabelColor: FlitColors.textSecondary,
+            labelStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+            tabs: const [
+              Tab(text: 'SCRAMBLE'),
+              Tab(text: 'TRAINING'),
+              Tab(text: 'BRIEFING'),
+            ],
+          ),
         ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
+        body: Column(
+          children: [
+            // Sub-tab chips: Today | Last Month | All Time
+            _TimeframeChips(
+                selected: _timeframe, onChanged: _onTimeframeChanged),
+            const Divider(color: FlitColors.cardBorder, height: 1),
+            // Player rank banner
+            if (_playerRank != null) _PlayerRankBanner(entry: _playerRank!),
+            // Leaderboard list
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _errorMessage != null
+                      ? _ErrorState(message: _errorMessage!, onRetry: _loadData)
+                      : _entries.isEmpty
+                          ? const _EmptyState()
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              itemCount: _entries.length,
+                              itemBuilder: (context, index) => _LeaderboardRow(
+                                entry: _entries[index],
+                                isCurrentPlayer:
+                                    _entries[index].playerId == _userId,
+                              ),
+                            ),
+            ),
+          ],
         ),
-        tabs: const [
-          Tab(text: 'SCRAMBLE'),
-          Tab(text: 'TRAINING'),
-          Tab(text: 'BRIEFING'),
-        ],
-      ),
-    ),
-    body: Column(
-      children: [
-        // Sub-tab chips: Today | Last Month | All Time
-        _TimeframeChips(selected: _timeframe, onChanged: _onTimeframeChanged),
-        const Divider(color: FlitColors.cardBorder, height: 1),
-        // Player rank banner
-        if (_playerRank != null) _PlayerRankBanner(entry: _playerRank!),
-        // Leaderboard list
-        Expanded(
-          child: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : _errorMessage != null
-              ? _ErrorState(message: _errorMessage!, onRetry: _loadData)
-              : _entries.isEmpty
-              ? const _EmptyState()
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: _entries.length,
-                  itemBuilder: (context, index) => _LeaderboardRow(
-                    entry: _entries[index],
-                    isCurrentPlayer: _entries[index].playerId == _userId,
-                  ),
-                ),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 // =============================================================================
@@ -224,37 +226,37 @@ class _TimeframeChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    height: 48,
-    color: FlitColors.backgroundMid,
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: TimeframeTab.values
-          .map(
-            (tab) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: ChoiceChip(
-                label: Text(tab.displayName),
-                selected: tab == selected,
-                onSelected: (_) => onChanged(tab),
-                selectedColor: FlitColors.accent,
-                backgroundColor: FlitColors.cardBackground,
-                labelStyle: TextStyle(
-                  color: tab == selected
-                      ? FlitColors.textPrimary
-                      : FlitColors.textSecondary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+        height: 48,
+        color: FlitColors.backgroundMid,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: TimeframeTab.values
+              .map(
+                (tab) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: ChoiceChip(
+                    label: Text(tab.displayName),
+                    selected: tab == selected,
+                    onSelected: (_) => onChanged(tab),
+                    selectedColor: FlitColors.accent,
+                    backgroundColor: FlitColors.cardBackground,
+                    labelStyle: TextStyle(
+                      color: tab == selected
+                          ? FlitColors.textPrimary
+                          : FlitColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
                 ),
-                side: BorderSide.none,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
-          )
-          .toList(),
-    ),
-  );
+              )
+              .toList(),
+        ),
+      );
 }
 
 // =============================================================================
@@ -376,8 +378,8 @@ class _LeaderboardRow extends StatelessWidget {
           color: isCurrentPlayer
               ? FlitColors.accent
               : entry.rank <= 3
-              ? _rankColor.withOpacity(0.6)
-              : FlitColors.cardBorder.withOpacity(0.5),
+                  ? _rankColor.withOpacity(0.6)
+                  : FlitColors.cardBorder.withOpacity(0.5),
         ),
       ),
       child: Row(
@@ -845,8 +847,8 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
                               final reason = selectedReason!;
                               final details =
                                   detailsController.text.trim().isEmpty
-                                  ? null
-                                  : detailsController.text.trim();
+                                      ? null
+                                      : detailsController.text.trim();
                               Navigator.of(dialogContext).pop();
                               try {
                                 await ReportService.instance.submitReport(
@@ -1127,27 +1129,27 @@ class _StatColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    children: [
-      Text(
-        label,
-        style: const TextStyle(
-          color: FlitColors.textMuted,
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.0,
-        ),
-      ),
-      const SizedBox(height: 4),
-      Text(
-        value,
-        style: const TextStyle(
-          color: FlitColors.textPrimary,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ],
-  );
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: FlitColors.textMuted,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      );
 }
 
 /// Stat bar for the license card on the pilot card bottom sheet.
@@ -1266,9 +1268,8 @@ class _MilestoneBar extends StatelessWidget {
     final nextThreshold = currentMilestone < _milestones.length
         ? _milestones[currentMilestone]
         : _milestones.last;
-    final prevThreshold = currentMilestone > 0
-        ? _milestones[currentMilestone - 1]
-        : 0;
+    final prevThreshold =
+        currentMilestone > 0 ? _milestones[currentMilestone - 1] : 0;
     final progress = currentMilestone >= _milestones.length
         ? 1.0
         : ((score - prevThreshold) / (nextThreshold - prevThreshold)).clamp(
@@ -1679,38 +1680,38 @@ class _LegendRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 3),
-    child: Row(
-      children: [
-        Container(
-          width: 14,
-          height: 14,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: _emojiToColor(emoji),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: FlitColors.textSecondary,
-              fontSize: 12,
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          children: [
+            Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _emojiToColor(emoji),
+              ),
             ),
-          ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            Text(
+              '$count',
+              style: const TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
-        Text(
-          '$count',
-          style: const TextStyle(
-            color: FlitColors.textPrimary,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 // =============================================================================
@@ -1722,27 +1723,27 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.leaderboard_outlined,
-          size: 64,
-          color: FlitColors.textMuted.withOpacity(0.5),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.leaderboard_outlined,
+              size: 64,
+              color: FlitColors.textMuted.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'No scores yet',
+              style: TextStyle(color: FlitColors.textSecondary, fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Be the first to set a record!',
+              style: TextStyle(color: FlitColors.textMuted, fontSize: 14),
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
-        const Text(
-          'No scores yet',
-          style: TextStyle(color: FlitColors.textSecondary, fontSize: 18),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Be the first to set a record!',
-          style: TextStyle(color: FlitColors.textMuted, fontSize: 14),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 class _ErrorState extends StatelessWidget {
@@ -1753,46 +1754,47 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: GestureDetector(
-      onTap: onRetry,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.cloud_off_rounded,
-            size: 64,
-            color: FlitColors.textMuted.withOpacity(0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: FlitColors.textSecondary,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-            decoration: BoxDecoration(
-              color: FlitColors.accent,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'Retry',
-              style: TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+        child: GestureDetector(
+          onTap: onRetry,
+          behavior: HitTestBehavior.opaque,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.cloud_off_rounded,
+                size: 64,
+                color: FlitColors.textMuted.withOpacity(0.5),
               ),
-            ),
+              const SizedBox(height: 16),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                decoration: BoxDecoration(
+                  color: FlitColors.accent,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'Retry',
+                  style: TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 // =============================================================================

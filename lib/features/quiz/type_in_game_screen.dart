@@ -172,9 +172,8 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
       // Split expected into words, check if any significant word (>3 chars)
       // matches or is contained
       final expectedWords = normExpected.split(RegExp(r'\s+'));
-      final significantWords = expectedWords
-          .where((w) => w.length > 3)
-          .toList();
+      final significantWords =
+          expectedWords.where((w) => w.length > 3).toList();
       // Accept if the input matches any significant word
       for (final word in significantWords) {
         if (normInput == word) return true;
@@ -519,9 +518,8 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
 
   Widget _buildTimer(int? remainingMs) {
     final isCountdown = remainingMs != null;
-    final displayTime = isCountdown
-        ? _formatMs(remainingMs)
-        : _session.elapsedFormatted;
+    final displayTime =
+        isCountdown ? _formatMs(remainingMs) : _session.elapsedFormatted;
     final isUrgent = isCountdown && remainingMs < 10000;
 
     return Container(

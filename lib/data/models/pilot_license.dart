@@ -169,9 +169,8 @@ class PilotLicense {
       fuelBoost: lockedStats.contains('fuelBoost')
           ? current.fuelBoost
           : rollStat(rng: rng, luckBonus: luckBonus),
-      preferredClueType: lockType
-          ? current.preferredClueType
-          : rollClueType(rng),
+      preferredClueType:
+          lockType ? current.preferredClueType : rollClueType(rng),
       nationality: current.nationality, // Preserve across rerolls
     );
   }
@@ -224,31 +223,32 @@ class PilotLicense {
     int? fuelBoost,
     String? preferredClueType,
     String? nationality,
-  }) => PilotLicense(
-    coinBoost: coinBoost ?? this.coinBoost,
-    clueChance: clueChance ?? this.clueChance,
-    fuelBoost: fuelBoost ?? this.fuelBoost,
-    preferredClueType: preferredClueType ?? this.preferredClueType,
-    nationality: nationality ?? this.nationality,
-  );
+  }) =>
+      PilotLicense(
+        coinBoost: coinBoost ?? this.coinBoost,
+        clueChance: clueChance ?? this.clueChance,
+        fuelBoost: fuelBoost ?? this.fuelBoost,
+        preferredClueType: preferredClueType ?? this.preferredClueType,
+        nationality: nationality ?? this.nationality,
+      );
 
   // ---------------------------------------------------------------------------
   // Serialisation
   // ---------------------------------------------------------------------------
 
   Map<String, dynamic> toJson() => {
-    'coin_boost': coinBoost,
-    'clue_chance': clueChance,
-    'fuel_boost': fuelBoost,
-    'preferred_clue_type': preferredClueType,
-    'nationality': nationality,
-  };
+        'coin_boost': coinBoost,
+        'clue_chance': clueChance,
+        'fuel_boost': fuelBoost,
+        'preferred_clue_type': preferredClueType,
+        'nationality': nationality,
+      };
 
   factory PilotLicense.fromJson(Map<String, dynamic> json) => PilotLicense(
-    coinBoost: json['coin_boost'] as int,
-    clueChance: json['clue_chance'] as int? ?? 1,
-    fuelBoost: json['fuel_boost'] as int,
-    preferredClueType: json['preferred_clue_type'] as String,
-    nationality: json['nationality'] as String?,
-  );
+        coinBoost: json['coin_boost'] as int,
+        clueChance: json['clue_chance'] as int? ?? 1,
+        fuelBoost: json['fuel_boost'] as int,
+        preferredClueType: json['preferred_clue_type'] as String,
+        nationality: json['nationality'] as String?,
+      );
 }

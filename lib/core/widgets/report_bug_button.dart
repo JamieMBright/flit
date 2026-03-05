@@ -165,9 +165,8 @@ class ReportBugButton extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: submitting
-                  ? null
-                  : () => Navigator.of(dialogContext).pop(),
+              onPressed:
+                  submitting ? null : () => Navigator.of(dialogContext).pop(),
               child: const Text(
                 'Cancel',
                 style: TextStyle(color: FlitColors.textSecondary),
@@ -227,11 +226,11 @@ class ReportBugButton extends StatelessWidget {
     final recentErrorsSummary = recentErrors.isEmpty
         ? 'none'
         : recentErrors
-              .map(
-                (e) =>
-                    '[${e.severity.label}] ${e.error.length > 120 ? '${e.error.substring(0, 120)}...' : e.error}',
-              )
-              .join(' | ');
+            .map(
+              (e) =>
+                  '[${e.severity.label}] ${e.error.length > 120 ? '${e.error.substring(0, 120)}...' : e.error}',
+            )
+            .join(' | ');
 
     // Delegate platform/device detection to ErrorService to avoid duplication.
     final platform = ErrorService.detectPlatform();

@@ -29,11 +29,11 @@ class DailyRoundResult {
   }
 
   Map<String, dynamic> toJson() => {
-    'hints_used': hintsUsed,
-    'completed': completed,
-    'time_ms': timeMs,
-    'score': score,
-  };
+        'hints_used': hintsUsed,
+        'completed': completed,
+        'time_ms': timeMs,
+        'score': score,
+      };
 
   factory DailyRoundResult.fromJson(Map<String, dynamic> json) =>
       DailyRoundResult(
@@ -135,22 +135,22 @@ class DailyResult {
   }
 
   Map<String, dynamic> toJson() => {
-    'date': date,
-    'rounds': rounds.map((r) => r.toJson()).toList(),
-    'total_score': totalScore,
-    'total_time_ms': totalTimeMs,
-    'total_rounds': totalRounds,
-    'theme': theme,
-  };
+        'date': date,
+        'rounds': rounds.map((r) => r.toJson()).toList(),
+        'total_score': totalScore,
+        'total_time_ms': totalTimeMs,
+        'total_rounds': totalRounds,
+        'theme': theme,
+      };
 
   factory DailyResult.fromJson(Map<String, dynamic> json) => DailyResult(
-    date: json['date'] as String,
-    rounds: (json['rounds'] as List)
-        .map((r) => DailyRoundResult.fromJson(r as Map<String, dynamic>))
-        .toList(),
-    totalScore: json['total_score'] as int,
-    totalTimeMs: json['total_time_ms'] as int,
-    totalRounds: json['total_rounds'] as int? ?? 5,
-    theme: json['theme'] as String? ?? '',
-  );
+        date: json['date'] as String,
+        rounds: (json['rounds'] as List)
+            .map((r) => DailyRoundResult.fromJson(r as Map<String, dynamic>))
+            .toList(),
+        totalScore: json['total_score'] as int,
+        totalTimeMs: json['total_time_ms'] as int,
+        totalRounds: json['total_rounds'] as int? ?? 5,
+        theme: json['theme'] as String? ?? '',
+      );
 }

@@ -684,7 +684,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                                         color: role == 'owner'
                                             ? FlitColors.gold.withOpacity(0.2)
                                             : FlitColors.oceanHighlight
-                                                  .withOpacity(0.2),
+                                                .withOpacity(0.2),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
@@ -856,8 +856,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
 
               await _client
                   .from('profiles')
-                  .update({'username': newName})
-                  .eq('id', user['id']);
+                  .update({'username': newName}).eq('id', user['id']);
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
               if (!context.mounted) return;
@@ -1876,8 +1875,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
     final roleName = player.isOwner
         ? 'Owner'
         : player.isModerator
-        ? 'Moderator'
-        : 'Admin';
+            ? 'Moderator'
+            : 'Admin';
 
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
@@ -2469,10 +2468,10 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                 Text(
                   player.isOwner
                       ? 'Full owner access. Gift actions write directly to '
-                            'Supabase. Username changes enforce uniqueness.'
+                          'Supabase. Username changes enforce uniqueness.'
                       : 'Moderator access. You can view player data, game '
-                            'designs, and rename offensive usernames. Economy '
-                            'and gifting tools are restricted to owners.',
+                          'designs, and rename offensive usernames. Economy '
+                          'and gifting tools are restricted to owners.',
                   style: const TextStyle(
                     color: FlitColors.textSecondary,
                     fontSize: 14,
@@ -2734,9 +2733,9 @@ class _UserDetailScreenState extends State<_UserDetailScreen> {
                 'Created',
                 u['created_at'] != null
                     ? DateTime.tryParse(
-                            u['created_at'] as String,
-                          )?.toLocal().toString().split('.').first ??
-                          '—'
+                          u['created_at'] as String,
+                        )?.toLocal().toString().split('.').first ??
+                        '—'
                     : '—',
               ),
             ],
@@ -2783,12 +2782,12 @@ class _UserDetailScreenState extends State<_UserDetailScreen> {
                 'Status',
                 u['banned_at'] != null
                     ? (u['ban_expires_at'] != null &&
-                              DateTime.tryParse(
-                                    u['ban_expires_at'] as String,
-                                  )?.isBefore(DateTime.now()) ==
-                                  true)
-                          ? 'Expired'
-                          : 'BANNED'
+                            DateTime.tryParse(
+                                  u['ban_expires_at'] as String,
+                                )?.isBefore(DateTime.now()) ==
+                                true)
+                        ? 'Expired'
+                        : 'BANNED'
                     : 'Clean',
               ),
               if (u['banned_at'] != null) ...[
@@ -2803,9 +2802,9 @@ class _UserDetailScreenState extends State<_UserDetailScreen> {
                   'Expires',
                   u['ban_expires_at'] != null
                       ? DateTime.tryParse(
-                              u['ban_expires_at'] as String,
-                            )?.toLocal().toString().split('.').first ??
-                            '—'
+                            u['ban_expires_at'] as String,
+                          )?.toLocal().toString().split('.').first ??
+                          '—'
                       : 'Permanent',
                 ),
                 _DetailRow('Reason', u['ban_reason'] as String? ?? '—'),
@@ -2885,9 +2884,9 @@ class _UserDetailScreenState extends State<_UserDetailScreen> {
                   final mode = g['game_mode'] as String? ?? '—';
                   final date = g['created_at'] != null
                       ? DateTime.tryParse(
-                              g['created_at'] as String,
-                            )?.toLocal().toString().split('.').first ??
-                            '—'
+                            g['created_at'] as String,
+                          )?.toLocal().toString().split('.').first ??
+                          '—'
                       : '—';
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
@@ -2965,28 +2964,28 @@ class _UserDetailSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.cardBorder),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: FlitColors.accent,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
         ),
-        const SizedBox(height: 12),
-        ...children,
-      ],
-    ),
-  );
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: FlitColors.accent,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...children,
+          ],
+        ),
+      );
 }
 
 class _DetailRow extends StatelessWidget {
@@ -2996,29 +2995,30 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 3),
-    child: Row(
-      children: [
-        Expanded(
-          flex: 2,
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: FlitColors.textSecondary,
-              fontSize: 13,
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 13,
+                ),
+              ),
             ),
-          ),
+            Expanded(
+              flex: 3,
+              child: Text(
+                value,
+                style: const TextStyle(
+                    color: FlitColors.textPrimary, fontSize: 13),
+              ),
+            ),
+          ],
         ),
-        Expanded(
-          flex: 3,
-          child: Text(
-            value,
-            style: const TextStyle(color: FlitColors.textPrimary, fontSize: 13),
-          ),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3076,61 +3076,69 @@ class _CoinLedgerScreenState extends State<_CoinLedgerScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: FlitColors.backgroundDark,
-    appBar: AppBar(
-      backgroundColor: FlitColors.backgroundMid,
-      title: Text('Coin Ledger • @${widget.username}'),
-    ),
-    body: _loading
-        ? const Center(child: CircularProgressIndicator())
-        : _error != null
-        ? Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                _error!,
-                style: const TextStyle(color: FlitColors.error),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          )
-        : _entries.isEmpty
-        ? const Center(
-            child: Text(
-              'No coin activity found.',
-              style: TextStyle(color: FlitColors.textMuted),
-            ),
-          )
-        : ListView.separated(
-            padding: const EdgeInsets.all(12),
-            itemCount: _entries.length,
-            separatorBuilder: (_, __) =>
-                const Divider(color: FlitColors.cardBorder, height: 1),
-            itemBuilder: (context, index) {
-              final entry = _entries[index];
-              final amount = (entry['coin_amount'] as num?)?.toInt() ?? 0;
-              final createdAt = DateTime.tryParse(
-                (entry['created_at'] as String?) ?? '',
-              );
-              final time =
-                  createdAt?.toLocal().toString().split('.').first ?? '';
-              return ListTile(
-                dense: true,
-                title: Text(
-                  '${amount >= 0 ? '+' : ''}$amount • ${entry['source'] ?? 'unknown'}',
-                  style: TextStyle(
-                    color: amount >= 0 ? FlitColors.success : FlitColors.error,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: Text(
-                  'Balance: ${entry['balance_after'] ?? '—'}\n$time',
-                  style: const TextStyle(color: FlitColors.textMuted),
-                ),
-              );
-            },
-          ),
-  );
+        backgroundColor: FlitColors.backgroundDark,
+        appBar: AppBar(
+          backgroundColor: FlitColors.backgroundMid,
+          title: Text('Coin Ledger • @${widget.username}'),
+        ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(color: FlitColors.error),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  )
+                : _entries.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No coin activity found.',
+                          style: TextStyle(color: FlitColors.textMuted),
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: _entries.length,
+                        separatorBuilder: (_, __) => const Divider(
+                            color: FlitColors.cardBorder, height: 1),
+                        itemBuilder: (context, index) {
+                          final entry = _entries[index];
+                          final amount =
+                              (entry['coin_amount'] as num?)?.toInt() ?? 0;
+                          final createdAt = DateTime.tryParse(
+                            (entry['created_at'] as String?) ?? '',
+                          );
+                          final time = createdAt
+                                  ?.toLocal()
+                                  .toString()
+                                  .split('.')
+                                  .first ??
+                              '';
+                          return ListTile(
+                            dense: true,
+                            title: Text(
+                              '${amount >= 0 ? '+' : ''}$amount • ${entry['source'] ?? 'unknown'}',
+                              style: TextStyle(
+                                color: amount >= 0
+                                    ? FlitColors.success
+                                    : FlitColors.error,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Balance: ${entry['balance_after'] ?? '—'}\n$time',
+                              style:
+                                  const TextStyle(color: FlitColors.textMuted),
+                            ),
+                          );
+                        },
+                      ),
+      );
 }
 
 // ── Shared widgets ──
@@ -3142,17 +3150,17 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Text(
-      title,
-      style: const TextStyle(
-        color: FlitColors.textMuted,
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 1,
-      ),
-    ),
-  );
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(
+          title,
+          style: const TextStyle(
+            color: FlitColors.textMuted,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1,
+          ),
+        ),
+      );
 }
 
 class _AccountCard extends StatelessWidget {
@@ -3162,61 +3170,61 @@ class _AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: FlitColors.accent.withOpacity(0.2),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.accent, width: 2),
-    ),
-    child: Row(
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: FlitColors.backgroundMid,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Center(
-            child: Text(
-              player.name.isNotEmpty ? player.name[0].toUpperCase() : '?',
-              style: const TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: FlitColors.accent.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.accent, width: 2),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Center(
+                child: Text(
+                  player.name.isNotEmpty ? player.name[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                player.name,
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    player.name,
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Lv.${player.level} • ${player.coins} gold • '
+                    '${player.gamesPlayed} flights',
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Lv.${player.level} • ${player.coins} gold • '
-                '${player.gamesPlayed} flights',
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
+            ),
+            const Icon(Icons.admin_panel_settings, color: FlitColors.gold),
+          ],
         ),
-        const Icon(Icons.admin_panel_settings, color: FlitColors.gold),
-      ],
-    ),
-  );
+      );
 }
 
 class _ActionChip extends StatelessWidget {
@@ -3227,12 +3235,12 @@ class _ActionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ActionChip(
-    label: Text(label),
-    onPressed: onTap,
-    backgroundColor: FlitColors.cardBackground,
-    labelStyle: const TextStyle(color: FlitColors.textPrimary),
-    side: const BorderSide(color: FlitColors.cardBorder),
-  );
+        label: Text(label),
+        onPressed: onTap,
+        backgroundColor: FlitColors.cardBackground,
+        labelStyle: const TextStyle(color: FlitColors.textPrimary),
+        side: const BorderSide(color: FlitColors.cardBorder),
+      );
 }
 
 class _AdminActionCard extends StatelessWidget {
@@ -3250,37 +3258,37 @@ class _AdminActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: FlitColors.cardBackground,
-    borderRadius: BorderRadius.circular(12),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.cardBorder),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: iconColor, size: 24),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: FlitColors.cardBorder),
             ),
-            const Icon(Icons.chevron_right, color: FlitColors.textMuted),
-          ],
+            child: Row(
+              children: [
+                Icon(icon, color: iconColor, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: FlitColors.textMuted),
+              ],
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 /// Reusable admin dialog with consistent styling.
@@ -3313,92 +3321,93 @@ class _AdminDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Dialog(
-    backgroundColor: FlitColors.cardBackground,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: iconColor, size: 36),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              color: FlitColors.textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              subtitle!,
-              style: const TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 13,
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: iconColor, size: 36),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-          if (error != null) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: FlitColors.error.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    color: FlitColors.error,
-                    size: 16,
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle!,
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 13,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      error!,
-                      style: const TextStyle(
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              if (error != null) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: FlitColors.error.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
                         color: FlitColors.error,
-                        fontSize: 12,
+                        size: 16,
                       ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          error!,
+                          style: const TextStyle(
+                            color: FlitColors.error,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              ...children,
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: onCancel,
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: FlitColors.textMuted),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    onPressed: onAction,
+                    icon: Icon(actionIcon, size: 16),
+                    label: Text(actionLabel),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: actionColor,
+                      foregroundColor: FlitColors.backgroundDark,
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          ...children,
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: onCancel,
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(color: FlitColors.textMuted),
-                ),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: onAction,
-                icon: Icon(actionIcon, size: 16),
-                label: Text(actionLabel),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: actionColor,
-                  foregroundColor: FlitColors.backgroundDark,
-                ),
-              ),
             ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 /// Username text field with @ prefix.
@@ -3410,21 +3419,21 @@ class _UsernameField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextField(
-    controller: controller,
-    style: const TextStyle(color: FlitColors.textPrimary),
-    decoration: InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: FlitColors.textMuted),
-      prefixText: '@',
-      prefixStyle: const TextStyle(color: FlitColors.textSecondary),
-      filled: true,
-      fillColor: FlitColors.backgroundMid,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide.none,
-      ),
-    ),
-  );
+        controller: controller,
+        style: const TextStyle(color: FlitColors.textPrimary),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(color: FlitColors.textMuted),
+          prefixText: '@',
+          prefixStyle: const TextStyle(color: FlitColors.textSecondary),
+          filled: true,
+          fillColor: FlitColors.backgroundMid,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      );
 }
 
 /// Numeric amount text field.
@@ -3441,20 +3450,20 @@ class _AmountField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextField(
-    controller: controller,
-    keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
-    style: const TextStyle(color: FlitColors.textPrimary),
-    decoration: InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: FlitColors.textMuted),
-      filled: true,
-      fillColor: FlitColors.backgroundMid,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide.none,
-      ),
-    ),
-  );
+        controller: controller,
+        keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
+        style: const TextStyle(color: FlitColors.textPrimary),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(color: FlitColors.textMuted),
+          filled: true,
+          fillColor: FlitColors.backgroundMid,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      );
 }
 
 // ── Game Log Screen (preserved from debug) ──
@@ -3556,11 +3565,11 @@ class _GameLogScreenState extends State<_GameLogScreen> {
   }
 
   Color _levelColor(LogLevel level) => switch (level) {
-    LogLevel.debug => FlitColors.textMuted,
-    LogLevel.info => FlitColors.accent,
-    LogLevel.warning => FlitColors.warning,
-    LogLevel.error => FlitColors.error,
-  };
+        LogLevel.debug => FlitColors.textMuted,
+        LogLevel.info => FlitColors.accent,
+        LogLevel.warning => FlitColors.warning,
+        LogLevel.error => FlitColors.error,
+      };
 }
 
 class _FilterChip extends StatelessWidget {
@@ -3578,24 +3587,24 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: selected ? color.withOpacity(0.25) : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: selected ? color : FlitColors.cardBorder),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: selected ? color : FlitColors.textMuted,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: selected ? color.withOpacity(0.25) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: selected ? color : FlitColors.cardBorder),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? color : FlitColors.textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 class _LogEntryTile extends StatefulWidget {
@@ -3804,38 +3813,38 @@ class _AdminTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: const TextStyle(
-          color: FlitColors.textSecondary,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      const SizedBox(height: 4),
-      TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: const TextStyle(color: FlitColors.textPrimary),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: const TextStyle(color: FlitColors.textMuted),
-          filled: true,
-          fillColor: FlitColors.backgroundMid,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 10,
+          const SizedBox(height: 4),
+          TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            style: const TextStyle(color: FlitColors.textPrimary),
+            decoration: InputDecoration(
+              hintText: hintText,
+              hintStyle: const TextStyle(color: FlitColors.textMuted),
+              filled: true,
+              fillColor: FlitColors.backgroundMid,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+            ),
           ),
-        ),
-      ),
-    ],
-  );
+        ],
+      );
 }
 
 /// Dialog for managing promotions (list, add, toggle, delete).
@@ -4193,16 +4202,16 @@ class _PromotionsDialogState extends State<_PromotionsDialog> {
                           setFormState(() => formError = 'Name is required');
                           return;
                         }
-                        final multiplier =
-                            (selectedType == PromotionType.earningsBoost ||
+                        final multiplier = (selectedType ==
+                                    PromotionType.earningsBoost ||
                                 selectedType == PromotionType.both)
                             ? double.tryParse(multiplierCtl.text.trim()) ?? 1.0
                             : 1.0;
                         final discount =
                             (selectedType == PromotionType.shopDiscount ||
-                                selectedType == PromotionType.both)
-                            ? int.tryParse(discountCtl.text.trim()) ?? 0
-                            : 0;
+                                    selectedType == PromotionType.both)
+                                ? int.tryParse(discountCtl.text.trim()) ?? 0
+                                : 0;
 
                         final promo = Promotion(
                           name: name,
@@ -4253,197 +4262,201 @@ class _PromotionsDialogState extends State<_PromotionsDialog> {
 
   @override
   Widget build(BuildContext context) => Dialog(
-    backgroundColor: FlitColors.cardBackground,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.local_offer, color: FlitColors.accent, size: 28),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text(
-                  'Manage Promotions',
-                  style: TextStyle(
-                    color: FlitColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+              Row(
+                children: [
+                  const Icon(Icons.local_offer,
+                      color: FlitColors.accent, size: 28),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Manage Promotions',
+                      style: TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add, color: FlitColors.accent),
+                    tooltip: 'Add Promotion',
+                    onPressed: _showAddForm,
+                  ),
+                ],
+              ),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    _error!,
+                    style:
+                        const TextStyle(color: FlitColors.error, fontSize: 12),
                   ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add, color: FlitColors.accent),
-                tooltip: 'Add Promotion',
-                onPressed: _showAddForm,
-              ),
-            ],
-          ),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                _error!,
-                style: const TextStyle(color: FlitColors.error, fontSize: 12),
-              ),
-            ),
-          const SizedBox(height: 12),
-          if (_promotions.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: Text(
-                  'No promotions. Tap + to add one.',
-                  style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
-                ),
-              ),
-            )
-          else
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 320),
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: _promotions.length,
-                separatorBuilder: (_, __) =>
-                    const Divider(color: FlitColors.cardBorder, height: 1),
-                itemBuilder: (ctx, index) {
-                  final promo = _promotions[index];
-                  final statusLabel = _promotionStatusLabel(promo);
-                  final statusColor = _statusColor(statusLabel);
+              const SizedBox(height: 12),
+              if (_promotions.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(
+                    child: Text(
+                      'No promotions. Tap + to add one.',
+                      style:
+                          TextStyle(color: FlitColors.textMuted, fontSize: 13),
+                    ),
+                  ),
+                )
+              else
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 320),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: _promotions.length,
+                    separatorBuilder: (_, __) =>
+                        const Divider(color: FlitColors.cardBorder, height: 1),
+                    itemBuilder: (ctx, index) {
+                      final promo = _promotions[index];
+                      final statusLabel = _promotionStatusLabel(promo);
+                      final statusColor = _statusColor(statusLabel);
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Text(
-                                promo.name,
-                                style: const TextStyle(
-                                  color: FlitColors.textPrimary,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    promo.name,
+                                    style: const TextStyle(
+                                      color: FlitColors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: statusColor.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                statusLabel,
-                                style: TextStyle(
-                                  color: statusColor,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: statusColor.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    statusLabel,
+                                    style: TextStyle(
+                                      color: statusColor,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 8),
+                                Switch(
+                                  value: promo.manualActive,
+                                  activeColor: FlitColors.success,
+                                  onChanged: (v) {
+                                    final updated = Promotion(
+                                      name: promo.name,
+                                      type: promo.type,
+                                      earningsMultiplier:
+                                          promo.earningsMultiplier,
+                                      shopDiscountPercent:
+                                          promo.shopDiscountPercent,
+                                      startDate: promo.startDate,
+                                      endDate: promo.endDate,
+                                      manualActive: v,
+                                      appliesTo: promo.appliesTo,
+                                    );
+                                    setState(() {
+                                      _promotions = [
+                                        ..._promotions.sublist(0, index),
+                                        updated,
+                                        ..._promotions.sublist(index + 1),
+                                      ];
+                                    });
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: FlitColors.error,
+                                    size: 18,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _promotions = [
+                                        ..._promotions.sublist(0, index),
+                                        ..._promotions.sublist(index + 1),
+                                      ];
+                                    });
+                                  },
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            Switch(
-                              value: promo.manualActive,
-                              activeColor: FlitColors.success,
-                              onChanged: (v) {
-                                final updated = Promotion(
-                                  name: promo.name,
-                                  type: promo.type,
-                                  earningsMultiplier: promo.earningsMultiplier,
-                                  shopDiscountPercent:
-                                      promo.shopDiscountPercent,
-                                  startDate: promo.startDate,
-                                  endDate: promo.endDate,
-                                  manualActive: v,
-                                  appliesTo: promo.appliesTo,
-                                );
-                                setState(() {
-                                  _promotions = [
-                                    ..._promotions.sublist(0, index),
-                                    updated,
-                                    ..._promotions.sublist(index + 1),
-                                  ];
-                                });
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: FlitColors.error,
-                                size: 18,
+                            const SizedBox(height: 2),
+                            Text(
+                              '${promo.type.name} • '
+                              '${promo.earningsMultiplier}x earnings • '
+                              '${promo.shopDiscountPercent}% off • '
+                              '${promo.appliesTo.contains('all') || promo.appliesTo.isEmpty ? 'all items' : promo.appliesTo.join(', ')}',
+                              style: const TextStyle(
+                                color: FlitColors.textSecondary,
+                                fontSize: 11,
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _promotions = [
-                                    ..._promotions.sublist(0, index),
-                                    ..._promotions.sublist(index + 1),
-                                  ];
-                                });
-                              },
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${promo.type.name} • '
-                          '${promo.earningsMultiplier}x earnings • '
-                          '${promo.shopDiscountPercent}% off • '
-                          '${promo.appliesTo.contains('all') || promo.appliesTo.isEmpty ? 'all items' : promo.appliesTo.join(', ')}',
-                          style: const TextStyle(
-                            color: FlitColors.textSecondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
+                      );
+                    },
+                  ),
+                ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: FlitColors.textMuted),
                     ),
-                  );
-                },
-              ),
-            ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(color: FlitColors.textMuted),
-                ),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: _saving ? null : _save,
-                icon: _saving
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: FlitColors.backgroundDark,
-                        ),
-                      )
-                    : const Icon(Icons.save, size: 16),
-                label: const Text('Save'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FlitColors.accent,
-                  foregroundColor: FlitColors.backgroundDark,
-                ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    onPressed: _saving ? null : _save,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: FlitColors.backgroundDark,
+                            ),
+                          )
+                        : const Icon(Icons.save, size: 16),
+                    label: const Text('Save'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.accent,
+                      foregroundColor: FlitColors.backgroundDark,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 /// Dialog for editing gold package promo prices.
@@ -4508,137 +4521,139 @@ class _GoldPackagesDialogState extends State<_GoldPackagesDialog> {
 
   @override
   Widget build(BuildContext context) => Dialog(
-    backgroundColor: FlitColors.cardBackground,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.inventory_2, color: FlitColors.gold, size: 28),
-              SizedBox(width: 10),
-              Text(
-                'Edit Gold Packages',
-                style: TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Set a promo price (leave blank for no promo).',
-            style: TextStyle(color: FlitColors.textSecondary, fontSize: 12),
-          ),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                _error!,
-                style: const TextStyle(color: FlitColors.error, fontSize: 12),
-              ),
-            ),
-          const SizedBox(height: 16),
-          ...widget.initialPackages.mapIndexed(
-            (i, pkg) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
+              const Row(
                 children: [
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${pkg.coins} coins',
-                          style: const TextStyle(
-                            color: FlitColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          'Base: \$${pkg.basePrice.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            color: FlitColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _controllers[i],
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      style: const TextStyle(
-                        color: FlitColors.textPrimary,
-                        fontSize: 14,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Promo \$',
-                        hintStyle: const TextStyle(color: FlitColors.textMuted),
-                        filled: true,
-                        fillColor: FlitColors.backgroundMid,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
-                        ),
-                      ),
+                  Icon(Icons.inventory_2, color: FlitColors.gold, size: 28),
+                  SizedBox(width: 10),
+                  Text(
+                    'Edit Gold Packages',
+                    style: TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(color: FlitColors.textMuted),
+              const SizedBox(height: 4),
+              const Text(
+                'Set a promo price (leave blank for no promo).',
+                style: TextStyle(color: FlitColors.textSecondary, fontSize: 12),
+              ),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    _error!,
+                    style:
+                        const TextStyle(color: FlitColors.error, fontSize: 12),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              ...widget.initialPackages.mapIndexed(
+                (i, pkg) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${pkg.coins} coins',
+                              style: const TextStyle(
+                                color: FlitColors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              'Base: \$${pkg.basePrice.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                color: FlitColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _controllers[i],
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          style: const TextStyle(
+                            color: FlitColors.textPrimary,
+                            fontSize: 14,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Promo \$',
+                            hintStyle:
+                                const TextStyle(color: FlitColors.textMuted),
+                            filled: true,
+                            fillColor: FlitColors.backgroundMid,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: _saving ? null : _save,
-                icon: _saving
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: FlitColors.backgroundDark,
-                        ),
-                      )
-                    : const Icon(Icons.save, size: 16),
-                label: const Text('Save'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FlitColors.gold,
-                  foregroundColor: FlitColors.backgroundDark,
-                ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: FlitColors.textMuted),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    onPressed: _saving ? null : _save,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: FlitColors.backgroundDark,
+                            ),
+                          )
+                        : const Icon(Icons.save, size: 16),
+                    label: const Text('Save'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.gold,
+                      foregroundColor: FlitColors.backgroundDark,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 /// Dialog for viewing and editing per-cosmetic price overrides.
@@ -4662,10 +4677,10 @@ class _ShopPriceOverridesDialogState extends State<_ShopPriceOverridesDialog> {
   String? _error;
 
   static List<Cosmetic> get _allCosmetics => [
-    ...CosmeticCatalog.planes,
-    ...CosmeticCatalog.contrails,
-    ...CosmeticCatalog.companions,
-  ];
+        ...CosmeticCatalog.planes,
+        ...CosmeticCatalog.contrails,
+        ...CosmeticCatalog.companions,
+      ];
 
   @override
   void initState() {
@@ -5402,8 +5417,7 @@ class _ReportQueuePlaceholderState extends State<_ReportQueuePlaceholder>
           icon: Icons.gavel,
           iconColor: FlitColors.success,
           title: 'Resolve Report',
-          subtitle:
-              '${report.reporterUsername ?? report.reporterId} reported '
+          subtitle: '${report.reporterUsername ?? report.reporterId} reported '
               '${report.reportedUsername ?? report.reportedId}',
           error: dialogError,
           actionLabel: 'Resolve',
@@ -5804,8 +5818,7 @@ class _AppConfigPlaceholderState extends State<_AppConfigPlaceholder> {
           icon: Icons.warning_amber,
           iconColor: FlitColors.error,
           title: 'Enable Maintenance Mode?',
-          subtitle:
-              'This will lock ALL users out of the app until maintenance '
+          subtitle: 'This will lock ALL users out of the app until maintenance '
               'mode is disabled.',
           error: null,
           actionLabel: 'Enable',
@@ -6649,40 +6662,40 @@ class _AnnouncementsPlaceholderState extends State<_AnnouncementsPlaceholder> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: FlitColors.error),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: _announcements.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 200),
-                        Center(
-                          child: Text(
-                            'No announcements',
-                            style: TextStyle(
-                              color: FlitColors.textSecondary,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      itemCount: _announcements.length,
-                      itemBuilder: (_, i) =>
-                          _buildAnnouncementCard(_announcements[i]),
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: FlitColors.error),
+                      textAlign: TextAlign.center,
                     ),
-            ),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: _announcements.isEmpty
+                      ? ListView(
+                          children: const [
+                            SizedBox(height: 200),
+                            Center(
+                              child: Text(
+                                'No announcements',
+                                style: TextStyle(
+                                  color: FlitColors.textSecondary,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          itemCount: _announcements.length,
+                          itemBuilder: (_, i) =>
+                              _buildAnnouncementCard(_announcements[i]),
+                        ),
+                ),
     );
   }
 }
@@ -6854,215 +6867,221 @@ class _SuspiciousActivityPlaceholderState
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: FlitColors.error),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: _rows.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 200),
-                        Center(
-                          child: Text(
-                            'No suspicious activity detected',
-                            style: TextStyle(
-                              color: FlitColors.textSecondary,
-                              fontSize: 16,
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: FlitColors.error),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: _rows.isEmpty
+                      ? ListView(
+                          children: const [
+                            SizedBox(height: 200),
+                            Center(
+                              child: Text(
+                                'No suspicious activity detected',
+                                style: TextStyle(
+                                  color: FlitColors.textSecondary,
+                                  fontSize: 16,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-                          color: FlitColors.backgroundMid,
-                          child: const Row(
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: Text(
-                                  'USER',
-                                  style: TextStyle(
-                                    color: FlitColors.textMuted,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 1,
-                                  ),
-                                ),
+                          ],
+                        )
+                      : Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
                               ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  'GAMES',
-                                  textAlign: TextAlign.right,
-                                  style: TextStyle(
-                                    color: FlitColors.textMuted,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 1,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  'COINS',
-                                  textAlign: TextAlign.right,
-                                  style: TextStyle(
-                                    color: FlitColors.textMuted,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 1,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  'BEST',
-                                  textAlign: TextAlign.right,
-                                  style: TextStyle(
-                                    color: FlitColors.textMuted,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 1,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 32),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: _rows.length,
-                            itemBuilder: (_, i) {
-                              final row = _rows[i];
-                              final username =
-                                  row['username'] as String? ?? '—';
-                              final totalGames =
-                                  (row['total_games_24h'] as num?)?.toInt() ??
-                                  0;
-                              final coinsEarned =
-                                  (row['coins_earned_24h'] as num?)?.toInt() ??
-                                  0;
-                              final bestScore =
-                                  (row['best_score'] as num?)?.toInt() ?? 0;
-                              final flags = _getFlags(row);
-                              final severity = _severityColor(flags.length);
-                              return InkWell(
-                                onTap: () => _showUserDialog(row),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color: FlitColors.cardBorder
-                                            .withOpacity(0.3),
+                              color: FlitColors.backgroundMid,
+                              child: const Row(
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      'USER',
+                                      style: TextStyle(
+                                        color: FlitColors.textMuted,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 1,
                                       ),
                                     ),
                                   ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        flex: 3,
-                                        child: Row(
-                                          children: [
-                                            if (flags.isNotEmpty)
-                                              Container(
-                                                width: 8,
-                                                height: 8,
-                                                margin: const EdgeInsets.only(
-                                                  right: 8,
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text(
+                                      'GAMES',
+                                      textAlign: TextAlign.right,
+                                      style: TextStyle(
+                                        color: FlitColors.textMuted,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text(
+                                      'COINS',
+                                      textAlign: TextAlign.right,
+                                      style: TextStyle(
+                                        color: FlitColors.textMuted,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text(
+                                      'BEST',
+                                      textAlign: TextAlign.right,
+                                      style: TextStyle(
+                                        color: FlitColors.textMuted,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 32),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: _rows.length,
+                                itemBuilder: (_, i) {
+                                  final row = _rows[i];
+                                  final username =
+                                      row['username'] as String? ?? '—';
+                                  final totalGames =
+                                      (row['total_games_24h'] as num?)
+                                              ?.toInt() ??
+                                          0;
+                                  final coinsEarned =
+                                      (row['coins_earned_24h'] as num?)
+                                              ?.toInt() ??
+                                          0;
+                                  final bestScore =
+                                      (row['best_score'] as num?)?.toInt() ?? 0;
+                                  final flags = _getFlags(row);
+                                  final severity = _severityColor(flags.length);
+                                  return InkWell(
+                                    onTap: () => _showUserDialog(row),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          bottom: BorderSide(
+                                            color: FlitColors.cardBorder
+                                                .withOpacity(0.3),
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            flex: 3,
+                                            child: Row(
+                                              children: [
+                                                if (flags.isNotEmpty)
+                                                  Container(
+                                                    width: 8,
+                                                    height: 8,
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                      right: 8,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: severity,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                  ),
+                                                Flexible(
+                                                  child: Text(
+                                                    '@$username',
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      color: severity ==
+                                                              FlitColors
+                                                                  .textMuted
+                                                          ? FlitColors
+                                                              .textPrimary
+                                                          : severity,
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
                                                 ),
-                                                decoration: BoxDecoration(
-                                                  color: severity,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                            Flexible(
-                                              child: Text(
-                                                '@$username',
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  color:
-                                                      severity ==
-                                                          FlitColors.textMuted
-                                                      ? FlitColors.textPrimary
-                                                      : severity,
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              '$totalGames',
+                                              textAlign: TextAlign.right,
+                                              style: const TextStyle(
+                                                color: FlitColors.textPrimary,
+                                                fontSize: 13,
                                               ),
                                             ),
-                                          ],
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(
-                                          '$totalGames',
-                                          textAlign: TextAlign.right,
-                                          style: const TextStyle(
-                                            color: FlitColors.textPrimary,
-                                            fontSize: 13,
                                           ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(
-                                          '$coinsEarned',
-                                          textAlign: TextAlign.right,
-                                          style: const TextStyle(
-                                            color: FlitColors.gold,
-                                            fontSize: 13,
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              '$coinsEarned',
+                                              textAlign: TextAlign.right,
+                                              style: const TextStyle(
+                                                color: FlitColors.gold,
+                                                fontSize: 13,
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Text(
-                                          '$bestScore',
-                                          textAlign: TextAlign.right,
-                                          style: const TextStyle(
-                                            color: FlitColors.textPrimary,
-                                            fontSize: 13,
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              '$bestScore',
+                                              textAlign: TextAlign.right,
+                                              style: const TextStyle(
+                                                color: FlitColors.textPrimary,
+                                                fontSize: 13,
+                                              ),
+                                            ),
                                           ),
-                                        ),
+                                          const SizedBox(width: 8),
+                                          Icon(
+                                            Icons.chevron_right,
+                                            size: 20,
+                                            color: FlitColors.textMuted,
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 8),
-                                      Icon(
-                                        Icons.chevron_right,
-                                        size: 20,
-                                        color: FlitColors.textMuted,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-            ),
+                ),
     );
   }
 }
@@ -7349,29 +7368,30 @@ class _SuspiciousDetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 3),
-    child: Row(
-      children: [
-        Expanded(
-          flex: 2,
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: FlitColors.textSecondary,
-              fontSize: 13,
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 13,
+                ),
+              ),
             ),
-          ),
+            Expanded(
+              flex: 3,
+              child: Text(
+                value,
+                style: const TextStyle(
+                    color: FlitColors.textPrimary, fontSize: 13),
+              ),
+            ),
+          ],
         ),
-        Expanded(
-          flex: 3,
-          child: Text(
-            value,
-            style: const TextStyle(color: FlitColors.textPrimary, fontSize: 13),
-          ),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 class _CountryDiffEntry {

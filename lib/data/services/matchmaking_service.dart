@@ -191,8 +191,7 @@ class MatchmakingService {
           .eq('id', matchedUserId)
           .single();
 
-      final opponentName =
-          (profile['display_name'] as String?) ??
+      final opponentName = (profile['display_name'] as String?) ??
           (profile['username'] as String?) ??
           'Challenger';
 
@@ -233,40 +232,32 @@ class MatchmakingService {
       final now = DateTime.now().toUtc().toIso8601String();
 
       // Mark our own entry first (RLS always allows user_id = auth.uid()).
-      final myEntryId =
-          myPoolEntryId ??
+      final myEntryId = myPoolEntryId ??
           (await _client
-                  .from('matchmaking_pool')
-                  .select('id')
-                  .eq('user_id', _userId!)
-                  .eq('region', region)
-                  .eq('gameplay_version', _gameplayVersion)
-                  .isFilter('matched_at', null)
-                  .order('created_at', ascending: true)
-                  .limit(1)
-                  .maybeSingle())?['id']
-              as String?;
+              .from('matchmaking_pool')
+              .select('id')
+              .eq('user_id', _userId!)
+              .eq('region', region)
+              .eq('gameplay_version', _gameplayVersion)
+              .isFilter('matched_at', null)
+              .order('created_at', ascending: true)
+              .limit(1)
+              .maybeSingle())?['id'] as String?;
 
       if (myEntryId != null) {
-        await _client
-            .from('matchmaking_pool')
-            .update({
-              'matched_at': now,
-              'matched_with': matchedUserId,
-              'challenge_id': challengeId,
-            })
-            .eq('id', myEntryId);
+        await _client.from('matchmaking_pool').update({
+          'matched_at': now,
+          'matched_with': matchedUserId,
+          'challenge_id': challengeId,
+        }).eq('id', myEntryId);
       }
 
       // Mark the opponent's entry (RLS allows update when matched_at IS NULL).
-      await _client
-          .from('matchmaking_pool')
-          .update({
-            'matched_at': now,
-            'matched_with': _userId,
-            'challenge_id': challengeId,
-          })
-          .eq('id', matchedEntryId);
+      await _client.from('matchmaking_pool').update({
+        'matched_at': now,
+        'matched_with': _userId,
+        'challenge_id': challengeId,
+      }).eq('id', matchedEntryId);
 
       // 6. Auto-friend both players (fire-and-forget, ignore if already friends).
       _autoFriend(matchedUserId);
@@ -342,8 +333,7 @@ class MatchmakingService {
           .eq('id', matchedWith)
           .maybeSingle();
 
-      final opponentName =
-          (profile?['display_name'] as String?) ??
+      final opponentName = (profile?['display_name'] as String?) ??
           (profile?['username'] as String?) ??
           'Challenger';
 

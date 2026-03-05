@@ -126,7 +126,6 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                 ),
               ),
             ),
-
             _buildBottomBar(),
           ],
         ),
@@ -135,87 +134,87 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
   }
 
   Widget _buildHeader() => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.cardBorder),
-    ),
-    child: Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: FlitColors.gold.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const Icon(Icons.school, color: FlitColors.gold, size: 36),
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
         ),
-        const SizedBox(height: 14),
-        Text(
-          widget.level.name.toUpperCase(),
-          style: const TextStyle(
-            color: FlitColors.textPrimary,
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 3,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Test your knowledge of ${widget.level.name}!\n'
-          'Tap the correct area on the map as fast as you can.',
-          style: const TextStyle(
-            color: FlitColors.textSecondary,
-            fontSize: 14,
-            height: 1.4,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: FlitColors.accent.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: FlitColors.accent.withOpacity(0.25)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.public, color: FlitColors.accent, size: 16),
-              const SizedBox(width: 6),
-              Text(
-                '${widget.level.name} \u2014 ${widget.level.subtitle}',
-                style: const TextStyle(
-                  color: FlitColors.accent,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: FlitColors.gold.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(14),
               ),
-            ],
-          ),
+              child: const Icon(Icons.school, color: FlitColors.gold, size: 36),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              widget.level.name.toUpperCase(),
+              style: const TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Test your knowledge of ${widget.level.name}!\n'
+              'Tap the correct area on the map as fast as you can.',
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 14,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: FlitColors.accent.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: FlitColors.accent.withOpacity(0.25)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.public, color: FlitColors.accent, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${widget.level.name} \u2014 ${widget.level.subtitle}',
+                    style: const TextStyle(
+                      color: FlitColors.accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 
   Widget _buildSectionLabel(String label, IconData icon) => Row(
-    children: [
-      Icon(icon, color: FlitColors.textMuted, size: 16),
-      const SizedBox(width: 8),
-      Text(
-        label,
-        style: const TextStyle(
-          color: FlitColors.textMuted,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.5,
-        ),
-      ),
-    ],
-  );
+        children: [
+          Icon(icon, color: FlitColors.textMuted, size: 16),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: FlitColors.textMuted,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.5,
+            ),
+          ),
+        ],
+      );
 
   List<Widget> _buildModeCards() {
     return QuizMode.values.map((mode) {
@@ -264,9 +263,8 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                   ),
                   child: Icon(
                     icon,
-                    color: isSelected
-                        ? FlitColors.accent
-                        : FlitColors.textMuted,
+                    color:
+                        isSelected ? FlitColors.accent : FlitColors.textMuted,
                     size: 24,
                   ),
                 ),
@@ -468,40 +466,40 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
   }
 
   Widget _buildBottomBar() => Container(
-    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-    decoration: const BoxDecoration(
-      color: FlitColors.backgroundMid,
-      border: Border(top: BorderSide(color: FlitColors.cardBorder)),
-    ),
-    child: SizedBox(
-      width: double.infinity,
-      height: 54,
-      child: ElevatedButton(
-        onPressed: _startQuiz,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: FlitColors.accent,
-          foregroundColor: FlitColors.textPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          elevation: 4,
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        decoration: const BoxDecoration(
+          color: FlitColors.backgroundMid,
+          border: Border(top: BorderSide(color: FlitColors.cardBorder)),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.play_arrow, size: 24),
-            SizedBox(width: 10),
-            Text(
-              'START QUIZ',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2,
+        child: SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: ElevatedButton(
+            onPressed: _startQuiz,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FlitColors.accent,
+              foregroundColor: FlitColors.textPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
               ),
+              elevation: 4,
             ),
-          ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.play_arrow, size: 24),
+                SizedBox(width: 10),
+                Text(
+                  'START QUIZ',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }

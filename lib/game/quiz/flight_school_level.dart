@@ -78,19 +78,20 @@ class FlightSchoolProgress {
     int? bestTimeMs,
     int? completions,
     int? attempts,
-  }) => FlightSchoolProgress(
-    bestScore: bestScore ?? this.bestScore,
-    bestTimeMs: bestTimeMs ?? this.bestTimeMs,
-    completions: completions ?? this.completions,
-    attempts: attempts ?? this.attempts,
-  );
+  }) =>
+      FlightSchoolProgress(
+        bestScore: bestScore ?? this.bestScore,
+        bestTimeMs: bestTimeMs ?? this.bestTimeMs,
+        completions: completions ?? this.completions,
+        attempts: attempts ?? this.attempts,
+      );
 
   Map<String, dynamic> toJson() => {
-    'best_score': bestScore,
-    'best_time_ms': bestTimeMs,
-    'completions': completions,
-    'attempts': attempts,
-  };
+        'best_score': bestScore,
+        'best_time_ms': bestTimeMs,
+        'completions': completions,
+        'attempts': attempts,
+      };
 
   factory FlightSchoolProgress.fromJson(Map<String, dynamic> json) =>
       FlightSchoolProgress(

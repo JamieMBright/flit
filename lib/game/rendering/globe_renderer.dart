@@ -122,8 +122,7 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
     // Solar declination: approximate with sinusoidal over the year.
     // March equinox ≈ day 80, max tilt 23.44°.
     final dayOfYear = now.difference(DateTime.utc(now.year)).inDays;
-    final declination =
-        23.44 *
+    final declination = 23.44 *
         math.pi /
         180.0 *
         math.sin(2.0 * math.pi * (dayOfYear - 81) / 365.0);
@@ -177,9 +176,8 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
 
       // Draw full-screen rect with the shader paint.
       // Fade out as altitude drops below 0.6 for smooth globe→map transition.
-      final shaderOpacity = alt >= 0.6
-          ? 1.0
-          : ((alt - 0.3) / 0.3).clamp(0.0, 1.0);
+      final shaderOpacity =
+          alt >= 0.6 ? 1.0 : ((alt - 0.3) / 0.3).clamp(0.0, 1.0);
       final paint = Paint()..shader = shader;
       if (shaderOpacity < 1.0) {
         canvas.saveLayer(
@@ -205,8 +203,7 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
 
         // Check if this is a shader-related error (non-fatal with fallback)
         final errorStr = e.toString();
-        final isShaderError =
-            errorStr.contains('shader') ||
+        final isShaderError = errorStr.contains('shader') ||
             errorStr.contains('Unsupported operation') ||
             errorStr.contains('not supported') ||
             errorStr.contains('HTML renderer') ||

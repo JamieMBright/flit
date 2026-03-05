@@ -42,37 +42,38 @@ class LeaderboardEntry {
     int? rank,
     String? equippedPlaneId,
     Map<String, dynamic>? avatarConfigJson,
-  }) => LeaderboardEntry(
-    rank: rank ?? this.rank,
-    playerId: playerId,
-    playerName: playerName,
-    time: time,
-    score: score,
-    avatarUrl: avatarUrl,
-    avatarConfigJson: avatarConfigJson ?? this.avatarConfigJson,
-    countryCode: countryCode,
-    timestamp: timestamp,
-    roundEmojis: roundEmojis,
-    roundDetails: roundDetails,
-    equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
-    level: level,
-  );
+  }) =>
+      LeaderboardEntry(
+        rank: rank ?? this.rank,
+        playerId: playerId,
+        playerName: playerName,
+        time: time,
+        score: score,
+        avatarUrl: avatarUrl,
+        avatarConfigJson: avatarConfigJson ?? this.avatarConfigJson,
+        countryCode: countryCode,
+        timestamp: timestamp,
+        roundEmojis: roundEmojis,
+        roundDetails: roundDetails,
+        equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
+        level: level,
+      );
 
   Map<String, dynamic> toJson() => {
-    'rank': rank,
-    'player_id': playerId,
-    'player_name': playerName,
-    'time_ms': time.inMilliseconds,
-    'score': score,
-    'avatar_url': avatarUrl,
-    'avatar_config': avatarConfigJson,
-    'country_code': countryCode,
-    'timestamp': timestamp?.toIso8601String(),
-    'round_emojis': roundEmojis,
-    'round_details': roundDetails,
-    'equipped_plane_id': equippedPlaneId,
-    'level': level,
-  };
+        'rank': rank,
+        'player_id': playerId,
+        'player_name': playerName,
+        'time_ms': time.inMilliseconds,
+        'score': score,
+        'avatar_url': avatarUrl,
+        'avatar_config': avatarConfigJson,
+        'country_code': countryCode,
+        'timestamp': timestamp?.toIso8601String(),
+        'round_emojis': roundEmojis,
+        'round_details': roundDetails,
+        'equipped_plane_id': equippedPlaneId,
+        'level': level,
+      };
 
   factory LeaderboardEntry.fromJson(Map<String, dynamic> json) =>
       LeaderboardEntry(

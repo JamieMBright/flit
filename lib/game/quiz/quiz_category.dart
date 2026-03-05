@@ -133,7 +133,7 @@ class QuizQuestion {
 /// Generates quiz questions from existing state data.
 class QuizQuestionGenerator {
   QuizQuestionGenerator({required this.region, int? seed})
-    : _random = Random(seed);
+      : _random = Random(seed);
 
   final GameRegion region;
   final Random _random;

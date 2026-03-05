@@ -210,8 +210,8 @@ class _CountryClueCardState extends State<_CountryClueCard> {
                                 quality: vertexCount >= 70
                                     ? _OutlineQuality.good
                                     : vertexCount >= 30
-                                    ? _OutlineQuality.fair
-                                    : _OutlineQuality.poor,
+                                        ? _OutlineQuality.fair
+                                        : _OutlineQuality.poor,
                               ),
                             )
                           : const Center(
@@ -358,8 +358,8 @@ class _ExpandedDetails extends StatelessWidget {
             valueColor: vertexCount >= 70
                 ? FlitColors.success
                 : vertexCount >= 30
-                ? FlitColors.warning
-                : FlitColors.error,
+                    ? FlitColors.warning
+                    : FlitColors.error,
           ),
 
           const SizedBox(height: 8),
@@ -696,14 +696,14 @@ class _OutlinePainter extends CustomPainter {
     final fillColor = quality == _OutlineQuality.good
         ? FlitColors.landMass.withOpacity(0.5)
         : quality == _OutlineQuality.fair
-        ? FlitColors.warning.withOpacity(0.25)
-        : FlitColors.error.withOpacity(0.2);
+            ? FlitColors.warning.withOpacity(0.25)
+            : FlitColors.error.withOpacity(0.2);
 
     final strokeColor = quality == _OutlineQuality.good
         ? FlitColors.accent
         : quality == _OutlineQuality.fair
-        ? FlitColors.warning
-        : FlitColors.error;
+            ? FlitColors.warning
+            : FlitColors.error;
 
     canvas.drawPath(path, Paint()..color = fillColor);
     canvas.drawPath(

@@ -106,17 +106,17 @@ class QuizSession {
     required this.region,
     this.difficulty = QuizDifficulty.medium,
     int? seed,
-  }) : _generator = QuizQuestionGenerator(region: region, seed: seed),
-       _results = [],
-       _answeredCodes = {},
-       _startTime = null,
-       _currentIndex = 0,
-       _streak = 0,
-       _totalScore = 0,
-       _wrongCount = 0,
-       _hintsUsed = 0,
-       _currentHintLevel = 0,
-       _isFinished = false;
+  })  : _generator = QuizQuestionGenerator(region: region, seed: seed),
+        _results = [],
+        _answeredCodes = {},
+        _startTime = null,
+        _currentIndex = 0,
+        _streak = 0,
+        _totalScore = 0,
+        _wrongCount = 0,
+        _hintsUsed = 0,
+        _currentHintLevel = 0,
+        _isFinished = false;
 
   final QuizMode mode;
   final QuizCategory category;
@@ -321,9 +321,8 @@ class QuizSession {
     final streakMult = min(2.0, 1.0 + (_streak - 1) * 0.2);
 
     // Speed bonus: decays over 10 seconds per question
-    final questionElapsed = _results.isEmpty
-        ? elapsedMs
-        : elapsedMs - (_results.last.elapsedMs);
+    final questionElapsed =
+        _results.isEmpty ? elapsedMs : elapsedMs - (_results.last.elapsedMs);
     final speedFraction = (1.0 - (questionElapsed / 10000)).clamp(0.0, 1.0);
     final speedBonus = (500 * speedFraction).round();
 
@@ -357,21 +356,21 @@ class QuizSession {
 
   /// Generate a summary of the quiz results.
   QuizSummary get summary => QuizSummary(
-    mode: mode,
-    category: category,
-    difficulty: difficulty,
-    totalScore: _totalScore,
-    correctCount: correctCount,
-    wrongCount: _wrongCount,
-    totalQuestions: _questions.length,
-    elapsedMs: elapsedMs,
-    bestStreak: _results.fold<int>(
-      0,
-      (best, r) => r.correct && r.streak > best ? r.streak : best,
-    ),
-    hintsUsed: _hintsUsed,
-    results: List.unmodifiable(_results),
-  );
+        mode: mode,
+        category: category,
+        difficulty: difficulty,
+        totalScore: _totalScore,
+        correctCount: correctCount,
+        wrongCount: _wrongCount,
+        totalQuestions: _questions.length,
+        elapsedMs: elapsedMs,
+        bestStreak: _results.fold<int>(
+          0,
+          (best, r) => r.correct && r.streak > best ? r.streak : best,
+        ),
+        hintsUsed: _hintsUsed,
+        results: List.unmodifiable(_results),
+      );
 }
 
 /// Summary of a completed quiz session.

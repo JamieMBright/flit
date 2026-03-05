@@ -43,13 +43,13 @@ class IapReceipt {
   }
 
   Map<String, dynamic> toJson() => {
-    'user_id': userId,
-    'product_id': productId,
-    'platform': platform,
-    'receipt_data': receiptData,
-    'is_valid': isValid,
-    'amount': amount,
-    'currency': currency,
-    'transaction_id': transactionId,
-  };
+        'user_id': userId,
+        'product_id': productId,
+        'platform': platform,
+        'receipt_data': receiptData,
+        'is_valid': isValid,
+        'amount': amount,
+        'currency': currency,
+        'transaction_id': transactionId,
+      };
 }

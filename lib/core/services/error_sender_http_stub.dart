@@ -19,11 +19,11 @@ Future<bool> errorSenderHttpImpl({
     final response = await http
         .post(Uri.parse(url), headers: headers, body: jsonBody)
         .timeout(
-          const Duration(seconds: 10),
-          onTimeout: () {
-            return http.Response('Request timeout', 408);
-          },
-        );
+      const Duration(seconds: 10),
+      onTimeout: () {
+        return http.Response('Request timeout', 408);
+      },
+    );
     return response.statusCode >= 200 && response.statusCode < 300;
   } catch (_) {
     return false;

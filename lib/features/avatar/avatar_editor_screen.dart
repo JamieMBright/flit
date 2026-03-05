@@ -93,132 +93,133 @@ List<_AvatarPart> _mouthParts(int n) => AvatarMouth.values
 /// Build hair parts with an optional leading 'None'.
 /// [nNonNone] is the number of non-none variants the style supports.
 List<_AvatarPart> _hairParts(int nNonNone, {bool includeNone = true}) => [
-  if (includeNone) const _AvatarPart(id: 'hair_none', label: 'None'),
-  ...AvatarHair.values
-      .skip(1)
-      .take(nNonNone)
-      .map(
-        (e) => _AvatarPart(
-          id: 'hair_${e.name}',
-          label: e.label,
-          price: AvatarConfig.hairPrice(e),
-        ),
-      ),
-];
+      if (includeNone) const _AvatarPart(id: 'hair_none', label: 'None'),
+      ...AvatarHair.values.skip(1).take(nNonNone).map(
+            (e) => _AvatarPart(
+              id: 'hair_${e.name}',
+              label: e.label,
+              price: AvatarConfig.hairPrice(e),
+            ),
+          ),
+    ];
 
 List<_AvatarPart> _glassesParts(int nNonNone) => [
-  const _AvatarPart(id: 'glasses_none', label: 'None'),
-  ...AvatarGlasses.values
-      .skip(1)
-      .take(nNonNone)
-      .map(
-        (g) => _AvatarPart(
-          id: 'glasses_${g.name}',
-          label: '#${g.index}',
-          price: AvatarConfig.glassesPrice(g),
-        ),
-      ),
-];
+      const _AvatarPart(id: 'glasses_none', label: 'None'),
+      ...AvatarGlasses.values.skip(1).take(nNonNone).map(
+            (g) => _AvatarPart(
+              id: 'glasses_${g.name}',
+              label: '#${g.index}',
+              price: AvatarConfig.glassesPrice(g),
+            ),
+          ),
+    ];
 
 List<_AvatarPart> _earringsParts(int nNonNone) => [
-  const _AvatarPart(id: 'earrings_none', label: 'None'),
-  ...AvatarEarrings.values
-      .skip(1)
-      .take(nNonNone)
-      .map(
-        (e) => _AvatarPart(
-          id: 'earrings_${e.name}',
-          label: '#${e.index}',
-          price: AvatarConfig.earringsPrice(e),
-        ),
-      ),
-];
+      const _AvatarPart(id: 'earrings_none', label: 'None'),
+      ...AvatarEarrings.values.skip(1).take(nNonNone).map(
+            (e) => _AvatarPart(
+              id: 'earrings_${e.name}',
+              label: '#${e.index}',
+              price: AvatarConfig.earringsPrice(e),
+            ),
+          ),
+    ];
 
 List<_AvatarPart> _featureParts(int nNonNone) => [
-  _AvatarPart(id: 'feature_${AvatarFeature.none.name}', label: 'None'),
-  ...AvatarFeature.values
-      .skip(1)
-      .take(nNonNone)
-      .map((f) => _AvatarPart(id: 'feature_${f.name}', label: f.label)),
-];
+      _AvatarPart(id: 'feature_${AvatarFeature.none.name}', label: 'None'),
+      ...AvatarFeature.values
+          .skip(1)
+          .take(nNonNone)
+          .map((f) => _AvatarPart(id: 'feature_${f.name}', label: f.label)),
+    ];
 
 List<_AvatarPart> _hairColorParts({String? customHex}) => [
-  ...AvatarHairColor.values.map(
-    (c) => _AvatarPart(
-      id: 'hairColor_${c.name}',
-      label: c.label,
-      price: AvatarConfig.hairColorPrice(c),
-      colorHex: c.hex,
-    ),
-  ),
-  if (customHex != null)
-    _AvatarPart(id: 'hairColor_custom', label: 'Custom', colorHex: customHex),
-  const _AvatarPart(
-    id: 'featureColor_picker',
-    label: 'Pick',
-    price: _customColorWheelPrice,
-    isCustomPicker: true,
-  ),
-];
+      ...AvatarHairColor.values.map(
+        (c) => _AvatarPart(
+          id: 'hairColor_${c.name}',
+          label: c.label,
+          price: AvatarConfig.hairColorPrice(c),
+          colorHex: c.hex,
+        ),
+      ),
+      if (customHex != null)
+        _AvatarPart(
+            id: 'hairColor_custom', label: 'Custom', colorHex: customHex),
+      const _AvatarPart(
+        id: 'featureColor_picker',
+        label: 'Pick',
+        price: _customColorWheelPrice,
+        isCustomPicker: true,
+      ),
+    ];
 
 List<_AvatarPart> _skinParts({String? customHex}) => [
-  ...AvatarSkinColor.values.map(
-    (c) =>
-        _AvatarPart(id: 'skinColor_${c.name}', label: c.label, colorHex: c.hex),
-  ),
-  if (customHex != null)
-    _AvatarPart(id: 'skinColor_custom', label: 'Custom', colorHex: customHex),
-  const _AvatarPart(
-    id: 'featureColor_picker',
-    label: 'Pick',
-    price: _customColorWheelPrice,
-    isCustomPicker: true,
-  ),
-];
+      ...AvatarSkinColor.values.map(
+        (c) => _AvatarPart(
+            id: 'skinColor_${c.name}', label: c.label, colorHex: c.hex),
+      ),
+      if (customHex != null)
+        _AvatarPart(
+            id: 'skinColor_custom', label: 'Custom', colorHex: customHex),
+      const _AvatarPart(
+        id: 'featureColor_picker',
+        label: 'Pick',
+        price: _customColorWheelPrice,
+        isCustomPicker: true,
+      ),
+    ];
 
 const _customColorWheelPrice = AvatarConfig.customColorPrice;
 
 /// Bottts robot-colour parts — maps to AvatarSkinColor enum values but
 /// displays vibrant robot colours instead of human skin tones.
 List<_AvatarPart> _botttsColorParts({String? customHex}) => [
-  const _AvatarPart(id: 'skinColor_light', label: 'Cyan', colorHex: '69D2E7'),
-  const _AvatarPart(
-    id: 'skinColor_mediumLight',
-    label: 'Purple',
-    colorHex: '9B59B6',
-  ),
-  const _AvatarPart(id: 'skinColor_medium', label: 'Red', colorHex: 'E74C3C'),
-  const _AvatarPart(id: 'skinColor_dark', label: 'Teal', colorHex: '1ABC9C'),
-  if (customHex != null)
-    _AvatarPart(id: 'skinColor_custom', label: 'Custom', colorHex: customHex),
-  const _AvatarPart(
-    id: 'featureColor_picker',
-    label: 'Pick',
-    price: _customColorWheelPrice,
-    isCustomPicker: true,
-  ),
-];
+      const _AvatarPart(
+          id: 'skinColor_light', label: 'Cyan', colorHex: '69D2E7'),
+      const _AvatarPart(
+        id: 'skinColor_mediumLight',
+        label: 'Purple',
+        colorHex: '9B59B6',
+      ),
+      const _AvatarPart(
+          id: 'skinColor_medium', label: 'Red', colorHex: 'E74C3C'),
+      const _AvatarPart(
+          id: 'skinColor_dark', label: 'Teal', colorHex: '1ABC9C'),
+      if (customHex != null)
+        _AvatarPart(
+            id: 'skinColor_custom', label: 'Custom', colorHex: customHex),
+      const _AvatarPart(
+        id: 'featureColor_picker',
+        label: 'Pick',
+        price: _customColorWheelPrice,
+        isCustomPicker: true,
+      ),
+    ];
 
 /// Thumbs body-colour parts — maps to AvatarSkinColor enum values but
 /// displays the actual cartoon colours used by the Thumbs style.
 List<_AvatarPart> _thumbsColorParts({String? customHex}) => [
-  const _AvatarPart(id: 'skinColor_light', label: 'Yellow', colorHex: 'FFD93D'),
-  const _AvatarPart(
-    id: 'skinColor_mediumLight',
-    label: 'Orange',
-    colorHex: 'FFA94D',
-  ),
-  const _AvatarPart(id: 'skinColor_medium', label: 'Coral', colorHex: 'FF6B6B'),
-  const _AvatarPart(id: 'skinColor_dark', label: 'Purple', colorHex: 'C084FC'),
-  if (customHex != null)
-    _AvatarPart(id: 'skinColor_custom', label: 'Custom', colorHex: customHex),
-  const _AvatarPart(
-    id: 'featureColor_picker',
-    label: 'Pick',
-    price: _customColorWheelPrice,
-    isCustomPicker: true,
-  ),
-];
+      const _AvatarPart(
+          id: 'skinColor_light', label: 'Yellow', colorHex: 'FFD93D'),
+      const _AvatarPart(
+        id: 'skinColor_mediumLight',
+        label: 'Orange',
+        colorHex: 'FFA94D',
+      ),
+      const _AvatarPart(
+          id: 'skinColor_medium', label: 'Coral', colorHex: 'FF6B6B'),
+      const _AvatarPart(
+          id: 'skinColor_dark', label: 'Purple', colorHex: 'C084FC'),
+      if (customHex != null)
+        _AvatarPart(
+            id: 'skinColor_custom', label: 'Custom', colorHex: customHex),
+      const _AvatarPart(
+        id: 'featureColor_picker',
+        label: 'Pick',
+        price: _customColorWheelPrice,
+        isCustomPicker: true,
+      ),
+    ];
 
 const Map<String, List<String>> _featureColorPresets = {
   'eyesColor': ['1f3a5f', '4a7c59', '6b4423'],
@@ -311,634 +312,635 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
       //   45 hair, 5 glasses, 6 earrings, 4 features, 14 hair colors, 4 skin)
       // -----------------------------------------------------------------------
       AvatarStyle.adventurer => [
-        _AvatarCategory(
-          label: 'Skin',
-          icon: Icons.palette,
-          configKey: 'skinColor',
-          parts: _skinParts(customHex: config.customColors['skinColor']),
-        ),
-        _AvatarCategory(
-          label: 'Hair',
-          icon: Icons.content_cut,
-          configKey: 'hair',
-          parts: _hairParts(45),
-        ),
-        _AvatarCategory(
-          label: 'Hair Color',
-          icon: Icons.color_lens,
-          configKey: 'hairColor',
-          parts: _hairColorParts(customHex: config.customColors['hairColor']),
-        ),
-        _AvatarCategory(
-          label: 'Eyes',
-          icon: Icons.visibility,
-          configKey: 'eyes',
-          parts: _eyesParts(26),
-        ),
-        _AvatarCategory(
-          label: 'Brows',
-          icon: Icons.remove,
-          configKey: 'eyebrows',
-          parts: _browsParts(15),
-        ),
-        _AvatarCategory(
-          label: 'Mouth',
-          icon: Icons.mood,
-          configKey: 'mouth',
-          parts: _mouthParts(30),
-        ),
-        _AvatarCategory(
-          label: 'Glasses',
-          icon: Icons.remove_red_eye,
-          configKey: 'glasses',
-          parts: _glassesParts(5),
-        ),
-        _AvatarCategory(
-          label: 'Earrings',
-          icon: Icons.radio_button_unchecked,
-          configKey: 'earrings',
-          parts: _earringsParts(6),
-        ),
-        _AvatarCategory(
-          label: 'Features',
-          icon: Icons.auto_awesome,
-          configKey: 'feature',
-          parts: _featureParts(4),
-        ),
-      ],
+          _AvatarCategory(
+            label: 'Skin',
+            icon: Icons.palette,
+            configKey: 'skinColor',
+            parts: _skinParts(customHex: config.customColors['skinColor']),
+          ),
+          _AvatarCategory(
+            label: 'Hair',
+            icon: Icons.content_cut,
+            configKey: 'hair',
+            parts: _hairParts(45),
+          ),
+          _AvatarCategory(
+            label: 'Hair Color',
+            icon: Icons.color_lens,
+            configKey: 'hairColor',
+            parts: _hairColorParts(customHex: config.customColors['hairColor']),
+          ),
+          _AvatarCategory(
+            label: 'Eyes',
+            icon: Icons.visibility,
+            configKey: 'eyes',
+            parts: _eyesParts(26),
+          ),
+          _AvatarCategory(
+            label: 'Brows',
+            icon: Icons.remove,
+            configKey: 'eyebrows',
+            parts: _browsParts(15),
+          ),
+          _AvatarCategory(
+            label: 'Mouth',
+            icon: Icons.mood,
+            configKey: 'mouth',
+            parts: _mouthParts(30),
+          ),
+          _AvatarCategory(
+            label: 'Glasses',
+            icon: Icons.remove_red_eye,
+            configKey: 'glasses',
+            parts: _glassesParts(5),
+          ),
+          _AvatarCategory(
+            label: 'Earrings',
+            icon: Icons.radio_button_unchecked,
+            configKey: 'earrings',
+            parts: _earringsParts(6),
+          ),
+          _AvatarCategory(
+            label: 'Features',
+            icon: Icons.auto_awesome,
+            configKey: 'feature',
+            parts: _featureParts(4),
+          ),
+        ],
 
       // -----------------------------------------------------------------------
       // Avataaars — 12 eyes, 13 brows, 12 mouth, 34 top/hair
       // -----------------------------------------------------------------------
       AvatarStyle.avataaars => [
-        _AvatarCategory(
-          label: 'Skin',
-          icon: Icons.palette,
-          configKey: 'skinColor',
-          parts: _skinParts(customHex: config.customColors['skinColor']),
-        ),
-        _AvatarCategory(
-          label: 'Hair',
-          icon: Icons.content_cut,
-          configKey: 'hair',
-          parts: _hairParts(34),
-        ),
-        _AvatarCategory(
-          label: 'Hair Color',
-          icon: Icons.color_lens,
-          configKey: 'hairColor',
-          parts: _hairColorParts(customHex: config.customColors['hairColor']),
-        ),
-        _AvatarCategory(
-          label: 'Hat Color',
-          icon: Icons.color_lens,
-          configKey: 'hatColor',
-          parts: _featureColorParts(
-            'hatColor',
-            customHex: config.customColors['hatColor'],
+          _AvatarCategory(
+            label: 'Skin',
+            icon: Icons.palette,
+            configKey: 'skinColor',
+            parts: _skinParts(customHex: config.customColors['skinColor']),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Eyes',
-          icon: Icons.visibility,
-          configKey: 'eyes',
-          parts: _eyesParts(12),
-        ),
-        _AvatarCategory(
-          label: 'Brows',
-          icon: Icons.remove,
-          configKey: 'eyebrows',
-          parts: _browsParts(13),
-        ),
-        _AvatarCategory(
-          label: 'Mouth',
-          icon: Icons.mood,
-          configKey: 'mouth',
-          parts: _mouthParts(12),
-        ),
-        _AvatarCategory(
-          label: 'Facial Hair',
-          icon: Icons.face_retouching_natural,
-          configKey: 'extras_facialHair',
-          parts: _extrasParts('facialHair', 5, hasNone: true),
-        ),
-        _AvatarCategory(
-          label: 'Facial Hair Color',
-          icon: Icons.color_lens,
-          configKey: 'facialHairColor',
-          parts: _featureColorParts(
-            'facialHairColor',
-            customHex: config.customColors['facialHairColor'],
+          _AvatarCategory(
+            label: 'Hair',
+            icon: Icons.content_cut,
+            configKey: 'hair',
+            parts: _hairParts(34),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Glasses',
-          icon: Icons.remove_red_eye,
-          configKey: 'glasses',
-          parts: _glassesParts(5),
-        ),
-        _AvatarCategory(
-          label: 'Glasses Color',
-          icon: Icons.color_lens,
-          configKey: 'accessoriesColor',
-          parts: _featureColorParts(
-            'accessoriesColor',
-            customHex: config.customColors['accessoriesColor'],
+          _AvatarCategory(
+            label: 'Hair Color',
+            icon: Icons.color_lens,
+            configKey: 'hairColor',
+            parts: _hairColorParts(customHex: config.customColors['hairColor']),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Clothing',
-          icon: Icons.checkroom,
-          configKey: 'extras_clothing',
-          parts: _extrasParts('clothing', 9),
-        ),
-        _AvatarCategory(
-          label: 'Clothes Color',
-          icon: Icons.color_lens,
-          configKey: 'clothesColor',
-          parts: _featureColorParts(
-            'clothesColor',
-            customHex: config.customColors['clothesColor'],
+          _AvatarCategory(
+            label: 'Hat Color',
+            icon: Icons.color_lens,
+            configKey: 'hatColor',
+            parts: _featureColorParts(
+              'hatColor',
+              customHex: config.customColors['hatColor'],
+            ),
           ),
-        ),
-      ],
+          _AvatarCategory(
+            label: 'Eyes',
+            icon: Icons.visibility,
+            configKey: 'eyes',
+            parts: _eyesParts(12),
+          ),
+          _AvatarCategory(
+            label: 'Brows',
+            icon: Icons.remove,
+            configKey: 'eyebrows',
+            parts: _browsParts(13),
+          ),
+          _AvatarCategory(
+            label: 'Mouth',
+            icon: Icons.mood,
+            configKey: 'mouth',
+            parts: _mouthParts(12),
+          ),
+          _AvatarCategory(
+            label: 'Facial Hair',
+            icon: Icons.face_retouching_natural,
+            configKey: 'extras_facialHair',
+            parts: _extrasParts('facialHair', 5, hasNone: true),
+          ),
+          _AvatarCategory(
+            label: 'Facial Hair Color',
+            icon: Icons.color_lens,
+            configKey: 'facialHairColor',
+            parts: _featureColorParts(
+              'facialHairColor',
+              customHex: config.customColors['facialHairColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Glasses',
+            icon: Icons.remove_red_eye,
+            configKey: 'glasses',
+            parts: _glassesParts(5),
+          ),
+          _AvatarCategory(
+            label: 'Glasses Color',
+            icon: Icons.color_lens,
+            configKey: 'accessoriesColor',
+            parts: _featureColorParts(
+              'accessoriesColor',
+              customHex: config.customColors['accessoriesColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Clothing',
+            icon: Icons.checkroom,
+            configKey: 'extras_clothing',
+            parts: _extrasParts('clothing', 9),
+          ),
+          _AvatarCategory(
+            label: 'Clothes Color',
+            icon: Icons.color_lens,
+            configKey: 'clothesColor',
+            parts: _featureColorParts(
+              'clothesColor',
+              customHex: config.customColors['clothesColor'],
+            ),
+          ),
+        ],
 
       // -----------------------------------------------------------------------
       // Big Ears — 32 eyes, 38 mouth, 12 front hair, 6 cheek (brows key)
       // -----------------------------------------------------------------------
       AvatarStyle.bigEars => [
-        _AvatarCategory(
-          label: 'Skin',
-          icon: Icons.palette,
-          configKey: 'skinColor',
-          parts: _skinParts(customHex: config.customColors['skinColor']),
-        ),
-        _AvatarCategory(
-          label: 'Hair',
-          icon: Icons.content_cut,
-          configKey: 'hair',
-          parts: _hairParts(12),
-        ),
-        _AvatarCategory(
-          label: 'Hair Color',
-          icon: Icons.color_lens,
-          configKey: 'hairColor',
-          parts: _hairColorParts(customHex: config.customColors['hairColor']),
-        ),
-        // Sideburn promoted to directly after hair section.
-        _AvatarCategory(
-          label: 'Sideburn',
-          icon: Icons.auto_awesome,
-          configKey: 'extras_sideburn',
-          parts: _extrasParts('sideburn', 7, hasNone: true),
-        ),
-        _AvatarCategory(
-          label: 'Face',
-          icon: Icons.face,
-          configKey: 'extras_face',
-          parts: _extrasParts('face', 10),
-        ),
-        _AvatarCategory(
-          label: 'Ear',
-          icon: Icons.hearing,
-          configKey: 'extras_ear',
-          parts: _extrasParts('ear', 8),
-        ),
-        _AvatarCategory(
-          label: 'Eyes',
-          icon: Icons.visibility,
-          configKey: 'eyes',
-          parts: _eyesParts(32),
-        ),
-        _AvatarCategory(
-          label: 'Nose',
-          icon: Icons.face,
-          configKey: 'extras_nose',
-          parts: _extrasParts('nose', 12),
-        ),
-        _AvatarCategory(
-          label: 'Cheek',
-          icon: Icons.blur_on,
-          configKey: 'extras_cheek',
-          parts: _extrasParts('cheek', 6),
-        ),
-        _AvatarCategory(
-          label: 'Mouth',
-          icon: Icons.mood,
-          configKey: 'mouth',
-          parts: _mouthParts(38),
-        ),
-      ],
+          _AvatarCategory(
+            label: 'Skin',
+            icon: Icons.palette,
+            configKey: 'skinColor',
+            parts: _skinParts(customHex: config.customColors['skinColor']),
+          ),
+          _AvatarCategory(
+            label: 'Hair',
+            icon: Icons.content_cut,
+            configKey: 'hair',
+            parts: _hairParts(12),
+          ),
+          _AvatarCategory(
+            label: 'Hair Color',
+            icon: Icons.color_lens,
+            configKey: 'hairColor',
+            parts: _hairColorParts(customHex: config.customColors['hairColor']),
+          ),
+          // Sideburn promoted to directly after hair section.
+          _AvatarCategory(
+            label: 'Sideburn',
+            icon: Icons.auto_awesome,
+            configKey: 'extras_sideburn',
+            parts: _extrasParts('sideburn', 7, hasNone: true),
+          ),
+          _AvatarCategory(
+            label: 'Face',
+            icon: Icons.face,
+            configKey: 'extras_face',
+            parts: _extrasParts('face', 10),
+          ),
+          _AvatarCategory(
+            label: 'Ear',
+            icon: Icons.hearing,
+            configKey: 'extras_ear',
+            parts: _extrasParts('ear', 8),
+          ),
+          _AvatarCategory(
+            label: 'Eyes',
+            icon: Icons.visibility,
+            configKey: 'eyes',
+            parts: _eyesParts(32),
+          ),
+          _AvatarCategory(
+            label: 'Nose',
+            icon: Icons.face,
+            configKey: 'extras_nose',
+            parts: _extrasParts('nose', 12),
+          ),
+          _AvatarCategory(
+            label: 'Cheek',
+            icon: Icons.blur_on,
+            configKey: 'extras_cheek',
+            parts: _extrasParts('cheek', 6),
+          ),
+          _AvatarCategory(
+            label: 'Mouth',
+            icon: Icons.mood,
+            configKey: 'mouth',
+            parts: _mouthParts(38),
+          ),
+        ],
 
       // -----------------------------------------------------------------------
       // Lorelei — 24 eyes, 13 brows, 27 mouth, 48 hair, 5 glasses,
       //   3 earrings, freckles/beard via features
       // -----------------------------------------------------------------------
       AvatarStyle.lorelei => [
-        _AvatarCategory(
-          label: 'Skin',
-          icon: Icons.palette,
-          configKey: 'skinColor',
-          parts: _skinParts(customHex: config.customColors['skinColor']),
-        ),
-        _AvatarCategory(
-          label: 'Hair',
-          icon: Icons.content_cut,
-          configKey: 'hair',
-          parts: _hairParts(48),
-        ),
-        _AvatarCategory(
-          label: 'Hair Color',
-          icon: Icons.color_lens,
-          configKey: 'hairColor',
-          parts: _hairColorParts(customHex: config.customColors['hairColor']),
-        ),
-        _AvatarCategory(
-          label: 'Hair Accessories',
-          icon: Icons.auto_awesome,
-          configKey: 'extras_hairAccessories',
-          parts: _extrasParts('hairAccessories', 1, hasNone: true),
-        ),
-        _AvatarCategory(
-          label: 'Hair Accessory Color',
-          icon: Icons.color_lens,
-          configKey: 'hairAccessoriesColor',
-          parts: _featureColorParts(
-            'hairAccessoriesColor',
-            customHex: config.customColors['hairAccessoriesColor'],
+          _AvatarCategory(
+            label: 'Skin',
+            icon: Icons.palette,
+            configKey: 'skinColor',
+            parts: _skinParts(customHex: config.customColors['skinColor']),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Head',
-          icon: Icons.face,
-          configKey: 'extras_head',
-          parts: _extrasParts('head', 4),
-        ),
-        _AvatarCategory(
-          label: 'Eyes',
-          icon: Icons.visibility,
-          configKey: 'eyes',
-          parts: _eyesParts(24),
-        ),
-        _AvatarCategory(
-          label: 'Eyes Color',
-          icon: Icons.color_lens,
-          configKey: 'eyesColor',
-          parts: _featureColorParts(
-            'eyesColor',
-            customHex: config.customColors['eyesColor'],
+          _AvatarCategory(
+            label: 'Hair',
+            icon: Icons.content_cut,
+            configKey: 'hair',
+            parts: _hairParts(48),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Brows',
-          icon: Icons.remove,
-          configKey: 'eyebrows',
-          parts: _browsParts(13),
-        ),
-        _AvatarCategory(
-          label: 'Nose',
-          icon: Icons.face,
-          configKey: 'extras_nose',
-          parts: _extrasParts('nose', 6),
-        ),
-        _AvatarCategory(
-          label: 'Mouth',
-          icon: Icons.mood,
-          configKey: 'mouth',
-          parts: _mouthParts(27),
-        ),
-        _AvatarCategory(
-          label: 'Beard',
-          icon: Icons.face_retouching_natural,
-          configKey: 'extras_beard',
-          parts: _extrasParts('beard', 2, hasNone: true),
-        ),
-        _AvatarCategory(
-          label: 'Glasses',
-          icon: Icons.remove_red_eye,
-          configKey: 'glasses',
-          parts: _glassesParts(5),
-        ),
-        _AvatarCategory(
-          label: 'Glasses Color',
-          icon: Icons.color_lens,
-          configKey: 'glassesColor',
-          parts: _featureColorParts(
-            'glassesColor',
-            customHex: config.customColors['glassesColor'],
+          _AvatarCategory(
+            label: 'Hair Color',
+            icon: Icons.color_lens,
+            configKey: 'hairColor',
+            parts: _hairColorParts(customHex: config.customColors['hairColor']),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Earrings',
-          icon: Icons.radio_button_unchecked,
-          configKey: 'earrings',
-          parts: _earringsParts(3),
-        ),
-        _AvatarCategory(
-          label: 'Earrings Color',
-          icon: Icons.color_lens,
-          configKey: 'earringsColor',
-          parts: _featureColorParts(
-            'earringsColor',
-            customHex: config.customColors['earringsColor'],
+          _AvatarCategory(
+            label: 'Hair Accessories',
+            icon: Icons.auto_awesome,
+            configKey: 'extras_hairAccessories',
+            parts: _extrasParts('hairAccessories', 1, hasNone: true),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Features',
-          icon: Icons.auto_awesome,
-          configKey: 'feature',
-          parts: _featureParts(4),
-        ),
-      ],
+          _AvatarCategory(
+            label: 'Hair Accessory Color',
+            icon: Icons.color_lens,
+            configKey: 'hairAccessoriesColor',
+            parts: _featureColorParts(
+              'hairAccessoriesColor',
+              customHex: config.customColors['hairAccessoriesColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Head',
+            icon: Icons.face,
+            configKey: 'extras_head',
+            parts: _extrasParts('head', 4),
+          ),
+          _AvatarCategory(
+            label: 'Eyes',
+            icon: Icons.visibility,
+            configKey: 'eyes',
+            parts: _eyesParts(24),
+          ),
+          _AvatarCategory(
+            label: 'Eyes Color',
+            icon: Icons.color_lens,
+            configKey: 'eyesColor',
+            parts: _featureColorParts(
+              'eyesColor',
+              customHex: config.customColors['eyesColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Brows',
+            icon: Icons.remove,
+            configKey: 'eyebrows',
+            parts: _browsParts(13),
+          ),
+          _AvatarCategory(
+            label: 'Nose',
+            icon: Icons.face,
+            configKey: 'extras_nose',
+            parts: _extrasParts('nose', 6),
+          ),
+          _AvatarCategory(
+            label: 'Mouth',
+            icon: Icons.mood,
+            configKey: 'mouth',
+            parts: _mouthParts(27),
+          ),
+          _AvatarCategory(
+            label: 'Beard',
+            icon: Icons.face_retouching_natural,
+            configKey: 'extras_beard',
+            parts: _extrasParts('beard', 2, hasNone: true),
+          ),
+          _AvatarCategory(
+            label: 'Glasses',
+            icon: Icons.remove_red_eye,
+            configKey: 'glasses',
+            parts: _glassesParts(5),
+          ),
+          _AvatarCategory(
+            label: 'Glasses Color',
+            icon: Icons.color_lens,
+            configKey: 'glassesColor',
+            parts: _featureColorParts(
+              'glassesColor',
+              customHex: config.customColors['glassesColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Earrings',
+            icon: Icons.radio_button_unchecked,
+            configKey: 'earrings',
+            parts: _earringsParts(3),
+          ),
+          _AvatarCategory(
+            label: 'Earrings Color',
+            icon: Icons.color_lens,
+            configKey: 'earringsColor',
+            parts: _featureColorParts(
+              'earringsColor',
+              customHex: config.customColors['earringsColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Features',
+            icon: Icons.auto_awesome,
+            configKey: 'feature',
+            parts: _featureParts(4),
+          ),
+        ],
 
       // -----------------------------------------------------------------------
       // Micah — 5 eyes, 4 brows, 8 mouth, 8 hair, 2 glasses, 2 earrings,
       //   2 facial hair (feature key)
       // -----------------------------------------------------------------------
       AvatarStyle.micah => [
-        _AvatarCategory(
-          label: 'Skin',
-          icon: Icons.palette,
-          configKey: 'skinColor',
-          parts: _skinParts(customHex: config.customColors['skinColor']),
-        ),
-        _AvatarCategory(
-          label: 'Hair',
-          icon: Icons.content_cut,
-          configKey: 'hair',
-          parts: _hairParts(8),
-        ),
-        _AvatarCategory(
-          label: 'Hair Color',
-          icon: Icons.color_lens,
-          configKey: 'hairColor',
-          parts: _hairColorParts(customHex: config.customColors['hairColor']),
-        ),
-        // Facial hair promoted to directly after hair section.
-        _AvatarCategory(
-          label: 'Facial Hair',
-          icon: Icons.auto_awesome,
-          configKey: 'feature',
-          parts: _featureParts(3),
-        ),
-        _AvatarCategory(
-          label: 'Eyes',
-          icon: Icons.visibility,
-          configKey: 'eyes',
-          parts: _eyesParts(5),
-        ),
-        _AvatarCategory(
-          label: 'Eyes Color',
-          icon: Icons.color_lens,
-          configKey: 'eyesColor',
-          parts: _featureColorParts(
-            'eyesColor',
-            customHex: config.customColors['eyesColor'],
+          _AvatarCategory(
+            label: 'Skin',
+            icon: Icons.palette,
+            configKey: 'skinColor',
+            parts: _skinParts(customHex: config.customColors['skinColor']),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Eye Shadow',
-          icon: Icons.color_lens,
-          configKey: 'eyeShadowColor',
-          parts: _featureColorParts(
-            'eyeShadowColor',
-            customHex: config.customColors['eyeShadowColor'],
+          _AvatarCategory(
+            label: 'Hair',
+            icon: Icons.content_cut,
+            configKey: 'hair',
+            parts: _hairParts(8),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Brows',
-          icon: Icons.remove,
-          configKey: 'eyebrows',
-          parts: _browsParts(4),
-        ),
-        _AvatarCategory(
-          label: 'Nose',
-          icon: Icons.face,
-          configKey: 'extras_nose',
-          parts: _extrasParts('nose', 3),
-        ),
-        _AvatarCategory(
-          label: 'Ears',
-          icon: Icons.hearing,
-          configKey: 'extras_ears',
-          parts: _extrasParts('ears', 2),
-        ),
-        _AvatarCategory(
-          label: 'Mouth',
-          icon: Icons.mood,
-          configKey: 'mouth',
-          parts: _mouthParts(8),
-        ),
-        _AvatarCategory(
-          label: 'Glasses',
-          icon: Icons.remove_red_eye,
-          configKey: 'glasses',
-          parts: _glassesParts(2),
-        ),
-        _AvatarCategory(
-          label: 'Glasses Color',
-          icon: Icons.color_lens,
-          configKey: 'glassesColor',
-          parts: _featureColorParts(
-            'glassesColor',
-            customHex: config.customColors['glassesColor'],
+          _AvatarCategory(
+            label: 'Hair Color',
+            icon: Icons.color_lens,
+            configKey: 'hairColor',
+            parts: _hairColorParts(customHex: config.customColors['hairColor']),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Earrings',
-          icon: Icons.radio_button_unchecked,
-          configKey: 'earrings',
-          parts: _earringsParts(2),
-        ),
-        _AvatarCategory(
-          label: 'Earring Color',
-          icon: Icons.color_lens,
-          configKey: 'earringColor',
-          parts: _featureColorParts(
-            'earringColor',
-            customHex: config.customColors['earringColor'],
+          // Facial hair promoted to directly after hair section.
+          _AvatarCategory(
+            label: 'Facial Hair',
+            icon: Icons.auto_awesome,
+            configKey: 'feature',
+            parts: _featureParts(3),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Shirt',
-          icon: Icons.checkroom,
-          configKey: 'extras_shirt',
-          parts: _extrasParts('shirt', 3),
-        ),
-        _AvatarCategory(
-          label: 'Shirt Color',
-          icon: Icons.color_lens,
-          configKey: 'shirtColor',
-          parts: _featureColorParts(
-            'shirtColor',
-            customHex: config.customColors['shirtColor'],
+          _AvatarCategory(
+            label: 'Eyes',
+            icon: Icons.visibility,
+            configKey: 'eyes',
+            parts: _eyesParts(5),
           ),
-        ),
-      ],
+          _AvatarCategory(
+            label: 'Eyes Color',
+            icon: Icons.color_lens,
+            configKey: 'eyesColor',
+            parts: _featureColorParts(
+              'eyesColor',
+              customHex: config.customColors['eyesColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Eye Shadow',
+            icon: Icons.color_lens,
+            configKey: 'eyeShadowColor',
+            parts: _featureColorParts(
+              'eyeShadowColor',
+              customHex: config.customColors['eyeShadowColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Brows',
+            icon: Icons.remove,
+            configKey: 'eyebrows',
+            parts: _browsParts(4),
+          ),
+          _AvatarCategory(
+            label: 'Nose',
+            icon: Icons.face,
+            configKey: 'extras_nose',
+            parts: _extrasParts('nose', 3),
+          ),
+          _AvatarCategory(
+            label: 'Ears',
+            icon: Icons.hearing,
+            configKey: 'extras_ears',
+            parts: _extrasParts('ears', 2),
+          ),
+          _AvatarCategory(
+            label: 'Mouth',
+            icon: Icons.mood,
+            configKey: 'mouth',
+            parts: _mouthParts(8),
+          ),
+          _AvatarCategory(
+            label: 'Glasses',
+            icon: Icons.remove_red_eye,
+            configKey: 'glasses',
+            parts: _glassesParts(2),
+          ),
+          _AvatarCategory(
+            label: 'Glasses Color',
+            icon: Icons.color_lens,
+            configKey: 'glassesColor',
+            parts: _featureColorParts(
+              'glassesColor',
+              customHex: config.customColors['glassesColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Earrings',
+            icon: Icons.radio_button_unchecked,
+            configKey: 'earrings',
+            parts: _earringsParts(2),
+          ),
+          _AvatarCategory(
+            label: 'Earring Color',
+            icon: Icons.color_lens,
+            configKey: 'earringColor',
+            parts: _featureColorParts(
+              'earringColor',
+              customHex: config.customColors['earringColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Shirt',
+            icon: Icons.checkroom,
+            configKey: 'extras_shirt',
+            parts: _extrasParts('shirt', 3),
+          ),
+          _AvatarCategory(
+            label: 'Shirt Color',
+            icon: Icons.color_lens,
+            configKey: 'shirtColor',
+            parts: _featureColorParts(
+              'shirtColor',
+              customHex: config.customColors['shirtColor'],
+            ),
+          ),
+        ],
 
       // -----------------------------------------------------------------------
       // Pixel Art — 12 eyes, 23 mouth, 45 hair, 14 glasses, 4 accessories
       //   (earrings key), beard via features
       // -----------------------------------------------------------------------
       AvatarStyle.pixelArt => [
-        _AvatarCategory(
-          label: 'Skin',
-          icon: Icons.palette,
-          configKey: 'skinColor',
-          parts: _skinParts(customHex: config.customColors['skinColor']),
-        ),
-        _AvatarCategory(
-          label: 'Hair',
-          icon: Icons.content_cut,
-          configKey: 'hair',
-          parts: _hairParts(45),
-        ),
-        _AvatarCategory(
-          label: 'Hair Color',
-          icon: Icons.color_lens,
-          configKey: 'hairColor',
-          parts: _hairColorParts(customHex: config.customColors['hairColor']),
-        ),
-        _AvatarCategory(
-          label: 'Eyes',
-          icon: Icons.visibility,
-          configKey: 'eyes',
-          parts: _eyesParts(12),
-        ),
-        _AvatarCategory(
-          label: 'Eyes Color',
-          icon: Icons.color_lens,
-          configKey: 'eyesColor',
-          parts: _featureColorParts(
-            'eyesColor',
-            customHex: config.customColors['eyesColor'],
+          _AvatarCategory(
+            label: 'Skin',
+            icon: Icons.palette,
+            configKey: 'skinColor',
+            parts: _skinParts(customHex: config.customColors['skinColor']),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Mouth',
-          icon: Icons.mood,
-          configKey: 'mouth',
-          parts: _mouthParts(23),
-        ),
-        _AvatarCategory(
-          label: 'Mouth Color',
-          icon: Icons.color_lens,
-          configKey: 'mouthColor',
-          parts: _featureColorParts(
-            'mouthColor',
-            customHex: config.customColors['mouthColor'],
+          _AvatarCategory(
+            label: 'Hair',
+            icon: Icons.content_cut,
+            configKey: 'hair',
+            parts: _hairParts(45),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Beard',
-          icon: Icons.face_retouching_natural,
-          configKey: 'extras_beard',
-          parts: _extrasParts('beard', 8, hasNone: true),
-        ),
-        _AvatarCategory(
-          label: 'Glasses',
-          icon: Icons.remove_red_eye,
-          configKey: 'glasses',
-          parts: _glassesParts(14),
-        ),
-        _AvatarCategory(
-          label: 'Glasses Color',
-          icon: Icons.color_lens,
-          configKey: 'glassesColor',
-          parts: _featureColorParts(
-            'glassesColor',
-            customHex: config.customColors['glassesColor'],
+          _AvatarCategory(
+            label: 'Hair Color',
+            icon: Icons.color_lens,
+            configKey: 'hairColor',
+            parts: _hairColorParts(customHex: config.customColors['hairColor']),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Accessories',
-          icon: Icons.radio_button_unchecked,
-          configKey: 'earrings',
-          parts: _earringsParts(4),
-        ),
-        _AvatarCategory(
-          label: 'Accessories Color',
-          icon: Icons.color_lens,
-          configKey: 'accessoriesColor',
-          parts: _featureColorParts(
-            'accessoriesColor',
-            customHex: config.customColors['accessoriesColor'],
+          _AvatarCategory(
+            label: 'Eyes',
+            icon: Icons.visibility,
+            configKey: 'eyes',
+            parts: _eyesParts(12),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Clothing',
-          icon: Icons.checkroom,
-          configKey: 'extras_clothing',
-          parts: _extrasParts('clothing', 23),
-        ),
-        _AvatarCategory(
-          label: 'Clothing Color',
-          icon: Icons.color_lens,
-          configKey: 'clothingColor',
-          parts: _featureColorParts(
-            'clothingColor',
-            customHex: config.customColors['clothingColor'],
+          _AvatarCategory(
+            label: 'Eyes Color',
+            icon: Icons.color_lens,
+            configKey: 'eyesColor',
+            parts: _featureColorParts(
+              'eyesColor',
+              customHex: config.customColors['eyesColor'],
+            ),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Hat',
-          icon: Icons.checkroom,
-          configKey: 'extras_hat',
-          parts: _extrasParts('hat', 10, hasNone: true),
-        ),
-        _AvatarCategory(
-          label: 'Hat Color',
-          icon: Icons.color_lens,
-          configKey: 'hatColor',
-          parts: _featureColorParts(
-            'hatColor',
-            customHex: config.customColors['hatColor'],
+          _AvatarCategory(
+            label: 'Mouth',
+            icon: Icons.mood,
+            configKey: 'mouth',
+            parts: _mouthParts(23),
           ),
-        ),
-      ],
+          _AvatarCategory(
+            label: 'Mouth Color',
+            icon: Icons.color_lens,
+            configKey: 'mouthColor',
+            parts: _featureColorParts(
+              'mouthColor',
+              customHex: config.customColors['mouthColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Beard',
+            icon: Icons.face_retouching_natural,
+            configKey: 'extras_beard',
+            parts: _extrasParts('beard', 8, hasNone: true),
+          ),
+          _AvatarCategory(
+            label: 'Glasses',
+            icon: Icons.remove_red_eye,
+            configKey: 'glasses',
+            parts: _glassesParts(14),
+          ),
+          _AvatarCategory(
+            label: 'Glasses Color',
+            icon: Icons.color_lens,
+            configKey: 'glassesColor',
+            parts: _featureColorParts(
+              'glassesColor',
+              customHex: config.customColors['glassesColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Accessories',
+            icon: Icons.radio_button_unchecked,
+            configKey: 'earrings',
+            parts: _earringsParts(4),
+          ),
+          _AvatarCategory(
+            label: 'Accessories Color',
+            icon: Icons.color_lens,
+            configKey: 'accessoriesColor',
+            parts: _featureColorParts(
+              'accessoriesColor',
+              customHex: config.customColors['accessoriesColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Clothing',
+            icon: Icons.checkroom,
+            configKey: 'extras_clothing',
+            parts: _extrasParts('clothing', 23),
+          ),
+          _AvatarCategory(
+            label: 'Clothing Color',
+            icon: Icons.color_lens,
+            configKey: 'clothingColor',
+            parts: _featureColorParts(
+              'clothingColor',
+              customHex: config.customColors['clothingColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Hat',
+            icon: Icons.checkroom,
+            configKey: 'extras_hat',
+            parts: _extrasParts('hat', 10, hasNone: true),
+          ),
+          _AvatarCategory(
+            label: 'Hat Color',
+            icon: Icons.color_lens,
+            configKey: 'hatColor',
+            parts: _featureColorParts(
+              'hatColor',
+              customHex: config.customColors['hatColor'],
+            ),
+          ),
+        ],
 
       // -----------------------------------------------------------------------
       // Bottts — robot: 14 eyes, 9 mouth, 9 top (brows key), 7 sides
       //   (hair key, no 'none'), body colour (skin key). No hair/skin colours.
       // -----------------------------------------------------------------------
       AvatarStyle.bottts => [
-        _AvatarCategory(
-          label: 'Color',
-          icon: Icons.palette,
-          configKey: 'skinColor',
-          parts: _botttsColorParts(customHex: config.customColors['skinColor']),
-        ),
-        _AvatarCategory(
-          label: 'Face',
-          icon: Icons.face,
-          configKey: 'extras_face',
-          parts: _extrasParts('face', 6),
-        ),
-        _AvatarCategory(
-          label: 'Eyes',
-          icon: Icons.visibility,
-          configKey: 'eyes',
-          parts: _eyesParts(14),
-        ),
-        _AvatarCategory(
-          label: 'Mouth',
-          icon: Icons.mood,
-          configKey: 'mouth',
-          parts: _mouthParts(9),
-        ),
-        _AvatarCategory(
-          label: 'Top',
-          icon: Icons.arrow_upward,
-          configKey: 'eyebrows',
-          parts: _browsParts(9),
-        ),
-        _AvatarCategory(
-          label: 'Sides',
-          icon: Icons.pan_tool,
-          configKey: 'hair',
-          parts: _hairParts(7, includeNone: false),
-        ),
-      ],
+          _AvatarCategory(
+            label: 'Color',
+            icon: Icons.palette,
+            configKey: 'skinColor',
+            parts:
+                _botttsColorParts(customHex: config.customColors['skinColor']),
+          ),
+          _AvatarCategory(
+            label: 'Face',
+            icon: Icons.face,
+            configKey: 'extras_face',
+            parts: _extrasParts('face', 6),
+          ),
+          _AvatarCategory(
+            label: 'Eyes',
+            icon: Icons.visibility,
+            configKey: 'eyes',
+            parts: _eyesParts(14),
+          ),
+          _AvatarCategory(
+            label: 'Mouth',
+            icon: Icons.mood,
+            configKey: 'mouth',
+            parts: _mouthParts(9),
+          ),
+          _AvatarCategory(
+            label: 'Top',
+            icon: Icons.arrow_upward,
+            configKey: 'eyebrows',
+            parts: _browsParts(9),
+          ),
+          _AvatarCategory(
+            label: 'Sides',
+            icon: Icons.pan_tool,
+            configKey: 'hair',
+            parts: _hairParts(7, includeNone: false),
+          ),
+        ],
 
       // -----------------------------------------------------------------------
       // Notionists — line-art style: no skin/hair colours. 5 eyes, 13 brows,
@@ -946,169 +948,170 @@ List<_AvatarCategory> _buildCategoriesForStyle(AvatarConfig config) {
       //   body (25), gesture (10), nose (20), beard (12+none).
       // -----------------------------------------------------------------------
       AvatarStyle.notionists => [
-        _AvatarCategory(
-          label: 'Hair',
-          icon: Icons.content_cut,
-          configKey: 'hair',
-          parts: _hairParts(64),
-        ),
-        _AvatarCategory(
-          label: 'Eyes',
-          icon: Icons.visibility,
-          configKey: 'eyes',
-          parts: _eyesParts(5),
-        ),
-        _AvatarCategory(
-          label: 'Brows',
-          icon: Icons.remove,
-          configKey: 'eyebrows',
-          parts: _browsParts(13),
-        ),
-        _AvatarCategory(
-          label: 'Nose',
-          icon: Icons.face,
-          configKey: 'extras_nose',
-          parts: _extrasParts('nose', 20),
-        ),
-        _AvatarCategory(
-          label: 'Lips',
-          icon: Icons.mood,
-          configKey: 'mouth',
-          parts: _mouthParts(30),
-        ),
-        _AvatarCategory(
-          label: 'Beard',
-          icon: Icons.auto_awesome,
-          configKey: 'extras_beard',
-          parts: _extrasParts('beard', 12, hasNone: true),
-        ),
-        _AvatarCategory(
-          label: 'Glasses',
-          icon: Icons.remove_red_eye,
-          configKey: 'glasses',
-          parts: _glassesParts(11),
-        ),
-        _AvatarCategory(
-          label: 'Body',
-          icon: Icons.checkroom,
-          configKey: 'extras_body',
-          parts: _extrasParts('body', 25),
-        ),
-        _AvatarCategory(
-          label: 'Body Icon',
-          icon: Icons.auto_awesome,
-          configKey: 'extras_bodyIcon',
-          parts: _extrasParts('bodyIcon', 3, hasNone: true),
-        ),
-        _AvatarCategory(
-          label: 'Gesture',
-          icon: Icons.waving_hand,
-          configKey: 'extras_gesture',
-          parts: _extrasParts('gesture', 10),
-        ),
-      ],
+          _AvatarCategory(
+            label: 'Hair',
+            icon: Icons.content_cut,
+            configKey: 'hair',
+            parts: _hairParts(64),
+          ),
+          _AvatarCategory(
+            label: 'Eyes',
+            icon: Icons.visibility,
+            configKey: 'eyes',
+            parts: _eyesParts(5),
+          ),
+          _AvatarCategory(
+            label: 'Brows',
+            icon: Icons.remove,
+            configKey: 'eyebrows',
+            parts: _browsParts(13),
+          ),
+          _AvatarCategory(
+            label: 'Nose',
+            icon: Icons.face,
+            configKey: 'extras_nose',
+            parts: _extrasParts('nose', 20),
+          ),
+          _AvatarCategory(
+            label: 'Lips',
+            icon: Icons.mood,
+            configKey: 'mouth',
+            parts: _mouthParts(30),
+          ),
+          _AvatarCategory(
+            label: 'Beard',
+            icon: Icons.auto_awesome,
+            configKey: 'extras_beard',
+            parts: _extrasParts('beard', 12, hasNone: true),
+          ),
+          _AvatarCategory(
+            label: 'Glasses',
+            icon: Icons.remove_red_eye,
+            configKey: 'glasses',
+            parts: _glassesParts(11),
+          ),
+          _AvatarCategory(
+            label: 'Body',
+            icon: Icons.checkroom,
+            configKey: 'extras_body',
+            parts: _extrasParts('body', 25),
+          ),
+          _AvatarCategory(
+            label: 'Body Icon',
+            icon: Icons.auto_awesome,
+            configKey: 'extras_bodyIcon',
+            parts: _extrasParts('bodyIcon', 3, hasNone: true),
+          ),
+          _AvatarCategory(
+            label: 'Gesture',
+            icon: Icons.waving_hand,
+            configKey: 'extras_gesture',
+            parts: _extrasParts('gesture', 10),
+          ),
+        ],
 
       // -----------------------------------------------------------------------
       // Open Peeps — 48 head (hair key), 30 face expressions (eyes key),
       //   8 accessories (glasses key), 16 facial hair (feature key)
       // -----------------------------------------------------------------------
       AvatarStyle.openPeeps => [
-        _AvatarCategory(
-          label: 'Skin',
-          icon: Icons.palette,
-          configKey: 'skinColor',
-          parts: _skinParts(customHex: config.customColors['skinColor']),
-        ),
-        _AvatarCategory(
-          label: 'Hair',
-          icon: Icons.content_cut,
-          configKey: 'hair',
-          parts: _hairParts(48),
-        ),
-        // Facial hair promoted to directly after hair.
-        _AvatarCategory(
-          label: 'Facial Hair',
-          icon: Icons.face_retouching_natural,
-          configKey: 'extras_facialHair',
-          parts: _extrasParts('facialHair', 16, hasNone: true),
-        ),
-        _AvatarCategory(
-          label: 'Expression',
-          icon: Icons.visibility,
-          configKey: 'eyes',
-          parts: _eyesParts(30),
-        ),
-        _AvatarCategory(
-          label: 'Accessories',
-          icon: Icons.remove_red_eye,
-          configKey: 'glasses',
-          parts: _glassesParts(11),
-        ),
-        _AvatarCategory(
-          label: 'Mask',
-          icon: Icons.masks,
-          configKey: 'extras_mask',
-          parts: _extrasParts('mask', 2, hasNone: true),
-        ),
-        _AvatarCategory(
-          label: 'Clothing Color',
-          icon: Icons.color_lens,
-          configKey: 'clothingColor',
-          parts: _featureColorParts(
-            'clothingColor',
-            customHex: config.customColors['clothingColor'],
+          _AvatarCategory(
+            label: 'Skin',
+            icon: Icons.palette,
+            configKey: 'skinColor',
+            parts: _skinParts(customHex: config.customColors['skinColor']),
           ),
-        ),
-      ],
+          _AvatarCategory(
+            label: 'Hair',
+            icon: Icons.content_cut,
+            configKey: 'hair',
+            parts: _hairParts(48),
+          ),
+          // Facial hair promoted to directly after hair.
+          _AvatarCategory(
+            label: 'Facial Hair',
+            icon: Icons.face_retouching_natural,
+            configKey: 'extras_facialHair',
+            parts: _extrasParts('facialHair', 16, hasNone: true),
+          ),
+          _AvatarCategory(
+            label: 'Expression',
+            icon: Icons.visibility,
+            configKey: 'eyes',
+            parts: _eyesParts(30),
+          ),
+          _AvatarCategory(
+            label: 'Accessories',
+            icon: Icons.remove_red_eye,
+            configKey: 'glasses',
+            parts: _glassesParts(11),
+          ),
+          _AvatarCategory(
+            label: 'Mask',
+            icon: Icons.masks,
+            configKey: 'extras_mask',
+            parts: _extrasParts('mask', 2, hasNone: true),
+          ),
+          _AvatarCategory(
+            label: 'Clothing Color',
+            icon: Icons.color_lens,
+            configKey: 'clothingColor',
+            parts: _featureColorParts(
+              'clothingColor',
+              customHex: config.customColors['clothingColor'],
+            ),
+          ),
+        ],
 
       // -----------------------------------------------------------------------
       // Thumbs — 36 eyes, 5 mouth, 5 face (hair key, no none),
       //   body colour (skin key), accent colour (hair colour key)
       // -----------------------------------------------------------------------
       AvatarStyle.thumbs => [
-        _AvatarCategory(
-          label: 'Color',
-          icon: Icons.palette,
-          configKey: 'skinColor',
-          parts: _thumbsColorParts(customHex: config.customColors['skinColor']),
-        ),
-        _AvatarCategory(
-          label: 'Face',
-          icon: Icons.face,
-          configKey: 'hair',
-          parts: _hairParts(5, includeNone: false),
-        ),
-        _AvatarCategory(
-          label: 'Eyes',
-          icon: Icons.visibility,
-          configKey: 'eyes',
-          parts: _eyesParts(36),
-        ),
-        _AvatarCategory(
-          label: 'Eyes Color',
-          icon: Icons.color_lens,
-          configKey: 'eyesColor',
-          parts: _featureColorParts(
-            'eyesColor',
-            customHex: config.customColors['eyesColor'],
+          _AvatarCategory(
+            label: 'Color',
+            icon: Icons.palette,
+            configKey: 'skinColor',
+            parts:
+                _thumbsColorParts(customHex: config.customColors['skinColor']),
           ),
-        ),
-        _AvatarCategory(
-          label: 'Mouth',
-          icon: Icons.mood,
-          configKey: 'mouth',
-          parts: _mouthParts(5),
-        ),
-        _AvatarCategory(
-          label: 'Mouth Color',
-          icon: Icons.color_lens,
-          configKey: 'mouthColor',
-          parts: _featureColorParts(
-            'mouthColor',
-            customHex: config.customColors['mouthColor'],
+          _AvatarCategory(
+            label: 'Face',
+            icon: Icons.face,
+            configKey: 'hair',
+            parts: _hairParts(5, includeNone: false),
           ),
-        ),
-      ],
+          _AvatarCategory(
+            label: 'Eyes',
+            icon: Icons.visibility,
+            configKey: 'eyes',
+            parts: _eyesParts(36),
+          ),
+          _AvatarCategory(
+            label: 'Eyes Color',
+            icon: Icons.color_lens,
+            configKey: 'eyesColor',
+            parts: _featureColorParts(
+              'eyesColor',
+              customHex: config.customColors['eyesColor'],
+            ),
+          ),
+          _AvatarCategory(
+            label: 'Mouth',
+            icon: Icons.mood,
+            configKey: 'mouth',
+            parts: _mouthParts(5),
+          ),
+          _AvatarCategory(
+            label: 'Mouth Color',
+            icon: Icons.color_lens,
+            configKey: 'mouthColor',
+            parts: _featureColorParts(
+              'mouthColor',
+              customHex: config.customColors['mouthColor'],
+            ),
+          ),
+        ],
     },
   ];
 }
@@ -1141,35 +1144,35 @@ AvatarConfig _previewConfig(
   final suffix = partId.substring(partId.indexOf('_') + 1);
   return switch (categoryKey) {
     'style' => base.copyWith(
-      style: AvatarStyle.values.firstWhere((v) => v.name == suffix),
-    ),
+        style: AvatarStyle.values.firstWhere((v) => v.name == suffix),
+      ),
     'eyes' => base.copyWith(
-      eyes: AvatarEyes.values.firstWhere((v) => v.name == suffix),
-    ),
+        eyes: AvatarEyes.values.firstWhere((v) => v.name == suffix),
+      ),
     'eyebrows' => base.copyWith(
-      eyebrows: AvatarEyebrows.values.firstWhere((v) => v.name == suffix),
-    ),
+        eyebrows: AvatarEyebrows.values.firstWhere((v) => v.name == suffix),
+      ),
     'mouth' => base.copyWith(
-      mouth: AvatarMouth.values.firstWhere((v) => v.name == suffix),
-    ),
+        mouth: AvatarMouth.values.firstWhere((v) => v.name == suffix),
+      ),
     'hair' => base.copyWith(
-      hair: AvatarHair.values.firstWhere((v) => v.name == suffix),
-    ),
+        hair: AvatarHair.values.firstWhere((v) => v.name == suffix),
+      ),
     'hairColor' => base.copyWith(
-      hairColor: AvatarHairColor.values.firstWhere((v) => v.name == suffix),
-    ),
+        hairColor: AvatarHairColor.values.firstWhere((v) => v.name == suffix),
+      ),
     'skinColor' => base.copyWith(
-      skinColor: AvatarSkinColor.values.firstWhere((v) => v.name == suffix),
-    ),
+        skinColor: AvatarSkinColor.values.firstWhere((v) => v.name == suffix),
+      ),
     'glasses' => base.copyWith(
-      glasses: AvatarGlasses.values.firstWhere((v) => v.name == suffix),
-    ),
+        glasses: AvatarGlasses.values.firstWhere((v) => v.name == suffix),
+      ),
     'earrings' => base.copyWith(
-      earrings: AvatarEarrings.values.firstWhere((v) => v.name == suffix),
-    ),
+        earrings: AvatarEarrings.values.firstWhere((v) => v.name == suffix),
+      ),
     'feature' => base.copyWith(
-      feature: AvatarFeature.values.firstWhere((v) => v.name == suffix),
-    ),
+        feature: AvatarFeature.values.firstWhere((v) => v.name == suffix),
+      ),
     _ => base,
   };
 }
@@ -1246,8 +1249,7 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
       return 'extras_${extrasKey}_${_config.extra(extrasKey)}';
     }
     if (_isFeatureColorCategory(categoryKey)) {
-      final hex =
-          _config.equippedCustomColors[categoryKey] ??
+      final hex = _config.equippedCustomColors[categoryKey] ??
           _config.customColors[categoryKey] ??
           _defaultColorFor(categoryKey);
       return 'featureColor_${categoryKey}_$hex';
@@ -1258,14 +1260,12 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
       'eyebrows' => 'eyebrows_${_config.eyebrows.name}',
       'mouth' => 'mouth_${_config.mouth.name}',
       'hair' => 'hair_${_config.hair.name}',
-      'hairColor' =>
-        _config.equippedCustomColors.containsKey('hairColor')
-            ? 'hairColor_custom'
-            : 'hairColor_${_config.hairColor.name}',
-      'skinColor' =>
-        _config.equippedCustomColors.containsKey('skinColor')
-            ? 'skinColor_custom'
-            : 'skinColor_${_config.skinColor.name}',
+      'hairColor' => _config.equippedCustomColors.containsKey('hairColor')
+          ? 'hairColor_custom'
+          : 'hairColor_${_config.hairColor.name}',
+      'skinColor' => _config.equippedCustomColors.containsKey('skinColor')
+          ? 'skinColor_custom'
+          : 'skinColor_${_config.skinColor.name}',
       'glasses' => 'glasses_${_config.glasses.name}',
       'earrings' => 'earrings_${_config.earrings.name}',
       'feature' => 'feature_${_config.feature.name}',
@@ -1416,9 +1416,8 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                     children: [
                       Icon(
                         Icons.monetization_on,
-                        color: canAfford
-                            ? FlitColors.warning
-                            : FlitColors.error,
+                        color:
+                            canAfford ? FlitColors.warning : FlitColors.error,
                         size: 16,
                       ),
                       const SizedBox(width: 6),
@@ -1577,10 +1576,8 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
           final hsv = HSVColor.fromColor(selected);
-          final selectedHex = selected.value
-              .toRadixString(16)
-              .padLeft(8, '0')
-              .substring(2);
+          final selectedHex =
+              selected.value.toRadixString(16).padLeft(8, '0').substring(2);
           final isExisting = existing == selectedHex;
           final price = isExisting ? 0 : _customColorWheelPrice;
           // Sync the text field when the slider drives the change.
@@ -1711,9 +1708,8 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
                           ),
                           textCapitalization: TextCapitalization.characters,
                           onChanged: (value) {
-                            final cleaned = value
-                                .replaceAll('#', '')
-                                .toLowerCase();
+                            final cleaned =
+                                value.replaceAll('#', '').toLowerCase();
                             if (RegExp(r'^[0-9a-f]{6}$').hasMatch(cleaned)) {
                               setDialogState(() {
                                 isEditingHex = true;
@@ -1914,47 +1910,47 @@ class _AvatarPreviewSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.symmetric(vertical: 24),
-    decoration: const BoxDecoration(
-      color: FlitColors.backgroundMid,
-      border: Border(bottom: BorderSide(color: FlitColors.cardBorder)),
-    ),
-    child: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 160,
-            height: 160,
-            decoration: BoxDecoration(
-              color: FlitColors.backgroundLight,
-              shape: BoxShape.circle,
-              border: Border.all(color: FlitColors.accent, width: 3),
-              boxShadow: const [
-                BoxShadow(
-                  color: FlitColors.shadow,
-                  blurRadius: 16,
-                  offset: Offset(0, 4),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: const BoxDecoration(
+          color: FlitColors.backgroundMid,
+          border: Border(bottom: BorderSide(color: FlitColors.cardBorder)),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
+                  color: FlitColors.backgroundLight,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: FlitColors.accent, width: 3),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: FlitColors.shadow,
+                      blurRadius: 16,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: AvatarWidget(config: config, size: 160),
+                child: AvatarWidget(config: config, size: 160),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                config.style.label,
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            config.style.label,
-            style: const TextStyle(
-              color: FlitColors.textSecondary,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 // =============================================================================
@@ -1974,64 +1970,66 @@ class _CategoryTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    height: 56,
-    color: FlitColors.backgroundDark,
-    child: ListView.builder(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      itemCount: categories.length,
-      itemBuilder: (context, index) {
-        final cat = categories[index];
-        final isSelected = index == selectedIndex;
+        height: 56,
+        color: FlitColors.backgroundDark,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            final cat = categories[index];
+            final isSelected = index == selectedIndex;
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: GestureDetector(
-            onTap: () => onSelected(index),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? FlitColors.accent.withOpacity(0.2)
-                    : FlitColors.cardBackground,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected ? FlitColors.accent : FlitColors.cardBorder,
-                  width: isSelected ? 1.5 : 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    cat.icon,
-                    size: 16,
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: GestureDetector(
+                onTap: () => onSelected(index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
                     color: isSelected
-                        ? FlitColors.accent
-                        : FlitColors.textMuted,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    cat.label,
-                    style: TextStyle(
+                        ? FlitColors.accent.withOpacity(0.2)
+                        : FlitColors.cardBackground,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
                       color: isSelected
                           ? FlitColors.accent
-                          : FlitColors.textSecondary,
-                      fontSize: 13,
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                          : FlitColors.cardBorder,
+                      width: isSelected ? 1.5 : 1,
                     ),
                   ),
-                ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        cat.icon,
+                        size: 16,
+                        color: isSelected
+                            ? FlitColors.accent
+                            : FlitColors.textMuted,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        cat.label,
+                        style: TextStyle(
+                          color: isSelected
+                              ? FlitColors.accent
+                              : FlitColors.textSecondary,
+                          fontSize: 13,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-        );
-      },
-    ),
-  );
+            );
+          },
+        ),
+      );
 }
 
 // =============================================================================
@@ -2057,36 +2055,36 @@ class _PartsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GridView.builder(
-    padding: const EdgeInsets.all(16),
-    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 4,
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      childAspectRatio: 0.85,
-    ),
-    itemCount: category.parts.length,
-    itemBuilder: (context, index) {
-      final part = category.parts[index];
-      final isSelected = selectedPartId == part.id;
-      final isOwned = part.isFree || ownedParts.contains(part.id);
-      final canAfford = coins >= part.price;
-      final isLocked = !isOwned && !part.isFree;
-
-      return _PartCard(
-        part: part,
-        previewConfig: _previewConfig(
-          currentConfig,
-          category.configKey,
-          part.id,
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 0.85,
         ),
-        isSelected: isSelected,
-        isOwned: isOwned,
-        isLocked: isLocked,
-        canAfford: canAfford,
-        onTap: () => onPartTapped(part),
+        itemCount: category.parts.length,
+        itemBuilder: (context, index) {
+          final part = category.parts[index];
+          final isSelected = selectedPartId == part.id;
+          final isOwned = part.isFree || ownedParts.contains(part.id);
+          final canAfford = coins >= part.price;
+          final isLocked = !isOwned && !part.isFree;
+
+          return _PartCard(
+            part: part,
+            previewConfig: _previewConfig(
+              currentConfig,
+              category.configKey,
+              part.id,
+            ),
+            isSelected: isSelected,
+            isOwned: isOwned,
+            isLocked: isLocked,
+            canAfford: canAfford,
+            onTap: () => onPartTapped(part),
+          );
+        },
       );
-    },
-  );
 }
 
 // =============================================================================
@@ -2114,151 +2112,152 @@ class _PartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      decoration: BoxDecoration(
-        color: isSelected
-            ? FlitColors.accent.withOpacity(0.1)
-            : FlitColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isSelected ? FlitColors.accent : FlitColors.cardBorder,
-          width: isSelected ? 2 : 1,
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Main content
-          Padding(
-            padding: const EdgeInsets.all(6),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Visual preview area
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: FlitColors.backgroundMid,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: part.isCustomPicker
-                          ? const Icon(
-                              Icons.colorize,
-                              color: FlitColors.accent,
-                              size: 24,
-                            )
-                          : part.isColorSwatch
-                          ? _ColorSwatch(hex: part.colorHex!)
-                          : LayoutBuilder(
-                              builder: (context, constraints) {
-                                final previewSize = constraints.maxWidth.clamp(
-                                  32.0,
-                                  56.0,
-                                );
-                                return AvatarWidget(
-                                  config: previewConfig,
-                                  size: previewSize,
-                                );
-                              },
-                            ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-
-                // Price label
-                if (part.isFree)
-                  const Text(
-                    'FREE',
-                    style: TextStyle(
-                      color: FlitColors.success,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  )
-                else if (isOwned)
-                  const Text(
-                    'OWNED',
-                    style: TextStyle(
-                      color: FlitColors.textSecondary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  )
-                else
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.monetization_on,
-                        size: 11,
-                        color: canAfford
-                            ? FlitColors.warning
-                            : FlitColors.error,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${part.price}',
-                        style: TextStyle(
-                          color: canAfford
-                              ? FlitColors.warning
-                              : FlitColors.error,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? FlitColors.accent.withOpacity(0.1)
+                : FlitColors.cardBackground,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? FlitColors.accent : FlitColors.cardBorder,
+              width: isSelected ? 2 : 1,
             ),
           ),
+          child: Stack(
+            children: [
+              // Main content
+              Padding(
+                padding: const EdgeInsets.all(6),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Visual preview area
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: FlitColors.backgroundMid,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: part.isCustomPicker
+                              ? const Icon(
+                                  Icons.colorize,
+                                  color: FlitColors.accent,
+                                  size: 24,
+                                )
+                              : part.isColorSwatch
+                                  ? _ColorSwatch(hex: part.colorHex!)
+                                  : LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final previewSize =
+                                            constraints.maxWidth.clamp(
+                                          32.0,
+                                          56.0,
+                                        );
+                                        return AvatarWidget(
+                                          config: previewConfig,
+                                          size: previewSize,
+                                        );
+                                      },
+                                    ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
 
-          // Selected check badge
-          if (isSelected)
-            Positioned(
-              top: 4,
-              right: 4,
-              child: Container(
-                width: 18,
-                height: 18,
-                decoration: const BoxDecoration(
-                  color: FlitColors.accent,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check,
-                  size: 12,
-                  color: FlitColors.textPrimary,
+                    // Price label
+                    if (part.isFree)
+                      const Text(
+                        'FREE',
+                        style: TextStyle(
+                          color: FlitColors.success,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      )
+                    else if (isOwned)
+                      const Text(
+                        'OWNED',
+                        style: TextStyle(
+                          color: FlitColors.textSecondary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      )
+                    else
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.monetization_on,
+                            size: 11,
+                            color: canAfford
+                                ? FlitColors.warning
+                                : FlitColors.error,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${part.price}',
+                            style: TextStyle(
+                              color: canAfford
+                                  ? FlitColors.warning
+                                  : FlitColors.error,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
               ),
-            ),
 
-          // Lock overlay for unaffordable paid items
-          if (isLocked && !canAfford)
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: FlitColors.backgroundDark.withOpacity(0.55),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.lock,
-                    color: FlitColors.textMuted,
-                    size: 24,
+              // Selected check badge
+              if (isSelected)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: const BoxDecoration(
+                      color: FlitColors.accent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      size: 12,
+                      color: FlitColors.textPrimary,
+                    ),
                   ),
                 ),
-              ),
-            ),
-        ],
-      ),
-    ),
-  );
+
+              // Lock overlay for unaffordable paid items
+              if (isLocked && !canAfford)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: FlitColors.backgroundDark.withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.lock,
+                        color: FlitColors.textMuted,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
 }
 
 // =============================================================================
@@ -2298,59 +2297,59 @@ class _SaveBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    decoration: const BoxDecoration(
-      color: FlitColors.backgroundMid,
-      border: Border(top: BorderSide(color: FlitColors.cardBorder)),
-    ),
-    child: SafeArea(
-      top: false,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Coin balance display
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: const BoxDecoration(
+          color: FlitColors.backgroundMid,
+          border: Border(top: BorderSide(color: FlitColors.cardBorder)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.monetization_on,
-                color: FlitColors.warning,
-                size: 16,
+              // Coin balance display
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.monetization_on,
+                    color: FlitColors.warning,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$coins coins remaining',
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 4),
-              Text(
-                '$coins coins remaining',
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 13,
+              const SizedBox(height: 10),
+              // Save button
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: onSave,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FlitColors.accent,
+                    foregroundColor: FlitColors.textPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  child: const Text('SAVE'),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          // Save button
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: onSave,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: FlitColors.accent,
-                foregroundColor: FlitColors.textPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
-                ),
-              ),
-              child: const Text('SAVE'),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }

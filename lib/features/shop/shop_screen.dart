@@ -78,9 +78,8 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
       appBar: AppBar(
-        backgroundColor: hasAnyPromo
-            ? const Color(0xFF2A2510)
-            : FlitColors.backgroundMid,
+        backgroundColor:
+            hasAnyPromo ? const Color(0xFF2A2510) : FlitColors.backgroundMid,
         title: Text(hasAnyPromo ? 'Shop — SALE' : 'Shop'),
         centerTitle: true,
         bottom: TabBar(
@@ -149,9 +148,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
                       coins: coins,
                       ownedIds: ownedIds,
                       onReveal: (Cosmetic plane) {
-                        ref
-                            .read(accountProvider.notifier)
-                            .purchaseCosmetic(
+                        ref.read(accountProvider.notifier).purchaseCosmetic(
                               plane.id,
                               _MysteryPlaneButton._mysteryCost,
                             );
@@ -208,9 +205,8 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
       item.price,
       category: category,
     );
-    final success = ref
-        .read(accountProvider.notifier)
-        .purchaseCosmetic(item.id, price);
+    final success =
+        ref.read(accountProvider.notifier).purchaseCosmetic(item.id, price);
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -365,9 +361,8 @@ class _GoldPackageCard extends StatelessWidget {
     final hasPromo =
         package.promoPrice != null && package.promoPrice! < package.basePrice;
     final displayPrice = hasPromo ? package.promoPrice! : package.basePrice;
-    final coinsPerDollar = displayPrice > 0
-        ? package.coins / displayPrice
-        : 0.0;
+    final coinsPerDollar =
+        displayPrice > 0 ? package.coins / displayPrice : 0.0;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -851,47 +846,48 @@ class _CosmeticGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GridView.builder(
-    padding: const EdgeInsets.all(16),
-    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 2,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 0.72,
-    ),
-    itemCount: items.length,
-    itemBuilder: (context, index) {
-      final item = items[index];
-      final isOwned = ownedIds.contains(item.id);
-      final isEquipped = equippedId == item.id;
-      final category = _categoryForType(item.type);
-      final effectivePrice = economyConfig.effectivePrice(
-        item.id,
-        item.price,
-        category: category,
-      );
-      final canAfford = coins >= effectivePrice;
-      final meetsLevel =
-          item.requiredLevel == null || level >= item.requiredLevel!;
-      final isOnSale = !isOwned && meetsLevel && effectivePrice < item.price;
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 0.72,
+        ),
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          final item = items[index];
+          final isOwned = ownedIds.contains(item.id);
+          final isEquipped = equippedId == item.id;
+          final category = _categoryForType(item.type);
+          final effectivePrice = economyConfig.effectivePrice(
+            item.id,
+            item.price,
+            category: category,
+          );
+          final canAfford = coins >= effectivePrice;
+          final meetsLevel =
+              item.requiredLevel == null || level >= item.requiredLevel!;
+          final isOnSale =
+              !isOwned && meetsLevel && effectivePrice < item.price;
 
-      return _CosmeticCard(
-        item: item,
-        isOwned: isOwned,
-        isEquipped: isEquipped,
-        canAfford: canAfford,
-        meetsLevel: meetsLevel,
-        effectivePrice: effectivePrice,
-        isOnSale: isOnSale,
-        onTap: () {
-          if (isOwned) {
-            _showOwnedDialog(context, item, isEquipped);
-          } else if (meetsLevel) {
-            _showPurchaseDialog(context, item, canAfford, effectivePrice);
-          }
+          return _CosmeticCard(
+            item: item,
+            isOwned: isOwned,
+            isEquipped: isEquipped,
+            canAfford: canAfford,
+            meetsLevel: meetsLevel,
+            effectivePrice: effectivePrice,
+            isOnSale: isOnSale,
+            onTap: () {
+              if (isOwned) {
+                _showOwnedDialog(context, item, isEquipped);
+              } else if (meetsLevel) {
+                _showPurchaseDialog(context, item, canAfford, effectivePrice);
+              }
+            },
+          );
         },
       );
-    },
-  );
 
   void _showOwnedDialog(BuildContext context, Cosmetic item, bool isEquipped) {
     showDialog<void>(
@@ -988,13 +984,12 @@ class _CosmeticGrid extends StatelessWidget {
                   style: TextStyle(
                     color: canAfford
                         ? (isDiscounted
-                              ? FlitColors.success
-                              : FlitColors.textPrimary)
+                            ? FlitColors.success
+                            : FlitColors.textPrimary)
                         : FlitColors.error,
                     fontSize: 18,
-                    fontWeight: isDiscounted
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+                    fontWeight:
+                        isDiscounted ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
                 if (isDiscounted) ...[
@@ -1193,10 +1188,10 @@ class _CosmeticCard extends StatelessWidget {
             color: isEquipped
                 ? FlitColors.success
                 : isOnSale
-                ? _SaleColors.border
-                : isLocked
-                ? FlitColors.textMuted
-                : FlitColors.cardBorder,
+                    ? _SaleColors.border
+                    : isLocked
+                        ? FlitColors.textMuted
+                        : FlitColors.cardBorder,
             width: isEquipped ? 2 : (isOnSale ? 2.5 : 1),
           ),
           boxShadow: isOnSale
@@ -1235,11 +1230,11 @@ class _CosmeticCard extends StatelessWidget {
                                 ),
                               )
                             : item.type == CosmeticType.coPilot
-                            ? _CompanionPreview(companionId: item.id)
-                            : _ContrailPreview(
-                                colorScheme: item.colorScheme,
-                                isLocked: isLocked,
-                              ),
+                                ? _CompanionPreview(companionId: item.id)
+                                : _ContrailPreview(
+                                    colorScheme: item.colorScheme,
+                                    isLocked: isLocked,
+                                  ),
                       ),
                     ),
                   ),
@@ -1722,7 +1717,8 @@ class _ContrailPainter extends CustomPainter {
         primary,
         secondary,
         t,
-      )!.withOpacity(1.0 - t * 0.7);
+      )!
+          .withOpacity(1.0 - t * 0.7);
       canvas.drawCircle(
         Offset(x, y),
         radius.clamp(1.5, 6.0),

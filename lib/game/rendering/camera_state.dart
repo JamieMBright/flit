@@ -154,13 +154,11 @@ class CameraState {
     final double targetDistance;
     if (altitudeFraction != null) {
       // Interpolate between low and high altitude distances
-      targetDistance =
-          lowAltitudeDistance +
+      targetDistance = lowAltitudeDistance +
           altitudeFraction * (highAltitudeDistance - lowAltitudeDistance);
     } else {
-      targetDistance = isHighAltitude
-          ? highAltitudeDistance
-          : lowAltitudeDistance;
+      targetDistance =
+          isHighAltitude ? highAltitudeDistance : lowAltitudeDistance;
     }
 
     // FOV: use preset override when set, otherwise compute speed-based value.
@@ -307,9 +305,8 @@ class CameraState {
     _activeRegion = region;
 
     // Convert optional FOV override from degrees to radians.
-    _fovOverrideRad = preset.fovOverride != null
-        ? preset.fovOverride! * pi / 180.0
-        : null;
+    _fovOverrideRad =
+        preset.fovOverride != null ? preset.fovOverride! * pi / 180.0 : null;
 
     // Snap camera center and altitude to the preset values.
     _currentLatRad = preset.centerLat * pi / 180.0;

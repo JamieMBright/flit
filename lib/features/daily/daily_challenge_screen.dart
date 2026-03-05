@@ -72,57 +72,58 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: FlitColors.backgroundDark,
-    appBar: AppBar(
-      backgroundColor: FlitColors.backgroundMid,
-      title: const Text('Daily Challenge'),
-      centerTitle: true,
-    ),
-    body: Column(
-      children: [
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            children: [
-              const _StreakSection(),
-              const SizedBox(height: 12),
-              _ChallengeHeader(challenge: _challenge),
-              const SizedBox(height: 12),
-              if (_seasonalTheme != null) ...[
-                _SeasonalBanner(theme: _seasonalTheme),
-                const SizedBox(height: 12),
-              ],
-              _RewardsSection(
-                challenge: _challenge,
-                playerCount: _dailyPlayerCount,
-              ),
-              const SizedBox(height: 12),
-              const _MedalProgressSection(),
-              const SizedBox(height: 16),
-              _loadingLeaderboard
-                  ? const Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: FlitColors.accent,
-                        ),
-                      ),
-                    )
-                  : _LeaderboardSection(entries: _leaderboardEntries),
-              const SizedBox(height: 16),
-              _HallOfFameSection(entries: _hallOfFame),
-              const SizedBox(height: 16),
-              _InfoFooter(bonusCoinReward: _challenge.bonusCoinReward),
-              const SizedBox(height: 16),
-            ],
-          ),
+        backgroundColor: FlitColors.backgroundDark,
+        appBar: AppBar(
+          backgroundColor: FlitColors.backgroundMid,
+          title: const Text('Daily Challenge'),
+          centerTitle: true,
         ),
-        _hasDoneToday
-            ? const _CompletedBanner()
-            : _PlayButton(onPressed: _onPlay),
-      ],
-    ),
-  );
+        body: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                children: [
+                  const _StreakSection(),
+                  const SizedBox(height: 12),
+                  _ChallengeHeader(challenge: _challenge),
+                  const SizedBox(height: 12),
+                  if (_seasonalTheme != null) ...[
+                    _SeasonalBanner(theme: _seasonalTheme),
+                    const SizedBox(height: 12),
+                  ],
+                  _RewardsSection(
+                    challenge: _challenge,
+                    playerCount: _dailyPlayerCount,
+                  ),
+                  const SizedBox(height: 12),
+                  const _MedalProgressSection(),
+                  const SizedBox(height: 16),
+                  _loadingLeaderboard
+                      ? const Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: FlitColors.accent,
+                            ),
+                          ),
+                        )
+                      : _LeaderboardSection(entries: _leaderboardEntries),
+                  const SizedBox(height: 16),
+                  _HallOfFameSection(entries: _hallOfFame),
+                  const SizedBox(height: 16),
+                  _InfoFooter(bonusCoinReward: _challenge.bonusCoinReward),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+            _hasDoneToday
+                ? const _CompletedBanner()
+                : _PlayButton(onPressed: _onPlay),
+          ],
+        ),
+      );
 
   Future<void> _onPlay() async {
     // Apply promo earnings multiplier to the daily challenge reward.
@@ -149,7 +150,6 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           equippedPlaneId: planeId,
           companionType: companion,
           fuelBoostMultiplier: fuelBoost,
-
           clueChance: license.clueChance,
           preferredClueType: license.preferredClueType,
           enabledClueTypes: _challenge.enabledClueTypes,
@@ -157,12 +157,10 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           planeHandling: plane?.handling ?? 1.0,
           planeSpeed: plane?.speed ?? 1.0,
           planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
-          contrailPrimaryColor: contrailPrimary != null
-              ? Color(contrailPrimary)
-              : null,
-          contrailSecondaryColor: contrailSecondary != null
-              ? Color(contrailSecondary)
-              : null,
+          contrailPrimaryColor:
+              contrailPrimary != null ? Color(contrailPrimary) : null,
+          contrailSecondaryColor:
+              contrailSecondary != null ? Color(contrailSecondary) : null,
           isDailyChallenge: true,
           dailyTheme: _challenge.title,
           dailySeed: _challenge.seed,
@@ -434,31 +432,31 @@ class _ClueChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: () => _showClueExplanation(context),
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: FlitColors.accent.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: FlitColors.accent.withOpacity(0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_clueIcon(clueType), color: FlitColors.accent, size: 16),
-          const SizedBox(width: 6),
-          Text(
-            _clueLabel(clueType),
-            style: const TextStyle(
-              color: FlitColors.textPrimary,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+        onTap: () => _showClueExplanation(context),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: FlitColors.accent.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: FlitColors.accent.withOpacity(0.4)),
           ),
-        ],
-      ),
-    ),
-  );
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(_clueIcon(clueType), color: FlitColors.accent, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                _clueLabel(clueType),
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 
   void _showClueExplanation(BuildContext context) {
     const explanations = {
@@ -635,76 +633,77 @@ class _RewardsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.cardBorder),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'REWARDS',
-          style: TextStyle(
-            color: FlitColors.textMuted,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.2,
-          ),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
         ),
-        const SizedBox(height: 6),
-        // Player count and winner info
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: FlitColors.backgroundMid,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.people, color: FlitColors.textMuted, size: 14),
-              const SizedBox(width: 6),
-              Text(
-                '$playerCount players today \u2022 Top 1,000 win prizes',
-                style: const TextStyle(
-                  color: FlitColors.textMuted,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Completion reward
-            Expanded(
-              child: _RewardTile(
-                icon: Icons.monetization_on_rounded,
-                iconColor: FlitColors.gold,
-                label: 'Completion',
-                value: '${challenge.coinReward}',
-                valueSuffix: ' coins',
+            const Text(
+              'REWARDS',
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
               ),
             ),
-            const SizedBox(width: 12),
-            // Bonus reward for daily leader
-            Expanded(
-              child: _RewardTile(
-                icon: Icons.emoji_events_rounded,
-                iconColor: FlitColors.warning,
-                label: 'Daily Leader',
-                value: '${challenge.bonusCoinReward}',
-                valueSuffix: ' bonus',
+            const SizedBox(height: 6),
+            // Player count and winner info
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundMid,
+                borderRadius: BorderRadius.circular(6),
               ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.people,
+                      color: FlitColors.textMuted, size: 14),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$playerCount players today \u2022 Top 1,000 win prizes',
+                    style: const TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                // Completion reward
+                Expanded(
+                  child: _RewardTile(
+                    icon: Icons.monetization_on_rounded,
+                    iconColor: FlitColors.gold,
+                    label: 'Completion',
+                    value: '${challenge.coinReward}',
+                    valueSuffix: ' coins',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Bonus reward for daily leader
+                Expanded(
+                  child: _RewardTile(
+                    icon: Icons.emoji_events_rounded,
+                    iconColor: FlitColors.warning,
+                    label: 'Daily Leader',
+                    value: '${challenge.bonusCoinReward}',
+                    valueSuffix: ' bonus',
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-      ],
-    ),
-  );
+      );
 }
 
 class _RewardTile extends StatelessWidget {
@@ -724,44 +723,44 @@ class _RewardTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: FlitColors.backgroundMid,
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Column(
-      children: [
-        Icon(icon, color: iconColor, size: 28),
-        const SizedBox(height: 6),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: FlitColors.backgroundMid,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
           children: [
-            Text(
-              value,
-              style: const TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Icon(icon, color: iconColor, size: 28),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  valueSuffix,
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 2),
             Text(
-              valueSuffix,
-              style: const TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 12,
-              ),
+              label,
+              style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
             ),
           ],
         ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 // =============================================================================
@@ -775,40 +774,41 @@ class _LeaderboardSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.cardBorder),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Section header
-        const Padding(
-          padding: EdgeInsets.fromLTRB(14, 14, 14, 0),
-          child: Row(
-            children: [
-              Icon(Icons.leaderboard_rounded, color: FlitColors.gold, size: 18),
-              SizedBox(width: 6),
-              Text(
-                'LEADERBOARD',
-                style: TextStyle(
-                  color: FlitColors.textMuted,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
-          ),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
         ),
-        const Divider(color: FlitColors.cardBorder, height: 20),
-        // Leaderboard rows
-        ...entries.map((entry) => _DailyLeaderboardRow(entry: entry)),
-        const SizedBox(height: 8),
-      ],
-    ),
-  );
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Section header
+            const Padding(
+              padding: EdgeInsets.fromLTRB(14, 14, 14, 0),
+              child: Row(
+                children: [
+                  Icon(Icons.leaderboard_rounded,
+                      color: FlitColors.gold, size: 18),
+                  SizedBox(width: 6),
+                  Text(
+                    'LEADERBOARD',
+                    style: TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(color: FlitColors.cardBorder, height: 20),
+            // Leaderboard rows
+            ...entries.map((entry) => _DailyLeaderboardRow(entry: entry)),
+            const SizedBox(height: 8),
+          ],
+        ),
+      );
 }
 
 class _DailyLeaderboardRow extends StatelessWidget {
@@ -825,9 +825,8 @@ class _DailyLeaderboardRow extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: entry.rank <= 3
-            ? _rankColor.withOpacity(0.08)
-            : Colors.transparent,
+        color:
+            entry.rank <= 3 ? _rankColor.withOpacity(0.08) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         border: entry.rank <= 3
             ? Border.all(color: _rankColor.withOpacity(0.3))
@@ -863,9 +862,8 @@ class _DailyLeaderboardRow extends StatelessWidget {
                         ? FlitColors.textPrimary
                         : FlitColors.textSecondary,
                     fontSize: 14,
-                    fontWeight: entry.rank <= 3
-                        ? FontWeight.w600
-                        : FontWeight.normal,
+                    fontWeight:
+                        entry.rank <= 3 ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -973,38 +971,38 @@ class _InfoFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: FlitColors.gold.withOpacity(0.08),
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: FlitColors.gold.withOpacity(0.2)),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(top: 2),
-          child: Icon(
-            Icons.info_outline_rounded,
-            color: FlitColors.gold,
-            size: 16,
-          ),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: FlitColors.gold.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: FlitColors.gold.withOpacity(0.2)),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            'Daily leader wins $bonusCoinReward bonus coins! '
-            'Annual champions receive exclusive cosmetics.',
-            style: const TextStyle(
-              color: FlitColors.textSecondary,
-              fontSize: 12,
-              height: 1.4,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 2),
+              child: Icon(
+                Icons.info_outline_rounded,
+                color: FlitColors.gold,
+                size: 16,
+              ),
             ),
-          ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Daily leader wins $bonusCoinReward bonus coins! '
+                'Annual champions receive exclusive cosmetics.',
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 12,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 }
 
 // =============================================================================
@@ -1016,95 +1014,95 @@ class _MedalProgressSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.cardBorder),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'DAILY MEDAL',
-          style: TextStyle(
-            color: FlitColors.textMuted,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.2,
-          ),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
         ),
-        const SizedBox(height: 10),
-        // Medal display
-        Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Current medal icon
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: const Color(0xFFCD7F32).withOpacity(0.2),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(0xFFCD7F32).withOpacity(0.5),
-                ),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.military_tech,
-                  color: Color(0xFFCD7F32),
-                  size: 28,
-                ),
+            const Text(
+              'DAILY MEDAL',
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
               ),
             ),
-            const SizedBox(width: 14),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Bronze Medal',
-                    style: TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+            const SizedBox(height: 10),
+            // Medal display
+            Row(
+              children: [
+                // Current medal icon
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCD7F32).withOpacity(0.2),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFCD7F32).withOpacity(0.5),
                     ),
                   ),
-                  SizedBox(height: 2),
-                  Text(
-                    '0 daily wins \u2022 Win to earn stars!',
-                    style: TextStyle(
-                      color: FlitColors.textSecondary,
-                      fontSize: 12,
+                  child: const Center(
+                    child: Icon(
+                      Icons.military_tech,
+                      color: Color(0xFFCD7F32),
+                      size: 28,
                     ),
                   ),
-                ],
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Bronze Medal',
+                        style: TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        '0 daily wins \u2022 Win to earn stars!',
+                        style: TextStyle(
+                          color: FlitColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Star progression
+            const Text(
+              'PROGRESSION: 20 steps (Bronze \u2192 Silver \u2192 Gold \u2192 Platinum)',
+              style: TextStyle(color: FlitColors.textMuted, fontSize: 10),
+            ),
+            const SizedBox(height: 6),
+            // Progress bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: const SizedBox(
+                height: 6,
+                child: LinearProgressIndicator(
+                  value: 0,
+                  backgroundColor: FlitColors.backgroundDark,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFCD7F32)),
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        // Star progression
-        const Text(
-          'PROGRESSION: 20 steps (Bronze \u2192 Silver \u2192 Gold \u2192 Platinum)',
-          style: TextStyle(color: FlitColors.textMuted, fontSize: 10),
-        ),
-        const SizedBox(height: 6),
-        // Progress bar
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: const SizedBox(
-            height: 6,
-            child: LinearProgressIndicator(
-              value: 0,
-              backgroundColor: FlitColors.backgroundDark,
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFCD7F32)),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 // =============================================================================
@@ -1118,53 +1116,53 @@ class _HallOfFameSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.gold.withOpacity(0.3)),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.gold.withOpacity(0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.emoji_events, color: FlitColors.gold, size: 18),
-            SizedBox(width: 6),
-            Text(
-              'HALL OF FAME',
-              style: TextStyle(
-                color: FlitColors.gold,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
-              ),
+            const Row(
+              children: [
+                Icon(Icons.emoji_events, color: FlitColors.gold, size: 18),
+                SizedBox(width: 6),
+                Text(
+                  'HALL OF FAME',
+                  style: TextStyle(
+                    color: FlitColors.gold,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 12),
+            if (entries.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'No daily winners yet',
+                  style: TextStyle(color: FlitColors.textMuted, fontSize: 12),
+                ),
+              )
+            else
+              ...entries.map(
+                (e) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: _HallOfFameRow(
+                    date: e['date'] as String,
+                    winner: e['winner'] as String,
+                    medal: 'Gold',
+                  ),
+                ),
+              ),
           ],
         ),
-        const SizedBox(height: 12),
-        if (entries.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text(
-              'No daily winners yet',
-              style: TextStyle(color: FlitColors.textMuted, fontSize: 12),
-            ),
-          )
-        else
-          ...entries.map(
-            (e) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: _HallOfFameRow(
-                date: e['date'] as String,
-                winner: e['winner'] as String,
-                medal: 'Gold',
-              ),
-            ),
-          ),
-      ],
-    ),
-  );
+      );
 }
 
 class _HallOfFameRow extends StatelessWidget {
@@ -1193,32 +1191,32 @@ class _HallOfFameRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-    decoration: BoxDecoration(
-      color: FlitColors.backgroundMid,
-      borderRadius: BorderRadius.circular(6),
-    ),
-    child: Row(
-      children: [
-        Icon(Icons.military_tech, color: _medalColor, size: 18),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            winner,
-            style: const TextStyle(
-              color: FlitColors.textPrimary,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: FlitColors.backgroundMid,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.military_tech, color: _medalColor, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                winner,
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-          ),
+            Text(
+              date,
+              style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
+            ),
+          ],
         ),
-        Text(
-          date,
-          style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 // =============================================================================
@@ -1232,41 +1230,41 @@ class _PlayButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SafeArea(
-    top: false,
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: FlitColors.accent,
-            foregroundColor: FlitColors.textPrimary,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 0,
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.play_arrow_rounded, size: 24),
-              SizedBox(width: 8),
-              Text(
-                "PLAY TODAY'S CHALLENGE",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FlitColors.accent,
+                foregroundColor: FlitColors.textPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: 0,
               ),
-            ],
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.play_arrow_rounded, size: 24),
+                  SizedBox(width: 8),
+                  Text(
+                    "PLAY TODAY'S CHALLENGE",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 // =============================================================================
@@ -1576,9 +1574,8 @@ class _StreakRecoveryPrompt extends ConsumerWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: canAfford
-                  ? () => _showRecoveryDialog(context, ref)
-                  : null,
+              onPressed:
+                  canAfford ? () => _showRecoveryDialog(context, ref) : null,
               icon: const Icon(Icons.monetization_on, size: 18),
               label: Text(
                 canAfford
@@ -1586,9 +1583,8 @@ class _StreakRecoveryPrompt extends ConsumerWidget {
                     : 'NOT ENOUGH COINS (${streak.recoveryCost} needed)',
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: canAfford
-                    ? FlitColors.gold
-                    : FlitColors.backgroundMid,
+                backgroundColor:
+                    canAfford ? FlitColors.gold : FlitColors.backgroundMid,
                 foregroundColor: canAfford
                     ? FlitColors.backgroundDark
                     : FlitColors.textMuted,
@@ -1692,9 +1688,8 @@ class _StreakRecoveryPrompt extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              final success = ref
-                  .read(accountProvider.notifier)
-                  .recoverStreak();
+              final success =
+                  ref.read(accountProvider.notifier).recoverStreak();
               Navigator.of(ctx).pop();
               if (success && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

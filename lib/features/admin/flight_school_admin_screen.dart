@@ -115,7 +115,7 @@ class _FlightSchoolAdminScreenState extends State<FlightSchoolAdminScreen> {
         (_config[levelId] as Map<String, dynamic>?) ?? <String, dynamic>{};
     final multipliers =
         (levelConfig['categoryMultipliers'] as Map<String, dynamic>?) ??
-        <String, dynamic>{};
+            <String, dynamic>{};
 
     // Dispose old controllers
     for (final c in _multiplierControllers.values) {
@@ -127,9 +127,8 @@ class _FlightSchoolAdminScreenState extends State<FlightSchoolAdminScreen> {
     for (final cat in QuizCategory.values) {
       final defaultVal = clueDifficultyMultiplier(cat);
       final overrideVal = multipliers[cat.name];
-      final value = overrideVal != null
-          ? (overrideVal as num).toDouble()
-          : defaultVal;
+      final value =
+          overrideVal != null ? (overrideVal as num).toDouble() : defaultVal;
       _multiplierControllers[cat.name] = TextEditingController(
         text: value.toStringAsFixed(2),
       );
@@ -139,8 +138,7 @@ class _FlightSchoolAdminScreenState extends State<FlightSchoolAdminScreen> {
     final coinReward = levelConfig['coinReward'] as int? ?? 50;
     final unlockCost =
         levelConfig['unlockCostOverride'] as int? ?? _selectedLevel.unlockCost;
-    final reqLevel =
-        levelConfig['requiredLevelOverride'] as int? ??
+    final reqLevel = levelConfig['requiredLevelOverride'] as int? ??
         _selectedLevel.requiredLevel;
 
     _coinRewardController.text = coinReward.toString();
@@ -266,64 +264,64 @@ class _FlightSchoolAdminScreenState extends State<FlightSchoolAdminScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: FlitColors.error,
-                      size: 48,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _error!,
-                      style: const TextStyle(
-                        color: FlitColors.textSecondary,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _loadConfig,
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // Level selector dropdown
-                _buildLevelSelector(),
-                const SizedBox(height: 20),
-
-                // Level settings card
-                _buildLevelSettingsCard(),
-                const SizedBox(height: 20),
-
-                // Category multipliers header
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'CATEGORY DIFFICULTY MULTIPLIERS',
-                    style: TextStyle(
-                      color: FlitColors.textMuted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1,
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: FlitColors.error,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _error!,
+                          style: const TextStyle(
+                            color: FlitColors.textSecondary,
+                            fontSize: 14,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadConfig,
+                          child: const Text('Retry'),
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    // Level selector dropdown
+                    _buildLevelSelector(),
+                    const SizedBox(height: 20),
 
-                // Category rows
-                ...QuizCategory.values.map(_buildCategoryRow),
-              ],
-            ),
+                    // Level settings card
+                    _buildLevelSettingsCard(),
+                    const SizedBox(height: 20),
+
+                    // Category multipliers header
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        'CATEGORY DIFFICULTY MULTIPLIERS',
+                        style: TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+
+                    // Category rows
+                    ...QuizCategory.values.map(_buildCategoryRow),
+                  ],
+                ),
     );
   }
 

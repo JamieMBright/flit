@@ -92,8 +92,8 @@ class _H2HResultsScreenState extends State<H2HResultsScreen>
                         isDraw
                             ? 'DRAW'
                             : winnerName != null
-                            ? '$winnerName WINS!'
-                            : 'MATCH COMPLETE',
+                                ? '$winnerName WINS!'
+                                : 'MATCH COMPLETE',
                         style: TextStyle(
                           color: isDraw
                               ? FlitColors.textSecondary
@@ -219,76 +219,77 @@ class _H2HResultsScreenState extends State<H2HResultsScreen>
   }
 
   Widget _buildBottomBar() => Container(
-    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-    decoration: const BoxDecoration(
-      color: FlitColors.backgroundMid,
-      border: Border(top: BorderSide(color: FlitColors.cardBorder)),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 50,
-            child: OutlinedButton(
-              onPressed: () => Navigator.of(context).pushReplacement(
-                MaterialPageRoute<void>(
-                  builder: (_) => const FlightSchoolScreen(),
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: FlitColors.textSecondary,
-                side: const BorderSide(color: FlitColors.cardBorder),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'FLIGHT SCHOOL',
-                style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 1),
-              ),
-            ),
-          ),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        decoration: const BoxDecoration(
+          color: FlitColors.backgroundMid,
+          border: Border(top: BorderSide(color: FlitColors.cardBorder)),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          flex: 2,
-          child: SizedBox(
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () => Navigator.of(context).pushReplacement(
-                MaterialPageRoute<void>(
-                  builder: (_) => const H2HChallengeScreen(),
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: FlitColors.accent,
-                foregroundColor: FlitColors.textPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 4,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.replay, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    'PLAY AGAIN',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1,
+        child: Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 50,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pushReplacement(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const FlightSchoolScreen(),
                     ),
                   ),
-                ],
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: FlitColors.textSecondary,
+                    side: const BorderSide(color: FlitColors.cardBorder),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'FLIGHT SCHOOL',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700, letterSpacing: 1),
+                  ),
+                ),
               ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pushReplacement(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const H2HChallengeScreen(),
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FlitColors.accent,
+                    foregroundColor: FlitColors.textPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 4,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.replay, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'PLAY AGAIN',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 }
 
 /// Card showing a single round's results with side-by-side scores.
@@ -436,9 +437,8 @@ class _RoundResultCard extends StatelessWidget {
     required bool isWinner,
     bool alignRight = false,
   }) {
-    final align = alignRight
-        ? CrossAxisAlignment.end
-        : CrossAxisAlignment.start;
+    final align =
+        alignRight ? CrossAxisAlignment.end : CrossAxisAlignment.start;
     final textAlign = alignRight ? TextAlign.right : TextAlign.left;
 
     return Column(
