@@ -6,62 +6,62 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 Map<String, dynamic> _fullAnnouncementJson() => {
-  'id': 1,
-  'title': 'Scheduled Maintenance',
-  'body': 'The servers will be offline tonight from 2–4 AM UTC.',
-  'type': 'maintenance',
-  'priority': 10,
-  'is_active': true,
-  'starts_at': '2026-03-01T02:00:00.000Z',
-  'expires_at': '2026-03-01T04:00:00.000Z',
-  'created_by': 'owner-uuid-001',
-  'created_at': '2026-02-28T18:00:00.000Z',
-};
+      'id': 1,
+      'title': 'Scheduled Maintenance',
+      'body': 'The servers will be offline tonight from 2–4 AM UTC.',
+      'type': 'maintenance',
+      'priority': 10,
+      'is_active': true,
+      'starts_at': '2026-03-01T02:00:00.000Z',
+      'expires_at': '2026-03-01T04:00:00.000Z',
+      'created_by': 'owner-uuid-001',
+      'created_at': '2026-02-28T18:00:00.000Z',
+    };
 
 Map<String, dynamic> _minimalAnnouncementJson() => {
-  'id': 2,
-  'title': 'Hello World',
-  'body': 'Welcome to Flit!',
-};
+      'id': 2,
+      'title': 'Hello World',
+      'body': 'Welcome to Flit!',
+    };
 
 Map<String, dynamic> _infoAnnouncementJson() => {
-  'id': 3,
-  'title': 'New Region Unlocked',
-  'body': 'South-East Asia clue pack is now live.',
-  'type': 'info',
-  'priority': 0,
-  'is_active': true,
-  'starts_at': null,
-  'expires_at': null,
-  'created_by': 'owner-uuid-001',
-  'created_at': '2026-02-20T09:00:00.000Z',
-};
+      'id': 3,
+      'title': 'New Region Unlocked',
+      'body': 'South-East Asia clue pack is now live.',
+      'type': 'info',
+      'priority': 0,
+      'is_active': true,
+      'starts_at': null,
+      'expires_at': null,
+      'created_by': 'owner-uuid-001',
+      'created_at': '2026-02-20T09:00:00.000Z',
+    };
 
 Map<String, dynamic> _warningAnnouncementJson() => {
-  'id': 4,
-  'title': 'Known Issue',
-  'body': 'Leaderboard updates may be delayed.',
-  'type': 'warning',
-  'priority': 5,
-  'is_active': false,
-  'starts_at': '2026-02-25T00:00:00.000Z',
-  'expires_at': '2026-02-27T00:00:00.000Z',
-  'created_by': null,
-  'created_at': '2026-02-24T22:00:00.000Z',
-};
+      'id': 4,
+      'title': 'Known Issue',
+      'body': 'Leaderboard updates may be delayed.',
+      'type': 'warning',
+      'priority': 5,
+      'is_active': false,
+      'starts_at': '2026-02-25T00:00:00.000Z',
+      'expires_at': '2026-02-27T00:00:00.000Z',
+      'created_by': null,
+      'created_at': '2026-02-24T22:00:00.000Z',
+    };
 
 Map<String, dynamic> _eventAnnouncementJson() => {
-  'id': 5,
-  'title': 'Double XP Weekend',
-  'body': 'Earn 2x XP this weekend only!',
-  'type': 'event',
-  'priority': 8,
-  'is_active': true,
-  'starts_at': '2026-03-07T00:00:00.000Z',
-  'expires_at': '2026-03-09T23:59:59.000Z',
-  'created_by': 'owner-uuid-001',
-  'created_at': '2026-03-01T00:00:00.000Z',
-};
+      'id': 5,
+      'title': 'Double XP Weekend',
+      'body': 'Earn 2x XP this weekend only!',
+      'type': 'event',
+      'priority': 8,
+      'is_active': true,
+      'starts_at': '2026-03-07T00:00:00.000Z',
+      'expires_at': '2026-03-09T23:59:59.000Z',
+      'created_by': 'owner-uuid-001',
+      'created_at': '2026-03-01T00:00:00.000Z',
+    };
 
 // ---------------------------------------------------------------------------
 // Tests

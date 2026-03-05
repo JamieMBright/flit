@@ -65,9 +65,7 @@ class LeaderboardService {
     int limit = 50,
   }) async {
     try {
-      final query = _client
-          .from('scores')
-          .select(
+      final query = _client.from('scores').select(
             'score, time_ms, region, rounds_completed, created_at, user_id',
           );
 
@@ -203,25 +201,23 @@ class LeaderboardService {
       }
 
       // 2-step: batch-fetch profiles for the winners.
-      final winnerIds = byDate.values
-          .map((r) => r['user_id'] as String)
-          .toSet()
-          .toList();
+      final winnerIds =
+          byDate.values.map((r) => r['user_id'] as String).toSet().toList();
       final profiles = await _fetchProfiles(winnerIds);
 
-      final result =
-          byDate.entries.map((e) {
-            final row = e.value;
-            final userId = row['user_id'] as String;
-            final profile = profiles[userId];
-            return {
-              'date': e.key,
-              'winner': profile?['username'] as String? ?? 'Unknown',
-              'score': row['score'] as int? ?? 0,
-            };
-          }).toList()..sort(
-            (a, b) => (b['date'] as String).compareTo(a['date'] as String),
-          );
+      final result = byDate.entries.map((e) {
+        final row = e.value;
+        final userId = row['user_id'] as String;
+        final profile = profiles[userId];
+        return {
+          'date': e.key,
+          'winner': profile?['username'] as String? ?? 'Unknown',
+          'score': row['score'] as int? ?? 0,
+        };
+      }).toList()
+        ..sort(
+          (a, b) => (b['date'] as String).compareTo(a['date'] as String),
+        );
 
       _hallOfFameCache.set(cacheKey, result);
       return result;
@@ -477,8 +473,7 @@ class LeaderboardService {
     bool isDailyScramble = true,
     LeaderboardMode? mode,
   }) async {
-    final effectiveMode =
-        mode ??
+    final effectiveMode = mode ??
         (isDailyScramble
             ? LeaderboardMode.dailyScramble
             : LeaderboardMode.trainingFlight);
@@ -581,8 +576,7 @@ class LeaderboardService {
     int limit = 50,
   }) async {
     // Support both old bool API and new enum API
-    final effectiveMode =
-        mode ??
+    final effectiveMode = mode ??
         (isDailyScramble
             ? LeaderboardMode.dailyScramble
             : LeaderboardMode.trainingFlight);
@@ -592,9 +586,7 @@ class LeaderboardService {
 
     try {
       // Step 1: Fetch scores (no embedded profile join).
-      final query = _client
-          .from('scores')
-          .select(
+      final query = _client.from('scores').select(
             'score, time_ms, region, round_emojis, round_details, '
             'created_at, user_id',
           );

@@ -7,25 +7,25 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 Map<String, dynamic> _defaultConfigJson() => {
-  'min_app_version': 'v1.0',
-  'recommended_version': 'v1.0',
-  'maintenance_mode': false,
-  'maintenance_message': null,
-};
+      'min_app_version': 'v1.0',
+      'recommended_version': 'v1.0',
+      'maintenance_mode': false,
+      'maintenance_message': null,
+    };
 
 Map<String, dynamic> _maintenanceConfigJson() => {
-  'min_app_version': 'v1.100',
-  'recommended_version': 'v1.200',
-  'maintenance_mode': true,
-  'maintenance_message': 'Back soon — deploying hotfix.',
-};
+      'min_app_version': 'v1.100',
+      'recommended_version': 'v1.200',
+      'maintenance_mode': true,
+      'maintenance_message': 'Back soon — deploying hotfix.',
+    };
 
 Map<String, dynamic> _gatedConfigJson() => {
-  'min_app_version': 'v1.50',
-  'recommended_version': 'v1.200',
-  'maintenance_mode': false,
-  'maintenance_message': null,
-};
+      'min_app_version': 'v1.50',
+      'recommended_version': 'v1.200',
+      'maintenance_mode': false,
+      'maintenance_message': null,
+    };
 
 // ---------------------------------------------------------------------------
 // Tests

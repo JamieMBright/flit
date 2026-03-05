@@ -283,7 +283,7 @@ class _CreateChallengeTabState extends ConsumerState<_CreateChallengeTab> {
     final rng = Random();
     final challengerName =
         ref.read(accountProvider).currentPlayer.displayName ??
-        ref.read(accountProvider).currentPlayer.username;
+            ref.read(accountProvider).currentPlayer.username;
 
     final h2hRounds = _rounds.map((config) {
       return H2HRound(
@@ -670,8 +670,7 @@ class _MyChallengesTabState extends ConsumerState<_MyChallengesTab> {
                 challenge.id,
               );
               if (updated != null && mounted) {
-                final isChallenger =
-                    updated.challengerId ==
+                final isChallenger = updated.challengerId ==
                     ref.read(accountProvider).currentPlayer.id;
                 _navigateToNextRound(updated, isChallenger);
               }
@@ -695,9 +694,8 @@ class _MyChallengesTabState extends ConsumerState<_MyChallengesTab> {
     int? nextIndex;
     for (var i = 0; i < challenge.rounds.length; i++) {
       final round = challenge.rounds[i];
-      final hasPlayed = isChallenger
-          ? round.challengerPlayed
-          : round.challengedPlayed;
+      final hasPlayed =
+          isChallenger ? round.challengerPlayed : round.challengedPlayed;
       if (!hasPlayed) {
         nextIndex = i;
         break;
@@ -723,9 +721,8 @@ class _MyChallengesTabState extends ConsumerState<_MyChallengesTab> {
     }
 
     final round = challenge.rounds[nextIndex];
-    final opponentName = isChallenger
-        ? challenge.challengedName
-        : challenge.challengerName;
+    final opponentName =
+        isChallenger ? challenge.challengedName : challenge.challengerName;
 
     // Find the FlightSchoolLevel for this round.
     final level = flightSchoolLevels.firstWhere(
@@ -776,9 +773,8 @@ class _ChallengeListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isChallenger = challenge.challengerId == currentUserId;
-    final opponentName = isChallenger
-        ? challenge.challengedName
-        : challenge.challengerName;
+    final opponentName =
+        isChallenger ? challenge.challengedName : challenge.challengerName;
     final statusInfo = _statusInfo(isChallenger);
 
     return Padding(

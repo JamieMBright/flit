@@ -9,28 +9,28 @@ import 'package:flutter_test/flutter_test.dart';
 Player _basePlayer() => const Player(id: 'uid-001', username: 'pilot_ace');
 
 Player _permanentlyBannedPlayer() => Player(
-  id: 'uid-002',
-  username: 'bad_actor',
-  bannedAt: DateTime.now().subtract(const Duration(days: 90)),
-  banExpiresAt: null,
-  banReason: 'Repeated cheating.',
-);
+      id: 'uid-002',
+      username: 'bad_actor',
+      bannedAt: DateTime.now().subtract(const Duration(days: 90)),
+      banExpiresAt: null,
+      banReason: 'Repeated cheating.',
+    );
 
 Player _temporarilyBannedPlayer() => Player(
-  id: 'uid-003',
-  username: 'temp_offender',
-  bannedAt: DateTime.now().subtract(const Duration(days: 5)),
-  banExpiresAt: DateTime.now().add(const Duration(days: 7)),
-  banReason: 'Offensive username.',
-);
+      id: 'uid-003',
+      username: 'temp_offender',
+      bannedAt: DateTime.now().subtract(const Duration(days: 5)),
+      banExpiresAt: DateTime.now().add(const Duration(days: 7)),
+      banReason: 'Offensive username.',
+    );
 
 Player _expiredBanPlayer() => Player(
-  id: 'uid-004',
-  username: 'reformed_player',
-  bannedAt: DateTime.now().subtract(const Duration(days: 30)),
-  banExpiresAt: DateTime.now().subtract(const Duration(days: 1)),
-  banReason: 'Harassment.',
-);
+      id: 'uid-004',
+      username: 'reformed_player',
+      bannedAt: DateTime.now().subtract(const Duration(days: 30)),
+      banExpiresAt: DateTime.now().subtract(const Duration(days: 1)),
+      banReason: 'Harassment.',
+    );
 
 Player _ownerPlayer() =>
     const Player(id: 'uid-owner', username: 'owner_user', adminRole: 'owner');

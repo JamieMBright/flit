@@ -114,17 +114,17 @@ class AvatarCompositor {
   ///
   /// Returns `null` only if composition fails unexpectedly.
   static String? compose(AvatarConfig config) => switch (config.style) {
-    AvatarStyle.adventurer => _composeAdventurer(config),
-    AvatarStyle.avataaars => _composeAvataaars(config),
-    AvatarStyle.bigEars => _composeBigEars(config),
-    AvatarStyle.lorelei => _composeLorelei(config),
-    AvatarStyle.micah => _composeMicah(config),
-    AvatarStyle.pixelArt => _composePixelArt(config),
-    AvatarStyle.bottts => _composeBottts(config),
-    AvatarStyle.notionists => _composeNotionists(config),
-    AvatarStyle.openPeeps => _composeOpenPeeps(config),
-    AvatarStyle.thumbs => _composeThumbs(config),
-  };
+        AvatarStyle.adventurer => _composeAdventurer(config),
+        AvatarStyle.avataaars => _composeAvataaars(config),
+        AvatarStyle.bigEars => _composeBigEars(config),
+        AvatarStyle.lorelei => _composeLorelei(config),
+        AvatarStyle.micah => _composeMicah(config),
+        AvatarStyle.pixelArt => _composePixelArt(config),
+        AvatarStyle.bottts => _composeBottts(config),
+        AvatarStyle.notionists => _composeNotionists(config),
+        AvatarStyle.openPeeps => _composeOpenPeeps(config),
+        AvatarStyle.thumbs => _composeThumbs(config),
+      };
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -136,19 +136,19 @@ class AvatarCompositor {
   /// remain fixed when the user tweaks individual features like eyes or mouth,
   /// but still differ between users with different skin/hair colour choices.
   static int _stableHash(AvatarConfig config) => Object.hash(
-    config.style.slug,
-    config.skinColor.hex,
-    config.hairColor.hex,
-  ).abs();
+        config.style.slug,
+        config.skinColor.hex,
+        config.hairColor.hex,
+      ).abs();
 
   /// Stable hash that does NOT vary with skin/hair color changes.
   /// Used for structural parts (face shape, ear shape, nose, etc.)
   /// that should stay fixed regardless of colour customization.
   static int _structuralHash(AvatarConfig config) => Object.hash(
-    config.style.slug,
-    config.eyes.index,
-    config.mouth.index,
-  ).abs();
+        config.style.slug,
+        config.eyes.index,
+        config.mouth.index,
+      ).abs();
 
   /// Pick a variant from a map using a deterministic hash + salt.
   static String _pick(Map<String, String> parts, int hash, [int salt = 0]) {
@@ -309,25 +309,25 @@ class AvatarCompositor {
     final top = config.hair == AvatarHair.none
         ? ''
         : _pick(avataaarsTop, config.hair.index, 5)
-              .replaceAll('{{HAIR_COLOR}}', hairHex)
-              .replaceAll(
-                '{{HAT_COLOR}}',
-                config.colorOverride('hatColor', _hashColor(sh, 44)),
-              );
+            .replaceAll('{{HAIR_COLOR}}', hairHex)
+            .replaceAll(
+              '{{HAT_COLOR}}',
+              config.colorOverride('hatColor', _hashColor(sh, 44)),
+            );
     // Clothing: uses full viewBox coordinates — no transform offset needed.
     // Use a color hash that does NOT depend on eyes/mouth to avoid coupling.
     final clothingColorHash = Object.hash(
       config.style.slug,
       config.hairColor.hex,
     ).abs();
-    final clothing = _pickDirect(avataaarsClothing, config.extra('clothing'))
-        .replaceAll(
-          '{{CLOTHES_COLOR}}',
-          config.colorOverride(
-            'clothesColor',
-            _hashColor(clothingColorHash, 66),
-          ),
-        );
+    final clothing =
+        _pickDirect(avataaarsClothing, config.extra('clothing')).replaceAll(
+      '{{CLOTHES_COLOR}}',
+      config.colorOverride(
+        'clothesColor',
+        _hashColor(clothingColorHash, 66),
+      ),
+    );
     // Facial hair: controlled by extras with hasNone (0 = none).
     final facialHairIdx = config.extra('facialHair');
     final facialHair = facialHairIdx > 0
@@ -498,8 +498,7 @@ class AvatarCompositor {
       config.extra('head'),
     ).replaceAll('{{SKIN_COLOR}}', skinHex);
     // Freckles only for freckles / blush / birthmark features.
-    final freckles =
-        (config.feature == AvatarFeature.freckles ||
+    final freckles = (config.feature == AvatarFeature.freckles ||
             config.feature == AvatarFeature.blush ||
             config.feature == AvatarFeature.birthmark)
         ? _pick(
@@ -547,8 +546,8 @@ class AvatarCompositor {
           ).replaceAll('{{HAIR_COLOR}}', hairHex);
     // Hair accessories are user-controllable via extras (0 = none).
     final hairAccessoriesIdx = config.extra('hairAccessories');
-    final hairAccessories =
-        (config.hair == AvatarHair.none || hairAccessoriesIdx == 0)
+    final hairAccessories = (config.hair == AvatarHair.none ||
+            hairAccessoriesIdx == 0)
         ? ''
         : _pickDirect(
             loreleiHairAccessories,
@@ -561,8 +560,8 @@ class AvatarCompositor {
     final beardIdx = config.extra('beard');
     final beard = beardIdx > 0
         ? _pickDirect(loreleiBeard, beardIdx - 1)
-              .replaceAll('{{BEARD_COLOR}}', hairHex)
-              .replaceAll('{{HAIR_COLOR}}', hairHex)
+            .replaceAll('{{BEARD_COLOR}}', hairHex)
+            .replaceAll('{{HAIR_COLOR}}', hairHex)
         : '';
 
     final buf = StringBuffer()
@@ -749,11 +748,11 @@ class AvatarCompositor {
       _hashColor(sh, 55),
     );
 
-    final clothing = _pickDirect(pixelartClothing, config.extra('clothing'))
-        .replaceAll(
-          '{{CLOTHING_COLOR}}',
-          config.colorOverride('clothingColor', _hashColor(sh, 66)),
-        );
+    final clothing =
+        _pickDirect(pixelartClothing, config.extra('clothing')).replaceAll(
+      '{{CLOTHING_COLOR}}',
+      config.colorOverride('clothingColor', _hashColor(sh, 66)),
+    );
     final eyes = _pick(
       pixelartEyes,
       config.eyes.index,
@@ -774,8 +773,8 @@ class AvatarCompositor {
     final beardIdx = config.extra('beard');
     final beard = beardIdx > 0
         ? _pickDirect(pixelartBeard, beardIdx - 1)
-              .replaceAll('{{BEARD_COLOR}}', hairHex)
-              .replaceAll('{{HAIR_COLOR}}', hairHex)
+            .replaceAll('{{BEARD_COLOR}}', hairHex)
+            .replaceAll('{{HAIR_COLOR}}', hairHex)
         : '';
     final glasses = config.glasses == AvatarGlasses.none
         ? ''
@@ -894,16 +893,14 @@ class AvatarCompositor {
     final body = _pickDirect(notionistsBody, config.extra('body'));
     // Body icon: extras with hasNone — 0 = none, 1+ = variant.
     final bodyIconIdx = config.extra('bodyIcon');
-    final bodyIcon = bodyIconIdx > 0
-        ? _pickDirect(notionistsBodyIcon, bodyIconIdx - 1)
-        : '';
+    final bodyIcon =
+        bodyIconIdx > 0 ? _pickDirect(notionistsBodyIcon, bodyIconIdx - 1) : '';
     final hair = _pick(notionistsHair, config.hair.index, 3);
     final lips = _pick(notionistsLips, config.mouth.index, 4);
     // Beard is user-controllable via extras. 0 = none.
     final beardIdx = config.extra('beard');
-    final beard = beardIdx > 0
-        ? _pickDirect(notionistsBeard, beardIdx - 1)
-        : '';
+    final beard =
+        beardIdx > 0 ? _pickDirect(notionistsBeard, beardIdx - 1) : '';
     final nose = _pickDirect(notionistsNose, config.extra('nose'));
     final eyes = _pick(notionistsEyes, config.eyes.index, 7);
     final glasses = config.glasses == AvatarGlasses.none
@@ -1048,13 +1045,12 @@ class AvatarCompositor {
     final widthSuffix = widths[widthIdx];
 
     // Pick eyes variant base (variant1-variant9), append width suffix.
-    final eyesKeys = thumbsEyes.keys
-        .where((k) => k.endsWith(widthSuffix))
-        .toList();
+    final eyesKeys =
+        thumbsEyes.keys.where((k) => k.endsWith(widthSuffix)).toList();
     final eyesSvg = eyesKeys.isNotEmpty
         ? (thumbsEyes[eyesKeys[(config.eyes.index % eyesKeys.length).abs()]] ??
-                  '')
-              .replaceAll('{{EYES_COLOR}}', eyeColor)
+                '')
+            .replaceAll('{{EYES_COLOR}}', eyeColor)
         : '';
 
     final mouthSvg = _pick(

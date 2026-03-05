@@ -54,7 +54,6 @@ class PlayScreen extends ConsumerStatefulWidget {
     this.planeHandling = 1.0,
     this.planeSpeed = 1.0,
     this.planeFuelEfficiency = 1.0,
-
     this.clueChance = 0,
     this.preferredClueType,
     this.enabledClueTypes,
@@ -261,8 +260,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             },
           );
           setState(() {
-            _error =
-                'Game engine failed to start.\n\nPlease go back and try '
+            _error = 'Game engine failed to start.\n\nPlease go back and try '
                 'again. If the problem persists, restart the app.';
           });
         }
@@ -382,9 +380,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         // Determine remaining types from the session's pool.
         Set<String>? remainingTypes;
         if (enabled != null && enabled.length > 1) {
-          final remaining = enabled
-              .where((t) => t != previousType?.name)
-              .toSet();
+          final remaining =
+              enabled.where((t) => t != previousType?.name).toSet();
           if (remaining.isNotEmpty) {
             remainingTypes = remaining;
           }
@@ -503,8 +500,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       );
     }
     if (widget.region == GameRegion.world) {
-      final seed =
-          DateTime.now().microsecondsSinceEpoch ^
+      final seed = DateTime.now().microsecondsSinceEpoch ^
           _sessionSeedRandom.nextInt(1 << 31);
       return GameSession.seeded(
         seed,
@@ -613,8 +609,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       WebErrorBridge.show('_startNewGame crash:\n$e\n\n$st');
       if (mounted) {
         setState(() {
-          _error =
-              'Failed to start game session.\n\n'
+          _error = 'Failed to start game session.\n\n'
               'Error: $e\n\n'
               'Stack trace:\n${st.toString().split('\n').take(8).join('\n')}';
         });
@@ -632,8 +627,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       // target country's borders. The border check allows high-altitude
       // fly-over to register — the player shouldn't need to descend.
       final nearTarget = _game.isNearTarget(threshold: 25);
-      final inTargetCountry =
-          _game.currentCountryName != null &&
+      final inTargetCountry = _game.currentCountryName != null &&
           _game.currentCountryName == _session!.targetName;
 
       if (nearTarget || inTargetCountry) {
@@ -699,26 +693,24 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             ),
           )
           .then((completedChallenge) {
-            if (completedChallenge != null && mounted) {
-              // Early victory — fetch final state and show result screen.
-              ChallengeService.instance
-                  .fetchChallenge(widget.challengeId!)
-                  .then((finalChallenge) {
-                    if (finalChallenge != null && mounted) {
-                      _navigateToChallengeResult(finalChallenge);
-                    }
-                  })
-                  .catchError((Object e) {
-                    _log.warning(
-                      'challenge',
-                      'Failed to fetch completed challenge: $e',
-                    );
-                  });
+        if (completedChallenge != null && mounted) {
+          // Early victory — fetch final state and show result screen.
+          ChallengeService.instance
+              .fetchChallenge(widget.challengeId!)
+              .then((finalChallenge) {
+            if (finalChallenge != null && mounted) {
+              _navigateToChallengeResult(finalChallenge);
             }
-          })
-          .catchError((Object e) {
-            _log.warning('challenge', 'Failed to submit round result: $e');
+          }).catchError((Object e) {
+            _log.warning(
+              'challenge',
+              'Failed to fetch completed challenge: $e',
+            );
           });
+        }
+      }).catchError((Object e) {
+        _log.warning('challenge', 'Failed to submit round result: $e');
+      });
     }
 
     _log.info(
@@ -797,9 +789,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   void _awardFreeFlightClue() {
     if (!_isFreeFlightEarning) return;
     final config = _economyConfig ?? EconomyConfig.defaults();
-    final earned = ref
-        .read(accountProvider.notifier)
-        .awardFreeFlightClue(
+    final earned = ref.read(accountProvider.notifier).awardFreeFlightClue(
           perClueReward: config.earnings.freeFlightPerClueReward,
           dailyCap: config.earnings.freeFlightDailyCap,
           promoMultiplier: config.earningsMultiplier,
@@ -861,30 +851,28 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             ),
           )
           .then((completedChallenge) {
-            if (completedChallenge != null && mounted) {
-              // Challenge is fully complete — fetch the final state and show
-              // the ChallengeResultScreen.
-              ChallengeService.instance
-                  .fetchChallenge(widget.challengeId!)
-                  .then((finalChallenge) {
-                    if (finalChallenge != null && mounted) {
-                      _navigateToChallengeResult(finalChallenge);
-                    }
-                  })
-                  .catchError((Object e) {
-                    _log.warning(
-                      'challenge',
-                      'Failed to fetch completed challenge: $e',
-                    );
-                  });
+        if (completedChallenge != null && mounted) {
+          // Challenge is fully complete — fetch the final state and show
+          // the ChallengeResultScreen.
+          ChallengeService.instance
+              .fetchChallenge(widget.challengeId!)
+              .then((finalChallenge) {
+            if (finalChallenge != null && mounted) {
+              _navigateToChallengeResult(finalChallenge);
             }
-          })
-          .catchError((Object e) {
+          }).catchError((Object e) {
             _log.warning(
               'challenge',
-              'Challenge round submit / complete chain failed: $e',
+              'Failed to fetch completed challenge: $e',
             );
           });
+        }
+      }).catchError((Object e) {
+        _log.warning(
+          'challenge',
+          'Challenge round submit / complete chain failed: $e',
+        );
+      });
     }
 
     _log.info(
@@ -910,8 +898,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     // Build and report daily result if this is a daily challenge.
     if (widget.isDailyChallenge) {
       final now = DateTime.now().toUtc();
-      final dateStr =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+      final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-'
           '${now.day.toString().padLeft(2, '0')}';
       final dailyResult = DailyResult(
         date: dateStr,
@@ -962,9 +949,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
     // Record game completion last — this calls flush() which persists all
     // pending dirty state including the daily callbacks above.
-    await ref
-        .read(accountProvider.notifier)
-        .recordGameCompletion(
+    await ref.read(accountProvider.notifier).recordGameCompletion(
           elapsed: _cumulativeTime,
           score: _totalScore,
           roundsCompleted: _currentRound,
@@ -1072,18 +1057,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     // exploitation (abort-to-learn-clues).
     String warningText;
     if (isChallenge) {
-      warningText =
-          'This will end your attempt and send your current '
+      warningText = 'This will end your attempt and send your current '
           'score to ${widget.challengeFriendName}. You only '
           'get one shot at each challenge.';
     } else if (isDailyChallenge) {
-      warningText =
-          'Aborting will register this attempt with your current '
+      warningText = 'Aborting will register this attempt with your current '
           'score. All remaining rounds will count as missed. '
           'You cannot replay today\'s daily challenge.';
     } else {
-      warningText =
-          'Aborting will register this game with your current '
+      warningText = 'Aborting will register this game with your current '
           'score. All remaining rounds will count as missed.';
     }
 
@@ -1291,8 +1273,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       widget.onComplete?.call(_totalScore);
 
       final now = DateTime.now().toUtc();
-      final dateStr =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+      final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-'
           '${now.day.toString().padLeft(2, '0')}';
       final dailyResult = DailyResult(
         date: dateStr,
@@ -1317,9 +1298,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     // Record stats as a completed game (abort counts as a game played).
     // The flush() inside recordGameCompletion() will write both the profile
     // stats AND the daily streak data marked dirty by the callbacks above.
-    await ref
-        .read(accountProvider.notifier)
-        .recordGameCompletion(
+    await ref.read(accountProvider.notifier).recordGameCompletion(
           elapsed: _cumulativeTime,
           score: _totalScore,
           roundsCompleted: _currentRound,
@@ -1674,42 +1653,42 @@ class _TurnButtonState extends State<_TurnButton> {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTapDown: (_) {
-      setState(() => _pressed = true);
-      widget.onPressStart();
-    },
-    onTapUp: (_) {
-      setState(() => _pressed = false);
-      widget.onPressEnd();
-    },
-    onTapCancel: () {
-      setState(() => _pressed = false);
-      widget.onPressEnd();
-    },
-    child: AnimatedOpacity(
-      opacity: _pressed ? 0.9 : 0.45,
-      duration: const Duration(milliseconds: 100),
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground.withOpacity(0.7),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: _pressed
-                ? FlitColors.accent.withOpacity(0.8)
-                : FlitColors.cardBorder.withOpacity(0.5),
-            width: 2,
+        onTapDown: (_) {
+          setState(() => _pressed = true);
+          widget.onPressStart();
+        },
+        onTapUp: (_) {
+          setState(() => _pressed = false);
+          widget.onPressEnd();
+        },
+        onTapCancel: () {
+          setState(() => _pressed = false);
+          widget.onPressEnd();
+        },
+        child: AnimatedOpacity(
+          opacity: _pressed ? 0.9 : 0.45,
+          duration: const Duration(milliseconds: 100),
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: FlitColors.cardBackground.withOpacity(0.7),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: _pressed
+                    ? FlitColors.accent.withOpacity(0.8)
+                    : FlitColors.cardBorder.withOpacity(0.5),
+                width: 2,
+              ),
+            ),
+            child: Icon(
+              widget.icon,
+              color: _pressed ? FlitColors.accent : FlitColors.textSecondary,
+              size: 28,
+            ),
           ),
         ),
-        child: Icon(
-          widget.icon,
-          color: _pressed ? FlitColors.accent : FlitColors.textSecondary,
-          size: 28,
-        ),
-      ),
-    ),
-  );
+      );
 }
 
 /// Aggregated clue-type correct counts and streak from round results.
@@ -1768,11 +1747,9 @@ class _RoundResult {
   /// Hint penalty computed from [hintsUsed] and tier penalties.
   int get hintPenalty {
     int penalty = 0;
-    for (
-      int i = 0;
-      i < hintsUsed && i < GameSession.hintTierPenalties.length;
-      i++
-    ) {
+    for (int i = 0;
+        i < hintsUsed && i < GameSession.hintTierPenalties.length;
+        i++) {
       penalty += GameSession.hintTierPenalties[i];
     }
     return penalty;
@@ -1815,9 +1792,8 @@ class _RoundBreakdownRowState extends State<_RoundBreakdownRow> {
         // Main row — tappable to expand/collapse.
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: r.completed
-              ? () => setState(() => _expanded = !_expanded)
-              : null,
+          onTap:
+              r.completed ? () => setState(() => _expanded = !_expanded) : null,
           child: Row(
             children: [
               SizedBox(
@@ -2088,7 +2064,7 @@ class _ResultDialog extends ConsumerWidget {
     final levelBoostPct = ((playerLevel - 1) * 0.5).toStringAsFixed(1);
     final totalEarned = coinReward > 0
         ? (coinReward * ref.read(accountProvider.notifier).totalGoldMultiplier)
-              .round()
+            .round()
         : 0;
     final licenseBonus = totalEarned - coinReward;
 
@@ -2308,12 +2284,12 @@ class _ResultDialog extends ConsumerWidget {
                     final color = !r.completed
                         ? FlitColors.error
                         : r.hintsUsed == 0
-                        ? FlitColors.success
-                        : r.hintsUsed <= 2
-                        ? FlitColors.gold
-                        : r.hintsUsed <= 4
-                        ? FlitColors.accent
-                        : FlitColors.error;
+                            ? FlitColors.success
+                            : r.hintsUsed <= 2
+                                ? FlitColors.gold
+                                : r.hintsUsed <= 4
+                                    ? FlitColors.accent
+                                    : FlitColors.error;
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Container(

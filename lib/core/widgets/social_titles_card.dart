@@ -269,9 +269,8 @@ class _TitleChip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isEquipped
-              ? rarityColor.withAlpha(51)
-              : FlitColors.backgroundMid,
+          color:
+              isEquipped ? rarityColor.withAlpha(51) : FlitColors.backgroundMid,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isEquipped ? rarityColor : FlitColors.cardBorder,

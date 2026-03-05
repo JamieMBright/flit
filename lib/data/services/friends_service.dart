@@ -20,30 +20,24 @@ class FriendsService {
 
   // 60 s TTL — friends list changes infrequently.
   final _friendsCache = TtlCache<List<Friend>>(const Duration(seconds: 60));
-  final _pendingCache =
-      TtlCache<
-        List<
+  final _pendingCache = TtlCache<
+      List<
           ({
             int friendshipId,
             String requesterId,
             String username,
             String? displayName,
             String? avatarUrl,
-          })
-        >
-      >(const Duration(seconds: 60));
-  final _sentCache =
-      TtlCache<
-        List<
+          })>>(const Duration(seconds: 60));
+  final _sentCache = TtlCache<
+      List<
           ({
             int friendshipId,
             String addresseeId,
             String username,
             String? displayName,
             String? avatarUrl,
-          })
-        >
-      >(const Duration(seconds: 60));
+          })>>(const Duration(seconds: 60));
   // Product rule: friend invites (incoming + sent pending) expire after 3 days.
   static const Duration _inviteExpiry = Duration(days: 3);
 
@@ -114,10 +108,8 @@ class FriendsService {
 
         // They sent us a pending request — auto-accept it.
         if (reverseStatus == 'pending') {
-          await _client
-              .from('friendships')
-              .update({'status': 'accepted'})
-              .eq('id', reverseExisting['id'] as int);
+          await _client.from('friendships').update({'status': 'accepted'}).eq(
+              'id', reverseExisting['id'] as int);
           await _deleteOwnPendingRequest(addresseeId);
           invalidateCache();
           return true;
@@ -181,10 +173,8 @@ class FriendsService {
           .maybeSingle();
 
       if (reverseAfterInsert != null) {
-        await _client
-            .from('friendships')
-            .update({'status': 'accepted'})
-            .eq('id', reverseAfterInsert['id'] as int);
+        await _client.from('friendships').update({'status': 'accepted'}).eq(
+            'id', reverseAfterInsert['id'] as int);
         await _deleteOwnPendingRequest(addresseeId);
       }
       invalidateCache();
@@ -211,8 +201,7 @@ class FriendsService {
     try {
       await _client
           .from('friendships')
-          .update({'status': 'accepted'})
-          .eq('id', friendshipId);
+          .update({'status': 'accepted'}).eq('id', friendshipId);
       invalidateCache();
       return true;
     } catch (e) {
@@ -227,8 +216,7 @@ class FriendsService {
     try {
       await _client
           .from('friendships')
-          .update({'status': 'declined'})
-          .eq('id', friendshipId);
+          .update({'status': 'declined'}).eq('id', friendshipId);
       invalidateCache();
       return true;
     } catch (e) {
@@ -277,9 +265,8 @@ class FriendsService {
       final result = data.map<Friend>((row) {
         // The "friend" is whichever party isn't the current user.
         final isRequester = row['requester_id'] == _userId;
-        final profile =
-            (isRequester ? row['addressee'] : row['requester'])
-                as Map<String, dynamic>;
+        final profile = (isRequester ? row['addressee'] : row['requester'])
+            as Map<String, dynamic>;
         return Friend(
           id: row['id'].toString(),
           playerId: profile['id'] as String,
@@ -300,17 +287,14 @@ class FriendsService {
 
   /// Fetch pending friend requests where the current user is the addressee.
   Future<
-    List<
-      ({
-        int friendshipId,
-        String requesterId,
-        String username,
-        String? displayName,
-        String? avatarUrl,
-      })
-    >
-  >
-  fetchPendingRequests() async {
+      List<
+          ({
+            int friendshipId,
+            String requesterId,
+            String username,
+            String? displayName,
+            String? avatarUrl,
+          })>> fetchPendingRequests() async {
     if (_userId == null) return [];
 
     const cacheKey = 'pending';
@@ -345,14 +329,13 @@ class FriendsService {
             );
           })
           .whereType<
-            ({
-              int friendshipId,
-              String requesterId,
-              String username,
-              String? displayName,
-              String? avatarUrl,
-            })
-          >()
+              ({
+                int friendshipId,
+                String requesterId,
+                String username,
+                String? displayName,
+                String? avatarUrl,
+              })>()
           .toList();
 
       if (expiredIds.isNotEmpty) {
@@ -373,17 +356,14 @@ class FriendsService {
 
   /// Fetch pending friend requests sent BY the current user.
   Future<
-    List<
-      ({
-        int friendshipId,
-        String addresseeId,
-        String username,
-        String? displayName,
-        String? avatarUrl,
-      })
-    >
-  >
-  fetchSentRequests() async {
+      List<
+          ({
+            int friendshipId,
+            String addresseeId,
+            String username,
+            String? displayName,
+            String? avatarUrl,
+          })>> fetchSentRequests() async {
     if (_userId == null) return [];
 
     const cacheKey = 'sent';
@@ -418,14 +398,13 @@ class FriendsService {
             );
           })
           .whereType<
-            ({
-              int friendshipId,
-              String addresseeId,
-              String username,
-              String? displayName,
-              String? avatarUrl,
-            })
-          >()
+              ({
+                int friendshipId,
+                String addresseeId,
+                String username,
+                String? displayName,
+                String? avatarUrl,
+              })>()
           .toList();
 
       if (expiredIds.isNotEmpty) {

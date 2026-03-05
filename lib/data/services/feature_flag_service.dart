@@ -30,9 +30,8 @@ class FeatureFlagService {
     }
 
     try {
-      final data = await _client
-          .from('feature_flags')
-          .select('flag_key, enabled');
+      final data =
+          await _client.from('feature_flags').select('flag_key, enabled');
       final map = <String, bool>{};
       for (final row in data as List) {
         map[row['flag_key'] as String] = row['enabled'] as bool? ?? true;

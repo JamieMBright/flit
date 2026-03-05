@@ -101,241 +101,243 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: Stack(
-      fit: StackFit.expand,
-      children: [
-        // Animated map background
-        _AnimatedMapBackground(animation: _animController),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Animated map background
+            _AnimatedMapBackground(animation: _animController),
 
-        // Maintenance mode admin banner — red alert at the very top so the
-        // admin knows maintenance is active (they bypassed the gate).
-        if (_maintenanceMode && ref.watch(accountProvider).isAdmin)
-          Positioned(
-            top: MediaQuery.of(context).padding.top,
-            left: 0,
-            right: 0,
-            child: Material(
-              color: FlitColors.error,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.warning_amber_rounded,
-                      color: Colors.white,
-                      size: 18,
+            // Maintenance mode admin banner — red alert at the very top so the
+            // admin knows maintenance is active (they bypassed the gate).
+            if (_maintenanceMode && ref.watch(accountProvider).isAdmin)
+              Positioned(
+                top: MediaQuery.of(context).padding.top,
+                left: 0,
+                right: 0,
+                child: Material(
+                  color: FlitColors.error,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _maintenanceMessage != null &&
-                                _maintenanceMessage!.isNotEmpty
-                            ? 'MAINTENANCE ON: $_maintenanceMessage'
-                            : 'MAINTENANCE MODE IS ON — players are locked out',
-                        style: const TextStyle(
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
                           color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          size: 18,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _maintenanceMessage != null &&
+                                    _maintenanceMessage!.isNotEmpty
+                                ? 'MAINTENANCE ON: $_maintenanceMessage'
+                                : 'MAINTENANCE MODE IS ON — players are locked out',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+            // Announcement banner — floats at the top of the safe area above the
+            // menu column, but below the globe so it feels part of the HUD layer.
+            Positioned(
+              top: MediaQuery.of(context).padding.top +
+                  12 +
+                  (_maintenanceMode && ref.watch(accountProvider).isAdmin
+                      ? 36
+                      : 0),
+              left: 16,
+              right: 16,
+              child: const AnnouncementBanner(),
+            ),
+
+            // Menu overlay
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: Column(
+                  children: [
+                    const Spacer(flex: 3),
+                    // Title block with paper plane accent
+                    _buildTitle(),
+                    const Spacer(flex: 2),
+                    _buildMenuButtons(context),
+                    const Spacer(flex: 1),
+                    // Version number
+                    const Text(
+                      appVersion,
+                      style: TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 1,
                       ),
                     ),
+                    const SizedBox(height: 4),
                   ],
                 ),
               ),
             ),
-          ),
-
-        // Announcement banner — floats at the top of the safe area above the
-        // menu column, but below the globe so it feels part of the HUD layer.
-        Positioned(
-          top:
-              MediaQuery.of(context).padding.top +
-              12 +
-              (_maintenanceMode && ref.watch(accountProvider).isAdmin ? 36 : 0),
-          left: 16,
-          right: 16,
-          child: const AnnouncementBanner(),
+          ],
         ),
+      );
 
-        // Menu overlay
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Column(
-              children: [
-                const Spacer(flex: 3),
-                // Title block with paper plane accent
-                _buildTitle(),
-                const Spacer(flex: 2),
-                _buildMenuButtons(context),
-                const Spacer(flex: 1),
-                // Version number
-                const Text(
-                  appVersion,
-                  style: TextStyle(
-                    color: FlitColors.textMuted,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 1,
-                  ),
+  Widget _buildTitle() => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Paper plane above title
+          Transform.rotate(
+            angle: -0.3,
+            child: const Icon(Icons.flight, color: FlitColors.accent, size: 32),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'FLIT',
+            style: TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 56,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 14,
+              shadows: [
+                Shadow(
+                  color: Color(0x60000000),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
                 ),
-                const SizedBox(height: 4),
               ],
             ),
           ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _buildTitle() => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      // Paper plane above title
-      Transform.rotate(
-        angle: -0.3,
-        child: const Icon(Icons.flight, color: FlitColors.accent, size: 32),
-      ),
-      const SizedBox(height: 8),
-      const Text(
-        'FLIT',
-        style: TextStyle(
-          color: FlitColors.textPrimary,
-          fontSize: 56,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 14,
-          shadows: [
-            Shadow(
-              color: Color(0x60000000),
-              blurRadius: 12,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 6),
-      // Tagline with decorative dashes
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 24,
-            height: 1,
-            color: FlitColors.gold.withOpacity(0.4),
-          ),
-          const SizedBox(width: 10),
-          const Text(
-            'A GEOGRAPHICAL ADVENTURE',
-            style: TextStyle(
-              color: FlitColors.gold,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 3,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Container(
-            width: 24,
-            height: 1,
-            color: FlitColors.gold.withOpacity(0.4),
+          const SizedBox(height: 6),
+          // Tagline with decorative dashes
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 24,
+                height: 1,
+                color: FlitColors.gold.withOpacity(0.4),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'A GEOGRAPHICAL ADVENTURE',
+                style: TextStyle(
+                  color: FlitColors.gold,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 3,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                width: 24,
+                height: 1,
+                color: FlitColors.gold.withOpacity(0.4),
+              ),
+            ],
           ),
         ],
-      ),
-    ],
-  );
+      );
 
   Widget _buildMenuButtons(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      // Daily streak stats card
-      const _DailyStreakCard(),
-      const SizedBox(height: 10),
-      // Primary PLAY button with glow
-      _PlayButton(onTap: () => _showGameModes(context)),
-      const SizedBox(height: 10),
-      // Secondary buttons in a 2x2 grid for variety
-      Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (_shopEnabled)
-            Expanded(
-              child: _MenuTile(
-                label: 'Shop',
-                icon: Icons.storefront_rounded,
-                onTap: () => _navigateSafely(context, const ShopScreen()),
+          // Daily streak stats card
+          const _DailyStreakCard(),
+          const SizedBox(height: 10),
+          // Primary PLAY button with glow
+          _PlayButton(onTap: () => _showGameModes(context)),
+          const SizedBox(height: 10),
+          // Secondary buttons in a 2x2 grid for variety
+          Row(
+            children: [
+              if (_shopEnabled)
+                Expanded(
+                  child: _MenuTile(
+                    label: 'Shop',
+                    icon: Icons.storefront_rounded,
+                    onTap: () => _navigateSafely(context, const ShopScreen()),
+                  ),
+                )
+              else
+                const Expanded(child: SizedBox()),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _MenuTile(
+                  label: 'Profile',
+                  icon: Icons.person_rounded,
+                  onTap: () => _navigateSafely(context, const ProfileScreen()),
+                ),
               ),
-            )
-          else
-            const Expanded(child: SizedBox()),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _MenuTile(
-              label: 'Profile',
-              icon: Icons.person_rounded,
-              onTap: () => _navigateSafely(context, const ProfileScreen()),
-            ),
+            ],
           ),
-        ],
-      ),
-      const SizedBox(height: 10),
-      // Friends + Country Clues in 2-column format
-      Row(
-        children: [
-          Expanded(
-            child: _FriendsMenuTile(
-              onTap: () => _navigateSafely(context, const FriendsScreen()),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _MenuTile(
-              label: 'Clues',
-              icon: Icons.travel_explore,
-              onTap: () => _navigateSafely(context, const CountryCluesScreen()),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 10),
-      Row(
-        children: [
-          if (_leaderboardEnabled)
-            Expanded(
-              child: _MenuTile(
-                label: 'Leaderboard',
-                icon: Icons.leaderboard_rounded,
-                onTap: () =>
-                    _navigateSafely(context, const LeaderboardScreen()),
+          const SizedBox(height: 10),
+          // Friends + Country Clues in 2-column format
+          Row(
+            children: [
+              Expanded(
+                child: _FriendsMenuTile(
+                  onTap: () => _navigateSafely(context, const FriendsScreen()),
+                ),
               ),
-            )
-          else
-            const Expanded(child: SizedBox()),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _MenuTile(
-              label: 'How to Play',
-              icon: Icons.menu_book_rounded,
-              onTap: () =>
-                  _navigateSafely(context, const GameplayGuideScreen()),
-            ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _MenuTile(
+                  label: 'Clues',
+                  icon: Icons.travel_explore,
+                  onTap: () =>
+                      _navigateSafely(context, const CountryCluesScreen()),
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              if (_leaderboardEnabled)
+                Expanded(
+                  child: _MenuTile(
+                    label: 'Leaderboard',
+                    icon: Icons.leaderboard_rounded,
+                    onTap: () =>
+                        _navigateSafely(context, const LeaderboardScreen()),
+                  ),
+                )
+              else
+                const Expanded(child: SizedBox()),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _MenuTile(
+                  label: 'How to Play',
+                  icon: Icons.menu_book_rounded,
+                  onTap: () =>
+                      _navigateSafely(context, const GameplayGuideScreen()),
+                ),
+              ),
+            ],
+          ),
+          if (ref.watch(accountProvider).isAdmin) ...[
+            const SizedBox(height: 10),
+            _MenuButton(
+              label: 'Admin',
+              icon: Icons.admin_panel_settings,
+              onTap: () => _navigateSafely(context, const AdminScreen()),
+            ),
+          ],
         ],
-      ),
-      if (ref.watch(accountProvider).isAdmin) ...[
-        const SizedBox(height: 10),
-        _MenuButton(
-          label: 'Admin',
-          icon: Icons.admin_panel_settings,
-          onTap: () => _navigateSafely(context, const AdminScreen()),
-        ),
-      ],
-    ],
-  );
+      );
 
   /// Safely navigate to a new screen with error handling.
   Future<void> _navigateSafely(BuildContext context, Widget destination) async {
@@ -479,11 +481,11 @@ class _AnimatedMapBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-    animation: animation,
-    builder: (context, child) => SizedBox.expand(
-      child: CustomPaint(painter: _GlobeBackgroundPainter(animation.value)),
-    ),
-  );
+        animation: animation,
+        builder: (context, child) => SizedBox.expand(
+          child: CustomPaint(painter: _GlobeBackgroundPainter(animation.value)),
+        ),
+      );
 }
 
 class _GlobeBackgroundPainter extends CustomPainter {
@@ -1121,48 +1123,48 @@ class _PlayButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          color: FlitColors.accent.withOpacity(0.25),
-          blurRadius: 16,
-          spreadRadius: 1,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: FlitColors.accent.withOpacity(0.25),
+              blurRadius: 16,
+              spreadRadius: 1,
+            ),
+          ],
         ),
-      ],
-    ),
-    child: Material(
-      color: FlitColors.accent,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.play_arrow_rounded,
-                color: FlitColors.textPrimary,
-                size: 28,
+        child: Material(
+          color: FlitColors.accent,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.play_arrow_rounded,
+                    color: FlitColors.textPrimary,
+                    size: 28,
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    'PLAY',
+                    style: TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 3,
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(width: 10),
-              Text(
-                'PLAY',
-                style: TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 3,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 /// Full-width Friends button that fetches pending friend requests and incoming
@@ -1241,100 +1243,101 @@ class _FriendsMenuTileState extends State<_FriendsMenuTile>
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-    animation: _glowController,
-    builder: (context, child) {
-      final hasNotifications = _notificationCount > 0;
-      final glowOpacity = hasNotifications ? _glowController.value : 0.0;
+        animation: _glowController,
+        builder: (context, child) {
+          final hasNotifications = _notificationCount > 0;
+          final glowOpacity = hasNotifications ? _glowController.value : 0.0;
 
-      return Container(
-        decoration: hasNotifications
-            ? BoxDecoration(
+          return Container(
+            decoration: hasNotifications
+                ? BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: FlitColors.gold.withOpacity(0.3 * glowOpacity),
+                        blurRadius: 12 + 8 * glowOpacity,
+                        spreadRadius: 1 + 2 * glowOpacity,
+                      ),
+                    ],
+                  )
+                : null,
+            child: Material(
+              color: FlitColors.cardBackground.withOpacity(0.85),
+              borderRadius: BorderRadius.circular(10),
+              child: InkWell(
+                onTap: widget.onTap,
                 borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: FlitColors.gold.withOpacity(0.3 * glowOpacity),
-                    blurRadius: 12 + 8 * glowOpacity,
-                    spreadRadius: 1 + 2 * glowOpacity,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: hasNotifications
+                          ? Color.lerp(
+                              FlitColors.gold.withOpacity(0.4),
+                              FlitColors.gold,
+                              glowOpacity,
+                            )!
+                          : FlitColors.cardBorder.withOpacity(0.5),
+                      width: hasNotifications ? 1.5 : 1.0,
+                    ),
                   ),
-                ],
-              )
-            : null,
-        child: Material(
-          color: FlitColors.cardBackground.withOpacity(0.85),
-          borderRadius: BorderRadius.circular(10),
-          child: InkWell(
-            onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: hasNotifications
-                      ? Color.lerp(
-                          FlitColors.gold.withOpacity(0.4),
-                          FlitColors.gold,
-                          glowOpacity,
-                        )!
-                      : FlitColors.cardBorder.withOpacity(0.5),
-                  width: hasNotifications ? 1.5 : 1.0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.people_rounded,
+                        color: hasNotifications
+                            ? Color.lerp(
+                                FlitColors.textSecondary,
+                                FlitColors.gold,
+                                glowOpacity,
+                              )
+                            : FlitColors.textSecondary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'FRIENDS',
+                        style: TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      if (hasNotifications) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: FlitColors.gold.withOpacity(
+                              0.2 + 0.15 * glowOpacity,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$_notificationCount',
+                            style: TextStyle(
+                              color: FlitColors.gold,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.people_rounded,
-                    color: hasNotifications
-                        ? Color.lerp(
-                            FlitColors.textSecondary,
-                            FlitColors.gold,
-                            glowOpacity,
-                          )
-                        : FlitColors.textSecondary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'FRIENDS',
-                    style: TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  if (hasNotifications) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: FlitColors.gold.withOpacity(
-                          0.2 + 0.15 * glowOpacity,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '$_notificationCount',
-                        style: TextStyle(
-                          color: FlitColors.gold,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
             ),
-          ),
-        ),
+          );
+        },
       );
-    },
-  );
 }
 
 /// Square-ish tile for secondary menu items (2x2 grid).
@@ -1351,39 +1354,39 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: FlitColors.cardBackground.withOpacity(0.85),
-    borderRadius: BorderRadius.circular(10),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-        decoration: BoxDecoration(
+        color: FlitColors.cardBackground.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: FlitColors.cardBorder.withOpacity(0.5)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: FlitColors.textSecondary, size: 20),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                label.toUpperCase(),
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: FlitColors.cardBorder.withOpacity(0.5)),
             ),
-          ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: FlitColors.textSecondary, size: 20),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label.toUpperCase(),
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 /// Full-width menu button for lower-priority items.
@@ -1400,36 +1403,36 @@ class _MenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: FlitColors.cardBackground.withOpacity(0.6),
-    borderRadius: BorderRadius.circular(8),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-        decoration: BoxDecoration(
+        color: FlitColors.cardBackground.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: FlitColors.cardBorder.withOpacity(0.3)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: FlitColors.textMuted, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              label.toUpperCase(),
-              style: const TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1,
-              ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: FlitColors.cardBorder.withOpacity(0.3)),
             ),
-          ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: FlitColors.textMuted, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  label.toUpperCase(),
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 class _GameModeCard extends StatelessWidget {
@@ -1449,70 +1452,70 @@ class _GameModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: isHighlighted
-        ? FlitColors.accent.withOpacity(0.15)
-        : FlitColors.backgroundMid,
-    borderRadius: BorderRadius.circular(12),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
+        color: isHighlighted
+            ? FlitColors.accent.withOpacity(0.15)
+            : FlitColors.backgroundMid,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isHighlighted
-                ? FlitColors.accent.withOpacity(0.5)
-                : FlitColors.cardBorder,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isHighlighted
+                    ? FlitColors.accent.withOpacity(0.5)
+                    : FlitColors.cardBorder,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isHighlighted
+                        ? FlitColors.accent.withOpacity(0.2)
+                        : FlitColors.backgroundDark.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isHighlighted
+                        ? FlitColors.accent
+                        : FlitColors.textPrimary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: FlitColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: FlitColors.textMuted),
+              ],
+            ),
           ),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: isHighlighted
-                    ? FlitColors.accent.withOpacity(0.2)
-                    : FlitColors.backgroundDark.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                color: isHighlighted
-                    ? FlitColors.accent
-                    : FlitColors.textPrimary,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      color: FlitColors.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: FlitColors.textMuted),
-          ],
-        ),
-      ),
-    ),
-  );
+      );
 }

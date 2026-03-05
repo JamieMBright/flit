@@ -142,8 +142,7 @@ class DailyChallenge {
   /// triple = 1.07x.
   factory DailyChallenge.forDate(DateTime date, {int? baseRewardOverride}) {
     final normalisedDate = DateTime.utc(date.year, date.month, date.day);
-    final seed =
-        normalisedDate.year * 10000 +
+    final seed = normalisedDate.year * 10000 +
         normalisedDate.month * 100 +
         normalisedDate.day;
 
@@ -250,20 +249,19 @@ class DailyChallenge {
         // Clue.random uses its own RNG internally, but the clue type pool is
         // deterministic from the allowed set. For difficulty estimation we pick
         // the middle-difficulty type from the allowed set as a representative.
-        final sorted =
-            clueTypeList
-                .map(
-                  (name) => ClueType.values.firstWhere(
-                    (t) => t.name == name,
-                    orElse: () => ClueType.flag,
-                  ),
-                )
-                .toList()
-              ..sort(
-                (a, b) => (clueTypeDifficulty[a] ?? 0.5).compareTo(
-                  clueTypeDifficulty[b] ?? 0.5,
-                ),
-              );
+        final sorted = clueTypeList
+            .map(
+              (name) => ClueType.values.firstWhere(
+                (t) => t.name == name,
+                orElse: () => ClueType.flag,
+              ),
+            )
+            .toList()
+          ..sort(
+            (a, b) => (clueTypeDifficulty[a] ?? 0.5).compareTo(
+              clueTypeDifficulty[b] ?? 0.5,
+            ),
+          );
         // Use seed-derived index to pick a clue type deterministically
         clueType = sorted[rng.nextInt(sorted.length)];
       }
@@ -277,17 +275,17 @@ class DailyChallenge {
   // ── Serialisation ───────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-    'date': date.toIso8601String(),
-    'title': title,
-    'description': description,
-    'enabled_clue_types': enabledClueTypes.toList(),
-    'coin_reward': coinReward,
-    'bonus_coin_reward': bonusCoinReward,
-    'seed': seed,
-    'map_region': mapRegion,
-    'difficulty_percent': difficultyPercent,
-    'difficulty_label': difficultyLabelText,
-  };
+        'date': date.toIso8601String(),
+        'title': title,
+        'description': description,
+        'enabled_clue_types': enabledClueTypes.toList(),
+        'coin_reward': coinReward,
+        'bonus_coin_reward': bonusCoinReward,
+        'seed': seed,
+        'map_region': mapRegion,
+        'difficulty_percent': difficultyPercent,
+        'difficulty_label': difficultyLabelText,
+      };
 
   factory DailyChallenge.fromJson(Map<String, dynamic> json) {
     final diffPercent = json['difficulty_percent'] as int? ?? 50;
@@ -295,16 +293,14 @@ class DailyChallenge {
       date: DateTime.parse(json['date'] as String),
       title: json['title'] as String,
       description: json['description'] as String,
-      enabledClueTypes: (json['enabled_clue_types'] as List)
-          .map((e) => e as String)
-          .toSet(),
+      enabledClueTypes:
+          (json['enabled_clue_types'] as List).map((e) => e as String).toSet(),
       coinReward: json['coin_reward'] as int,
       bonusCoinReward: json['bonus_coin_reward'] as int,
       seed: json['seed'] as int,
       mapRegion: json['map_region'] as String? ?? 'World',
       difficultyPercent: diffPercent,
-      difficultyLabelText:
-          json['difficulty_label'] as String? ??
+      difficultyLabelText: json['difficulty_label'] as String? ??
           difficultyLabel(diffPercent / 100.0),
     );
   }
@@ -330,11 +326,11 @@ class DailyLeaderboardEntry {
   final int rank;
 
   Map<String, dynamic> toJson() => {
-    'username': username,
-    'score': score,
-    'time_ms': time.inMilliseconds,
-    'rank': rank,
-  };
+        'username': username,
+        'score': score,
+        'time_ms': time.inMilliseconds,
+        'rank': rank,
+      };
 
   factory DailyLeaderboardEntry.fromJson(Map<String, dynamic> json) =>
       DailyLeaderboardEntry(

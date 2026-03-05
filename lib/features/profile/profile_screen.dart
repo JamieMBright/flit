@@ -208,9 +208,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 if (hasError) return;
 
                 // Update player via AccountProvider
-                ref
-                    .read(accountProvider.notifier)
-                    .switchAccount(
+                ref.read(accountProvider.notifier).switchAccount(
                       currentPlayer.copyWith(
                         username: username.isEmpty
                             ? currentPlayer.username
@@ -395,9 +393,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: isLoading
-                  ? null
-                  : () => Navigator.of(dialogContext).pop(),
+              onPressed:
+                  isLoading ? null : () => Navigator.of(dialogContext).pop(),
               child: const Text(
                 'Cancel',
                 style: TextStyle(color: FlitColors.textSecondary),
@@ -767,27 +764,28 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    children: [
-      // Avatar
-      AvatarWidget(config: avatarConfig, size: 100),
-      const SizedBox(height: 16),
-      // Name
-      Text(
-        player.name,
-        style: const TextStyle(
-          color: FlitColors.textPrimary,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      const SizedBox(height: 4),
-      // Username
-      Text(
-        '@${player.username}',
-        style: const TextStyle(color: FlitColors.textSecondary, fontSize: 14),
-      ),
-    ],
-  );
+        children: [
+          // Avatar
+          AvatarWidget(config: avatarConfig, size: 100),
+          const SizedBox(height: 16),
+          // Name
+          Text(
+            player.name,
+            style: const TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Username
+          Text(
+            '@${player.username}',
+            style:
+                const TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+          ),
+        ],
+      );
 }
 
 class _LevelProgress extends StatelessWidget {
@@ -797,37 +795,46 @@ class _LevelProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.cardBorder),
-    ),
-    child: Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
+        ),
+        child: Column(
           children: [
             Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(
-                  _aviationRank(player.level).icon,
-                  color: FlitColors.gold,
-                  size: 20,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _aviationRank(player.level).icon,
+                      color: FlitColors.gold,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _aviationRank(player.level).title,
+                      style: const TextStyle(
+                        color: FlitColors.gold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Lv.${player.level}',
+                      style: const TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 6),
                 Text(
-                  _aviationRank(player.level).title,
-                  style: const TextStyle(
-                    color: FlitColors.gold,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Lv.${player.level}',
+                  '${player.xp} / ${player.xpForNextLevel} XP',
                   style: const TextStyle(
                     color: FlitColors.textSecondary,
                     fontSize: 14,
@@ -835,28 +842,20 @@ class _LevelProgress extends StatelessWidget {
                 ),
               ],
             ),
-            Text(
-              '${player.xp} / ${player.xpForNextLevel} XP',
-              style: const TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 14,
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: player.levelProgress,
+                backgroundColor: FlitColors.backgroundMid,
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(FlitColors.accent),
+                minHeight: 8,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: player.levelProgress,
-            backgroundColor: FlitColors.backgroundMid,
-            valueColor: const AlwaysStoppedAnimation<Color>(FlitColors.accent),
-            minHeight: 8,
-          ),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 class _StatsGrid extends StatelessWidget {
@@ -985,33 +984,33 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.cardBorder),
-    ),
-    child: Column(
-      children: [
-        Icon(icon, color: iconColor, size: 28),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: FlitColors.textPrimary,
-            fontSize: valueSize,
-            fontWeight: FontWeight.bold,
-          ),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+        child: Column(
+          children: [
+            Icon(icon, color: iconColor, size: 28),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: valueSize,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 }
 
 class _ProfileActions extends StatelessWidget {
@@ -1033,60 +1032,60 @@ class _ProfileActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      _ActionButton(
-        icon: Icons.edit,
-        label: 'Edit Profile',
-        onTap: onEditProfile,
-      ),
-      const SizedBox(height: 12),
-      _ActionButton(
-        icon: Icons.lock_outline,
-        label: 'Change Password',
-        onTap: onChangePassword,
-      ),
-      const SizedBox(height: 12),
-      _ActionButton(
-        icon: Icons.history,
-        label: 'Game History',
-        onTap: onGameHistory,
-      ),
-      const SizedBox(height: 24),
-      // Data & Privacy section
-      const Padding(
-        padding: EdgeInsets.only(left: 4, bottom: 8),
-        child: Text(
-          'DATA & PRIVACY',
-          style: TextStyle(
-            color: FlitColors.textMuted,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.2,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _ActionButton(
+            icon: Icons.edit,
+            label: 'Edit Profile',
+            onTap: onEditProfile,
           ),
-        ),
-      ),
-      _ActionButton(
-        icon: Icons.download,
-        label: 'Export My Data',
-        onTap: onExportData,
-      ),
-      const SizedBox(height: 12),
-      _ActionButton(
-        icon: Icons.delete_forever,
-        label: 'Delete Account',
-        isDestructive: true,
-        onTap: onDeleteAccount,
-      ),
-      const SizedBox(height: 24),
-      _ActionButton(
-        icon: Icons.logout,
-        label: 'Sign Out',
-        isDestructive: true,
-        onTap: onSignOut,
-      ),
-    ],
-  );
+          const SizedBox(height: 12),
+          _ActionButton(
+            icon: Icons.lock_outline,
+            label: 'Change Password',
+            onTap: onChangePassword,
+          ),
+          const SizedBox(height: 12),
+          _ActionButton(
+            icon: Icons.history,
+            label: 'Game History',
+            onTap: onGameHistory,
+          ),
+          const SizedBox(height: 24),
+          // Data & Privacy section
+          const Padding(
+            padding: EdgeInsets.only(left: 4, bottom: 8),
+            child: Text(
+              'DATA & PRIVACY',
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          _ActionButton(
+            icon: Icons.download,
+            label: 'Export My Data',
+            onTap: onExportData,
+          ),
+          const SizedBox(height: 12),
+          _ActionButton(
+            icon: Icons.delete_forever,
+            label: 'Delete Account',
+            isDestructive: true,
+            onTap: onDeleteAccount,
+          ),
+          const SizedBox(height: 24),
+          _ActionButton(
+            icon: Icons.logout,
+            label: 'Sign Out',
+            isDestructive: true,
+            onTap: onSignOut,
+          ),
+        ],
+      );
 }
 
 class _ActionButton extends StatelessWidget {
@@ -1104,42 +1103,42 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: FlitColors.cardBackground,
-    borderRadius: BorderRadius.circular(12),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.cardBorder),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: isDestructive
-                  ? FlitColors.error
-                  : FlitColors.textSecondary,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: FlitColors.cardBorder),
             ),
-            const SizedBox(width: 16),
-            Text(
-              label,
-              style: TextStyle(
-                color: isDestructive
-                    ? FlitColors.error
-                    : FlitColors.textPrimary,
-                fontSize: 16,
-              ),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  color: isDestructive
+                      ? FlitColors.error
+                      : FlitColors.textSecondary,
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isDestructive
+                        ? FlitColors.error
+                        : FlitColors.textPrimary,
+                    fontSize: 16,
+                  ),
+                ),
+                const Spacer(),
+                const Icon(Icons.chevron_right, color: FlitColors.textMuted),
+              ],
             ),
-            const Spacer(),
-            const Icon(Icons.chevron_right, color: FlitColors.textMuted),
-          ],
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 class _QuickLinkButton extends StatelessWidget {
@@ -1155,34 +1154,34 @@ class _QuickLinkButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: FlitColors.cardBackground,
-    borderRadius: BorderRadius.circular(12),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.cardBorder),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: FlitColors.accent, size: 28),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: FlitColors.cardBorder),
             ),
-          ],
+            child: Column(
+              children: [
+                Icon(icon, color: FlitColors.accent, size: 28),
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -1197,76 +1196,78 @@ class _NationalitySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: FlitColors.cardBackground,
-    borderRadius: BorderRadius.circular(12),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.cardBorder),
-        ),
-        child: Row(
-          children: [
-            if (nationality != null) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: SizedBox(
-                  width: 32,
-                  height: 22,
-                  child: Flag.fromString(
-                    nationality!,
-                    height: 22,
-                    width: 32,
-                    fit: BoxFit.cover,
-                    borderRadius: 4,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: FlitColors.cardBorder),
+            ),
+            child: Row(
+              children: [
+                if (nationality != null) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: SizedBox(
+                      width: 32,
+                      height: 22,
+                      child: Flag.fromString(
+                        nationality!,
+                        height: 22,
+                        width: 32,
+                        fit: BoxFit.cover,
+                        borderRadius: 4,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Nationality',
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Nationality',
+                          style: TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _NationalityPickerSheet.countryNameForCode(
+                                nationality!,
+                              ) ??
+                              nationality!,
+                          style: const TextStyle(
+                            color: FlitColors.textPrimary,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  const Icon(Icons.flag_outlined,
+                      color: FlitColors.textSecondary),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Set Nationality',
                       style: TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 12,
-                      ),
+                          color: FlitColors.textPrimary, fontSize: 16),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _NationalityPickerSheet.countryNameForCode(
-                            nationality!,
-                          ) ??
-                          nationality!,
-                      style: const TextStyle(
-                        color: FlitColors.textPrimary,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ] else ...[
-              const Icon(Icons.flag_outlined, color: FlitColors.textSecondary),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Text(
-                  'Set Nationality',
-                  style: TextStyle(color: FlitColors.textPrimary, fontSize: 16),
-                ),
-              ),
-            ],
-            const Icon(Icons.chevron_right, color: FlitColors.textMuted),
-          ],
+                  ),
+                ],
+                const Icon(Icons.chevron_right, color: FlitColors.textMuted),
+              ],
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -1744,42 +1745,42 @@ class _ExportDataDialogState extends State<_ExportDataDialog> {
               ],
             )
           : _error != null
-          ? Text(_error!, style: const TextStyle(color: FlitColors.error))
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Your data is ready to export. This includes your '
-                  'profile, stats, settings, scores history, friends '
-                  'list, and challenge history.',
-                  style: TextStyle(
-                    color: FlitColors.textSecondary,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  constraints: const BoxConstraints(maxHeight: 200),
-                  decoration: BoxDecoration(
-                    color: FlitColors.backgroundDark,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: FlitColors.cardBorder),
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      _jsonData ?? '',
-                      style: const TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 11,
-                        fontFamily: 'monospace',
+              ? Text(_error!, style: const TextStyle(color: FlitColors.error))
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Your data is ready to export. This includes your '
+                      'profile, stats, settings, scores history, friends '
+                      'list, and challenge history.',
+                      style: TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 14,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 200),
+                      decoration: BoxDecoration(
+                        color: FlitColors.backgroundDark,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: FlitColors.cardBorder),
+                      ),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(12),
+                        child: Text(
+                          _jsonData ?? '',
+                          style: const TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -1835,8 +1836,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
   }
 
   void _checkEmail() {
-    final matches =
-        _emailController.text.trim().toLowerCase() ==
+    final matches = _emailController.text.trim().toLowerCase() ==
         widget.userEmail.toLowerCase();
     if (matches != _emailMatches) {
       setState(() => _emailMatches = matches);
@@ -1948,31 +1948,31 @@ class _DeletionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(left: 8, top: 4),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(top: 2),
-          child: Icon(
-            Icons.remove_circle_outline,
-            color: FlitColors.error,
-            size: 14,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: FlitColors.textSecondary,
-              fontSize: 13,
+        padding: const EdgeInsets.only(left: 8, top: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 2),
+              child: Icon(
+                Icons.remove_circle_outline,
+                color: FlitColors.error,
+                size: 14,
+              ),
             ),
-          ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -2084,9 +2084,8 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
               _GameHistoryEntry(
                 region: (entry['region'] as String?) ?? 'World',
                 duration: Duration(
-                  milliseconds: timeMs is int
-                      ? timeMs
-                      : (timeMs as num).toInt(),
+                  milliseconds:
+                      timeMs is int ? timeMs : (timeMs as num).toInt(),
                 ),
                 score: score is int ? score : (score as num).toInt(),
                 date: DateTime.parse(createdAt as String),
@@ -2146,9 +2145,8 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
 
   void _showEntryDetail(BuildContext context, _GameHistoryEntry entry) {
     final isDaily = entry.region.toLowerCase() == 'daily';
-    final rounds = entry.clueEmojiRow.runes
-        .map((r) => String.fromCharCode(r))
-        .toList();
+    final rounds =
+        entry.clueEmojiRow.runes.map((r) => String.fromCharCode(r)).toList();
     int perfect = 0, hinted = 0, heavy = 0, failed = 0;
     for (final r in rounds) {
       if (r == '\u{1F7E2}') {
@@ -2280,144 +2278,149 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: FlitColors.backgroundDark,
-    appBar: AppBar(
-      backgroundColor: FlitColors.backgroundMid,
-      title: const Text('Game History'),
-      centerTitle: true,
-    ),
-    body: _loading
-        ? const Center(child: CircularProgressIndicator())
-        : _entries.isEmpty
-        ? const Center(
-            child: Text(
-              'No games played yet',
-              style: TextStyle(color: FlitColors.textMuted, fontSize: 16),
-            ),
-          )
-        : ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: _entries.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final entry = _entries[index];
-              final isDaily = entry.region.toLowerCase() == 'daily';
-              return GestureDetector(
-                onTap: () => _showEntryDetail(context, entry),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: FlitColors.cardBackground,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: FlitColors.cardBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      // Region icon
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: FlitColors.backgroundLight,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            isDaily ? Icons.calendar_today : Icons.public,
-                            color: isDaily
-                                ? FlitColors.gold
-                                : FlitColors.accent,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Region, time, emojis
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isDaily ? 'Daily Scramble' : entry.region,
-                              style: const TextStyle(
-                                color: FlitColors.textPrimary,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              '${_formatDuration(entry.duration)}  \u2022  ${_formatDate(entry.date)}',
-                              style: const TextStyle(
-                                color: FlitColors.textMuted,
-                                fontSize: 11,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              entry.clueEmojiRow,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Score
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            entry.score.toString(),
-                            style: const TextStyle(
-                              color: FlitColors.gold,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'pts',
-                            style: TextStyle(
-                              color: FlitColors.textMuted.withOpacity(0.7),
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 8),
-                      // Share button
-                      GestureDetector(
-                        onTap: () {
-                          final text = entry.toShareText();
-                          Clipboard.setData(ClipboardData(text: text));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Result copied to clipboard!'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
+        backgroundColor: FlitColors.backgroundDark,
+        appBar: AppBar(
+          backgroundColor: FlitColors.backgroundMid,
+          title: const Text('Game History'),
+          centerTitle: true,
+        ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _entries.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No games played yet',
+                      style:
+                          TextStyle(color: FlitColors.textMuted, fontSize: 16),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _entries.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final entry = _entries[index];
+                      final isDaily = entry.region.toLowerCase() == 'daily';
+                      return GestureDetector(
+                        onTap: () => _showEntryDetail(context, entry),
                         child: Container(
-                          width: 32,
-                          height: 32,
+                          padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: FlitColors.backgroundLight,
-                            borderRadius: BorderRadius.circular(8),
+                            color: FlitColors.cardBackground,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: FlitColors.cardBorder),
                           ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.share,
-                              color: FlitColors.textMuted,
-                              size: 16,
-                            ),
+                          child: Row(
+                            children: [
+                              // Region icon
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: FlitColors.backgroundLight,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    isDaily
+                                        ? Icons.calendar_today
+                                        : Icons.public,
+                                    color: isDaily
+                                        ? FlitColors.gold
+                                        : FlitColors.accent,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              // Region, time, emojis
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      isDaily ? 'Daily Scramble' : entry.region,
+                                      style: const TextStyle(
+                                        color: FlitColors.textPrimary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      '${_formatDuration(entry.duration)}  \u2022  ${_formatDate(entry.date)}',
+                                      style: const TextStyle(
+                                        color: FlitColors.textMuted,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      entry.clueEmojiRow,
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Score
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    entry.score.toString(),
+                                    style: const TextStyle(
+                                      color: FlitColors.gold,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    'pts',
+                                    style: TextStyle(
+                                      color:
+                                          FlitColors.textMuted.withOpacity(0.7),
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 8),
+                              // Share button
+                              GestureDetector(
+                                onTap: () {
+                                  final text = entry.toShareText();
+                                  Clipboard.setData(ClipboardData(text: text));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content:
+                                          Text('Result copied to clipboard!'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: FlitColors.backgroundLight,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.share,
+                                      color: FlitColors.textMuted,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                ),
-              );
-            },
-          ),
-  );
+      );
 }
 
 class _LegendItem extends StatelessWidget {
@@ -2445,29 +2448,29 @@ class _LegendItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        width: 14,
-        height: 14,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: _emojiColor(emoji),
-        ),
-      ),
-      const SizedBox(height: 2),
-      Text(
-        count,
-        style: const TextStyle(
-          color: FlitColors.textPrimary,
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      Text(
-        label,
-        style: const TextStyle(color: FlitColors.textMuted, fontSize: 9),
-      ),
-    ],
-  );
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 14,
+            height: 14,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _emojiColor(emoji),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            count,
+            style: const TextStyle(
+              color: FlitColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(color: FlitColors.textMuted, fontSize: 9),
+          ),
+        ],
+      );
 }

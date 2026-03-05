@@ -28,25 +28,21 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   List<Friend> _friends = [];
   Map<String, HeadToHead> _h2hRecords = {};
   List<
-    ({
-      int friendshipId,
-      String requesterId,
-      String username,
-      String? displayName,
-      String? avatarUrl,
-    })
-  >
-  _pendingRequests = [];
+      ({
+        int friendshipId,
+        String requesterId,
+        String username,
+        String? displayName,
+        String? avatarUrl,
+      })> _pendingRequests = [];
   List<
-    ({
-      int friendshipId,
-      String addresseeId,
-      String username,
-      String? displayName,
-      String? avatarUrl,
-    })
-  >
-  _sentRequests = [];
+      ({
+        int friendshipId,
+        String addresseeId,
+        String username,
+        String? displayName,
+        String? avatarUrl,
+      })> _sentRequests = [];
   bool _loading = true;
   bool _giftingEnabled = true;
 
@@ -90,29 +86,23 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     ]);
 
     final friends = results[0] as List<Friend>;
-    final pending =
-        results[1]
-            as List<
-              ({
-                int friendshipId,
-                String requesterId,
-                String username,
-                String? displayName,
-                String? avatarUrl,
-              })
-            >;
+    final pending = results[1] as List<
+        ({
+          int friendshipId,
+          String requesterId,
+          String username,
+          String? displayName,
+          String? avatarUrl,
+        })>;
     final activeChallenges = results[2] as List<Challenge>;
-    final sentRequests =
-        results[3]
-            as List<
-              ({
-                int friendshipId,
-                String addresseeId,
-                String username,
-                String? displayName,
-                String? avatarUrl,
-              })
-            >;
+    final sentRequests = results[3] as List<
+        ({
+          int friendshipId,
+          String addresseeId,
+          String username,
+          String? displayName,
+          String? avatarUrl,
+        })>;
 
     // Load H2H records for all friends in parallel.
     final h2hEntries = await Future.wait(
@@ -185,29 +175,29 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: FlitColors.backgroundDark,
-    appBar: AppBar(
-      backgroundColor: FlitColors.backgroundMid,
-      title: const Text('Friends & Challenges'),
-      centerTitle: true,
-      actions: [
-        IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
-        IconButton(
-          icon: const Icon(Icons.person_add),
-          onPressed: _showAddFriendDialog,
+        backgroundColor: FlitColors.backgroundDark,
+        appBar: AppBar(
+          backgroundColor: FlitColors.backgroundMid,
+          title: const Text('Friends & Challenges'),
+          centerTitle: true,
+          actions: [
+            IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
+            IconButton(
+              icon: const Icon(Icons.person_add),
+              onPressed: _showAddFriendDialog,
+            ),
+          ],
         ),
-      ],
-    ),
-    body: _loading
-        ? const Center(
-            child: CircularProgressIndicator(color: FlitColors.accent),
-          )
-        : RefreshIndicator(
-            onRefresh: _loadData,
-            color: FlitColors.accent,
-            child: _buildBody(),
-          ),
-  );
+        body: _loading
+            ? const Center(
+                child: CircularProgressIndicator(color: FlitColors.accent),
+              )
+            : RefreshIndicator(
+                onRefresh: _loadData,
+                color: FlitColors.accent,
+                child: _buildBody(),
+              ),
+      );
 
   Widget _buildBody() {
     if (_friends.isEmpty && _pendingRequests.isEmpty && _sentRequests.isEmpty) {
@@ -434,9 +424,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       challengedName: friend.name,
       challengerName: myName,
       gameMode: gameMode,
-      quizCategory: gameMode == ChallengeGameMode.quiz
-          ? QuizCategory.mixed
-          : null,
+      quizCategory:
+          gameMode == ChallengeGameMode.quiz ? QuizCategory.mixed : null,
       quizMode: gameMode == ChallengeGameMode.quiz ? QuizMode.allStates : null,
     );
 
@@ -485,36 +474,33 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     if (!mounted) return;
     Navigator.of(context)
         .push(
-          MaterialPageRoute<void>(
-            builder: (context) => PlayScreen(
-              challengeFriendName: opponentName,
-              challengeId: challengeId,
-              challengeSeeds: seeds,
-              totalRounds: Challenge.totalRounds,
-              planeColorScheme: plane?.colorScheme,
-              planeWingSpan: plane?.wingSpan,
-              equippedPlaneId: planeId,
-              companionType: companion,
-              fuelBoostMultiplier: fuelBoost,
-
-              clueChance: license.clueChance,
-              preferredClueType: license.preferredClueType,
-              enableFuel: true,
-              planeHandling: plane?.handling ?? 1.0,
-              planeSpeed: plane?.speed ?? 1.0,
-              planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
-              contrailPrimaryColor: contrailPrimary != null
-                  ? Color(contrailPrimary)
-                  : null,
-              contrailSecondaryColor: contrailSecondary != null
-                  ? Color(contrailSecondary)
-                  : null,
-            ),
-          ),
-        )
+      MaterialPageRoute<void>(
+        builder: (context) => PlayScreen(
+          challengeFriendName: opponentName,
+          challengeId: challengeId,
+          challengeSeeds: seeds,
+          totalRounds: Challenge.totalRounds,
+          planeColorScheme: plane?.colorScheme,
+          planeWingSpan: plane?.wingSpan,
+          equippedPlaneId: planeId,
+          companionType: companion,
+          fuelBoostMultiplier: fuelBoost,
+          clueChance: license.clueChance,
+          preferredClueType: license.preferredClueType,
+          enableFuel: true,
+          planeHandling: plane?.handling ?? 1.0,
+          planeSpeed: plane?.speed ?? 1.0,
+          planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
+          contrailPrimaryColor:
+              contrailPrimary != null ? Color(contrailPrimary) : null,
+          contrailSecondaryColor:
+              contrailSecondary != null ? Color(contrailSecondary) : null,
+        ),
+      ),
+    )
         .then((_) {
-          if (mounted) _loadData();
-        });
+      if (mounted) _loadData();
+    });
   }
 
   Future<void> _launchQuizChallengeGameplay(
@@ -532,19 +518,19 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
 
     Navigator.of(context)
         .push(
-          MaterialPageRoute<void>(
-            builder: (_) => QuizGameScreen(
-              mode: quizMode,
-              category: category,
-              challengeId: challengeId,
-              challengeOpponentName: opponentName,
-              seed: seed,
-            ),
-          ),
-        )
+      MaterialPageRoute<void>(
+        builder: (_) => QuizGameScreen(
+          mode: quizMode,
+          category: category,
+          challengeId: challengeId,
+          challengeOpponentName: opponentName,
+          seed: seed,
+        ),
+      ),
+    )
         .then((_) {
-          if (mounted) _loadData();
-        });
+      if (mounted) _loadData();
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -635,9 +621,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                       );
                       if (!mounted) return;
                       if (ok) {
-                        ref
-                            .read(accountProvider.notifier)
-                            .spendCoins(
+                        ref.read(accountProvider.notifier).spendCoins(
                               amount,
                               source: 'gift_sent',
                               logActivity: false,
@@ -873,8 +857,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: FlitColors.warning,
                         foregroundColor: FlitColors.backgroundDark,
-                        disabledBackgroundColor: FlitColors.textMuted
-                            .withOpacity(0.3),
+                        disabledBackgroundColor:
+                            FlitColors.textMuted.withOpacity(0.3),
                       ),
                       child: const Text('Report'),
                     ),
@@ -1008,52 +992,52 @@ class _FriendRequestTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.accent.withOpacity(0.3)),
-    ),
-    child: Row(
-      children: [
-        const Icon(Icons.person_add, color: FlitColors.accent, size: 32),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                displayName ?? username,
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.accent.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.person_add, color: FlitColors.accent, size: 32),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayName ?? username,
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '@$username \u2022 Invite Pending',
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                '@$username \u2022 Invite Pending',
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.check_circle, color: FlitColors.success),
+              onPressed: onAccept,
+              tooltip: 'Accept',
+            ),
+            IconButton(
+              icon: const Icon(Icons.cancel, color: FlitColors.error),
+              onPressed: onDecline,
+              tooltip: 'Decline',
+            ),
+          ],
         ),
-        IconButton(
-          icon: const Icon(Icons.check_circle, color: FlitColors.success),
-          onPressed: onAccept,
-          tooltip: 'Accept',
-        ),
-        IconButton(
-          icon: const Icon(Icons.cancel, color: FlitColors.error),
-          onPressed: onDecline,
-          tooltip: 'Decline',
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 class _SentRequestTile extends StatelessWidget {
@@ -1069,67 +1053,69 @@ class _SentRequestTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.textMuted.withOpacity(0.3)),
-    ),
-    child: Row(
-      children: [
-        const Icon(Icons.schedule_send, color: FlitColors.textMuted, size: 32),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                displayName ?? username,
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                '@$username',
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.textMuted.withOpacity(0.3)),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: FlitColors.warning.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: FlitColors.warning.withOpacity(0.3)),
-          ),
-          child: const Text(
-            'Invite Pending',
-            style: TextStyle(
-              color: FlitColors.warning,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
+        child: Row(
+          children: [
+            const Icon(Icons.schedule_send,
+                color: FlitColors.textMuted, size: 32),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayName ?? username,
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '@$username',
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: FlitColors.warning.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: FlitColors.warning.withOpacity(0.3)),
+              ),
+              child: const Text(
+                'Invite Pending',
+                style: TextStyle(
+                  color: FlitColors.warning,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              icon: const Icon(Icons.close,
+                  color: FlitColors.textMuted, size: 18),
+              onPressed: onCancel,
+              tooltip: 'Cancel request',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
+          ],
         ),
-        const SizedBox(width: 4),
-        IconButton(
-          icon: const Icon(Icons.close, color: FlitColors.textMuted, size: 18),
-          onPressed: onCancel,
-          tooltip: 'Cancel request',
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 class _GiftOption extends StatelessWidget {
@@ -1147,73 +1133,73 @@ class _GiftOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(10),
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isBestValue
-            ? FlitColors.accent.withOpacity(0.1)
-            : FlitColors.backgroundMid,
+        onTap: onTap,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isBestValue ? FlitColors.accent : FlitColors.cardBorder,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isBestValue
+                ? FlitColors.accent.withOpacity(0.1)
+                : FlitColors.backgroundMid,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isBestValue ? FlitColors.accent : FlitColors.cardBorder,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: FlitColors.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (isBestValue) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: FlitColors.accent,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'BEST VALUE',
-                          style: TextStyle(
+                    Row(
+                      children: [
+                        Text(
+                          label,
+                          style: const TextStyle(
                             color: FlitColors.textPrimary,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
-                    ],
+                        if (isBestValue) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: FlitColors.accent,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'BEST VALUE',
+                              style: TextStyle(
+                                color: FlitColors.textPrimary,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              Text(
+                price,
+                style: const TextStyle(
+                  color: FlitColors.gold,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-          Text(
-            price,
-            style: const TextStyle(
-              color: FlitColors.gold,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 class _MiniStat extends StatelessWidget {
@@ -1225,22 +1211,22 @@ class _MiniStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    children: [
-      Text(
-        value,
-        style: TextStyle(
-          color: color,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      const SizedBox(height: 2),
-      Text(
-        label,
-        style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
-      ),
-    ],
-  );
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
+          ),
+        ],
+      );
 }
 
 class _FriendTile extends StatelessWidget {
@@ -1368,8 +1354,8 @@ class _FriendTile extends StatelessWidget {
                                   color: h2h!.recentTrend > 0
                                       ? FlitColors.success
                                       : h2h!.recentTrend < 0
-                                      ? FlitColors.error
-                                      : FlitColors.textMuted,
+                                          ? FlitColors.error
+                                          : FlitColors.textMuted,
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1424,68 +1410,68 @@ class _AddFriendDialogState extends State<_AddFriendDialog> {
 
   @override
   Widget build(BuildContext context) => Dialog(
-    backgroundColor: FlitColors.cardBackground,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'Add Friend',
-            style: TextStyle(
-              color: FlitColors.textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _controller,
-            style: const TextStyle(color: FlitColors.textPrimary),
-            decoration: InputDecoration(
-              hintText: 'Enter username',
-              hintStyle: const TextStyle(color: FlitColors.textMuted),
-              prefixText: '@',
-              prefixStyle: const TextStyle(color: FlitColors.textSecondary),
-              filled: true,
-              fillColor: FlitColors.backgroundMid,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(color: FlitColors.textMuted),
+              const Text(
+                'Add Friend',
+                style: TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: () {
-                  if (_controller.text.isNotEmpty) {
-                    widget.onAdd(_controller.text);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FlitColors.accent,
-                  foregroundColor: FlitColors.textPrimary,
+              const SizedBox(height: 16),
+              TextField(
+                controller: _controller,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                decoration: InputDecoration(
+                  hintText: 'Enter username',
+                  hintStyle: const TextStyle(color: FlitColors.textMuted),
+                  prefixText: '@',
+                  prefixStyle: const TextStyle(color: FlitColors.textSecondary),
+                  filled: true,
+                  fillColor: FlitColors.backgroundMid,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
-                child: const Text('Send Request'),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: FlitColors.textMuted),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_controller.text.isNotEmpty) {
+                        widget.onAdd(_controller.text);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.accent,
+                      foregroundColor: FlitColors.textPrimary,
+                    ),
+                    child: const Text('Send Request'),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 }
 
 class _EmptyState extends StatelessWidget {
@@ -1493,27 +1479,27 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.people_outline,
-          size: 64,
-          color: FlitColors.textMuted.withOpacity(0.5),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 64,
+              color: FlitColors.textMuted.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'No friends yet',
+              style: TextStyle(color: FlitColors.textSecondary, fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Add friends to challenge them!',
+              style: TextStyle(color: FlitColors.textMuted, fontSize: 14),
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
-        const Text(
-          'No friends yet',
-          style: TextStyle(color: FlitColors.textSecondary, fontSize: 18),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Add friends to challenge them!',
-          style: TextStyle(color: FlitColors.textMuted, fontSize: 14),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 // =============================================================================
@@ -1914,8 +1900,8 @@ class _FriendProfileSheetState extends State<_FriendProfileSheet> {
                                   color: h2h.lastGameWon == true
                                       ? FlitColors.success
                                       : h2h.lastGameWon == false
-                                      ? FlitColors.error
-                                      : FlitColors.textSecondary,
+                                          ? FlitColors.error
+                                          : FlitColors.textSecondary,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1940,8 +1926,8 @@ class _FriendProfileSheetState extends State<_FriendProfileSheet> {
                                   color: h2h.recentTrend > 0
                                       ? FlitColors.success
                                       : h2h.recentTrend < 0
-                                      ? FlitColors.error
-                                      : FlitColors.textMuted,
+                                          ? FlitColors.error
+                                          : FlitColors.textMuted,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1983,18 +1969,19 @@ class _FriendProfileSheetState extends State<_FriendProfileSheet> {
                 ),
                 const SizedBox(height: 8),
                 ..._matchHistory!.asMap().entries.map(
-                  (entry) => _MatchHistoryTile(
-                    match: entry.value,
-                    isExpanded: _expandedMatchIndex == entry.key,
-                    onTap: () {
-                      setState(() {
-                        _expandedMatchIndex = _expandedMatchIndex == entry.key
-                            ? null
-                            : entry.key;
-                      });
-                    },
-                  ),
-                ),
+                      (entry) => _MatchHistoryTile(
+                        match: entry.value,
+                        isExpanded: _expandedMatchIndex == entry.key,
+                        onTap: () {
+                          setState(() {
+                            _expandedMatchIndex =
+                                _expandedMatchIndex == entry.key
+                                    ? null
+                                    : entry.key;
+                          });
+                        },
+                      ),
+                    ),
               ],
             ] else
               Container(
@@ -2161,19 +2148,19 @@ class _MatchHistoryTile extends StatelessWidget {
     final resultColor = match.youWon == true
         ? FlitColors.success
         : match.youWon == false
-        ? FlitColors.error
-        : FlitColors.textMuted;
+            ? FlitColors.error
+            : FlitColors.textMuted;
     final resultLabel = match.youWon == true
         ? 'W'
         : match.youWon == false
-        ? 'L'
-        : 'D';
+            ? 'L'
+            : 'D';
     final daysAgo = DateTime.now().difference(match.playedAt).inDays;
     final dateLabel = daysAgo == 0
         ? 'Today'
         : daysAgo == 1
-        ? 'Yesterday'
-        : '$daysAgo days ago';
+            ? 'Yesterday'
+            : '$daysAgo days ago';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -2291,9 +2278,8 @@ class _RoundOutcomeRow extends StatelessWidget {
                     ? FlitColors.success
                     : FlitColors.textPrimary,
                 fontSize: 11,
-                fontWeight: youWon == true
-                    ? FontWeight.w600
-                    : FontWeight.normal,
+                fontWeight:
+                    youWon == true ? FontWeight.w600 : FontWeight.normal,
                 fontFamily: 'monospace',
               ),
               textAlign: TextAlign.right,
@@ -2344,13 +2330,11 @@ class _RoundOutcomeRow extends StatelessWidget {
                   ? _formatScore(round.theirScore!)
                   : _formatMs(round.theirTimeMs),
               style: TextStyle(
-                color: youWon == false
-                    ? FlitColors.error
-                    : FlitColors.textPrimary,
+                color:
+                    youWon == false ? FlitColors.error : FlitColors.textPrimary,
                 fontSize: 11,
-                fontWeight: youWon == false
-                    ? FontWeight.w600
-                    : FontWeight.normal,
+                fontWeight:
+                    youWon == false ? FontWeight.w600 : FontWeight.normal,
                 fontFamily: 'monospace',
               ),
               textAlign: TextAlign.left,

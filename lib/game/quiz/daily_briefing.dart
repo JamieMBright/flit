@@ -65,8 +65,7 @@ class DailyBriefing {
   /// Only the year/month/day components matter; the time portion is ignored.
   factory DailyBriefing.forDate(DateTime date) {
     final normalised = DateTime.utc(date.year, date.month, date.day);
-    final dateKey =
-        '${normalised.year}-'
+    final dateKey = '${normalised.year}-'
         '${normalised.month.toString().padLeft(2, '0')}-'
         '${normalised.day.toString().padLeft(2, '0')}';
 

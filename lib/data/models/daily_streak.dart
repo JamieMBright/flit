@@ -86,24 +86,25 @@ class DailyStreak {
     int? longestStreak,
     String? lastCompletionDate,
     int? totalCompleted,
-  }) => DailyStreak(
-    currentStreak: currentStreak ?? this.currentStreak,
-    longestStreak: longestStreak ?? this.longestStreak,
-    lastCompletionDate: lastCompletionDate ?? this.lastCompletionDate,
-    totalCompleted: totalCompleted ?? this.totalCompleted,
-  );
+  }) =>
+      DailyStreak(
+        currentStreak: currentStreak ?? this.currentStreak,
+        longestStreak: longestStreak ?? this.longestStreak,
+        lastCompletionDate: lastCompletionDate ?? this.lastCompletionDate,
+        totalCompleted: totalCompleted ?? this.totalCompleted,
+      );
 
   Map<String, dynamic> toJson() => {
-    'current_streak': currentStreak,
-    'longest_streak': longestStreak,
-    'last_completion_date': lastCompletionDate,
-    'total_completed': totalCompleted,
-  };
+        'current_streak': currentStreak,
+        'longest_streak': longestStreak,
+        'last_completion_date': lastCompletionDate,
+        'total_completed': totalCompleted,
+      };
 
   factory DailyStreak.fromJson(Map<String, dynamic> json) => DailyStreak(
-    currentStreak: json['current_streak'] as int? ?? 0,
-    longestStreak: json['longest_streak'] as int? ?? 0,
-    lastCompletionDate: json['last_completion_date'] as String?,
-    totalCompleted: json['total_completed'] as int? ?? 0,
-  );
+        currentStreak: json['current_streak'] as int? ?? 0,
+        longestStreak: json['longest_streak'] as int? ?? 0,
+        lastCompletionDate: json['last_completion_date'] as String?,
+        totalCompleted: json['total_completed'] as int? ?? 0,
+      );
 }

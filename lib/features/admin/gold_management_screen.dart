@@ -102,14 +102,12 @@ class _GoldManagementScreenState extends State<GoldManagementScreen> {
       final config = await EconomyConfigService.instance.getConfig();
       if (!mounted) return;
       _economyConfig = config;
-      _dailyScrambleController.text = config.earnings.dailyScrambleBaseReward
-          .toString();
-      _freeFlightPerClueController.text = config
-          .earnings
-          .freeFlightPerClueReward
-          .toString();
-      _freeFlightCapController.text = config.earnings.freeFlightDailyCap
-          .toString();
+      _dailyScrambleController.text =
+          config.earnings.dailyScrambleBaseReward.toString();
+      _freeFlightPerClueController.text =
+          config.earnings.freeFlightPerClueReward.toString();
+      _freeFlightCapController.text =
+          config.earnings.freeFlightDailyCap.toString();
     } catch (_) {
       if (!mounted) return;
       _economyConfig = EconomyConfig.defaults();
@@ -226,8 +224,7 @@ class _GoldManagementScreenState extends State<GoldManagementScreen> {
       // Update coins
       await _client
           .from('profiles')
-          .update({'coins': newCoins})
-          .eq('id', userId);
+          .update({'coins': newCoins}).eq('id', userId);
 
       // Record in coin ledger
       await _client.from('coin_ledger').insert({
@@ -239,8 +236,8 @@ class _GoldManagementScreenState extends State<GoldManagementScreen> {
       final opLabel = operation == 'gift'
           ? 'Gifted'
           : operation == 'remove'
-          ? 'Removed'
-          : 'Set to';
+              ? 'Removed'
+              : 'Set to';
       _setOpResult(
         '$opLabel ${operation == "set" ? newCoins : amount} coins '
         'for @$username (was $currentCoins, now $newCoins)',
@@ -282,8 +279,7 @@ class _GoldManagementScreenState extends State<GoldManagementScreen> {
   Future<void> _saveFlightSchoolUnlockCost(String levelId, int cost) async {
     _flightSchoolConfig[levelId] ??= <String, dynamic>{};
     (_flightSchoolConfig[levelId]
-            as Map<String, dynamic>)['unlockCostOverride'] =
-        cost;
+        as Map<String, dynamic>)['unlockCostOverride'] = cost;
 
     try {
       await _client.from('remote_config').upsert({
@@ -455,18 +451,16 @@ class _GoldManagementScreenState extends State<GoldManagementScreen> {
                         .withOpacity(0.15),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: _playerOpIsError
-                      ? FlitColors.error
-                      : FlitColors.success,
+                  color:
+                      _playerOpIsError ? FlitColors.error : FlitColors.success,
                   width: 0.5,
                 ),
               ),
               child: Text(
                 _playerOpResult!,
                 style: TextStyle(
-                  color: _playerOpIsError
-                      ? FlitColors.error
-                      : FlitColors.success,
+                  color:
+                      _playerOpIsError ? FlitColors.error : FlitColors.success,
                   fontSize: 12,
                 ),
               ),
@@ -497,10 +491,9 @@ class _GoldManagementScreenState extends State<GoldManagementScreen> {
               children: flightSchoolLevels.map((level) {
                 final levelConfig =
                     (_flightSchoolConfig[level.id] as Map<String, dynamic>?) ??
-                    <String, dynamic>{};
+                        <String, dynamic>{};
                 final coinReward = levelConfig['coinReward'] as int? ?? 50;
-                final unlockCost =
-                    levelConfig['unlockCostOverride'] as int? ??
+                final unlockCost = levelConfig['unlockCostOverride'] as int? ??
                     level.unlockCost;
 
                 return _FlightSchoolLevelRow(
@@ -629,41 +622,42 @@ class _GoldManagementScreenState extends State<GoldManagementScreen> {
               ),
             )
           : !_auditLoaded
-          ? const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                'Expand to load audit log',
-                style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
-              ),
-            )
-          : _auditLog.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                'No audit log entries found',
-                style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
-              ),
-            )
-          : Column(
-              children: [
-                // Refresh button
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: _loadAuditLog,
-                    icon: const Icon(Icons.refresh, size: 16),
-                    label: const Text('Refresh'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: FlitColors.textSecondary,
-                    ),
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'Expand to load audit log',
+                    style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
                   ),
-                ),
-                ...List.generate(
-                  _auditLog.length,
-                  (i) => _buildAuditRow(_auditLog[i]),
-                ),
-              ],
-            ),
+                )
+              : _auditLog.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'No audit log entries found',
+                        style: TextStyle(
+                            color: FlitColors.textMuted, fontSize: 13),
+                      ),
+                    )
+                  : Column(
+                      children: [
+                        // Refresh button
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: _loadAuditLog,
+                            icon: const Icon(Icons.refresh, size: 16),
+                            label: const Text('Refresh'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: FlitColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                        ...List.generate(
+                          _auditLog.length,
+                          (i) => _buildAuditRow(_auditLog[i]),
+                        ),
+                      ],
+                    ),
     );
   }
 

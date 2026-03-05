@@ -46,192 +46,192 @@ class _SettingsSheetContent extends StatefulWidget {
 class _SettingsSheetContentState extends State<_SettingsSheetContent> {
   @override
   Widget build(BuildContext context) => ListView(
-    controller: widget.scrollController,
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-    children: [
-      // Title
-      const Center(
-        child: Text(
-          'Settings',
-          style: TextStyle(
-            color: FlitColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+        controller: widget.scrollController,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        children: [
+          // Title
+          const Center(
+            child: Text(
+              'Settings',
+              style: TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
-        ),
-      ),
-      const SizedBox(height: 24),
+          const SizedBox(height: 24),
 
-      // ── Audio ──────────────────────────────────────────
-      const _SectionHeader(title: 'Audio'),
-      _SettingsToggle(
-        label: 'Sound',
-        icon: Icons.volume_up_outlined,
-        value: GameSettings.instance.soundEnabled,
-        onChanged: (value) {
-          GameSettings.instance.soundEnabled = value;
-          setState(() {});
-        },
-      ),
-      const Divider(color: FlitColors.cardBorder, height: 1),
-      _SettingsSlider(
-        label: 'Music Volume',
-        icon: Icons.music_note_outlined,
-        value: GameSettings.instance.musicVolume,
-        min: 0.0,
-        max: 1.0,
-        valueLabel: GameSettings.instance.musicVolumeLabel,
-        onChanged: GameSettings.instance.soundEnabled
-            ? (value) {
-                GameSettings.instance.musicVolume = value;
+          // ── Audio ──────────────────────────────────────────
+          const _SectionHeader(title: 'Audio'),
+          _SettingsToggle(
+            label: 'Sound',
+            icon: Icons.volume_up_outlined,
+            value: GameSettings.instance.soundEnabled,
+            onChanged: (value) {
+              GameSettings.instance.soundEnabled = value;
+              setState(() {});
+            },
+          ),
+          const Divider(color: FlitColors.cardBorder, height: 1),
+          _SettingsSlider(
+            label: 'Music Volume',
+            icon: Icons.music_note_outlined,
+            value: GameSettings.instance.musicVolume,
+            min: 0.0,
+            max: 1.0,
+            valueLabel: GameSettings.instance.musicVolumeLabel,
+            onChanged: GameSettings.instance.soundEnabled
+                ? (value) {
+                    GameSettings.instance.musicVolume = value;
+                    setState(() {});
+                  }
+                : null,
+          ),
+          const Divider(color: FlitColors.cardBorder, height: 1),
+          _SettingsSlider(
+            label: 'Effects Volume',
+            icon: Icons.surround_sound_outlined,
+            value: GameSettings.instance.effectsVolume,
+            min: 0.0,
+            max: 1.0,
+            valueLabel: GameSettings.instance.effectsVolumeLabel,
+            onChanged: GameSettings.instance.soundEnabled
+                ? (value) {
+                    GameSettings.instance.effectsVolume = value;
+                    setState(() {});
+                  }
+                : null,
+          ),
+          const Divider(color: FlitColors.cardBorder, height: 1),
+          _SettingsToggle(
+            label: 'Notifications',
+            icon: Icons.notifications_outlined,
+            value: GameSettings.instance.notificationsEnabled,
+            onChanged: (value) {
+              GameSettings.instance.notificationsEnabled = value;
+              setState(() {});
+            },
+          ),
+          const Divider(color: FlitColors.cardBorder, height: 1),
+          _SettingsToggle(
+            label: 'Haptic Feedback',
+            icon: Icons.vibration,
+            value: GameSettings.instance.hapticEnabled,
+            onChanged: (value) {
+              GameSettings.instance.hapticEnabled = value;
+              setState(() {});
+            },
+          ),
+          const SizedBox(height: 20),
+
+          // ── Controls ───────────────────────────────────────
+          const _SectionHeader(title: 'Controls'),
+          _SettingsToggle(
+            label: 'Invert Controls',
+            icon: Icons.swap_horiz,
+            value: GameSettings.instance.invertControls,
+            onChanged: (value) {
+              GameSettings.instance.invertControls = value;
+              setState(() {});
+            },
+          ),
+          const Divider(color: FlitColors.cardBorder, height: 1),
+          _SettingsSlider(
+            label: 'Turn Sensitivity',
+            icon: Icons.speed,
+            value: GameSettings.instance.turnSensitivity,
+            min: 0.2,
+            max: 1.5,
+            valueLabel: GameSettings.instance.sensitivityLabel,
+            onChanged: (value) {
+              GameSettings.instance.turnSensitivity = value;
+              setState(() {});
+            },
+          ),
+          const SizedBox(height: 20),
+
+          // ── Display ────────────────────────────────────────
+          const _SectionHeader(title: 'Display'),
+          _SettingsToggle(
+            label: 'Night / Day Cycle',
+            icon: Icons.nightlight_outlined,
+            value: GameSettings.instance.enableNight,
+            onChanged: (value) {
+              GameSettings.instance.enableNight = value;
+              setState(() {});
+            },
+          ),
+          const Divider(color: FlitColors.cardBorder, height: 1),
+          _SettingsToggle(
+            label: 'Clouds',
+            icon: Icons.cloud_outlined,
+            value: GameSettings.instance.enableClouds,
+            onChanged: (value) {
+              GameSettings.instance.enableClouds = value;
+              setState(() {});
+            },
+          ),
+          if (GameSettings.instance.enableClouds) ...[
+            const Divider(color: FlitColors.cardBorder, height: 1),
+            _SettingsSlider(
+              label: 'Cloud Coverage',
+              icon: Icons.cloud_queue_outlined,
+              value: GameSettings.instance.cloudCoverage,
+              min: 0.1,
+              max: 0.8,
+              valueLabel: GameSettings.instance.cloudCoverageLabel,
+              onChanged: (value) {
+                GameSettings.instance.cloudCoverage = value;
                 setState(() {});
-              }
-            : null,
-      ),
-      const Divider(color: FlitColors.cardBorder, height: 1),
-      _SettingsSlider(
-        label: 'Effects Volume',
-        icon: Icons.surround_sound_outlined,
-        value: GameSettings.instance.effectsVolume,
-        min: 0.0,
-        max: 1.0,
-        valueLabel: GameSettings.instance.effectsVolumeLabel,
-        onChanged: GameSettings.instance.soundEnabled
-            ? (value) {
-                GameSettings.instance.effectsVolume = value;
+              },
+            ),
+            const Divider(color: FlitColors.cardBorder, height: 1),
+            _SettingsSlider(
+              label: 'Cloud Opacity',
+              icon: Icons.opacity,
+              value: GameSettings.instance.cloudOpacity,
+              min: 0.1,
+              max: 1.0,
+              valueLabel: GameSettings.instance.cloudOpacityLabel,
+              onChanged: (value) {
+                GameSettings.instance.cloudOpacity = value;
                 setState(() {});
-              }
-            : null,
-      ),
-      const Divider(color: FlitColors.cardBorder, height: 1),
-      _SettingsToggle(
-        label: 'Notifications',
-        icon: Icons.notifications_outlined,
-        value: GameSettings.instance.notificationsEnabled,
-        onChanged: (value) {
-          GameSettings.instance.notificationsEnabled = value;
-          setState(() {});
-        },
-      ),
-      const Divider(color: FlitColors.cardBorder, height: 1),
-      _SettingsToggle(
-        label: 'Haptic Feedback',
-        icon: Icons.vibration,
-        value: GameSettings.instance.hapticEnabled,
-        onChanged: (value) {
-          GameSettings.instance.hapticEnabled = value;
-          setState(() {});
-        },
-      ),
-      const SizedBox(height: 20),
+              },
+            ),
+          ],
+          const Divider(color: FlitColors.cardBorder, height: 1),
+          _SettingsToggle(
+            label: 'English Labels',
+            icon: Icons.translate,
+            value: GameSettings.instance.englishLabels,
+            onChanged: (value) {
+              GameSettings.instance.englishLabels = value;
+              setState(() {});
+            },
+          ),
+          const Divider(color: FlitColors.cardBorder, height: 1),
+          _MapStyleSelector(
+            value: GameSettings.instance.mapStyle,
+            onChanged: (value) {
+              GameSettings.instance.mapStyle = value;
+              setState(() {});
+            },
+          ),
+          const SizedBox(height: 20),
 
-      // ── Controls ───────────────────────────────────────
-      const _SectionHeader(title: 'Controls'),
-      _SettingsToggle(
-        label: 'Invert Controls',
-        icon: Icons.swap_horiz,
-        value: GameSettings.instance.invertControls,
-        onChanged: (value) {
-          GameSettings.instance.invertControls = value;
-          setState(() {});
-        },
-      ),
-      const Divider(color: FlitColors.cardBorder, height: 1),
-      _SettingsSlider(
-        label: 'Turn Sensitivity',
-        icon: Icons.speed,
-        value: GameSettings.instance.turnSensitivity,
-        min: 0.2,
-        max: 1.5,
-        valueLabel: GameSettings.instance.sensitivityLabel,
-        onChanged: (value) {
-          GameSettings.instance.turnSensitivity = value;
-          setState(() {});
-        },
-      ),
-      const SizedBox(height: 20),
-
-      // ── Display ────────────────────────────────────────
-      const _SectionHeader(title: 'Display'),
-      _SettingsToggle(
-        label: 'Night / Day Cycle',
-        icon: Icons.nightlight_outlined,
-        value: GameSettings.instance.enableNight,
-        onChanged: (value) {
-          GameSettings.instance.enableNight = value;
-          setState(() {});
-        },
-      ),
-      const Divider(color: FlitColors.cardBorder, height: 1),
-      _SettingsToggle(
-        label: 'Clouds',
-        icon: Icons.cloud_outlined,
-        value: GameSettings.instance.enableClouds,
-        onChanged: (value) {
-          GameSettings.instance.enableClouds = value;
-          setState(() {});
-        },
-      ),
-      if (GameSettings.instance.enableClouds) ...[
-        const Divider(color: FlitColors.cardBorder, height: 1),
-        _SettingsSlider(
-          label: 'Cloud Coverage',
-          icon: Icons.cloud_queue_outlined,
-          value: GameSettings.instance.cloudCoverage,
-          min: 0.1,
-          max: 0.8,
-          valueLabel: GameSettings.instance.cloudCoverageLabel,
-          onChanged: (value) {
-            GameSettings.instance.cloudCoverage = value;
-            setState(() {});
-          },
-        ),
-        const Divider(color: FlitColors.cardBorder, height: 1),
-        _SettingsSlider(
-          label: 'Cloud Opacity',
-          icon: Icons.opacity,
-          value: GameSettings.instance.cloudOpacity,
-          min: 0.1,
-          max: 1.0,
-          valueLabel: GameSettings.instance.cloudOpacityLabel,
-          onChanged: (value) {
-            GameSettings.instance.cloudOpacity = value;
-            setState(() {});
-          },
-        ),
-      ],
-      const Divider(color: FlitColors.cardBorder, height: 1),
-      _SettingsToggle(
-        label: 'English Labels',
-        icon: Icons.translate,
-        value: GameSettings.instance.englishLabels,
-        onChanged: (value) {
-          GameSettings.instance.englishLabels = value;
-          setState(() {});
-        },
-      ),
-      const Divider(color: FlitColors.cardBorder, height: 1),
-      _MapStyleSelector(
-        value: GameSettings.instance.mapStyle,
-        onChanged: (value) {
-          GameSettings.instance.mapStyle = value;
-          setState(() {});
-        },
-      ),
-      const SizedBox(height: 20),
-
-      // ── Gameplay ───────────────────────────────────────
-      const _SectionHeader(title: 'Gameplay'),
-      _DifficultySelector(
-        value: GameSettings.instance.difficulty,
-        onChanged: (value) {
-          GameSettings.instance.difficulty = value;
-          setState(() {});
-        },
-      ),
-      const SizedBox(height: 24),
-    ],
-  );
+          // ── Gameplay ───────────────────────────────────────
+          const _SectionHeader(title: 'Gameplay'),
+          _DifficultySelector(
+            value: GameSettings.instance.difficulty,
+            onChanged: (value) {
+              GameSettings.instance.difficulty = value;
+              setState(() {});
+            },
+          ),
+          const SizedBox(height: 24),
+        ],
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -245,17 +245,17 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Text(
-      title.toUpperCase(),
-      style: const TextStyle(
-        color: FlitColors.textSecondary,
-        fontSize: 12,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 1.5,
-      ),
-    ),
-  );
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(
+          title.toUpperCase(),
+          style: const TextStyle(
+            color: FlitColors.textSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.5,
+          ),
+        ),
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -277,37 +277,37 @@ class _SettingsToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Row(
-      children: [
-        Icon(
-          icon,
-          color: onChanged != null
-              ? FlitColors.textSecondary
-              : FlitColors.textMuted,
-          size: 22,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Icon(
+              icon,
               color: onChanged != null
-                  ? FlitColors.textPrimary
+                  ? FlitColors.textSecondary
                   : FlitColors.textMuted,
-              fontSize: 16,
+              size: 22,
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: onChanged != null
+                      ? FlitColors.textPrimary
+                      : FlitColors.textMuted,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            Switch.adaptive(
+              value: value,
+              onChanged: onChanged,
+              activeColor: FlitColors.accent,
+              inactiveTrackColor: FlitColors.backgroundMid,
+            ),
+          ],
         ),
-        Switch.adaptive(
-          value: value,
-          onChanged: onChanged,
-          activeColor: FlitColors.accent,
-          inactiveTrackColor: FlitColors.backgroundMid,
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -345,9 +345,8 @@ class _SettingsSlider extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: isEnabled
-                    ? FlitColors.textSecondary
-                    : FlitColors.textMuted,
+                color:
+                    isEnabled ? FlitColors.textSecondary : FlitColors.textMuted,
                 size: 22,
               ),
               const SizedBox(width: 12),
@@ -408,70 +407,70 @@ class _DifficultySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.tune, color: FlitColors.textSecondary, size: 22),
-            SizedBox(width: 12),
-            Text(
-              'Difficulty',
-              style: TextStyle(color: FlitColors.textPrimary, fontSize: 16),
+            const Row(
+              children: [
+                Icon(Icons.tune, color: FlitColors.textSecondary, size: 22),
+                SizedBox(width: 12),
+                Text(
+                  'Difficulty',
+                  style: TextStyle(color: FlitColors.textPrimary, fontSize: 16),
+                ),
+              ],
             ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          _subtitle(value),
-          style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: GameDifficulty.values.map((d) {
-            final isActive = d == value;
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: GestureDetector(
-                  onTap: () => onChanged(d),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? _activeColor(d).withOpacity(0.2)
-                          : FlitColors.backgroundMid,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isActive
-                            ? _activeColor(d)
-                            : FlitColors.cardBorder,
-                        width: isActive ? 1.5 : 1,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        _label(d),
-                        style: TextStyle(
+            const SizedBox(height: 4),
+            Text(
+              _subtitle(value),
+              style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: GameDifficulty.values.map((d) {
+                final isActive = d == value;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: GestureDetector(
+                      onTap: () => onChanged(d),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
                           color: isActive
-                              ? _activeColor(d)
-                              : FlitColors.textMuted,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
+                              ? _activeColor(d).withOpacity(0.2)
+                              : FlitColors.backgroundMid,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isActive
+                                ? _activeColor(d)
+                                : FlitColors.cardBorder,
+                            width: isActive ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _label(d),
+                            style: TextStyle(
+                              color: isActive
+                                  ? _activeColor(d)
+                                  : FlitColors.textMuted,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
-            );
-          }).toList(),
+                );
+              }).toList(),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 
   static String _label(GameDifficulty d) {
     switch (d) {
@@ -519,82 +518,83 @@ class _MapStyleSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.map_outlined, color: FlitColors.textSecondary, size: 22),
-            SizedBox(width: 12),
-            Text(
-              'Map Style',
-              style: TextStyle(color: FlitColors.textPrimary, fontSize: 16),
+            const Row(
+              children: [
+                Icon(Icons.map_outlined,
+                    color: FlitColors.textSecondary, size: 22),
+                SizedBox(width: 12),
+                Text(
+                  'Map Style',
+                  style: TextStyle(color: FlitColors.textPrimary, fontSize: 16),
+                ),
+              ],
             ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          _subtitle(value),
-          style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: MapStyle.values.map((s) {
-            final isActive = s == value;
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: GestureDetector(
-                  onTap: () => onChanged(s),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? FlitColors.accent.withOpacity(0.2)
-                          : FlitColors.backgroundMid,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isActive
-                            ? FlitColors.accent
-                            : FlitColors.cardBorder,
-                        width: isActive ? 1.5 : 1,
-                      ),
-                    ),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          Icon(
-                            _icon(s),
-                            size: 18,
+            const SizedBox(height: 4),
+            Text(
+              _subtitle(value),
+              style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: MapStyle.values.map((s) {
+                final isActive = s == value;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: GestureDetector(
+                      onTap: () => onChanged(s),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? FlitColors.accent.withOpacity(0.2)
+                              : FlitColors.backgroundMid,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
                             color: isActive
                                 ? FlitColors.accent
-                                : FlitColors.textMuted,
+                                : FlitColors.cardBorder,
+                            width: isActive ? 1.5 : 1,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _label(s),
-                            style: TextStyle(
-                              color: isActive
-                                  ? FlitColors.accent
-                                  : FlitColors.textMuted,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.3,
-                            ),
+                        ),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(
+                                _icon(s),
+                                size: 18,
+                                color: isActive
+                                    ? FlitColors.accent
+                                    : FlitColors.textMuted,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _label(s),
+                                style: TextStyle(
+                                  color: isActive
+                                      ? FlitColors.accent
+                                      : FlitColors.textMuted,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-            );
-          }).toList(),
+                );
+              }).toList(),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 
   static String _label(MapStyle s) {
     switch (s) {

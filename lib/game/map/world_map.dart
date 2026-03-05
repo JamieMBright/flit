@@ -540,8 +540,7 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
         1.0,
       ),
     );
-    final lng =
-        lng0 +
+    final lng = lng0 +
         atan2(
           dx / scale * sin(c),
           rho * cos(lat0) * cos(c) - dy / scale * sin(lat0) * sin(c),

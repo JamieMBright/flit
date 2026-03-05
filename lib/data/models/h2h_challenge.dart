@@ -14,9 +14,9 @@ enum H2HStatus {
   final String dbName;
 
   static H2HStatus fromDb(String value) => H2HStatus.values.firstWhere(
-    (s) => s.dbName == value,
-    orElse: () => H2HStatus.pending,
-  );
+        (s) => s.dbName == value,
+        orElse: () => H2HStatus.pending,
+      );
 }
 
 /// A single round in a best-of-3 H2H Flight School challenge.
@@ -98,42 +98,42 @@ class H2HRound {
   }
 
   Map<String, dynamic> toJson() => {
-    'level_id': levelId,
-    'level_name': levelName,
-    'category': category.name,
-    'difficulty': difficulty.name,
-    'seed': seed,
-    if (challengerScore != null) 'challenger_score': challengerScore,
-    if (challengedScore != null) 'challenged_score': challengedScore,
-    if (challengerTimeMs != null) 'challenger_time_ms': challengerTimeMs,
-    if (challengedTimeMs != null) 'challenged_time_ms': challengedTimeMs,
-    if (challengerCorrect != null) 'challenger_correct': challengerCorrect,
-    if (challengedCorrect != null) 'challenged_correct': challengedCorrect,
-    if (challengerWrong != null) 'challenger_wrong': challengerWrong,
-    if (challengedWrong != null) 'challenged_wrong': challengedWrong,
-  };
+        'level_id': levelId,
+        'level_name': levelName,
+        'category': category.name,
+        'difficulty': difficulty.name,
+        'seed': seed,
+        if (challengerScore != null) 'challenger_score': challengerScore,
+        if (challengedScore != null) 'challenged_score': challengedScore,
+        if (challengerTimeMs != null) 'challenger_time_ms': challengerTimeMs,
+        if (challengedTimeMs != null) 'challenged_time_ms': challengedTimeMs,
+        if (challengerCorrect != null) 'challenger_correct': challengerCorrect,
+        if (challengedCorrect != null) 'challenged_correct': challengedCorrect,
+        if (challengerWrong != null) 'challenger_wrong': challengerWrong,
+        if (challengedWrong != null) 'challenged_wrong': challengedWrong,
+      };
 
   factory H2HRound.fromJson(Map<String, dynamic> json) => H2HRound(
-    levelId: json['level_id'] as String? ?? '',
-    levelName: json['level_name'] as String? ?? '',
-    category: QuizCategory.values.firstWhere(
-      (c) => c.name == json['category'],
-      orElse: () => QuizCategory.mixed,
-    ),
-    difficulty: QuizDifficulty.values.firstWhere(
-      (d) => d.name == json['difficulty'],
-      orElse: () => QuizDifficulty.medium,
-    ),
-    seed: json['seed'] as int? ?? 0,
-    challengerScore: json['challenger_score'] as int?,
-    challengedScore: json['challenged_score'] as int?,
-    challengerTimeMs: json['challenger_time_ms'] as int?,
-    challengedTimeMs: json['challenged_time_ms'] as int?,
-    challengerCorrect: json['challenger_correct'] as int?,
-    challengedCorrect: json['challenged_correct'] as int?,
-    challengerWrong: json['challenger_wrong'] as int?,
-    challengedWrong: json['challenged_wrong'] as int?,
-  );
+        levelId: json['level_id'] as String? ?? '',
+        levelName: json['level_name'] as String? ?? '',
+        category: QuizCategory.values.firstWhere(
+          (c) => c.name == json['category'],
+          orElse: () => QuizCategory.mixed,
+        ),
+        difficulty: QuizDifficulty.values.firstWhere(
+          (d) => d.name == json['difficulty'],
+          orElse: () => QuizDifficulty.medium,
+        ),
+        seed: json['seed'] as int? ?? 0,
+        challengerScore: json['challenger_score'] as int?,
+        challengedScore: json['challenged_score'] as int?,
+        challengerTimeMs: json['challenger_time_ms'] as int?,
+        challengedTimeMs: json['challenged_time_ms'] as int?,
+        challengerCorrect: json['challenger_correct'] as int?,
+        challengedCorrect: json['challenged_correct'] as int?,
+        challengerWrong: json['challenger_wrong'] as int?,
+        challengedWrong: json['challenged_wrong'] as int?,
+      );
 
   H2HRound copyWith({
     String? levelId,
@@ -149,21 +149,22 @@ class H2HRound {
     int? challengedCorrect,
     int? challengerWrong,
     int? challengedWrong,
-  }) => H2HRound(
-    levelId: levelId ?? this.levelId,
-    levelName: levelName ?? this.levelName,
-    category: category ?? this.category,
-    difficulty: difficulty ?? this.difficulty,
-    seed: seed ?? this.seed,
-    challengerScore: challengerScore ?? this.challengerScore,
-    challengedScore: challengedScore ?? this.challengedScore,
-    challengerTimeMs: challengerTimeMs ?? this.challengerTimeMs,
-    challengedTimeMs: challengedTimeMs ?? this.challengedTimeMs,
-    challengerCorrect: challengerCorrect ?? this.challengerCorrect,
-    challengedCorrect: challengedCorrect ?? this.challengedCorrect,
-    challengerWrong: challengerWrong ?? this.challengerWrong,
-    challengedWrong: challengedWrong ?? this.challengedWrong,
-  );
+  }) =>
+      H2HRound(
+        levelId: levelId ?? this.levelId,
+        levelName: levelName ?? this.levelName,
+        category: category ?? this.category,
+        difficulty: difficulty ?? this.difficulty,
+        seed: seed ?? this.seed,
+        challengerScore: challengerScore ?? this.challengerScore,
+        challengedScore: challengedScore ?? this.challengedScore,
+        challengerTimeMs: challengerTimeMs ?? this.challengerTimeMs,
+        challengedTimeMs: challengedTimeMs ?? this.challengedTimeMs,
+        challengerCorrect: challengerCorrect ?? this.challengerCorrect,
+        challengedCorrect: challengedCorrect ?? this.challengedCorrect,
+        challengerWrong: challengerWrong ?? this.challengerWrong,
+        challengedWrong: challengedWrong ?? this.challengedWrong,
+      );
 }
 
 /// A Head-to-Head Flight School challenge (best of 3 rounds).
@@ -243,17 +244,17 @@ class H2HChallenge {
   String get scoreText => '$challengerWins - $challengedWins';
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'challenger_id': challengerId,
-    'challenger_name': challengerName,
-    'challenged_id': challengedId,
-    'challenged_name': challengedName,
-    'rounds': rounds.map((r) => r.toJson()).toList(),
-    'status': status.dbName,
-    'created_at': createdAt.toIso8601String(),
-    if (completedAt != null) 'completed_at': completedAt!.toIso8601String(),
-    if (winnerId != null) 'winner_id': winnerId,
-  };
+        'id': id,
+        'challenger_id': challengerId,
+        'challenger_name': challengerName,
+        'challenged_id': challengedId,
+        'challenged_name': challengedName,
+        'rounds': rounds.map((r) => r.toJson()).toList(),
+        'status': status.dbName,
+        'created_at': createdAt.toIso8601String(),
+        if (completedAt != null) 'completed_at': completedAt!.toIso8601String(),
+        if (winnerId != null) 'winner_id': winnerId,
+      };
 
   factory H2HChallenge.fromJson(Map<String, dynamic> json) {
     final roundsList = json['rounds'] as List? ?? [];
@@ -288,16 +289,17 @@ class H2HChallenge {
     DateTime? createdAt,
     DateTime? completedAt,
     String? winnerId,
-  }) => H2HChallenge(
-    id: id ?? this.id,
-    challengerId: challengerId ?? this.challengerId,
-    challengerName: challengerName ?? this.challengerName,
-    challengedId: challengedId ?? this.challengedId,
-    challengedName: challengedName ?? this.challengedName,
-    rounds: rounds ?? this.rounds,
-    status: status ?? this.status,
-    createdAt: createdAt ?? this.createdAt,
-    completedAt: completedAt ?? this.completedAt,
-    winnerId: winnerId ?? this.winnerId,
-  );
+  }) =>
+      H2HChallenge(
+        id: id ?? this.id,
+        challengerId: challengerId ?? this.challengerId,
+        challengerName: challengerName ?? this.challengerName,
+        challengedId: challengedId ?? this.challengedId,
+        challengedName: challengedName ?? this.challengedName,
+        rounds: rounds ?? this.rounds,
+        status: status ?? this.status,
+        createdAt: createdAt ?? this.createdAt,
+        completedAt: completedAt ?? this.completedAt,
+        winnerId: winnerId ?? this.winnerId,
+      );
 }

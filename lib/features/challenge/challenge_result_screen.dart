@@ -72,30 +72,24 @@ class ChallengeResultScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDraw = challenge.winnerId == null;
-    final youWon =
-        !isDraw &&
+    final youWon = !isDraw &&
         ((isChallenger && challenge.winnerId == challenge.challengerId) ||
             (!isChallenger && challenge.winnerId == challenge.challengedId));
-    final yourWins = isChallenger
-        ? challenge.challengerWins
-        : challenge.challengedWins;
-    final theirWins = isChallenger
-        ? challenge.challengedWins
-        : challenge.challengerWins;
-    final opponentName = isChallenger
-        ? challenge.challengedName
-        : challenge.challengerName;
-    final yourCoins = isChallenger
-        ? challenge.challengerCoins
-        : challenge.challengedCoins;
+    final yourWins =
+        isChallenger ? challenge.challengerWins : challenge.challengedWins;
+    final theirWins =
+        isChallenger ? challenge.challengedWins : challenge.challengerWins;
+    final opponentName =
+        isChallenger ? challenge.challengedName : challenge.challengerName;
+    final yourCoins =
+        isChallenger ? challenge.challengerCoins : challenge.challengedCoins;
 
     // Build pilot info from account state if not provided externally.
     final account = ref.read(accountProvider);
     final equippedPlaneId = account.equippedPlaneId;
     final equippedPlane = CosmeticCatalog.getById(equippedPlaneId);
 
-    final yourInfo =
-        yourPilotInfo ??
+    final yourInfo = yourPilotInfo ??
         PilotInfo(
           name: 'You',
           level: account.currentPlayer.level,
@@ -167,8 +161,7 @@ class ChallengeResultScreen extends ConsumerWidget {
             const SizedBox(height: 24),
             // Actions
             _ResultActions(
-              onRematch:
-                  onRematch ??
+              onRematch: onRematch ??
                   () {
                     _handleRematch(context, ref);
                   },
@@ -184,12 +177,10 @@ class ChallengeResultScreen extends ConsumerWidget {
 
   void _handleRematch(BuildContext context, WidgetRef ref) {
     final account = ref.read(accountProvider);
-    final opponentId = isChallenger
-        ? challenge.challengedId
-        : challenge.challengerId;
-    final opponentName = isChallenger
-        ? challenge.challengedName
-        : challenge.challengerName;
+    final opponentId =
+        isChallenger ? challenge.challengedId : challenge.challengerId;
+    final opponentName =
+        isChallenger ? challenge.challengedName : challenge.challengerName;
     final myName = account.currentPlayer.name;
 
     showDialog<void>(
@@ -213,42 +204,42 @@ class ChallengeResultScreen extends ConsumerWidget {
 
     ChallengeService.instance
         .createChallenge(
-          challengedId: opponentId,
-          challengedName: opponentName,
-          challengerName: myName,
-          gameMode: challenge.gameMode,
-          quizCategory: challenge.quizCategory,
-          quizMode: challenge.quizMode,
-        )
+      challengedId: opponentId,
+      challengedName: opponentName,
+      challengerName: myName,
+      gameMode: challenge.gameMode,
+      quizCategory: challenge.quizCategory,
+      quizMode: challenge.quizMode,
+    )
         .then((challengeId) {
-          if (context.mounted) {
-            Navigator.of(context).pop(); // Dismiss loading dialog
-            if (challengeId != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Rematch sent to $opponentName!'),
-                  backgroundColor: FlitColors.success,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              );
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Failed to send rematch'),
-                  backgroundColor: FlitColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              );
-            }
-          }
-        });
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Dismiss loading dialog
+        if (challengeId != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Rematch sent to $opponentName!'),
+              backgroundColor: FlitColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Failed to send rematch'),
+              backgroundColor: FlitColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+        }
+      }
+    });
   }
 }
 
@@ -269,45 +260,46 @@ class _ResultHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    children: [
-      Icon(
-        isDraw
-            ? Icons.handshake
-            : youWon
-            ? Icons.emoji_events
-            : Icons.sentiment_dissatisfied,
-        size: 64,
-        color: isDraw
-            ? FlitColors.textSecondary
-            : youWon
-            ? FlitColors.warning
-            : FlitColors.textSecondary,
-      ),
-      const SizedBox(height: 16),
-      Text(
-        isDraw
-            ? 'DRAW'
-            : youWon
-            ? 'VICTORY!'
-            : 'DEFEAT',
-        style: TextStyle(
-          color: isDraw
-              ? FlitColors.textSecondary
-              : youWon
-              ? FlitColors.warning
-              : FlitColors.textSecondary,
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 2,
-        ),
-      ),
-      const SizedBox(height: 8),
-      Text(
-        'vs $opponentName',
-        style: const TextStyle(color: FlitColors.textSecondary, fontSize: 16),
-      ),
-    ],
-  );
+        children: [
+          Icon(
+            isDraw
+                ? Icons.handshake
+                : youWon
+                    ? Icons.emoji_events
+                    : Icons.sentiment_dissatisfied,
+            size: 64,
+            color: isDraw
+                ? FlitColors.textSecondary
+                : youWon
+                    ? FlitColors.warning
+                    : FlitColors.textSecondary,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            isDraw
+                ? 'DRAW'
+                : youWon
+                    ? 'VICTORY!'
+                    : 'DEFEAT',
+            style: TextStyle(
+              color: isDraw
+                  ? FlitColors.textSecondary
+                  : youWon
+                      ? FlitColors.warning
+                      : FlitColors.textSecondary,
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'vs $opponentName',
+            style:
+                const TextStyle(color: FlitColors.textSecondary, fontSize: 16),
+          ),
+        ],
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -329,24 +321,24 @@ class _PilotCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: _PilotCard(
-          info: yourInfo,
-          isWinner: !isDraw && youWon,
-          label: 'YOU',
-        ),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: _PilotCard(
-          info: opponentInfo,
-          isWinner: !isDraw && !youWon,
-          label: 'OPP',
-        ),
-      ),
-    ],
-  );
+        children: [
+          Expanded(
+            child: _PilotCard(
+              info: yourInfo,
+              isWinner: !isDraw && youWon,
+              label: 'YOU',
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _PilotCard(
+              info: opponentInfo,
+              isWinner: !isDraw && !youWon,
+              label: 'OPP',
+            ),
+          ),
+        ],
+      );
 }
 
 class _PilotCard extends StatelessWidget {
@@ -362,111 +354,114 @@ class _PilotCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(
-        color: isWinner ? FlitColors.gold : FlitColors.cardBorder,
-        width: isWinner ? 2 : 1,
-      ),
-    ),
-    child: Column(
-      children: [
-        // Winner crown or label
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isWinner ? FlitColors.gold : FlitColors.cardBorder,
+            width: isWinner ? 2 : 1,
+          ),
+        ),
+        child: Column(
           children: [
-            if (isWinner)
-              const Padding(
-                padding: EdgeInsets.only(right: 4),
-                child: Icon(
-                  Icons.emoji_events,
-                  color: FlitColors.gold,
-                  size: 16,
-                ),
-              ),
-            Text(
-              label,
-              style: TextStyle(
-                color: isWinner ? FlitColors.gold : FlitColors.textMuted,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.5,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        // Flag
-        if (info.nationality != null) ...[
-          ClipRRect(
-            borderRadius: BorderRadius.circular(3),
-            child: SizedBox(
-              width: 36,
-              height: 24,
-              child: Flag.fromString(
-                info.nationality!,
-                height: 24,
-                width: 36,
-                fit: BoxFit.cover,
-                borderRadius: 3,
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-        ],
-        // Name
-        Text(
-          info.name,
-          style: const TextStyle(
-            color: FlitColors.textPrimary,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 4),
-        // Rank / Level
-        if (info.rankTitle != null || info.level > 1)
-          Text(
-            info.rankTitle ?? 'Lv.${info.level}',
-            style: const TextStyle(color: FlitColors.textMuted, fontSize: 11),
-            textAlign: TextAlign.center,
-          ),
-        if (info.level > 1 && info.rankTitle != null)
-          Text(
-            'Lv.${info.level}',
-            style: const TextStyle(color: FlitColors.textMuted, fontSize: 10),
-          ),
-        // Plane
-        if (info.equippedPlaneName != null) ...[
-          const SizedBox(height: 4),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.flight, color: FlitColors.textMuted, size: 12),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  info.equippedPlaneName!,
-                  style: const TextStyle(
-                    color: FlitColors.textMuted,
-                    fontSize: 10,
+            // Winner crown or label
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (isWinner)
+                  const Padding(
+                    padding: EdgeInsets.only(right: 4),
+                    child: Icon(
+                      Icons.emoji_events,
+                      color: FlitColors.gold,
+                      size: 16,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isWinner ? FlitColors.gold : FlitColors.textMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                  ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Flag
+            if (info.nationality != null) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: SizedBox(
+                  width: 36,
+                  height: 24,
+                  child: Flag.fromString(
+                    info.nationality!,
+                    height: 24,
+                    width: 36,
+                    fit: BoxFit.cover,
+                    borderRadius: 3,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+            ],
+            // Name
+            Text(
+              info.name,
+              style: const TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            // Rank / Level
+            if (info.rankTitle != null || info.level > 1)
+              Text(
+                info.rankTitle ?? 'Lv.${info.level}',
+                style:
+                    const TextStyle(color: FlitColors.textMuted, fontSize: 11),
+                textAlign: TextAlign.center,
+              ),
+            if (info.level > 1 && info.rankTitle != null)
+              Text(
+                'Lv.${info.level}',
+                style:
+                    const TextStyle(color: FlitColors.textMuted, fontSize: 10),
+              ),
+            // Plane
+            if (info.equippedPlaneName != null) ...[
+              const SizedBox(height: 4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.flight,
+                      color: FlitColors.textMuted, size: 12),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      info.equippedPlaneName!,
+                      style: const TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 10,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
-      ],
-    ),
-  );
+          ],
+        ),
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -481,45 +476,45 @@ class _ScoreDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: FlitColors.cardBorder),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          yourWins.toString(),
-          style: TextStyle(
-            color: yourWins > theirWins
-                ? FlitColors.success
-                : FlitColors.textPrimary,
-            fontSize: 48,
-            fontWeight: FontWeight.bold,
-          ),
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: FlitColors.cardBorder),
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            '-',
-            style: TextStyle(color: FlitColors.textMuted, fontSize: 32),
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              yourWins.toString(),
+              style: TextStyle(
+                color: yourWins > theirWins
+                    ? FlitColors.success
+                    : FlitColors.textPrimary,
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                '-',
+                style: TextStyle(color: FlitColors.textMuted, fontSize: 32),
+              ),
+            ),
+            Text(
+              theirWins.toString(),
+              style: TextStyle(
+                color: theirWins > yourWins
+                    ? FlitColors.error
+                    : FlitColors.textPrimary,
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
-        Text(
-          theirWins.toString(),
-          style: TextStyle(
-            color: theirWins > yourWins
-                ? FlitColors.error
-                : FlitColors.textPrimary,
-            fontSize: 48,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -541,92 +536,91 @@ class _RoundBreakdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.cardBorder),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Round Breakdown',
-          style: TextStyle(
-            color: FlitColors.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
         ),
-        const SizedBox(height: 12),
-        // Header row: yourName | | Clue | | opponentName
-        Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              flex: 2,
-              child: Text(
-                yourName,
-                style: const TextStyle(
-                  color: FlitColors.textMuted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            const Text(
+              'Round Breakdown',
+              style: TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(width: 4),
-            const Expanded(
-              flex: 3,
-              child: Text(
-                'Clue',
-                style: TextStyle(
-                  color: FlitColors.textMuted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+            const SizedBox(height: 12),
+            // Header row: yourName | | Clue | | opponentName
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    yourName,
+                    style: const TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Expanded(
-              flex: 2,
-              child: Text(
-                opponentName,
-                style: const TextStyle(
-                  color: FlitColors.textMuted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                const SizedBox(width: 4),
+                const Expanded(
+                  flex: 3,
+                  child: Text(
+                    'Clue',
+                    style: TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+                const SizedBox(width: 4),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    opponentName,
+                    style: const TextStyle(
+                      color: FlitColors.textMuted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 8),
+            const Divider(color: FlitColors.cardBorder, height: 1),
+            const SizedBox(height: 8),
+            ...rounds.where((r) => r.isComplete).map(
+                  (round) =>
+                      _RoundRow(round: round, isChallenger: isChallenger),
+                ),
+            // Total score row
+            if (rounds.where((r) => r.isComplete).length > 1) ...[
+              const SizedBox(height: 8),
+              const Divider(color: FlitColors.cardBorder, height: 1),
+              const SizedBox(height: 8),
+              _TotalScoreRow(
+                rounds: rounds.where((r) => r.isComplete).toList(),
+                isChallenger: isChallenger,
+              ),
+            ],
           ],
         ),
-        const SizedBox(height: 8),
-        const Divider(color: FlitColors.cardBorder, height: 1),
-        const SizedBox(height: 8),
-        ...rounds
-            .where((r) => r.isComplete)
-            .map(
-              (round) => _RoundRow(round: round, isChallenger: isChallenger),
-            ),
-        // Total score row
-        if (rounds.where((r) => r.isComplete).length > 1) ...[
-          const SizedBox(height: 8),
-          const Divider(color: FlitColors.cardBorder, height: 1),
-          const SizedBox(height: 8),
-          _TotalScoreRow(
-            rounds: rounds.where((r) => r.isComplete).toList(),
-            isChallenger: isChallenger,
-          ),
-        ],
-      ],
-    ),
-  );
+      );
 }
 
 class _RoundRow extends StatelessWidget {
@@ -637,36 +631,27 @@ class _RoundRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final yourScore = isChallenger
-        ? round.challengerScore
-        : round.challengedScore;
-    final theirScore = isChallenger
-        ? round.challengedScore
-        : round.challengerScore;
-    final yourHints = isChallenger
-        ? round.challengerHintsUsed
-        : round.challengedHintsUsed;
-    final theirHints = isChallenger
-        ? round.challengedHintsUsed
-        : round.challengerHintsUsed;
+    final yourScore =
+        isChallenger ? round.challengerScore : round.challengedScore;
+    final theirScore =
+        isChallenger ? round.challengedScore : round.challengerScore;
+    final yourHints =
+        isChallenger ? round.challengerHintsUsed : round.challengedHintsUsed;
+    final theirHints =
+        isChallenger ? round.challengedHintsUsed : round.challengerHintsUsed;
     final yourTime = isChallenger ? round.challengerTime : round.challengedTime;
-    final theirTime = isChallenger
-        ? round.challengedTime
-        : round.challengerTime;
-    final youWon =
-        (isChallenger && round.winner == 'challenger') ||
+    final theirTime =
+        isChallenger ? round.challengedTime : round.challengerTime;
+    final youWon = (isChallenger && round.winner == 'challenger') ||
         (!isChallenger && round.winner == 'challenged');
-    final theyWon =
-        (isChallenger && round.winner == 'challenged') ||
+    final theyWon = (isChallenger && round.winner == 'challenged') ||
         (!isChallenger && round.winner == 'challenger');
 
     // Display score if available, otherwise fall back to time.
-    final yourDisplay = yourScore != null
-        ? yourScore.toString()
-        : _formatTime(yourTime);
-    final theirDisplay = theirScore != null
-        ? theirScore.toString()
-        : _formatTime(theirTime);
+    final yourDisplay =
+        yourScore != null ? yourScore.toString() : _formatTime(yourTime);
+    final theirDisplay =
+        theirScore != null ? theirScore.toString() : _formatTime(theirTime);
 
     // Clue label: "Brazil (borders)" or just clue type name.
     final clueLabel = round.countryName != null
@@ -689,8 +674,8 @@ class _RoundRow extends StatelessWidget {
                     color: youWon
                         ? FlitColors.success
                         : theyWon
-                        ? FlitColors.error
-                        : FlitColors.textPrimary,
+                            ? FlitColors.error
+                            : FlitColors.textPrimary,
                     fontSize: 13,
                     fontWeight: youWon ? FontWeight.w600 : FontWeight.normal,
                     fontFamily: 'monospace',
@@ -734,8 +719,8 @@ class _RoundRow extends StatelessWidget {
                     color: theyWon
                         ? FlitColors.success
                         : youWon
-                        ? FlitColors.error
-                        : FlitColors.textPrimary,
+                            ? FlitColors.error
+                            : FlitColors.textPrimary,
                     fontSize: 13,
                     fontWeight: theyWon ? FontWeight.w600 : FontWeight.normal,
                     fontFamily: 'monospace',
@@ -848,8 +833,8 @@ class _TotalScoreRow extends StatelessWidget {
               color: youHigher
                   ? FlitColors.success
                   : theyHigher
-                  ? FlitColors.error
-                  : FlitColors.textPrimary,
+                      ? FlitColors.error
+                      : FlitColors.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w600,
               fontFamily: 'monospace',
@@ -879,8 +864,8 @@ class _TotalScoreRow extends StatelessWidget {
               color: theyHigher
                   ? FlitColors.success
                   : youHigher
-                  ? FlitColors.error
-                  : FlitColors.textPrimary,
+                      ? FlitColors.error
+                      : FlitColors.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w600,
               fontFamily: 'monospace',
@@ -971,12 +956,10 @@ class _QuizScoreDisplay extends StatelessWidget {
             children: [
               _scoreColumn(
                 score: yourScore,
-                isHigher:
-                    yourScore != null &&
+                isHigher: yourScore != null &&
                     theirScore != null &&
                     yourScore > theirScore,
-                isLower:
-                    yourScore != null &&
+                isLower: yourScore != null &&
                     theirScore != null &&
                     yourScore < theirScore,
               ),
@@ -989,12 +972,10 @@ class _QuizScoreDisplay extends StatelessWidget {
               ),
               _scoreColumn(
                 score: theirScore,
-                isHigher:
-                    theirScore != null &&
+                isHigher: theirScore != null &&
                     yourScore != null &&
                     theirScore > yourScore,
-                isLower:
-                    theirScore != null &&
+                isLower: theirScore != null &&
                     yourScore != null &&
                     theirScore < yourScore,
               ),
@@ -1018,8 +999,8 @@ class _QuizScoreDisplay extends StatelessWidget {
             color: isHigher
                 ? FlitColors.success
                 : isLower
-                ? FlitColors.error
-                : FlitColors.textPrimary,
+                    ? FlitColors.error
+                    : FlitColors.textPrimary,
             fontSize: 42,
             fontWeight: FontWeight.bold,
           ),
@@ -1066,16 +1047,13 @@ class _QuizRoundBreakdown extends StatelessWidget {
     final theirCorrect = isChallenger
         ? round.challengedQuizCorrect
         : round.challengerQuizCorrect;
-    final yourWrong = isChallenger
-        ? round.challengerQuizWrong
-        : round.challengedQuizWrong;
-    final theirWrong = isChallenger
-        ? round.challengedQuizWrong
-        : round.challengerQuizWrong;
+    final yourWrong =
+        isChallenger ? round.challengerQuizWrong : round.challengedQuizWrong;
+    final theirWrong =
+        isChallenger ? round.challengedQuizWrong : round.challengerQuizWrong;
     final yourTime = isChallenger ? round.challengerTime : round.challengedTime;
-    final theirTime = isChallenger
-        ? round.challengedTime
-        : round.challengerTime;
+    final theirTime =
+        isChallenger ? round.challengedTime : round.challengerTime;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1146,12 +1124,10 @@ class _QuizRoundBreakdown extends StatelessWidget {
             yourVal: yourCorrect?.toString() ?? '...',
             theirVal: theirCorrect?.toString() ?? '...',
             label: 'Correct',
-            yourBetter:
-                yourCorrect != null &&
+            yourBetter: yourCorrect != null &&
                 theirCorrect != null &&
                 yourCorrect > theirCorrect,
-            theirBetter:
-                theirCorrect != null &&
+            theirBetter: theirCorrect != null &&
                 yourCorrect != null &&
                 theirCorrect > yourCorrect,
           ),
@@ -1160,12 +1136,10 @@ class _QuizRoundBreakdown extends StatelessWidget {
             yourVal: yourWrong?.toString() ?? '...',
             theirVal: theirWrong?.toString() ?? '...',
             label: 'Wrong',
-            yourBetter:
-                yourWrong != null &&
+            yourBetter: yourWrong != null &&
                 theirWrong != null &&
                 yourWrong < theirWrong,
-            theirBetter:
-                theirWrong != null &&
+            theirBetter: theirWrong != null &&
                 yourWrong != null &&
                 theirWrong < yourWrong,
           ),
@@ -1202,8 +1176,8 @@ class _QuizRoundBreakdown extends StatelessWidget {
                 color: yourBetter
                     ? FlitColors.success
                     : theirBetter
-                    ? FlitColors.error
-                    : FlitColors.textPrimary,
+                        ? FlitColors.error
+                        : FlitColors.textPrimary,
                 fontSize: 14,
                 fontWeight: yourBetter ? FontWeight.w700 : FontWeight.normal,
                 fontFamily: 'monospace',
@@ -1225,8 +1199,8 @@ class _QuizRoundBreakdown extends StatelessWidget {
                 color: theirBetter
                     ? FlitColors.success
                     : yourBetter
-                    ? FlitColors.error
-                    : FlitColors.textPrimary,
+                        ? FlitColors.error
+                        : FlitColors.textPrimary,
                 fontSize: 14,
                 fontWeight: theirBetter ? FontWeight.w700 : FontWeight.normal,
                 fontFamily: 'monospace',
@@ -1259,33 +1233,34 @@ class _RewardsDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: FlitColors.warning.withOpacity(0.1),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: FlitColors.warning.withOpacity(0.3)),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(Icons.monetization_on, color: FlitColors.warning, size: 32),
-        const SizedBox(width: 12),
-        Text(
-          '+$coins',
-          style: const TextStyle(
-            color: FlitColors.warning,
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: FlitColors.warning.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.warning.withOpacity(0.3)),
         ),
-        const SizedBox(width: 8),
-        const Text(
-          'coins earned',
-          style: TextStyle(color: FlitColors.textSecondary, fontSize: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.monetization_on,
+                color: FlitColors.warning, size: 32),
+            const SizedBox(width: 12),
+            Text(
+              '+$coins',
+              style: const TextStyle(
+                color: FlitColors.warning,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'coins earned',
+              style: TextStyle(color: FlitColors.textSecondary, fontSize: 16),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -1305,58 +1280,58 @@ class _ResultActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: onHome,
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onHome,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: FlitColors.textSecondary,
+                    side: const BorderSide(color: FlitColors.cardBorder),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('HOME'),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: onRematch,
+                  icon: const Icon(Icons.refresh, size: 18),
+                  label: const Text('REMATCH'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FlitColors.accent,
+                    foregroundColor: FlitColors.textPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (onPlayAgain != null) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: onPlayAgain,
+              icon: const Icon(Icons.play_arrow, size: 18),
+              label: const Text('PLAY AGAIN'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: FlitColors.textSecondary,
-                side: const BorderSide(color: FlitColors.cardBorder),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('HOME'),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: onRematch,
-              icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('REMATCH'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: FlitColors.accent,
-                foregroundColor: FlitColors.textPrimary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                foregroundColor: FlitColors.accent,
+                side: const BorderSide(color: FlitColors.accent),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
             ),
-          ),
+          ],
         ],
-      ),
-      if (onPlayAgain != null) ...[
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: onPlayAgain,
-          icon: const Icon(Icons.play_arrow, size: 18),
-          label: const Text('PLAY AGAIN'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: FlitColors.accent,
-            side: const BorderSide(color: FlitColors.accent),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-      ],
-    ],
-  );
+      );
 }

@@ -125,9 +125,9 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         // Allocate vertices proportionally to polygon size.
         // Larger polygons (mainland) get more points than tiny islands.
         final polyBudget = (budget * polygon.length / totalVerts).ceil().clamp(
-          3,
-          polygon.length,
-        );
+              3,
+              polygon.length,
+            );
         final stride = polygon.length > polyBudget
             ? (polygon.length / polyBudget).ceil()
             : 1;

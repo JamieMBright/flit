@@ -760,8 +760,8 @@ class _CountryCardState extends State<_CountryCard> {
                                 color: vertexCount < 30
                                     ? FlitColors.error
                                     : vertexCount < 70
-                                    ? FlitColors.warning
-                                    : FlitColors.textMuted,
+                                        ? FlitColors.warning
+                                        : FlitColors.textMuted,
                               ),
                               if (c.capital != null) ...[
                                 const SizedBox(width: 6),
@@ -878,21 +878,20 @@ class _CountryCardState extends State<_CountryCard> {
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
-                      children:
-                          [
-                                CountryIssue.outlineMissing,
-                                CountryIssue.outlineTooFewVertices,
-                                CountryIssue.outlineIncorrect,
-                                CountryIssue.outlineDistorted,
-                              ]
-                              .map(
-                                (issue) => _IssueChip(
-                                  issue: issue,
-                                  selected: widget.issues.contains(issue),
-                                  onTap: () => widget.onToggleIssue(issue),
-                                ),
-                              )
-                              .toList(),
+                      children: [
+                        CountryIssue.outlineMissing,
+                        CountryIssue.outlineTooFewVertices,
+                        CountryIssue.outlineIncorrect,
+                        CountryIssue.outlineDistorted,
+                      ]
+                          .map(
+                            (issue) => _IssueChip(
+                              issue: issue,
+                              selected: widget.issues.contains(issue),
+                              onTap: () => widget.onToggleIssue(issue),
+                            ),
+                          )
+                          .toList(),
                     ),
                     const SizedBox(height: 10),
                     const Text(
@@ -908,19 +907,18 @@ class _CountryCardState extends State<_CountryCard> {
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
-                      children:
-                          [
-                                CountryIssue.capitalMissing,
-                                CountryIssue.capitalIncorrect,
-                              ]
-                              .map(
-                                (issue) => _IssueChip(
-                                  issue: issue,
-                                  selected: widget.issues.contains(issue),
-                                  onTap: () => widget.onToggleIssue(issue),
-                                ),
-                              )
-                              .toList(),
+                      children: [
+                        CountryIssue.capitalMissing,
+                        CountryIssue.capitalIncorrect,
+                      ]
+                          .map(
+                            (issue) => _IssueChip(
+                              issue: issue,
+                              selected: widget.issues.contains(issue),
+                              onTap: () => widget.onToggleIssue(issue),
+                            ),
+                          )
+                          .toList(),
                     ),
                     const SizedBox(height: 8),
                     // Note button

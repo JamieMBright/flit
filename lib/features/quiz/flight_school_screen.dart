@@ -97,8 +97,7 @@ class _FlightSchoolScreenState extends ConsumerState<FlightSchoolScreen> {
                   );
                   final progress =
                       progressMap[level.id] ?? const FlightSchoolProgress();
-                  final canBuyEarly =
-                      !isUnlocked &&
+                  final canBuyEarly = !isUnlocked &&
                       level.unlockCost > 0 &&
                       playerCoins >= level.unlockCost;
 
@@ -110,9 +109,8 @@ class _FlightSchoolScreenState extends ConsumerState<FlightSchoolScreen> {
                     playerLevel: playerLevel,
                     playerCoins: playerCoins,
                     onTap: isUnlocked ? () => _navigateToSetup(level) : null,
-                    onBuy: canBuyEarly
-                        ? () => _buyLevel(level, notifier)
-                        : null,
+                    onBuy:
+                        canBuyEarly ? () => _buyLevel(level, notifier) : null,
                   );
                 },
               ),
@@ -124,32 +122,32 @@ class _FlightSchoolScreenState extends ConsumerState<FlightSchoolScreen> {
   }
 
   Widget _buildHeader() => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(16),
-    decoration: const BoxDecoration(
-      color: FlitColors.backgroundMid,
-      border: Border(bottom: BorderSide(color: FlitColors.cardBorder)),
-    ),
-    child: Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: FlitColors.gold.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const Icon(Icons.school, color: FlitColors.gold, size: 32),
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: FlitColors.backgroundMid,
+          border: Border(bottom: BorderSide(color: FlitColors.cardBorder)),
         ),
-        const SizedBox(height: 10),
-        const Text(
-          'Choose your training region',
-          style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: FlitColors.gold.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.school, color: FlitColors.gold, size: 32),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Choose your training region',
+              style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+            ),
+            const SizedBox(height: 6),
+            _buildOverallProgress(),
+          ],
         ),
-        const SizedBox(height: 6),
-        _buildOverallProgress(),
-      ],
-    ),
-  );
+      );
 
   Widget _buildOverallProgress() {
     final progressMap = ref.watch(accountProvider).flightSchoolProgress;
@@ -324,8 +322,8 @@ class _LevelCard extends StatelessWidget {
                 color: isUnlocked
                     ? FlitColors.cardBorder
                     : canBuyEarly
-                    ? FlitColors.gold.withOpacity(0.4)
-                    : FlitColors.textMuted.withOpacity(0.3),
+                        ? FlitColors.gold.withOpacity(0.4)
+                        : FlitColors.textMuted.withOpacity(0.3),
               ),
             ),
             child: Row(
@@ -338,8 +336,8 @@ class _LevelCard extends StatelessWidget {
                     color: isUnlocked
                         ? FlitColors.accent.withOpacity(0.15)
                         : canBuyEarly
-                        ? FlitColors.gold.withOpacity(0.1)
-                        : FlitColors.backgroundMid,
+                            ? FlitColors.gold.withOpacity(0.1)
+                            : FlitColors.backgroundMid,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
@@ -349,8 +347,8 @@ class _LevelCard extends StatelessWidget {
                       color: isUnlocked
                           ? FlitColors.accent
                           : canBuyEarly
-                          ? FlitColors.gold
-                          : FlitColors.textMuted,
+                              ? FlitColors.gold
+                              : FlitColors.textMuted,
                     ),
                   ),
                 ),
@@ -370,8 +368,8 @@ class _LevelCard extends StatelessWidget {
                                 color: isUnlocked
                                     ? FlitColors.textPrimary
                                     : canBuyEarly
-                                    ? FlitColors.textSecondary
-                                    : FlitColors.textMuted,
+                                        ? FlitColors.textSecondary
+                                        : FlitColors.textMuted,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
                               ),

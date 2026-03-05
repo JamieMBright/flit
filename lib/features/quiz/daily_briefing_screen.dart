@@ -83,25 +83,25 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen>
 
     Navigator.of(context)
         .push(
-          MaterialPageRoute<QuizSummary>(
-            builder: (_) => QuizGameScreen(
-              mode: _briefing.mode,
-              category: _briefing.category,
-              region: _briefing.level.region,
-              difficulty: _briefing.difficulty,
-              seed: _briefing.seed,
-              flightSchoolLevelId: _briefing.level.id,
-              dailyBriefingDateKey: _briefing.dateKey,
-            ),
-          ),
-        )
+      MaterialPageRoute<QuizSummary>(
+        builder: (_) => QuizGameScreen(
+          mode: _briefing.mode,
+          category: _briefing.category,
+          region: _briefing.level.region,
+          difficulty: _briefing.difficulty,
+          seed: _briefing.seed,
+          flightSchoolLevelId: _briefing.level.id,
+          dailyBriefingDateKey: _briefing.dateKey,
+        ),
+      ),
+    )
         .then((summary) {
-          // The QuizGameScreen pushes QuizResultsScreen, but for the daily
-          // briefing we intercept the pop result to submit the score.
-          // QuizGameScreen pops without a result (navigates to results itself),
-          // so we check completion when returning.
-          _checkCompletion();
-        });
+      // The QuizGameScreen pushes QuizResultsScreen, but for the daily
+      // briefing we intercept the pop result to submit the score.
+      // QuizGameScreen pops without a result (navigates to results itself),
+      // so we check completion when returning.
+      _checkCompletion();
+    });
   }
 
   // ---------------------------------------------------------------------------

@@ -42,16 +42,17 @@ class AuthState {
     String? email,
     Object? error = _sentinel,
     bool? needsEmailConfirmation,
-  }) => AuthState(
-    isAuthenticated: isAuthenticated ?? this.isAuthenticated,
-    isLoading: isLoading ?? this.isLoading,
-    player: player ?? this.player,
-    authMethod: authMethod ?? this.authMethod,
-    email: email ?? this.email,
-    error: error == _sentinel ? this.error : error as String?,
-    needsEmailConfirmation:
-        needsEmailConfirmation ?? this.needsEmailConfirmation,
-  );
+  }) =>
+      AuthState(
+        isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+        isLoading: isLoading ?? this.isLoading,
+        player: player ?? this.player,
+        authMethod: authMethod ?? this.authMethod,
+        email: email ?? this.email,
+        error: error == _sentinel ? this.error : error as String?,
+        needsEmailConfirmation:
+            needsEmailConfirmation ?? this.needsEmailConfirmation,
+      );
 }
 
 /// Supabase-backed authentication service.
@@ -167,9 +168,8 @@ class AuthService {
         email: email,
         password: password,
         data: {'username': username, 'display_name': displayName ?? username},
-        emailRedirectTo: SupabaseConfig.siteUrl.isNotEmpty
-            ? SupabaseConfig.siteUrl
-            : null,
+        emailRedirectTo:
+            SupabaseConfig.siteUrl.isNotEmpty ? SupabaseConfig.siteUrl : null,
       );
 
       if (response.user != null) {
@@ -181,8 +181,7 @@ class AuthService {
         if (identities != null && identities.isEmpty) {
           _state = _state.copyWith(
             isLoading: false,
-            error:
-                'An account with this email may already exist. '
+            error: 'An account with this email may already exist. '
                 'Try signing in instead, or use a different email.',
           );
           return _state;
@@ -193,13 +192,10 @@ class AuthService {
         // blocks unauthenticated writes — that's fine, we'll update on
         // first sign-in instead.
         try {
-          await _client
-              .from('profiles')
-              .update({
-                'username': username,
-                'display_name': displayName ?? username,
-              })
-              .eq('id', response.user!.id);
+          await _client.from('profiles').update({
+            'username': username,
+            'display_name': displayName ?? username,
+          }).eq('id', response.user!.id);
         } catch (_) {
           // Profile update will happen on first sign-in.
         }
@@ -379,14 +375,12 @@ class AuthService {
       if (data != null) {
         // Ensure username is set (may be null if trigger created row
         // before the profile update succeeded).
-        final username =
-            data['username'] as String? ??
+        final username = data['username'] as String? ??
             user.userMetadata?['username'] as String? ??
             user.email?.split('@').first ??
             'Pilot';
 
-        final displayName =
-            data['display_name'] as String? ??
+        final displayName = data['display_name'] as String? ??
             user.userMetadata?['display_name'] as String? ??
             username;
 
@@ -395,8 +389,8 @@ class AuthService {
           try {
             await _client
                 .from('profiles')
-                .update({'username': username, 'display_name': displayName})
-                .eq('id', user.id);
+                .update({'username': username, 'display_name': displayName}).eq(
+                    'id', user.id);
           } catch (_) {}
         }
 
@@ -441,8 +435,7 @@ class AuthService {
     }
 
     // Fallback: build Player from auth user metadata.
-    final username =
-        user.userMetadata?['username'] as String? ??
+    final username = user.userMetadata?['username'] as String? ??
         user.email?.split('@').first ??
         'Pilot';
 

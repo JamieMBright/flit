@@ -6,41 +6,41 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 Map<String, dynamic> _fullReportJson() => {
-  'id': 42,
-  'reporter_id': 'reporter-uuid-001',
-  'reported_id': 'reported-uuid-002',
-  'reason': 'cheating',
-  'details': 'Used an aimbot on round 5.',
-  'status': 'pending',
-  'reviewed_by': null,
-  'reviewed_at': null,
-  'action_taken': null,
-  'created_at': '2026-02-01T10:00:00.000Z',
-  'reported_username': 'cheater99',
-  'reporter_username': 'pilot_ace',
-};
+      'id': 42,
+      'reporter_id': 'reporter-uuid-001',
+      'reported_id': 'reported-uuid-002',
+      'reason': 'cheating',
+      'details': 'Used an aimbot on round 5.',
+      'status': 'pending',
+      'reviewed_by': null,
+      'reviewed_at': null,
+      'action_taken': null,
+      'created_at': '2026-02-01T10:00:00.000Z',
+      'reported_username': 'cheater99',
+      'reporter_username': 'pilot_ace',
+    };
 
 Map<String, dynamic> _minimalReportJson() => {
-  'id': 1,
-  'reporter_id': 'r1',
-  'reported_id': 'r2',
-  'reason': 'other',
-};
+      'id': 1,
+      'reporter_id': 'r1',
+      'reported_id': 'r2',
+      'reason': 'other',
+    };
 
 Map<String, dynamic> _reviewedReportJson() => {
-  'id': 99,
-  'reporter_id': 'r-alpha',
-  'reported_id': 'r-beta',
-  'reason': 'harassment',
-  'details': 'Sent offensive messages.',
-  'status': 'actioned',
-  'reviewed_by': 'mod-uuid-007',
-  'reviewed_at': '2026-02-15T08:30:00.000Z',
-  'action_taken': 'Temp ban applied for 7 days.',
-  'created_at': '2026-02-14T12:00:00.000Z',
-  'reported_username': null,
-  'reporter_username': null,
-};
+      'id': 99,
+      'reporter_id': 'r-alpha',
+      'reported_id': 'r-beta',
+      'reason': 'harassment',
+      'details': 'Sent offensive messages.',
+      'status': 'actioned',
+      'reviewed_by': 'mod-uuid-007',
+      'reviewed_at': '2026-02-15T08:30:00.000Z',
+      'action_taken': 'Temp ban applied for 7 days.',
+      'created_at': '2026-02-14T12:00:00.000Z',
+      'reported_username': null,
+      'reporter_username': null,
+    };
 
 // ---------------------------------------------------------------------------
 // Tests

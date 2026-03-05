@@ -126,14 +126,14 @@ abstract final class AdminPermissions {
   /// (perma-ban, unban, role management).
   static final Set<AdminPermission> collaborator =
       Set<AdminPermission>.unmodifiable({
-        ...moderator,
-        // ── Collaborator extras (game design + content) ──
-        AdminPermission.editDifficulty,
-        AdminPermission.editAnnouncements,
-        AdminPermission.editAppConfig,
-        AdminPermission.editFeatureFlags,
-        AdminPermission.viewAuditLog,
-      });
+    ...moderator,
+    // ── Collaborator extras (game design + content) ──
+    AdminPermission.editDifficulty,
+    AdminPermission.editAnnouncements,
+    AdminPermission.editAppConfig,
+    AdminPermission.editFeatureFlags,
+    AdminPermission.viewAuditLog,
+  });
 
   /// Permissions granted to owners — everything.
   static final Set<AdminPermission> owner = Set<AdminPermission>.unmodifiable(

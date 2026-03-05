@@ -75,12 +75,10 @@ class RegionSelectScreen extends ConsumerWidget {
             planeHandling: plane?.handling ?? 1.0,
             planeSpeed: plane?.speed ?? 1.0,
             planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
-            contrailPrimaryColor: contrailPrimary != null
-                ? Color(contrailPrimary)
-                : null,
-            contrailSecondaryColor: contrailSecondary != null
-                ? Color(contrailSecondary)
-                : null,
+            contrailPrimaryColor:
+                contrailPrimary != null ? Color(contrailPrimary) : null,
+            contrailSecondaryColor:
+                contrailSecondary != null ? Color(contrailSecondary) : null,
           ),
         ),
       );
@@ -158,8 +156,8 @@ class RegionSelectScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final region = GameRegion.values[index];
                 final isUnlockedByLevel = playerLevel >= region.requiredLevel;
-                final isUnlockedByPurchase = accountState.unlockedRegions
-                    .contains(region.name);
+                final isUnlockedByPurchase =
+                    accountState.unlockedRegions.contains(region.name);
                 final isUnlocked = isUnlockedByLevel || isUnlockedByPurchase;
                 final cost = unlockCost(region);
                 final canAfford = coins >= cost && cost > 0;
@@ -253,9 +251,8 @@ class RegionSelectScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              final success = ref
-                  .read(accountProvider.notifier)
-                  .unlockRegion(region, cost);
+              final success =
+                  ref.read(accountProvider.notifier).unlockRegion(region, cost);
               Navigator.of(dialogContext).pop();
               if (success) {
                 ScaffoldMessenger.of(scaffoldContext).showSnackBar(
@@ -332,168 +329,169 @@ class _RegionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: Material(
-      color: FlitColors.cardBackground,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isUnlocked
-                      ? FlitColors.cardBorder
-                      : FlitColors.textMuted,
-                ),
-              ),
-              child: Row(
-                children: [
-                  // Region icon
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Material(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
                       color: isUnlocked
-                          ? FlitColors.accent.withOpacity(0.2)
-                          : FlitColors.backgroundMid,
-                      borderRadius: BorderRadius.circular(12),
+                          ? FlitColors.cardBorder
+                          : FlitColors.textMuted,
                     ),
-                    child: Center(
-                      child: Icon(
-                        _getRegionIcon(region),
-                        size: 32,
+                  ),
+                  child: Row(
+                    children: [
+                      // Region icon
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: isUnlocked
+                              ? FlitColors.accent.withOpacity(0.2)
+                              : FlitColors.backgroundMid,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            _getRegionIcon(region),
+                            size: 32,
+                            color: isUnlocked
+                                ? FlitColors.accent
+                                : FlitColors.textMuted,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // Region info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              region.displayName,
+                              style: TextStyle(
+                                color: isUnlocked
+                                    ? FlitColors.textPrimary
+                                    : FlitColors.textMuted,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              region.description,
+                              style: TextStyle(
+                                color: isUnlocked
+                                    ? FlitColors.textSecondary
+                                    : FlitColors.textMuted,
+                                fontSize: 14,
+                              ),
+                            ),
+                            if (!isUnlocked) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.lock,
+                                    size: 14,
+                                    color: FlitColors.warning,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Unlocks at Level ${region.requiredLevel}',
+                                    style: const TextStyle(
+                                      color: FlitColors.warning,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (canBuy) ...[
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: onBuy,
+                                    icon: const Icon(
+                                      Icons.monetization_on,
+                                      size: 16,
+                                    ),
+                                    label: Text(
+                                      'BUY FOR $unlockCost COINS',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: FlitColors.gold,
+                                      foregroundColor:
+                                          FlitColors.backgroundDark,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ],
+                        ),
+                      ),
+                      // Arrow or lock
+                      Icon(
+                        isUnlocked ? Icons.chevron_right : Icons.lock,
                         color: isUnlocked
-                            ? FlitColors.accent
+                            ? FlitColors.textSecondary
                             : FlitColors.textMuted,
+                      ),
+                    ],
+                  ),
+                ),
+                // "COMING SOON" badge — shown for non-World regions for regular users.
+                if (_showComingSoonBadge)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: FlitColors.accent.withOpacity(0.85),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'COMING SOON',
+                        style: TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  // Region info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          region.displayName,
-                          style: TextStyle(
-                            color: isUnlocked
-                                ? FlitColors.textPrimary
-                                : FlitColors.textMuted,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          region.description,
-                          style: TextStyle(
-                            color: isUnlocked
-                                ? FlitColors.textSecondary
-                                : FlitColors.textMuted,
-                            fontSize: 14,
-                          ),
-                        ),
-                        if (!isUnlocked) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.lock,
-                                size: 14,
-                                color: FlitColors.warning,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Unlocks at Level ${region.requiredLevel}',
-                                style: const TextStyle(
-                                  color: FlitColors.warning,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (canBuy) ...[
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: onBuy,
-                                icon: const Icon(
-                                  Icons.monetization_on,
-                                  size: 16,
-                                ),
-                                label: Text(
-                                  'BUY FOR $unlockCost COINS',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: FlitColors.gold,
-                                  foregroundColor: FlitColors.backgroundDark,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ],
-                    ),
-                  ),
-                  // Arrow or lock
-                  Icon(
-                    isUnlocked ? Icons.chevron_right : Icons.lock,
-                    color: isUnlocked
-                        ? FlitColors.textSecondary
-                        : FlitColors.textMuted,
-                  ),
-                ],
-              ),
+              ],
             ),
-            // "COMING SOON" badge — shown for non-World regions for regular users.
-            if (_showComingSoonBadge)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: FlitColors.accent.withOpacity(0.85),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'COMING SOON',
-                    style: TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-              ),
-          ],
+          ),
         ),
-      ),
-    ),
-  );
+      );
 
   IconData _getRegionIcon(GameRegion region) {
     switch (region) {
@@ -535,57 +533,57 @@ class _DifficultyBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    color: FlitColors.backgroundMid,
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-    child: Row(
-      children: [
-        const Icon(Icons.tune, color: FlitColors.textSecondary, size: 18),
-        const SizedBox(width: 8),
-        const Text(
-          'Difficulty',
-          style: TextStyle(
-            color: FlitColors.textSecondary,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(width: 12),
-        ...GameDifficulty.values.map((d) {
-          final isActive = d == difficulty;
-          return Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: GestureDetector(
-              onTap: () => onChanged(d),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? _color(d).withOpacity(0.2)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isActive ? _color(d) : FlitColors.cardBorder,
-                    width: isActive ? 1.5 : 1,
-                  ),
-                ),
-                child: Text(
-                  _label(d),
-                  style: TextStyle(
-                    color: isActive ? _color(d) : FlitColors.textMuted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+        color: FlitColors.backgroundMid,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            const Icon(Icons.tune, color: FlitColors.textSecondary, size: 18),
+            const SizedBox(width: 8),
+            const Text(
+              'Difficulty',
+              style: TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          );
-        }),
-      ],
-    ),
-  );
+            const SizedBox(width: 12),
+            ...GameDifficulty.values.map((d) {
+              final isActive = d == difficulty;
+              return Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: GestureDetector(
+                  onTap: () => onChanged(d),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? _color(d).withOpacity(0.2)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isActive ? _color(d) : FlitColors.cardBorder,
+                        width: isActive ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Text(
+                      _label(d),
+                      style: TextStyle(
+                        color: isActive ? _color(d) : FlitColors.textMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      );
 
   static String _label(GameDifficulty d) => d.displayName.toUpperCase();
 

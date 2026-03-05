@@ -37,30 +37,30 @@ class PlayerReport {
   bool get isPending => status == 'pending';
 
   factory PlayerReport.fromJson(Map<String, dynamic> json) => PlayerReport(
-    id: json['id'] as int,
-    reporterId: json['reporter_id'] as String,
-    reportedId: json['reported_id'] as String,
-    reason: json['reason'] as String,
-    details: json['details'] as String?,
-    status: json['status'] as String? ?? 'pending',
-    reviewedBy: json['reviewed_by'] as String?,
-    reviewedAt: json['reviewed_at'] != null
-        ? DateTime.tryParse(json['reviewed_at'] as String)
-        : null,
-    actionTaken: json['action_taken'] as String?,
-    createdAt: json['created_at'] != null
-        ? DateTime.tryParse(json['created_at'] as String)
-        : null,
-    reportedUsername: json['reported_username'] as String?,
-    reporterUsername: json['reporter_username'] as String?,
-  );
+        id: json['id'] as int,
+        reporterId: json['reporter_id'] as String,
+        reportedId: json['reported_id'] as String,
+        reason: json['reason'] as String,
+        details: json['details'] as String?,
+        status: json['status'] as String? ?? 'pending',
+        reviewedBy: json['reviewed_by'] as String?,
+        reviewedAt: json['reviewed_at'] != null
+            ? DateTime.tryParse(json['reviewed_at'] as String)
+            : null,
+        actionTaken: json['action_taken'] as String?,
+        createdAt: json['created_at'] != null
+            ? DateTime.tryParse(json['created_at'] as String)
+            : null,
+        reportedUsername: json['reported_username'] as String?,
+        reporterUsername: json['reporter_username'] as String?,
+      );
 
   Map<String, dynamic> toInsertJson() => {
-    'reporter_id': reporterId,
-    'reported_id': reportedId,
-    'reason': reason,
-    if (details != null) 'details': details,
-  };
+        'reporter_id': reporterId,
+        'reported_id': reportedId,
+        'reason': reason,
+        if (details != null) 'details': details,
+      };
 }
 
 /// Predefined report reasons.

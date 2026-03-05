@@ -495,13 +495,11 @@ class ProfanityFilter {
   // ---------------------------------------------------------------------------
   // Pre-compiled state (built lazily on first access)
   // ---------------------------------------------------------------------------
-  late final Set<String> _whitelistLower = _whitelist
-      .map((w) => w.toLowerCase())
-      .toSet();
+  late final Set<String> _whitelistLower =
+      _whitelist.map((w) => w.toLowerCase()).toSet();
 
-  late final Set<String> _impersonationLower = _impersonationTerms
-      .map((t) => t.toLowerCase())
-      .toSet();
+  late final Set<String> _impersonationLower =
+      _impersonationTerms.map((t) => t.toLowerCase()).toSet();
 
   /// Profanity entries split into two buckets:
   ///  1. Single-word terms  -> matched with word-boundary regex

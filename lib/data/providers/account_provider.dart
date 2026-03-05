@@ -36,8 +36,8 @@ class AccountState {
     this.freeFlightCoinsToday = 0,
     this.freeFlightCoinDate,
     this.flightSchoolProgress = const {},
-  }) : avatar = avatar ?? const AvatarConfig(),
-       license = license ?? PilotLicense.random();
+  })  : avatar = avatar ?? const AvatarConfig(),
+        license = license ?? PilotLicense.random();
 
   final Player currentPlayer;
 
@@ -150,31 +150,32 @@ class AccountState {
     int? freeFlightCoinsToday,
     Object? freeFlightCoinDate = _sentinel,
     Map<String, FlightSchoolProgress>? flightSchoolProgress,
-  }) => AccountState(
-    currentPlayer: currentPlayer ?? this.currentPlayer,
-    unlockedRegions: unlockedRegions ?? this.unlockedRegions,
-    avatar: avatar ?? this.avatar,
-    license: license ?? this.license,
-    ownedAvatarParts: ownedAvatarParts ?? this.ownedAvatarParts,
-    ownedCosmetics: ownedCosmetics ?? this.ownedCosmetics,
-    equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
-    equippedContrailId: equippedContrailId ?? this.equippedContrailId,
-    equippedTitleId: equippedTitleId == _sentinel
-        ? this.equippedTitleId
-        : equippedTitleId as String?,
-    lastFreeRerollDate: lastFreeRerollDate ?? this.lastFreeRerollDate,
-    lastDailyChallengeDate:
-        lastDailyChallengeDate ?? this.lastDailyChallengeDate,
-    dailyStreak: dailyStreak ?? this.dailyStreak,
-    lastDailyResult: lastDailyResult == _sentinel
-        ? this.lastDailyResult
-        : lastDailyResult as DailyResult?,
-    freeFlightCoinsToday: freeFlightCoinsToday ?? this.freeFlightCoinsToday,
-    freeFlightCoinDate: freeFlightCoinDate == _sentinel
-        ? this.freeFlightCoinDate
-        : freeFlightCoinDate as String?,
-    flightSchoolProgress: flightSchoolProgress ?? this.flightSchoolProgress,
-  );
+  }) =>
+      AccountState(
+        currentPlayer: currentPlayer ?? this.currentPlayer,
+        unlockedRegions: unlockedRegions ?? this.unlockedRegions,
+        avatar: avatar ?? this.avatar,
+        license: license ?? this.license,
+        ownedAvatarParts: ownedAvatarParts ?? this.ownedAvatarParts,
+        ownedCosmetics: ownedCosmetics ?? this.ownedCosmetics,
+        equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
+        equippedContrailId: equippedContrailId ?? this.equippedContrailId,
+        equippedTitleId: equippedTitleId == _sentinel
+            ? this.equippedTitleId
+            : equippedTitleId as String?,
+        lastFreeRerollDate: lastFreeRerollDate ?? this.lastFreeRerollDate,
+        lastDailyChallengeDate:
+            lastDailyChallengeDate ?? this.lastDailyChallengeDate,
+        dailyStreak: dailyStreak ?? this.dailyStreak,
+        lastDailyResult: lastDailyResult == _sentinel
+            ? this.lastDailyResult
+            : lastDailyResult as DailyResult?,
+        freeFlightCoinsToday: freeFlightCoinsToday ?? this.freeFlightCoinsToday,
+        freeFlightCoinDate: freeFlightCoinDate == _sentinel
+            ? this.freeFlightCoinDate
+            : freeFlightCoinDate as String?,
+        flightSchoolProgress: flightSchoolProgress ?? this.flightSchoolProgress,
+      );
 }
 
 // Sentinel used by [AccountState.copyWith] to distinguish "not provided" from
@@ -184,17 +185,17 @@ const Object _sentinel = Object();
 /// Account state notifier.
 class AccountNotifier extends StateNotifier<AccountState> {
   AccountNotifier()
-    : super(
-        AccountState(
-          currentPlayer: const Player(
-            id: '',
-            username: '',
-            level: 1,
-            xp: 0,
-            coins: 0,
+      : super(
+          AccountState(
+            currentPlayer: const Player(
+              id: '',
+              username: '',
+              level: 1,
+              xp: 0,
+              coins: 0,
+            ),
           ),
-        ),
-      );
+        );
 
   final _prefs = UserPreferencesService.instance;
 
@@ -306,7 +307,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // If Supabase isn't ready, we can't listen for auth changes, so
     // we rely on the periodic refresh timer instead.
     try {
-      _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
+      _authSubscription =
+          Supabase.instance.client.auth.onAuthStateChange.listen((
         authState,
       ) {
         if (authState.event == AuthChangeEvent.tokenRefreshed &&
@@ -347,8 +349,9 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // Coins are consumable (server-authoritative), so they are NOT protected.
     // Admin overrides bypass this protection entirely.
     final local = state.currentPlayer;
-    final player =
-        (!adminOverride && local.id.isNotEmpty && local.id == serverPlayer.id)
+    final player = (!adminOverride &&
+            local.id.isNotEmpty &&
+            local.id == serverPlayer.id)
         ? serverPlayer.copyWith(
             gamesPlayed: math.max(local.gamesPlayed, serverPlayer.gamesPlayed),
             countriesFound: math.max(
@@ -359,12 +362,12 @@ class AccountNotifier extends StateNotifier<AccountState> {
             xp: local.level > serverPlayer.level
                 ? local.xp
                 : (local.level == serverPlayer.level
-                      ? math.max(local.xp, serverPlayer.xp)
-                      : serverPlayer.xp),
+                    ? math.max(local.xp, serverPlayer.xp)
+                    : serverPlayer.xp),
             totalFlightTime:
                 local.totalFlightTime > serverPlayer.totalFlightTime
-                ? local.totalFlightTime
-                : serverPlayer.totalFlightTime,
+                    ? local.totalFlightTime
+                    : serverPlayer.totalFlightTime,
             flagsCorrect: math.max(
               local.flagsCorrect,
               serverPlayer.flagsCorrect,
@@ -747,8 +750,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
 
     final updated = current.copyWith(
       bestScore: score > current.bestScore ? score : null,
-      bestTimeMs:
-          (timeMs > 0 &&
+      bestTimeMs: (timeMs > 0 &&
               (current.bestTimeMs == 0 || timeMs < current.bestTimeMs))
           ? timeMs
           : null,
@@ -1235,9 +1237,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
       newCurrent = 1;
     }
 
-    final newLongest = newCurrent > streak.longestStreak
-        ? newCurrent
-        : streak.longestStreak;
+    final newLongest =
+        newCurrent > streak.longestStreak ? newCurrent : streak.longestStreak;
 
     state = state.copyWith(
       dailyStreak: streak.copyWith(
@@ -1270,8 +1271,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // were completed. The lastCompletionDate moves to yesterday so the
     // streak is active again (the player still needs to play today).
     final yesterday = DateTime.now().toUtc().subtract(const Duration(days: 1));
-    final yesterdayStr =
-        '${yesterday.year}-'
+    final yesterdayStr = '${yesterday.year}-'
         '${yesterday.month.toString().padLeft(2, '0')}-'
         '${yesterday.day.toString().padLeft(2, '0')}';
 

@@ -904,8 +904,7 @@ class FlitGame extends FlameGame
       final isLow = _planeReady && !_plane.isHighAltitude;
       final altitudeFactor = isLow ? 0.25 : 1.0;
       // planeFuelEfficiency > 1 = less burn; divide to invert.
-      final burnRate =
-          _baseFuelBurnRate *
+      final burnRate = _baseFuelBurnRate *
           _speedMultiplier *
           altitudeFactor /
           planeFuelEfficiency;
@@ -1327,17 +1326,16 @@ class FlitGame extends FlameGame
       if (_keyTurnDir != 0) {
         _keyTurnHoldTime += rampDt;
       }
-      final holdTime = _buttonTurnDir != 0
-          ? _buttonTurnHoldTime
-          : _keyTurnHoldTime;
+      final holdTime =
+          _buttonTurnDir != 0 ? _buttonTurnHoldTime : _keyTurnHoldTime;
 
       // Progressive curve: starts at 0.08, reaches 1.0 after ~0.6s.
       // Scale ramp speed with turn sensitivity setting (default 0.5 → 1.0x).
       // In descent mode the faster ramp-up + higher base turn rate gives
       // immediate, snappy steering that matches the slower movement.
       final sensitivityScale = GameSettings.instance.turnSensitivity / 0.5;
-      final strength = (0.08 + holdTime * holdTime * 4.5 * sensitivityScale)
-          .clamp(0.0, 1.0);
+      final strength =
+          (0.08 + holdTime * holdTime * 4.5 * sensitivityScale).clamp(0.0, 1.0);
       // When invertControls is false, pass direction through (right = right).
       // When invertControls is true, negate (right input = left turn).
       final invert = GameSettings.instance.invertControls ? -1.0 : 1.0;
@@ -1653,11 +1651,9 @@ class FlitGame extends FlameGame
       'game',
       'startGame',
       data: {
-        'start':
-            '${startPosition.x.toStringAsFixed(1)},'
+        'start': '${startPosition.x.toStringAsFixed(1)},'
             '${startPosition.y.toStringAsFixed(1)}',
-        'target':
-            '${targetPosition.x.toStringAsFixed(1)},'
+        'target': '${targetPosition.x.toStringAsFixed(1)},'
             '${targetPosition.y.toStringAsFixed(1)}',
       },
     );
@@ -1697,8 +1693,7 @@ class FlitGame extends FlameGame
       'game',
       'continueWithNewTarget',
       data: {
-        'target':
-            '${targetPosition.x.toStringAsFixed(1)},'
+        'target': '${targetPosition.x.toStringAsFixed(1)},'
             '${targetPosition.y.toStringAsFixed(1)}',
       },
     );
@@ -1740,8 +1735,7 @@ class FlitGame extends FlameGame
     final dLat = (b.y - a.y) * deg2rad;
     final dLng = (b.x - a.x) * deg2rad;
 
-    final h =
-        sin(dLat / 2) * sin(dLat / 2) +
+    final h = sin(dLat / 2) * sin(dLat / 2) +
         cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
     final c = 2 * atan2(sqrt(h), sqrt(1 - h));
     return c * rad2deg;
