@@ -153,13 +153,19 @@ class QuizQuestionGenerator {
     QuizCategory.filmSetting,
   ];
 
-  /// Generate a list of questions for the given category, covering all states.
+  /// Categories available for any region (name + capital).
+  static const List<QuizCategory> _universalCategories = [
+    QuizCategory.stateName,
+    QuizCategory.capital,
+  ];
+
+  /// Generate a list of questions for the given category, covering all areas.
   List<QuizQuestion> generateQuestions(QuizCategory category) {
     final areas = RegionalData.getAreas(region);
     final questions = <QuizQuestion>[];
 
     for (final area in areas) {
-      final question = _generateForState(area, category);
+      final question = _generateForArea(area, category);
       if (question != null) {
         questions.add(question);
       }
@@ -169,11 +175,19 @@ class QuizQuestionGenerator {
     return questions;
   }
 
-  /// Generate a single question for a state in the given category.
-  QuizQuestion? _generateForState(RegionalArea area, QuizCategory category) {
-    final effectiveCategory = category == QuizCategory.mixed
-        ? _singleCategories[_random.nextInt(_singleCategories.length)]
-        : category;
+  /// Whether this generator's region has rich US-specific clue data.
+  bool get _hasRichClues => region == GameRegion.usStates;
+
+  /// Generate a single question for an area in the given category.
+  QuizQuestion? _generateForArea(RegionalArea area, QuizCategory category) {
+    QuizCategory effectiveCategory;
+    if (category == QuizCategory.mixed) {
+      // For non-US regions, mixed only uses universal categories.
+      final pool = _hasRichClues ? _singleCategories : _universalCategories;
+      effectiveCategory = pool[_random.nextInt(pool.length)];
+    } else {
+      effectiveCategory = category;
+    }
 
     switch (effectiveCategory) {
       case QuizCategory.stateName:

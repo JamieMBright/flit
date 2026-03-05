@@ -20,17 +20,27 @@ class RegionSelectScreen extends ConsumerWidget {
   static int unlockCost(GameRegion region) {
     switch (region) {
       case GameRegion.world:
-        return 0; // Always unlocked
+        return 0;
       case GameRegion.usStates:
-        return 500; // Level 3
+        return 500;
       case GameRegion.canadianProvinces:
-        return 750; // Level 4
+        return 750;
       case GameRegion.ukCounties:
-        return 1000; // Level 5
+        return 1000;
       case GameRegion.caribbean:
-        return 2000; // Level 7
+        return 2000;
       case GameRegion.ireland:
-        return 5000; // Level 10
+        return 5000;
+      case GameRegion.europe:
+        return 500;
+      case GameRegion.africa:
+        return 1000;
+      case GameRegion.asia:
+        return 1500;
+      case GameRegion.latinAmerica:
+        return 2000;
+      case GameRegion.oceania:
+        return 2500;
     }
   }
 
@@ -499,6 +509,16 @@ class _RegionCard extends StatelessWidget {
         return Icons.grass;
       case GameRegion.canadianProvinces:
         return Icons.landscape;
+      case GameRegion.europe:
+        return Icons.castle;
+      case GameRegion.africa:
+        return Icons.terrain;
+      case GameRegion.asia:
+        return Icons.temple_buddhist;
+      case GameRegion.latinAmerica:
+        return Icons.festival;
+      case GameRegion.oceania:
+        return Icons.beach_access;
     }
   }
 }

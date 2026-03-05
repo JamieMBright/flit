@@ -22,7 +22,8 @@ import '../matchmaking/find_challenger_screen.dart';
 import '../play/practice_screen.dart';
 import '../play/region_select_screen.dart';
 import '../profile/profile_screen.dart';
-import '../quiz/quiz_setup_screen.dart';
+import '../quiz/daily_briefing_screen.dart';
+import '../quiz/flight_school_screen.dart';
 import '../shop/shop_screen.dart';
 import 'announcement_banner.dart';
 
@@ -425,7 +426,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               title: 'Flight School',
               subtitle: 'Quiz yourself on states, capitals & more',
               icon: Icons.quiz_rounded,
-              onTap: () => _closeSheetAndNavigate(ctx, const QuizSetupScreen()),
+              onTap: () =>
+                  _closeSheetAndNavigate(ctx, const FlightSchoolScreen()),
+            ),
+            const SizedBox(height: 10),
+            _GameModeCard(
+              title: 'Daily Briefing',
+              subtitle: 'Daily quiz challenge — same for all pilots',
+              icon: Icons.today_rounded,
+              onTap: () =>
+                  _closeSheetAndNavigate(ctx, const DailyBriefingScreen()),
             ),
             const SizedBox(height: 10),
             _GameModeCard(

@@ -475,8 +475,14 @@ class LeaderboardService {
   Future<LeaderboardEntry?> fetchPlayerRank(
     String userId, {
     bool isDailyScramble = true,
+    LeaderboardMode? mode,
   }) async {
-    final cacheKey = 'rank_${userId}_$isDailyScramble';
+    final effectiveMode =
+        mode ??
+        (isDailyScramble
+            ? LeaderboardMode.dailyScramble
+            : LeaderboardMode.trainingFlight);
+    final cacheKey = 'rank_${userId}_${effectiveMode.name}';
     final cached = _rankCache.get(cacheKey);
     if (cached != null) return cached;
 
@@ -484,17 +490,10 @@ class LeaderboardService {
       // Compute rank from the scores table directly so we aren't limited to
       // the daily-only leaderboard_global view.
       PostgrestFilterBuilder<List<Map<String, dynamic>>> query;
-      if (isDailyScramble) {
-        query = _client
-            .from('scores')
-            .select('score, time_ms, user_id, created_at')
-            .eq('region', 'daily');
-      } else {
-        query = _client
-            .from('scores')
-            .select('score, time_ms, user_id, created_at')
-            .neq('region', 'daily');
-      }
+      query = _applyModeFilter(
+        _client.from('scores').select('score, time_ms, user_id, created_at'),
+        effectiveMode,
+      );
 
       // Get the player's best score in this mode.
       final playerBest = await query
@@ -510,38 +509,15 @@ class LeaderboardService {
       final bestTime = playerBest['time_ms'] as int? ?? 0;
 
       // Count how many distinct scores rank above this one.
-      // A score ranks higher if it has a higher score, or the same score with
-      // a lower time.
-      PostgrestFilterBuilder<List<Map<String, dynamic>>> countQuery;
-      if (isDailyScramble) {
-        countQuery = _client
-            .from('scores')
-            .select('user_id')
-            .eq('region', 'daily');
-      } else {
-        countQuery = _client
-            .from('scores')
-            .select('user_id')
-            .neq('region', 'daily');
-      }
-      final aboveData = await countQuery.gt('score', bestScore).limit(10000);
+      final aboveData = await _applyModeFilter(
+        _client.from('scores').select('user_id'),
+        effectiveMode,
+      ).gt('score', bestScore).limit(10000);
       // Also count those with same score but faster time.
-      PostgrestFilterBuilder<List<Map<String, dynamic>>> tieQuery;
-      if (isDailyScramble) {
-        tieQuery = _client
-            .from('scores')
-            .select('user_id')
-            .eq('region', 'daily');
-      } else {
-        tieQuery = _client
-            .from('scores')
-            .select('user_id')
-            .neq('region', 'daily');
-      }
-      final tieData = await tieQuery
-          .eq('score', bestScore)
-          .lt('time_ms', bestTime)
-          .limit(10000);
+      final tieData = await _applyModeFilter(
+        _client.from('scores').select('user_id'),
+        effectiveMode,
+      ).eq('score', bestScore).lt('time_ms', bestTime).limit(10000);
 
       // Rank = number of distinct users above + 1.
       final usersAbove = <String>{
@@ -578,17 +554,39 @@ class LeaderboardService {
   // Mode-based leaderboard (Daily Scramble / Training Flight)
   // ---------------------------------------------------------------------------
 
+  /// Apply the mode-based region filter to a query.
+  PostgrestFilterBuilder<List<Map<String, dynamic>>> _applyModeFilter(
+    PostgrestFilterBuilder<List<Map<String, dynamic>>> query,
+    LeaderboardMode mode,
+  ) {
+    switch (mode) {
+      case LeaderboardMode.dailyScramble:
+        return query.eq('region', 'daily');
+      case LeaderboardMode.flightBriefing:
+        return query.eq('region', 'briefing');
+      case LeaderboardMode.trainingFlight:
+        return query.neq('region', 'daily').neq('region', 'briefing');
+    }
+  }
+
   /// Fetch leaderboard entries filtered by game mode and timeframe.
   ///
   /// Daily Scramble entries have `region = 'daily'`; Training Flight entries
-  /// have any other region value. Each flight is its own entry — no
-  /// deduplication.
+  /// have any other region value; Flight Briefing entries have
+  /// `region = 'briefing'`. Each flight is its own entry — no deduplication.
   Future<List<LeaderboardEntry>> fetchModeLeaderboard({
-    required bool isDailyScramble,
+    bool isDailyScramble = true,
+    LeaderboardMode? mode,
     required TimeframeTab timeframe,
     int limit = 50,
   }) async {
-    final cacheKey = 'mode_${isDailyScramble}_${timeframe.name}_$limit';
+    // Support both old bool API and new enum API
+    final effectiveMode =
+        mode ??
+        (isDailyScramble
+            ? LeaderboardMode.dailyScramble
+            : LeaderboardMode.trainingFlight);
+    final cacheKey = 'mode_${effectiveMode.name}_${timeframe.name}_$limit';
     final cached = _boardCache.get(cacheKey);
     if (cached != null) return cached;
 
@@ -603,10 +601,16 @@ class LeaderboardService {
 
       // Filter by game mode.
       PostgrestFilterBuilder<List<Map<String, dynamic>>> filtered;
-      if (isDailyScramble) {
-        filtered = query.eq('region', 'daily');
-      } else {
-        filtered = query.neq('region', 'daily');
+      switch (effectiveMode) {
+        case LeaderboardMode.dailyScramble:
+          filtered = query.eq('region', 'daily');
+          break;
+        case LeaderboardMode.flightBriefing:
+          filtered = query.eq('region', 'briefing');
+          break;
+        case LeaderboardMode.trainingFlight:
+          filtered = query.neq('region', 'daily').neq('region', 'briefing');
+          break;
       }
 
       // Filter by time period.

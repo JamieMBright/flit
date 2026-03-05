@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flame/components.dart';
 
 import '../models/challenge.dart';
+import '../models/h2h_challenge.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_session.dart';
@@ -456,6 +457,265 @@ class ChallengeService {
     }
     return coins;
   }
+
+  // ===========================================================================
+  // H2H Flight School Challenges (best-of-3)
+  // ===========================================================================
+
+  /// Create a new H2H Flight School challenge.
+  ///
+  /// [challengedUsername] is looked up in the profiles table.
+  /// [rounds] contains the 3 round configurations (level, category, difficulty).
+  /// Returns the challenge ID on success, or null on failure.
+  Future<String?> createH2HChallenge({
+    required String challengedUsername,
+    required String challengerName,
+    required List<H2HRound> rounds,
+  }) async {
+    if (_userId == null) return null;
+    if (rounds.length != H2HChallenge.totalRounds) return null;
+
+    try {
+      // Look up the challenged user by username.
+      final profile = await _client
+          .from('profiles')
+          .select('id, username, display_name')
+          .eq('username', challengedUsername)
+          .neq('id', _userId!)
+          .maybeSingle();
+
+      if (profile == null) return null;
+
+      final challengedId = profile['id'] as String;
+      final challengedName =
+          (profile['display_name'] as String?) ??
+          (profile['username'] as String? ?? '');
+
+      final roundsJson = rounds.map((r) => r.toJson()).toList();
+
+      final data = await _client
+          .from('h2h_challenges')
+          .insert({
+            'challenger_id': _userId,
+            'challenger_name': challengerName,
+            'challenged_id': challengedId,
+            'challenged_name': challengedName,
+            'rounds': roundsJson,
+            'status': 'pending',
+          })
+          .select('id')
+          .single();
+
+      return data['id'] as String;
+    } catch (e) {
+      debugPrint('[ChallengeService] createH2HChallenge failed: $e');
+      return null;
+    }
+  }
+
+  /// Accept a pending H2H challenge (marks it as in_progress).
+  Future<bool> acceptH2HChallenge(String challengeId) async {
+    if (_userId == null) return false;
+    try {
+      await _client
+          .from('h2h_challenges')
+          .update({'status': 'in_progress'})
+          .eq('id', challengeId)
+          .eq('challenged_id', _userId!)
+          .eq('status', 'pending');
+      return true;
+    } catch (e) {
+      debugPrint('[ChallengeService] acceptH2HChallenge failed: $e');
+      return false;
+    }
+  }
+
+  /// Decline a pending H2H challenge.
+  Future<bool> declineH2HChallenge(String challengeId) async {
+    if (_userId == null) return false;
+    try {
+      await _client
+          .from('h2h_challenges')
+          .update({'status': 'declined'})
+          .eq('id', challengeId)
+          .eq('challenged_id', _userId!)
+          .eq('status', 'pending');
+      return true;
+    } catch (e) {
+      debugPrint('[ChallengeService] declineH2HChallenge failed: $e');
+      return false;
+    }
+  }
+
+  /// Submit a round score for an H2H challenge.
+  ///
+  /// [roundIndex] is 0-based. The method reads the current rounds JSONB,
+  /// updates the appropriate field, and writes it back.
+  Future<bool> submitH2HRoundScore({
+    required String challengeId,
+    required int roundIndex,
+    required int score,
+    required int timeMs,
+    required int correctCount,
+    required int wrongCount,
+  }) async {
+    if (_userId == null) return false;
+
+    for (var attempt = 0; attempt <= _maxRetries; attempt++) {
+      try {
+        final row = await _client
+            .from('h2h_challenges')
+            .select('challenger_id, challenged_id, rounds, status')
+            .eq('id', challengeId)
+            .single();
+
+        final isChallenger = row['challenger_id'] == _userId;
+        final rounds = List<Map<String, dynamic>>.from(
+          (row['rounds'] as List).map(
+            (r) => Map<String, dynamic>.from(r as Map),
+          ),
+        );
+
+        if (roundIndex < 0 || roundIndex >= rounds.length) return false;
+
+        final prefix = isChallenger ? 'challenger' : 'challenged';
+        rounds[roundIndex]['${prefix}_score'] = score;
+        rounds[roundIndex]['${prefix}_time_ms'] = timeMs;
+        rounds[roundIndex]['${prefix}_correct'] = correctCount;
+        rounds[roundIndex]['${prefix}_wrong'] = wrongCount;
+
+        // Move to in_progress if still pending.
+        final newStatus = row['status'] == 'pending'
+            ? 'in_progress'
+            : row['status'];
+
+        await _client
+            .from('h2h_challenges')
+            .update({'rounds': rounds, 'status': newStatus})
+            .eq('id', challengeId);
+
+        return true;
+      } catch (e) {
+        debugPrint(
+          '[ChallengeService] submitH2HRoundScore failed '
+          '(attempt ${attempt + 1}/${_maxRetries + 1}): $e',
+        );
+        if (attempt < _maxRetries) {
+          await Future<void>.delayed(Duration(seconds: 1 << attempt));
+        }
+      }
+    }
+    return false;
+  }
+
+  /// Check if the H2H challenge is complete and determine the winner.
+  ///
+  /// If one player has won 2+ rounds or all rounds are done, marks the
+  /// challenge as completed and sets the winner.
+  Future<H2HChallenge?> tryCompleteH2HChallenge(String challengeId) async {
+    if (_userId == null) return null;
+
+    for (var attempt = 0; attempt <= _maxRetries; attempt++) {
+      try {
+        final row = await _client
+            .from('h2h_challenges')
+            .select()
+            .eq('id', challengeId)
+            .single();
+
+        final challenge = H2HChallenge.fromJson(row);
+
+        if (!challenge.isComplete) return null;
+
+        String? winnerId;
+        if (challenge.challengerWins > challenge.challengedWins) {
+          winnerId = challenge.challengerId;
+        } else if (challenge.challengedWins > challenge.challengerWins) {
+          winnerId = challenge.challengedId;
+        }
+
+        await _client
+            .from('h2h_challenges')
+            .update({
+              'status': 'completed',
+              'winner_id': winnerId,
+              'completed_at': DateTime.now().toUtc().toIso8601String(),
+            })
+            .eq('id', challengeId);
+
+        return challenge.copyWith(
+          status: H2HStatus.completed,
+          winnerId: winnerId,
+          completedAt: DateTime.now().toUtc(),
+        );
+      } catch (e) {
+        debugPrint(
+          '[ChallengeService] tryCompleteH2HChallenge failed '
+          '(attempt ${attempt + 1}/${_maxRetries + 1}): $e',
+        );
+        if (attempt < _maxRetries) {
+          await Future<void>.delayed(Duration(seconds: 1 << attempt));
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Fetch pending H2H challenges where the current user is challenged.
+  Future<List<H2HChallenge>> fetchPendingH2HChallenges() async {
+    if (_userId == null) return [];
+    try {
+      final data = await _client
+          .from('h2h_challenges')
+          .select()
+          .eq('challenged_id', _userId!)
+          .eq('status', 'pending')
+          .order('created_at', ascending: false);
+
+      return data.map((row) => H2HChallenge.fromJson(row)).toList();
+    } catch (e) {
+      debugPrint('[ChallengeService] fetchPendingH2HChallenges failed: $e');
+      return [];
+    }
+  }
+
+  /// Fetch all H2H challenges involving the current user.
+  Future<List<H2HChallenge>> fetchMyH2HChallenges({int limit = 50}) async {
+    if (_userId == null) return [];
+    try {
+      final data = await _client
+          .from('h2h_challenges')
+          .select()
+          .or('challenger_id.eq.$_userId,challenged_id.eq.$_userId')
+          .order('created_at', ascending: false)
+          .limit(limit);
+
+      return data.map((row) => H2HChallenge.fromJson(row)).toList();
+    } catch (e) {
+      debugPrint('[ChallengeService] fetchMyH2HChallenges failed: $e');
+      return [];
+    }
+  }
+
+  /// Fetch a single H2H challenge by ID.
+  Future<H2HChallenge?> fetchH2HChallenge(String challengeId) async {
+    if (_userId == null) return null;
+    try {
+      final data = await _client
+          .from('h2h_challenges')
+          .select()
+          .eq('id', challengeId)
+          .single();
+      return H2HChallenge.fromJson(data);
+    } catch (e) {
+      debugPrint('[ChallengeService] fetchH2HChallenge failed: $e');
+      return null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Internal
+  // ---------------------------------------------------------------------------
 
   Challenge _rowToChallenge(Map<String, dynamic> row) {
     final roundsList = row['rounds'] as List? ?? [];

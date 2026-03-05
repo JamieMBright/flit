@@ -26,6 +26,8 @@ import '../debug/avatar_preview_screen.dart';
 import '../debug/country_preview_screen.dart';
 import '../debug/plane_preview_screen.dart';
 import 'admin_stats_screen.dart';
+import 'flight_school_admin_screen.dart';
+import 'gold_management_screen.dart';
 
 /// Admin panel — visible to users with a non-null `admin_role`.
 ///
@@ -2253,6 +2255,34 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                 ),
               ],
             ],
+            const SizedBox(height: 24),
+          ],
+
+          // ── Flight School Config (owner only) ──
+          if (_can(state, AdminPermission.editEarnings)) ...[
+            const _SectionHeader(title: 'Flight School'),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.school,
+              iconColor: FlitColors.oceanHighlight,
+              label: 'Flight School Config',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const FlightSchoolAdminScreen(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.monetization_on,
+              iconColor: FlitColors.gold,
+              label: 'Gold Management',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const GoldManagementScreen(),
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
           ],
 

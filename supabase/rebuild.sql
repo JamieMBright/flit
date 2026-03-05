@@ -1637,6 +1637,65 @@ ALTER TABLE public.account_state
 ALTER TABLE public.account_state
   ADD COLUMN IF NOT EXISTS free_flight_coin_date TEXT;
 
+ALTER TABLE public.account_state
+  ADD COLUMN IF NOT EXISTS flight_school_progress JSONB NOT NULL DEFAULT '{}';
+
+CREATE INDEX IF NOT EXISTS idx_account_flight_school_progress
+  ON public.account_state USING gin (flight_school_progress);
+
+-- H2H Flight School Challenges (best-of-3)
+CREATE TABLE IF NOT EXISTS public.h2h_challenges (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  challenger_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  challenger_name text NOT NULL DEFAULT '',
+  challenged_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  challenged_name text NOT NULL DEFAULT '',
+  rounds jsonb NOT NULL DEFAULT '[]'::jsonb,
+  status text NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'in_progress', 'completed', 'declined', 'expired')),
+  winner_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  completed_at timestamptz
+);
+CREATE INDEX IF NOT EXISTS idx_h2h_challenges_challenger ON public.h2h_challenges (challenger_id);
+CREATE INDEX IF NOT EXISTS idx_h2h_challenges_challenged ON public.h2h_challenges (challenged_id);
+CREATE INDEX IF NOT EXISTS idx_h2h_challenges_status ON public.h2h_challenges (status);
+CREATE INDEX IF NOT EXISTS idx_h2h_challenges_created ON public.h2h_challenges (created_at DESC);
+ALTER TABLE public.h2h_challenges ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "h2h_challenges_select_own" ON public.h2h_challenges FOR SELECT
+  USING (auth.uid() = challenger_id OR auth.uid() = challenged_id);
+CREATE POLICY "h2h_challenges_insert_own" ON public.h2h_challenges FOR INSERT
+  WITH CHECK (auth.uid() = challenger_id);
+CREATE POLICY "h2h_challenges_update_own" ON public.h2h_challenges FOR UPDATE
+  USING (auth.uid() = challenger_id OR auth.uid() = challenged_id);
+
+-- Daily Flight Briefing scores
+CREATE TABLE IF NOT EXISTS public.daily_briefing_scores (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  date_key text NOT NULL,
+  score int NOT NULL DEFAULT 0,
+  time_ms int NOT NULL DEFAULT 0,
+  level_id text NOT NULL,
+  category text NOT NULL,
+  difficulty text NOT NULL,
+  mode text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.daily_briefing_scores
+  ADD CONSTRAINT daily_briefing_scores_user_date_unique UNIQUE (user_id, date_key);
+CREATE INDEX IF NOT EXISTS idx_daily_briefing_scores_date_score
+  ON public.daily_briefing_scores (date_key, score DESC);
+CREATE INDEX IF NOT EXISTS idx_daily_briefing_scores_user
+  ON public.daily_briefing_scores (user_id, created_at DESC);
+ALTER TABLE public.daily_briefing_scores ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can read daily briefing scores" ON public.daily_briefing_scores
+  FOR SELECT USING (true);
+CREATE POLICY "Users can insert own daily briefing scores" ON public.daily_briefing_scores
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own daily briefing scores" ON public.daily_briefing_scores
+  FOR UPDATE USING (auth.uid() = user_id);
+
 
 -- ---------------------------------------------------------------------------
 -- 15. SEED ADMIN ROLES

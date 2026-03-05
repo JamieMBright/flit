@@ -76,6 +76,7 @@ class LeaderboardScreen extends StatefulWidget {
 class _LeaderboardScreenState extends State<LeaderboardScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _modeTabController;
+  LeaderboardMode _currentMode = LeaderboardMode.dailyScramble;
   TimeframeTab _timeframe = TimeframeTab.today;
   bool _loading = true;
   String? _errorMessage;
@@ -84,12 +85,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   String? get _userId => Supabase.instance.client.auth.currentUser?.id;
 
-  bool get _isDailyScramble => _modeTabController.index == 0;
-
   @override
   void initState() {
     super.initState();
-    _modeTabController = TabController(length: 2, vsync: this);
+    _modeTabController = TabController(length: 3, vsync: this);
     _modeTabController.addListener(_onModeChanged);
     _loadData();
   }
@@ -103,6 +102,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   void _onModeChanged() {
     if (!_modeTabController.indexIsChanging) return;
+    _currentMode = LeaderboardMode.values[_modeTabController.index];
     _loadData();
   }
 
@@ -119,7 +119,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
     try {
       final entries = await LeaderboardService.instance.fetchModeLeaderboard(
-        isDailyScramble: _isDailyScramble,
+        mode: _currentMode,
         timeframe: _timeframe,
       );
 
@@ -148,7 +148,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
     final rank = await LeaderboardService.instance.fetchPlayerRank(
       userId,
-      isDailyScramble: _isDailyScramble,
+      mode: _currentMode,
     );
     if (mounted) {
       setState(() => _playerRank = rank);
@@ -177,8 +177,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           fontWeight: FontWeight.w500,
         ),
         tabs: const [
-          Tab(text: 'DAILY SCRAMBLE'),
-          Tab(text: 'TRAINING FLIGHT'),
+          Tab(text: 'SCRAMBLE'),
+          Tab(text: 'TRAINING'),
+          Tab(text: 'BRIEFING'),
         ],
       ),
     ),

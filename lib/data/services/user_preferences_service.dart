@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../game/quiz/flight_school_level.dart';
 import '../models/avatar_config.dart';
 import '../models/daily_result.dart';
 import '../models/daily_streak.dart';
@@ -425,6 +426,7 @@ class UserPreferencesService {
     DailyResult? lastDailyResult,
     int freeFlightCoinsToday = 0,
     String? freeFlightCoinDate,
+    Map<String, FlightSchoolProgress> flightSchoolProgress = const {},
   }) {
     _accountStateWriteVersion++;
     _accountStateDirty = true;
@@ -444,6 +446,9 @@ class UserPreferencesService {
       'last_daily_result': lastDailyResult?.toJson(),
       'free_flight_coins_today': freeFlightCoinsToday,
       'free_flight_coin_date': freeFlightCoinDate,
+      'flight_school_progress': flightSchoolProgress.map(
+        (k, v) => MapEntry(k, v.toJson()),
+      ),
     };
     _cacheLocally(_kLocalAccountState, _pendingAccountState!);
     _scheduleSave();
@@ -1144,6 +1149,27 @@ class UserPreferencesSnapshot {
       }
     }
     return null;
+  }
+
+  Map<String, FlightSchoolProgress> toFlightSchoolProgress() {
+    final data = accountState;
+    if (data == null) return {};
+    final json = data['flight_school_progress'];
+    if (json is Map<String, dynamic>) {
+      try {
+        return json.map(
+          (k, v) => MapEntry(
+            k,
+            v is Map<String, dynamic>
+                ? FlightSchoolProgress.fromJson(v)
+                : const FlightSchoolProgress(),
+          ),
+        );
+      } catch (_) {
+        return {};
+      }
+    }
+    return {};
   }
 
   // ── Settings helpers ─────────────────────────────────────────────────
