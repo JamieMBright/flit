@@ -8,13 +8,18 @@ void main() {
   group('GameRegion enum', () {
     test('has all expected enum values', () {
       const values = GameRegion.values;
-      expect(values.length, equals(6));
+      expect(values.length, equals(11));
       expect(values, contains(GameRegion.world));
       expect(values, contains(GameRegion.usStates));
       expect(values, contains(GameRegion.ukCounties));
       expect(values, contains(GameRegion.caribbean));
       expect(values, contains(GameRegion.ireland));
       expect(values, contains(GameRegion.canadianProvinces));
+      expect(values, contains(GameRegion.europe));
+      expect(values, contains(GameRegion.africa));
+      expect(values, contains(GameRegion.asia));
+      expect(values, contains(GameRegion.latinAmerica));
+      expect(values, contains(GameRegion.oceania));
     });
 
     test('each region has a non-empty displayName', () {
