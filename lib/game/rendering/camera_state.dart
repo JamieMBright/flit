@@ -264,10 +264,28 @@ class CameraState {
       uy /= len;
       uz /= len;
     } else {
-      // Fallback (shouldn't happen except exactly at poles)
-      ux = 0.0;
-      uy = 1.0;
-      uz = 0.0;
+      // Degenerate tangent basis — use East tangent which is always valid.
+      ux = eastX;
+      uy = eastY;
+      uz = eastZ;
+    }
+
+    // Safety: ensure up vector is not parallel to the camera forward direction.
+    // At the poles, if heading aligns with the radial direction, cross(up, forward)
+    // in the shader would produce a zero vector, breaking the view matrix.
+    // Camera forward = -normalize(camPos) ∝ -(cosLat*cosLng, sinLat, cosLat*sinLng).
+    final fwdX = -cosLat * cosLng;
+    final fwdY = -sinLat;
+    final fwdZ = -cosLat * sinLng;
+    final fwdLen = sqrt(fwdX * fwdX + fwdY * fwdY + fwdZ * fwdZ);
+    if (fwdLen > 1e-6) {
+      final dotUpFwd = (ux * fwdX + uy * fwdY + uz * fwdZ) / fwdLen;
+      if (dotUpFwd.abs() > 0.99) {
+        // Nearly parallel — use East tangent instead.
+        ux = eastX;
+        uy = eastY;
+        uz = eastZ;
+      }
     }
 
     _upX = ux;
