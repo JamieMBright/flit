@@ -1568,7 +1568,7 @@ class FlitGame extends FlameGame
 
   @override
   KeyEventResult onKeyEvent(
-    RawKeyEvent event,
+    KeyEvent event,
     Set<LogicalKeyboardKey> keysPressed,
   ) {
     final superResult = super.onKeyEvent(event, keysPressed);
@@ -1592,7 +1592,7 @@ class FlitGame extends FlameGame
 
     // Altitude toggle on key-down only (not hold).
     // Disabled in flat map mode — regional modes have no altitude concept.
-    if (event is RawKeyDownEvent) {
+    if (event is KeyDownEvent) {
       if (!isFlatMapMode &&
           (event.logicalKey == LogicalKeyboardKey.space ||
               event.logicalKey == LogicalKeyboardKey.arrowUp ||
