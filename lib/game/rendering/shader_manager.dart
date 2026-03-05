@@ -8,7 +8,6 @@ import '../../core/services/game_settings.dart';
 import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
 import 'camera_state.dart';
-import 'city_lights_generator.dart';
 
 final _log = GameLog.instance;
 
@@ -162,8 +161,8 @@ class ShaderManager {
       return;
     }
 
-    // Load satellite texture (required) and generate procedural city lights
-    // (optional) in parallel.
+    // Load satellite texture (required) and NASA city lights PNG (optional)
+    // in parallel.
     final results = await Future.wait([
       _loadImage(
         'assets/textures/blue_marble.png',
@@ -186,13 +185,12 @@ class ShaderManager {
         );
         return null;
       }),
-      CityLightsGenerator.generate().then<ui.Image?>((img) => img).catchError((
-        Object e,
-        StackTrace st,
-      ) {
+      _loadImage(
+        'assets/textures/city_lights.png',
+      ).then<ui.Image?>((img) => img).catchError((Object e, StackTrace st) {
         _log.info(
           'shader',
-          'Procedural city lights generation failed — using black fallback',
+          'City lights texture failed to load — using black fallback',
         );
         return null;
       }),
@@ -210,7 +208,7 @@ class ShaderManager {
     if (_cityLightsTexture != null) {
       _log.info(
         'shader',
-        'Generated procedural city lights (${_cityLightsTexture!.width}x${_cityLightsTexture!.height})',
+        'Loaded city lights (${_cityLightsTexture!.width}x${_cityLightsTexture!.height})',
       );
     }
 
