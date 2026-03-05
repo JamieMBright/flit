@@ -41,14 +41,15 @@ extension QuizDifficultyExtension on QuizDifficulty {
   }
 
   /// Maximum hints allowed per quiz session.
+  /// All difficulties now allow unlimited hints (score penalty increases).
   int get maxHints {
     switch (this) {
       case QuizDifficulty.easy:
-        return 5;
+        return 999;
       case QuizDifficulty.medium:
-        return 2;
+        return 999;
       case QuizDifficulty.hard:
-        return 0;
+        return 999;
     }
   }
 

@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:flame/components.dart';
+import 'package:flame/components.dart' hide Matrix4;
 import 'package:flutter/material.dart';
 
 import '../map/region.dart';
@@ -40,6 +40,7 @@ typedef OnStateTapped = void Function(String stateCode);
 /// Features:
 /// - CONUS (continental US) as the main view
 /// - Alaska and Hawaii in inset boxes (bottom-left)
+/// - Pinch-to-zoom and pan support
 /// - Tap detection via point-in-polygon hit testing
 /// - Visual feedback: green flash (correct), red flash (wrong), dim (completed)
 class QuizMapWidget extends StatefulWidget {
@@ -49,6 +50,8 @@ class QuizMapWidget extends StatefulWidget {
     required this.onStateTapped,
     this.highlightCode,
     this.showLabels = true,
+    this.eliminatedCodes = const {},
+    this.correctCodes = const {},
   });
 
   /// Visual state for each US state.
@@ -63,6 +66,12 @@ class QuizMapWidget extends StatefulWidget {
   /// Whether to show state code labels on the map.
   final bool showLabels;
 
+  /// Codes that have been eliminated (hidden) during progressive hints.
+  final Set<String> eliminatedCodes;
+
+  /// Codes that were correctly guessed (shown in muted green).
+  final Set<String> correctCodes;
+
   @override
   State<QuizMapWidget> createState() => _QuizMapWidgetState();
 }
@@ -70,6 +79,8 @@ class QuizMapWidget extends StatefulWidget {
 class _QuizMapWidgetState extends State<QuizMapWidget>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
+  final TransformationController _transformController =
+      TransformationController();
 
   @override
   void initState() {
@@ -83,6 +94,7 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
   @override
   void dispose() {
     _pulseController.dispose();
+    _transformController.dispose();
     super.dispose();
   }
 
@@ -93,16 +105,25 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
         return AnimatedBuilder(
           animation: _pulseController,
           builder: (context, child) {
-            return GestureDetector(
-              onTapDown: (details) =>
-                  _handleTap(details.localPosition, constraints.biggest),
-              child: CustomPaint(
-                size: constraints.biggest,
-                painter: _UsaMapPainter(
-                  stateVisuals: widget.stateVisuals,
-                  highlightCode: widget.highlightCode,
-                  pulseValue: _pulseController.value,
-                  showLabels: widget.showLabels,
+            return InteractiveViewer(
+              transformationController: _transformController,
+              minScale: 1.0,
+              maxScale: 5.0,
+              panEnabled: true,
+              scaleEnabled: true,
+              child: GestureDetector(
+                onTapDown: (details) =>
+                    _handleTap(details.localPosition, constraints.biggest),
+                child: CustomPaint(
+                  size: constraints.biggest,
+                  painter: _UsaMapPainter(
+                    stateVisuals: widget.stateVisuals,
+                    highlightCode: widget.highlightCode,
+                    pulseValue: _pulseController.value,
+                    showLabels: widget.showLabels,
+                    eliminatedCodes: widget.eliminatedCodes,
+                    correctCodes: widget.correctCodes,
+                  ),
                 ),
               ),
             );
@@ -113,14 +134,24 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
   }
 
   void _handleTap(Offset position, Size size) {
+    // Transform the tap position from screen to content coordinates
+    final matrix = _transformController.value;
+    final inverseMatrix = Matrix4.inverted(matrix);
+    final transformed = MatrixUtils.transformPoint(
+      inverseMatrix,
+      position,
+    );
+
     final painter = _UsaMapPainter(
       stateVisuals: widget.stateVisuals,
       highlightCode: widget.highlightCode,
       pulseValue: 0,
       showLabels: widget.showLabels,
+      eliminatedCodes: widget.eliminatedCodes,
+      correctCodes: widget.correctCodes,
     );
 
-    final code = painter.hitTestState(position, size);
+    final code = painter.hitTestState(transformed, size);
     if (code != null) {
       widget.onStateTapped(code);
     }
@@ -134,12 +165,16 @@ class _UsaMapPainter extends CustomPainter {
     required this.highlightCode,
     required this.pulseValue,
     this.showLabels = true,
+    this.eliminatedCodes = const {},
+    this.correctCodes = const {},
   });
 
   final Map<String, StateVisual> stateVisuals;
   final String? highlightCode;
   final double pulseValue;
   final bool showLabels;
+  final Set<String> eliminatedCodes;
+  final Set<String> correctCodes;
 
   // CONUS bounds (continental US)
   static const double _conusMinLng = -125.0;
@@ -195,24 +230,36 @@ class _UsaMapPainter extends CustomPainter {
       _drawState(canvas, size, hiArea, _hiTransform(size));
     }
 
-    // Draw state borders for CONUS
+    // Draw clean borders — single pass with anti-aliased strokes
+    final borderPaint = Paint()
+      ..color = const Color(0xFF1A2A32).withOpacity(0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true;
+
     for (final area in areas) {
       if (area.code == 'AK' || area.code == 'HI') continue;
-      _drawStateBorder(canvas, size, area, _conusTransform(size));
+      if (eliminatedCodes.contains(area.code)) continue;
+      final path = _buildStatePath(area.points, _conusTransform(size));
+      canvas.drawPath(path, borderPaint);
     }
 
     // Draw borders for insets
-    if (akArea != null) {
-      _drawStateBorder(canvas, size, akArea, _akTransform(size));
+    if (akArea != null && !eliminatedCodes.contains('AK')) {
+      final path = _buildStatePath(akArea.points, _akTransform(size));
+      canvas.drawPath(path, borderPaint);
     }
-    if (hiArea != null) {
-      _drawStateBorder(canvas, size, hiArea, _hiTransform(size));
+    if (hiArea != null && !eliminatedCodes.contains('HI')) {
+      final path = _buildStatePath(hiArea.points, _hiTransform(size));
+      canvas.drawPath(path, borderPaint);
     }
 
     // Draw state labels for larger states (only when enabled)
     if (showLabels) {
       for (final area in areas) {
         if (area.code == 'AK' || area.code == 'HI') continue;
+        if (eliminatedCodes.contains(area.code)) continue;
         _drawStateLabel(canvas, size, area, _conusTransform(size));
       }
     }
@@ -233,7 +280,6 @@ class _UsaMapPainter extends CustomPainter {
     // At ~37N (mid-CONUS), cos(37) ≈ 0.799
     const lngSpan = _conusMaxLng - _conusMinLng; // 59 degrees
     const latSpan = _conusMaxLat - _conusMinLat; // 26 degrees
-    const midLatRad = 37.0 * 3.14159265 / 180.0;
     // cos(37°) ≈ 0.799
     const cosLat = 0.799;
     final geoAspect = (lngSpan * cosLat) / latSpan;
@@ -348,32 +394,18 @@ class _UsaMapPainter extends CustomPainter {
   ) {
     if (area.points.isEmpty) return;
 
+    // Hidden (eliminated) states
+    if (eliminatedCodes.contains(area.code)) return;
+
     final visual = stateVisuals[area.code];
     final status = visual?.status ?? StateVisualStatus.idle;
     final isHighlighted = highlightCode == area.code;
+    final isCorrectlyGuessed = correctCodes.contains(area.code);
 
     final path = _buildStatePath(area.points, transform);
-    final fillColor = _getFillColor(status, isHighlighted);
+    final fillColor = _getFillColor(status, isHighlighted, isCorrectlyGuessed);
 
     canvas.drawPath(path, Paint()..color = fillColor);
-  }
-
-  void _drawStateBorder(
-    Canvas canvas,
-    Size size,
-    RegionalArea area,
-    _GeoTransform transform,
-  ) {
-    if (area.points.isEmpty) return;
-    final path = _buildStatePath(area.points, transform);
-
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = const Color(0xFF3A5A6A)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.8,
-    );
   }
 
   void _drawStateLabel(
@@ -419,7 +451,18 @@ class _UsaMapPainter extends CustomPainter {
     );
   }
 
-  Color _getFillColor(StateVisualStatus status, bool isHighlighted) {
+  Color _getFillColor(
+    StateVisualStatus status,
+    bool isHighlighted,
+    bool isCorrectlyGuessed,
+  ) {
+    // Correctly guessed countries show muted green
+    if (isCorrectlyGuessed &&
+        status != StateVisualStatus.correct &&
+        status != StateVisualStatus.wrong) {
+      return const Color(0xFF1E4A2A);
+    }
+
     if (isHighlighted) {
       // Pulsing highlight for showing the correct answer
       final opacity = 0.4 + 0.4 * pulseValue;
@@ -473,7 +516,7 @@ class _UsaMapPainter extends CustomPainter {
     final akRect = _akInsetRect(size);
     if (akRect.contains(position)) {
       final akArea = areas.where((a) => a.code == 'AK').firstOrNull;
-      if (akArea != null) {
+      if (akArea != null && !eliminatedCodes.contains('AK')) {
         final transform = _akTransform(size);
         if (_pointInPolygon(position, akArea.points, transform)) {
           return 'AK';
@@ -486,7 +529,7 @@ class _UsaMapPainter extends CustomPainter {
     final hiRect = _hiInsetRect(size);
     if (hiRect.contains(position)) {
       final hiArea = areas.where((a) => a.code == 'HI').firstOrNull;
-      if (hiArea != null) {
+      if (hiArea != null && !eliminatedCodes.contains('HI')) {
         final transform = _hiTransform(size);
         if (_pointInPolygon(position, hiArea.points, transform)) {
           return 'HI';
@@ -499,6 +542,7 @@ class _UsaMapPainter extends CustomPainter {
     final transform = _conusTransform(size);
     for (final area in areas) {
       if (area.code == 'AK' || area.code == 'HI') continue;
+      if (eliminatedCodes.contains(area.code)) continue;
       if (_pointInPolygon(position, area.points, transform)) {
         return area.code;
       }
@@ -537,6 +581,8 @@ class _UsaMapPainter extends CustomPainter {
   bool shouldRepaint(covariant _UsaMapPainter oldDelegate) {
     return oldDelegate.highlightCode != highlightCode ||
         oldDelegate.pulseValue != pulseValue ||
+        oldDelegate.eliminatedCodes != eliminatedCodes ||
+        oldDelegate.correctCodes != correctCodes ||
         true; // Always repaint for status changes
   }
 }

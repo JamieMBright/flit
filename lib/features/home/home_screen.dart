@@ -257,6 +257,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           // Daily streak stats card
           const _DailyStreakCard(),
           const SizedBox(height: 10),
+          // Daily modes — highlighted in red at top for easy access
+          Row(
+            children: [
+              if (_dailyScrambleEnabled)
+                Expanded(
+                  child: _DailyModeButton(
+                    label: 'Daily Scramble',
+                    icon: Icons.today_rounded,
+                    onTap: () =>
+                        _navigateSafely(context, const DailyChallengeScreen()),
+                  ),
+                )
+              else
+                const Expanded(child: SizedBox()),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _DailyModeButton(
+                  label: 'Daily Briefing',
+                  icon: Icons.assignment_rounded,
+                  onTap: () =>
+                      _navigateSafely(context, const DailyBriefingScreen()),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
           // Primary PLAY button with glow
           _PlayButton(onTap: () => _showGameModes(context)),
           const SizedBox(height: 10),
@@ -403,6 +429,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
               ),
               const SizedBox(height: 20),
+              // Daily modes at the top in red
+              if (_dailyScrambleEnabled) ...[
+                _GameModeCard(
+                  title: 'Daily Scramble',
+                  subtitle: "Today's challenge — compete for glory",
+                  icon: Icons.today_rounded,
+                  isHighlighted: true,
+                  isRedHighlighted: true,
+                  onTap: () =>
+                      _closeSheetAndNavigate(ctx, const DailyChallengeScreen()),
+                ),
+                const SizedBox(height: 10),
+              ],
+              _GameModeCard(
+                title: 'Daily Briefing',
+                subtitle: 'Daily quiz challenge — same for all pilots',
+                icon: Icons.assignment_rounded,
+                isHighlighted: true,
+                isRedHighlighted: true,
+                onTap: () =>
+                    _closeSheetAndNavigate(ctx, const DailyBriefingScreen()),
+              ),
+              const SizedBox(height: 10),
               _GameModeCard(
                 title: 'Free Flight',
                 subtitle: 'Explore the world at your own pace',
@@ -419,31 +468,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     _closeSheetAndNavigate(ctx, const PracticeScreen()),
               ),
               const SizedBox(height: 10),
-              if (_dailyScrambleEnabled) ...[
-                _GameModeCard(
-                  title: 'Daily Scramble',
-                  subtitle: "Today's challenge — compete for glory",
-                  icon: Icons.today_rounded,
-                  isHighlighted: true,
-                  onTap: () =>
-                      _closeSheetAndNavigate(ctx, const DailyChallengeScreen()),
-                ),
-                const SizedBox(height: 10),
-              ],
               _GameModeCard(
                 title: 'Flight School',
                 subtitle: 'Quiz yourself on states, capitals & more',
                 icon: Icons.quiz_rounded,
                 onTap: () =>
                     _closeSheetAndNavigate(ctx, const FlightSchoolScreen()),
-              ),
-              const SizedBox(height: 10),
-              _GameModeCard(
-                title: 'Daily Briefing',
-                subtitle: 'Daily quiz challenge — same for all pilots',
-                icon: Icons.today_rounded,
-                onTap: () =>
-                    _closeSheetAndNavigate(ctx, const DailyBriefingScreen()),
               ),
               const SizedBox(height: 10),
               _GameModeCard(
@@ -1341,6 +1371,55 @@ class _FriendsMenuTileState extends State<_FriendsMenuTile>
 }
 
 /// Square-ish tile for secondary menu items (2x2 grid).
+/// Red-highlighted daily mode button for prominent placement at the top.
+class _DailyModeButton extends StatelessWidget {
+  const _DailyModeButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: FlitColors.error.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: FlitColors.error.withOpacity(0.5)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: FlitColors.error, size: 20),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label.toUpperCase(),
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
 class _MenuTile extends StatelessWidget {
   const _MenuTile({
     required this.label,
@@ -1442,6 +1521,7 @@ class _GameModeCard extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.isHighlighted = false,
+    this.isRedHighlighted = false,
   });
 
   final String title;
@@ -1449,11 +1529,15 @@ class _GameModeCard extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final bool isHighlighted;
+  final bool isRedHighlighted;
+
+  Color get _highlightColor =>
+      isRedHighlighted ? FlitColors.error : FlitColors.accent;
 
   @override
   Widget build(BuildContext context) => Material(
         color: isHighlighted
-            ? FlitColors.accent.withOpacity(0.15)
+            ? _highlightColor.withOpacity(0.15)
             : FlitColors.backgroundMid,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
@@ -1465,7 +1549,7 @@ class _GameModeCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isHighlighted
-                    ? FlitColors.accent.withOpacity(0.5)
+                    ? _highlightColor.withOpacity(0.5)
                     : FlitColors.cardBorder,
               ),
             ),
@@ -1476,14 +1560,14 @@ class _GameModeCard extends StatelessWidget {
                   height: 44,
                   decoration: BoxDecoration(
                     color: isHighlighted
-                        ? FlitColors.accent.withOpacity(0.2)
+                        ? _highlightColor.withOpacity(0.2)
                         : FlitColors.backgroundDark.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     icon,
                     color: isHighlighted
-                        ? FlitColors.accent
+                        ? _highlightColor
                         : FlitColors.textPrimary,
                     size: 24,
                   ),
