@@ -1,4 +1,4 @@
-import 'package:flame/components.dart';
+import 'package:flame/components.dart' hide Matrix4;
 import 'package:flutter/material.dart';
 
 import '../map/region.dart';
@@ -7,7 +7,7 @@ import 'quiz_map_widget.dart';
 /// Generic region map widget for Flight School quiz mode on non-US regions.
 ///
 /// Renders any set of [RegionalArea] polygons within the region's bounds.
-/// Supports tap detection, visual feedback, and labels.
+/// Supports pinch-to-zoom, tap detection, visual feedback, and labels.
 class QuizRegionMapWidget extends StatefulWidget {
   const QuizRegionMapWidget({
     super.key,
@@ -16,6 +16,8 @@ class QuizRegionMapWidget extends StatefulWidget {
     required this.onStateTapped,
     this.highlightCode,
     this.showLabels = true,
+    this.eliminatedCodes = const {},
+    this.correctCodes = const {},
   });
 
   final GameRegion region;
@@ -24,6 +26,12 @@ class QuizRegionMapWidget extends StatefulWidget {
   final String? highlightCode;
   final bool showLabels;
 
+  /// Codes that have been eliminated (hidden) during progressive hints.
+  final Set<String> eliminatedCodes;
+
+  /// Codes that were correctly guessed (shown in muted green).
+  final Set<String> correctCodes;
+
   @override
   State<QuizRegionMapWidget> createState() => _QuizRegionMapWidgetState();
 }
@@ -31,6 +39,8 @@ class QuizRegionMapWidget extends StatefulWidget {
 class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
+  final TransformationController _transformController =
+      TransformationController();
 
   @override
   void initState() {
@@ -44,6 +54,7 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
   @override
   void dispose() {
     _pulseController.dispose();
+    _transformController.dispose();
     super.dispose();
   }
 
@@ -54,17 +65,26 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
         return AnimatedBuilder(
           animation: _pulseController,
           builder: (context, child) {
-            return GestureDetector(
-              onTapDown: (details) =>
-                  _handleTap(details.localPosition, constraints.biggest),
-              child: CustomPaint(
-                size: constraints.biggest,
-                painter: _RegionMapPainter(
-                  region: widget.region,
-                  stateVisuals: widget.stateVisuals,
-                  highlightCode: widget.highlightCode,
-                  pulseValue: _pulseController.value,
-                  showLabels: widget.showLabels,
+            return InteractiveViewer(
+              transformationController: _transformController,
+              minScale: 1.0,
+              maxScale: 5.0,
+              panEnabled: true,
+              scaleEnabled: true,
+              child: GestureDetector(
+                onTapDown: (details) =>
+                    _handleTap(details.localPosition, constraints.biggest),
+                child: CustomPaint(
+                  size: constraints.biggest,
+                  painter: _RegionMapPainter(
+                    region: widget.region,
+                    stateVisuals: widget.stateVisuals,
+                    highlightCode: widget.highlightCode,
+                    pulseValue: _pulseController.value,
+                    showLabels: widget.showLabels,
+                    eliminatedCodes: widget.eliminatedCodes,
+                    correctCodes: widget.correctCodes,
+                  ),
                 ),
               ),
             );
@@ -75,15 +95,25 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
   }
 
   void _handleTap(Offset position, Size size) {
+    // Transform the tap position from screen to content coordinates
+    final matrix = _transformController.value;
+    final inverseMatrix = Matrix4.inverted(matrix);
+    final transformed = MatrixUtils.transformPoint(
+      inverseMatrix,
+      position,
+    );
+
     final painter = _RegionMapPainter(
       region: widget.region,
       stateVisuals: widget.stateVisuals,
       highlightCode: widget.highlightCode,
       pulseValue: 0,
       showLabels: widget.showLabels,
+      eliminatedCodes: widget.eliminatedCodes,
+      correctCodes: widget.correctCodes,
     );
 
-    final code = painter.hitTestArea(position, size);
+    final code = painter.hitTestArea(transformed, size);
     if (code != null) {
       widget.onStateTapped(code);
     }
@@ -97,6 +127,8 @@ class _RegionMapPainter extends CustomPainter {
     required this.highlightCode,
     required this.pulseValue,
     this.showLabels = true,
+    this.eliminatedCodes = const {},
+    this.correctCodes = const {},
   });
 
   final GameRegion region;
@@ -104,6 +136,8 @@ class _RegionMapPainter extends CustomPainter {
   final String? highlightCode;
   final double pulseValue;
   final bool showLabels;
+  final Set<String> eliminatedCodes;
+  final Set<String> correctCodes;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -122,14 +156,24 @@ class _RegionMapPainter extends CustomPainter {
       _drawArea(canvas, size, area, transform);
     }
 
-    // Draw borders
+    // Draw clean borders (subtle, single pass)
+    final borderPaint = Paint()
+      ..color = const Color(0xFF1A2A32).withOpacity(0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true;
+
     for (final area in areas) {
-      _drawAreaBorder(canvas, area, transform);
+      if (eliminatedCodes.contains(area.code)) continue;
+      final path = _buildPath(area.points, transform);
+      canvas.drawPath(path, borderPaint);
     }
 
     // Draw labels for larger areas (only when enabled)
     if (showLabels) {
       for (final area in areas) {
+        if (eliminatedCodes.contains(area.code)) continue;
         _drawAreaLabel(canvas, size, area, transform);
       }
     }
@@ -194,29 +238,17 @@ class _RegionMapPainter extends CustomPainter {
   ) {
     if (area.points.isEmpty) return;
 
+    // Hidden (eliminated) countries
+    if (eliminatedCodes.contains(area.code)) return;
+
     final visual = stateVisuals[area.code];
     final status = visual?.status ?? StateVisualStatus.idle;
     final isHighlighted = highlightCode == area.code;
+    final isCorrectlyGuessed = correctCodes.contains(area.code);
 
     final path = _buildPath(area.points, transform);
-    final fillColor = _getFillColor(status, isHighlighted);
+    final fillColor = _getFillColor(status, isHighlighted, isCorrectlyGuessed);
     canvas.drawPath(path, Paint()..color = fillColor);
-  }
-
-  void _drawAreaBorder(
-    Canvas canvas,
-    RegionalArea area,
-    _GeoTransform transform,
-  ) {
-    if (area.points.isEmpty) return;
-    final path = _buildPath(area.points, transform);
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = const Color(0xFF3A5A6A)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.8,
-    );
   }
 
   void _drawAreaLabel(
@@ -260,7 +292,18 @@ class _RegionMapPainter extends CustomPainter {
     );
   }
 
-  Color _getFillColor(StateVisualStatus status, bool isHighlighted) {
+  Color _getFillColor(
+    StateVisualStatus status,
+    bool isHighlighted,
+    bool isCorrectlyGuessed,
+  ) {
+    // Correctly guessed countries show muted green
+    if (isCorrectlyGuessed &&
+        status != StateVisualStatus.correct &&
+        status != StateVisualStatus.wrong) {
+      return const Color(0xFF1E4A2A);
+    }
+
     if (isHighlighted) {
       final opacity = 0.4 + 0.4 * pulseValue;
       return Color.fromRGBO(232, 122, 90, opacity);
@@ -309,6 +352,8 @@ class _RegionMapPainter extends CustomPainter {
     final transform = _regionTransform(size);
 
     for (final area in areas) {
+      // Can't tap eliminated areas
+      if (eliminatedCodes.contains(area.code)) continue;
       if (_pointInPolygon(position, area.points, transform)) {
         return area.code;
       }
@@ -345,6 +390,8 @@ class _RegionMapPainter extends CustomPainter {
   bool shouldRepaint(covariant _RegionMapPainter oldDelegate) {
     return oldDelegate.highlightCode != highlightCode ||
         oldDelegate.pulseValue != pulseValue ||
+        oldDelegate.eliminatedCodes != eliminatedCodes ||
+        oldDelegate.correctCodes != correctCodes ||
         true;
   }
 }

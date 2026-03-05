@@ -14,8 +14,9 @@ import 'quiz_results_screen.dart';
 
 /// Main quiz game screen for Flight School.
 ///
-/// Shows an interactive USA map with a clue card at the top.
-/// Player taps states to answer. Provides real-time feedback.
+/// Shows an interactive map (zoomable) with a clue card at the top.
+/// Player taps states/countries to answer. Provides real-time feedback.
+/// Progressive hint system: extra clues, elimination, then country removal.
 ///
 /// When [challengeId] is non-null, results are submitted to the challenge
 /// system so both players can compare scores.
@@ -153,7 +154,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
           }
         });
 
-        // After a brief flash, mark as completed
+        // After a brief flash, mark as completed (muted green via correctCodes)
         Future.delayed(const Duration(milliseconds: 400), () {
           if (mounted) {
             setState(() {
@@ -202,28 +203,13 @@ class _QuizGameScreenState extends State<QuizGameScreen>
     if (question == null) return;
 
     setState(() {
-      if (level >= 3) {
-        // Level 3: Highlight the exact correct answer
+      if (level >= 5) {
+        // Level 5+: Highlight the exact correct answer
         _highlightCode = question.answerCode;
-      } else if (level >= 2) {
-        // Level 2: Dim 75% of wrong answers
-        final areas = _stateVisuals.keys.toList();
-        final wrongAreas = areas
-            .where(
-              (c) =>
-                  c != question.answerCode &&
-                  _stateVisuals[c]?.status == StateVisualStatus.idle,
-            )
-            .toList();
-        wrongAreas.shuffle();
-        final toDim = wrongAreas.take((wrongAreas.length * 0.75).round());
-        for (final code in toDim) {
-          _stateVisuals[code]?.status = StateVisualStatus.completed;
-        }
       }
-      // Level 1: Just a visual indicator (could highlight quadrant, but
-      // for now we just show that a hint was used - the reduced score is
-      // the main feedback)
+      // Levels 1-2: Extra clue texts (handled by session, shown in clue card)
+      // Levels 3-4: Elimination (handled by session via eliminatedCodes)
+      // Level 6+: Country removal (handled by session via eliminatedCodes)
     });
   }
 
@@ -328,7 +314,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
             // Top bar: back button, mode label, timer
             _buildTopBar(remaining),
 
-            // Clue card
+            // Clue card (with extra hint clues)
             _buildClueCard(question),
 
             // Score and streak bar
@@ -347,6 +333,8 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                             onStateTapped: _handleStateTapped,
                             highlightCode: _highlightCode,
                             showLabels: _session.showLabels,
+                            eliminatedCodes: _session.eliminatedCodes,
+                            correctCodes: _session.correctCodes,
                           )
                         : QuizRegionMapWidget(
                             region: widget.region,
@@ -354,6 +342,8 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                             onStateTapped: _handleStateTapped,
                             highlightCode: _highlightCode,
                             showLabels: _session.showLabels,
+                            eliminatedCodes: _session.eliminatedCodes,
+                            correctCodes: _session.correctCodes,
                           ),
                   ),
 
@@ -500,10 +490,14 @@ class _QuizGameScreenState extends State<QuizGameScreen>
   // ── Clue card ──────────────────────────────────────────────────────────
 
   Widget _buildClueCard(QuizQuestion? question) {
+    final extraClues = _session.extraClueTexts;
+
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
       child: Container(
-        key: ValueKey(question?.clueText ?? 'empty'),
+        key: ValueKey(
+          '${question?.clueText ?? 'empty'}_${extraClues.length}',
+        ),
         width: double.infinity,
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -544,6 +538,29 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                     ),
                     textAlign: TextAlign.center,
                   ),
+                  // Extra clue texts from hints
+                  if (extraClues.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    const Divider(
+                      color: FlitColors.cardBorder,
+                      height: 1,
+                    ),
+                    const SizedBox(height: 6),
+                    for (final clue in extraClues)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(
+                          clue,
+                          style: const TextStyle(
+                            color: FlitColors.warning,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                  ],
                 ],
               )
             : const Text(
@@ -612,7 +629,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
               ),
             ),
 
-          // Hint button
+          // Hint button (always available now)
           if (_session.canUseHint)
             GestureDetector(
               onTap: _useHint,
@@ -635,7 +652,9 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Hint (${widget.difficulty.maxHints - _session.hintsUsed})',
+                      _session.currentHintLevel == 0
+                          ? 'Hint'
+                          : 'Hint (${_session.currentHintLevel})',
                       style: const TextStyle(
                         color: FlitColors.warning,
                         fontSize: 11,

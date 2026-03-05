@@ -39,6 +39,15 @@ class _FlightSchoolScreenState extends ConsumerState<FlightSchoolScreen> {
         ),
         centerTitle: true,
         iconTheme: const IconThemeData(color: FlitColors.textPrimary),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // Pop all the way back to the home screen (root)
+            // instead of just one level, which might land on a stale
+            // game mode screen.
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          },
+        ),
         actions: [
           // Coin balance
           Container(
