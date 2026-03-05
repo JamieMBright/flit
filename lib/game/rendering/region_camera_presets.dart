@@ -56,7 +56,7 @@ abstract class RegionCameraPresets {
   static const CameraPreset _worldPreset = CameraPreset(
     centerLat: 20.0,
     centerLng: 0.0,
-    altitudeDistance: 3.0,
+    altitudeDistance: 3.5,
     maxBoundsLat: 90.0,
     maxBoundsLng: 180.0,
   );

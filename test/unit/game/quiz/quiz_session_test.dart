@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flit/game/quiz/quiz_category.dart';
+import 'package:flit/game/quiz/quiz_difficulty.dart';
 import 'package:flit/game/quiz/quiz_session.dart';
 import 'package:flit/game/map/region.dart';
 
@@ -335,12 +336,14 @@ void main() {
       const summary90 = QuizSummary(
         mode: QuizMode.allStates,
         category: QuizCategory.stateName,
+        difficulty: QuizDifficulty.medium,
         totalScore: 10000,
         correctCount: 45,
         wrongCount: 5,
         totalQuestions: 50,
         elapsedMs: 60000,
         bestStreak: 5,
+        hintsUsed: 0,
         results: [],
       );
       expect(summary90.grade, equals('A'));
@@ -348,12 +351,14 @@ void main() {
       const summary50 = QuizSummary(
         mode: QuizMode.allStates,
         category: QuizCategory.stateName,
+        difficulty: QuizDifficulty.medium,
         totalScore: 5000,
         correctCount: 25,
         wrongCount: 25,
         totalQuestions: 50,
         elapsedMs: 120000,
         bestStreak: 3,
+        hintsUsed: 0,
         results: [],
       );
       expect(summary50.grade, equals('D'));
@@ -363,12 +368,14 @@ void main() {
       const summary = QuizSummary(
         mode: QuizMode.allStates,
         category: QuizCategory.stateName,
+        difficulty: QuizDifficulty.medium,
         totalScore: 10000,
         correctCount: 50,
         wrongCount: 0,
         totalQuestions: 50,
         elapsedMs: 125000,
         bestStreak: 50,
+        hintsUsed: 0,
         results: [],
       );
       expect(summary.elapsedFormatted, equals('2:05'));
