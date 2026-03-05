@@ -147,9 +147,9 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(
-            color: FlitColors.accent.withValues(alpha: 0.15),
+            color: FlitColors.accent.withOpacity(0.15),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: FlitColors.accent.withValues(alpha: 0.4)),
+            border: Border.all(color: FlitColors.accent.withOpacity(0.4)),
           ),
           child: Text(
             _briefing.dateKey,
@@ -200,7 +200,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen>
         border: Border.all(color: FlitColors.cardBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: Colors.black.withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -292,7 +292,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen>
               Text(
                 label,
                 style: TextStyle(
-                  color: FlitColors.textMuted.withValues(alpha: 0.8),
+                  color: FlitColors.textMuted.withOpacity(0.8),
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.2,
@@ -338,9 +338,9 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: FlitColors.success.withValues(alpha: 0.1),
+        color: FlitColors.success.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: FlitColors.success.withValues(alpha: 0.4)),
+        border: Border.all(color: FlitColors.success.withOpacity(0.4)),
       ),
       child: Column(
         children: [
@@ -385,7 +385,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen>
         Text(
           label,
           style: TextStyle(
-            color: FlitColors.textMuted.withValues(alpha: 0.8),
+            color: FlitColors.textMuted.withOpacity(0.8),
             fontSize: 10,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.0,
@@ -423,7 +423,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen>
               borderRadius: BorderRadius.circular(14),
             ),
             elevation: 6,
-            shadowColor: FlitColors.accent.withValues(alpha: 0.5),
+            shadowColor: FlitColors.accent.withOpacity(0.5),
           ),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -456,7 +456,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen>
       decoration: BoxDecoration(
         color: FlitColors.backgroundMid,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: FlitColors.cardBorder.withValues(alpha: 0.5)),
+        border: Border.all(color: FlitColors.cardBorder.withOpacity(0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

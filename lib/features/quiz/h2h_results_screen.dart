@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/h2h_challenge.dart';
+import '../../game/quiz/quiz_category.dart';
+import '../../game/quiz/quiz_difficulty.dart';
 import 'flight_school_screen.dart';
 import 'h2h_challenge_screen.dart';
 
