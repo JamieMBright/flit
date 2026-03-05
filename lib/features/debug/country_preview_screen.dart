@@ -757,9 +757,9 @@ class _CountryCardState extends State<_CountryCard> {
                             children: [
                               _InfoChip(
                                 label: '$vertexCount vertices',
-                                color: vertexCount < 20
+                                color: vertexCount < 30
                                     ? FlitColors.error
-                                    : vertexCount < 50
+                                    : vertexCount < 70
                                     ? FlitColors.warning
                                     : FlitColors.textMuted,
                               ),

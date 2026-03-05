@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
@@ -36,9 +38,8 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
   /// Elapsed time in seconds, fed to the shader for animations.
   double _time = 0.0;
 
-  /// Sun direction (normalized, static — computed once at initialization).
-  /// Sun at ~30 degrees above the equatorial plane, slightly to the right.
-  /// Already normalized: sqrt(0.866^2 + 0.5^2 + 0.0^2) = sqrt(0.75+0.25) = 1.0
+  /// Sun direction (normalized). Updated each frame from real UTC time
+  /// so the day/night terminator and city lights match the real world.
   double _sunDirX = 0.866;
   double _sunDirY = 0.5;
   double _sunDirZ = 0.0;
@@ -81,6 +82,12 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
 
     _time += dt;
 
+    // -- Compute sun direction from real UTC time --
+    // The sub-solar point longitude tracks UTC: at 12:00 UTC, the sun
+    // is directly over 0° longitude. Each hour moves it 15° west.
+    // Solar declination oscillates ±23.44° over the year.
+    _updateSunDirection();
+
     // -- Update camera from the behind-plane chase camera position --
     final camPos = gameRef.shaderCameraPosition;
     final plane = gameRef.plane;
@@ -99,6 +106,34 @@ class GlobeRenderer extends Component with HasGameRef<FlitGame> {
       headingRad: gameRef.cameraHeadingBearing,
       altitudeFraction: plane.continuousAltitude,
     );
+  }
+
+  /// Compute a realistic sun direction from the current UTC time.
+  ///
+  /// The sub-solar longitude tracks the hour angle: at 12:00 UTC,
+  /// the sun is over 0° E. Each hour moves it 15° westward.
+  /// Solar declination oscillates ±23.44° over the year (simplified).
+  void _updateSunDirection() {
+    final now = DateTime.now().toUtc();
+    // Hour angle: fraction of the day as an angle (0 = midnight, π = noon).
+    final dayFrac = (now.hour + now.minute / 60.0 + now.second / 3600.0) / 24.0;
+    final hourAngle = 2.0 * math.pi * dayFrac;
+
+    // Solar declination: approximate with sinusoidal over the year.
+    // March equinox ≈ day 80, max tilt 23.44°.
+    final dayOfYear = now.difference(DateTime.utc(now.year)).inDays;
+    final declination =
+        23.44 *
+        math.pi /
+        180.0 *
+        math.sin(2.0 * math.pi * (dayOfYear - 81) / 365.0);
+
+    // Sub-solar point in equirectangular coordinates → cartesian unit vector.
+    // Longitude of the sub-solar point = 180° - hourAngle (sun at noon over 0°E).
+    final sunLng = math.pi - hourAngle;
+    _sunDirX = math.cos(declination) * math.cos(sunLng);
+    _sunDirY = math.sin(declination);
+    _sunDirZ = math.cos(declination) * math.sin(sunLng);
   }
 
   @override

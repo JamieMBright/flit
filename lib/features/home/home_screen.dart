@@ -14,6 +14,7 @@ import '../../data/services/friends_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../admin/admin_screen.dart';
 import '../daily/daily_challenge_screen.dart';
+import '../explore/country_clues_screen.dart';
 import '../friends/friends_screen.dart';
 import '../guide/gameplay_guide_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
@@ -281,10 +282,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ],
       ),
       const SizedBox(height: 10),
-      // Friends button — full width (2 columns) with animated notification
-      // border when there are pending friend requests or incoming challenges.
-      _FriendsMenuTile(
-        onTap: () => _navigateSafely(context, const FriendsScreen()),
+      // Friends + Country Clues in 2-column format
+      Row(
+        children: [
+          Expanded(
+            child: _FriendsMenuTile(
+              onTap: () => _navigateSafely(context, const FriendsScreen()),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _MenuTile(
+              label: 'Clues',
+              icon: Icons.travel_explore,
+              onTap: () => _navigateSafely(context, const CountryCluesScreen()),
+            ),
+          ),
+        ],
       ),
       const SizedBox(height: 10),
       Row(
