@@ -428,7 +428,9 @@ void main() {
     if (!isOcean) {
         // Land — satellite texture with diffuse lighting
         vec3 landColor = satColor.rgb;
-        float ambientLand = 0.06;
+        // Night-side ambient is near-black (0.01) so the surface is dark
+        // enough for city lights to stand out. Day-side ambient is 0.06.
+        float ambientLand = mix(0.01, 0.06, dayFactor);
         landColor *= (diffuse * 0.9 + ambientLand);
         landColor += terminatorGlow * 0.4;
         surfaceColor = landColor;
@@ -437,7 +439,8 @@ void main() {
         vec3 oceanColor = satColor.rgb * vec3(0.8, 0.9, 1.1);
 
         float oceanDiffuse = max(dot(normal, uSunDir), 0.0);
-        float ambientOcean = 0.06;
+        // Near-black ambient on night-side ocean to eliminate blue hue.
+        float ambientOcean = mix(0.01, 0.06, dayFactor);
         oceanColor *= (oceanDiffuse * 0.85 + ambientOcean);
 
         // Blinn-Phong specular (cheaper than gaussian)
@@ -455,22 +458,9 @@ void main() {
     }
 
     // =======================================================================
-    // V6: CITY LIGHTS ON NIGHT SIDE
-    // =======================================================================
-
-    {
-        float nightFactor = 1.0 - dayFactor;
-        if (uEnableNight > 0.5 && nightFactor > 0.01) {
-            vec3 cityLights = texture(uCityLights, uv).rgb;
-            cityLights *= CITY_LIGHT_BOOST;
-            vec3 lightTint = vec3(1.0, 0.85, 0.6);
-            cityLights *= lightTint;
-            surfaceColor += cityLights * nightFactor;
-        }
-    }
-
-    // =======================================================================
     // V5: CLOUD LAYER (gated: high altitude only)
+    // Rendered BEFORE city lights so night-side clouds appear as dark
+    // silhouettes against the surface, and city lights shine through gaps.
     // =======================================================================
 
     if (cloudsActive) {
@@ -493,7 +483,9 @@ void main() {
                 float cloudDayFactor = smoothstep(TERMINATOR_SOFT, TERMINATOR_HARD, cloudNdotL);
 
                 vec3 cloudColor = mix(vec3(0.25, 0.27, 0.35), vec3(CLOUD_BRIGHTNESS), cloudLight);
-                cloudColor = mix(vec3(0.03, 0.04, 0.06), cloudColor, max(cloudDayFactor, 0.05));
+                // Night-side clouds: visible as dark gray silhouettes (15% brightness)
+                // so they're clearly distinguishable against the dark surface.
+                cloudColor = mix(vec3(0.06, 0.06, 0.08), cloudColor, max(cloudDayFactor, 0.15));
 
                 float cloudTerminator = smoothstep(-0.15, 0.0, cloudNdotL) * smoothstep(0.25, 0.05, cloudNdotL);
                 cloudColor += TERMINATOR_WARM * cloudTerminator * 0.3;
@@ -512,18 +504,34 @@ void main() {
     }
 
     // =======================================================================
+    // V6: CITY LIGHTS ON NIGHT SIDE
+    // Rendered AFTER clouds so lights shine through cloud gaps.
+    // =======================================================================
+
+    {
+        float nightFactor = 1.0 - dayFactor;
+        if (uEnableNight > 0.5 && nightFactor > 0.01) {
+            vec3 cityLights = texture(uCityLights, uv).rgb;
+            cityLights *= CITY_LIGHT_BOOST;
+            vec3 lightTint = vec3(1.0, 0.85, 0.6);
+            cityLights *= lightTint;
+            surfaceColor += cityLights * nightFactor;
+        }
+    }
+
+    // =======================================================================
     // V4: AERIAL PERSPECTIVE HAZE
     // =======================================================================
 
     {
         float viewDist = length(hitPoint - ro);
         float maxDist  = camDist + uGlobeRadius;
-        float hazeFactor = smoothstep(0.0, maxDist, viewDist) * HAZE_STRENGTH;
+        // Reduce haze on night side so it doesn't add blue tint to dark areas.
+        float hazeFactor = smoothstep(0.0, maxDist, viewDist) * HAZE_STRENGTH * dayFactor;
 
         float sunViewDot = max(dot(viewDir, uSunDir), 0.0);
         float sv2 = sunViewDot * sunViewDot;
         vec3 hazeColor = mix(vec3(0.5, 0.6, 0.8), vec3(0.8, 0.7, 0.5), sv2 * sv2);
-        hazeColor *= dayFactor;
         surfaceColor = mix(surfaceColor, hazeColor, hazeFactor);
     }
 
@@ -540,7 +548,7 @@ void main() {
         vec3 dayRimColor = mix(vec3(0.3, 0.5, 1.0), vec3(0.5, 0.7, 1.0), sunAlignment);
         vec3 dayRim = dayRimColor * rim * RIM_INTENSITY * dayFactor;
 
-        vec3 nightRimColor = vec3(0.08, 0.12, 0.25);
+        vec3 nightRimColor = vec3(0.04, 0.05, 0.10);
         vec3 nightRim = nightRimColor * rim * NIGHT_RIM_STRENGTH * (1.0 - dayFactor);
 
         vec3 termRim = TERMINATOR_WARM * rim * terminatorZone * 0.4;

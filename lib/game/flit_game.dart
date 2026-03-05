@@ -1195,56 +1195,63 @@ class FlitGame extends FlameGame
     final halfFovTan = tan(fov / 2);
     final offsetRad = desiredUvY * (d - CameraState.globeRadius) * halfFovTan;
 
-    // Convert camera heading to navigation bearing (0 = north).
+    // Use 3D cartesian great-circle math instead of Vincenty lat/lng formulas.
+    // Vincenty degenerates at the poles (cosPLat → 0 causes atan2(0, small)
+    // to flip longitude by 180°), while cartesian math handles poles smoothly.
     final camBearing = _cameraHeading + pi / 2;
 
-    // Great-circle destination: move offsetRad ahead of the plane (for Canvas).
     final planeLat = _worldPosition.y * deg2rad;
     final planeLng = _worldPosition.x * deg2rad;
+    final cosLat = cos(planeLat);
+    final sinLat = sin(planeLat);
+    final cosLng = cos(planeLng);
+    final sinLng = sin(planeLng);
 
-    final sinPLat = sin(planeLat);
-    final cosPLat = cos(planeLat);
-    final sinDist = sin(offsetRad);
-    final cosDist = cos(offsetRad);
+    // Position on unit sphere
+    final px = cosLat * cosLng;
+    final py = sinLat;
+    final pz = cosLat * sinLng;
 
-    final aheadLat = asin(
-      (sinPLat * cosDist + cosPLat * sinDist * cos(camBearing)).clamp(
-        -1.0,
-        1.0,
-      ),
-    );
-    final aheadLng =
-        planeLng +
-        atan2(
-          sin(camBearing) * sinDist * cosPLat,
-          cosDist - sinPLat * sin(aheadLat),
-        );
+    // Local tangent basis at plane position
+    final ex = -sinLng;
+    const ey = 0.0;
+    final ez = cosLng;
+    final nx = -sinLat * cosLng;
+    final ny = cosLat;
+    final nz = -sinLat * sinLng;
+
+    // Heading tangent in 3D (navigation bearing)
+    final cosB = cos(camBearing);
+    final sinB = sin(camBearing);
+    final hx = cosB * nx + sinB * ex;
+    final hy = cosB * ny + sinB * ey;
+    final hz = cosB * nz + sinB * ez;
+
+    final cosD = cos(offsetRad);
+    final sinD = sin(offsetRad);
+
+    // Move AHEAD along great circle: P' = P*cos(d) + H*sin(d)
+    final aheadX = px * cosD + hx * sinD;
+    final aheadY = py * cosD + hy * sinD;
+    final aheadZ = pz * cosD + hz * sinD;
+    final aheadLatRad = asin(aheadY.clamp(-1.0, 1.0));
+    final aheadLngRad = atan2(aheadZ, aheadX);
 
     _cameraOffsetPosition = Vector2(
-      _normalizeLng(aheadLng * rad2deg),
-      aheadLat * rad2deg,
+      _normalizeLng(aheadLngRad * rad2deg),
+      aheadLatRad * rad2deg,
     );
 
-    // Compute a point BEHIND the plane for the shader chase camera.
-    // The shader camera is behind the plane so the plane appears at
-    // planeScreenY on screen, creating a natural over-the-shoulder view.
-    final behindBearing = camBearing + pi;
-    final behindLat = asin(
-      (sinPLat * cosDist + cosPLat * sinDist * cos(behindBearing)).clamp(
-        -1.0,
-        1.0,
-      ),
-    );
-    final behindLng =
-        planeLng +
-        atan2(
-          sin(behindBearing) * sinDist * cosPLat,
-          cosDist - sinPLat * sin(behindLat),
-        );
+    // Move BEHIND along great circle: P' = P*cos(d) - H*sin(d)
+    final behindX = px * cosD - hx * sinD;
+    final behindY = py * cosD - hy * sinD;
+    final behindZ = pz * cosD - hz * sinD;
+    final behindLatRad = asin(behindY.clamp(-1.0, 1.0));
+    final behindLngRad = atan2(behindZ, behindX);
 
     _shaderCameraPosition = Vector2(
-      _normalizeLng(behindLng * rad2deg),
-      behindLat * rad2deg,
+      _normalizeLng(behindLngRad * rad2deg),
+      behindLatRad * rad2deg,
     );
   }
 

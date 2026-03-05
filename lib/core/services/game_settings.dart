@@ -294,8 +294,8 @@ class GameSettings extends ChangeNotifier {
   }
 
   /// Cloud coverage threshold (0.0 = fully covered, 1.0 = clear sky).
-  /// Higher values mean fewer clouds. Default 0.42.
-  double _cloudCoverage = 0.42;
+  /// Higher values mean fewer clouds. Default 0.25.
+  double _cloudCoverage = 0.25;
 
   double get cloudCoverage => _cloudCoverage;
 
@@ -308,8 +308,8 @@ class GameSettings extends ChangeNotifier {
   String get cloudCoverageLabel => '${((_cloudCoverage) * 100).round()}%';
 
   /// Cloud blend opacity (0.0 = transparent, 1.0 = fully opaque).
-  /// Default 0.9 (90% opaque).
-  double _cloudOpacity = 0.9;
+  /// Default 0.5 (50% opaque).
+  double _cloudOpacity = 0.5;
 
   double get cloudOpacity => _cloudOpacity;
 
