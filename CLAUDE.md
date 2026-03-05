@@ -162,12 +162,20 @@ flutter test --coverage
 - Lint before commit when possible, but formatting and lint issues are **advisory, not blocking**
 - CI reports formatting and lint warnings but does not fail the build on them
 - Use project flutter_lints config
+- **Zero-warning policy** — Do not leave existing warnings unresolved. When you see warnings in hook output or CI logs, fix them. A clean log is a healthy codebase.
 
 ```bash
 ./scripts/lint.sh            # Check linting
 dart format lib/ test/ --fix # Auto-fix formatting
-flutter analyze              # Static analysis
+flutter analyze              # Static analysis (authoritative for prefer_const_constructors etc.)
 ```
+
+### Warning & Log File Management
+- **Always check hook/CI output for warnings** — treat them as bugs to fix, not noise to ignore
+- After resolving warnings, verify they no longer appear in the output
+- The `lint-noflutter.sh` script provides lightweight heuristic checks; `flutter analyze` is the authoritative source
+- **Pre-push hooks only scan changed files** — they compare against the merge base with `origin/main`, so only your changes are validated
+- Do not commit code that introduces new warnings — fix them before pushing
 
 ### Style
 - Prefer composition over inheritance
