@@ -8,6 +8,7 @@ import '../../core/services/game_settings.dart';
 import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
 import 'camera_state.dart';
+import 'city_lights_generator.dart';
 
 final _log = GameLog.instance;
 
@@ -112,8 +113,7 @@ class ShaderManager {
 
       // Check if this is an "unsupported operation" error (e.g., HTML renderer on web)
       final errorStr = e.toString();
-      final isUnsupportedError =
-          errorStr.contains('Unsupported operation') ||
+      final isUnsupportedError = errorStr.contains('Unsupported operation') ||
           errorStr.contains('not supported') ||
           errorStr.contains('HTML renderer');
 
@@ -162,8 +162,8 @@ class ShaderManager {
       return;
     }
 
-    // Load textures in parallel. Satellite is required; city lights is
-    // optional (falls back to black if missing or fails to load).
+    // Load satellite texture (required) and generate procedural city lights
+    // (optional) in parallel.
     final results = await Future.wait([
       _loadImage(
         'assets/textures/blue_marble.png',
@@ -186,13 +186,13 @@ class ShaderManager {
         );
         return null;
       }),
-      _loadImage(
-        'assets/textures/city_lights.png',
-      ).then<ui.Image?>((img) => img).catchError((Object e, StackTrace st) {
-        // City lights is optional — log at info, not warning/error.
+      CityLightsGenerator.generate().then<ui.Image?>((img) => img).catchError((
+        Object e,
+        StackTrace st,
+      ) {
         _log.info(
           'shader',
-          'City lights texture unavailable — using black fallback',
+          'Procedural city lights generation failed — using black fallback',
         );
         return null;
       }),
@@ -210,7 +210,7 @@ class ShaderManager {
     if (_cityLightsTexture != null) {
       _log.info(
         'shader',
-        'Loaded city lights (${_cityLightsTexture!.width}x${_cityLightsTexture!.height})',
+        'Generated procedural city lights (${_cityLightsTexture!.width}x${_cityLightsTexture!.height})',
       );
     }
 
@@ -337,8 +337,7 @@ class ShaderManager {
 
         // Check if this is a known non-fatal error
         final errorStr = e.toString();
-        final isUnsupportedError =
-            errorStr.contains('Unsupported operation') ||
+        final isUnsupportedError = errorStr.contains('Unsupported operation') ||
             errorStr.contains('not supported') ||
             errorStr.contains('HTML renderer');
 
@@ -385,9 +384,7 @@ class ShaderManager {
   Future<ui.Image> _loadImage(String assetPath) async {
     _log.debug('shader', 'Loading texture: $assetPath');
     try {
-      final data = await rootBundle
-          .load(assetPath)
-          .timeout(
+      final data = await rootBundle.load(assetPath).timeout(
             _textureTimeout,
             onTimeout: () => throw TimeoutException(
               'Texture load timed out: $assetPath',
@@ -397,15 +394,14 @@ class ShaderManager {
       final sizeBytes = data.lengthInBytes;
       _log.debug('shader', 'Texture loaded: $assetPath ($sizeBytes bytes)');
 
-      final codec = await ui
-          .instantiateImageCodec(data.buffer.asUint8List())
-          .timeout(
-            _textureTimeout,
-            onTimeout: () => throw TimeoutException(
-              'Texture decode timed out: $assetPath',
-              _textureTimeout,
-            ),
-          );
+      final codec =
+          await ui.instantiateImageCodec(data.buffer.asUint8List()).timeout(
+                _textureTimeout,
+                onTimeout: () => throw TimeoutException(
+                  'Texture decode timed out: $assetPath',
+                  _textureTimeout,
+                ),
+              );
       final frame = await codec.getNextFrame();
       final image = frame.image;
 
@@ -415,7 +411,7 @@ class ShaderManager {
       );
 
       return image;
-    } catch (e, st) {
+    } catch (e) {
       // Log at debug level — callers decide severity for required vs optional.
       _log.debug('shader', 'Failed to load/decode texture: $assetPath ($e)');
 
