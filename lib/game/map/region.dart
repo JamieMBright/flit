@@ -10,6 +10,11 @@ enum GameRegion {
   caribbean,
   ireland,
   canadianProvinces,
+  europe,
+  africa,
+  asia,
+  latinAmerica,
+  oceania,
 }
 
 /// Whether a region uses a flat map projection instead of the globe.
@@ -20,6 +25,11 @@ bool isRegionalFlatMap(GameRegion region) {
   switch (region) {
     case GameRegion.world:
     case GameRegion.caribbean:
+    case GameRegion.europe:
+    case GameRegion.africa:
+    case GameRegion.asia:
+    case GameRegion.latinAmerica:
+    case GameRegion.oceania:
       return false;
     case GameRegion.usStates:
     case GameRegion.ukCounties:
@@ -44,6 +54,16 @@ extension GameRegionExtension on GameRegion {
         return 'Ireland';
       case GameRegion.canadianProvinces:
         return 'Canada';
+      case GameRegion.europe:
+        return 'Europe';
+      case GameRegion.africa:
+        return 'Africa';
+      case GameRegion.asia:
+        return 'Asia';
+      case GameRegion.latinAmerica:
+        return 'Latin America';
+      case GameRegion.oceania:
+        return 'Oceania';
     }
   }
 
@@ -61,6 +81,16 @@ extension GameRegionExtension on GameRegion {
         return 'Tour all 32 counties of Ireland';
       case GameRegion.canadianProvinces:
         return 'Fly across Canada\'s provinces';
+      case GameRegion.europe:
+        return 'Test your knowledge of European countries';
+      case GameRegion.africa:
+        return 'Navigate the African continent';
+      case GameRegion.asia:
+        return 'Explore the diverse nations of Asia';
+      case GameRegion.latinAmerica:
+        return 'Fly through Central & South America';
+      case GameRegion.oceania:
+        return 'Discover the Pacific island nations';
     }
   }
 
@@ -79,6 +109,16 @@ extension GameRegionExtension on GameRegion {
         return [-11, 51, -5, 56];
       case GameRegion.canadianProvinces:
         return [-141, 42, -52, 72];
+      case GameRegion.europe:
+        return [-25, 34, 45, 72];
+      case GameRegion.africa:
+        return [-18, -35, 52, 38];
+      case GameRegion.asia:
+        return [25, -12, 150, 55];
+      case GameRegion.latinAmerica:
+        return [-118, -56, -34, 33];
+      case GameRegion.oceania:
+        return [110, -50, 180, 0];
     }
   }
 
@@ -95,14 +135,24 @@ extension GameRegionExtension on GameRegion {
         return 1;
       case GameRegion.usStates:
         return 3;
+      case GameRegion.canadianProvinces:
+        return 4;
       case GameRegion.ukCounties:
         return 5;
+      case GameRegion.europe:
+        return 3;
+      case GameRegion.africa:
+        return 5;
+      case GameRegion.asia:
+        return 7;
+      case GameRegion.latinAmerica:
+        return 9;
+      case GameRegion.oceania:
+        return 11;
       case GameRegion.caribbean:
         return 7;
       case GameRegion.ireland:
         return 10;
-      case GameRegion.canadianProvinces:
-        return 4;
     }
   }
 
@@ -155,8 +205,238 @@ abstract class RegionalData {
         return _irelandCounties;
       case GameRegion.canadianProvinces:
         return _canadianProvinces;
+      case GameRegion.europe:
+        return _countriesForCodes(_europeCodes);
+      case GameRegion.africa:
+        return _countriesForCodes(_africaCodes);
+      case GameRegion.asia:
+        return _countriesForCodes(_asiaCodes);
+      case GameRegion.latinAmerica:
+        return _countriesForCodes(_latinAmericaCodes);
+      case GameRegion.oceania:
+        return _countriesForCodes(_oceaniaCodes);
     }
   }
+
+  static List<RegionalArea> _countriesForCodes(Set<String> codes) {
+    return CountryData.countries
+        .where((c) => codes.contains(c.code))
+        .map(
+          (c) => RegionalArea(
+            code: c.code,
+            name: c.name,
+            points: c.allPoints,
+            capital: c.capital,
+          ),
+        )
+        .toList();
+  }
+
+  // ── Continent country code sets ────────────────────────────────────────
+
+  static const _europeCodes = <String>{
+    'AD',
+    'AL',
+    'AT',
+    'BA',
+    'BE',
+    'BG',
+    'BY',
+    'CH',
+    'CY',
+    'CZ',
+    'DE',
+    'DK',
+    'EE',
+    'ES',
+    'FI',
+    'FR',
+    'GB',
+    'GR',
+    'HR',
+    'HU',
+    'IE',
+    'IS',
+    'IT',
+    'LI',
+    'LT',
+    'LU',
+    'LV',
+    'MC',
+    'MD',
+    'ME',
+    'MK',
+    'MT',
+    'NL',
+    'NO',
+    'PL',
+    'PT',
+    'RO',
+    'RS',
+    'RU',
+    'SE',
+    'SI',
+    'SK',
+    'SM',
+    'TR',
+    'UA',
+    'VA',
+    'XK',
+  };
+
+  static const _africaCodes = <String>{
+    'AO',
+    'BF',
+    'BI',
+    'BJ',
+    'BW',
+    'CD',
+    'CF',
+    'CG',
+    'CI',
+    'CM',
+    'CV',
+    'DJ',
+    'DZ',
+    'EG',
+    'EH',
+    'ER',
+    'ET',
+    'GA',
+    'GH',
+    'GM',
+    'GN',
+    'GQ',
+    'GW',
+    'KE',
+    'KM',
+    'LR',
+    'LS',
+    'LY',
+    'MA',
+    'MG',
+    'ML',
+    'MR',
+    'MU',
+    'MW',
+    'MZ',
+    'NA',
+    'NE',
+    'NG',
+    'RW',
+    'SC',
+    'SD',
+    'SL',
+    'SN',
+    'SO',
+    'SS',
+    'ST',
+    'SZ',
+    'TD',
+    'TG',
+    'TN',
+    'TZ',
+    'UG',
+    'ZA',
+    'ZM',
+    'ZW',
+  };
+
+  static const _asiaCodes = <String>{
+    'AE',
+    'AF',
+    'AM',
+    'AZ',
+    'BD',
+    'BH',
+    'BN',
+    'BT',
+    'CN',
+    'GE',
+    'ID',
+    'IL',
+    'IN',
+    'IQ',
+    'IR',
+    'JO',
+    'JP',
+    'KG',
+    'KH',
+    'KP',
+    'KR',
+    'KW',
+    'KZ',
+    'LA',
+    'LB',
+    'LK',
+    'MM',
+    'MN',
+    'MV',
+    'MY',
+    'NP',
+    'OM',
+    'PH',
+    'PK',
+    'PS',
+    'QA',
+    'SA',
+    'SG',
+    'SY',
+    'TH',
+    'TJ',
+    'TL',
+    'TM',
+    'TW',
+    'UZ',
+    'VN',
+    'YE',
+  };
+
+  static const _latinAmericaCodes = <String>{
+    'AR',
+    'BO',
+    'BR',
+    'BZ',
+    'CL',
+    'CO',
+    'CR',
+    'CU',
+    'DO',
+    'EC',
+    'GT',
+    'GY',
+    'HN',
+    'HT',
+    'JM',
+    'MX',
+    'NI',
+    'PA',
+    'PE',
+    'PR',
+    'PY',
+    'SR',
+    'SV',
+    'TT',
+    'UY',
+    'VE',
+  };
+
+  static const _oceaniaCodes = <String>{
+    'AU',
+    'FJ',
+    'FM',
+    'KI',
+    'MH',
+    'NR',
+    'NZ',
+    'PG',
+    'PW',
+    'SB',
+    'TO',
+    'TV',
+    'VU',
+    'WS',
+  };
 
   /// Get random area from a region
   static RegionalArea getRandomArea(GameRegion region) {

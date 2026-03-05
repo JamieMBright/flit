@@ -48,6 +48,7 @@ class QuizMapWidget extends StatefulWidget {
     required this.stateVisuals,
     required this.onStateTapped,
     this.highlightCode,
+    this.showLabels = true,
   });
 
   /// Visual state for each US state.
@@ -58,6 +59,9 @@ class QuizMapWidget extends StatefulWidget {
 
   /// Optional state to highlight (e.g., for showing the correct answer).
   final String? highlightCode;
+
+  /// Whether to show state code labels on the map.
+  final bool showLabels;
 
   @override
   State<QuizMapWidget> createState() => _QuizMapWidgetState();
@@ -98,6 +102,7 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
                   stateVisuals: widget.stateVisuals,
                   highlightCode: widget.highlightCode,
                   pulseValue: _pulseController.value,
+                  showLabels: widget.showLabels,
                 ),
               ),
             );
@@ -112,6 +117,7 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
       stateVisuals: widget.stateVisuals,
       highlightCode: widget.highlightCode,
       pulseValue: 0,
+      showLabels: widget.showLabels,
     );
 
     final code = painter.hitTestState(position, size);
@@ -127,11 +133,13 @@ class _UsaMapPainter extends CustomPainter {
     required this.stateVisuals,
     required this.highlightCode,
     required this.pulseValue,
+    this.showLabels = true,
   });
 
   final Map<String, StateVisual> stateVisuals;
   final String? highlightCode;
   final double pulseValue;
+  final bool showLabels;
 
   // CONUS bounds (continental US)
   static const double _conusMinLng = -125.0;
@@ -201,10 +209,12 @@ class _UsaMapPainter extends CustomPainter {
       _drawStateBorder(canvas, size, hiArea, _hiTransform(size));
     }
 
-    // Draw state labels for larger states
-    for (final area in areas) {
-      if (area.code == 'AK' || area.code == 'HI') continue;
-      _drawStateLabel(canvas, size, area, _conusTransform(size));
+    // Draw state labels for larger states (only when enabled)
+    if (showLabels) {
+      for (final area in areas) {
+        if (area.code == 'AK' || area.code == 'HI') continue;
+        _drawStateLabel(canvas, size, area, _conusTransform(size));
+      }
     }
   }
 
@@ -219,15 +229,37 @@ class _UsaMapPainter extends CustomPainter {
     // Reserve bottom space for insets
     final mainH = drawH * 0.78;
 
+    // Correct aspect ratio for latitude distortion.
+    // At ~37N (mid-CONUS), cos(37) ≈ 0.799
+    const lngSpan = _conusMaxLng - _conusMinLng; // 59 degrees
+    const latSpan = _conusMaxLat - _conusMinLat; // 26 degrees
+    const midLatRad = 37.0 * 3.14159265 / 180.0;
+    // cos(37°) ≈ 0.799
+    const cosLat = 0.799;
+    final geoAspect = (lngSpan * cosLat) / latSpan;
+    final canvasAspect = drawW / mainH;
+
+    double usedW, usedH;
+    if (geoAspect > canvasAspect) {
+      usedW = drawW;
+      usedH = drawW / geoAspect;
+    } else {
+      usedH = mainH;
+      usedW = mainH * geoAspect;
+    }
+
+    final offsetX = padX + (drawW - usedW) / 2;
+    final offsetY = padY + (mainH - usedH) / 2;
+
     return _GeoTransform(
       minLng: _conusMinLng,
       maxLng: _conusMaxLng,
       minLat: _conusMinLat,
       maxLat: _conusMaxLat,
-      offsetX: padX,
-      offsetY: padY,
-      width: drawW,
-      height: mainH,
+      offsetX: offsetX,
+      offsetY: offsetY,
+      width: usedW,
+      height: usedH,
     );
   }
 

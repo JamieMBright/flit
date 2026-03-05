@@ -128,6 +128,34 @@ extension GameModeTabExtension on GameModeTab {
   }
 }
 
+/// Top-level leaderboard mode tab.
+enum LeaderboardMode { dailyScramble, trainingFlight, flightBriefing }
+
+extension LeaderboardModeExtension on LeaderboardMode {
+  String get displayName {
+    switch (this) {
+      case LeaderboardMode.dailyScramble:
+        return 'DAILY SCRAMBLE';
+      case LeaderboardMode.trainingFlight:
+        return 'TRAINING FLIGHT';
+      case LeaderboardMode.flightBriefing:
+        return 'FLIGHT BRIEFING';
+    }
+  }
+
+  /// The region filter value used in the `scores` table.
+  String? get regionFilter {
+    switch (this) {
+      case LeaderboardMode.dailyScramble:
+        return 'daily';
+      case LeaderboardMode.trainingFlight:
+        return null; // neq 'daily' and neq 'briefing'
+      case LeaderboardMode.flightBriefing:
+        return 'briefing';
+    }
+  }
+}
+
 /// Time period sub-tab.
 enum TimeframeTab { today, lastMonth, allTime }
 

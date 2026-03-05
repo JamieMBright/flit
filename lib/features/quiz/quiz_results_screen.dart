@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/providers/account_provider.dart';
+import '../../data/services/leaderboard_service.dart';
+import '../../game/map/region.dart';
+import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_session.dart';
-import 'quiz_setup_screen.dart';
+import 'flight_school_screen.dart';
 
 /// Results screen shown after completing a Flight School quiz.
 ///
@@ -14,12 +20,16 @@ import 'quiz_setup_screen.dart';
 /// - Time taken
 /// - Best streak
 /// - Correct/Wrong breakdown
-class QuizResultsScreen extends StatefulWidget {
+class QuizResultsScreen extends ConsumerStatefulWidget {
   const QuizResultsScreen({
     super.key,
     required this.summary,
     this.challengeId,
     this.opponentName,
+    this.flightSchoolLevelId,
+    this.region,
+    this.h2hRoundIndex,
+    this.dailyBriefingDateKey,
   });
 
   final QuizSummary summary;
@@ -30,12 +40,27 @@ class QuizResultsScreen extends StatefulWidget {
   /// Opponent name for challenge display.
   final String? opponentName;
 
+  /// Flight school level ID for progress tracking.
+  final String? flightSchoolLevelId;
+
+  /// Region played (for context).
+  final GameRegion? region;
+
+  /// When non-null, this was a round of a best-of-3 H2H challenge.
+  final int? h2hRoundIndex;
+
+  /// When non-null, this quiz was a Daily Flight Briefing. The value is the
+  /// date key (YYYY-MM-DD) for score submission.
+  final String? dailyBriefingDateKey;
+
   @override
-  State<QuizResultsScreen> createState() => _QuizResultsScreenState();
+  ConsumerState<QuizResultsScreen> createState() => _QuizResultsScreenState();
 }
 
-class _QuizResultsScreenState extends State<QuizResultsScreen>
+class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
     with SingleTickerProviderStateMixin {
+  bool _progressSaved = false;
+  int _coinsEarned = 0;
   late AnimationController _animController;
   late Animation<double> _fadeIn;
   late Animation<double> _slideUp;
@@ -52,6 +77,80 @@ class _QuizResultsScreenState extends State<QuizResultsScreen>
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
     _animController.forward();
+    _saveFlightSchoolProgress();
+    _saveDailyBriefingScore();
+  }
+
+  void _saveFlightSchoolProgress() {
+    final levelId = widget.flightSchoolLevelId;
+    if (levelId == null || _progressSaved) return;
+    _progressSaved = true;
+
+    final summary = widget.summary;
+    final isCompleted = summary.mode == QuizMode.allStates
+        ? summary.correctCount == summary.totalQuestions
+        : summary.correctCount > 0;
+
+    final notifier = ref.read(accountProvider.notifier);
+
+    notifier.updateFlightSchoolProgress(
+      levelId: levelId,
+      score: summary.totalScore,
+      timeMs: summary.elapsedMs,
+      completed: isCompleted,
+    );
+
+    // Award coins based on performance with diminishing returns
+    final progress =
+        ref.read(accountProvider).flightSchoolProgress[levelId] ??
+        const FlightSchoolProgress();
+    final baseCoinReward = summary.coinReward;
+    final adjustedReward = progress.coinRewardForCompletion(baseCoinReward);
+    if (adjustedReward > 0) {
+      notifier.addCoins(adjustedReward, source: 'flight_school');
+      _coinsEarned = adjustedReward;
+    }
+  }
+
+  /// Submit the score to the daily briefing tables when this quiz is a
+  /// Daily Flight Briefing.
+  Future<void> _saveDailyBriefingScore() async {
+    final dateKey = widget.dailyBriefingDateKey;
+    if (dateKey == null) return;
+
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final summary = widget.summary;
+
+    try {
+      final client = Supabase.instance.client;
+
+      // 1. Dedicated daily_briefing_scores table (one per day, upsert).
+      await client.from('daily_briefing_scores').upsert({
+        'user_id': userId,
+        'date_key': dateKey,
+        'score': summary.totalScore,
+        'time_ms': summary.elapsedMs,
+        'level_id': widget.flightSchoolLevelId ?? '',
+        'category': summary.category.name,
+        'difficulty': summary.difficulty.name,
+        'mode': summary.mode.name,
+      }, onConflict: 'user_id,date_key');
+
+      // 2. Shared scores table with region = 'briefing' for the leaderboard.
+      await client.from('scores').insert({
+        'user_id': userId,
+        'score': summary.totalScore,
+        'time_ms': summary.elapsedMs,
+        'region': 'briefing',
+        'rounds_completed': summary.correctCount,
+      });
+
+      LeaderboardService.instance.invalidateCache();
+    } catch (e) {
+      debugPrint('[QuizResults] Failed to save daily briefing score: $e');
+    }
   }
 
   @override
@@ -138,7 +237,13 @@ class _QuizResultsScreenState extends State<QuizResultsScreen>
 
                       // Score card (big)
                       _buildScoreCard(summary),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
+
+                      // Coin reward
+                      if (_coinsEarned > 0) ...[
+                        _buildCoinReward(),
+                        const SizedBox(height: 12),
+                      ],
 
                       // Stats grid
                       _buildStatsGrid(summary),
@@ -269,6 +374,33 @@ class _QuizResultsScreenState extends State<QuizResultsScreen>
               ),
             ),
           ],
+        ),
+      ],
+    ),
+  );
+
+  // ── Coin reward ────────────────────────────────────────────────────────
+
+  Widget _buildCoinReward() => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: BoxDecoration(
+      color: FlitColors.gold.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: FlitColors.gold.withOpacity(0.3)),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.monetization_on, color: FlitColors.gold, size: 24),
+        const SizedBox(width: 8),
+        Text(
+          '+$_coinsEarned coins earned',
+          style: const TextStyle(
+            color: FlitColors.gold,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ],
     ),
@@ -432,7 +564,7 @@ class _QuizResultsScreenState extends State<QuizResultsScreen>
             child: OutlinedButton(
               onPressed: () => Navigator.of(context).pushReplacement(
                 MaterialPageRoute<void>(
-                  builder: (_) => const QuizSetupScreen(),
+                  builder: (_) => const FlightSchoolScreen(),
                 ),
               ),
               style: OutlinedButton.styleFrom(

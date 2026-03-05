@@ -111,6 +111,56 @@ abstract class RegionCameraPresets {
     fovOverride: 50.0,
   );
 
+  /// Europe: centered roughly on the Alps.
+  static const CameraPreset _europePreset = CameraPreset(
+    centerLat: 50.0,
+    centerLng: 10.0,
+    altitudeDistance: 2.2,
+    maxBoundsLat: 25.0,
+    maxBoundsLng: 40.0,
+    fovOverride: 50.0,
+  );
+
+  /// Africa: centered on the equatorial belt.
+  static const CameraPreset _africaPreset = CameraPreset(
+    centerLat: 2.0,
+    centerLng: 20.0,
+    altitudeDistance: 2.8,
+    maxBoundsLat: 40.0,
+    maxBoundsLng: 40.0,
+    fovOverride: 50.0,
+  );
+
+  /// Asia: centered on the Indian subcontinent area.
+  static const CameraPreset _asiaPreset = CameraPreset(
+    centerLat: 30.0,
+    centerLng: 80.0,
+    altitudeDistance: 3.0,
+    maxBoundsLat: 40.0,
+    maxBoundsLng: 70.0,
+    fovOverride: 50.0,
+  );
+
+  /// Latin America: centered on the Amazon basin.
+  static const CameraPreset _latinAmericaPreset = CameraPreset(
+    centerLat: -5.0,
+    centerLng: -60.0,
+    altitudeDistance: 2.8,
+    maxBoundsLat: 45.0,
+    maxBoundsLng: 45.0,
+    fovOverride: 50.0,
+  );
+
+  /// Oceania: centered on Australia / Coral Sea.
+  static const CameraPreset _oceaniaPreset = CameraPreset(
+    centerLat: -22.0,
+    centerLng: 150.0,
+    altitudeDistance: 2.5,
+    maxBoundsLat: 30.0,
+    maxBoundsLng: 40.0,
+    fovOverride: 50.0,
+  );
+
   // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
@@ -130,6 +180,16 @@ abstract class RegionCameraPresets {
         return _irelandPreset;
       case GameRegion.canadianProvinces:
         return _canadianProvincesPreset;
+      case GameRegion.europe:
+        return _europePreset;
+      case GameRegion.africa:
+        return _africaPreset;
+      case GameRegion.asia:
+        return _asiaPreset;
+      case GameRegion.latinAmerica:
+        return _latinAmericaPreset;
+      case GameRegion.oceania:
+        return _oceaniaPreset;
     }
   }
 

@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/services/game_settings.dart';
 import '../../game/map/region.dart';
+import '../../game/quiz/flight_school_level.dart';
 import '../models/avatar_config.dart';
 import '../models/daily_result.dart';
 import '../models/daily_streak.dart';
@@ -34,6 +35,7 @@ class AccountState {
     this.lastDailyResult,
     this.freeFlightCoinsToday = 0,
     this.freeFlightCoinDate,
+    this.flightSchoolProgress = const {},
   }) : avatar = avatar ?? const AvatarConfig(),
        license = license ?? PilotLicense.random();
 
@@ -90,6 +92,9 @@ class AccountState {
   /// YYYY-MM-DD date string for the free flight daily cap tracking.
   final String? freeFlightCoinDate;
 
+  /// Flight school progress per level ID.
+  final Map<String, FlightSchoolProgress> flightSchoolProgress;
+
   static String _todayStr() {
     final today = DateTime.now().toUtc();
     return '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
@@ -144,6 +149,7 @@ class AccountState {
     Object? lastDailyResult = _sentinel,
     int? freeFlightCoinsToday,
     Object? freeFlightCoinDate = _sentinel,
+    Map<String, FlightSchoolProgress>? flightSchoolProgress,
   }) => AccountState(
     currentPlayer: currentPlayer ?? this.currentPlayer,
     unlockedRegions: unlockedRegions ?? this.unlockedRegions,
@@ -167,6 +173,7 @@ class AccountState {
     freeFlightCoinDate: freeFlightCoinDate == _sentinel
         ? this.freeFlightCoinDate
         : freeFlightCoinDate as String?,
+    flightSchoolProgress: flightSchoolProgress ?? this.flightSchoolProgress,
   );
 }
 
@@ -403,6 +410,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       lastDailyResult: snapshot.toLastDailyResult(),
       freeFlightCoinsToday: snapshot.freeFlightCoinsToday,
       freeFlightCoinDate: snapshot.freeFlightCoinDate,
+      flightSchoolProgress: snapshot.toFlightSchoolProgress(),
     );
 
     // Mark Supabase data as loaded — enables writes. Must happen AFTER
@@ -569,6 +577,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       lastDailyResult: state.lastDailyResult,
       freeFlightCoinsToday: state.freeFlightCoinsToday,
       freeFlightCoinDate: state.freeFlightCoinDate,
+      flightSchoolProgress: state.flightSchoolProgress,
     );
   }
 
@@ -707,6 +716,50 @@ class AccountNotifier extends StateNotifier<AccountState> {
   bool isRegionUnlocked(GameRegion region) {
     if (state.currentPlayer.level >= region.requiredLevel) return true;
     return state.unlockedRegions.contains(region.name);
+  }
+
+  /// Unlock a flight school level with coins (early unlock).
+  /// Returns true if successful, false if insufficient funds.
+  bool unlockFlightSchoolLevel(String levelId, int cost) {
+    if (!spendCoins(cost, source: 'flight_school_unlock')) return false;
+    state = state.copyWith(
+      unlockedRegions: {...state.unlockedRegions, levelId},
+    );
+    _syncAccountState();
+    return true;
+  }
+
+  /// Check if a flight school level is accessible (by player level or purchase).
+  bool isFlightSchoolLevelUnlocked(FlightSchoolLevel level) {
+    if (state.currentPlayer.level >= level.requiredLevel) return true;
+    return state.unlockedRegions.contains(level.id);
+  }
+
+  /// Update flight school progress for a given level.
+  void updateFlightSchoolProgress({
+    required String levelId,
+    required int score,
+    required int timeMs,
+    required bool completed,
+  }) {
+    final current =
+        state.flightSchoolProgress[levelId] ?? const FlightSchoolProgress();
+
+    final updated = current.copyWith(
+      bestScore: score > current.bestScore ? score : null,
+      bestTimeMs:
+          (timeMs > 0 &&
+              (current.bestTimeMs == 0 || timeMs < current.bestTimeMs))
+          ? timeMs
+          : null,
+      completions: completed ? current.completions + 1 : null,
+      attempts: current.attempts + 1,
+    );
+
+    state = state.copyWith(
+      flightSchoolProgress: {...state.flightSchoolProgress, levelId: updated},
+    );
+    _syncAccountState();
   }
 
   /// Add XP and handle level ups

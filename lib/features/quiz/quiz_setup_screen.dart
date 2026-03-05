@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/quiz_category.dart';
+import '../../game/quiz/quiz_difficulty.dart';
 import '../../game/quiz/quiz_session.dart';
 import '../../game/map/region.dart';
 import 'quiz_game_screen.dart';
+import 'type_in_game_screen.dart';
 
 /// Setup/lobby screen for Flight School quiz mode.
 ///
 /// Lets the player choose:
-/// 1. Quiz category (capitals, nicknames, sports teams, etc.)
-/// 2. Game mode (all states, time trial, rapid fire)
-/// 3. Region (USA first, extensible)
+/// 1. Quiz category (filtered by region)
+/// 2. Game mode (all areas, time trial, rapid fire)
+///
+/// The [level] parameter determines which region and categories are available.
 class QuizSetupScreen extends StatefulWidget {
-  const QuizSetupScreen({super.key});
+  const QuizSetupScreen({super.key, required this.level});
+
+  final FlightSchoolLevel level;
 
   @override
   State<QuizSetupScreen> createState() => _QuizSetupScreenState();
@@ -22,6 +28,7 @@ class QuizSetupScreen extends StatefulWidget {
 class _QuizSetupScreenState extends State<QuizSetupScreen> {
   QuizCategory _selectedCategory = QuizCategory.mixed;
   QuizMode _selectedMode = QuizMode.allStates;
+  QuizDifficulty _selectedDifficulty = QuizDifficulty.medium;
 
   static const _iconMap = <String, IconData>{
     'map': Icons.map,
@@ -38,16 +45,38 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
     'shuffle': Icons.shuffle,
   };
 
+  List<QuizCategory> get _availableCategories =>
+      _selectedDifficulty.filterCategories(widget.level.availableCategories);
+
+  @override
+  void initState() {
+    super.initState();
+    // Ensure default selection is valid for this level
+    if (!_availableCategories.contains(_selectedCategory)) {
+      _selectedCategory = _availableCategories.first;
+    }
+  }
+
   void _startQuiz() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => QuizGameScreen(
-          mode: _selectedMode,
-          category: _selectedCategory,
-          region: GameRegion.usStates,
-        ),
-      ),
-    );
+    final Widget screen;
+    if (_selectedMode == QuizMode.typeIn) {
+      screen = TypeInGameScreen(
+        mode: _selectedMode,
+        category: _selectedCategory,
+        region: widget.level.region,
+        difficulty: _selectedDifficulty,
+        flightSchoolLevelId: widget.level.id,
+      );
+    } else {
+      screen = QuizGameScreen(
+        mode: _selectedMode,
+        category: _selectedCategory,
+        region: widget.level.region,
+        difficulty: _selectedDifficulty,
+        flightSchoolLevelId: widget.level.id,
+      );
+    }
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
   }
 
   @override
@@ -56,9 +85,9 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
       backgroundColor: FlitColors.backgroundDark,
       appBar: AppBar(
         backgroundColor: FlitColors.backgroundMid,
-        title: const Text(
-          'Flight School',
-          style: TextStyle(color: FlitColors.textPrimary),
+        title: Text(
+          widget.level.name,
+          style: const TextStyle(color: FlitColors.textPrimary),
         ),
         centerTitle: true,
         iconTheme: const IconThemeData(color: FlitColors.textPrimary),
@@ -75,17 +104,20 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header
                     _buildHeader(),
                     const SizedBox(height: 24),
 
-                    // Game mode selection
+                    // Difficulty selector
+                    _buildSectionLabel('DIFFICULTY', Icons.tune),
+                    const SizedBox(height: 10),
+                    _buildDifficultySelector(),
+                    const SizedBox(height: 24),
+
                     _buildSectionLabel('GAME MODE', Icons.videogame_asset),
                     const SizedBox(height: 10),
                     ..._buildModeCards(),
                     const SizedBox(height: 24),
 
-                    // Category selection
                     _buildSectionLabel('CATEGORY', Icons.category),
                     const SizedBox(height: 10),
                     _buildCategoryGrid(),
@@ -95,15 +127,12 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
               ),
             ),
 
-            // Bottom start button
             _buildBottomBar(),
           ],
         ),
       ),
     );
   }
-
-  // ── Header ──────────────────────────────────────────────────────────────
 
   Widget _buildHeader() => Container(
     width: double.infinity,
@@ -124,9 +153,9 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
           child: const Icon(Icons.school, color: FlitColors.gold, size: 36),
         ),
         const SizedBox(height: 14),
-        const Text(
-          'FLIGHT SCHOOL',
-          style: TextStyle(
+        Text(
+          widget.level.name.toUpperCase(),
+          style: const TextStyle(
             color: FlitColors.textPrimary,
             fontSize: 24,
             fontWeight: FontWeight.w900,
@@ -134,10 +163,10 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Test your knowledge of US states!\n'
-          'Tap the correct state on the map as fast as you can.',
-          style: TextStyle(
+        Text(
+          'Test your knowledge of ${widget.level.name}!\n'
+          'Tap the correct area on the map as fast as you can.',
+          style: const TextStyle(
             color: FlitColors.textSecondary,
             fontSize: 14,
             height: 1.4,
@@ -145,7 +174,6 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
-        // Region badge
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
@@ -155,12 +183,12 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.public, color: FlitColors.accent, size: 16),
-              SizedBox(width: 6),
+            children: [
+              const Icon(Icons.public, color: FlitColors.accent, size: 16),
+              const SizedBox(width: 6),
               Text(
-                'USA — 50 States',
-                style: TextStyle(
+                '${widget.level.name} \u2014 ${widget.level.subtitle}',
+                style: const TextStyle(
                   color: FlitColors.accent,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -172,8 +200,6 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
       ],
     ),
   );
-
-  // ── Section label ───────────────────────────────────────────────────────
 
   Widget _buildSectionLabel(String label, IconData icon) => Row(
     children: [
@@ -191,8 +217,6 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
     ],
   );
 
-  // ── Mode cards ──────────────────────────────────────────────────────────
-
   List<Widget> _buildModeCards() {
     return QuizMode.values.map((mode) {
       final isSelected = _selectedMode == mode;
@@ -204,6 +228,8 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
           icon = Icons.timer;
         case QuizMode.rapidFire:
           icon = Icons.bolt;
+        case QuizMode.typeIn:
+          icon = Icons.keyboard;
       }
 
       return Padding(
@@ -287,13 +313,11 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
     }).toList();
   }
 
-  // ── Category grid ──────────────────────────────────────────────────────
-
   Widget _buildCategoryGrid() {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: QuizCategory.values.map((category) {
+      children: _availableCategories.map((category) {
         final isSelected = _selectedCategory == category;
         final iconData = _iconMap[category.icon] ?? Icons.help;
 
@@ -345,7 +369,103 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
     );
   }
 
-  // ── Bottom bar ──────────────────────────────────────────────────────────
+  Widget _buildDifficultySelector() {
+    return Row(
+      children: QuizDifficulty.values.map((diff) {
+        final isSelected = _selectedDifficulty == diff;
+        final color = _difficultyColor(diff);
+
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+              right: diff != QuizDifficulty.hard ? 8 : 0,
+            ),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedDifficulty = diff;
+                  // Re-validate category selection
+                  if (!_availableCategories.contains(_selectedCategory)) {
+                    _selectedCategory = _availableCategories.first;
+                  }
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? color.withOpacity(0.15)
+                      : FlitColors.cardBackground,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isSelected
+                        ? color.withOpacity(0.7)
+                        : FlitColors.cardBorder,
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      diff.displayName.toUpperCase(),
+                      style: TextStyle(
+                        color: isSelected ? color : FlitColors.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      diff.showLabels ? 'Labels on' : 'Labels off',
+                      style: TextStyle(
+                        color: isSelected
+                            ? FlitColors.textSecondary
+                            : FlitColors.textMuted,
+                        fontSize: 10,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${diff.maxHints} hints',
+                      style: TextStyle(
+                        color: isSelected
+                            ? FlitColors.textSecondary
+                            : FlitColors.textMuted,
+                        fontSize: 10,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${diff.scoreMultiplier}x pts',
+                      style: TextStyle(
+                        color: isSelected ? color : FlitColors.textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Color _difficultyColor(QuizDifficulty diff) {
+    switch (diff) {
+      case QuizDifficulty.easy:
+        return FlitColors.success;
+      case QuizDifficulty.medium:
+        return FlitColors.accent;
+      case QuizDifficulty.hard:
+        return FlitColors.gold;
+    }
+  }
 
   Widget _buildBottomBar() => Container(
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),

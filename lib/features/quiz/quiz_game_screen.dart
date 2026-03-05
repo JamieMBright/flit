@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../data/services/challenge_service.dart';
 import '../../game/quiz/quiz_category.dart';
+import '../../game/quiz/quiz_difficulty.dart';
 import '../../game/quiz/quiz_map_widget.dart';
+import '../../game/quiz/quiz_region_map_widget.dart';
 import '../../game/quiz/quiz_session.dart';
 import '../../game/map/region.dart';
 import 'quiz_results_screen.dart';
@@ -26,11 +28,16 @@ class QuizGameScreen extends StatefulWidget {
     this.challengeId,
     this.challengeOpponentName,
     this.seed,
+    this.flightSchoolLevelId,
+    this.difficulty = QuizDifficulty.medium,
+    this.h2hRoundIndex,
+    this.dailyBriefingDateKey,
   });
 
   final QuizMode mode;
   final QuizCategory category;
   final GameRegion region;
+  final QuizDifficulty difficulty;
 
   /// When non-null, this quiz is part of an H2H challenge.
   final String? challengeId;
@@ -40,6 +47,17 @@ class QuizGameScreen extends StatefulWidget {
 
   /// Deterministic seed for challenge mode (both players get same questions).
   final int? seed;
+
+  /// Flight school level ID for progress tracking.
+  final String? flightSchoolLevelId;
+
+  /// When non-null, this quiz is a round of a best-of-3 H2H challenge.
+  /// The value is the 0-based round index.
+  final int? h2hRoundIndex;
+
+  /// When non-null, this quiz is a Daily Flight Briefing. The value is the
+  /// date key (YYYY-MM-DD) used for score submission.
+  final String? dailyBriefingDateKey;
 
   @override
   State<QuizGameScreen> createState() => _QuizGameScreenState();
@@ -81,6 +99,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
       mode: widget.mode,
       category: widget.category,
       region: widget.region,
+      difficulty: widget.difficulty,
       seed: widget.seed,
     );
 
@@ -175,20 +194,72 @@ class _QuizGameScreenState extends State<QuizGameScreen>
     }
   }
 
+  void _useHint() {
+    final level = _session.useHint();
+    if (level == null) return;
+
+    final question = _session.currentQuestion;
+    if (question == null) return;
+
+    setState(() {
+      if (level >= 3) {
+        // Level 3: Highlight the exact correct answer
+        _highlightCode = question.answerCode;
+      } else if (level >= 2) {
+        // Level 2: Dim 75% of wrong answers
+        final areas = _stateVisuals.keys.toList();
+        final wrongAreas = areas
+            .where(
+              (c) =>
+                  c != question.answerCode &&
+                  _stateVisuals[c]?.status == StateVisualStatus.idle,
+            )
+            .toList();
+        wrongAreas.shuffle();
+        final toDim = wrongAreas.take((wrongAreas.length * 0.75).round());
+        for (final code in toDim) {
+          _stateVisuals[code]?.status = StateVisualStatus.completed;
+        }
+      }
+      // Level 1: Just a visual indicator (could highlight quadrant, but
+      // for now we just show that a hint was used - the reduced score is
+      // the main feedback)
+    });
+  }
+
   Future<void> _navigateToResults() async {
     if (!mounted) return;
 
     // Submit results to challenge system if this is an H2H quiz.
     if (widget.challengeId != null) {
       final summary = _session.summary;
-      await ChallengeService.instance.submitQuizRoundResult(
-        challengeId: widget.challengeId!,
-        score: summary.totalScore,
-        timeMs: summary.elapsedMs,
-        correctCount: summary.correctCount,
-        wrongCount: summary.wrongCount,
-      );
-      await ChallengeService.instance.tryCompleteChallenge(widget.challengeId!);
+
+      if (widget.h2hRoundIndex != null) {
+        // Best-of-3 H2H challenge round.
+        await ChallengeService.instance.submitH2HRoundScore(
+          challengeId: widget.challengeId!,
+          roundIndex: widget.h2hRoundIndex!,
+          score: summary.totalScore,
+          timeMs: summary.elapsedMs,
+          correctCount: summary.correctCount,
+          wrongCount: summary.wrongCount,
+        );
+        await ChallengeService.instance.tryCompleteH2HChallenge(
+          widget.challengeId!,
+        );
+      } else {
+        // Legacy single-round quiz challenge.
+        await ChallengeService.instance.submitQuizRoundResult(
+          challengeId: widget.challengeId!,
+          score: summary.totalScore,
+          timeMs: summary.elapsedMs,
+          correctCount: summary.correctCount,
+          wrongCount: summary.wrongCount,
+        );
+        await ChallengeService.instance.tryCompleteChallenge(
+          widget.challengeId!,
+        );
+      }
     }
 
     if (!mounted) return;
@@ -198,6 +269,10 @@ class _QuizGameScreenState extends State<QuizGameScreen>
           summary: _session.summary,
           challengeId: widget.challengeId,
           opponentName: widget.challengeOpponentName,
+          flightSchoolLevelId: widget.flightSchoolLevelId,
+          region: widget.region,
+          h2hRoundIndex: widget.h2hRoundIndex,
+          dailyBriefingDateKey: widget.dailyBriefingDateKey,
         ),
       ),
     );
@@ -263,14 +338,23 @@ class _QuizGameScreenState extends State<QuizGameScreen>
             Expanded(
               child: Stack(
                 children: [
-                  // Interactive map
+                  // Interactive map (US-specific or generic region map)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: QuizMapWidget(
-                      stateVisuals: _stateVisuals,
-                      onStateTapped: _handleStateTapped,
-                      highlightCode: _highlightCode,
-                    ),
+                    child: widget.region == GameRegion.usStates
+                        ? QuizMapWidget(
+                            stateVisuals: _stateVisuals,
+                            onStateTapped: _handleStateTapped,
+                            highlightCode: _highlightCode,
+                            showLabels: _session.showLabels,
+                          )
+                        : QuizRegionMapWidget(
+                            region: widget.region,
+                            stateVisuals: _stateVisuals,
+                            onStateTapped: _handleStateTapped,
+                            highlightCode: _highlightCode,
+                            showLabels: _session.showLabels,
+                          ),
                   ),
 
                   // Points popup animation
@@ -529,6 +613,41 @@ class _QuizGameScreenState extends State<QuizGameScreen>
               ),
             ),
 
+          // Hint button
+          if (_session.canUseHint)
+            GestureDetector(
+              onTap: _useHint,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: FlitColors.warning.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: FlitColors.warning.withOpacity(0.4),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.lightbulb_outline,
+                      color: FlitColors.warning,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Hint (${widget.difficulty.maxHints - _session.hintsUsed})',
+                      style: const TextStyle(
+                        color: FlitColors.warning,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           // Correct / Wrong counts
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -640,7 +759,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${_session.correctCount} of ${_session.totalQuestions} states found',
+                '${_session.correctCount} of ${_session.totalQuestions} found',
                 style: const TextStyle(
                   color: FlitColors.textSecondary,
                   fontSize: 12,
