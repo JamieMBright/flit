@@ -381,82 +381,89 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'CHOOSE YOUR FLIGHT',
-              style: TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'CHOOSE YOUR FLIGHT',
+                style: TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            _GameModeCard(
-              title: 'Free Flight',
-              subtitle: 'Explore the world at your own pace',
-              icon: Icons.flight_takeoff,
-              onTap: () =>
-                  _closeSheetAndNavigate(ctx, const RegionSelectScreen()),
-            ),
-            const SizedBox(height: 10),
-            _GameModeCard(
-              title: 'Training Sortie',
-              subtitle: 'Practice without rank pressure',
-              icon: Icons.school_rounded,
-              onTap: () => _closeSheetAndNavigate(ctx, const PracticeScreen()),
-            ),
-            const SizedBox(height: 10),
-            if (_dailyScrambleEnabled) ...[
+              const SizedBox(height: 20),
               _GameModeCard(
-                title: 'Daily Scramble',
-                subtitle: "Today's challenge — compete for glory",
+                title: 'Free Flight',
+                subtitle: 'Explore the world at your own pace',
+                icon: Icons.flight_takeoff,
+                onTap: () =>
+                    _closeSheetAndNavigate(ctx, const RegionSelectScreen()),
+              ),
+              const SizedBox(height: 10),
+              _GameModeCard(
+                title: 'Training Sortie',
+                subtitle: 'Practice without rank pressure',
+                icon: Icons.school_rounded,
+                onTap: () =>
+                    _closeSheetAndNavigate(ctx, const PracticeScreen()),
+              ),
+              const SizedBox(height: 10),
+              if (_dailyScrambleEnabled) ...[
+                _GameModeCard(
+                  title: 'Daily Scramble',
+                  subtitle: "Today's challenge — compete for glory",
+                  icon: Icons.today_rounded,
+                  isHighlighted: true,
+                  onTap: () =>
+                      _closeSheetAndNavigate(ctx, const DailyChallengeScreen()),
+                ),
+                const SizedBox(height: 10),
+              ],
+              _GameModeCard(
+                title: 'Flight School',
+                subtitle: 'Quiz yourself on states, capitals & more',
+                icon: Icons.quiz_rounded,
+                onTap: () =>
+                    _closeSheetAndNavigate(ctx, const FlightSchoolScreen()),
+              ),
+              const SizedBox(height: 10),
+              _GameModeCard(
+                title: 'Daily Briefing',
+                subtitle: 'Daily quiz challenge — same for all pilots',
                 icon: Icons.today_rounded,
-                isHighlighted: true,
                 onTap: () =>
-                    _closeSheetAndNavigate(ctx, const DailyChallengeScreen()),
+                    _closeSheetAndNavigate(ctx, const DailyBriefingScreen()),
               ),
               const SizedBox(height: 10),
-            ],
-            _GameModeCard(
-              title: 'Flight School',
-              subtitle: 'Quiz yourself on states, capitals & more',
-              icon: Icons.quiz_rounded,
-              onTap: () =>
-                  _closeSheetAndNavigate(ctx, const FlightSchoolScreen()),
-            ),
-            const SizedBox(height: 10),
-            _GameModeCard(
-              title: 'Daily Briefing',
-              subtitle: 'Daily quiz challenge — same for all pilots',
-              icon: Icons.today_rounded,
-              onTap: () =>
-                  _closeSheetAndNavigate(ctx, const DailyBriefingScreen()),
-            ),
-            const SizedBox(height: 10),
-            _GameModeCard(
-              title: 'Dogfight',
-              subtitle: 'Challenge your friends head-to-head',
-              icon: Icons.people_rounded,
-              onTap: () => _closeSheetAndNavigate(ctx, const FriendsScreen()),
-            ),
-            const SizedBox(height: 10),
-            if (_matchmakingEnabled) ...[
               _GameModeCard(
-                title: 'Find a Challenger',
-                subtitle: 'Matchmake against pilots at your level',
-                icon: Icons.radar,
-                onTap: () =>
-                    _closeSheetAndNavigate(ctx, const FindChallengerScreen()),
+                title: 'Dogfight',
+                subtitle: 'Challenge your friends head-to-head',
+                icon: Icons.people_rounded,
+                onTap: () => _closeSheetAndNavigate(ctx, const FriendsScreen()),
               ),
               const SizedBox(height: 10),
+              if (_matchmakingEnabled) ...[
+                _GameModeCard(
+                  title: 'Find a Challenger',
+                  subtitle: 'Matchmake against pilots at your level',
+                  icon: Icons.radar,
+                  onTap: () =>
+                      _closeSheetAndNavigate(ctx, const FindChallengerScreen()),
+                ),
+                const SizedBox(height: 10),
+              ],
+              const SizedBox(height: 16),
             ],
-            const SizedBox(height: 16),
-          ],
+          ),
         ),
       ),
     );
