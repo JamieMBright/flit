@@ -1816,22 +1816,195 @@ class Clue {
       },
     };
 
+    // Celebrity pool — adds variety so the same person doesn't always appear.
+    // When 'celebrity' is selected, one is picked at random from the pool.
+    const celebrityPool = <String, List<String>>{
+      'US': [
+        'Beyoncé',
+        'Taylor Swift',
+        'LeBron James',
+        'Oprah Winfrey',
+        'Tom Hanks',
+        'Elon Musk'
+      ],
+      'GB': [
+        'David Beckham',
+        'Adele',
+        'Ed Sheeran',
+        'Emma Watson',
+        'Elton John',
+        'David Attenborough'
+      ],
+      'FR': [
+        'Zinedine Zidane',
+        'Marion Cotillard',
+        'Thierry Henry',
+        'Brigitte Bardot',
+        'Kylian Mbappé',
+        'Coco Chanel'
+      ],
+      'DE': [
+        'Albert Einstein',
+        'Jürgen Klopp',
+        'Heidi Klum',
+        'Ludwig van Beethoven',
+        'Michael Schumacher',
+        'Boris Becker'
+      ],
+      'BR': [
+        'Pelé',
+        'Neymar',
+        'Gisele Bündchen',
+        'Ayrton Senna',
+        'Ronaldinho',
+        'Caetano Veloso'
+      ],
+      'IN': [
+        'Shah Rukh Khan',
+        'Sachin Tendulkar',
+        'Priyanka Chopra',
+        'Virat Kohli',
+        'Amitabh Bachchan',
+        'Sundar Pichai'
+      ],
+      'JP': [
+        'Shohei Ohtani',
+        'Hayao Miyazaki',
+        'Naomi Osaka',
+        'Yoko Ono',
+        'Marie Kondo',
+        'Akira Kurosawa'
+      ],
+      'AU': [
+        'Hugh Jackman',
+        'Nicole Kidman',
+        'Steve Irwin',
+        'Margot Robbie',
+        'Kylie Minogue',
+        'Chris Hemsworth'
+      ],
+      'CA': [
+        'Drake',
+        'Ryan Reynolds',
+        'Céline Dion',
+        'Justin Bieber',
+        'Keanu Reeves',
+        'Wayne Gretzky'
+      ],
+      'IT': [
+        'Leonardo da Vinci',
+        'Andrea Bocelli',
+        'Monica Bellucci',
+        'Roberto Baggio',
+        'Sophia Loren',
+        'Valentino Rossi'
+      ],
+      'ES': [
+        'Rafael Nadal',
+        'Penélope Cruz',
+        'Andrés Iniesta',
+        'Antonio Banderas',
+        'Pablo Picasso',
+        'Enrique Iglesias'
+      ],
+      'MX': [
+        'Salma Hayek',
+        'Guillermo del Toro',
+        'Frida Kahlo',
+        'Canelo Álvarez',
+        'Carlos Slim',
+        'Octavio Paz'
+      ],
+      'AR': [
+        'Lionel Messi',
+        'Diego Maradona',
+        'Pope Francis',
+        'Eva Perón',
+        'Che Guevara',
+        'Jorge Luis Borges'
+      ],
+      'NG': [
+        'Wizkid',
+        'Burna Boy',
+        'Chimamanda Ngozi Adichie',
+        'Tiwa Savage',
+        'Davido',
+        'Wole Soyinka'
+      ],
+      'KR': [
+        'BTS',
+        'Son Heung-min',
+        'BLACKPINK',
+        'Bong Joon-ho',
+        'Park Ji-sung',
+        'PSY'
+      ],
+      'ZA': [
+        'Nelson Mandela',
+        'Trevor Noah',
+        'Charlize Theron',
+        'Elon Musk',
+        'Siya Kolisi',
+        'Desmond Tutu'
+      ],
+      'EG': [
+        'Mohamed Salah',
+        'Omar Sharif',
+        'Cleopatra',
+        'Naguib Mahfouz',
+        'Ahmed Zewail',
+        'Tutankhamun'
+      ],
+      'CN': [
+        'Jackie Chan',
+        'Yao Ming',
+        'Jack Ma',
+        'Jet Li',
+        'Fan Bingbing',
+        'Zhang Yimou'
+      ],
+      'RU': [
+        'Maria Sharapova',
+        'Leo Tolstoy',
+        'Garry Kasparov',
+        'Anna Pavlova',
+        'Yuri Gagarin',
+        'Pyotr Tchaikovsky'
+      ],
+      'CO': [
+        'Shakira',
+        'James Rodríguez',
+        'Gabriel García Márquez',
+        'Sofía Vergara',
+        'Juan Valdez',
+        'Maluma'
+      ],
+    };
+
     final countryStats = allStats[code];
     // Return empty map if country not found - caller should handle by picking different clue type
     if (countryStats == null) return <String, dynamic>{};
 
+    // Build a mutable copy so we can swap in a random celebrity.
+    final stats = Map<String, dynamic>.from(countryStats);
+    final pool = celebrityPool[code];
+    if (pool != null && pool.isNotEmpty) {
+      final rng = random ?? Random();
+      stats['celebrity'] = pool[rng.nextInt(pool.length)];
+    }
+
     // Return all stats when requested (e.g. for the clues browser).
-    if (returnAll) return Map<String, dynamic>.from(countryStats);
+    if (returnAll) return stats;
 
     // Pick a random trio of stats from all available keys.
     // Use the provided seeded RNG when available so H2H players see the same
     // three facts; fall back to an unseeded Random for free-play.
-    final keys = countryStats.keys.toList()..shuffle(random ?? Random());
+    final keys = stats.keys.toList()..shuffle(random ?? Random());
     final selectedKeys = keys.take(3).toList();
 
     final result = <String, dynamic>{};
     for (final key in selectedKeys) {
-      result[key] = countryStats[key];
+      result[key] = stats[key];
     }
     return result;
   }

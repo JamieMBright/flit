@@ -70,7 +70,7 @@ const float RIM_INTENSITY      = 0.35;
 const float HAZE_STRENGTH      = 0.15;
 
 // Clouds
-const float CLOUD_SOFTNESS     = 0.25;
+const float CLOUD_SOFTNESS     = 0.12;  // tighter edges for defined cloud shapes
 const float CLOUD_DRIFT_SPEED  = 0.008;
 const float CLOUD_BRIGHTNESS   = 1.0;
 const float CLOUD_SHADOW_STR   = 0.15;
@@ -88,8 +88,8 @@ const float NIGHT_RIM_STRENGTH = 0.3;
 
 // Night-side dark overlay — darkens the Blue Marble on the unlit hemisphere
 // so the night side looks distinctly dark, not just dimly lit.
-const float NIGHT_DARKEN       = 0.02;  // multiply factor for night surface
-const vec3  NIGHT_TINT         = vec3(0.06, 0.07, 0.12); // deep blue-black
+const float NIGHT_DARKEN       = 0.01;  // multiply factor for night surface
+const vec3  NIGHT_TINT         = vec3(0.02, 0.02, 0.03); // near-black
 
 // Sky / stars
 const float SUN_DISC_SIZE      = 0.9995;
@@ -482,12 +482,29 @@ void main() {
             vec3 cloudHit = ro + rayDir * tC;
             vec3 cloudNormal = normalize(cloudHit - GLOBE_ORIGIN);
 
-            vec3 cloudSamplePos = cloudHit * 3.0;
+            // Higher frequency = more, smaller cloud formations
+            vec3 cloudSamplePos = cloudHit * 6.0;
             cloudSamplePos.x += uTime * CLOUD_DRIFT_SPEED;
             cloudSamplePos.z += uTime * CLOUD_DRIFT_SPEED * 0.7;
 
+            // Cluster mask: cheap single-noise call at low frequency
+            // creates regions where clouds preferentially form
+            float cluster = noise3D(cloudHit * 1.8 + vec3(uTime * 0.001));
+            cluster = smoothstep(0.3, 0.7, cluster);
+
+            // Detail noise via FBM for cloud shape
             float density = fbm(cloudSamplePos);
-            float cloudMask = smoothstep(uCloudCoverage - CLOUD_SOFTNESS, uCloudCoverage + CLOUD_SOFTNESS, density);
+
+            // Apply clustering: clouds concentrate in cluster regions
+            density *= (0.15 + 0.85 * cluster);
+
+            // Log-like distribution: small clouds common, large rare
+            density = pow(density, 1.5);
+
+            // Coverage: 0 = no clouds, 1 = full coverage
+            // Invert threshold so higher coverage = more clouds
+            float coverageThreshold = 1.0 - uCloudCoverage;
+            float cloudMask = smoothstep(coverageThreshold, coverageThreshold + CLOUD_SOFTNESS, density);
 
             if (cloudMask > 0.01) {
                 float cloudNdotL = dot(cloudNormal, uSunDir);
@@ -507,11 +524,16 @@ void main() {
         }
 
         // Cloud shadows on terrain
-        vec3 shadowSamplePos = hitPoint * 3.0;
+        vec3 shadowSamplePos = hitPoint * 6.0;
         shadowSamplePos.x += uTime * CLOUD_DRIFT_SPEED;
         shadowSamplePos.z += uTime * CLOUD_DRIFT_SPEED * 0.7;
+        float shadowCluster = noise3D(hitPoint * 1.8 + vec3(uTime * 0.001));
+        shadowCluster = smoothstep(0.3, 0.7, shadowCluster);
         float shadowDensity = fbm(shadowSamplePos);
-        float shadowMask = smoothstep(uCloudCoverage - CLOUD_SOFTNESS, uCloudCoverage + CLOUD_SOFTNESS, shadowDensity);
+        shadowDensity *= (0.15 + 0.85 * shadowCluster);
+        shadowDensity = pow(shadowDensity, 1.5);
+        float shadowThreshold = 1.0 - uCloudCoverage;
+        float shadowMask = smoothstep(shadowThreshold, shadowThreshold + CLOUD_SOFTNESS, shadowDensity);
         surfaceColor *= 1.0 - shadowMask * CLOUD_SHADOW_STR * dayFactor;
     }
 
