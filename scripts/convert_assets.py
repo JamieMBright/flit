@@ -76,22 +76,14 @@ def convert_audio_dir(directory, label):
 
 
 def convert_city_lights():
-    """Convert city_lights.jpg to city_lights.png, resized."""
-    from PIL import Image
+    """City lights are now auto-extracted as vector data.
 
-    jpg_path = TEXTURES / "city_lights.jpg"
-    png_path = TEXTURES / "city_lights.png"
-
-    if not jpg_path.exists():
-        print("  city_lights.jpg not found, skipping")
-        return
-
-    print(f"  city_lights.jpg -> city_lights.png ({TARGET_SIZE[0]}x{TARGET_SIZE[1]})")
-    img = Image.open(jpg_path).convert("RGB")
-    img = img.resize(TARGET_SIZE, Image.LANCZOS)
-    img.save(png_path, "PNG")
-    jpg_path.unlink()
-    print(f"    Removed city_lights.jpg")
+    The NASA raster is no longer shipped as a texture asset.
+    Use scripts/extract_city_lights.py to regenerate the Dart data file
+    from scripts/source_textures/city_lights.png.
+    """
+    print("  City lights are now vector-based (auto-extracted data texture).")
+    print("  To regenerate: python3 scripts/extract_city_lights.py")
 
 
 def convert_heightmap():
@@ -316,7 +308,7 @@ def main():
 
     # Check what's still missing
     print("\nStill needed:")
-    expected_textures = ["blue_marble.png", "heightmap.png", "city_lights.png", "shore_distance.png"]
+    expected_textures = ["blue_marble.png", "heightmap.png", "shore_distance.png"]
     for t in expected_textures:
         path = TEXTURES / t
         if not path.exists() or path.stat().st_size == 0:

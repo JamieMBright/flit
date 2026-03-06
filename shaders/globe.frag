@@ -8,9 +8,9 @@
 //   V5: Procedural volumetric clouds on a shell above the globe (high alt only)
 //   V6: Day/night cycle, city lights, star field, terminator glow
 //
-// 2 texture samplers (reduced from 4):
-//   uSatellite  — NASA Blue Marble
-//   uCityLights — NASA Earth at Night
+// 2 texture samplers:
+//   uSatellite  — NASA Blue Marble (equirectangular satellite imagery)
+//   uCityLights — City light data texture (2048x1, RGBA = normal.xyz + intensity)
 //
 // Compatible with Flutter FragmentProgram.fromAsset() on iOS, Android, Web.
 // =============================================================================
@@ -35,13 +35,15 @@ uniform float uEnableClouds;  // Index 17:  0.0 = no clouds,   1.0 = clouds on
 uniform float uCloudCoverage; // Index 18:  cloud coverage threshold (0.0–1.0)
 uniform float uCloudOpacity;  // Index 19:  cloud blend opacity (0.0–1.0)
 uniform float uCameraDist;    // Index 20:  camera distance from globe center
+uniform float uCityCount;     // Index 21:  number of light points in data texture
+uniform float uDataTexWidth;  // Index 22:  data texture width in pixels
 
 // ---------------------------------------------------------------------------
-// Samplers — 2 per shader pass (reduced from 4)
+// Samplers — 2 per shader pass
 // ---------------------------------------------------------------------------
 
 uniform sampler2D uSatellite;   // NASA Blue Marble (equirectangular)
-uniform sampler2D uCityLights;  // NASA Earth at Night
+uniform sampler2D uCityLights;  // City light data texture (2048x1, RGBA = normal.xyz + intensity)
 
 // Fragment output
 out vec4 fragColor;
@@ -85,6 +87,12 @@ const float TERMINATOR_HARD    = 0.2;
 const vec3  TERMINATOR_WARM    = vec3(1.0, 0.45, 0.15);
 const float CITY_LIGHT_BOOST   = 1.8;
 const float NIGHT_RIM_STRENGTH = 0.3;
+
+// City light glow (vector rendering from data texture)
+const float CITY_GLOW_BASE_RADIUS = 0.035;  // max angular radius (~2 degrees)
+const float CITY_GLOW_MIN_RADIUS  = 0.006;  // min radius when zoomed in close
+const float CITY_GLOW_ZOOM_SCALE  = 0.008;  // radius growth per unit camera distance
+const int   MAX_CITY_LIGHTS       = 1500;   // compile-time loop bound (GLSL ES 1.0 compat)
 
 // Night-side dark overlay — darkens the Blue Marble on the unlit hemisphere
 // so the night side looks distinctly dark, not just dimly lit.
@@ -516,25 +524,70 @@ void main() {
     }
 
     // =======================================================================
-    // V6: CITY LIGHTS ON NIGHT SIDE
-    // Rendered AFTER clouds so lights shine through cloud gaps.
+    // V6: VECTOR CITY LIGHTS ON NIGHT SIDE
+    // Each light point is encoded in uCityLights data texture (2048x1):
+    //   R,G,B = unit sphere normal (encoded as val*0.5+0.5)
+    //   A = intensity (0=none, 1=brightest)
+    // Glow radius scales with intensity: bright cities glow wider,
+    // dim towns glow smaller — resolution-independent at any zoom.
     // =======================================================================
 
     {
         float nightFactor = 1.0 - dayFactor;
         if (uEnableNight > 0.5 && nightFactor > 0.01) {
-            // Sample the NASA Earth-at-Night texture directly.
-            vec3 cityRaw = texture(uCityLights, uv).rgb;
+            vec3 hitNormal = normalize(hitPoint);
 
-            // Use the real texture colors — they already have realistic detail.
-            // Apply a gentle warm shift and boost for visibility.
-            vec3 cityLights = cityRaw * CITY_LIGHT_BOOST;
+            // Zoom-responsive base glow radius
+            float baseGlowRadius = CITY_GLOW_MIN_RADIUS
+                + CITY_GLOW_ZOOM_SCALE * uCameraDist;
+            baseGlowRadius = min(baseGlowRadius, CITY_GLOW_BASE_RADIUS);
 
-            // Slight warm tint so lights feel amber/golden, not grey.
-            cityLights *= vec3(1.0, 0.85, 0.65);
+            // Precompute the widest possible cosine threshold for early-exit
+            float widestCosThreshold = cos(baseGlowRadius);
 
-            // Additive blend onto the dark night surface.
-            surfaceColor += cityLights * nightFactor;
+            vec3 totalGlow = vec3(0.0);
+            int cityCount = int(uCityCount);
+
+            for (int i = 0; i < MAX_CITY_LIGHTS; i++) {
+                if (i >= cityCount) break;
+                // Sample city data from data texture
+                float texU = (float(i) + 0.5) / uDataTexWidth;
+                vec4 cityData = texture(uCityLights, vec2(texU, 0.5));
+
+                float intensity = cityData.a;
+                // Skip empty slots
+                if (intensity < 0.01) continue;
+
+                // Decode unit sphere normal from [0,1] to [-1,1]
+                vec3 cityNormal = cityData.rgb * 2.0 - 1.0;
+
+                // Angular distance via dot product (fast early skip)
+                float cosAngle = dot(hitNormal, cityNormal);
+                if (cosAngle < widestCosThreshold) continue;
+
+                // Per-city glow radius: bright cities glow wider
+                float glowRadius = baseGlowRadius * (0.3 + 0.7 * intensity);
+                float cosThreshold = cos(glowRadius);
+
+                // Skip if outside this city's actual radius
+                if (cosAngle < cosThreshold) continue;
+
+                // Smooth glow falloff (quadratic for soft edges)
+                float t = (cosAngle - cosThreshold) / (1.0 - cosThreshold);
+                float glow = t * t * intensity;
+
+                // Warm amber tint: bright cities → warm white,
+                // dim towns → deeper amber/orange
+                vec3 lightColor = mix(
+                    vec3(1.0, 0.65, 0.25),
+                    vec3(1.0, 0.92, 0.75),
+                    intensity
+                );
+                totalGlow += lightColor * glow;
+            }
+
+            totalGlow *= CITY_LIGHT_BOOST;
+            surfaceColor += totalGlow * nightFactor;
         }
     }
 
