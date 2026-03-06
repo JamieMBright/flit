@@ -94,7 +94,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
   }
 
-  void _openSettings() => showSettingsSheet(context);
+  void _openSettings() => showSettingsSheet(context, inGame: false);
 
   Future<void> _refreshProfile() async {
     if (_isRefreshingProfile) return;

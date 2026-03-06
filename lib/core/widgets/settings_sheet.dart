@@ -6,11 +6,15 @@ import '../theme/flit_colors.dart';
 
 /// Reusable settings bottom-sheet content.
 ///
-/// Used from both the profile screen and the in-game HUD so that all
-/// settings are accessible from either place without code duplication.
+/// Used from both the profile screen and the in-game HUD.
+///
+/// When [inGame] is true (default), only gameplay-relevant settings are
+/// shown (audio, controls, display).  Notifications and difficulty are
+/// omitted because notifications belong in profile preferences and
+/// difficulty should be set before starting a game, not during play.
 ///
 /// Call [showSettingsSheet] to present it as a modal bottom sheet.
-void showSettingsSheet(BuildContext context) {
+void showSettingsSheet(BuildContext context, {bool inGame = true}) {
   showModalBottomSheet<void>(
     context: context,
     backgroundColor: FlitColors.cardBackground,
@@ -23,8 +27,10 @@ void showSettingsSheet(BuildContext context) {
       minChildSize: 0.4,
       maxChildSize: 0.9,
       expand: false,
-      builder: (context, scrollController) =>
-          _SettingsSheetContent(scrollController: scrollController),
+      builder: (context, scrollController) => _SettingsSheetContent(
+        scrollController: scrollController,
+        inGame: inGame,
+      ),
     ),
   ).then((_) {
     // Flush pending settings writes when the sheet is dismissed.
@@ -35,9 +41,13 @@ void showSettingsSheet(BuildContext context) {
 }
 
 class _SettingsSheetContent extends StatefulWidget {
-  const _SettingsSheetContent({required this.scrollController});
+  const _SettingsSheetContent({
+    required this.scrollController,
+    required this.inGame,
+  });
 
   final ScrollController scrollController;
+  final bool inGame;
 
   @override
   State<_SettingsSheetContent> createState() => _SettingsSheetContentState();
@@ -103,16 +113,19 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
                   }
                 : null,
           ),
-          const Divider(color: FlitColors.cardBorder, height: 1),
-          _SettingsToggle(
-            label: 'Notifications',
-            icon: Icons.notifications_outlined,
-            value: GameSettings.instance.notificationsEnabled,
-            onChanged: (value) {
-              GameSettings.instance.notificationsEnabled = value;
-              setState(() {});
-            },
-          ),
+          // Notifications — profile settings only (not during gameplay)
+          if (!widget.inGame) ...[
+            const Divider(color: FlitColors.cardBorder, height: 1),
+            _SettingsToggle(
+              label: 'Notifications',
+              icon: Icons.notifications_outlined,
+              value: GameSettings.instance.notificationsEnabled,
+              onChanged: (value) {
+                GameSettings.instance.notificationsEnabled = value;
+                setState(() {});
+              },
+            ),
+          ],
           const Divider(color: FlitColors.cardBorder, height: 1),
           _SettingsToggle(
             label: 'Haptic Feedback',
@@ -178,8 +191,8 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
               label: 'Cloud Coverage',
               icon: Icons.cloud_queue_outlined,
               value: GameSettings.instance.cloudCoverage,
-              min: 0.1,
-              max: 0.8,
+              min: 0.0,
+              max: 1.0,
               valueLabel: GameSettings.instance.cloudCoverageLabel,
               onChanged: (value) {
                 GameSettings.instance.cloudCoverage = value;
@@ -220,16 +233,19 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
           ),
           const SizedBox(height: 20),
 
-          // ── Gameplay ───────────────────────────────────────
-          const _SectionHeader(title: 'Gameplay'),
-          _DifficultySelector(
-            value: GameSettings.instance.difficulty,
-            onChanged: (value) {
-              GameSettings.instance.difficulty = value;
-              setState(() {});
-            },
-          ),
-          const SizedBox(height: 24),
+          // ── Gameplay (profile only) ────────────────────────
+          // Difficulty should be set pre-game, not during gameplay.
+          if (!widget.inGame) ...[
+            const _SectionHeader(title: 'Gameplay'),
+            _DifficultySelector(
+              value: GameSettings.instance.difficulty,
+              onChanged: (value) {
+                GameSettings.instance.difficulty = value;
+                setState(() {});
+              },
+            ),
+            const SizedBox(height: 24),
+          ],
         ],
       );
 }

@@ -739,10 +739,10 @@ class _HintButtonState extends State<_HintButton>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: FlitColors.gold.withOpacity(0.35),
+              color: FlitColors.gold.withOpacity(0.55),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: FlitColors.gold.withOpacity(0.8),
+                color: FlitColors.gold.withOpacity(0.9),
                 width: 1.5,
               ),
             ),

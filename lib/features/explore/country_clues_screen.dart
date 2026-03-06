@@ -7,13 +7,17 @@ import 'package:flutter/services.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/clues/clue_types.dart';
+import '../../game/data/canada_clues.dart';
+import '../../game/data/ireland_clues.dart';
+import '../../game/data/uk_clues.dart';
+import '../../game/data/us_state_clues.dart';
 import '../../game/map/country_data.dart';
+import '../../game/map/region.dart';
 
-/// Player-facing screen showing all country game clues.
+/// Player-facing screen showing all game clues across tabs.
 ///
-/// Each country is shown as a compact card (flag + outline + name) that
-/// expands to reveal stats, capital, borders, and a "report" button so
-/// players can flag incorrect data.
+/// Tabs: Countries | US States | UK | Ireland | Canada
+/// Each tab shows the clue data used in-game for that region.
 class CountryCluesScreen extends StatefulWidget {
   const CountryCluesScreen({super.key});
 
@@ -28,7 +32,15 @@ class _CountryCluesScreenState extends State<CountryCluesScreen> {
   /// Codes known to be unsupported by the flag SVG package.
   static const _unsupportedFlagCodes = {'XC', 'XS', 'AN', 'CS', 'TP'};
 
-  List<CountryShape> get _filtered {
+  /// Flight school tabs with rich clue data.
+  static const _flightSchoolTabs = <({String label, GameRegion region})>[
+    (label: 'US States', region: GameRegion.usStates),
+    (label: 'UK', region: GameRegion.ukCounties),
+    (label: 'Ireland', region: GameRegion.ireland),
+    (label: 'Canada', region: GameRegion.canadianProvinces),
+  ];
+
+  List<CountryShape> get _filteredCountries {
     var list = CountryData.countries;
     if (_search.isNotEmpty) {
       final q = _search.toLowerCase();
@@ -44,6 +56,22 @@ class _CountryCluesScreenState extends State<CountryCluesScreen> {
     return list;
   }
 
+  List<RegionalArea> _filteredAreas(GameRegion region) {
+    var list = RegionalData.getAreas(region);
+    if (_search.isNotEmpty) {
+      final q = _search.toLowerCase();
+      list = list
+          .where(
+            (a) =>
+                a.name.toLowerCase().contains(q) ||
+                a.code.toLowerCase().contains(q) ||
+                (a.capital?.toLowerCase().contains(q) ?? false),
+          )
+          .toList();
+    }
+    return list;
+  }
+
   @override
   void dispose() {
     _searchCtl.dispose();
@@ -52,95 +80,498 @@ class _CountryCluesScreenState extends State<CountryCluesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final countries = _filtered;
-
-    return Scaffold(
-      backgroundColor: FlitColors.backgroundDark,
-      appBar: AppBar(
-        backgroundColor: FlitColors.cardBackground,
-        title: const Text(
-          'Country Clues',
-          style: TextStyle(color: FlitColors.textPrimary),
-        ),
-        iconTheme: const IconThemeData(color: FlitColors.textPrimary),
-      ),
-      body: Column(
-        children: [
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
-              controller: _searchCtl,
-              onChanged: (v) => setState(() => _search = v.trim()),
-              style: const TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 14,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Search countries, capitals…',
-                hintStyle: const TextStyle(color: FlitColors.textMuted),
-                prefixIcon: const Icon(
-                  Icons.search,
-                  color: FlitColors.textMuted,
-                  size: 20,
-                ),
-                suffixIcon: _search.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(
-                          Icons.close,
-                          color: FlitColors.textMuted,
-                          size: 18,
-                        ),
-                        onPressed: () {
-                          _searchCtl.clear();
-                          setState(() => _search = '');
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: FlitColors.backgroundMid,
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 10,
-                  horizontal: 12,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
+    return DefaultTabController(
+      length: 1 + _flightSchoolTabs.length,
+      child: Scaffold(
+        backgroundColor: FlitColors.backgroundDark,
+        appBar: AppBar(
+          backgroundColor: FlitColors.cardBackground,
+          title: const Text(
+            'Clues',
+            style: TextStyle(color: FlitColors.textPrimary),
           ),
-
-          // Summary
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Text(
-                  '${countries.length} countries',
-                  style: const TextStyle(
+          iconTheme: const IconThemeData(color: FlitColors.textPrimary),
+          bottom: TabBar(
+            isScrollable: true,
+            labelColor: FlitColors.accent,
+            unselectedLabelColor: FlitColors.textMuted,
+            indicatorColor: FlitColors.accent,
+            labelStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+            tabAlignment: TabAlignment.start,
+            tabs: [
+              const Tab(text: 'Countries'),
+              ..._flightSchoolTabs.map((t) => Tab(text: t.label)),
+            ],
+          ),
+        ),
+        body: Column(
+          children: [
+            // Search bar (shared across tabs)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: TextField(
+                controller: _searchCtl,
+                onChanged: (v) => setState(() => _search = v.trim()),
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 14,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search…',
+                  hintStyle: const TextStyle(color: FlitColors.textMuted),
+                  prefixIcon: const Icon(
+                    Icons.search,
                     color: FlitColors.textMuted,
-                    fontSize: 12,
+                    size: 20,
+                  ),
+                  suffixIcon: _search.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(
+                            Icons.close,
+                            color: FlitColors.textMuted,
+                            size: 18,
+                          ),
+                          onPressed: () {
+                            _searchCtl.clear();
+                            setState(() => _search = '');
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: FlitColors.backgroundMid,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
                   ),
                 ),
-              ],
+              ),
+            ),
+
+            // Tab content
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _CountriesTab(
+                    countries: _filteredCountries,
+                    unsupportedFlags: _unsupportedFlagCodes,
+                  ),
+                  ..._flightSchoolTabs.map(
+                    (t) => _RegionalTab(
+                      region: t.region,
+                      areas: _filteredAreas(t.region),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Countries tab
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CountriesTab extends StatelessWidget {
+  const _CountriesTab({
+    required this.countries,
+    required this.unsupportedFlags,
+  });
+
+  final List<CountryShape> countries;
+  final Set<String> unsupportedFlags;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Summary + outline quality legend
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Text(
+                '${countries.length} countries',
+                style: const TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 12,
+                ),
+              ),
+              const Spacer(),
+              _LegendDot(color: FlitColors.accent, label: 'Good'),
+              const SizedBox(width: 8),
+              _LegendDot(color: FlitColors.warning, label: 'Fair'),
+              const SizedBox(width: 8),
+              _LegendDot(color: FlitColors.error, label: 'Poor'),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'Outline quality — based on polygon detail',
+            style: TextStyle(
+              color: FlitColors.textMuted.withOpacity(0.6),
+              fontSize: 10,
             ),
           ),
-          const SizedBox(height: 8),
+        ),
+        const SizedBox(height: 8),
 
-          // Country list
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: countries.length,
-              itemBuilder: (context, index) => _CountryClueCard(
-                country: countries[index],
-                isUnsupportedFlag: _unsupportedFlagCodes.contains(
-                  countries[index].code,
-                ),
+        // Country list
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: countries.length,
+            itemBuilder: (context, index) => _CountryClueCard(
+              country: countries[index],
+              isUnsupportedFlag: unsupportedFlags.contains(
+                countries[index].code,
               ),
             ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Regional / flight school tab
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _RegionalTab extends StatelessWidget {
+  const _RegionalTab({required this.region, required this.areas});
+
+  final GameRegion region;
+  final List<RegionalArea> areas;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            '${areas.length} areas',
+            style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: areas.length,
+            itemBuilder: (context, index) => _RegionalClueCard(
+              area: areas[index],
+              region: region,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Regional area clue card
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _RegionalClueCard extends StatefulWidget {
+  const _RegionalClueCard({required this.area, required this.region});
+
+  final RegionalArea area;
+  final GameRegion region;
+
+  @override
+  State<_RegionalClueCard> createState() => _RegionalClueCardState();
+}
+
+class _RegionalClueCardState extends State<_RegionalClueCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final a = widget.area;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
+        ),
+        child: Column(
+          children: [
+            InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    // Outline
+                    SizedBox(
+                      width: 56,
+                      height: 42,
+                      child: a.points.isNotEmpty
+                          ? CustomPaint(
+                              painter: _OutlinePainter(
+                                [a.points],
+                                quality: a.points.length >= 70
+                                    ? _OutlineQuality.good
+                                    : a.points.length >= 30
+                                        ? _OutlineQuality.fair
+                                        : _OutlineQuality.poor,
+                              ),
+                            )
+                          : const Center(
+                              child: Text(
+                                '—',
+                                style: TextStyle(
+                                  color: FlitColors.textMuted,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            a.name,
+                            style: const TextStyle(
+                              color: FlitColors.textPrimary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (a.capital != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              a.capital!,
+                              style: const TextStyle(
+                                color: FlitColors.textMuted,
+                                fontSize: 11,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      _expanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      color: FlitColors.textMuted,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_expanded) _buildRegionalDetails(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRegionalDetails(BuildContext context) {
+    final code = widget.area.code;
+    final rows = <Widget>[];
+
+    switch (widget.region) {
+      case GameRegion.usStates:
+        final d = UsStateClues.data[code];
+        if (d != null) {
+          rows.add(_DetailRow(
+            icon: Icons.badge,
+            label: 'Nickname',
+            value: d.nickname,
+          ));
+          if (d.sportsTeams.isNotEmpty) {
+            rows.add(_DetailRow(
+              icon: Icons.sports,
+              label: 'Sports',
+              value: d.sportsTeams.join(', '),
+            ));
+          }
+          rows.add(_DetailRow(
+            icon: Icons.landscape,
+            label: 'Landmark',
+            value: d.famousLandmark,
+          ));
+          rows.add(_DetailRow(
+            icon: Icons.format_quote,
+            label: 'Motto',
+            value: d.motto,
+          ));
+          if (d.senators.isNotEmpty) {
+            rows.add(_DetailRow(
+              icon: Icons.account_balance,
+              label: 'Senators',
+              value: d.senators.join(', '),
+            ));
+          }
+          rows.add(_DetailRow(
+            icon: Icons.pets,
+            label: 'State Bird',
+            value: d.stateBird,
+          ));
+          rows.add(_DetailRow(
+            icon: Icons.local_florist,
+            label: 'State Flower',
+            value: d.stateFlower,
+          ));
+          if (d.celebrities.isNotEmpty) {
+            rows.add(_DetailRow(
+              icon: Icons.star,
+              label: 'Celebrities',
+              value: d.celebrities.join(', '),
+            ));
+          }
+        }
+        break;
+      case GameRegion.ukCounties:
+        final d = UkClues.data[code];
+        if (d != null) {
+          rows.add(_DetailRow(
+            icon: Icons.flag,
+            label: 'Country',
+            value: d.country,
+          ));
+          rows.add(_DetailRow(
+            icon: Icons.badge,
+            label: 'Nickname',
+            value: d.nickname,
+          ));
+          rows.add(_DetailRow(
+            icon: Icons.star,
+            label: 'Famous Person',
+            value: d.famousPerson,
+          ));
+          rows.add(_DetailRow(
+            icon: Icons.landscape,
+            label: 'Landmark',
+            value: d.famousLandmark,
+          ));
+          rows.add(_DetailRow(
+            icon: Icons.sports_soccer,
+            label: 'Football',
+            value: d.footballTeam,
+          ));
+        }
+        break;
+      case GameRegion.ireland:
+        final d = IrelandClues.data[code];
+        if (d != null) {
+          rows.add(_DetailRow(
+            icon: Icons.map,
+            label: 'Province',
+            value: d.province,
+          ));
+          rows.add(_DetailRow(
+            icon: Icons.badge,
+            label: 'Nickname',
+            value: d.nickname,
+          ));
+          rows.add(_DetailRow(
+            icon: Icons.star,
+            label: 'Famous Person',
+            value: d.famousPerson,
+          ));
+          rows.add(_DetailRow(
+            icon: Icons.landscape,
+            label: 'Landmark',
+            value: d.famousLandmark,
+          ));
+          rows.add(_DetailRow(
+            icon: Icons.sports,
+            label: 'GAA Team',
+            value: d.gaaTeam,
+          ));
+        }
+        break;
+      case GameRegion.canadianProvinces:
+        final d = CanadaClues.data[code];
+        if (d != null) {
+          rows.add(_DetailRow(
+            icon: Icons.badge,
+            label: 'Nickname',
+            value: d.nickname,
+          ));
+          rows.add(_DetailRow(
+            icon: Icons.account_balance,
+            label: 'Premier',
+            value: d.premier,
+          ));
+          rows.add(_DetailRow(
+            icon: Icons.landscape,
+            label: 'Landmark',
+            value: d.famousLandmark,
+          ));
+          if (d.sportsTeams.isNotEmpty) {
+            rows.add(_DetailRow(
+              icon: Icons.sports,
+              label: 'Sports',
+              value: d.sportsTeams.join(', '),
+            ));
+          }
+        }
+        break;
+      default:
+        break;
+    }
+
+    if (widget.area.population != null && widget.area.population! > 0) {
+      final pop = widget.area.population!;
+      final popStr = pop >= 1000000
+          ? '${(pop / 1000000).toStringAsFixed(1)}M'
+          : pop >= 1000
+              ? '${(pop / 1000).toStringAsFixed(0)}K'
+              : pop.toString();
+      rows.add(_DetailRow(
+        icon: Icons.people,
+        label: 'Population',
+        value: popStr,
+      ));
+    }
+
+    if (widget.area.funFact != null) {
+      rows.add(_DetailRow(
+        icon: Icons.lightbulb_outline,
+        label: 'Fun Fact',
+        value: widget.area.funFact!,
+      ));
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(color: FlitColors.cardBorder, height: 1),
+          const SizedBox(height: 10),
+          ...rows,
         ],
       ),
     );
@@ -308,7 +739,7 @@ class _ExpandedDetails extends StatelessWidget {
     'currency': 'Currency',
     'religion': 'Religion',
     'headOfState': 'Head of State',
-    'sport': 'Popular Sport',
+    'sport': 'Most Popular Sport',
     'language': 'Language',
     'celebrity': 'Famous Person',
   };
@@ -718,4 +1149,36 @@ class _OutlinePainter extends CustomPainter {
   @override
   bool shouldRepaint(_OutlinePainter old) =>
       polygons != old.polygons || quality != old.quality;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Legend dot
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _LegendDot extends StatelessWidget {
+  const _LegendDot({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.4),
+              shape: BoxShape.circle,
+              border: Border.all(color: color, width: 1),
+            ),
+          ),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: TextStyle(color: color, fontSize: 10),
+          ),
+        ],
+      );
 }
