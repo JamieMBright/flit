@@ -25,11 +25,12 @@ This directory should contain texture files for the GPU shader renderer. All tex
 - **Recommended Size**: 1024x512 or 2048x1024
 - **Description**: Distance to nearest coastline for foam rendering
 
-### 4. City Lights (procedural data texture)
-- **Source**: Auto-extracted from [NASA Earth at Night](https://earthobservatory.nasa.gov/features/NightLights) via `scripts/extract_city_lights.py`
-- **License**: Public Domain (derived from NASA imagery)
-- **Format**: Generated at runtime as a 2048×1 data texture encoding ~1500 light positions
-- **Description**: City light positions and intensities, rendered as resolution-independent glow dots in the shader. The original NASA raster is kept at `scripts/source_textures/city_lights.png` for re-extraction.
+### 4. `city_lights.png`
+- **Source**: [NASA Earth at Night](https://earthobservatory.nasa.gov/features/NightLights)
+- **License**: Public Domain
+- **Format**: Equirectangular emission map
+- **Recommended Size**: 2048x1024 or 4096x2048
+- **Description**: City light emissions for night-side rendering
 
 ## Download Instructions
 
