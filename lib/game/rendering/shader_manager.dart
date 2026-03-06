@@ -8,6 +8,8 @@ import '../../core/services/game_settings.dart';
 import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
 import 'camera_state.dart';
+import 'city_lights_extracted.dart';
+import 'city_lights_generator.dart';
 
 final _log = GameLog.instance;
 
@@ -33,8 +35,10 @@ final _log = GameLog.instance;
 /// Index 18  : uCloudCoverage (cloud coverage threshold, 0.0–1.0)
 /// Index 19  : uCloudOpacity  (cloud blend opacity, 0.0–1.0)
 /// Index 20  : uCameraDist (camera distance from globe center)
+/// Index 21  : uCityCount  (number of light points in data texture)
+/// Index 22  : uDataTexWidth (data texture width in pixels)
 /// ```
-/// 2 image samplers: uSatellite, uCityLights
+/// 2 image samplers: uSatellite, uCityLights (data texture: 2048x1)
 class ShaderManager {
   ShaderManager._();
 
@@ -185,12 +189,12 @@ class ShaderManager {
         );
         return null;
       }),
-      _loadImage(
-        'assets/textures/city_lights.png',
-      ).then<ui.Image?>((img) => img).catchError((Object e, StackTrace st) {
+      CityLightsGenerator.generateDataTexture()
+          .then<ui.Image?>((img) => img)
+          .catchError((Object e, StackTrace st) {
         _log.info(
           'shader',
-          'City lights texture failed to load — using black fallback',
+          'City lights data texture generation failed — using black fallback',
         );
         return null;
       }),
@@ -312,6 +316,12 @@ class ShaderManager {
 
       // uCameraDist (camera distance from globe center)
       s.setFloat(20, cameraDist);
+
+      // uCityCount (number of light points in data texture)
+      s.setFloat(21, extractedCityLights.length.toDouble());
+
+      // uDataTexWidth (data texture width in pixels)
+      s.setFloat(22, cityLightsDataTexWidth.toDouble());
 
       // -- Image samplers (indices 0-1) --
       // Always bind all 2 samplers to prevent shader errors on platforms that

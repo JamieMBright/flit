@@ -1,92 +1,68 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'city_lights_data.dart';
+import 'city_lights_extracted.dart';
 
-/// Generates a procedural city-lights texture from [cityLightClusters].
+/// Width of the data texture (power-of-2, fits extracted points with headroom).
+const int cityLightsDataTexWidth = 2048;
+
+/// Generates a data texture encoding city light positions for the shader.
 ///
-/// Instead of loading the NASA Earth-at-Night PNG, this builds a small
-/// equirectangular image at runtime where each city is rendered as a warm
-/// glow dot with radial falloff. The result can be bound to the shader's
-/// `uCityLights` sampler.
+/// Each pixel in the 2048×1 RGBA8888 texture encodes one light source:
+///   R = nx * 0.5 + 0.5  (unit sphere normal X)
+///   G = ny * 0.5 + 0.5  (unit sphere normal Y)
+///   B = nz * 0.5 + 0.5  (unit sphere normal Z)
+///   A = intensity        (0 = none, 255 = brightest)
+///
+/// The shader loops through pixels, decodes the normal, and computes
+/// glow falloff per-fragment for resolution-independent city lights.
 class CityLightsGenerator {
   CityLightsGenerator._();
 
-  /// Texture dimensions — small is fine since glow dots are low-frequency.
-  static const int _width = 1024;
-  static const int _height = 512;
+  /// Generate the city-lights data texture and return a [ui.Image].
+  ///
+  /// Uses [extractedCityLights] (auto-extracted from NASA Earth at Night)
+  /// as the source of light positions and intensities.
+  static Future<ui.Image> generateDataTexture() async {
+    final pixels = Uint8List(cityLightsDataTexWidth * 1 * 4); // 2048x1 RGBA
 
-  /// Glow radius in pixels (at the texture resolution).
-  static const double _baseGlowRadius = 8.0;
+    final count = extractedCityLights.length;
+    for (int i = 0; i < count && i < cityLightsDataTexWidth; i++) {
+      final entry = extractedCityLights[i];
+      final lat = entry[0];
+      final lon = entry[1];
+      final intensity = entry[2];
 
-  /// Generate the city-lights texture and return a [ui.Image].
-  static Future<ui.Image> generate() async {
-    final pixels = Uint8List(_width * _height * 4); // RGBA
+      // Convert lat/lon (degrees) to unit sphere normal.
+      final latRad = lat * pi / 180.0;
+      final lonRad = lon * pi / 180.0;
+      final cosLat = cos(latRad);
+      final nx = cosLat * cos(lonRad);
+      final ny = sin(latRad);
+      final nz = cosLat * sin(lonRad);
 
-    // For each city, stamp a glow dot into the pixel buffer.
-    for (final city in cityLightClusters) {
-      final lat = city[0];
-      final lng = city[1];
-      final intensity = city[2];
-
-      // Lat/lon → equirectangular pixel coordinates.
-      // u = (lng + 180) / 360, v = (90 - lat) / 180
-      final cx = ((lng + 180.0) / 360.0 * _width).round();
-      final cy = ((90.0 - lat) / 180.0 * _height).round();
-
-      // Scale glow radius by intensity so bigger cities glow wider.
-      final radius = _baseGlowRadius * (0.6 + 0.4 * intensity);
-      final radiusSq = radius * radius;
-      final ri = radius.ceil();
-
-      // Warm city-light tint: amber-orange bias.
-      final r0 = (255 * intensity).round().clamp(0, 255);
-      final g0 = (200 * intensity).round().clamp(0, 255);
-      final b0 = (120 * intensity).round().clamp(0, 255);
-
-      for (int dy = -ri; dy <= ri; dy++) {
-        final py = cy + dy;
-        if (py < 0 || py >= _height) continue;
-
-        for (int dx = -ri; dx <= ri; dx++) {
-          // Wrap horizontally for seamless equirectangular.
-          var px = (cx + dx) % _width;
-          if (px < 0) px += _width;
-
-          final distSq = (dx * dx + dy * dy).toDouble();
-          if (distSq > radiusSq) continue;
-
-          // Smooth radial falloff (quadratic, looks like a soft glow).
-          final t = 1.0 - distSq / radiusSq;
-          final glow = t * t; // quadratic falloff
-
-          final idx = (py * _width + px) * 4;
-
-          // Additive blend — accumulates where cities overlap.
-          final nr = (pixels[idx] + (r0 * glow).round()).clamp(0, 255);
-          final ng = (pixels[idx + 1] + (g0 * glow).round()).clamp(0, 255);
-          final nb = (pixels[idx + 2] + (b0 * glow).round()).clamp(0, 255);
-          final na = (pixels[idx + 3] + (255 * glow).round()).clamp(0, 255);
-
-          pixels[idx] = nr;
-          pixels[idx + 1] = ng;
-          pixels[idx + 2] = nb;
-          pixels[idx + 3] = na;
-        }
-      }
+      // Encode normal components from [-1, 1] to [0, 255].
+      final idx = i * 4;
+      pixels[idx] = ((nx * 0.5 + 0.5) * 255.0).round().clamp(0, 255);
+      pixels[idx + 1] = ((ny * 0.5 + 0.5) * 255.0).round().clamp(0, 255);
+      pixels[idx + 2] = ((nz * 0.5 + 0.5) * 255.0).round().clamp(0, 255);
+      pixels[idx + 3] = (intensity * 255.0).round().clamp(0, 255);
     }
 
-    // Apply a second pass: slight blur to soften hard edges.
-    // Skip for performance — the quadratic falloff already looks smooth.
+    // Remaining pixels (count..2048) stay zero — shader skips them (A=0).
 
-    // Decode pixels into a ui.Image.
     final completer = Completer<ui.Image>();
-    ui.decodeImageFromPixels(pixels, _width, _height, ui.PixelFormat.rgba8888, (
-      ui.Image image,
-    ) {
-      completer.complete(image);
-    });
+    ui.decodeImageFromPixels(
+      pixels,
+      cityLightsDataTexWidth,
+      1,
+      ui.PixelFormat.rgba8888,
+      (ui.Image image) {
+        completer.complete(image);
+      },
+    );
 
     return completer.future;
   }
