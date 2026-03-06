@@ -538,17 +538,48 @@ class _UsaMapPainter extends CustomPainter {
       return null;
     }
 
-    // Check CONUS states
+    // Check CONUS states — collect all matches to handle border overlaps.
     final transform = _conusTransform(size);
+    final matches = <String>[];
     for (final area in areas) {
       if (area.code == 'AK' || area.code == 'HI') continue;
       if (eliminatedCodes.contains(area.code)) continue;
       if (_pointInPolygon(position, area.points, transform)) {
-        return area.code;
+        matches.add(area.code);
       }
     }
 
-    return null;
+    if (matches.isEmpty) return null;
+    if (matches.length == 1) return matches.first;
+
+    // Multiple overlapping polygons — pick the one whose centroid is closest.
+    String? best;
+    var bestDist = double.infinity;
+    for (final code in matches) {
+      final area = areas.firstWhere((a) => a.code == code);
+      final centroid = _canvasCentroid(area.points, transform);
+      final dx = centroid.dx - position.dx;
+      final dy = centroid.dy - position.dy;
+      final dist = dx * dx + dy * dy;
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = code;
+      }
+    }
+    return best;
+  }
+
+  /// Compute the centroid of a polygon in canvas coordinates.
+  Offset _canvasCentroid(List<Vector2> polygon, _GeoTransform transform) {
+    if (polygon.isEmpty) return Offset.zero;
+    var sumX = 0.0;
+    var sumY = 0.0;
+    for (final p in polygon) {
+      final cp = transform.toCanvas(p.x, p.y);
+      sumX += cp.dx;
+      sumY += cp.dy;
+    }
+    return Offset(sumX / polygon.length, sumY / polygon.length);
   }
 
   /// Point-in-polygon test using ray casting algorithm.

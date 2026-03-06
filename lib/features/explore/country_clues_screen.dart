@@ -261,11 +261,35 @@ class _RegionalTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // Summary + outline quality legend
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Text(
+                '${areas.length} areas',
+                style: const TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 12,
+                ),
+              ),
+              const Spacer(),
+              _LegendDot(color: FlitColors.accent, label: 'Good'),
+              const SizedBox(width: 8),
+              _LegendDot(color: FlitColors.warning, label: 'Fair'),
+              const SizedBox(width: 8),
+              _LegendDot(color: FlitColors.error, label: 'Poor'),
+            ],
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            '${areas.length} areas',
-            style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+            'Outline quality — based on polygon detail',
+            style: TextStyle(
+              color: FlitColors.textMuted.withOpacity(0.6),
+              fontSize: 10,
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -1076,8 +1100,22 @@ class _FlagWidget extends StatelessWidget {
   }
 
   Widget _emojiFallback() {
-    final codeUnits = code.toUpperCase().codeUnits;
-    final emoji = String.fromCharCodes(codeUnits.map((c) => c + 127397));
+    // Standard ISO codes can produce regional indicator emoji; custom codes
+    // (XC, XS, etc.) produce unrecognisable symbols so show a map icon instead.
+    if (code.length == 2 && !code.startsWith('X')) {
+      final codeUnits = code.toUpperCase().codeUnits;
+      final emoji = String.fromCharCodes(codeUnits.map((c) => c + 127397));
+      return Container(
+        width: 48,
+        height: 32,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: FlitColors.backgroundMid,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(emoji, style: const TextStyle(fontSize: 20)),
+      );
+    }
     return Container(
       width: 48,
       height: 32,
@@ -1085,8 +1123,22 @@ class _FlagWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: FlitColors.backgroundMid,
         borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: FlitColors.cardBorder),
       ),
-      child: Text(emoji, style: const TextStyle(fontSize: 20)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.flag, color: FlitColors.textMuted, size: 14),
+          Text(
+            code,
+            style: const TextStyle(
+              color: FlitColors.textMuted,
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

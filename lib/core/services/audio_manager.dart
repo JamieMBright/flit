@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:audioplayers/audioplayers.dart';
@@ -74,6 +75,9 @@ class AudioManager {
       await _stopAll();
     }
   }
+
+  /// Subscription for track-complete events (to advance to next track).
+  StreamSubscription<void>? _onCompleteSubscription;
 
   /// Background music player.
   final AudioPlayer _musicPlayer = AudioPlayer();
@@ -157,7 +161,9 @@ class AudioManager {
 
     try {
       // Set default release mode for all players.
-      await _musicPlayer.setReleaseMode(ReleaseMode.loop);
+      await _musicPlayer.setReleaseMode(ReleaseMode.stop);
+      _onCompleteSubscription =
+          _musicPlayer.onPlayerComplete.listen((_) => nextTrack());
       for (final p in _sfxPool) {
         await p.setReleaseMode(ReleaseMode.release);
       }
@@ -169,6 +175,8 @@ class AudioManager {
 
   /// Release all players. Call on app dispose.
   Future<void> dispose() async {
+    await _onCompleteSubscription?.cancel();
+    _onCompleteSubscription = null;
     await _musicPlayer.dispose();
     for (final p in _sfxPool) {
       await p.dispose();

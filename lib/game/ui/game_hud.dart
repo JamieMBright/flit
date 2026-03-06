@@ -32,6 +32,7 @@ class GameHud extends StatelessWidget {
     this.totalRounds,
     this.fuelLevel,
     this.maxFuel = 1.0,
+    this.onSkipClue,
   });
 
   final bool isHighAltitude;
@@ -56,6 +57,9 @@ class GameHud extends StatelessWidget {
 
   /// Maximum fuel (licence-boosted). 1.0 = no bonus, 1.1 = 10% bonus.
   final double maxFuel;
+
+  /// Callback to skip to next clue (free flight only). When null, skip button is hidden.
+  final VoidCallback? onSkipClue;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -168,6 +172,8 @@ class GameHud extends StatelessWidget {
                   // Hint button
                   if (hintTier < 4 && onHint != null)
                     _HintButton(tier: hintTier, onTap: onHint),
+                  // Skip clue button (free flight only)
+                  if (onSkipClue != null) _SkipClueButton(onTap: onSkipClue),
                   // Speed controls
                   Flexible(
                     child: _SpeedControls(
@@ -801,6 +807,45 @@ class _HintButtonState extends State<_HintButton>
       ),
     );
   }
+}
+
+/// Skip-clue pill button for free flight mode.
+class _SkipClueButton extends StatelessWidget {
+  const _SkipClueButton({this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: FlitColors.accent.withOpacity(0.55),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: FlitColors.accent.withOpacity(0.9),
+              width: 1.5,
+            ),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.skip_next, color: FlitColors.accent, size: 16),
+              SizedBox(width: 4),
+              Text(
+                'SKIP',
+                style: TextStyle(
+                  color: FlitColors.accent,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
 /// Mini country outline silhouette rendered from multi-polygon data.
