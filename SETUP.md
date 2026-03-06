@@ -13,7 +13,7 @@ The shader expects 4 texture files. Download and place them in `assets/textures/
 | `blue_marble.png` | [NASA Blue Marble](https://visibleearth.nasa.gov/collection/1484/blue-marble) | Public Domain |
 | `heightmap.png` | [ETOPO1](https://www.ncei.noaa.gov/products/etopo-global-relief-model) | Public Domain |
 | `shore_distance.png` | Generate from heightmap (Euclidean distance transform from coastline) | Public Domain |
-| *(city lights)* | Auto-extracted from [NASA Earth at Night](https://earthobservatory.nasa.gov/features/NightLights) via `scripts/extract_city_lights.py` | Public Domain |
+| `city_lights.png` | [NASA Earth at Night](https://earthobservatory.nasa.gov/features/NightLights) | Public Domain |
 
 All textures should be equirectangular projection. Recommended resolution: 2048x1024 or 4096x2048.
 
@@ -163,7 +163,7 @@ Flutter App                    Vercel                      GitHub
 - [ ] `blue_marble.png` in `assets/textures/` (NASA, equirectangular, 2048x1024+)
 - [ ] `heightmap.png` in `assets/textures/` (ETOPO1, grayscale)
 - [ ] `shore_distance.png` in `assets/textures/` (generated from heightmap)
-- [ ] City lights: auto-generated data texture (run `python3 scripts/extract_city_lights.py` to regenerate from source)
+- [ ] `city_lights.png` in `assets/textures/` (NASA Earth at Night)
 
 **For audio (see AUDIO.md):**
 - [ ] 6 engine sounds in `assets/audio/engines/` (OGG)
