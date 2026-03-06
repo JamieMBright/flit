@@ -99,12 +99,11 @@ class GameHud extends StatelessWidget {
                         _CompassDisplay(heading: heading!),
                       ],
                       if (currentRound != null &&
-                          totalRounds != null &&
-                          totalRounds! > 1) ...[
+                          (totalRounds == null || totalRounds! > 1)) ...[
                         const SizedBox(height: 6),
                         _RoundIndicator(
                           current: currentRound!,
-                          total: totalRounds!,
+                          total: totalRounds,
                         ),
                       ],
                     ],
@@ -483,10 +482,10 @@ class _CompassDisplay extends StatelessWidget {
 }
 
 class _RoundIndicator extends StatelessWidget {
-  const _RoundIndicator({required this.current, required this.total});
+  const _RoundIndicator({required this.current, this.total});
 
   final int current;
-  final int total;
+  final int? total;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -497,7 +496,7 @@ class _RoundIndicator extends StatelessWidget {
           border: Border.all(color: FlitColors.accent.withOpacity(0.5)),
         ),
         child: Text(
-          '$current/$total',
+          total != null ? '$current/$total' : '#$current',
           style: const TextStyle(
             color: FlitColors.accent,
             fontSize: 12,

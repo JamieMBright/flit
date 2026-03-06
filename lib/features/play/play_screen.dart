@@ -59,6 +59,7 @@ class PlayScreen extends ConsumerStatefulWidget {
     this.enabledClueTypes,
     this.enableFuel = false,
     this.isFreeFlight = false,
+    this.isEndless = false,
     this.contrailPrimaryColor,
     this.contrailSecondaryColor,
     this.isDailyChallenge = false,
@@ -132,6 +133,9 @@ class PlayScreen extends ConsumerStatefulWidget {
 
   /// Whether this is a free flight session (enables skip clue button).
   final bool isFreeFlight;
+
+  /// When true, the game never ends — rounds advance indefinitely.
+  final bool isEndless;
 
   /// Primary contrail color from equipped cosmetic.
   final Color? contrailPrimaryColor;
@@ -485,8 +489,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     _startNewGame();
   }
 
-  bool get _isMultiRound => widget.totalRounds > 1;
-  bool get _isFinalRound => _currentRound >= widget.totalRounds;
+  bool get _isMultiRound => widget.totalRounds > 1 || widget.isEndless;
+  bool get _isFinalRound =>
+      !widget.isEndless && _currentRound >= widget.totalRounds;
 
   /// Called when fuel runs out — ends the current session.
   void _onFuelEmpty() {
@@ -1020,7 +1025,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         session: _session!,
         challengeFriendName: friendName,
         totalScore: _totalScore,
-        totalRounds: widget.totalRounds,
+        totalRounds: widget.isEndless ? _currentRound : widget.totalRounds,
         cumulativeTime: _cumulativeTime,
         coinReward: widget.coinReward,
         roundResults: _roundResults,
@@ -1230,7 +1235,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     }
 
     // Fill remaining unseen rounds as failures with zero score.
-    for (var i = _currentRound + 1; i <= widget.totalRounds; i++) {
+    // Skip for endless mode — there is no fixed total.
+    for (var i = _currentRound + 1;
+        !widget.isEndless && i <= widget.totalRounds;
+        i++) {
       _roundResults.add(
         _RoundResult(
           countryName: 'Unseen',
@@ -1604,7 +1612,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 heading: _game.heading,
                 countryFlashProgress: _game.countryFlashProgress,
                 currentRound: _isMultiRound ? _currentRound : null,
-                totalRounds: _isMultiRound ? widget.totalRounds : null,
+                totalRounds: _isMultiRound
+                    ? (widget.isEndless ? null : widget.totalRounds)
+                    : null,
                 fuelLevel: _game.fuelEnabled ? _game.fuel : null,
                 maxFuel: _game.maxFuel,
                 onSkipClue: widget.isFreeFlight ? _skipClue : null,
