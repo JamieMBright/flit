@@ -58,6 +58,7 @@ class PlayScreen extends ConsumerStatefulWidget {
     this.preferredClueType,
     this.enabledClueTypes,
     this.enableFuel = false,
+    this.isFreeFlight = false,
     this.contrailPrimaryColor,
     this.contrailSecondaryColor,
     this.isDailyChallenge = false,
@@ -128,6 +129,9 @@ class PlayScreen extends ConsumerStatefulWidget {
   /// Whether fuel mechanics are active. True for training, daily, dogfight.
   /// False for free flight.
   final bool enableFuel;
+
+  /// Whether this is a free flight session (enables skip clue button).
+  final bool isFreeFlight;
 
   /// Primary contrail color from equipped cosmetic.
   final Color? contrailPrimaryColor;
@@ -464,6 +468,21 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         _useHint(); // Trigger tier 1 (clue change)
       }
     });
+  }
+
+  /// Skip to a completely new country/clue (free flight only).
+  void _skipClue() {
+    if (!widget.isFreeFlight || _session == null || _session!.isCompleted) {
+      return;
+    }
+    _log.info('session', 'Skip clue (free flight)');
+    // Reset hint state and start a fresh session.
+    setState(() {
+      _hintTier = 0;
+      _currentClue = null;
+      _revealedCountry = null;
+    });
+    _startNewGame();
   }
 
   bool get _isMultiRound => widget.totalRounds > 1;
@@ -1588,6 +1607,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 totalRounds: _isMultiRound ? widget.totalRounds : null,
                 fuelLevel: _game.fuelEnabled ? _game.fuel : null,
                 maxFuel: _game.maxFuel,
+                onSkipClue: widget.isFreeFlight ? _skipClue : null,
               ),
 
             // Mobile turn buttons (L/R) — positioned at bottom corners.

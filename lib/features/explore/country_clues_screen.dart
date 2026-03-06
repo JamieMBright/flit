@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/services/clue_report_service.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/data/canada_clues.dart';
 import '../../game/data/ireland_clues.dart';
@@ -260,11 +261,35 @@ class _RegionalTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // Summary + outline quality legend
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Text(
+                '${areas.length} areas',
+                style: const TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 12,
+                ),
+              ),
+              const Spacer(),
+              _LegendDot(color: FlitColors.accent, label: 'Good'),
+              const SizedBox(width: 8),
+              _LegendDot(color: FlitColors.warning, label: 'Fair'),
+              const SizedBox(width: 8),
+              _LegendDot(color: FlitColors.error, label: 'Poor'),
+            ],
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            '${areas.length} areas',
-            style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+            'Outline quality — based on polygon detail',
+            style: TextStyle(
+              color: FlitColors.textMuted.withOpacity(0.6),
+              fontSize: 10,
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -948,25 +973,46 @@ class _ExpandedDetails extends StatelessWidget {
     );
   }
 
-  void _submitReport(BuildContext context, String issue, String notes) {
-    // Copy the report to clipboard for now — when a backend endpoint exists
-    // this can POST instead.
-    final report = {
-      'country': country.code,
-      'name': country.name,
-      'issue': issue,
-      if (notes.trim().isNotEmpty) 'notes': notes.trim(),
-    };
-    Clipboard.setData(ClipboardData(text: report.toString()));
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Thanks! Report submitted for review.'),
-        backgroundColor: FlitColors.success,
-        duration: Duration(seconds: 2),
-      ),
-    );
+  Future<void> _submitReport(
+    BuildContext context,
+    String issue,
+    String notes,
+  ) async {
+    try {
+      await ClueReportService.instance.submitReport(
+        countryCode: country.code,
+        countryName: country.name,
+        issue: issue,
+        notes: notes.trim().isEmpty ? null : notes.trim(),
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Thanks! Report submitted for review.'),
+          backgroundColor: FlitColors.success,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      // Fallback: copy to clipboard if submission fails (e.g. not logged in).
+      final report = {
+        'country': country.code,
+        'name': country.name,
+        'issue': issue,
+        if (notes.trim().isNotEmpty) 'notes': notes.trim(),
+      };
+      Clipboard.setData(ClipboardData(text: report.toString()));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not submit online. Report copied to clipboard.',
+          ),
+          backgroundColor: FlitColors.warning,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 }
 
@@ -1054,8 +1100,22 @@ class _FlagWidget extends StatelessWidget {
   }
 
   Widget _emojiFallback() {
-    final codeUnits = code.toUpperCase().codeUnits;
-    final emoji = String.fromCharCodes(codeUnits.map((c) => c + 127397));
+    // Standard ISO codes can produce regional indicator emoji; custom codes
+    // (XC, XS, etc.) produce unrecognisable symbols so show a map icon instead.
+    if (code.length == 2 && !code.startsWith('X')) {
+      final codeUnits = code.toUpperCase().codeUnits;
+      final emoji = String.fromCharCodes(codeUnits.map((c) => c + 127397));
+      return Container(
+        width: 48,
+        height: 32,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: FlitColors.backgroundMid,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(emoji, style: const TextStyle(fontSize: 20)),
+      );
+    }
     return Container(
       width: 48,
       height: 32,
@@ -1063,8 +1123,22 @@ class _FlagWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: FlitColors.backgroundMid,
         borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: FlitColors.cardBorder),
       ),
-      child: Text(emoji, style: const TextStyle(fontSize: 20)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.flag, color: FlitColors.textMuted, size: 14),
+          Text(
+            code,
+            style: const TextStyle(
+              color: FlitColors.textMuted,
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

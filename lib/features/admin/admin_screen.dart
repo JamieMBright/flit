@@ -17,9 +17,11 @@ import '../../data/providers/account_provider.dart';
 import '../../data/services/economy_config_service.dart';
 import '../../data/models/announcement.dart';
 import '../../data/models/app_remote_config.dart';
+import '../../data/models/clue_report.dart';
 import '../../data/models/player_report.dart';
 import '../../data/services/announcement_service.dart';
 import '../../data/services/app_config_service.dart';
+import '../../data/services/clue_report_service.dart';
 import '../../data/services/report_service.dart';
 import '../../data/services/feature_flag_service.dart';
 import '../debug/avatar_preview_screen.dart';
@@ -68,6 +70,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
 
   // Report queue
   int _pendingReportCount = 0;
+  int _pendingClueReportCount = 0;
 
   // Feature flags
   Map<String, bool> _featureFlags = {};
@@ -78,6 +81,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
     super.initState();
     _loadEconomyConfig();
     _loadReportCount();
+    _loadClueReportCount();
     _loadFeatureFlags();
   }
 
@@ -103,6 +107,14 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
       final count = await ReportService.instance.countPending();
       if (!mounted) return;
       setState(() => _pendingReportCount = count);
+    } catch (_) {}
+  }
+
+  Future<void> _loadClueReportCount() async {
+    try {
+      final count = await ClueReportService.instance.countPending();
+      if (!mounted) return;
+      setState(() => _pendingClueReportCount = count);
     } catch (_) {}
   }
 
@@ -2143,11 +2155,24 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               icon: Icons.flag,
               iconColor: FlitColors.warning,
               label: _pendingReportCount > 0
-                  ? 'Report Queue ($_pendingReportCount pending)'
-                  : 'Report Queue',
+                  ? 'Player Reports ($_pendingReportCount pending)'
+                  : 'Player Reports',
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const _ReportQueuePlaceholder(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.map_outlined,
+              iconColor: FlitColors.warning,
+              label: _pendingClueReportCount > 0
+                  ? 'Clue Reports ($_pendingClueReportCount pending)'
+                  : 'Clue Reports',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const _ClueReportQueue(),
                 ),
               ),
             ),
@@ -5743,6 +5768,433 @@ class _ReportQueuePlaceholderState extends State<_ReportQueuePlaceholder>
                                 itemCount: _allReports.length,
                                 itemBuilder: (_, i) =>
                                     _buildReportCard(_allReports[i]),
+                              ),
+                      ),
+              ],
+            ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Clue Report Queue (admin)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ClueReportQueue extends StatefulWidget {
+  const _ClueReportQueue();
+
+  @override
+  State<_ClueReportQueue> createState() => _ClueReportQueueState();
+}
+
+class _ClueReportQueueState extends State<_ClueReportQueue>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  List<ClueReport> _pendingReports = [];
+  List<ClueReport> _allReports = [];
+  bool _pendingLoading = true;
+  bool _allLoading = false;
+  bool _allLoaded = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_onTabChanged);
+    _loadPending();
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (_tabController.index == 1 && !_allLoaded && !_allLoading) {
+      _loadAll();
+    }
+  }
+
+  Future<void> _loadPending() async {
+    setState(() {
+      _pendingLoading = true;
+      _error = null;
+    });
+    try {
+      final reports = await ClueReportService.instance.fetchPendingReports();
+      if (!mounted) return;
+      setState(() {
+        _pendingReports = reports;
+        _pendingLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to load clue reports: $e';
+        _pendingLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadAll() async {
+    setState(() {
+      _allLoading = true;
+      _error = null;
+    });
+    try {
+      final reports = await ClueReportService.instance.fetchAllReports();
+      if (!mounted) return;
+      setState(() {
+        _allReports = reports;
+        _allLoading = false;
+        _allLoaded = true;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to load clue reports: $e';
+        _allLoading = false;
+      });
+    }
+  }
+
+  void _showResolveDialog(ClueReport report) {
+    final actionCtl = TextEditingController();
+    String? dialogError;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => _AdminDialog(
+          icon: Icons.check_circle,
+          iconColor: FlitColors.success,
+          title: 'Resolve Clue Report',
+          subtitle: '${report.countryName} (${report.countryCode})\n'
+              'Issue: ${report.issue}',
+          error: dialogError,
+          actionLabel: 'Resolve',
+          actionIcon: Icons.check,
+          actionColor: FlitColors.success,
+          onAction: () async {
+            final action = actionCtl.text.trim();
+            if (action.isEmpty) {
+              setDialogState(
+                () => dialogError = 'Describe the action taken',
+              );
+              return;
+            }
+            try {
+              await ClueReportService.instance.resolveReport(
+                reportId: report.id,
+                status: 'actioned',
+                actionTaken: action,
+              );
+              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Clue report resolved'),
+                  backgroundColor: FlitColors.success,
+                ),
+              );
+              _loadPending();
+              if (_allLoaded) _loadAll();
+            } catch (e) {
+              setDialogState(() => dialogError = 'Failed: $e');
+            }
+          },
+          onCancel: () => Navigator.of(dialogCtx).pop(),
+          children: [
+            TextField(
+              controller: actionCtl,
+              maxLines: 3,
+              style: const TextStyle(color: FlitColors.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Action taken (e.g. fixed flag, updated data, etc.)',
+                hintStyle: const TextStyle(color: FlitColors.textMuted),
+                filled: true,
+                fillColor: FlitColors.backgroundDark,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: FlitColors.cardBorder),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: FlitColors.cardBorder),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _dismissReport(ClueReport report) async {
+    try {
+      await ClueReportService.instance.resolveReport(
+        reportId: report.id,
+        status: 'dismissed',
+        actionTaken: 'Dismissed',
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Clue report dismissed'),
+          backgroundColor: FlitColors.success,
+        ),
+      );
+      _loadPending();
+      if (_allLoaded) _loadAll();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to dismiss: $e'),
+          backgroundColor: FlitColors.error,
+        ),
+      );
+    }
+  }
+
+  String _formatDate(DateTime? dt) {
+    if (dt == null) return '\u2014';
+    final local = dt.toLocal();
+    return '${local.year}-${local.month.toString().padLeft(2, '0')}-'
+        '${local.day.toString().padLeft(2, '0')} '
+        '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildClueReportCard(ClueReport report, {bool showActions = false}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: FlitColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.map, color: FlitColors.textSecondary, size: 16),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '${report.countryName} (${report.countryCode})',
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: FlitColors.warning.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              report.issue,
+              style: const TextStyle(
+                color: FlitColors.warning,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          if (report.notes != null && report.notes!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              report.notes!,
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                '${report.reporterUsername ?? 'Anonymous'} \u2022 ${_formatDate(report.createdAt)}',
+                style: const TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 11,
+                ),
+              ),
+              const Spacer(),
+              if (!report.isPending)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: report.status == 'actioned'
+                        ? FlitColors.success.withOpacity(0.15)
+                        : FlitColors.textMuted.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    report.status.toUpperCase(),
+                    style: TextStyle(
+                      color: report.status == 'actioned'
+                          ? FlitColors.success
+                          : FlitColors.textMuted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (report.actionTaken != null && report.actionTaken!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Action: ${report.actionTaken}',
+              style: const TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          if (showActions) ...[
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => _dismissReport(report),
+                  child: const Text(
+                    'Dismiss',
+                    style: TextStyle(color: FlitColors.textMuted),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: () => _showResolveDialog(report),
+                  icon: const Icon(Icons.check, size: 16),
+                  label: const Text('Resolve'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FlitColors.success,
+                    foregroundColor: FlitColors.backgroundDark,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: FlitColors.backgroundDark,
+      appBar: AppBar(
+        backgroundColor: FlitColors.backgroundMid,
+        title: const Text('Clue Reports'),
+        centerTitle: true,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: FlitColors.accent,
+          labelColor: FlitColors.accent,
+          unselectedLabelColor: FlitColors.textMuted,
+          tabs: [
+            Tab(
+              text: _pendingReports.isEmpty
+                  ? 'Pending'
+                  : 'Pending (${_pendingReports.length})',
+            ),
+            const Tab(text: 'All'),
+          ],
+        ),
+      ),
+      body: _error != null && _tabController.index == 0 && _pendingLoading
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: FlitColors.error),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                // Pending tab
+                _pendingLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : RefreshIndicator(
+                        onRefresh: _loadPending,
+                        child: _pendingReports.isEmpty
+                            ? ListView(
+                                children: const [
+                                  SizedBox(height: 200),
+                                  Center(
+                                    child: Text(
+                                      'No pending clue reports',
+                                      style: TextStyle(
+                                        color: FlitColors.textSecondary,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                itemCount: _pendingReports.length,
+                                itemBuilder: (_, i) => _buildClueReportCard(
+                                  _pendingReports[i],
+                                  showActions: true,
+                                ),
+                              ),
+                      ),
+                // All tab
+                _allLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : RefreshIndicator(
+                        onRefresh: _loadAll,
+                        child: _allReports.isEmpty && _allLoaded
+                            ? ListView(
+                                children: const [
+                                  SizedBox(height: 200),
+                                  Center(
+                                    child: Text(
+                                      'No clue reports found',
+                                      style: TextStyle(
+                                        color: FlitColors.textSecondary,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                itemCount: _allReports.length,
+                                itemBuilder: (_, i) =>
+                                    _buildClueReportCard(_allReports[i]),
                               ),
                       ),
               ],

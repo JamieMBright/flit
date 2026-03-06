@@ -351,14 +351,47 @@ class _RegionMapPainter extends CustomPainter {
     final areas = RegionalData.getAreas(region);
     final transform = _regionTransform(size);
 
+    // Collect all matching regions to handle border overlaps.
+    final matches = <String>[];
     for (final area in areas) {
       // Can't tap eliminated areas
       if (eliminatedCodes.contains(area.code)) continue;
       if (_pointInPolygon(position, area.points, transform)) {
-        return area.code;
+        matches.add(area.code);
       }
     }
-    return null;
+
+    if (matches.isEmpty) return null;
+    if (matches.length == 1) return matches.first;
+
+    // Multiple overlapping polygons — pick the one whose centroid is closest.
+    String? best;
+    var bestDist = double.infinity;
+    for (final code in matches) {
+      final area = areas.firstWhere((a) => a.code == code);
+      final centroid = _canvasCentroid(area.points, transform);
+      final dx = centroid.dx - position.dx;
+      final dy = centroid.dy - position.dy;
+      final dist = dx * dx + dy * dy;
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = code;
+      }
+    }
+    return best;
+  }
+
+  /// Compute the centroid of a polygon in canvas coordinates.
+  Offset _canvasCentroid(List<Vector2> polygon, _GeoTransform transform) {
+    if (polygon.isEmpty) return Offset.zero;
+    var sumX = 0.0;
+    var sumY = 0.0;
+    for (final p in polygon) {
+      final cp = transform.toCanvas(p.x, p.y);
+      sumX += cp.dx;
+      sumY += cp.dy;
+    }
+    return Offset(sumX / polygon.length, sumY / polygon.length);
   }
 
   bool _pointInPolygon(

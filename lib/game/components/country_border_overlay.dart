@@ -87,7 +87,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
     // Per-country vertex budget — minimum 50, distributed proportionally
     // to polygon size so larger landmasses get more detail than tiny islands.
-    const countryBudget = kIsWeb ? 400 : 800;
+    const countryBudget = kIsWeb ? 800 : 1600;
     const minCountryBudget = 50;
 
     final playerPos = gameRef.worldPosition;
@@ -113,6 +113,10 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
       for (final polygon in country.polygons) {
         if (polygon.length < 3) continue;
+
+        // Skip tiny polygons — they appear as small diamonds at globe scale
+        // and waste vertex budget.
+        if (polygon.length < 6) continue;
 
         // Quick center-of-polygon check for visibility culling.
         final center = polygon[polygon.length ~/ 2];
@@ -205,7 +209,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       ..strokeJoin = StrokeJoin.round;
 
     // Per-country vertex budget for active highlight — higher for crisp look.
-    const activeBudget = kIsWeb ? 600 : 1200;
+    const activeBudget = kIsWeb ? 1200 : 2400;
     const minActiveBudget = 50;
     var activeTotalVerts = 0;
     for (final polygon in activeCountry.polygons) {
@@ -217,6 +221,9 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
     for (final polygon in activeCountry.polygons) {
       if (polygon.length < 3) continue;
+
+      // Skip very tiny polygons — not useful even for the active highlight.
+      if (polygon.length < 4) continue;
 
       // Allocate vertices proportionally — larger polygons get more detail.
       final polyBudget = (aBudget * polygon.length / activeTotalVerts)

@@ -409,7 +409,7 @@ void main() {
 
     // ----- Diffuse lighting ------------------------------------------------
     float NdotL   = dot(normal, uSunDir);
-    float diffuse = max(NdotL, 0.0);
+    float diffuse = uEnableNight > 0.5 ? max(NdotL, 0.0) : 0.7;
 
     // =======================================================================
     // V6: DAY/NIGHT TERMINATOR
