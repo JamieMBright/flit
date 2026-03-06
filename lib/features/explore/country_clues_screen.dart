@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/services/clue_report_service.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/data/canada_clues.dart';
 import '../../game/data/ireland_clues.dart';
@@ -948,25 +949,46 @@ class _ExpandedDetails extends StatelessWidget {
     );
   }
 
-  void _submitReport(BuildContext context, String issue, String notes) {
-    // Copy the report to clipboard for now — when a backend endpoint exists
-    // this can POST instead.
-    final report = {
-      'country': country.code,
-      'name': country.name,
-      'issue': issue,
-      if (notes.trim().isNotEmpty) 'notes': notes.trim(),
-    };
-    Clipboard.setData(ClipboardData(text: report.toString()));
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Thanks! Report submitted for review.'),
-        backgroundColor: FlitColors.success,
-        duration: Duration(seconds: 2),
-      ),
-    );
+  Future<void> _submitReport(
+    BuildContext context,
+    String issue,
+    String notes,
+  ) async {
+    try {
+      await ClueReportService.instance.submitReport(
+        countryCode: country.code,
+        countryName: country.name,
+        issue: issue,
+        notes: notes.trim().isEmpty ? null : notes.trim(),
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Thanks! Report submitted for review.'),
+          backgroundColor: FlitColors.success,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      // Fallback: copy to clipboard if submission fails (e.g. not logged in).
+      final report = {
+        'country': country.code,
+        'name': country.name,
+        'issue': issue,
+        if (notes.trim().isNotEmpty) 'notes': notes.trim(),
+      };
+      Clipboard.setData(ClipboardData(text: report.toString()));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not submit online. Report copied to clipboard.',
+          ),
+          backgroundColor: FlitColors.warning,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 }
 
