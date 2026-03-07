@@ -1,7 +1,9 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flame/components.dart' hide Matrix4;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../map/region.dart';
 
@@ -81,6 +83,7 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
   late final AnimationController _pulseController;
   final TransformationController _transformController =
       TransformationController();
+  ui.Image? _satelliteImage;
 
   @override
   void initState() {
@@ -89,10 +92,21 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     )..repeat(reverse: true);
+    _loadSatelliteImage();
+  }
+
+  Future<void> _loadSatelliteImage() async {
+    final data = await rootBundle.load('assets/textures/blue_marble.png');
+    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+    final frame = await codec.getNextFrame();
+    if (mounted) {
+      setState(() => _satelliteImage = frame.image);
+    }
   }
 
   @override
   void dispose() {
+    _satelliteImage?.dispose();
     _pulseController.dispose();
     _transformController.dispose();
     super.dispose();
@@ -103,8 +117,9 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
     return LayoutBuilder(
       builder: (context, constraints) {
         return AnimatedBuilder(
-          animation: _pulseController,
+          animation: Listenable.merge([_pulseController, _transformController]),
           builder: (context, child) {
+            final scale = _transformController.value.getMaxScaleOnAxis();
             return InteractiveViewer(
               transformationController: _transformController,
               minScale: 1.0,
@@ -123,6 +138,8 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
                     showLabels: widget.showLabels,
                     eliminatedCodes: widget.eliminatedCodes,
                     correctCodes: widget.correctCodes,
+                    zoomScale: scale,
+                    satelliteImage: _satelliteImage,
                   ),
                 ),
               ),
@@ -134,14 +151,10 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
   }
 
   void _handleTap(Offset position, Size size) {
-    // Transform the tap position from screen to content coordinates
-    final matrix = _transformController.value;
-    final inverseMatrix = Matrix4.inverted(matrix);
-    final transformed = MatrixUtils.transformPoint(
-      inverseMatrix,
-      position,
-    );
-
+    // GestureDetector is a child of InteractiveViewer's Transform widget,
+    // so localPosition is already in content coordinates. No inverse
+    // transform needed — applying one would double-invert and shift the
+    // tap point proportionally to the zoom level.
     final painter = _UsaMapPainter(
       stateVisuals: widget.stateVisuals,
       highlightCode: widget.highlightCode,
@@ -149,9 +162,11 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
       showLabels: widget.showLabels,
       eliminatedCodes: widget.eliminatedCodes,
       correctCodes: widget.correctCodes,
+      zoomScale: 1.0,
+      satelliteImage: _satelliteImage,
     );
 
-    final code = painter.hitTestState(transformed, size);
+    final code = painter.hitTestState(position, size);
     if (code != null) {
       widget.onStateTapped(code);
     }
@@ -167,6 +182,8 @@ class _UsaMapPainter extends CustomPainter {
     this.showLabels = true,
     this.eliminatedCodes = const {},
     this.correctCodes = const {},
+    this.zoomScale = 1.0,
+    this.satelliteImage,
   });
 
   final Map<String, StateVisual> stateVisuals;
@@ -175,6 +192,8 @@ class _UsaMapPainter extends CustomPainter {
   final bool showLabels;
   final Set<String> eliminatedCodes;
   final Set<String> correctCodes;
+  final double zoomScale;
+  final ui.Image? satelliteImage;
 
   // CONUS bounds (continental US)
   static const double _conusMinLng = -125.0;
@@ -197,6 +216,27 @@ class _UsaMapPainter extends CustomPainter {
   static const double _hiMaxLng = -154.5;
   static const double _hiMinLat = 18.5;
   static const double _hiMaxLat = 22.5;
+
+  // Northeast inset bounds (zoomed view of small NE states)
+  static const double _neMinLng = -80.0;
+  static const double _neMaxLng = -66.5;
+  static const double _neMinLat = 38.5;
+  static const double _neMaxLat = 47.5;
+
+  // States shown in the NE inset
+  static const _neStateCodes = {
+    'CT',
+    'DE',
+    'MA',
+    'MD',
+    'ME',
+    'NH',
+    'NJ',
+    'NY',
+    'PA',
+    'RI',
+    'VT',
+  };
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -230,11 +270,21 @@ class _UsaMapPainter extends CustomPainter {
       _drawState(canvas, size, hiArea, _hiTransform(size));
     }
 
-    // Draw clean borders — single pass with anti-aliased strokes
+    // Draw Northeast inset (zoomed view of small NE states)
+    final neRect = _neInsetRect(size);
+    _drawInsetBox(canvas, size, 'Northeast', neRect);
+    final neTransform = _neTransform(size);
+    for (final area in areas) {
+      if (!_neStateCodes.contains(area.code)) continue;
+      _drawState(canvas, size, area, neTransform);
+    }
+
+    // Draw clean borders — single pass with anti-aliased strokes.
+    // Divide strokeWidth by zoom scale so borders stay visually constant.
     final borderPaint = Paint()
-      ..color = const Color(0xFF1A2A32).withOpacity(0.6)
+      ..color = const Color(0xFF1A2A32).withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0
+      ..strokeWidth = 1.0 / zoomScale
       ..strokeJoin = StrokeJoin.round
       ..isAntiAlias = true;
 
@@ -254,6 +304,13 @@ class _UsaMapPainter extends CustomPainter {
       final path = _buildStatePath(hiArea.points, _hiTransform(size));
       canvas.drawPath(path, borderPaint);
     }
+    // NE inset borders
+    for (final area in areas) {
+      if (!_neStateCodes.contains(area.code)) continue;
+      if (eliminatedCodes.contains(area.code)) continue;
+      final path = _buildStatePath(area.points, neTransform);
+      canvas.drawPath(path, borderPaint);
+    }
 
     // Draw state labels for larger states (only when enabled)
     if (showLabels) {
@@ -261,6 +318,12 @@ class _UsaMapPainter extends CustomPainter {
         if (area.code == 'AK' || area.code == 'HI') continue;
         if (eliminatedCodes.contains(area.code)) continue;
         _drawStateLabel(canvas, size, area, _conusTransform(size));
+      }
+      // NE inset labels
+      for (final area in areas) {
+        if (!_neStateCodes.contains(area.code)) continue;
+        if (eliminatedCodes.contains(area.code)) continue;
+        _drawStateLabel(canvas, size, area, neTransform);
       }
     }
   }
@@ -356,6 +419,29 @@ class _UsaMapPainter extends CustomPainter {
     );
   }
 
+  Rect _neInsetRect(Size size) {
+    final insetW = size.width * 0.28;
+    final insetH = insetW * 0.75;
+    final right = size.width - size.width * _insetPadding;
+    final top = size.height - insetH - size.height * _insetPadding;
+    return Rect.fromLTWH(right - insetW, top, insetW, insetH);
+  }
+
+  _GeoTransform _neTransform(Size size) {
+    final rect = _neInsetRect(size);
+    final pad = rect.width * 0.06;
+    return _GeoTransform(
+      minLng: _neMinLng,
+      maxLng: _neMaxLng,
+      minLat: _neMinLat,
+      maxLat: _neMaxLat,
+      offsetX: rect.left + pad,
+      offsetY: rect.top + pad,
+      width: rect.width - pad * 2,
+      height: rect.height - pad * 2,
+    );
+  }
+
   void _drawInsetBox(Canvas canvas, Size size, String label, Rect rect) {
     // Background
     canvas.drawRRect(
@@ -403,9 +489,44 @@ class _UsaMapPainter extends CustomPainter {
     final isCorrectlyGuessed = correctCodes.contains(area.code);
 
     final path = _buildStatePath(area.points, transform);
-    final fillColor = _getFillColor(status, isHighlighted, isCorrectlyGuessed);
 
-    canvas.drawPath(path, Paint()..color = fillColor);
+    // Reveal satellite imagery for correctly guessed states
+    if ((isCorrectlyGuessed || status == StateVisualStatus.correct) &&
+        satelliteImage != null) {
+      _drawSatelliteFill(canvas, path, transform);
+    } else {
+      final fillColor =
+          _getFillColor(status, isHighlighted, isCorrectlyGuessed);
+      canvas.drawPath(path, Paint()..color = fillColor);
+    }
+  }
+
+  /// Draw the Blue Marble satellite texture clipped to a polygon path.
+  void _drawSatelliteFill(
+    Canvas canvas,
+    Path path,
+    _GeoTransform transform,
+  ) {
+    final img = satelliteImage!;
+
+    // Map geographic bounds to satellite image pixels (equirectangular).
+    final srcLeft = ((transform.minLng + 180.0) / 360.0) * img.width;
+    final srcRight = ((transform.maxLng + 180.0) / 360.0) * img.width;
+    final srcTop = ((90.0 - transform.maxLat) / 180.0) * img.height;
+    final srcBottom = ((90.0 - transform.minLat) / 180.0) * img.height;
+
+    final srcRect = Rect.fromLTRB(srcLeft, srcTop, srcRight, srcBottom);
+    final dstRect = Rect.fromLTWH(
+      transform.offsetX,
+      transform.offsetY,
+      transform.width,
+      transform.height,
+    );
+
+    canvas.save();
+    canvas.clipPath(path);
+    canvas.drawImageRect(img, srcRect, dstRect, Paint());
+    canvas.restore();
   }
 
   void _drawStateLabel(
@@ -512,30 +633,50 @@ class _UsaMapPainter extends CustomPainter {
   String? hitTestState(Offset position, Size size) {
     final areas = RegionalData.getAreas(GameRegion.usStates);
 
-    // Check Alaska inset first (on top)
+    // Check Alaska inset — tapping anywhere in the box counts as Alaska
     final akRect = _akInsetRect(size);
     if (akRect.contains(position)) {
-      final akArea = areas.where((a) => a.code == 'AK').firstOrNull;
-      if (akArea != null && !eliminatedCodes.contains('AK')) {
-        final transform = _akTransform(size);
-        if (_hitTestPolygons(position, akArea, transform)) {
-          return 'AK';
-        }
-      }
-      return null; // Tapped in AK box but not on the state
+      if (!eliminatedCodes.contains('AK')) return 'AK';
+      return null;
     }
 
-    // Check Hawaii inset
+    // Check Hawaii inset — tapping anywhere in the box counts as Hawaii
     final hiRect = _hiInsetRect(size);
     if (hiRect.contains(position)) {
-      final hiArea = areas.where((a) => a.code == 'HI').firstOrNull;
-      if (hiArea != null && !eliminatedCodes.contains('HI')) {
-        final transform = _hiTransform(size);
-        if (_hitTestPolygons(position, hiArea, transform)) {
-          return 'HI';
+      if (!eliminatedCodes.contains('HI')) return 'HI';
+      return null;
+    }
+
+    // Check NE inset — hit-test individual states within the inset
+    final neRect = _neInsetRect(size);
+    if (neRect.contains(position)) {
+      final neTransform = _neTransform(size);
+      final neMatches = <String>[];
+      for (final area in areas) {
+        if (!_neStateCodes.contains(area.code)) continue;
+        if (eliminatedCodes.contains(area.code)) continue;
+        if (_hitTestPolygons(position, area, neTransform)) {
+          neMatches.add(area.code);
         }
       }
-      return null;
+      if (neMatches.length == 1) return neMatches.first;
+      if (neMatches.length > 1) {
+        String? best;
+        var bestDist = double.infinity;
+        for (final code in neMatches) {
+          final area = areas.firstWhere((a) => a.code == code);
+          final centroid = _canvasCentroid(area.points, neTransform);
+          final dx = centroid.dx - position.dx;
+          final dy = centroid.dy - position.dy;
+          final dist = dx * dx + dy * dy;
+          if (dist < bestDist) {
+            bestDist = dist;
+            best = code;
+          }
+        }
+        return best;
+      }
+      // Tapped in NE box but not on a state — fall through to CONUS check
     }
 
     // Check CONUS states — collect all matches to handle border overlaps.
