@@ -107,6 +107,11 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       // Skip the active country — it gets the red highlight instead.
       if (country.name == activeCountryName) continue;
 
+      // Skip Antarctica — its polygon spans 360° of longitude and creates
+      // visual wrapping artifacts near the south pole. The satellite texture
+      // shows Antarctica clearly without a border overlay.
+      if (country.code == 'AQ') continue;
+
       // Compute total vertices across all polygons for proportional allocation.
       var totalVerts = 0;
       for (final polygon in country.polygons) {
@@ -156,12 +161,6 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         var started = false;
         var anyVisible = false;
 
-        // Maximum screen-space segment length squared — segments longer
-        // than this cross the globe interior (e.g. Antarctica near the
-        // south pole) and must be broken to avoid visual wrapping.
-        final maxSegLenSq = screenW * screenW * 0.09; // 30% of width
-        double lastSx = 0, lastSy = 0;
-
         for (var i = 0; i < polygon.length; i += stride) {
           final screenPos = gameRef.worldToScreenGlobe(polygon[i]);
 
@@ -182,17 +181,8 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
             path.moveTo(screenPos.x, screenPos.y);
             started = true;
           } else {
-            // Break segment if it crosses the globe interior.
-            final segDx = screenPos.x - lastSx;
-            final segDy = screenPos.y - lastSy;
-            if (segDx * segDx + segDy * segDy > maxSegLenSq) {
-              path.moveTo(screenPos.x, screenPos.y);
-            } else {
-              path.lineTo(screenPos.x, screenPos.y);
-            }
+            path.lineTo(screenPos.x, screenPos.y);
           }
-          lastSx = screenPos.x;
-          lastSy = screenPos.y;
         }
 
         if (anyVisible && started) {
@@ -225,6 +215,9 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       }
     }
     if (activeCountry == null) return;
+
+    // Skip Antarctica — its 360° polygon wraps visually near the south pole.
+    if (activeCountry.code == 'AQ') return;
 
     final borderOpacity = (0.6 * (continuousAlt / 0.6)).clamp(0.0, 0.6);
 
@@ -281,11 +274,6 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       var anyVisible = false;
       var hasOccluded = false;
 
-      // Maximum screen-space segment length squared — break segments
-      // that cross the globe interior (e.g. Antarctica near the pole).
-      final maxSegLenSq = screenW * screenW * 0.09; // 30% of width
-      double lastSx = 0, lastSy = 0;
-
       for (var i = 0; i < polygon.length; i += stride) {
         final screenPos = gameRef.worldToScreenGlobe(polygon[i]);
 
@@ -306,17 +294,8 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
           path.moveTo(screenPos.x, screenPos.y);
           started = true;
         } else {
-          // Break segment if it crosses the globe interior.
-          final segDx = screenPos.x - lastSx;
-          final segDy = screenPos.y - lastSy;
-          if (segDx * segDx + segDy * segDy > maxSegLenSq) {
-            path.moveTo(screenPos.x, screenPos.y);
-          } else {
-            path.lineTo(screenPos.x, screenPos.y);
-          }
+          path.lineTo(screenPos.x, screenPos.y);
         }
-        lastSx = screenPos.x;
-        lastSy = screenPos.y;
       }
 
       if (anyVisible) {
