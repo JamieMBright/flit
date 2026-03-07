@@ -127,9 +127,13 @@ class AudioManager {
   /// Whether [initialize] has been called.
   bool _initialized = false;
 
-  /// Asset paths that have failed to load. Once an asset fails, we skip
-  /// future attempts to avoid repeated errors (especially on Safari where
+  /// Asset paths that have permanently failed to load (e.g. missing file,
+  /// unsupported format). Once an asset permanently fails, we skip future
+  /// attempts to avoid repeated errors (especially on Safari where
   /// MEDIA_ELEMENT_ERROR from missing files can destabilise the audio context).
+  ///
+  /// Transient failures (timeouts, network errors, autoplay restrictions) do
+  /// NOT add to this set, allowing retry on subsequent attempts.
   final Set<String> _failedAssets = {};
 
   /// Asset path for a sound effect.
@@ -211,16 +215,21 @@ class AudioManager {
 
     final asset = _musicTracks[_currentTrackIndex];
 
-    // Skip assets that have already failed.
+    // Skip assets that have permanently failed.
     if (_failedAssets.contains(asset)) return;
 
     try {
       await _musicPlayer.setVolume(_defaultMusicVolume * _musicVolume);
       await _musicPlayer.play(AssetSource(asset));
     } catch (e) {
-      final msg = e.toString();
-      if (msg.contains('NotAllowedError') || msg.contains('not allowed')) {
+      if (_isAutoplayRestriction(e)) {
         return; // Temporary — clears after user gesture.
+      }
+      if (_isTransientError(e)) {
+        // Transient failures (timeout, network) — don't blacklist, just skip
+        // to the next track so the player isn't stuck.
+        _log.debug('audio', 'Music track skipped (transient): $asset');
+        return;
       }
       _log.warning('audio', 'Music track failed: $asset', error: e);
       _failedAssets.add(asset);
@@ -258,11 +267,11 @@ class AudioManager {
       await player.setVolume(_defaultSfxVolume * _effectsVolume);
       await player.play(AssetSource(asset));
     } catch (e) {
-      // Don't blacklist on NotAllowedError — this is a temporary browser
-      // autoplay restriction that clears after the first user gesture.
-      final msg = e.toString();
-      if (msg.contains('NotAllowedError') || msg.contains('not allowed')) {
-        return;
+      if (_isAutoplayRestriction(e)) {
+        return; // Temporary — clears after user gesture.
+      }
+      if (_isTransientError(e)) {
+        return; // Timeout/network — don't blacklist, allow retry.
       }
       _log.warning('audio', 'SFX failed: $asset', error: e);
       _failedAssets.add(asset);
@@ -272,6 +281,33 @@ class AudioManager {
   // -----------------------------------------------------------------
   // Internal
   // -----------------------------------------------------------------
+
+  /// Whether an exception is a browser autoplay restriction.
+  ///
+  /// These are temporary — they clear after the first user gesture (tap,
+  /// click, keypress). We silently swallow them to avoid noisy telemetry.
+  static bool _isAutoplayRestriction(Object e) {
+    final msg = e.toString().toLowerCase();
+    return msg.contains('notallowederror') ||
+        msg.contains('not allowed') ||
+        msg.contains('user denied permission') ||
+        msg.contains('play() failed') ||
+        msg.contains('aborterror');
+  }
+
+  /// Whether an exception is a transient network/timeout error.
+  ///
+  /// These should NOT permanently blacklist the asset — the user's network
+  /// may recover, or the next attempt may succeed.
+  static bool _isTransientError(Object e) {
+    final msg = e.toString().toLowerCase();
+    return msg.contains('timeoutexception') ||
+        msg.contains('timed out') ||
+        msg.contains('clientexception') ||
+        msg.contains('load failed') ||
+        msg.contains('network') ||
+        msg.contains('typeerror: load failed');
+  }
 
   Future<void> _stopAll() async {
     await _musicPlayer.stop();
