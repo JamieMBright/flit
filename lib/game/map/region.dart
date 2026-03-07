@@ -166,6 +166,7 @@ class RegionalArea {
     required this.code,
     required this.name,
     required this.points,
+    this.polygons,
     this.capital,
     this.population,
     this.funFact,
@@ -173,7 +174,13 @@ class RegionalArea {
 
   final String code;
   final String name;
+
+  /// Flat list of all points (used for hit-testing, centroids, etc.)
   final List<Vector2> points;
+
+  /// Separate polygon rings. When non-null, renderers should draw each ring
+  /// as its own sub-path to avoid artefacts between disjoint polygons.
+  final List<List<Vector2>>? polygons;
   final String? capital;
   final int? population;
   final String? funFact;
@@ -191,6 +198,7 @@ abstract class RegionalData {
                 code: c.code,
                 name: c.name,
                 points: c.allPoints,
+                polygons: c.polygons,
                 capital: c.capital,
               ),
             )
@@ -226,6 +234,7 @@ abstract class RegionalData {
             code: c.code,
             name: c.name,
             points: c.allPoints,
+            polygons: c.polygons,
             capital: c.capital,
           ),
         )

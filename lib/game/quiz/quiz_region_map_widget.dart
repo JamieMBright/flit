@@ -166,7 +166,7 @@ class _RegionMapPainter extends CustomPainter {
 
     for (final area in areas) {
       if (eliminatedCodes.contains(area.code)) continue;
-      final path = _buildPath(area.points, transform);
+      final path = _buildPath(area.points, transform, polygons: area.polygons);
       canvas.drawPath(path, borderPaint);
     }
 
@@ -246,7 +246,7 @@ class _RegionMapPainter extends CustomPainter {
     final isHighlighted = highlightCode == area.code;
     final isCorrectlyGuessed = correctCodes.contains(area.code);
 
-    final path = _buildPath(area.points, transform);
+    final path = _buildPath(area.points, transform, polygons: area.polygons);
     final fillColor = _getFillColor(status, isHighlighted, isCorrectlyGuessed);
     canvas.drawPath(path, Paint()..color = fillColor);
   }
@@ -320,10 +320,29 @@ class _RegionMapPainter extends CustomPainter {
     }
   }
 
-  Path _buildPath(List<Vector2> points, _GeoTransform transform) {
+  Path _buildPath(List<Vector2> points, _GeoTransform transform,
+      {List<List<Vector2>>? polygons}) {
     final path = Path();
-    if (points.isEmpty) return path;
 
+    // When separate polygon rings are available, draw each as its own
+    // sub-path so disjoint polygons (islands, exclaves) don't produce
+    // stretching artefacts.
+    if (polygons != null && polygons.isNotEmpty) {
+      for (final ring in polygons) {
+        if (ring.isEmpty) continue;
+        final first = transform.toCanvas(ring.first.x, ring.first.y);
+        path.moveTo(first.dx, first.dy);
+        for (var i = 1; i < ring.length; i++) {
+          final p = transform.toCanvas(ring[i].x, ring[i].y);
+          path.lineTo(p.dx, p.dy);
+        }
+        path.close();
+      }
+      return path;
+    }
+
+    // Fallback: single flat list of points.
+    if (points.isEmpty) return path;
     final first = transform.toCanvas(points.first.x, points.first.y);
     path.moveTo(first.dx, first.dy);
 
