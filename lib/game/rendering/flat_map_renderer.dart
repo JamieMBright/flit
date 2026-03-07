@@ -123,24 +123,32 @@ class FlatMapRenderer extends Component with HasGameRef<FlitGame> {
     for (final area in areas) {
       if (area.points.length < 3) continue;
 
-      final path = ui.Path();
-      var started = false;
+      // When separate polygon rings are available, draw each as its own
+      // sub-path so disjoint polygons don't produce stretching artefacts.
+      final rings = area.polygons ?? [area.points];
 
-      for (var i = 0; i < area.points.length; i++) {
-        final screenPos = worldToScreen(area.points[i], screenW, screenH);
-        if (screenPos.x < -500) continue;
+      for (final ring in rings) {
+        if (ring.length < 3) continue;
 
-        if (!started) {
-          path.moveTo(screenPos.x, screenPos.y);
-          started = true;
-        } else {
-          path.lineTo(screenPos.x, screenPos.y);
+        final path = ui.Path();
+        var started = false;
+
+        for (var i = 0; i < ring.length; i++) {
+          final screenPos = worldToScreen(ring[i], screenW, screenH);
+          if (screenPos.x < -500) continue;
+
+          if (!started) {
+            path.moveTo(screenPos.x, screenPos.y);
+            started = true;
+          } else {
+            path.lineTo(screenPos.x, screenPos.y);
+          }
         }
-      }
 
-      if (started) {
-        path.close();
-        canvas.drawPath(path, borderPaint);
+        if (started) {
+          path.close();
+          canvas.drawPath(path, borderPaint);
+        }
       }
     }
   }

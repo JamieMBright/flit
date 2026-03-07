@@ -224,7 +224,7 @@ class GameSession {
       final country = CountryShape(
         code: area.code,
         name: area.name,
-        polygons: [area.points],
+        polygons: area.polygons ?? [area.points],
         capital: area.capital,
       );
 
