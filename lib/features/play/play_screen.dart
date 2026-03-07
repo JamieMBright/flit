@@ -474,19 +474,33 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     });
   }
 
-  /// Skip to a completely new country/clue (free flight only).
+  /// Skip to a new country/clue without moving the plane (free flight only).
   void _skipClue() {
     if (!widget.isFreeFlight || _session == null || _session!.isCompleted) {
       return;
     }
     _log.info('session', 'Skip clue (free flight)');
-    // Reset hint state and start a fresh session.
+
+    // Create a new session (new country + clue) but keep the plane in place.
+    final newSession = _createSession();
     setState(() {
+      _session = newSession;
       _hintTier = 0;
-      _currentClue = null;
+      _currentClue = newSession.clue;
       _revealedCountry = null;
     });
-    _startNewGame();
+
+    // Update the game target without reseeding the plane position.
+    _game.continueWithNewTarget(
+      targetPosition: newSession.targetPosition,
+      clue: newSession.clue.displayText,
+    );
+
+    // Play clue popup sound.
+    AudioManager.instance.playSfx(SfxType.cluePop);
+
+    // Restart auto-hint timer for the new clue.
+    _startAutoHintTimer();
   }
 
   bool get _isMultiRound => widget.totalRounds > 1 || widget.isEndless;
