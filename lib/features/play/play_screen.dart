@@ -1673,16 +1673,16 @@ class _TurnButtonState extends State<_TurnButton> {
   bool _pressed = false;
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTapDown: (_) {
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: (_) {
       setState(() => _pressed = true);
       widget.onPressStart();
     },
-    onTapUp: (_) {
+    onPointerUp: (_) {
       setState(() => _pressed = false);
       widget.onPressEnd();
     },
-    onTapCancel: () {
+    onPointerCancel: (_) {
       setState(() => _pressed = false);
       widget.onPressEnd();
     },

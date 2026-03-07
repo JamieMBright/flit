@@ -392,6 +392,10 @@ class FlitGame extends FlameGame
   Vector2 get shaderCameraPosition => _shaderCameraPosition;
   Vector2 _shaderCameraPosition = Vector2.zero();
 
+  /// Raw camera heading in math convention (radians). Used by components
+  /// (e.g. CompanionRenderer) that need the same reference frame as the plane.
+  double get cameraHeading => _cameraHeading;
+
   /// Navigation bearing for the camera position offset (radians).
   /// Includes chase camera lag.
   double get cameraBearing => _cameraHeading + pi / 2;
