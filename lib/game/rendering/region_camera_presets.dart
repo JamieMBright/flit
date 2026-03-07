@@ -52,11 +52,13 @@ abstract class RegionCameraPresets {
   // ---------------------------------------------------------------------------
 
   /// World view: high altitude, full freedom.
+  /// maxBoundsLat must be large enough so that centerLat ± maxBoundsLat
+  /// covers [-90, +90] — otherwise the camera can't reach the poles.
   static const CameraPreset _worldPreset = CameraPreset(
     centerLat: 20.0,
     centerLng: 0.0,
     altitudeDistance: 3.5,
-    maxBoundsLat: 90.0,
+    maxBoundsLat: 110.0,
     maxBoundsLng: 180.0,
   );
 
