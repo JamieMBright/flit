@@ -208,7 +208,10 @@ void main() {
     test('all counties have non-empty country', () {
       for (final countyData in UkClues.data.values) {
         expect(countyData.country, isNotEmpty);
-        expect(countyData.country, isIn(['England', 'Scotland', 'Wales']));
+        expect(
+          countyData.country,
+          isIn(['England', 'Scotland', 'Wales', 'Northern Ireland']),
+        );
       }
     });
 

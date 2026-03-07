@@ -525,7 +525,12 @@ class _UsaMapPainter extends CustomPainter {
 
     canvas.save();
     canvas.clipPath(path);
-    canvas.drawImageRect(img, srcRect, dstRect, Paint());
+    canvas.drawImageRect(
+      img,
+      srcRect,
+      dstRect,
+      Paint()..filterQuality = FilterQuality.high,
+    );
     canvas.restore();
   }
 

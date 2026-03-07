@@ -191,6 +191,15 @@ class _RegionMapPainter extends CustomPainter {
       canvas.drawPath(path, borderPaint);
     }
 
+    // Draw expanded markers for tiny areas (below minimum canvas size).
+    // These ensure microstates and small islands are visible and tappable.
+    for (final area in areas) {
+      if (eliminatedCodes.contains(area.code)) continue;
+      if (_isTinyArea(area, transform, size)) {
+        _drawTinyMarker(canvas, size, area, transform);
+      }
+    }
+
     // Draw labels for larger areas (only when enabled)
     if (showLabels) {
       for (final area in areas) {
@@ -315,7 +324,12 @@ class _RegionMapPainter extends CustomPainter {
 
     canvas.save();
     canvas.clipPath(path);
-    canvas.drawImageRect(img, srcRect, dstRect, Paint());
+    canvas.drawImageRect(
+      img,
+      srcRect,
+      dstRect,
+      Paint()..filterQuality = FilterQuality.high,
+    );
     canvas.restore();
   }
 
@@ -434,14 +448,114 @@ class _RegionMapPainter extends CustomPainter {
     return Vector2(sumX / points.length, sumY / points.length);
   }
 
+  /// Minimum canvas diameter (in logical pixels) below which an area is
+  /// considered "tiny" and gets an expanded marker.
+  static const double _tinyThreshold = 18.0;
+
+  /// Radius of the expanded marker drawn for tiny areas.
+  static const double _markerRadius = 10.0;
+
+  /// Whether an area's polygon footprint on canvas is too small to tap.
+  bool _isTinyArea(RegionalArea area, _GeoTransform transform, Size size) {
+    if (area.points.length < 3) return true;
+    var minX = double.infinity, maxX = -double.infinity;
+    var minY = double.infinity, maxY = -double.infinity;
+    for (final p in area.points) {
+      final cp = transform.toCanvas(p.x, p.y);
+      if (cp.dx < minX) minX = cp.dx;
+      if (cp.dx > maxX) maxX = cp.dx;
+      if (cp.dy < minY) minY = cp.dy;
+      if (cp.dy > maxY) maxY = cp.dy;
+    }
+    final w = (maxX - minX) / zoomScale;
+    final h = (maxY - minY) / zoomScale;
+    return w < _tinyThreshold && h < _tinyThreshold;
+  }
+
+  /// Draw a visible labeled marker for a tiny area (microstate / small island).
+  void _drawTinyMarker(
+    Canvas canvas,
+    Size size,
+    RegionalArea area,
+    _GeoTransform transform,
+  ) {
+    final centroid = _centroid(area.points);
+    final pos = transform.toCanvas(centroid.x, centroid.y);
+    if (pos.dx < 0 || pos.dx > size.width || pos.dy < 0 || pos.dy > size.height)
+      return;
+
+    final visual = stateVisuals[area.code];
+    final status = visual?.status ?? StateVisualStatus.idle;
+    final isHighlighted = highlightCode == area.code;
+    final isCorrectlyGuessed = correctCodes.contains(area.code);
+
+    final r = _markerRadius / zoomScale;
+
+    // Background circle
+    Color fillColor;
+    if (isHighlighted) {
+      final opacity = 0.6 + 0.3 * pulseValue;
+      fillColor = Color.fromRGBO(232, 122, 90, opacity);
+    } else if (isCorrectlyGuessed || status == StateVisualStatus.correct) {
+      fillColor = const Color(0xFF2A8A4A);
+    } else if (status == StateVisualStatus.wrong) {
+      fillColor = const Color(0xFFAA3333);
+    } else {
+      fillColor = const Color(0xFF3A6A7A);
+    }
+    canvas.drawCircle(pos, r, Paint()..color = fillColor);
+
+    // Border ring
+    canvas.drawCircle(
+      pos,
+      r,
+      Paint()
+        ..color = const Color(0xFF8AB0C0)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2 / zoomScale,
+    );
+
+    // Label
+    final fontSize = 6.0 / zoomScale;
+    final tp = TextPainter(
+      text: TextSpan(
+        text: area.code,
+        style: TextStyle(
+          color: const Color(0xFFE0F0FF),
+          fontSize: fontSize.clamp(4.0, 8.0),
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.3,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, Offset(pos.dx - tp.width / 2, pos.dy - tp.height / 2));
+  }
+
   String? hitTestArea(Offset position, Size size) {
     final areas = RegionalData.getAreas(region);
     final transform = _regionTransform(size);
 
-    // Collect all matching regions to handle border overlaps.
+    // First pass: check tiny area markers (expanded circular hit targets).
+    // These take priority because they're drawn on top.
+    for (final area in areas) {
+      if (eliminatedCodes.contains(area.code)) continue;
+      if (_isTinyArea(area, transform, size)) {
+        final centroid = _centroid(area.points);
+        final pos = transform.toCanvas(centroid.x, centroid.y);
+        final dx = position.dx - pos.dx;
+        final dy = position.dy - pos.dy;
+        // Use a generous tap radius (larger than the visual marker)
+        final tapRadius = _markerRadius * 1.5 / zoomScale;
+        if (dx * dx + dy * dy <= tapRadius * tapRadius) {
+          return area.code;
+        }
+      }
+    }
+
+    // Second pass: standard polygon hit-testing.
     final matches = <String>[];
     for (final area in areas) {
-      // Can't tap eliminated areas
       if (eliminatedCodes.contains(area.code)) continue;
       if (_hitTestPolygons(position, area, transform)) {
         matches.add(area.code);
