@@ -85,10 +85,15 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       ..strokeJoin = StrokeJoin.round
       ..isAntiAlias = true;
 
-    // Per-country vertex budget — minimum 50, distributed proportionally
-    // to polygon size so larger landmasses get more detail than tiny islands.
-    const countryBudget = kIsWeb ? 800 : 1600;
+    // Per-country vertex budget — distributed proportionally to polygon size
+    // so larger landmasses get more detail than tiny islands.
+    // Large countries (Canada, Russia, USA) need higher budgets because their
+    // mainland polygon competes with hundreds of island polygons.
+    const countryBudget = kIsWeb ? 1600 : 3200;
     const minCountryBudget = 50;
+    // Minimum vertices for the largest polygon in each country — ensures
+    // mainland coastlines always look smooth regardless of island count.
+    const minMainlandBudget = kIsWeb ? 600 : 1200;
 
     final playerPos = gameRef.worldPosition;
 
@@ -111,6 +116,12 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
           ? totalVerts
           : countryBudget.clamp(minCountryBudget, totalVerts);
 
+      // Find the largest polygon (mainland) so we can guarantee it a minimum.
+      var maxPolyLen = 0;
+      for (final polygon in country.polygons) {
+        if (polygon.length > maxPolyLen) maxPolyLen = polygon.length;
+      }
+
       for (final polygon in country.polygons) {
         if (polygon.length < 3) continue;
 
@@ -128,10 +139,15 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
         // Allocate vertices proportionally to polygon size.
         // Larger polygons (mainland) get more points than tiny islands.
-        final polyBudget = (budget * polygon.length / totalVerts).ceil().clamp(
+        var polyBudget = (budget * polygon.length / totalVerts).ceil().clamp(
               3,
               polygon.length,
             );
+        // Guarantee the largest polygon (mainland) a minimum vertex count
+        // so countries with many islands still get smooth mainland outlines.
+        if (polygon.length == maxPolyLen && polyBudget < minMainlandBudget) {
+          polyBudget = minMainlandBudget.clamp(3, polygon.length);
+        }
         final stride = polygon.length > polyBudget
             ? (polygon.length / polyBudget).ceil()
             : 1;
@@ -139,6 +155,12 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         final path = ui.Path();
         var started = false;
         var anyVisible = false;
+
+        // Maximum screen-space segment length squared — segments longer
+        // than this cross the globe interior (e.g. Antarctica near the
+        // south pole) and must be broken to avoid visual wrapping.
+        final maxSegLenSq = screenW * screenW * 0.09; // 30% of width
+        double lastSx = 0, lastSy = 0;
 
         for (var i = 0; i < polygon.length; i += stride) {
           final screenPos = gameRef.worldToScreenGlobe(polygon[i]);
@@ -160,8 +182,17 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
             path.moveTo(screenPos.x, screenPos.y);
             started = true;
           } else {
-            path.lineTo(screenPos.x, screenPos.y);
+            // Break segment if it crosses the globe interior.
+            final segDx = screenPos.x - lastSx;
+            final segDy = screenPos.y - lastSy;
+            if (segDx * segDx + segDy * segDy > maxSegLenSq) {
+              path.moveTo(screenPos.x, screenPos.y);
+            } else {
+              path.lineTo(screenPos.x, screenPos.y);
+            }
           }
+          lastSx = screenPos.x;
+          lastSy = screenPos.y;
         }
 
         if (anyVisible && started) {
@@ -209,8 +240,9 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       ..strokeJoin = StrokeJoin.round;
 
     // Per-country vertex budget for active highlight — higher for crisp look.
-    const activeBudget = kIsWeb ? 1200 : 2400;
+    const activeBudget = kIsWeb ? 2400 : 4800;
     const minActiveBudget = 50;
+    const minActiveMainland = kIsWeb ? 800 : 1600;
     var activeTotalVerts = 0;
     for (final polygon in activeCountry.polygons) {
       activeTotalVerts += polygon.length;
@@ -219,6 +251,12 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         ? activeTotalVerts
         : activeBudget.clamp(minActiveBudget, activeTotalVerts);
 
+    // Find largest polygon for mainland minimum guarantee.
+    var activeMaxPolyLen = 0;
+    for (final polygon in activeCountry.polygons) {
+      if (polygon.length > activeMaxPolyLen) activeMaxPolyLen = polygon.length;
+    }
+
     for (final polygon in activeCountry.polygons) {
       if (polygon.length < 3) continue;
 
@@ -226,9 +264,14 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       if (polygon.length < 4) continue;
 
       // Allocate vertices proportionally — larger polygons get more detail.
-      final polyBudget = (aBudget * polygon.length / activeTotalVerts)
+      var polyBudget = (aBudget * polygon.length / activeTotalVerts)
           .ceil()
           .clamp(3, polygon.length);
+      // Guarantee mainland polygon a minimum so it's always crisp.
+      if (polygon.length == activeMaxPolyLen &&
+          polyBudget < minActiveMainland) {
+        polyBudget = minActiveMainland.clamp(3, polygon.length);
+      }
       final stride = polygon.length > polyBudget
           ? (polygon.length / polyBudget).ceil()
           : 1;
@@ -237,6 +280,11 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       var started = false;
       var anyVisible = false;
       var hasOccluded = false;
+
+      // Maximum screen-space segment length squared — break segments
+      // that cross the globe interior (e.g. Antarctica near the pole).
+      final maxSegLenSq = screenW * screenW * 0.09; // 30% of width
+      double lastSx = 0, lastSy = 0;
 
       for (var i = 0; i < polygon.length; i += stride) {
         final screenPos = gameRef.worldToScreenGlobe(polygon[i]);
@@ -258,8 +306,17 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
           path.moveTo(screenPos.x, screenPos.y);
           started = true;
         } else {
-          path.lineTo(screenPos.x, screenPos.y);
+          // Break segment if it crosses the globe interior.
+          final segDx = screenPos.x - lastSx;
+          final segDy = screenPos.y - lastSy;
+          if (segDx * segDx + segDy * segDy > maxSegLenSq) {
+            path.moveTo(screenPos.x, screenPos.y);
+          } else {
+            path.lineTo(screenPos.x, screenPos.y);
+          }
         }
+        lastSx = screenPos.x;
+        lastSy = screenPos.y;
       }
 
       if (anyVisible) {

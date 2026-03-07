@@ -130,7 +130,8 @@ class _FreeFlightSetupScreenState extends ConsumerState<FreeFlightSetupScreen> {
       MaterialPageRoute<void>(
         builder: (_) => PlayScreen(
           region: widget.region,
-          totalRounds: _selectedRounds == 0 ? 1 : _selectedRounds,
+          totalRounds: _selectedRounds == 0 ? 99999 : _selectedRounds,
+          isEndless: _selectedRounds == 0,
           planeColorScheme: plane?.colorScheme,
           planeWingSpan: plane?.wingSpan,
           equippedPlaneId: planeId,

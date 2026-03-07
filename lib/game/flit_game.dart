@@ -392,6 +392,9 @@ class FlitGame extends FlameGame
   Vector2 get shaderCameraPosition => _shaderCameraPosition;
   Vector2 _shaderCameraPosition = Vector2.zero();
 
+  /// Previous frame's heading — used to detect pole-crossing heading flips.
+  double _prevHeading = 0;
+
   /// Navigation bearing for the camera position offset (radians).
   /// Includes chase camera lag.
   double get cameraBearing => _cameraHeading + pi / 2;
@@ -915,6 +918,7 @@ class FlitGame extends FlameGame
     }
 
     // --- Motion-gated: input, steering, movement ---
+    _prevHeading = _heading;
     if (motionEnabled) {
       _updateMotion(dt);
     }
@@ -1153,7 +1157,19 @@ class FlitGame extends FlameGame
   /// screen. This offset is computed dynamically from the current camera
   /// distance and FOV so contrails and overlays align with the plane sprite.
   void _updateChaseCamera(double dt) {
-    if (_cameraFirstUpdate) {
+    // Detect pole crossing: heading flips by ~π when the lat/lng coordinate
+    // singularity at ±90° latitude is traversed. Snap the camera heading
+    // instantly to avoid the visual 180° swivel that confuses controls.
+    var headingDelta = _heading - _prevHeading;
+    while (headingDelta > pi) {
+      headingDelta -= 2 * pi;
+    }
+    while (headingDelta < -pi) {
+      headingDelta += 2 * pi;
+    }
+    final isPoleCrossing = headingDelta.abs() > pi * 0.7;
+
+    if (_cameraFirstUpdate || isPoleCrossing) {
       _cameraHeading = _heading;
       _cameraFirstUpdate = false;
     } else {
