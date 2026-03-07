@@ -289,6 +289,13 @@ class FlitGame extends FlameGame
     _fuel = (_fuel + 0.75).clamp(0.0, maxFuel);
   }
 
+  /// Companion delivers fuel after a fetch trip.
+  /// Amount is typically [CompanionRenderer.companionFuelGift] (12.5%).
+  void companionRefuel(double amount) {
+    if (!fuelEnabled) return;
+    _fuel = (_fuel + amount).clamp(0.0, maxFuel);
+  }
+
   /// Deduct fuel for using a hint. Returns false if tank is empty.
   bool useHintFuel() {
     if (!fuelEnabled) return true;

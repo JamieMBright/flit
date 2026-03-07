@@ -23,6 +23,7 @@ import '../../data/services/app_config_service.dart';
 import '../../data/services/report_service.dart';
 import '../../data/services/feature_flag_service.dart';
 import '../debug/avatar_preview_screen.dart';
+import '../debug/companion_preview_screen.dart';
 import '../debug/country_preview_screen.dart';
 import '../debug/plane_preview_screen.dart';
 import 'admin_stats_screen.dart';
@@ -2203,6 +2204,17 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const CountryPreviewScreen(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.pets,
+              iconColor: FlitColors.gold,
+              label: 'Companion Preview (all creatures)',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const CompanionPreviewScreen(),
                 ),
               ),
             ),
