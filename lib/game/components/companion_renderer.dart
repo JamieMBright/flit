@@ -83,15 +83,21 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     canvas.save();
     canvas.translate(offsetX, offsetY);
 
-    // Rotate to match the plane heading relative to camera.
-    // Wrap the difference to [-pi, pi] to prevent visual spinning during
-    // sharp turns where the raw delta crosses the +/-pi boundary.
-    var visualHeading = delayedHeading - gameRef.heading;
-    while (visualHeading > pi) {
-      visualHeading -= 2 * pi;
-    }
-    while (visualHeading < -pi) {
-      visualHeading += 2 * pi;
+    // Rotate to match the companion's delayed heading relative to the camera.
+    // Must use cameraHeading (not heading) to match the plane's own visual
+    // rotation logic — the camera lags behind the heading during turns.
+    // In flat-map mode, convert math convention to canvas (north-up) with +π/2.
+    double visualHeading;
+    if (gameRef.isFlatMapMode) {
+      visualHeading = delayedHeading + pi / 2;
+    } else {
+      visualHeading = delayedHeading - gameRef.cameraHeading;
+      while (visualHeading > pi) {
+        visualHeading -= 2 * pi;
+      }
+      while (visualHeading < -pi) {
+        visualHeading += 2 * pi;
+      }
     }
     canvas.rotate(visualHeading);
 

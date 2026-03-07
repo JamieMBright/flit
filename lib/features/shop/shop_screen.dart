@@ -1772,15 +1772,19 @@ class _CompanionPreviewPainter extends CustomPainter {
     canvas.save();
     canvas.translate(cx, cy);
 
+    // Scale so each creature's coordinate system maps nicely into preview.
+    final scale = size.shortestSide / 64;
+    canvas.scale(scale);
+
     switch (companionId) {
       case 'companion_pidgey':
-        _paintBird(canvas, const Color(0xFFA0785A), 10);
+        _paintPidgey(canvas);
       case 'companion_sparrow':
-        _paintBird(canvas, FlitColors.textSecondary, 12);
+        _paintSparrow(canvas);
       case 'companion_eagle':
-        _paintBird(canvas, const Color(0xFF8B4513), 18);
+        _paintEagle(canvas);
       case 'companion_parrot':
-        _paintBird(canvas, const Color(0xFF00CC44), 15);
+        _paintParrot(canvas);
       case 'companion_phoenix':
         _paintPhoenix(canvas);
       case 'companion_dragon':
@@ -1792,240 +1796,1211 @@ class _CompanionPreviewPainter extends CustomPainter {
     canvas.restore();
   }
 
-  void _paintBird(Canvas canvas, Color color, double birdSize) {
-    final bodyPaint = Paint()..color = color;
-    final wingPaint = Paint()..color = color.withOpacity(0.7);
-    final beakPaint = Paint()..color = const Color(0xFFFFAA00);
+  // ---------------------------------------------------------------------------
+  // Pidgey — Adorable chibi bird with rosy cheeks and big eyes.
+  // ---------------------------------------------------------------------------
+  void _paintPidgey(Canvas canvas) {
+    const s = 14.0; // doubled from in-game 7.0 for preview clarity
+    const brown = Color(0xFF9E7B5A);
+    const cream = Color(0xFFF5E8D0);
+    const darkBrown = Color(0xFF6B5238);
 
-    // Body
+    // Soft drop shadow.
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset.zero,
-        width: birdSize * 1.5,
-        height: birdSize,
+        center: const Offset(0.5, s * 0.22),
+        width: s * 1.0,
+        height: s * 0.3,
       ),
-      bodyPaint,
+      Paint()
+        ..color = const Color(0xFF000000).withOpacity(0.1)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
     );
 
-    // Wings (spread for preview)
-    final wingPath = Path()
-      ..moveTo(0, -birdSize * 0.3)
-      ..lineTo(-birdSize * 1.5, -birdSize * 1.2)
-      ..lineTo(-birdSize * 0.4, 0)
-      ..close();
-    canvas.drawPath(wingPath, wingPaint);
+    // Tail feathers.
+    _drawTailFeathers(canvas, s, darkBrown, 3, 0.35, 0.12);
 
-    final wingPath2 = Path()
-      ..moveTo(0, -birdSize * 0.3)
-      ..lineTo(birdSize * 1.5, -birdSize * 1.2)
-      ..lineTo(birdSize * 0.4, 0)
-      ..close();
-    canvas.drawPath(wingPath2, wingPaint);
+    // Wings (spread, static flapOffset=0).
+    _drawWing(canvas, s, 0, darkBrown.withOpacity(0.85), true, 0.7, 2);
+    _drawWing(canvas, s, 0, darkBrown.withOpacity(0.85), false, 0.7, 2);
 
-    // Beak
-    canvas.drawCircle(Offset(0, -birdSize * 0.6), birdSize * 0.15, beakPaint);
+    // Pudgy body.
+    _drawBody(canvas, s * 0.95, s * 0.6, brown, cream);
 
-    // Eye
+    // Round head.
     canvas.drawCircle(
-      Offset(-birdSize * 0.2, -birdSize * 0.2),
-      birdSize * 0.1,
-      Paint()..color = Colors.white,
+      const Offset(0, -s * 0.32),
+      s * 0.28,
+      Paint()..color = brown,
     );
     canvas.drawCircle(
-      Offset(-birdSize * 0.2, -birdSize * 0.2),
-      birdSize * 0.05,
-      Paint()..color = Colors.black,
+      const Offset(0, -s * 0.28),
+      s * 0.18,
+      Paint()..color = cream,
+    );
+    canvas.drawCircle(
+      const Offset(-s * 0.05, -s * 0.42),
+      s * 0.08,
+      Paint()..color = _lighten(brown, 0.15).withOpacity(0.5),
+    );
+
+    // Big cute eyes.
+    _drawEyes(
+      canvas,
+      const Offset(-s * 0.1, -s * 0.35),
+      const Offset(s * 0.1, -s * 0.35),
+      s * 0.07,
+    );
+
+    // Tiny beak.
+    _drawBeak(
+      canvas,
+      const Offset(0, -s * 0.52),
+      s * 0.15,
+      const Color(0xFFE8962A),
+    );
+
+    // Rosy cheeks.
+    canvas.drawCircle(
+      const Offset(-s * 0.15, -s * 0.26),
+      s * 0.05,
+      Paint()..color = const Color(0xFFE88080).withOpacity(0.35),
+    );
+    canvas.drawCircle(
+      const Offset(s * 0.15, -s * 0.26),
+      s * 0.05,
+      Paint()..color = const Color(0xFFE88080).withOpacity(0.35),
     );
   }
 
-  void _paintPhoenix(Canvas canvas) {
-    // Glow
-    final glowPaint = Paint()
-      ..color = const Color(0xFFFF6600).withOpacity(0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-    canvas.drawCircle(Offset.zero, 22, glowPaint);
+  // ---------------------------------------------------------------------------
+  // Sparrow — Sleek barn swallow with navy back, forked tail.
+  // ---------------------------------------------------------------------------
+  void _paintSparrow(Canvas canvas) {
+    const s = 16.0;
+    const navy = Color(0xFF2C3E6B);
+    const russet = Color(0xFFB85C38);
+    const cream = Color(0xFFF0E6D4);
 
-    _paintBird(canvas, const Color(0xFFFF6600), 15);
-  }
-
-  void _paintDragon(Canvas canvas) {
-    const bodyColor = Color(0xFFE85D04);
-    final bodyPaint = Paint()..color = bodyColor;
-    final wingPaint = Paint()..color = const Color(0xFF1B998B).withOpacity(0.7);
-
-    // Body
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset.zero, width: 24, height: 16),
-      bodyPaint,
-    );
-    // Pale belly
-    canvas.drawOval(
-      Rect.fromCenter(center: const Offset(0, 2), width: 14, height: 8),
-      Paint()..color = const Color(0xFFFFCC66),
-    );
-
-    // Teal bat wings
-    final leftWing = Path()
-      ..moveTo(-6, -4)
-      ..quadraticBezierTo(-24, -22, -18, -2)
-      ..quadraticBezierTo(-20, -14, -10, -2)
+    // Forked tail.
+    final leftFork = Path()
+      ..moveTo(-s * 0.05, s * 0.2)
+      ..quadraticBezierTo(-s * 0.2, s * 0.55, -s * 0.18, s * 0.7)
+      ..quadraticBezierTo(-s * 0.12, s * 0.5, -s * 0.02, s * 0.35)
       ..close();
-    canvas.drawPath(leftWing, wingPaint);
-
-    final rightWing = Path()
-      ..moveTo(6, -4)
-      ..quadraticBezierTo(24, -22, 18, -2)
-      ..quadraticBezierTo(20, -14, 10, -2)
+    final rightFork = Path()
+      ..moveTo(s * 0.05, s * 0.2)
+      ..quadraticBezierTo(s * 0.2, s * 0.55, s * 0.18, s * 0.7)
+      ..quadraticBezierTo(s * 0.12, s * 0.5, s * 0.02, s * 0.35)
       ..close();
-    canvas.drawPath(rightWing, wingPaint);
+    canvas.drawPath(leftFork, Paint()..color = navy);
+    canvas.drawPath(rightFork, Paint()..color = navy);
 
-    // Tail with flame tip
-    final tailPath = Path()
-      ..moveTo(0, 8)
-      ..quadraticBezierTo(8, 20, 4, 24)
-      ..lineTo(-2, 18)
-      ..close();
-    canvas.drawPath(tailPath, bodyPaint);
-    canvas.drawCircle(
-      const Offset(3, 24),
+    // Long swept wings.
+    _drawWing(
+      canvas,
+      s,
+      0,
+      navy.withOpacity(0.9),
+      true,
+      0.95,
       4,
-      Paint()..color = const Color(0xFFFF6600).withOpacity(0.7),
+      tipColor: const Color(0xFF1A2A4D),
+    );
+    _drawWing(
+      canvas,
+      s,
+      0,
+      navy.withOpacity(0.9),
+      false,
+      0.95,
+      4,
+      tipColor: const Color(0xFF1A2A4D),
     );
 
-    // Horns
-    final hornPaint = Paint()..color = const Color(0xFF553300);
-    canvas.drawLine(
-      const Offset(-4, -8),
-      const Offset(-7, -16),
-      hornPaint..strokeWidth = 2.0,
+    // Streamlined body.
+    _drawBody(canvas, s * 0.8, s * 0.45, navy, cream);
+
+    // Head.
+    canvas.drawCircle(
+      const Offset(0, -s * 0.28),
+      s * 0.18,
+      Paint()..color = navy,
     );
-    canvas.drawLine(
-      const Offset(4, -8),
-      const Offset(7, -16),
-      hornPaint..strokeWidth = 2.0,
+    // Russet throat patch.
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: const Offset(0, -s * 0.2),
+        width: s * 0.2,
+        height: s * 0.12,
+      ),
+      Paint()..color = russet,
     );
 
-    // Eyes
-    final eyePaint = Paint()..color = const Color(0xFFFFDD00);
-    canvas.drawCircle(const Offset(-4, -4), 2.5, eyePaint);
-    canvas.drawCircle(const Offset(4, -4), 2.5, eyePaint);
-    canvas.drawCircle(
-      const Offset(-4, -4),
-      1.0,
-      Paint()..color = const Color(0xFF000000),
+    // Sharp eyes.
+    _drawEyes(
+      canvas,
+      const Offset(-s * 0.07, -s * 0.31),
+      const Offset(s * 0.07, -s * 0.31),
+      s * 0.04,
+      irisColor: const Color(0xFF111122),
     );
-    canvas.drawCircle(
-      const Offset(4, -4),
-      1.0,
-      Paint()..color = const Color(0xFF000000),
+
+    // Small pointed beak.
+    _drawBeak(
+      canvas,
+      const Offset(0, -s * 0.44),
+      s * 0.12,
+      const Color(0xFF2A2A2A),
     );
   }
 
-  void _paintCharizard(Canvas canvas) {
-    // Fire aura glow
+  // ---------------------------------------------------------------------------
+  // Eagle — Majestic golden raptor with white head.
+  // ---------------------------------------------------------------------------
+  void _paintEagle(Canvas canvas) {
+    const s = 20.0;
+    const darkBrown = Color(0xFF4A3222);
+    const goldenBrown = Color(0xFF8B6B3A);
+    const white = Color(0xFFF5F0E8);
+    const gold = Color(0xFFD4A030);
+
+    // Broad fanned tail.
+    _drawTailFeathers(canvas, s, darkBrown, 5, 0.45, 0.2);
+
+    // Massive soaring wings.
+    _drawWing(
+      canvas,
+      s,
+      0,
+      goldenBrown.withOpacity(0.9),
+      true,
+      1.15,
+      5,
+      tipColor: darkBrown,
+    );
+    _drawWing(
+      canvas,
+      s,
+      0,
+      goldenBrown.withOpacity(0.9),
+      false,
+      1.15,
+      5,
+      tipColor: darkBrown,
+    );
+
+    // Wing bar pattern.
+    for (final sign in [-1.0, 1.0]) {
+      final bar = Path()
+        ..moveTo(sign * s * 0.4, -s * 0.2)
+        ..lineTo(sign * s * 0.8, -s * 0.32)
+        ..lineTo(sign * s * 0.82, -s * 0.27)
+        ..lineTo(sign * s * 0.42, -s * 0.15)
+        ..close();
+      canvas.drawPath(bar, Paint()..color = gold.withOpacity(0.3));
+    }
+
+    // Powerful body.
+    _drawBody(canvas, s * 0.85, s * 0.5, goldenBrown, const Color(0xFFE8D8B8));
+
+    // White head.
+    canvas.drawCircle(
+      const Offset(0, -s * 0.32),
+      s * 0.22,
+      Paint()..color = white,
+    );
+    canvas.drawCircle(
+      const Offset(0, -s * 0.28),
+      s * 0.18,
+      Paint()..color = const Color(0xFFE8E0D0),
+    );
+
+    // Fierce eyes.
+    _drawEyes(
+      canvas,
+      const Offset(-s * 0.08, -s * 0.34),
+      const Offset(s * 0.08, -s * 0.34),
+      s * 0.04,
+      irisColor: const Color(0xFFCC8800),
+      fierce: true,
+    );
+
+    // Prominent hooked beak.
+    _drawBeak(
+      canvas,
+      const Offset(0, -s * 0.52),
+      s * 0.18,
+      const Color(0xFFE8A820),
+      hooked: true,
+    );
+
+    // Brow ridges.
+    canvas.drawLine(
+      const Offset(-s * 0.14, -s * 0.38),
+      const Offset(-s * 0.03, -s * 0.36),
+      Paint()
+        ..color = const Color(0xFFD0C8B8)
+        ..strokeWidth = 1.2
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawLine(
+      const Offset(s * 0.14, -s * 0.38),
+      const Offset(s * 0.03, -s * 0.36),
+      Paint()
+        ..color = const Color(0xFFD0C8B8)
+        ..strokeWidth = 1.2
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Parrot — Vivid scarlet macaw with multicolor wings and tail streamers.
+  // ---------------------------------------------------------------------------
+  void _paintParrot(Canvas canvas) {
+    const s = 16.0;
+    const scarlet = Color(0xFFDD2828);
+    const royalBlue = Color(0xFF1845A0);
+    const emerald = Color(0xFF22AA44);
+    const gold = Color(0xFFFFCC22);
+    const white = Color(0xFFF8F4F0);
+
+    // Long tail streamers.
+    for (var i = 0; i < 3; i++) {
+      final colors = [royalBlue, scarlet, emerald];
+      final offsets = [-0.08, 0.0, 0.08];
+      final lengths = [0.85, 0.95, 0.8];
+      final streamer = Path()
+        ..moveTo(s * offsets[i], s * 0.2)
+        ..cubicTo(
+          s * offsets[i] * 2,
+          s * 0.5,
+          s * offsets[i] * 0.5,
+          s * 0.7,
+          s * offsets[i] * 1.5,
+          s * lengths[i],
+        )
+        ..quadraticBezierTo(
+          s * offsets[i],
+          s * (lengths[i] - 0.1),
+          s * offsets[i] * 0.5,
+          s * 0.2,
+        )
+        ..close();
+      canvas.drawPath(streamer, Paint()..color = colors[i].withOpacity(0.85));
+    }
+
+    // Multicolored wings.
+    for (final isLeft in [true, false]) {
+      _drawWing(
+        canvas,
+        s,
+        0,
+        royalBlue.withOpacity(0.9),
+        isLeft,
+        0.85,
+        3,
+        tipColor: const Color(0xFF0D2D6B),
+      );
+      final sign = isLeft ? -1.0 : 1.0;
+      // Green secondary band.
+      final greenBand = Path()
+        ..moveTo(sign * s * 0.25, -s * 0.05)
+        ..lineTo(sign * s * 0.55, -s * 0.25)
+        ..lineTo(sign * s * 0.58, -s * 0.18)
+        ..lineTo(sign * s * 0.28, s * 0.02)
+        ..close();
+      canvas.drawPath(greenBand, Paint()..color = emerald.withOpacity(0.7));
+      // Gold covert stripe.
+      final goldStripe = Path()
+        ..moveTo(sign * s * 0.2, 0)
+        ..lineTo(sign * s * 0.45, -s * 0.12)
+        ..lineTo(sign * s * 0.47, -s * 0.08)
+        ..lineTo(sign * s * 0.22, s * 0.04)
+        ..close();
+      canvas.drawPath(goldStripe, Paint()..color = gold.withOpacity(0.5));
+    }
+
+    // Scarlet body.
+    _drawBody(canvas, s * 0.8, s * 0.48, scarlet, const Color(0xFFEE5555));
+
+    // Round head.
+    canvas.drawCircle(
+      const Offset(0, -s * 0.3),
+      s * 0.2,
+      Paint()..color = scarlet,
+    );
+    canvas.drawCircle(
+      const Offset(-s * 0.04, -s * 0.38),
+      s * 0.06,
+      Paint()..color = _lighten(scarlet, 0.15).withOpacity(0.4),
+    );
+
+    // White eye patches.
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: const Offset(-s * 0.09, -s * 0.3),
+        width: s * 0.12,
+        height: s * 0.14,
+      ),
+      Paint()..color = white.withOpacity(0.85),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: const Offset(s * 0.09, -s * 0.3),
+        width: s * 0.12,
+        height: s * 0.14,
+      ),
+      Paint()..color = white.withOpacity(0.85),
+    );
+
+    // Eyes.
+    _drawEyes(
+      canvas,
+      const Offset(-s * 0.09, -s * 0.31),
+      const Offset(s * 0.09, -s * 0.31),
+      s * 0.04,
+      irisColor: const Color(0xFF222222),
+    );
+
+    // Curved parrot beak.
+    final upperBeak = Path()
+      ..moveTo(0, -s * 0.42)
+      ..cubicTo(-s * 0.1, -s * 0.48, -s * 0.08, -s * 0.56, 0, -s * 0.58)
+      ..cubicTo(s * 0.08, -s * 0.56, s * 0.1, -s * 0.48, 0, -s * 0.42);
+    canvas.drawPath(upperBeak, Paint()..color = const Color(0xFF1A1A1A));
+    final lowerBeak = Path()
+      ..moveTo(-s * 0.04, -s * 0.42)
+      ..quadraticBezierTo(0, -s * 0.46, s * 0.04, -s * 0.42)
+      ..quadraticBezierTo(0, -s * 0.39, -s * 0.04, -s * 0.42);
+    canvas.drawPath(lowerBeak, Paint()..color = const Color(0xFF333333));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phoenix — Ethereal fire bird with warm aura glow and flame crest.
+  // ---------------------------------------------------------------------------
+  void _paintPhoenix(Canvas canvas) {
+    const s = 18.0;
+    const deepOrange = Color(0xFFE85D04);
+    const brightOrange = Color(0xFFFF8C22);
+    const gold = Color(0xFFFFCC00);
+    const paleGold = Color(0xFFFFE888);
+    const crimson = Color(0xFFCC1100);
+
+    // Warm aura.
     canvas.drawCircle(
       Offset.zero,
-      28,
+      s * 0.9,
       Paint()
-        ..color = const Color(0xFFFF4400).withOpacity(0.2)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+        ..color = const Color(0xFFFF6600).withOpacity(0.08)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
     );
-
-    const bodyColor = Color(0xFFE85D04);
-    final bodyPaint = Paint()..color = bodyColor;
-    final wingPaint = Paint()..color = const Color(0xFF1B998B).withOpacity(0.8);
-
-    // Larger body
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset.zero, width: 28, height: 18),
-      bodyPaint,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(center: const Offset(0, 2), width: 16, height: 10),
-      Paint()..color = const Color(0xFFFFDD88),
-    );
-
-    // Massive teal bat wings
-    final leftWing = Path()
-      ..moveTo(-7, -5)
-      ..lineTo(-20, -24)
-      ..lineTo(-16, -10)
-      ..lineTo(-28, -16)
-      ..lineTo(-22, -4)
-      ..lineTo(-12, -2)
-      ..close();
-    canvas.drawPath(leftWing, wingPaint);
-
-    final rightWing = Path()
-      ..moveTo(7, -5)
-      ..lineTo(20, -24)
-      ..lineTo(16, -10)
-      ..lineTo(28, -16)
-      ..lineTo(22, -4)
-      ..lineTo(12, -2)
-      ..close();
-    canvas.drawPath(rightWing, wingPaint);
-
-    // Thick tail with large flame
-    final tailPath = Path()
-      ..moveTo(0, 9)
-      ..quadraticBezierTo(10, 22, 5, 26)
-      ..lineTo(-2, 20)
-      ..close();
-    canvas.drawPath(tailPath, bodyPaint);
-    // Big flame
-    final flame = Path()
-      ..moveTo(2, 24)
-      ..lineTo(-3, 32)
-      ..lineTo(1, 28)
-      ..lineTo(5, 34)
-      ..lineTo(7, 26)
-      ..close();
-    canvas.drawPath(flame, Paint()..color = const Color(0xFFFF6600));
-    canvas.drawPath(
-      flame,
+    canvas.drawCircle(
+      const Offset(0, -s * 0.1),
+      s * 0.5,
       Paint()
-        ..color = const Color(0xFFFFDD00).withOpacity(0.5)
+        ..color = gold.withOpacity(0.12)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+    );
+
+    // Flame tail tongues.
+    final tongueColors = [crimson, deepOrange, gold, brightOrange, crimson];
+    for (var i = 0; i < 5; i++) {
+      final t = (i - 2) * 0.06;
+      final tongue = Path()
+        ..moveTo(s * t, s * 0.2)
+        ..cubicTo(
+          s * t,
+          s * 0.5,
+          s * t * 2,
+          s * 0.7,
+          s * t * 1.5,
+          s * (0.75 + i * 0.06),
+        )
+        ..quadraticBezierTo(s * t, s * (0.6 + i * 0.03), s * t * 0.5, s * 0.2)
+        ..close();
+      canvas.drawPath(
+        tongue,
+        Paint()..color = tongueColors[i].withOpacity(0.7),
+      );
+    }
+
+    // Flame wings.
+    for (final isLeft in [true, false]) {
+      final sign = isLeft ? -1.0 : 1.0;
+      // Wing glow.
+      final glowWing = Path()
+        ..moveTo(sign * s * 0.15, 0)
+        ..cubicTo(
+          sign * s * 0.5,
+          -s * 0.3,
+          sign * s * 0.8,
+          -s * 0.55,
+          sign * s * 1.05,
+          -s * 0.15,
+        )
+        ..lineTo(sign * s * 0.1, s * 0.05)
+        ..close();
+      canvas.drawPath(
+        glowWing,
+        Paint()
+          ..color = gold.withOpacity(0.15)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      );
+      _drawWing(
+        canvas,
+        s,
+        0,
+        deepOrange.withOpacity(0.85),
+        isLeft,
+        1.05,
+        4,
+        tipColor: crimson.withOpacity(0.8),
+      );
+    }
+
+    // Luminous body.
+    _drawBody(canvas, s * 0.75, s * 0.42, deepOrange, paleGold);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset.zero, width: s * 0.5, height: s * 0.25),
+      Paint()
+        ..color = gold.withOpacity(0.15)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
     );
 
-    // Prominent horns (two pairs)
-    final hornPaint = Paint()
-      ..color = const Color(0xFF553300)
-      ..strokeWidth = 2.5
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(const Offset(-5, -9), const Offset(-9, -18), hornPaint);
-    canvas.drawLine(const Offset(5, -9), const Offset(9, -18), hornPaint);
-    canvas.drawLine(
-      const Offset(-3, -10),
-      const Offset(-5, -15),
-      hornPaint..strokeWidth = 1.5,
+    // Elegant head.
+    canvas.drawCircle(
+      const Offset(0, -s * 0.28),
+      s * 0.18,
+      Paint()..color = brightOrange,
     );
-    canvas.drawLine(
-      const Offset(3, -10),
-      const Offset(5, -15),
-      hornPaint..strokeWidth = 1.5,
+    canvas.drawCircle(
+      const Offset(0, -s * 0.28),
+      s * 0.12,
+      Paint()
+        ..color = gold.withOpacity(0.2)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
     );
 
-    // Fierce eyes
-    canvas.drawCircle(
-      const Offset(-5, -5),
-      3.0,
-      Paint()..color = const Color(0xFFFFDD00),
+    // Crown crest — three flame plumes.
+    final plumeColors = [crimson, gold, deepOrange];
+    final plumeLengths = [s * 0.28, s * 0.35, s * 0.25];
+    for (var i = 0; i < 3; i++) {
+      final offX = (i - 1) * s * 0.08;
+      final plume = Path()
+        ..moveTo(offX, -s * 0.42)
+        ..quadraticBezierTo(
+          offX,
+          -s * 0.42 - plumeLengths[i] * 0.6,
+          offX * 0.5,
+          -s * 0.42 - plumeLengths[i],
+        )
+        ..quadraticBezierTo(
+          offX,
+          -s * 0.42 - plumeLengths[i] * 0.4,
+          offX,
+          -s * 0.42,
+        )
+        ..close();
+      canvas.drawPath(plume, Paint()..color = plumeColors[i].withOpacity(0.8));
+    }
+
+    // Bright eyes.
+    _drawEyes(
+      canvas,
+      const Offset(-s * 0.07, -s * 0.3),
+      const Offset(s * 0.07, -s * 0.3),
+      s * 0.035,
+      irisColor: const Color(0xFFFFDD00),
     );
+
+    // Small beak.
+    _drawBeak(
+      canvas,
+      const Offset(0, -s * 0.44),
+      s * 0.1,
+      const Color(0xFFCC6600),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Dragon — Western wyvern with bat-membrane wings, horns, fire tail.
+  // ---------------------------------------------------------------------------
+  void _paintDragon(Canvas canvas) {
+    const s = 20.0;
+    const forestGreen = Color(0xFF2D6B3F);
+    const darkGreen = Color(0xFF1A4228);
+    const paleGreen = Color(0xFFA8D8A0);
+    const amber = Color(0xFFE8A820);
+    const hornColor = Color(0xFF5C4A32);
+
+    // Spined tail with flame tip.
+    final tail = Path()
+      ..moveTo(0, s * 0.25)
+      ..cubicTo(-s * 0.08, s * 0.5, -s * 0.15, s * 0.7, -s * 0.08, s * 0.85)
+      ..lineTo(0, s * 0.78)
+      ..lineTo(s * 0.08, s * 0.85)
+      ..cubicTo(s * 0.15, s * 0.7, s * 0.08, s * 0.5, 0, s * 0.25)
+      ..close();
+    canvas.drawPath(tail, Paint()..color = forestGreen);
+    // Tail spines.
+    for (var i = 0; i < 3; i++) {
+      final t = 0.35 + i * 0.15;
+      final spine = Path()
+        ..moveTo(-s * 0.02, s * t)
+        ..lineTo(-s * 0.06, s * t - s * 0.04)
+        ..lineTo(0, s * t - s * 0.01)
+        ..close();
+      canvas.drawPath(spine, Paint()..color = darkGreen);
+    }
+    // Flame tail tip.
+    final flameTip = Path()
+      ..moveTo(-s * 0.08, s * 0.82)
+      ..lineTo(-s * 0.1, s * 0.96)
+      ..lineTo(0, s * 0.9)
+      ..lineTo(s * 0.1, s * 0.96)
+      ..lineTo(s * 0.08, s * 0.82)
+      ..close();
+    canvas.drawPath(flameTip, Paint()..color = const Color(0xFFFF6600));
+    canvas.drawPath(
+      flameTip,
+      Paint()
+        ..color = amber.withOpacity(0.4)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+    );
+
+    // Bat-like membrane wings with finger bones.
+    for (final isLeft in [true, false]) {
+      final sign = isLeft ? -1.0 : 1.0;
+      final membrane = Path()
+        ..moveTo(sign * s * 0.3, -s * 0.05)
+        ..lineTo(sign * s * 0.95, -s * 0.7)
+        ..quadraticBezierTo(
+          sign * s * 0.7,
+          -s * 0.3,
+          sign * s * 0.75,
+          -s * 0.28,
+        )
+        ..lineTo(sign * s * 1.15, -s * 0.45)
+        ..quadraticBezierTo(
+          sign * s * 0.85,
+          -s * 0.12,
+          sign * s * 0.88,
+          -s * 0.08,
+        )
+        ..lineTo(sign * s * 1.05, -s * 0.15)
+        ..quadraticBezierTo(sign * s * 0.7, s * 0.05, sign * s * 0.15, s * 0.02)
+        ..close();
+      canvas.drawPath(
+        membrane,
+        Paint()..color = const Color(0xFF3D8B55).withOpacity(0.7),
+      );
+      canvas.drawPath(membrane, Paint()..color = paleGreen.withOpacity(0.1));
+
+      // Finger bones.
+      final bonePaint = Paint()
+        ..color = darkGreen.withOpacity(0.7)
+        ..strokeWidth = 1.2
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(
+        Offset(sign * s * 0.3, -s * 0.05),
+        Offset(sign * s * 0.65, -s * 0.35),
+        bonePaint,
+      );
+      canvas.drawLine(
+        Offset(sign * s * 0.65, -s * 0.35),
+        Offset(sign * s * 0.95, -s * 0.7),
+        bonePaint,
+      );
+      canvas.drawLine(
+        Offset(sign * s * 0.65, -s * 0.35),
+        Offset(sign * s * 1.15, -s * 0.45),
+        bonePaint,
+      );
+      canvas.drawLine(
+        Offset(sign * s * 0.65, -s * 0.35),
+        Offset(sign * s * 1.05, -s * 0.15),
+        bonePaint,
+      );
+    }
+
+    // Muscular body.
+    _drawBody(canvas, s * 0.85, s * 0.52, forestGreen, paleGreen);
+    // Scale chevrons.
+    for (var i = 0; i < 4; i++) {
+      final sy = -s * 0.08 + i * s * 0.06;
+      canvas.drawLine(
+        Offset(-s * 0.12, sy),
+        Offset(0, sy + s * 0.02),
+        Paint()
+          ..color = darkGreen.withOpacity(0.2)
+          ..strokeWidth = 0.6,
+      );
+      canvas.drawLine(
+        Offset(0, sy + s * 0.02),
+        Offset(s * 0.12, sy),
+        Paint()
+          ..color = darkGreen.withOpacity(0.2)
+          ..strokeWidth = 0.6,
+      );
+    }
+
+    // Head.
+    final snout = Path()
+      ..moveTo(-s * 0.12, -s * 0.32)
+      ..quadraticBezierTo(0, -s * 0.55, s * 0.12, -s * 0.32)
+      ..quadraticBezierTo(0, -s * 0.28, -s * 0.12, -s * 0.32);
+    canvas.drawPath(snout, Paint()..color = forestGreen);
     canvas.drawCircle(
-      const Offset(5, -5),
-      3.0,
-      Paint()..color = const Color(0xFFFFDD00),
+      const Offset(0, -s * 0.34),
+      s * 0.18,
+      Paint()..color = forestGreen,
     );
     canvas.drawOval(
-      Rect.fromCenter(center: const Offset(-5, -5), width: 1.5, height: 4.0),
-      Paint()..color = const Color(0xFF000000),
+      Rect.fromCenter(
+        center: const Offset(0, -s * 0.3),
+        width: s * 0.18,
+        height: s * 0.08,
+      ),
+      Paint()..color = paleGreen.withOpacity(0.6),
+    );
+
+    // Horns.
+    for (final sign in [-1.0, 1.0]) {
+      final horn = Path()
+        ..moveTo(sign * s * 0.1, -s * 0.46)
+        ..cubicTo(
+          sign * s * 0.18,
+          -s * 0.58,
+          sign * s * 0.22,
+          -s * 0.68,
+          sign * s * 0.16,
+          -s * 0.72,
+        )
+        ..lineTo(sign * s * 0.08, -s * 0.5)
+        ..close();
+      canvas.drawPath(horn, Paint()..color = hornColor);
+    }
+
+    // Fierce slit eyes.
+    for (final sign in [-1.0, 1.0]) {
+      canvas.drawCircle(
+        Offset(sign * s * 0.08, -s * 0.38),
+        s * 0.04,
+        Paint()
+          ..color = amber.withOpacity(0.3)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(sign * s * 0.08, -s * 0.38),
+          width: s * 0.06,
+          height: s * 0.045,
+        ),
+        Paint()..color = amber,
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(sign * s * 0.08, -s * 0.38),
+          width: s * 0.015,
+          height: s * 0.04,
+        ),
+        Paint()..color = const Color(0xFF111111),
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Charizard — Ultimate flame dragon with scalloped wings and fire aura.
+  // ---------------------------------------------------------------------------
+  void _paintCharizard(Canvas canvas) {
+    const s = 22.0;
+    const deepOrange = Color(0xFFD85A10);
+    const brightOrange = Color(0xFFFF8833);
+    const paleYellow = Color(0xFFFFE8A0);
+    const tealWing = Color(0xFF1B8B7A);
+    const darkTeal = Color(0xFF0E5E52);
+    const hornColor = Color(0xFF5C4432);
+    const fireRed = Color(0xFFEE2200);
+    const fireGold = Color(0xFFFFCC00);
+
+    // Fiery aura.
+    canvas.drawCircle(
+      Offset.zero,
+      s * 1.0,
+      Paint()
+        ..color = const Color(0xFFFF4400).withOpacity(0.06)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16),
+    );
+    canvas.drawCircle(
+      const Offset(0, -s * 0.15),
+      s * 0.55,
+      Paint()
+        ..color = fireGold.withOpacity(0.08)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+
+    // Thick tail with multi-layered flame.
+    final tail = Path()
+      ..moveTo(0, s * 0.25)
+      ..cubicTo(-s * 0.1, s * 0.55, -s * 0.18, s * 0.75, -s * 0.1, s * 0.9)
+      ..lineTo(0, s * 0.82)
+      ..lineTo(s * 0.1, s * 0.9)
+      ..cubicTo(s * 0.18, s * 0.75, s * 0.1, s * 0.55, 0, s * 0.25)
+      ..close();
+    canvas.drawPath(tail, Paint()..color = deepOrange);
+    // Tail belly stripe.
+    final tailBelly = Path()
+      ..moveTo(-s * 0.03, s * 0.3)
+      ..cubicTo(-s * 0.04, s * 0.55, -s * 0.06, s * 0.75, -s * 0.03, s * 0.82)
+      ..lineTo(s * 0.03, s * 0.82)
+      ..cubicTo(s * 0.06, s * 0.75, s * 0.04, s * 0.55, s * 0.03, s * 0.3)
+      ..close();
+    canvas.drawPath(tailBelly, Paint()..color = paleYellow.withOpacity(0.4));
+    // Tail flame.
+    final flameCore = Path()
+      ..moveTo(-s * 0.04, s * 0.88)
+      ..lineTo(0, s * 1.05)
+      ..lineTo(s * 0.04, s * 0.88)
+      ..close();
+    canvas.drawPath(flameCore, Paint()..color = const Color(0xFFFFEE88));
+    canvas.drawCircle(
+      const Offset(0, s * 0.95),
+      s * 0.12,
+      Paint()
+        ..color = fireRed.withOpacity(0.25)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+    );
+
+    // Massive bat-membrane wings with scalloped edges.
+    for (final isLeft in [true, false]) {
+      final sign = isLeft ? -1.0 : 1.0;
+      final membrane = Path()..moveTo(sign * s * 0.3, -s * 0.08);
+      membrane.lineTo(sign * s * 1.0, -s * 0.8);
+      membrane.quadraticBezierTo(
+        sign * s * 0.78,
+        -s * 0.38,
+        sign * s * 0.82,
+        -s * 0.35,
+      );
+      membrane.lineTo(sign * s * 1.3, -s * 0.55);
+      membrane.quadraticBezierTo(
+        sign * s * 0.98,
+        -s * 0.18,
+        sign * s * 1.0,
+        -s * 0.12,
+      );
+      membrane.lineTo(sign * s * 1.18, -s * 0.18);
+      membrane.quadraticBezierTo(
+        sign * s * 0.75,
+        s * 0.08,
+        sign * s * 0.15,
+        s * 0.05,
+      );
+      membrane.close();
+      canvas.drawPath(membrane, Paint()..color = tealWing.withOpacity(0.8));
+      // Inner membrane lighter.
+      final inner = Path()
+        ..moveTo(sign * s * 0.35, -s * 0.05)
+        ..lineTo(sign * s * 0.82, -s * 0.35)
+        ..lineTo(sign * s * 1.0, -s * 0.12)
+        ..quadraticBezierTo(sign * s * 0.6, s * 0.06, sign * s * 0.15, s * 0.03)
+        ..close();
+      canvas.drawPath(
+        inner,
+        Paint()..color = const Color(0xFF40C4B0).withOpacity(0.2),
+      );
+
+      // Finger bones.
+      final bonePaint = Paint()
+        ..color = darkTeal.withOpacity(0.7)
+        ..strokeWidth = 1.5
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(
+        Offset(sign * s * 0.3, -s * 0.08),
+        Offset(sign * s * 0.7, -s * 0.4),
+        bonePaint,
+      );
+      canvas.drawLine(
+        Offset(sign * s * 0.7, -s * 0.4),
+        Offset(sign * s * 1.0, -s * 0.8),
+        bonePaint,
+      );
+      canvas.drawLine(
+        Offset(sign * s * 0.7, -s * 0.4),
+        Offset(sign * s * 1.3, -s * 0.55),
+        bonePaint,
+      );
+      canvas.drawLine(
+        Offset(sign * s * 0.7, -s * 0.4),
+        Offset(sign * s * 1.18, -s * 0.18),
+        bonePaint,
+      );
+
+      // Wing claw.
+      final claw = Path()
+        ..moveTo(sign * s * 0.68, -s * 0.4)
+        ..lineTo(sign * s * 0.62, -s * 0.48)
+        ..lineTo(sign * s * 0.72, -s * 0.42)
+        ..close();
+      canvas.drawPath(claw, Paint()..color = hornColor);
+    }
+
+    // Powerful body.
+    _drawBody(canvas, s * 0.85, s * 0.52, deepOrange, paleYellow);
+    // Scale chevrons.
+    for (var i = 0; i < 5; i++) {
+      final sy = -s * 0.1 + i * s * 0.05;
+      canvas.drawLine(
+        Offset(-s * 0.14, sy),
+        Offset(0, sy + s * 0.02),
+        Paint()
+          ..color = const Color(0xFFDDB870).withOpacity(0.25)
+          ..strokeWidth = 0.6,
+      );
+      canvas.drawLine(
+        Offset(0, sy + s * 0.02),
+        Offset(s * 0.14, sy),
+        Paint()
+          ..color = const Color(0xFFDDB870).withOpacity(0.25)
+          ..strokeWidth = 0.6,
+      );
+    }
+
+    // Head.
+    final snout = Path()
+      ..moveTo(-s * 0.14, -s * 0.33)
+      ..cubicTo(-s * 0.08, -s * 0.52, s * 0.08, -s * 0.52, s * 0.14, -s * 0.33)
+      ..quadraticBezierTo(0, -s * 0.3, -s * 0.14, -s * 0.33);
+    canvas.drawPath(snout, Paint()..color = deepOrange);
+    canvas.drawCircle(
+      const Offset(0, -s * 0.36),
+      s * 0.2,
+      Paint()..color = deepOrange,
     );
     canvas.drawOval(
-      Rect.fromCenter(center: const Offset(5, -5), width: 1.5, height: 4.0),
-      Paint()..color = const Color(0xFF000000),
+      Rect.fromCenter(
+        center: const Offset(0, -s * 0.32),
+        width: s * 0.2,
+        height: s * 0.08,
+      ),
+      Paint()..color = paleYellow.withOpacity(0.5),
     );
+
+    // Prominent double horns.
+    for (final sign in [-1.0, 1.0]) {
+      final outerHorn = Path()
+        ..moveTo(sign * s * 0.12, -s * 0.5)
+        ..cubicTo(
+          sign * s * 0.2,
+          -s * 0.62,
+          sign * s * 0.28,
+          -s * 0.75,
+          sign * s * 0.22,
+          -s * 0.82,
+        )
+        ..lineTo(sign * s * 0.08, -s * 0.54)
+        ..close();
+      canvas.drawPath(outerHorn, Paint()..color = hornColor);
+      final innerHorn = Path()
+        ..moveTo(sign * s * 0.06, -s * 0.52)
+        ..lineTo(sign * s * 0.1, -s * 0.66)
+        ..lineTo(sign * s * 0.03, -s * 0.54)
+        ..close();
+      canvas.drawPath(innerHorn, Paint()..color = _lighten(hornColor, 0.1));
+    }
+
+    // Fierce glowing slit eyes.
+    for (final sign in [-1.0, 1.0]) {
+      canvas.drawCircle(
+        Offset(sign * s * 0.08, -s * 0.4),
+        s * 0.045,
+        Paint()
+          ..color = const Color(0xFFFFAA00).withOpacity(0.35)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(sign * s * 0.08, -s * 0.4),
+          width: s * 0.065,
+          height: s * 0.05,
+        ),
+        Paint()..color = const Color(0xFFFFBB00),
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(sign * s * 0.08, -s * 0.4),
+          width: s * 0.015,
+          height: s * 0.045,
+        ),
+        Paint()..color = const Color(0xFF111111),
+      );
+      canvas.drawCircle(
+        Offset(sign * s * 0.065, -s * 0.41),
+        s * 0.01,
+        Paint()..color = const Color(0xFFFFFFFF).withOpacity(0.6),
+      );
+    }
+
+    // Brow ridges.
+    for (final sign in [-1.0, 1.0]) {
+      canvas.drawLine(
+        Offset(sign * s * 0.14, -s * 0.43),
+        Offset(sign * s * 0.04, -s * 0.41),
+        Paint()
+          ..color = _darken(deepOrange, 0.2)
+          ..strokeWidth = 1.5
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+
+    // Open mouth with fire glow.
+    final mouth = Path()
+      ..moveTo(-s * 0.07, -s * 0.48)
+      ..quadraticBezierTo(0, -s * 0.52, s * 0.07, -s * 0.48)
+      ..quadraticBezierTo(0, -s * 0.46, -s * 0.07, -s * 0.48);
+    canvas.drawPath(mouth, Paint()..color = const Color(0xFFBB1100));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shared helpers (static preview versions of CompanionRenderer helpers)
+  // ---------------------------------------------------------------------------
+
+  void _drawWing(
+    Canvas canvas,
+    double size,
+    double flapOffset,
+    Color color,
+    bool isLeft,
+    double spread,
+    int featherCount, {
+    Color? tipColor,
+  }) {
+    final sign = isLeft ? -1.0 : 1.0;
+    final paint = Paint()..color = color;
+    final wing = Path()
+      ..moveTo(sign * size * 0.2, 0)
+      ..cubicTo(
+        sign * size * 0.5,
+        flapOffset - size * 0.3,
+        sign * size * 0.75,
+        flapOffset - size * 0.55,
+        sign * size * spread,
+        flapOffset - size * 0.2,
+      );
+
+    final featherStep = size * 0.15;
+    for (var i = 0; i < featherCount; i++) {
+      final fx = sign * (size * spread - (i + 1) * featherStep * 0.6);
+      final fy = flapOffset - size * 0.2 + (i + 1) * featherStep * 0.4;
+      wing.lineTo(fx, fy);
+      if (i < featherCount - 1) {
+        wing.lineTo(
+          sign *
+              (size * spread -
+                  (i + 1) * featherStep * 0.6 -
+                  featherStep * 0.15),
+          fy - featherStep * 0.1,
+        );
+      }
+    }
+    wing
+      ..lineTo(sign * size * 0.1, size * 0.05)
+      ..close();
+    canvas.drawPath(wing, paint);
+
+    if (tipColor != null) {
+      final tip = Path()
+        ..moveTo(sign * size * (spread - 0.15), flapOffset - size * 0.35)
+        ..cubicTo(
+          sign * size * (spread - 0.05),
+          flapOffset - size * 0.3,
+          sign * size * spread,
+          flapOffset - size * 0.25,
+          sign * size * spread,
+          flapOffset - size * 0.2,
+        )
+        ..lineTo(sign * size * (spread - 0.12), flapOffset - size * 0.12)
+        ..close();
+      canvas.drawPath(tip, Paint()..color = tipColor);
+    }
+  }
+
+  void _drawBody(
+    Canvas canvas,
+    double width,
+    double height,
+    Color baseColor,
+    Color bellyColor,
+  ) {
+    // Shadow.
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(0, height * 0.08),
+        width: width * 0.95,
+        height: height * 0.6,
+      ),
+      Paint()..color = _darken(baseColor, 0.3),
+    );
+    // Main body.
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset.zero, width: width, height: height),
+      Paint()..color = baseColor,
+    );
+    // Belly.
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(0, height * 0.06),
+        width: width * 0.6,
+        height: height * 0.45,
+      ),
+      Paint()..color = bellyColor,
+    );
+    // Top highlight.
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(0, -height * 0.12),
+        width: width * 0.35,
+        height: height * 0.15,
+      ),
+      Paint()..color = _lighten(baseColor, 0.2).withOpacity(0.4),
+    );
+  }
+
+  void _drawEyes(
+    Canvas canvas,
+    Offset leftCenter,
+    Offset rightCenter,
+    double radius, {
+    Color irisColor = const Color(0xFF1A1A2E),
+    bool fierce = false,
+  }) {
+    for (final center in [leftCenter, rightCenter]) {
+      if (fierce) {
+        final eye = Path()
+          ..addOval(
+            Rect.fromCenter(
+              center: center,
+              width: radius * 2.4,
+              height: radius * 1.6,
+            ),
+          );
+        canvas.drawPath(eye, Paint()..color = irisColor);
+        canvas.drawCircle(
+          Offset(center.dx - radius * 0.3, center.dy - radius * 0.2),
+          radius * 0.3,
+          Paint()..color = const Color(0xFFFFFFFF).withOpacity(0.7),
+        );
+      } else {
+        canvas.drawCircle(
+          center,
+          radius * 1.2,
+          Paint()..color = const Color(0xFFF8F4F0),
+        );
+        canvas.drawCircle(center, radius, Paint()..color = irisColor);
+        canvas.drawCircle(
+          Offset(center.dx - radius * 0.35, center.dy - radius * 0.35),
+          radius * 0.35,
+          Paint()..color = const Color(0xFFFFFFFF),
+        );
+      }
+    }
+  }
+
+  void _drawBeak(
+    Canvas canvas,
+    Offset tip,
+    double size,
+    Color color, {
+    bool hooked = false,
+  }) {
+    final upperBeak = Path()..moveTo(tip.dx, tip.dy);
+    if (hooked) {
+      upperBeak
+        ..quadraticBezierTo(
+          tip.dx - size * 0.5,
+          tip.dy + size * 0.3,
+          tip.dx - size * 0.3,
+          tip.dy + size * 0.7,
+        )
+        ..quadraticBezierTo(
+          tip.dx,
+          tip.dy + size * 0.5,
+          tip.dx + size * 0.3,
+          tip.dy + size * 0.7,
+        )
+        ..quadraticBezierTo(
+          tip.dx + size * 0.5,
+          tip.dy + size * 0.3,
+          tip.dx,
+          tip.dy,
+        );
+    } else {
+      upperBeak
+        ..lineTo(tip.dx - size * 0.35, tip.dy + size * 0.5)
+        ..quadraticBezierTo(
+          tip.dx,
+          tip.dy + size * 0.65,
+          tip.dx + size * 0.35,
+          tip.dy + size * 0.5,
+        )
+        ..close();
+    }
+    canvas.drawPath(upperBeak, Paint()..color = color);
+    final lower = Path()
+      ..moveTo(tip.dx - size * 0.25, tip.dy + size * 0.45)
+      ..quadraticBezierTo(
+        tip.dx,
+        tip.dy + size * 0.7,
+        tip.dx + size * 0.25,
+        tip.dy + size * 0.45,
+      )
+      ..close();
+    canvas.drawPath(lower, Paint()..color = _darken(color, 0.2));
+  }
+
+  void _drawTailFeathers(
+    Canvas canvas,
+    double size,
+    Color color,
+    int count,
+    double length,
+    double splay,
+  ) {
+    for (var i = 0; i < count; i++) {
+      final t = (i - (count - 1) / 2.0) / math.max(count - 1, 1);
+      final feather = Path()
+        ..moveTo(t * size * splay * 0.5, size * 0.2)
+        ..quadraticBezierTo(
+          t * size * splay * 1.5,
+          size * (0.2 + length * 0.5),
+          t * size * splay,
+          size * (0.2 + length),
+        )
+        ..quadraticBezierTo(
+          t * size * splay * 0.8,
+          size * (0.2 + length * 0.4),
+          t * size * splay * 0.3,
+          size * 0.2,
+        )
+        ..close();
+      final featherColor = i.isEven ? color : _darken(color, 0.1);
+      canvas.drawPath(feather, Paint()..color = featherColor);
+    }
+  }
+
+  static Color _darken(Color c, double amount) {
+    final hsl = HSLColor.fromColor(c);
+    return hsl
+        .withLightness((hsl.lightness - amount).clamp(0.0, 1.0))
+        .toColor();
+  }
+
+  static Color _lighten(Color c, double amount) {
+    final hsl = HSLColor.fromColor(c);
+    return hsl
+        .withLightness((hsl.lightness + amount).clamp(0.0, 1.0))
+        .toColor();
   }
 
   @override
