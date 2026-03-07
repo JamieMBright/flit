@@ -108,7 +108,7 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
             return InteractiveViewer(
               transformationController: _transformController,
               minScale: 1.0,
-              maxScale: 5.0,
+              maxScale: 20.0,
               panEnabled: true,
               scaleEnabled: true,
               child: GestureDetector(
@@ -518,7 +518,7 @@ class _UsaMapPainter extends CustomPainter {
       final akArea = areas.where((a) => a.code == 'AK').firstOrNull;
       if (akArea != null && !eliminatedCodes.contains('AK')) {
         final transform = _akTransform(size);
-        if (_pointInPolygon(position, akArea.points, transform)) {
+        if (_hitTestPolygons(position, akArea, transform)) {
           return 'AK';
         }
       }
@@ -531,7 +531,7 @@ class _UsaMapPainter extends CustomPainter {
       final hiArea = areas.where((a) => a.code == 'HI').firstOrNull;
       if (hiArea != null && !eliminatedCodes.contains('HI')) {
         final transform = _hiTransform(size);
-        if (_pointInPolygon(position, hiArea.points, transform)) {
+        if (_hitTestPolygons(position, hiArea, transform)) {
           return 'HI';
         }
       }
@@ -544,7 +544,7 @@ class _UsaMapPainter extends CustomPainter {
     for (final area in areas) {
       if (area.code == 'AK' || area.code == 'HI') continue;
       if (eliminatedCodes.contains(area.code)) continue;
-      if (_pointInPolygon(position, area.points, transform)) {
+      if (_hitTestPolygons(position, area, transform)) {
         matches.add(area.code);
       }
     }
@@ -580,6 +580,25 @@ class _UsaMapPainter extends CustomPainter {
       sumY += cp.dy;
     }
     return Offset(sumX / polygon.length, sumY / polygon.length);
+  }
+
+  /// Hit-test using individual polygon rings when available.
+  ///
+  /// Multi-polygon states (e.g. Michigan with upper/lower peninsulas, Hawaii
+  /// islands) must test each ring separately. Using the flat `points` list
+  /// creates a single malformed polygon connecting all rings.
+  bool _hitTestPolygons(
+    Offset point,
+    RegionalArea area,
+    _GeoTransform transform,
+  ) {
+    if (area.polygons != null && area.polygons!.isNotEmpty) {
+      for (final ring in area.polygons!) {
+        if (_pointInPolygon(point, ring, transform)) return true;
+      }
+      return false;
+    }
+    return _pointInPolygon(point, area.points, transform);
   }
 
   /// Point-in-polygon test using ray casting algorithm.

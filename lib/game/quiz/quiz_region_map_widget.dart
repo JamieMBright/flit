@@ -68,7 +68,7 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
             return InteractiveViewer(
               transformationController: _transformController,
               minScale: 1.0,
-              maxScale: 5.0,
+              maxScale: 20.0,
               panEnabled: true,
               scaleEnabled: true,
               child: GestureDetector(
@@ -375,7 +375,7 @@ class _RegionMapPainter extends CustomPainter {
     for (final area in areas) {
       // Can't tap eliminated areas
       if (eliminatedCodes.contains(area.code)) continue;
-      if (_pointInPolygon(position, area.points, transform)) {
+      if (_hitTestPolygons(position, area, transform)) {
         matches.add(area.code);
       }
     }
@@ -411,6 +411,26 @@ class _RegionMapPainter extends CustomPainter {
       sumY += cp.dy;
     }
     return Offset(sumX / polygon.length, sumY / polygon.length);
+  }
+
+  /// Hit-test using individual polygon rings when available.
+  ///
+  /// Multi-polygon countries (e.g. France with mainland + Corsica) must test
+  /// each ring separately. Using the flat `points` list (all rings concatenated)
+  /// creates a single malformed polygon that stretches across unrelated areas.
+  bool _hitTestPolygons(
+    Offset point,
+    RegionalArea area,
+    _GeoTransform transform,
+  ) {
+    if (area.polygons != null && area.polygons!.isNotEmpty) {
+      for (final ring in area.polygons!) {
+        if (_pointInPolygon(point, ring, transform)) return true;
+      }
+      return false;
+    }
+    // Fallback: single polygon from flat point list
+    return _pointInPolygon(point, area.points, transform);
   }
 
   bool _pointInPolygon(
