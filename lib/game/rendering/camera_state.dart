@@ -86,6 +86,9 @@ class CameraState {
   /// Smoothed heading for interpolation (radians, navigation bearing).
   double _currentHeadingRad = 0.0;
 
+  /// Previous frame's target longitude — used to detect pole-crossing flips.
+  double _prevTargetLngRad = 0.0;
+
   /// Camera X position in world space (for shader uniform).
   double get cameraX => _camX;
 
@@ -169,14 +172,30 @@ class CameraState {
       targetFov = _lerpDouble(fovNarrow, fovWide, speedFraction.clamp(0, 1));
     }
 
-    if (_firstUpdate) {
-      // Snap to target on first frame - no interpolation.
+    // Detect pole crossing: longitude jumps by ~π when the coordinate
+    // singularity at ±90° latitude is traversed. Snap position/heading
+    // instead of interpolating through the 180° discontinuity.
+    var lngDelta = targetLngRad - _prevTargetLngRad;
+    while (lngDelta > pi) {
+      lngDelta -= 2 * pi;
+    }
+    while (lngDelta < -pi) {
+      lngDelta += 2 * pi;
+    }
+    final isPoleCrossing =
+        lngDelta.abs() > pi * 0.7 && targetLatRad.abs() > 1.2;
+    _prevTargetLngRad = targetLngRad;
+
+    if (_firstUpdate || isPoleCrossing) {
+      // Snap to target — no interpolation through the singularity.
       _currentLatRad = targetLatRad;
       _currentLngRad = targetLngRad;
-      _currentDistance = targetDistance;
-      _currentFov = targetFov;
       _currentHeadingRad = headingRad;
-      _firstUpdate = false;
+      if (_firstUpdate) {
+        _currentDistance = targetDistance;
+        _currentFov = targetFov;
+        _firstUpdate = false;
+      }
     } else {
       // Smooth ease-out interpolation using dt-based lerp factor.
       // factor = 1 - e^(-rate * dt) gives frame-rate-independent easing.
