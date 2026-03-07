@@ -2,6 +2,10 @@ import 'dart:math';
 
 import 'quiz_category.dart';
 import 'quiz_difficulty.dart';
+import '../data/canada_clues.dart';
+import '../data/ireland_clues.dart';
+import '../data/uk_clues.dart';
+import '../data/us_state_clues.dart';
 import '../map/region.dart';
 
 /// Game modes for Flight School quizzes.
@@ -253,8 +257,8 @@ class QuizSession {
   /// Use a hint on the current question. Returns the hint level (1+).
   ///
   /// Progressive hint system:
-  /// 1. Show bordering regions as extra clue
-  /// 2. Show flag/additional identifier
+  /// 1. Factual clue (capital, nickname, landmark)
+  /// 2. Second factual clue (flag, sports team, celebrity)
   /// 3. Eliminate 50% of wrong answers
   /// 4. Eliminate 75% of wrong answers
   /// 5. Highlight the exact correct answer
@@ -271,21 +275,18 @@ class QuizSession {
 
     switch (_currentHintLevel) {
       case 1:
-        // Show bordering regions as text clue
-        final borderText = _getBorderClue(question.answerCode, areas);
-        if (borderText != null) {
-          _extraClueTexts.add(borderText);
-        } else {
-          // Fallback: show continent/region
-          _extraClueTexts.add('Region: ${region.displayName}');
+        // First factual clue: capital, nickname, or landmark
+        final clue = _getFactualHint(question.answerCode, areas, tier: 1);
+        if (clue != null) {
+          _extraClueTexts.add(clue);
         }
         break;
 
       case 2:
-        // Show flag or additional info
-        final flagText = _getFlagClue(question.answerCode);
-        if (flagText != null) {
-          _extraClueTexts.add(flagText);
+        // Second factual clue: flag, sports team, celebrity, etc.
+        final clue = _getFactualHint(question.answerCode, areas, tier: 2);
+        if (clue != null) {
+          _extraClueTexts.add(clue);
         }
         break;
 
@@ -312,43 +313,182 @@ class QuizSession {
     return _currentHintLevel;
   }
 
-  /// Get a border clue for the given area code.
-  String? _getBorderClue(String code, List<RegionalArea> areas) {
-    // For non-US regions we don't have border data easily available,
-    // so provide a geographic hint based on the area's position
-    final area = areas.where((a) => a.code == code).firstOrNull;
-    if (area == null || area.points.isEmpty) return null;
-
-    // Calculate rough centroid to give directional hint
-    var sumX = 0.0;
-    var sumY = 0.0;
-    for (final p in area.points) {
-      sumX += p.x;
-      sumY += p.y;
-    }
-    final cx = sumX / area.points.length;
-    final cy = sumY / area.points.length;
-
-    final bounds = region.bounds;
-    final midLng = (bounds[0] + bounds[2]) / 2;
-    final midLat = (bounds[1] + bounds[3]) / 2;
-
-    final ew = cx < midLng ? 'western' : 'eastern';
-    final ns = cy < midLat ? 'southern' : 'northern';
-
-    return 'Location: $ns $ew part of the region';
-  }
-
-  /// Get a flag-related clue.
-  String? _getFlagClue(String code) {
-    // Try to provide the area name's first letter as a hint
+  /// Get a factual hint for the given area code.
+  ///
+  /// Tier 1: capital, nickname, landmark (easier clues)
+  /// Tier 2: flag, sports team, celebrity (deeper knowledge)
+  ///
+  /// Avoids duplicating clues already shown in the question itself.
+  String? _getFactualHint(
+    String code,
+    List<RegionalArea> areas, {
+    required int tier,
+  }) {
     final question = currentQuestion;
     if (question == null) return null;
-    final name = question.answerName;
-    if (name.length >= 2) {
-      return 'Starts with: "${name[0]}"';
+    final category = question.category;
+
+    // Build a pool of candidate hints, excluding the current question's type.
+    final hints = <String>[];
+
+    // ── US States ──────────────────────────────────────────────────────
+    if (region == GameRegion.usStates) {
+      final data = UsStateClues.data[code];
+      if (data != null) {
+        if (tier == 1) {
+          if (category != QuizCategory.nickname && data.nickname.isNotEmpty) {
+            hints.add('Nickname: ${data.nickname}');
+          }
+          if (category != QuizCategory.landmark &&
+              data.famousLandmark.isNotEmpty) {
+            hints.add('Landmark: ${data.famousLandmark}');
+          }
+          if (category != QuizCategory.motto && data.motto.isNotEmpty) {
+            hints.add('Motto: "${data.motto}"');
+          }
+          if (category != QuizCategory.stateBird && data.stateBird.isNotEmpty) {
+            hints.add('State Bird: ${data.stateBird}');
+          }
+        } else {
+          if (category != QuizCategory.flagDescription &&
+              data.flag.isNotEmpty) {
+            hints.add('Flag: ${data.flag}');
+          }
+          if (category != QuizCategory.sportsTeam &&
+              data.sportsTeams.isNotEmpty) {
+            final team =
+                data.sportsTeams[_random.nextInt(data.sportsTeams.length)];
+            hints.add('Team: $team');
+          }
+          if (category != QuizCategory.celebrity &&
+              data.celebrities.isNotEmpty) {
+            final celeb =
+                data.celebrities[_random.nextInt(data.celebrities.length)];
+            hints.add('Celebrity: $celeb');
+          }
+          if (category != QuizCategory.stateFlower &&
+              data.stateFlower.isNotEmpty) {
+            hints.add('State Flower: ${data.stateFlower}');
+          }
+          if (category != QuizCategory.filmSetting &&
+              data.filmSettings.isNotEmpty) {
+            final film =
+                data.filmSettings[_random.nextInt(data.filmSettings.length)];
+            hints.add('Film/Show: $film');
+          }
+        }
+      }
     }
-    return null;
+
+    // ── Ireland ────────────────────────────────────────────────────────
+    if (region == GameRegion.ireland) {
+      final data = IrelandClues.data[code];
+      if (data != null) {
+        if (tier == 1) {
+          if (data.province.isNotEmpty) {
+            hints.add('Province: ${data.province}');
+          }
+          if (data.nickname.isNotEmpty) hints.add('Nickname: ${data.nickname}');
+          if (data.gaaTeam.isNotEmpty) hints.add('GAA Team: ${data.gaaTeam}');
+        } else {
+          if (data.gaelicName.isNotEmpty) {
+            hints.add('Gaelic: ${data.gaelicName}');
+          }
+          if (data.famousPerson.isNotEmpty) {
+            hints.add('Famous Person: ${data.famousPerson}');
+          }
+          if (data.famousLandmark.isNotEmpty) {
+            hints.add('Landmark: ${data.famousLandmark}');
+          }
+        }
+      }
+    }
+
+    // ── UK Counties ────────────────────────────────────────────────────
+    if (region == GameRegion.ukCounties) {
+      final data = UkClues.data[code];
+      if (data != null) {
+        if (tier == 1) {
+          if (data.country.isNotEmpty) hints.add('Country: ${data.country}');
+          if (data.nickname.isNotEmpty) hints.add('Nickname: ${data.nickname}');
+          if (data.famousLandmark.isNotEmpty) {
+            hints.add('Landmark: ${data.famousLandmark}');
+          }
+        } else {
+          if (data.famousPerson.isNotEmpty) {
+            hints.add('Famous Person: ${data.famousPerson}');
+          }
+          if (data.footballTeam.isNotEmpty) {
+            hints.add('Football: ${data.footballTeam}');
+          }
+        }
+      }
+    }
+
+    // ── Canada ─────────────────────────────────────────────────────────
+    if (region == GameRegion.canadianProvinces) {
+      final data = CanadaClues.data[code];
+      if (data != null) {
+        if (tier == 1) {
+          if (data.nickname.isNotEmpty) hints.add('Nickname: ${data.nickname}');
+          if (data.famousLandmark.isNotEmpty) {
+            hints.add('Landmark: ${data.famousLandmark}');
+          }
+          if (data.motto.isNotEmpty) hints.add('Motto: "${data.motto}"');
+        } else {
+          if (data.flag.isNotEmpty) hints.add('Flag: ${data.flag}');
+          if (data.sportsTeams.isNotEmpty) {
+            final team =
+                data.sportsTeams[_random.nextInt(data.sportsTeams.length)];
+            hints.add('Team: $team');
+          }
+        }
+      }
+    }
+
+    // ── Country-based regions (Europe, Africa, Asia, etc.) ─────────
+    if (hints.isEmpty) {
+      final area = areas.where((a) => a.code == code).firstOrNull;
+      if (area != null) {
+        if (tier == 1) {
+          if (category != QuizCategory.capital &&
+              area.capital != null &&
+              area.capital!.isNotEmpty) {
+            hints.add('Capital: ${area.capital}');
+          }
+          if (area.population != null) {
+            hints.add('Population: ${_formatPopulation(area.population!)}');
+          }
+        } else {
+          if (area.funFact != null && area.funFact!.isNotEmpty) {
+            hints.add(area.funFact!);
+          }
+          // Capital as fallback for tier 2 if not used in tier 1
+          if (category == QuizCategory.capital &&
+              area.capital != null &&
+              area.capital!.isNotEmpty) {
+            // Capital was the question, skip it
+          } else if (area.capital != null && area.capital!.isNotEmpty) {
+            hints.add('Capital: ${area.capital}');
+          }
+        }
+      }
+    }
+
+    if (hints.isEmpty) return null;
+    return hints[_random.nextInt(hints.length)];
+  }
+
+  /// Format population number for display (e.g. 67000000 → "67M").
+  static String _formatPopulation(int pop) {
+    if (pop >= 1000000000) {
+      return '${(pop / 1000000000).toStringAsFixed(1)}B';
+    } else if (pop >= 1000000) {
+      return '${(pop / 1000000).toStringAsFixed(1)}M';
+    } else if (pop >= 1000) {
+      return '${(pop / 1000).toStringAsFixed(0)}K';
+    }
+    return pop.toString();
   }
 
   /// Eliminate a fraction of wrong answers by adding them to eliminated set.

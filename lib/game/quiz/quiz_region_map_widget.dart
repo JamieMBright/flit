@@ -63,8 +63,9 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
     return LayoutBuilder(
       builder: (context, constraints) {
         return AnimatedBuilder(
-          animation: _pulseController,
+          animation: Listenable.merge([_pulseController, _transformController]),
           builder: (context, child) {
+            final scale = _transformController.value.getMaxScaleOnAxis();
             return InteractiveViewer(
               transformationController: _transformController,
               minScale: 1.0,
@@ -84,6 +85,7 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
                     showLabels: widget.showLabels,
                     eliminatedCodes: widget.eliminatedCodes,
                     correctCodes: widget.correctCodes,
+                    zoomScale: scale,
                   ),
                 ),
               ),
@@ -95,14 +97,10 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
   }
 
   void _handleTap(Offset position, Size size) {
-    // Transform the tap position from screen to content coordinates
-    final matrix = _transformController.value;
-    final inverseMatrix = Matrix4.inverted(matrix);
-    final transformed = MatrixUtils.transformPoint(
-      inverseMatrix,
-      position,
-    );
-
+    // GestureDetector is a child of InteractiveViewer's Transform widget,
+    // so localPosition is already in content coordinates. No inverse
+    // transform needed — applying one would double-invert and shift the
+    // tap point proportionally to the zoom level.
     final painter = _RegionMapPainter(
       region: widget.region,
       stateVisuals: widget.stateVisuals,
@@ -111,9 +109,10 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
       showLabels: widget.showLabels,
       eliminatedCodes: widget.eliminatedCodes,
       correctCodes: widget.correctCodes,
+      zoomScale: 1.0,
     );
 
-    final code = painter.hitTestArea(transformed, size);
+    final code = painter.hitTestArea(position, size);
     if (code != null) {
       widget.onStateTapped(code);
     }
@@ -129,6 +128,7 @@ class _RegionMapPainter extends CustomPainter {
     this.showLabels = true,
     this.eliminatedCodes = const {},
     this.correctCodes = const {},
+    this.zoomScale = 1.0,
   });
 
   final GameRegion region;
@@ -138,6 +138,7 @@ class _RegionMapPainter extends CustomPainter {
   final bool showLabels;
   final Set<String> eliminatedCodes;
   final Set<String> correctCodes;
+  final double zoomScale;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -156,11 +157,12 @@ class _RegionMapPainter extends CustomPainter {
       _drawArea(canvas, size, area, transform);
     }
 
-    // Draw clean borders (subtle, single pass)
+    // Draw clean borders (subtle, single pass).
+    // Divide strokeWidth by zoom scale so borders stay visually constant.
     final borderPaint = Paint()
-      ..color = const Color(0xFF1A2A32).withOpacity(0.6)
+      ..color = const Color(0xFF1A2A32).withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0
+      ..strokeWidth = 1.0 / zoomScale
       ..strokeJoin = StrokeJoin.round
       ..isAntiAlias = true;
 
