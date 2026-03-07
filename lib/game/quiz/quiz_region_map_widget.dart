@@ -1,5 +1,8 @@
+import 'dart:ui' as ui;
+
 import 'package:flame/components.dart' hide Matrix4;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../map/region.dart';
 import 'quiz_map_widget.dart';
@@ -41,6 +44,7 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
   late final AnimationController _pulseController;
   final TransformationController _transformController =
       TransformationController();
+  ui.Image? _satelliteImage;
 
   @override
   void initState() {
@@ -49,10 +53,21 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     )..repeat(reverse: true);
+    _loadSatelliteImage();
+  }
+
+  Future<void> _loadSatelliteImage() async {
+    final data = await rootBundle.load('assets/textures/blue_marble.png');
+    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+    final frame = await codec.getNextFrame();
+    if (mounted) {
+      setState(() => _satelliteImage = frame.image);
+    }
   }
 
   @override
   void dispose() {
+    _satelliteImage?.dispose();
     _pulseController.dispose();
     _transformController.dispose();
     super.dispose();
@@ -86,6 +101,7 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
                     eliminatedCodes: widget.eliminatedCodes,
                     correctCodes: widget.correctCodes,
                     zoomScale: scale,
+                    satelliteImage: _satelliteImage,
                   ),
                 ),
               ),
@@ -110,6 +126,7 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
       eliminatedCodes: widget.eliminatedCodes,
       correctCodes: widget.correctCodes,
       zoomScale: 1.0,
+      satelliteImage: _satelliteImage,
     );
 
     final code = painter.hitTestArea(position, size);
@@ -129,6 +146,7 @@ class _RegionMapPainter extends CustomPainter {
     this.eliminatedCodes = const {},
     this.correctCodes = const {},
     this.zoomScale = 1.0,
+    this.satelliteImage,
   });
 
   final GameRegion region;
@@ -139,6 +157,7 @@ class _RegionMapPainter extends CustomPainter {
   final Set<String> eliminatedCodes;
   final Set<String> correctCodes;
   final double zoomScale;
+  final ui.Image? satelliteImage;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -249,8 +268,55 @@ class _RegionMapPainter extends CustomPainter {
     final isCorrectlyGuessed = correctCodes.contains(area.code);
 
     final path = _buildPath(area.points, transform, polygons: area.polygons);
-    final fillColor = _getFillColor(status, isHighlighted, isCorrectlyGuessed);
-    canvas.drawPath(path, Paint()..color = fillColor);
+
+    // Reveal satellite imagery for correctly guessed countries
+    if ((isCorrectlyGuessed || status == StateVisualStatus.correct) &&
+        satelliteImage != null) {
+      _drawSatelliteFill(canvas, path, transform);
+    } else {
+      final fillColor =
+          _getFillColor(status, isHighlighted, isCorrectlyGuessed);
+      canvas.drawPath(path, Paint()..color = fillColor);
+    }
+  }
+
+  /// Draw the Blue Marble satellite texture clipped to a polygon path.
+  ///
+  /// Maps the equirectangular satellite image (full world: -180..180 lng,
+  /// -90..90 lat) to the region's canvas transform so the texture aligns
+  /// with the geographic coordinates.
+  void _drawSatelliteFill(
+    Canvas canvas,
+    Path path,
+    _GeoTransform transform,
+  ) {
+    final img = satelliteImage!;
+
+    // Map from geographic bounds to image pixels:
+    // Image pixel x = ((lng + 180) / 360) * imageWidth
+    // Image pixel y = ((90 - lat) / 180) * imageHeight
+    //
+    // We need the source rect in the satellite image that corresponds to
+    // the region's geographic bounds.
+    final srcLeft = ((transform.minLng + 180.0) / 360.0) * img.width;
+    final srcRight = ((transform.maxLng + 180.0) / 360.0) * img.width;
+    final srcTop = ((90.0 - transform.maxLat) / 180.0) * img.height;
+    final srcBottom = ((90.0 - transform.minLat) / 180.0) * img.height;
+
+    final srcRect = Rect.fromLTRB(srcLeft, srcTop, srcRight, srcBottom);
+
+    // Destination rect is the region's canvas area
+    final dstRect = Rect.fromLTWH(
+      transform.offsetX,
+      transform.offsetY,
+      transform.width,
+      transform.height,
+    );
+
+    canvas.save();
+    canvas.clipPath(path);
+    canvas.drawImageRect(img, srcRect, dstRect, Paint());
+    canvas.restore();
   }
 
   void _drawAreaLabel(
