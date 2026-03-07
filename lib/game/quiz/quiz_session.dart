@@ -277,17 +277,15 @@ class QuizSession {
       case 1:
         // First factual clue: capital, nickname, or landmark
         final clue = _getFactualHint(question.answerCode, areas, tier: 1);
-        if (clue != null) {
-          _extraClueTexts.add(clue);
-        }
+        _extraClueTexts
+            .add(clue ?? _getLocationHint(question.answerCode, areas));
         break;
 
       case 2:
         // Second factual clue: flag, sports team, celebrity, etc.
         final clue = _getFactualHint(question.answerCode, areas, tier: 2);
-        if (clue != null) {
-          _extraClueTexts.add(clue);
-        }
+        _extraClueTexts
+            .add(clue ?? _getStartsWithHint(question.answerCode, areas));
         break;
 
       case 3:
@@ -489,6 +487,46 @@ class QuizSession {
       return '${(pop / 1000).toStringAsFixed(0)}K';
     }
     return pop.toString();
+  }
+
+  /// Fallback hint: directional location within the region.
+  String _getLocationHint(String code, List<RegionalArea> areas) {
+    final area = areas.where((a) => a.code == code).firstOrNull;
+    if (area == null || area.points.isEmpty) return 'Look carefully at the map';
+
+    // Calculate centroid of the target area
+    double cx = 0, cy = 0;
+    for (final p in area.points) {
+      cx += p.x;
+      cy += p.y;
+    }
+    cx /= area.points.length;
+    cy /= area.points.length;
+
+    // Calculate bounds of the entire region
+    double minX = double.infinity, maxX = -double.infinity;
+    double minY = double.infinity, maxY = -double.infinity;
+    for (final a in areas) {
+      for (final p in a.points) {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      }
+    }
+
+    final midLng = (minX + maxX) / 2;
+    final midLat = (minY + maxY) / 2;
+    final ew = cx < midLng ? 'western' : 'eastern';
+    final ns = cy < midLat ? 'southern' : 'northern';
+    return 'Location: $ns $ew part of the region';
+  }
+
+  /// Fallback hint: first letter of the answer name.
+  String _getStartsWithHint(String code, List<RegionalArea> areas) {
+    final area = areas.where((a) => a.code == code).firstOrNull;
+    if (area == null || area.name.isEmpty) return 'Check the shape carefully';
+    return 'Starts with: "${area.name[0]}"';
   }
 
   /// Eliminate a fraction of wrong answers by adding them to eliminated set.
