@@ -1177,11 +1177,11 @@ class UserPreferencesSnapshot {
   }
 
   double get cloudCoverage {
-    return (settings?['cloud_coverage'] as num?)?.toDouble() ?? 0.42;
+    return (settings?['cloud_coverage'] as num?)?.toDouble() ?? 0.64;
   }
 
   double get cloudOpacity {
-    return (settings?['cloud_opacity'] as num?)?.toDouble() ?? 0.9;
+    return (settings?['cloud_opacity'] as num?)?.toDouble() ?? 0.85;
   }
 
   String get mapStyle {
