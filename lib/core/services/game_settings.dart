@@ -77,6 +77,16 @@ class GameSettings extends ChangeNotifier {
 
   static const String _prefsKey = 'game_settings';
 
+  /// Bump this when you need to force-override specific settings for all
+  /// players. The migration in [loadFromLocal] checks the stored version
+  /// and resets affected fields to the new defaults.
+  static const int _settingsVersion = 2;
+
+  /// Set to `true` when [loadFromLocal] detects the stored version is behind
+  /// [_settingsVersion]. When set, [hydrateFrom] skips overwriting the
+  /// migrated fields so Supabase data doesn't revert the forced defaults.
+  bool _pendingMigration = false;
+
   bool _hydrating = false;
 
   void _syncToSupabase() {
@@ -127,10 +137,16 @@ class GameSettings extends ChangeNotifier {
     try {
       this.turnSensitivity = turnSensitivity;
       this.invertControls = invertControls;
-      this.enableNight = enableNight;
-      this.enableClouds = enableClouds;
-      if (cloudCoverage != null) this.cloudCoverage = cloudCoverage;
-      if (cloudOpacity != null) this.cloudOpacity = cloudOpacity;
+      // When a migration is pending, keep the forced cloud/night defaults
+      // instead of reverting to stale Supabase values.
+      if (_pendingMigration) {
+        _pendingMigration = false;
+      } else {
+        this.enableNight = enableNight;
+        this.enableClouds = enableClouds;
+        if (cloudCoverage != null) this.cloudCoverage = cloudCoverage;
+        if (cloudOpacity != null) this.cloudOpacity = cloudOpacity;
+      }
       this.englishLabels = englishLabels;
       this.mapStyle = mapStyle;
       this.difficulty = difficulty;
@@ -153,6 +169,7 @@ class GameSettings extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final data = {
+        'version': _settingsVersion,
         'turn_sensitivity': _turnSensitivity,
         'invert_controls': _invertControls,
         'enable_night': _enableNight,
@@ -187,16 +204,26 @@ class GameSettings extends ChangeNotifier {
       final raw = prefs.getString(_prefsKey);
       if (raw == null) return false;
       final data = json.decode(raw) as Map<String, dynamic>;
+      final storedVersion = data['version'] as int? ?? 1;
       _hydrating = true;
       _turnSensitivity =
           (data['turn_sensitivity'] as num?)?.toDouble() ?? _turnSensitivity;
       _invertControls = data['invert_controls'] as bool? ?? _invertControls;
-      _enableNight = data['enable_night'] as bool? ?? _enableNight;
-      _enableClouds = data['enable_clouds'] as bool? ?? _enableClouds;
-      _cloudCoverage =
-          (data['cloud_coverage'] as num?)?.toDouble() ?? _cloudCoverage;
-      _cloudOpacity =
-          (data['cloud_opacity'] as num?)?.toDouble() ?? _cloudOpacity;
+
+      // Migration v2: force cloud and night defaults on all players.
+      if (storedVersion < 2) {
+        _enableNight = true;
+        _enableClouds = true;
+        _cloudCoverage = 0.64;
+        _cloudOpacity = 0.85;
+      } else {
+        _enableNight = data['enable_night'] as bool? ?? _enableNight;
+        _enableClouds = data['enable_clouds'] as bool? ?? _enableClouds;
+        _cloudCoverage =
+            (data['cloud_coverage'] as num?)?.toDouble() ?? _cloudCoverage;
+        _cloudOpacity =
+            (data['cloud_opacity'] as num?)?.toDouble() ?? _cloudOpacity;
+      }
       final mapStyleName = data['map_style'] as String?;
       if (mapStyleName != null) {
         _mapStyle = MapStyle.values.firstWhere(
@@ -230,6 +257,12 @@ class GameSettings extends ChangeNotifier {
       // before loadFromSupabase has a chance to fetch the authoritative data.
       notifyListeners();
       _hydrating = false;
+
+      // Persist migrated values so the migration only runs once.
+      if (storedVersion < _settingsVersion) {
+        _pendingMigration = true;
+        await _saveToLocal();
+      }
       return true;
     } catch (_) {
       return false;
