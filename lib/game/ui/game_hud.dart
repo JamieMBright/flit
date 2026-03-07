@@ -84,7 +84,10 @@ class GameHud extends StatelessWidget {
                   const SizedBox(width: 8),
                   // Center: Clue display (expanded to fill available space)
                   if (currentClue != null)
-                    Expanded(child: _ClueCard(clue: currentClue!))
+                    Expanded(
+                      child:
+                          _ClueCard(clue: currentClue!, onSkipClue: onSkipClue),
+                    )
                   else
                     const Spacer(),
                   const SizedBox(width: 8),
@@ -102,9 +105,7 @@ class GameHud extends StatelessWidget {
                           (totalRounds == null || totalRounds! > 1)) ...[
                         const SizedBox(height: 6),
                         _RoundIndicator(
-                          current: currentRound!,
-                          total: totalRounds,
-                        ),
+                            current: currentRound!, total: totalRounds),
                       ],
                     ],
                   ),
@@ -171,8 +172,6 @@ class GameHud extends StatelessWidget {
                   // Hint button
                   if (hintTier < 4 && onHint != null)
                     _HintButton(tier: hintTier, onTap: onHint),
-                  // Skip clue button (free flight only)
-                  if (onSkipClue != null) _SkipClueButton(onTap: onSkipClue),
                   // Speed controls
                   Flexible(
                     child: _SpeedControls(
@@ -241,9 +240,13 @@ class _GearButton extends StatelessWidget {
 }
 
 class _ClueCard extends StatelessWidget {
-  const _ClueCard({required this.clue});
+  const _ClueCard({required this.clue, this.onSkipClue});
 
   final Clue clue;
+
+  /// Callback to skip to next clue (free flight only). When null, skip button
+  /// is hidden.
+  final VoidCallback? onSkipClue;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -257,15 +260,21 @@ class _ClueCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Clue type label
-            Text(
-              _clueTypeLabel(clue.type),
-              style: const TextStyle(
-                color: FlitColors.gold,
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.5,
-              ),
+            // Clue type label + skip button row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _clueTypeLabel(clue.type),
+                  style: const TextStyle(
+                    color: FlitColors.gold,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                if (onSkipClue != null) _SkipClueButton(onTap: onSkipClue),
+              ],
             ),
             const SizedBox(height: 4),
             // Clue content
@@ -626,8 +635,10 @@ class _SpeedControls extends StatelessWidget {
             return GestureDetector(
               onTap: () => onChanged?.call(speed),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: isActive
                       ? FlitColors.accent.withOpacity(0.3)
@@ -808,7 +819,7 @@ class _HintButtonState extends State<_HintButton>
   }
 }
 
-/// Skip-clue pill button for free flight mode.
+/// Compact skip-clue pill button shown inside the clue card (free flight only).
 class _SkipClueButton extends StatelessWidget {
   const _SkipClueButton({this.onTap});
 
@@ -818,25 +829,23 @@ class _SkipClueButton extends StatelessWidget {
   Widget build(BuildContext context) => GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
-            color: FlitColors.accent.withOpacity(0.55),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: FlitColors.accent.withOpacity(0.9),
-              width: 1.5,
-            ),
+            color: FlitColors.gold.withOpacity(0.55),
+            borderRadius: BorderRadius.circular(12),
+            border:
+                Border.all(color: FlitColors.gold.withOpacity(0.9), width: 1),
           ),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.skip_next, color: FlitColors.accent, size: 16),
-              SizedBox(width: 4),
+              Icon(Icons.skip_next, color: FlitColors.gold, size: 12),
+              SizedBox(width: 2),
               Text(
                 'SKIP',
                 style: TextStyle(
-                  color: FlitColors.accent,
-                  fontSize: 11,
+                  color: FlitColors.gold,
+                  fontSize: 9,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
                 ),
