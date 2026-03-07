@@ -16,14 +16,16 @@ WARNINGS=0
 FILES=()
 if [ "${1:-}" = "--staged" ]; then
     while IFS= read -r f; do
+        [ -z "$f" ] && continue
         [ -f "$f" ] && FILES+=("$f")
-    done < <(git diff --cached --name-only --diff-filter=ACM -- '*.dart' 2>/dev/null || true)
+    done <<< "$(git diff --cached --name-only --diff-filter=ACM -- '*.dart' 2>/dev/null || true)"
 elif [ $# -gt 0 ]; then
     FILES=("$@")
 else
     while IFS= read -r f; do
+        [ -z "$f" ] && continue
         FILES+=("$f")
-    done < <(find lib/ test/ -name '*.dart' -type f 2>/dev/null || true)
+    done <<< "$(find lib/ test/ -name '*.dart' -type f 2>/dev/null || true)"
 fi
 
 if [ ${#FILES[@]} -eq 0 ]; then
@@ -62,7 +64,7 @@ check_unused_privates() {
             echo "  WARNING [$file:$line_num]: Private '$ident' appears only once (possibly unused)"
             WARNINGS=$((WARNINGS + 1))
         fi
-    done < <(grep -nP '^\s+(final\s+|static\s+|late\s+)*([\w<>,\s]+)\s+_[a-zA-Z]' "$file" 2>/dev/null || true)
+    done <<< "$(grep -nP '^\s+(final\s+|static\s+|late\s+)*([\w<>,\s]+)\s+_[a-zA-Z]' "$file" 2>/dev/null || true)"
 }
 
 # -----------------------------------------------------------------------
@@ -123,7 +125,7 @@ check_unused_imports() {
             # Only warn, not error - the heuristic can have false positives
             echo "  INFO [$file:$line_num]: Import '$basename' ($pascal) may be unused"
         fi
-    done < <(grep -nP "^import\s+'[^']+'" "$file" 2>/dev/null || true)
+    done <<< "$(grep -nP "^import\s+'[^']+'" "$file" 2>/dev/null || true)"
 }
 
 # -----------------------------------------------------------------------
@@ -157,7 +159,7 @@ check_print_statements() {
 
         echo "  WARNING [$file:$line_num]: print() statement found (use debugPrint or logging)"
         WARNINGS=$((WARNINGS + 1))
-    done < <(grep -nP '(?<!\w)print\s*\(' "$file" 2>/dev/null || true)
+    done <<< "$(grep -nP '(?<!\w)print\s*\(' "$file" 2>/dev/null || true)"
 }
 
 # -----------------------------------------------------------------------
