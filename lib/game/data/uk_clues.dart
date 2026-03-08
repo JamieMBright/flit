@@ -8,6 +8,7 @@ class UkCountyClueData {
     required this.famousLandmark,
     required this.footballTeam,
     required this.nickname,
+    required this.flag,
   });
 
   final String country;
@@ -15,6 +16,7 @@ class UkCountyClueData {
   final String famousLandmark;
   final String footballTeam;
   final String nickname;
+  final String flag;
 }
 
 abstract class UkClues {
@@ -28,6 +30,7 @@ abstract class UkClues {
       famousLandmark: 'Tower Bridge',
       footballTeam: 'Arsenal, Chelsea, Tottenham',
       nickname: 'The Big Smoke',
+      flag: 'Red cross on white field with red sword in upper hoist canton',
     ),
     'WMD': UkCountyClueData(
       country: 'England',
@@ -35,6 +38,7 @@ abstract class UkClues {
       famousLandmark: 'Birmingham Cathedral',
       footballTeam: 'Aston Villa, Birmingham City',
       nickname: 'The Black Country',
+      flag: 'Black field with gold diagonal cross and industrial motifs',
     ),
     'GTM': UkCountyClueData(
       country: 'England',
@@ -42,6 +46,8 @@ abstract class UkClues {
       famousLandmark: 'Old Trafford Stadium',
       footballTeam: 'Manchester United, Manchester City',
       nickname: 'Cottonopolis',
+      flag:
+          'Red field with gold ship and seven-pointed star with three gold stripes',
     ),
     'WYK': UkCountyClueData(
       country: 'England',
@@ -49,6 +55,7 @@ abstract class UkClues {
       famousLandmark: 'Leeds Town Hall',
       footballTeam: 'Leeds United',
       nickname: 'God\'s Own County',
+      flag: 'White rose of York on blue field',
     ),
     'MER': UkCountyClueData(
       country: 'England',
@@ -56,6 +63,7 @@ abstract class UkClues {
       famousLandmark: 'Royal Liver Building',
       footballTeam: 'Liverpool FC, Everton',
       nickname: 'The Pool of Life',
+      flag: 'Yellow field with blue wavy band and Liver Bird',
     ),
     'SYK': UkCountyClueData(
       country: 'England',
@@ -63,6 +71,7 @@ abstract class UkClues {
       famousLandmark: 'Sheffield Cathedral',
       footballTeam: 'Sheffield United, Sheffield Wednesday',
       nickname: 'Steel City',
+      flag: 'White rose of York on blue and green divided field',
     ),
     'TWR': UkCountyClueData(
       country: 'England',
@@ -70,6 +79,7 @@ abstract class UkClues {
       famousLandmark: 'Angel of the North',
       footballTeam: 'Newcastle United, Sunderland AFC',
       nickname: 'The Geordies',
+      flag: 'Blue and gold quartered field with castle and lion',
     ),
 
     // =========================================================================
@@ -81,6 +91,7 @@ abstract class UkClues {
       famousLandmark: 'Canterbury Cathedral',
       footballTeam: 'Gillingham FC',
       nickname: 'The Garden of England',
+      flag: 'Red rampant horse on white field',
     ),
     'ESS': UkCountyClueData(
       country: 'England',
@@ -88,6 +99,7 @@ abstract class UkClues {
       famousLandmark: 'Colchester Castle',
       footballTeam: 'Colchester United',
       nickname: 'The Saxon Shore',
+      flag: 'Three Saxon seaxes on red field',
     ),
     'HAM': UkCountyClueData(
       country: 'England',
@@ -95,6 +107,7 @@ abstract class UkClues {
       famousLandmark: 'Winchester Cathedral',
       footballTeam: 'Southampton FC, Portsmouth FC',
       nickname: 'Hants',
+      flag: 'Gold crown and red Tudor rose on white and blue field',
     ),
     'SRY': UkCountyClueData(
       country: 'England',
@@ -102,6 +115,7 @@ abstract class UkClues {
       famousLandmark: 'Hampton Court Palace',
       footballTeam: 'Crystal Palace',
       nickname: 'The Home Counties',
+      flag: 'Orange-gold chequered field derived from the Warren family arms',
     ),
     'HRT': UkCountyClueData(
       country: 'England',
@@ -109,6 +123,7 @@ abstract class UkClues {
       famousLandmark: 'St Albans Cathedral',
       footballTeam: 'Watford FC',
       nickname: 'Herts',
+      flag: 'Blue field with gold hart (deer) emblem',
     ),
     // SUS renamed to SSX (East Sussex)
     'SSX': UkCountyClueData(
@@ -117,6 +132,7 @@ abstract class UkClues {
       famousLandmark: 'Brighton Pier',
       footballTeam: 'Brighton & Hove Albion',
       nickname: 'The Downs',
+      flag: 'Six gold martlets on blue field',
     ),
     'BRK': UkCountyClueData(
       country: 'England',
@@ -124,6 +140,7 @@ abstract class UkClues {
       famousLandmark: 'Windsor Castle',
       footballTeam: 'Reading FC',
       nickname: 'Royal County',
+      flag: 'Blue stag on white field with oak tree',
     ),
     'WSX': UkCountyClueData(
       country: 'England',
@@ -131,6 +148,7 @@ abstract class UkClues {
       famousLandmark: 'Arundel Castle',
       footballTeam: 'Crawley Town',
       nickname: 'The South Downs',
+      flag: 'Six gold martlets on blue field with gold crown',
     ),
     'IOW': UkCountyClueData(
       country: 'England',
@@ -138,6 +156,7 @@ abstract class UkClues {
       famousLandmark: 'Osborne House',
       footballTeam: 'Newport IOW FC',
       nickname: 'The Island',
+      flag: 'Blue and white halved field with the isle outlined in gold',
     ),
 
     // =========================================================================
@@ -149,6 +168,7 @@ abstract class UkClues {
       famousLandmark: 'Norwich Cathedral',
       footballTeam: 'Norwich City',
       nickname: 'The Broads',
+      flag: 'White and black horizontal bicolour',
     ),
     'SUF': UkCountyClueData(
       country: 'England',
@@ -156,6 +176,7 @@ abstract class UkClues {
       famousLandmark: 'Framlingham Castle',
       footballTeam: 'Ipswich Town',
       nickname: 'Silly Suffolk',
+      flag: 'Gold crown and blue wavy lines on white and gold field',
     ),
     'CAM': UkCountyClueData(
       country: 'England',
@@ -163,6 +184,7 @@ abstract class UkClues {
       famousLandmark: 'King\'s College Chapel',
       footballTeam: 'Cambridge United',
       nickname: 'The Fens',
+      flag: 'Three gold crowns on blue field with wavy blue lines',
     ),
     'LIN': UkCountyClueData(
       country: 'England',
@@ -170,6 +192,8 @@ abstract class UkClues {
       famousLandmark: 'Lincoln Cathedral',
       footballTeam: 'Lincoln City',
       nickname: 'The Yellow Bellies',
+      flag:
+          'Red cross on green and white quartered field with gold fleur-de-lis',
     ),
     'BED': UkCountyClueData(
       country: 'England',
@@ -177,6 +201,7 @@ abstract class UkClues {
       famousLandmark: 'Woburn Abbey',
       footballTeam: 'Luton Town',
       nickname: 'The Bedfordshire Clanger County',
+      flag: 'Gold field with three white shells on red bend',
     ),
 
     // =========================================================================
@@ -188,6 +213,7 @@ abstract class UkClues {
       famousLandmark: 'Exeter Cathedral',
       footballTeam: 'Plymouth Argyle, Exeter City',
       nickname: 'Glorious Devon',
+      flag: 'Green and black horizontal bicolour',
     ),
     'COR': UkCountyClueData(
       country: 'England',
@@ -195,6 +221,7 @@ abstract class UkClues {
       famousLandmark: 'St Michael\'s Mount',
       footballTeam: 'Truro City',
       nickname: 'The Duchy',
+      flag: 'White cross on black field (St Piran\'s Cross)',
     ),
     'SOM': UkCountyClueData(
       country: 'England',
@@ -202,6 +229,7 @@ abstract class UkClues {
       famousLandmark: 'Glastonbury Tor',
       footballTeam: 'Bristol City',
       nickname: 'The Cider County',
+      flag: 'Red dragon on gold field',
     ),
     'DOR': UkCountyClueData(
       country: 'England',
@@ -209,6 +237,7 @@ abstract class UkClues {
       famousLandmark: 'Durdle Door',
       footballTeam: 'Bournemouth AFC',
       nickname: 'Hardy Country',
+      flag: 'White Dorset Cross on red and gold quartered field',
     ),
     'GLO': UkCountyClueData(
       country: 'England',
@@ -216,6 +245,7 @@ abstract class UkClues {
       famousLandmark: 'Gloucester Cathedral',
       footballTeam: 'Cheltenham Town, Forest Green Rovers',
       nickname: 'The Cotswolds County',
+      flag: 'Green and gold horizontal stripes with chevron pattern',
     ),
     'WIL': UkCountyClueData(
       country: 'England',
@@ -223,6 +253,7 @@ abstract class UkClues {
       famousLandmark: 'Stonehenge',
       footballTeam: 'Swindon Town',
       nickname: 'The Moonraker County',
+      flag: 'Green field with white Great Bustard bird',
     ),
 
     // =========================================================================
@@ -234,6 +265,7 @@ abstract class UkClues {
       famousLandmark: 'Radcliffe Camera',
       footballTeam: 'Oxford United',
       nickname: 'The City of Dreaming Spires',
+      flag: 'Blue field with red ox crossing gold ford',
     ),
     'WAR': UkCountyClueData(
       country: 'England',
@@ -241,6 +273,8 @@ abstract class UkClues {
       famousLandmark: 'Warwick Castle',
       footballTeam: 'Coventry City',
       nickname: 'The Heart of England',
+      flag:
+          'Gold field with red and white chequered fess and bear and ragged staff',
     ),
     'NTH': UkCountyClueData(
       country: 'England',
@@ -248,6 +282,7 @@ abstract class UkClues {
       famousLandmark: 'Silverstone Circuit',
       footballTeam: 'Northampton Town',
       nickname: 'The Rose of the Shires',
+      flag: 'Crimson field with gold rose',
     ),
     'LEI': UkCountyClueData(
       country: 'England',
@@ -255,6 +290,7 @@ abstract class UkClues {
       famousLandmark: 'Leicester Cathedral',
       footballTeam: 'Leicester City',
       nickname: 'The Foxes',
+      flag: 'Gold fox on red field with white cinquefoil',
     ),
     'NOT': UkCountyClueData(
       country: 'England',
@@ -262,6 +298,8 @@ abstract class UkClues {
       famousLandmark: 'Sherwood Forest',
       footballTeam: 'Nottingham Forest, Notts County',
       nickname: 'Robin Hood Country',
+      flag:
+          'Green field with white cross of St Andrew and Robin Hood silhouette',
     ),
     'DER': UkCountyClueData(
       country: 'England',
@@ -269,6 +307,7 @@ abstract class UkClues {
       famousLandmark: 'Chatsworth House',
       footballTeam: 'Derby County',
       nickname: 'The Peak',
+      flag: 'Green field with gold Tudor rose and blue cross',
     ),
     'STS': UkCountyClueData(
       country: 'England',
@@ -276,6 +315,7 @@ abstract class UkClues {
       famousLandmark: 'Alton Towers',
       footballTeam: 'Stoke City',
       nickname: 'The Potteries',
+      flag: 'Gold field with red Staffordshire knot',
     ),
     'BKM': UkCountyClueData(
       country: 'England',
@@ -283,6 +323,7 @@ abstract class UkClues {
       famousLandmark: 'Bletchley Park',
       footballTeam: 'Wycombe Wanderers',
       nickname: 'The Home of the Chilterns',
+      flag: 'White field with red chained swan (Buckinghamshire swan badge)',
     ),
     'HEF': UkCountyClueData(
       country: 'England',
@@ -290,6 +331,7 @@ abstract class UkClues {
       famousLandmark: 'Hereford Cathedral',
       footballTeam: 'Hereford FC',
       nickname: 'The Marches',
+      flag: 'Blue field with white Hereford bull and three gold lions',
     ),
     'WOR': UkCountyClueData(
       country: 'England',
@@ -297,6 +339,7 @@ abstract class UkClues {
       famousLandmark: 'Worcester Cathedral',
       footballTeam: 'Worcester City',
       nickname: 'The Faithful City County',
+      flag: 'White field with blue wavy lines and gold pear tree',
     ),
     'RUT': UkCountyClueData(
       country: 'England',
@@ -304,6 +347,7 @@ abstract class UkClues {
       famousLandmark: 'Rutland Water',
       footballTeam: 'Oakham United',
       nickname: 'England\'s Smallest County',
+      flag: 'Gold horseshoe on white field with green border',
     ),
     'SHR': UkCountyClueData(
       country: 'England',
@@ -311,6 +355,7 @@ abstract class UkClues {
       famousLandmark: 'Ironbridge Gorge',
       footballTeam: 'Shrewsbury Town',
       nickname: 'Salop',
+      flag: 'Blue and gold field with three white leopard faces',
     ),
 
     // =========================================================================
@@ -322,6 +367,7 @@ abstract class UkClues {
       famousLandmark: 'Blackpool Tower',
       footballTeam: 'Blackburn Rovers, Preston North End',
       nickname: 'The Red Rose County',
+      flag: 'Red rose on gold field',
     ),
     // CHS renamed to CHE (Cheshire)
     'CHE': UkCountyClueData(
@@ -330,6 +376,7 @@ abstract class UkClues {
       famousLandmark: 'Chester Cathedral',
       footballTeam: 'Chester FC',
       nickname: 'The County Palatine',
+      flag: 'Blue field with three gold wheatsheaves and gold sword',
     ),
     'DUR': UkCountyClueData(
       country: 'England',
@@ -337,6 +384,7 @@ abstract class UkClues {
       famousLandmark: 'Durham Cathedral',
       footballTeam: 'Darlington FC',
       nickname: 'Land of the Prince Bishops',
+      flag: 'Blue field with gold cross between gold lions',
     ),
     // CUM renamed to CMA (Cumbria)
     'CMA': UkCountyClueData(
@@ -345,6 +393,7 @@ abstract class UkClues {
       famousLandmark: 'Hadrian\'s Wall',
       footballTeam: 'Carlisle United',
       nickname: 'The Lake District',
+      flag: 'Green and blue field with gold and red bars and gold fleece',
     ),
     'NBL': UkCountyClueData(
       country: 'England',
@@ -352,6 +401,7 @@ abstract class UkClues {
       famousLandmark: 'Lindisfarne Castle',
       footballTeam: 'Newcastle United',
       nickname: 'The Far North',
+      flag: 'Red and gold quartered field with blue and white chequered canton',
     ),
     'NYK': UkCountyClueData(
       country: 'England',
@@ -359,6 +409,7 @@ abstract class UkClues {
       famousLandmark: 'Whitby Abbey',
       footballTeam: 'Harrogate Town, York City',
       nickname: 'God\'s Own County',
+      flag: 'White rose of York on blue field',
     ),
     'ERY': UkCountyClueData(
       country: 'England',
@@ -366,6 +417,7 @@ abstract class UkClues {
       famousLandmark: 'The Humber Bridge',
       footballTeam: 'Hull City',
       nickname: 'The Wolds',
+      flag: 'Blue field with white Yorkshire rose on red and white wavy band',
     ),
 
     // =========================================================================
@@ -377,6 +429,7 @@ abstract class UkClues {
       famousLandmark: 'Kelvingrove Art Gallery',
       footballTeam: 'Celtic, Rangers',
       nickname: 'The Dear Green Place',
+      flag: 'White field with tree, bird, bell and fish from city arms',
     ),
     'EDH': UkCountyClueData(
       country: 'Scotland',
@@ -384,6 +437,7 @@ abstract class UkClues {
       famousLandmark: 'Edinburgh Castle',
       footballTeam: 'Hibernian, Hearts',
       nickname: 'Auld Reekie',
+      flag: 'White field with red castle from city arms',
     ),
     'FIF': UkCountyClueData(
       country: 'Scotland',
@@ -391,6 +445,8 @@ abstract class UkClues {
       famousLandmark: 'St Andrews Links',
       footballTeam: 'Dunfermline Athletic',
       nickname: 'The Kingdom of Fife',
+      flag:
+          'Red rampant lion on gold field with blue and white chequered border',
     ),
     'HLD': UkCountyClueData(
       country: 'Scotland',
@@ -398,6 +454,7 @@ abstract class UkClues {
       famousLandmark: 'Loch Ness',
       footballTeam: 'Inverness Caledonian Thistle',
       nickname: 'The Highlands',
+      flag: 'White saltire on blue field (St Andrew\'s Cross)',
     ),
     'ABD': UkCountyClueData(
       country: 'Scotland',
@@ -405,6 +462,7 @@ abstract class UkClues {
       famousLandmark: 'Balmoral Castle',
       footballTeam: 'Aberdeen FC',
       nickname: 'The Granite City',
+      flag: 'Azure field with three silver towers from county arms',
     ),
     'ABE': UkCountyClueData(
       country: 'Scotland',
@@ -412,6 +470,7 @@ abstract class UkClues {
       famousLandmark: 'Marischal College',
       footballTeam: 'Aberdeen FC',
       nickname: 'The Silver City',
+      flag: 'Red field with three silver towers and leopards from city arms',
     ),
     'AYR': UkCountyClueData(
       country: 'Scotland',
@@ -419,6 +478,7 @@ abstract class UkClues {
       famousLandmark: 'Burns Cottage',
       footballTeam: 'Ayr United, Kilmarnock',
       nickname: 'Burns Country',
+      flag: 'Blue saltire with red heart on white field',
     ),
     'DGY': UkCountyClueData(
       country: 'Scotland',
@@ -426,6 +486,7 @@ abstract class UkClues {
       famousLandmark: 'Sweetheart Abbey',
       footballTeam: 'Queen of the South',
       nickname: 'The Galloway Hills',
+      flag: 'Blue field with white lion rampant from Galloway arms',
     ),
     // STI renamed to STG (Stirling)
     'STG': UkCountyClueData(
@@ -434,6 +495,7 @@ abstract class UkClues {
       famousLandmark: 'Stirling Castle',
       footballTeam: 'Stirling Albion',
       nickname: 'The Gateway to the Highlands',
+      flag: 'Gold field with red wolf from burgh arms',
     ),
     'ANS': UkCountyClueData(
       country: 'Scotland',
@@ -441,6 +503,7 @@ abstract class UkClues {
       famousLandmark: 'Glamis Castle',
       footballTeam: 'Arbroath FC, Forfar Athletic',
       nickname: 'The Land o\' the Angus Glens',
+      flag: 'Red field with white lion passant from Angus arms',
     ),
     'ARG': UkCountyClueData(
       country: 'Scotland',
@@ -448,6 +511,7 @@ abstract class UkClues {
       famousLandmark: 'Inveraray Castle',
       footballTeam: 'Oban Saints',
       nickname: 'The Gateway to the Isles',
+      flag: 'Blue and green field with lymphad ship from Campbell arms',
     ),
     'CLK': UkCountyClueData(
       country: 'Scotland',
@@ -455,6 +519,7 @@ abstract class UkClues {
       famousLandmark: 'Alloa Tower',
       footballTeam: 'Alloa Athletic',
       nickname: 'The Wee County',
+      flag: 'Gold field with black saltire and oak tree from county arms',
     ),
     'DND': UkCountyClueData(
       country: 'Scotland',
@@ -462,6 +527,7 @@ abstract class UkClues {
       famousLandmark: 'RRS Discovery',
       footballTeam: 'Dundee FC, Dundee United',
       nickname: 'The City of Discovery',
+      flag: 'Blue field with white pot of lilies from city arms',
     ),
     'EDU': UkCountyClueData(
       country: 'Scotland',
@@ -469,6 +535,8 @@ abstract class UkClues {
       famousLandmark: 'Mugdock Castle',
       footballTeam: 'Kirkintilloch Rob Roy',
       nickname: 'The Bears Den',
+      flag:
+          'Green field with white and blue wavy band and bear from council arms',
     ),
     'EIL': UkCountyClueData(
       country: 'Scotland',
@@ -476,6 +544,7 @@ abstract class UkClues {
       famousLandmark: 'Callanish Standing Stones',
       footballTeam: 'Stornoway United',
       nickname: 'The Western Isles',
+      flag: 'Blue field with Norse longship and herring from island arms',
     ),
     'ELN': UkCountyClueData(
       country: 'Scotland',
@@ -483,6 +552,7 @@ abstract class UkClues {
       famousLandmark: 'Tantallon Castle',
       footballTeam: 'Dunbar United',
       nickname: 'Scotland\'s Golf Coast',
+      flag: 'Red field with white goat from county arms',
     ),
     'ERW': UkCountyClueData(
       country: 'Scotland',
@@ -490,6 +560,7 @@ abstract class UkClues {
       famousLandmark: 'Rouken Glen Park',
       footballTeam: 'Arthurlie FC',
       nickname: 'The Ren',
+      flag: 'Green field with white chevron and thistle from council arms',
     ),
     'FAL': UkCountyClueData(
       country: 'Scotland',
@@ -497,6 +568,7 @@ abstract class UkClues {
       famousLandmark: 'The Kelpies',
       footballTeam: 'Falkirk FC',
       nickname: 'The Bairns\' Town',
+      flag: 'Blue field with silver stag and Forth bridge from council arms',
     ),
     'INV': UkCountyClueData(
       country: 'Scotland',
@@ -504,6 +576,8 @@ abstract class UkClues {
       famousLandmark: 'Newark Castle',
       footballTeam: 'Greenock Morton',
       nickname: 'The Tail of the Bank',
+      flag:
+          'Blue field with silver herring and sailing ship from Inverclyde arms',
     ),
     'MLN': UkCountyClueData(
       country: 'Scotland',
@@ -511,6 +585,7 @@ abstract class UkClues {
       famousLandmark: 'Rosslyn Chapel',
       footballTeam: 'Bonnyrigg Rose Athletic',
       nickname: 'The Heart of Midlothian',
+      flag: 'Blue field with white castle and gold stars from Midlothian arms',
     ),
     'MRY': UkCountyClueData(
       country: 'Scotland',
@@ -518,6 +593,7 @@ abstract class UkClues {
       famousLandmark: 'Elgin Cathedral',
       footballTeam: 'Elgin City',
       nickname: 'The Malt Whisky Country',
+      flag: 'Blue field with gold stars and silver castle from Moray arms',
     ),
     'NAY': UkCountyClueData(
       country: 'Scotland',
@@ -525,6 +601,7 @@ abstract class UkClues {
       famousLandmark: 'Brodick Castle',
       footballTeam: 'Kilwinning Rangers',
       nickname: 'The Ayrshire Coast',
+      flag: 'Blue field with silver saltire and red heart',
     ),
     'NLK': UkCountyClueData(
       country: 'Scotland',
@@ -532,6 +609,7 @@ abstract class UkClues {
       famousLandmark: 'Summerlee Museum of Scottish Industrial Life',
       footballTeam: 'Motherwell FC, Airdrieonians',
       nickname: 'The Lanarkshire Heartland',
+      flag: 'Red field with double-headed eagle from Hamilton arms',
     ),
     'ORK': UkCountyClueData(
       country: 'Scotland',
@@ -539,6 +617,7 @@ abstract class UkClues {
       famousLandmark: 'Skara Brae',
       footballTeam: 'Orkney FC',
       nickname: 'The Northern Isles',
+      flag: 'Red and yellow Nordic cross on blue field',
     ),
     'PKN': UkCountyClueData(
       country: 'Scotland',
@@ -546,6 +625,7 @@ abstract class UkClues {
       famousLandmark: 'Scone Palace',
       footballTeam: 'St Johnstone',
       nickname: 'The Big County',
+      flag: 'Gold field with red eagle from Perth arms',
     ),
     'RFW': UkCountyClueData(
       country: 'Scotland',
@@ -553,6 +633,7 @@ abstract class UkClues {
       famousLandmark: 'Paisley Abbey',
       footballTeam: 'St Mirren',
       nickname: 'The Buddies\' Land',
+      flag: 'Blue field with chequered silver band and mitre from Paisley arms',
     ),
     'SAY': UkCountyClueData(
       country: 'Scotland',
@@ -560,6 +641,7 @@ abstract class UkClues {
       famousLandmark: 'Culzean Castle',
       footballTeam: 'Ayr United',
       nickname: 'The Burns Coast',
+      flag: 'Blue field with silver saltire and castle from Ayr arms',
     ),
     'SCB': UkCountyClueData(
       country: 'Scotland',
@@ -567,6 +649,7 @@ abstract class UkClues {
       famousLandmark: 'Abbotsford House',
       footballTeam: 'Gala Fairydean Rovers',
       nickname: 'Scott\'s Country',
+      flag: 'Green field with gold saltire and silver tower from Borders arms',
     ),
     'SLK': UkCountyClueData(
       country: 'Scotland',
@@ -574,6 +657,7 @@ abstract class UkClues {
       famousLandmark: 'New Lanark',
       footballTeam: 'Hamilton Academical',
       nickname: 'The Clyde Valley',
+      flag: 'Red field with double-headed eagle and Hamilton cinquefoils',
     ),
     'WDU': UkCountyClueData(
       country: 'Scotland',
@@ -581,6 +665,7 @@ abstract class UkClues {
       famousLandmark: 'Dumbarton Castle',
       footballTeam: 'Dumbarton FC',
       nickname: 'The Rock',
+      flag: 'Blue field with white elephant and castle from Dumbarton arms',
     ),
     'WLN': UkCountyClueData(
       country: 'Scotland',
@@ -588,6 +673,7 @@ abstract class UkClues {
       famousLandmark: 'Linlithgow Palace',
       footballTeam: 'Livingston FC',
       nickname: 'The Shale Oil County',
+      flag: 'Blue field with black dog on gold ground from Linlithgow arms',
     ),
     'ZET': UkCountyClueData(
       country: 'Scotland',
@@ -595,6 +681,7 @@ abstract class UkClues {
       famousLandmark: 'Jarlshof',
       footballTeam: 'Shetland FC',
       nickname: 'The Old Rock',
+      flag: 'White Nordic cross on blue field',
     ),
 
     // =========================================================================
@@ -606,6 +693,7 @@ abstract class UkClues {
       famousLandmark: 'Cardiff Castle',
       footballTeam: 'Cardiff City',
       nickname: 'The Capital',
+      flag: 'Red dragon on white and green field (Y Ddraig Goch)',
     ),
     'SWA': UkCountyClueData(
       country: 'Wales',
@@ -613,6 +701,7 @@ abstract class UkClues {
       famousLandmark: 'Swansea Bay',
       footballTeam: 'Swansea City',
       nickname: 'The Copperopolis',
+      flag: 'White castle with black swan on red and gold field',
     ),
     'GWN': UkCountyClueData(
       country: 'Wales',
@@ -620,6 +709,7 @@ abstract class UkClues {
       famousLandmark: 'Snowdon (Yr Wyddfa)',
       footballTeam: 'Bangor City',
       nickname: 'Land of Castles',
+      flag: 'Green field with gold eagles and lions from Gwynedd arms',
     ),
     'PEM': UkCountyClueData(
       country: 'Wales',
@@ -627,6 +717,7 @@ abstract class UkClues {
       famousLandmark: 'Pembroke Castle',
       footballTeam: 'Haverfordwest County',
       nickname: 'Little England Beyond Wales',
+      flag: 'Blue field with gold lions from Deheubarth arms',
     ),
     // PWS renamed to POW (Powys)
     'POW': UkCountyClueData(
@@ -635,6 +726,7 @@ abstract class UkClues {
       famousLandmark: 'Powis Castle',
       footballTeam: 'Newtown AFC',
       nickname: 'The Green Desert of Wales',
+      flag: 'Red field with gold lion rampant from Powys Fadog arms',
     ),
     // CRD renamed to CAY (Caerphilly)
     'CAY': UkCountyClueData(
@@ -643,6 +735,7 @@ abstract class UkClues {
       famousLandmark: 'Caerphilly Castle',
       footballTeam: 'Cardiff Metropolitan',
       nickname: 'The Valleys',
+      flag: 'Green field with red dragon and red chevron',
     ),
     'NWP': UkCountyClueData(
       country: 'Wales',
@@ -650,6 +743,7 @@ abstract class UkClues {
       famousLandmark: 'Newport Transporter Bridge',
       footballTeam: 'Newport County',
       nickname: 'The Gateway to Wales',
+      flag: 'Gold field with red chevron and three silver towers',
     ),
     'RCT': UkCountyClueData(
       country: 'Wales',
@@ -657,6 +751,7 @@ abstract class UkClues {
       famousLandmark: 'Rhondda Heritage Park',
       footballTeam: 'Pontypridd Town',
       nickname: 'The Rhondda Valleys',
+      flag: 'Black and gold field with red dragon and mining symbols',
     ),
     'FLN': UkCountyClueData(
       country: 'Wales',
@@ -664,6 +759,7 @@ abstract class UkClues {
       famousLandmark: 'Flint Castle',
       footballTeam: 'Connah\'s Quay Nomads',
       nickname: 'The Borderlands',
+      flag: 'Gold field with red lion rampant and silver castle',
     ),
     'WRX': UkCountyClueData(
       country: 'Wales',
@@ -671,6 +767,7 @@ abstract class UkClues {
       famousLandmark: 'Wrexham Parish Church',
       footballTeam: 'Wrexham AFC',
       nickname: 'The Gateway to Wales',
+      flag: 'Green field with gold cross and red Powys lion',
     ),
     'CMN': UkCountyClueData(
       country: 'Wales',
@@ -678,6 +775,7 @@ abstract class UkClues {
       famousLandmark: 'National Botanic Garden of Wales',
       footballTeam: 'Carmarthen Town',
       nickname: 'The Garden of Wales',
+      flag: 'Blue and gold quartered field with gold lions and towers',
     ),
     'CRG': UkCountyClueData(
       country: 'Wales',
@@ -685,6 +783,7 @@ abstract class UkClues {
       famousLandmark: 'Devil\'s Bridge',
       footballTeam: 'Aberystwyth Town',
       nickname: 'The Celtic Heartland',
+      flag: 'Gold field with blue dolphins and red lion from Ceredigion arms',
     ),
     'AGY': UkCountyClueData(
       country: 'Wales',
@@ -692,6 +791,7 @@ abstract class UkClues {
       famousLandmark: 'Beaumaris Castle',
       footballTeam: 'Holyhead Hotspur',
       nickname: 'Mother of Wales',
+      flag: 'Green and white field with gold coronet and red lions',
     ),
 
     // =========================================================================
@@ -703,6 +803,8 @@ abstract class UkClues {
       famousLandmark: 'Giant\'s Causeway',
       footballTeam: 'Glentoran, Cliftonville, Linfield',
       nickname: 'The Glens',
+      flag:
+          'Red field with white castle and gold chief with red hand of Ulster',
     ),
     'ARM': UkCountyClueData(
       country: 'Northern Ireland',
@@ -710,6 +812,7 @@ abstract class UkClues {
       famousLandmark: 'Armagh Cathedral',
       footballTeam: 'Armagh City FC',
       nickname: 'The Orchard County',
+      flag: 'Blue field with red hand of Ulster on gold shield',
     ),
     'DOW': UkCountyClueData(
       country: 'Northern Ireland',
@@ -717,6 +820,7 @@ abstract class UkClues {
       famousLandmark: 'Mourne Mountains',
       footballTeam: 'Glenavon FC',
       nickname: 'The Mournes',
+      flag: 'Green field with silver ship and gold fish from county arms',
     ),
     'FER': UkCountyClueData(
       country: 'Northern Ireland',
@@ -724,6 +828,8 @@ abstract class UkClues {
       famousLandmark: 'Enniskillen Castle',
       footballTeam: 'Enniskillen Town',
       nickname: 'The Lakeland County',
+      flag:
+          'Blue field with red hand of Ulster and silver cross from county arms',
     ),
     'LDY': UkCountyClueData(
       country: 'Northern Ireland',
@@ -731,6 +837,7 @@ abstract class UkClues {
       famousLandmark: 'Derry City Walls',
       footballTeam: 'Derry City FC',
       nickname: 'The Maiden City',
+      flag: 'White field with red cross and gold castle with skeleton in tower',
     ),
     'TYR': UkCountyClueData(
       country: 'Northern Ireland',
@@ -738,6 +845,8 @@ abstract class UkClues {
       famousLandmark: 'Sperrin Mountains',
       footballTeam: 'Dungannon Swifts',
       nickname: 'O\'Neill Country',
+      flag:
+          'Gold field with red hand of Ulster and red cross from O\'Neill arms',
     ),
   };
 }

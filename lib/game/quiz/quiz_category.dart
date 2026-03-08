@@ -1,5 +1,14 @@
 import 'dart:math';
 
+import '../data/africa_clues.dart';
+import '../data/asia_clues.dart';
+import '../data/canada_clues.dart';
+import '../data/caribbean_clues.dart';
+import '../data/europe_clues.dart';
+import '../data/ireland_clues.dart';
+import '../data/latin_america_clues.dart';
+import '../data/oceania_clues.dart';
+import '../data/uk_clues.dart';
 import '../data/us_state_clues.dart';
 import '../map/region.dart';
 
@@ -23,7 +32,7 @@ extension QuizCategoryExtension on QuizCategory {
   String get displayName {
     switch (this) {
       case QuizCategory.stateName:
-        return 'State Name';
+        return 'Name';
       case QuizCategory.capital:
         return 'Capitals';
       case QuizCategory.nickname:
@@ -41,7 +50,7 @@ extension QuizCategoryExtension on QuizCategory {
       case QuizCategory.motto:
         return 'Mottos';
       case QuizCategory.celebrity:
-        return 'Celebrities';
+        return 'Famous People';
       case QuizCategory.filmSetting:
         return 'Film Settings';
       case QuizCategory.mixed:
@@ -52,25 +61,25 @@ extension QuizCategoryExtension on QuizCategory {
   String get description {
     switch (this) {
       case QuizCategory.stateName:
-        return 'Tap the named state on the map';
+        return 'Tap the named area on the map';
       case QuizCategory.capital:
-        return 'Find the state from its capital city';
+        return 'Find the area from its capital city';
       case QuizCategory.nickname:
-        return 'Match the nickname to the state';
+        return 'Match the nickname to the area';
       case QuizCategory.sportsTeam:
-        return 'Which state has this team?';
+        return 'Which area has this team?';
       case QuizCategory.landmark:
         return 'Locate the famous landmark';
       case QuizCategory.flagDescription:
-        return 'Identify the state from its flag';
+        return 'Identify the area from its flag';
       case QuizCategory.stateBird:
         return 'Which state has this bird?';
       case QuizCategory.stateFlower:
         return 'Which state has this flower?';
       case QuizCategory.motto:
-        return 'Match the motto to the state';
+        return 'Match the motto to the area';
       case QuizCategory.celebrity:
-        return 'Where is this celebrity from?';
+        return 'Where is this person from?';
       case QuizCategory.filmSetting:
         return 'Where was this film/show set?';
       case QuizCategory.mixed:
@@ -130,16 +139,11 @@ class QuizQuestion {
   final String answerName;
 }
 
-/// Generates quiz questions from existing state data.
-class QuizQuestionGenerator {
-  QuizQuestionGenerator({required this.region, int? seed})
-      : _random = Random(seed);
-
-  final GameRegion region;
-  final Random _random;
-
-  /// All non-mixed single categories.
-  static const List<QuizCategory> _singleCategories = [
+/// Non-mixed categories available for each region with rich clue data.
+///
+/// Regions not listed here only support [stateName] and [capital].
+const Map<GameRegion, List<QuizCategory>> _regionCategories = {
+  GameRegion.usStates: [
     QuizCategory.stateName,
     QuizCategory.capital,
     QuizCategory.nickname,
@@ -151,13 +155,103 @@ class QuizQuestionGenerator {
     QuizCategory.motto,
     QuizCategory.celebrity,
     QuizCategory.filmSetting,
-  ];
-
-  /// Categories available for any region (name + capital).
-  static const List<QuizCategory> _universalCategories = [
+  ],
+  GameRegion.europe: [
     QuizCategory.stateName,
     QuizCategory.capital,
-  ];
+    QuizCategory.nickname,
+    QuizCategory.landmark,
+    QuizCategory.flagDescription,
+    QuizCategory.sportsTeam,
+    QuizCategory.celebrity,
+    QuizCategory.motto,
+  ],
+  GameRegion.ireland: [
+    QuizCategory.stateName,
+    QuizCategory.capital,
+    QuizCategory.nickname,
+    QuizCategory.landmark,
+    QuizCategory.sportsTeam,
+    QuizCategory.celebrity,
+    QuizCategory.flagDescription,
+  ],
+  GameRegion.ukCounties: [
+    QuizCategory.stateName,
+    QuizCategory.capital,
+    QuizCategory.nickname,
+    QuizCategory.landmark,
+    QuizCategory.sportsTeam,
+    QuizCategory.celebrity,
+    QuizCategory.flagDescription,
+  ],
+  GameRegion.canadianProvinces: [
+    QuizCategory.stateName,
+    QuizCategory.capital,
+    QuizCategory.nickname,
+    QuizCategory.landmark,
+    QuizCategory.sportsTeam,
+    QuizCategory.flagDescription,
+    QuizCategory.motto,
+  ],
+  GameRegion.africa: [
+    QuizCategory.stateName,
+    QuizCategory.capital,
+    QuizCategory.nickname,
+    QuizCategory.landmark,
+    QuizCategory.flagDescription,
+    QuizCategory.celebrity,
+  ],
+  GameRegion.asia: [
+    QuizCategory.stateName,
+    QuizCategory.capital,
+    QuizCategory.nickname,
+    QuizCategory.landmark,
+    QuizCategory.flagDescription,
+    QuizCategory.celebrity,
+  ],
+  GameRegion.latinAmerica: [
+    QuizCategory.stateName,
+    QuizCategory.capital,
+    QuizCategory.nickname,
+    QuizCategory.landmark,
+    QuizCategory.flagDescription,
+    QuizCategory.celebrity,
+  ],
+  GameRegion.oceania: [
+    QuizCategory.stateName,
+    QuizCategory.capital,
+    QuizCategory.nickname,
+    QuizCategory.landmark,
+    QuizCategory.flagDescription,
+    QuizCategory.celebrity,
+  ],
+  GameRegion.caribbean: [
+    QuizCategory.stateName,
+    QuizCategory.capital,
+    QuizCategory.nickname,
+    QuizCategory.landmark,
+    QuizCategory.flagDescription,
+    QuizCategory.celebrity,
+  ],
+};
+
+/// Categories available for any region (name + capital).
+const List<QuizCategory> _universalCategories = [
+  QuizCategory.stateName,
+  QuizCategory.capital,
+];
+
+/// Generates quiz questions from regional clue data.
+class QuizQuestionGenerator {
+  QuizQuestionGenerator({required this.region, int? seed})
+      : _random = Random(seed);
+
+  final GameRegion region;
+  final Random _random;
+
+  /// Non-mixed categories available for this region.
+  List<QuizCategory> get _pool =>
+      _regionCategories[region] ?? _universalCategories;
 
   /// Generate a list of questions for the given category, covering all areas.
   List<QuizQuestion> generateQuestions(QuizCategory category) {
@@ -175,16 +269,11 @@ class QuizQuestionGenerator {
     return questions;
   }
 
-  /// Whether this generator's region has rich US-specific clue data.
-  bool get _hasRichClues => region == GameRegion.usStates;
-
   /// Generate a single question for an area in the given category.
   QuizQuestion? _generateForArea(RegionalArea area, QuizCategory category) {
     QuizCategory effectiveCategory;
     if (category == QuizCategory.mixed) {
-      // For non-US regions, mixed only uses universal categories.
-      final pool = _hasRichClues ? _singleCategories : _universalCategories;
-      effectiveCategory = pool[_random.nextInt(pool.length)];
+      effectiveCategory = _pool[_random.nextInt(_pool.length)];
     } else {
       effectiveCategory = category;
     }
@@ -206,108 +295,372 @@ class QuizQuestionGenerator {
           answerName: area.name,
         );
       case QuizCategory.nickname:
-        return _fromStateClueData(
-          area,
-          QuizCategory.nickname,
-          (data) => data.nickname,
-          (value) => 'Nickname: $value',
-        );
+        return _generateNickname(area);
       case QuizCategory.sportsTeam:
-        return _fromStateClueDataList(
-          area,
-          QuizCategory.sportsTeam,
-          (data) => data.sportsTeams,
-          (value) => 'Team: $value',
-        );
+        return _generateSportsTeam(area);
       case QuizCategory.landmark:
-        return _fromStateClueData(
-          area,
-          QuizCategory.landmark,
-          (data) => data.famousLandmark,
-          (value) => 'Landmark: $value',
-        );
+        return _generateLandmark(area);
       case QuizCategory.flagDescription:
-        return _fromStateClueData(
-          area,
-          QuizCategory.flagDescription,
-          (data) => data.flag,
-          (value) => 'Flag: $value',
-        );
+        return _generateFlag(area);
       case QuizCategory.stateBird:
-        return _fromStateClueData(
-          area,
-          QuizCategory.stateBird,
-          (data) => data.stateBird,
-          (value) => 'State Bird: $value',
+        final bird = _usField(area.code, 'stateBird');
+        if (bird == null) return null;
+        return QuizQuestion(
+          category: QuizCategory.stateBird,
+          clueText: 'State Bird: $bird',
+          answerCode: area.code,
+          answerName: area.name,
         );
       case QuizCategory.stateFlower:
-        return _fromStateClueData(
-          area,
-          QuizCategory.stateFlower,
-          (data) => data.stateFlower,
-          (value) => 'State Flower: $value',
+        final flower = _usField(area.code, 'stateFlower');
+        if (flower == null) return null;
+        return QuizQuestion(
+          category: QuizCategory.stateFlower,
+          clueText: 'State Flower: $flower',
+          answerCode: area.code,
+          answerName: area.name,
         );
       case QuizCategory.motto:
-        return _fromStateClueData(
-          area,
-          QuizCategory.motto,
-          (data) => data.motto,
-          (value) => 'Motto: "$value"',
-        );
+        return _generateMotto(area);
       case QuizCategory.celebrity:
-        return _fromStateClueDataList(
-          area,
-          QuizCategory.celebrity,
-          (data) => data.celebrities,
-          (value) => 'Celebrity: $value',
-        );
+        return _generateCelebrity(area);
       case QuizCategory.filmSetting:
-        return _fromStateClueDataList(
-          area,
-          QuizCategory.filmSetting,
-          (data) => data.filmSettings,
-          (value) => 'Film/Show: $value',
+        final film = _usField(area.code, 'filmSetting');
+        if (film == null) return null;
+        return QuizQuestion(
+          category: QuizCategory.filmSetting,
+          clueText: 'Film/Show: $film',
+          answerCode: area.code,
+          answerName: area.name,
         );
       case QuizCategory.mixed:
-        // Should not reach here — handled above
         return null;
     }
   }
 
-  QuizQuestion? _fromStateClueData(
-    RegionalArea area,
-    QuizCategory category,
-    String Function(StateClueData) getter,
-    String Function(String) formatter,
-  ) {
-    final data = UsStateClues.data[area.code];
-    if (data == null) return null;
-    final value = getter(data);
-    if (value.isEmpty) return null;
+  // ── Multi-region category generators ───────────────────────────────────
+
+  QuizQuestion? _generateNickname(RegionalArea area) {
+    final value = _getRegionalString(area.code, 'nickname');
+    if (value == null) return null;
     return QuizQuestion(
-      category: category,
-      clueText: formatter(value),
+      category: QuizCategory.nickname,
+      clueText: 'Nickname: $value',
       answerCode: area.code,
       answerName: area.name,
     );
   }
 
-  QuizQuestion? _fromStateClueDataList(
-    RegionalArea area,
-    QuizCategory category,
-    List<String> Function(StateClueData) getter,
-    String Function(String) formatter,
-  ) {
-    final data = UsStateClues.data[area.code];
-    if (data == null) return null;
-    final values = getter(data);
-    if (values.isEmpty) return null;
-    final value = values[_random.nextInt(values.length)];
+  QuizQuestion? _generateLandmark(RegionalArea area) {
+    final value = _getRegionalString(area.code, 'landmark');
+    if (value == null) return null;
     return QuizQuestion(
-      category: category,
-      clueText: formatter(value),
+      category: QuizCategory.landmark,
+      clueText: 'Landmark: $value',
       answerCode: area.code,
       answerName: area.name,
     );
+  }
+
+  QuizQuestion? _generateSportsTeam(RegionalArea area) {
+    final value = _getRegionalString(area.code, 'sportsTeam');
+    if (value == null) return null;
+    final prefix = region == GameRegion.ireland
+        ? 'GAA Team'
+        : region == GameRegion.ukCounties
+            ? 'Football'
+            : 'Team';
+    return QuizQuestion(
+      category: QuizCategory.sportsTeam,
+      clueText: '$prefix: $value',
+      answerCode: area.code,
+      answerName: area.name,
+    );
+  }
+
+  QuizQuestion? _generateCelebrity(RegionalArea area) {
+    final value = _getRegionalString(area.code, 'celebrity');
+    if (value == null) return null;
+    return QuizQuestion(
+      category: QuizCategory.celebrity,
+      clueText: 'Famous Person: $value',
+      answerCode: area.code,
+      answerName: area.name,
+    );
+  }
+
+  QuizQuestion? _generateFlag(RegionalArea area) {
+    final value = _getRegionalString(area.code, 'flag');
+    if (value == null) return null;
+    return QuizQuestion(
+      category: QuizCategory.flagDescription,
+      clueText: 'Flag: $value',
+      answerCode: area.code,
+      answerName: area.name,
+    );
+  }
+
+  QuizQuestion? _generateMotto(RegionalArea area) {
+    final value = _getRegionalString(area.code, 'motto');
+    if (value == null) return null;
+    return QuizQuestion(
+      category: QuizCategory.motto,
+      clueText: 'Motto: "$value"',
+      answerCode: area.code,
+      answerName: area.name,
+    );
+  }
+
+  // ── Generic regional data lookup ───────────────────────────────────────
+
+  /// Look up a string clue value for [areaCode] from the region's data source.
+  ///
+  /// [field] is a logical field name: nickname, landmark, celebrity, flag,
+  /// motto, sportsTeam.
+  String? _getRegionalString(String areaCode, String field) {
+    switch (region) {
+      case GameRegion.usStates:
+        return _usField(areaCode, field);
+      case GameRegion.ireland:
+        return _irelandField(areaCode, field);
+      case GameRegion.ukCounties:
+        return _ukField(areaCode, field);
+      case GameRegion.canadianProvinces:
+        return _canadaField(areaCode, field);
+      case GameRegion.europe:
+        return _europeField(areaCode, field);
+      case GameRegion.africa:
+        return _africaField(areaCode, field);
+      case GameRegion.asia:
+        return _asiaField(areaCode, field);
+      case GameRegion.latinAmerica:
+        return _latinAmericaField(areaCode, field);
+      case GameRegion.oceania:
+        return _oceaniaField(areaCode, field);
+      case GameRegion.caribbean:
+        return _caribbeanField(areaCode, field);
+      case GameRegion.world:
+        return null;
+    }
+  }
+
+  String? _nonEmpty(String? v) => (v != null && v.isNotEmpty) ? v : null;
+
+  // ── US ─────────────────────────────────────────────────────────────────
+
+  String? _usField(String code, String field) {
+    final d = UsStateClues.data[code];
+    if (d == null) return null;
+    switch (field) {
+      case 'nickname':
+        return _nonEmpty(d.nickname);
+      case 'landmark':
+        return _nonEmpty(d.famousLandmark);
+      case 'flag':
+        return _nonEmpty(d.flag);
+      case 'motto':
+        return _nonEmpty(d.motto);
+      case 'stateBird':
+        return _nonEmpty(d.stateBird);
+      case 'stateFlower':
+        return _nonEmpty(d.stateFlower);
+      case 'sportsTeam':
+        return d.sportsTeams.isNotEmpty
+            ? d.sportsTeams[_random.nextInt(d.sportsTeams.length)]
+            : null;
+      case 'celebrity':
+        return d.celebrities.isNotEmpty
+            ? d.celebrities[_random.nextInt(d.celebrities.length)]
+            : null;
+      case 'filmSetting':
+        return d.filmSettings.isNotEmpty
+            ? d.filmSettings[_random.nextInt(d.filmSettings.length)]
+            : null;
+      default:
+        return null;
+    }
+  }
+
+  // ── Ireland ────────────────────────────────────────────────────────────
+
+  String? _irelandField(String code, String field) {
+    final d = IrelandClues.data[code];
+    if (d == null) return null;
+    switch (field) {
+      case 'nickname':
+        return _nonEmpty(d.nickname);
+      case 'landmark':
+        return _nonEmpty(d.famousLandmark);
+      case 'celebrity':
+        return _nonEmpty(d.famousPerson);
+      case 'sportsTeam':
+        return _nonEmpty(d.gaaTeam);
+      case 'flag':
+        return _nonEmpty(d.flag);
+      default:
+        return null;
+    }
+  }
+
+  // ── UK ─────────────────────────────────────────────────────────────────
+
+  String? _ukField(String code, String field) {
+    final d = UkClues.data[code];
+    if (d == null) return null;
+    switch (field) {
+      case 'nickname':
+        return _nonEmpty(d.nickname);
+      case 'landmark':
+        return _nonEmpty(d.famousLandmark);
+      case 'celebrity':
+        return _nonEmpty(d.famousPerson);
+      case 'sportsTeam':
+        return _nonEmpty(d.footballTeam);
+      case 'flag':
+        return _nonEmpty(d.flag);
+      default:
+        return null;
+    }
+  }
+
+  // ── Canada ─────────────────────────────────────────────────────────────
+
+  String? _canadaField(String code, String field) {
+    final d = CanadaClues.data[code];
+    if (d == null) return null;
+    switch (field) {
+      case 'nickname':
+        return _nonEmpty(d.nickname);
+      case 'landmark':
+        return _nonEmpty(d.famousLandmark);
+      case 'flag':
+        return _nonEmpty(d.flag);
+      case 'motto':
+        return _nonEmpty(d.motto);
+      case 'sportsTeam':
+        return d.sportsTeams.isNotEmpty
+            ? d.sportsTeams[_random.nextInt(d.sportsTeams.length)]
+            : null;
+      default:
+        return null;
+    }
+  }
+
+  // ── Europe ─────────────────────────────────────────────────────────────
+
+  String? _europeField(String code, String field) {
+    final d = EuropeClues.data[code];
+    if (d == null) return null;
+    switch (field) {
+      case 'nickname':
+        return _nonEmpty(d.nickname);
+      case 'landmark':
+        return _nonEmpty(d.famousLandmark);
+      case 'celebrity':
+        return _nonEmpty(d.famousPerson);
+      case 'flag':
+        return _nonEmpty(d.flag);
+      case 'motto':
+        return _nonEmpty(d.motto);
+      case 'sportsTeam':
+        return _nonEmpty(d.footballTeam);
+      default:
+        return null;
+    }
+  }
+
+  // ── Africa ─────────────────────────────────────────────────────────────
+
+  String? _africaField(String code, String field) {
+    final d = AfricaClues.data[code];
+    if (d == null) return null;
+    switch (field) {
+      case 'nickname':
+        return _nonEmpty(d.nickname);
+      case 'landmark':
+        return _nonEmpty(d.famousLandmark);
+      case 'celebrity':
+        return _nonEmpty(d.famousPerson);
+      case 'flag':
+        return _nonEmpty(d.flag);
+      default:
+        return null;
+    }
+  }
+
+  // ── Asia ───────────────────────────────────────────────────────────────
+
+  String? _asiaField(String code, String field) {
+    final d = AsiaClues.data[code];
+    if (d == null) return null;
+    switch (field) {
+      case 'nickname':
+        return _nonEmpty(d.nickname);
+      case 'landmark':
+        return _nonEmpty(d.famousLandmark);
+      case 'celebrity':
+        return _nonEmpty(d.famousPerson);
+      case 'flag':
+        return _nonEmpty(d.flag);
+      default:
+        return null;
+    }
+  }
+
+  // ── Latin America ──────────────────────────────────────────────────────
+
+  String? _latinAmericaField(String code, String field) {
+    final d = LatinAmericaClues.data[code];
+    if (d == null) return null;
+    switch (field) {
+      case 'nickname':
+        return _nonEmpty(d.nickname);
+      case 'landmark':
+        return _nonEmpty(d.famousLandmark);
+      case 'celebrity':
+        return _nonEmpty(d.famousPerson);
+      case 'flag':
+        return _nonEmpty(d.flag);
+      default:
+        return null;
+    }
+  }
+
+  // ── Oceania ────────────────────────────────────────────────────────────
+
+  String? _oceaniaField(String code, String field) {
+    final d = OceaniaClues.data[code];
+    if (d == null) return null;
+    switch (field) {
+      case 'nickname':
+        return _nonEmpty(d.nickname);
+      case 'landmark':
+        return _nonEmpty(d.famousLandmark);
+      case 'celebrity':
+        return _nonEmpty(d.famousPerson);
+      case 'flag':
+        return _nonEmpty(d.flag);
+      default:
+        return null;
+    }
+  }
+
+  // ── Caribbean ──────────────────────────────────────────────────────────
+
+  String? _caribbeanField(String code, String field) {
+    final d = CaribbeanClues.data[code];
+    if (d == null) return null;
+    switch (field) {
+      case 'nickname':
+        return _nonEmpty(d.nickname);
+      case 'landmark':
+        return _nonEmpty(d.famousLandmark);
+      case 'celebrity':
+        return _nonEmpty(d.famousPerson);
+      case 'flag':
+        return _nonEmpty(d.flag);
+      default:
+        return null;
+    }
   }
 }
