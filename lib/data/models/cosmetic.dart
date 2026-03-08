@@ -504,7 +504,8 @@ abstract class CosmeticCatalog {
       price: 500,
       rarity: CosmeticRarity.common,
       requiredLevel: 3,
-      description: 'A tiny, plucky bird. Small but full of heart.',
+      description:
+          'A tiny, plucky bird. Fetches fuel and nudges your earnings.',
     ),
     Cosmetic(
       id: 'companion_sparrow',
@@ -513,7 +514,8 @@ abstract class CosmeticCatalog {
       price: 2000,
       rarity: CosmeticRarity.common,
       requiredLevel: 10,
-      description: 'A small, nimble companion for your journey.',
+      description:
+          'A nimble companion that stretches your fuel and boosts rewards.',
     ),
     Cosmetic(
       id: 'companion_eagle',
@@ -522,7 +524,8 @@ abstract class CosmeticCatalog {
       price: 5000,
       rarity: CosmeticRarity.rare,
       requiredLevel: 20,
-      description: 'A majestic bird of prey with keen eyes.',
+      description:
+          'Keen-eyed bird of prey. Grants a free hint and solid fuel savings.',
     ),
     Cosmetic(
       id: 'companion_parrot',
@@ -531,7 +534,8 @@ abstract class CosmeticCatalog {
       price: 8000,
       rarity: CosmeticRarity.rare,
       requiredLevel: 25,
-      description: 'A colorful tropical companion.',
+      description:
+          'A colourful co-pilot with a free hint and generous coin boost.',
     ),
     Cosmetic(
       id: 'companion_phoenix',
@@ -540,7 +544,8 @@ abstract class CosmeticCatalog {
       price: 15000,
       rarity: CosmeticRarity.epic,
       requiredLevel: 35,
-      description: 'A legendary firebird risen from the ashes.',
+      description:
+          'Risen from the ashes. Two free hints and a streak shield keep you flying.',
     ),
     Cosmetic(
       id: 'companion_dragon',
@@ -549,7 +554,8 @@ abstract class CosmeticCatalog {
       price: 30000,
       rarity: CosmeticRarity.legendary,
       requiredLevel: 45,
-      description: 'A fierce fire-breathing dragon.',
+      description:
+          'A fierce fire-breather. Major coin and XP boosts with streak protection.',
     ),
     Cosmetic(
       id: 'companion_charizard',
@@ -560,7 +566,7 @@ abstract class CosmeticCatalog {
       isPremium: true,
       requiredLevel: 50,
       description:
-          'The ultimate flame dragon. Radiates power and leaves a blazing trail.',
+          'The ultimate flame dragon. Three free hints, double streak shields, and top-tier bonuses.',
     ),
   ];
 

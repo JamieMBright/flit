@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/models/avatar_config.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/economy_config.dart';
 import '../../data/providers/account_provider.dart';
@@ -1376,6 +1377,12 @@ class _CosmeticCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                   ],
+                  // Companion ability summary (skip for 'none')
+                  if (item.type == CosmeticType.coPilot &&
+                      item.id != 'companion_none') ...[
+                    _CompanionAbilitySummary(companionId: item.id),
+                    const SizedBox(height: 4),
+                  ],
                   // Price or status
                   if (isOwned)
                     Text(
@@ -1568,6 +1575,49 @@ class _AttrBar extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// =============================================================================
+// Companion ability summary — compact list of bonuses on the shop card
+// =============================================================================
+
+class _CompanionAbilitySummary extends StatelessWidget {
+  const _CompanionAbilitySummary({required this.companionId});
+
+  final String companionId;
+
+  @override
+  Widget build(BuildContext context) {
+    // Map companion ID → enum.
+    final companion = AvatarCompanion.values.firstWhere(
+      (c) => 'companion_${c.name}' == companionId,
+      orElse: () => AvatarCompanion.none,
+    );
+    final abilities = CompanionAbilities.forCompanion(companion);
+    final lines = abilities.summaryLines;
+    if (lines.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final line in lines)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 1),
+            child: Text(
+              line,
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 8,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
     );
   }
 }

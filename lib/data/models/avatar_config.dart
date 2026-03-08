@@ -314,6 +314,136 @@ enum AvatarCompanion {
   charizard,
 }
 
+/// Gameplay bonuses granted by a companion.
+///
+/// Each companion tier offers progressively stronger passive abilities.
+/// All companions share the fuel-fetch ability (fly off to collect fuel
+/// when the tank drops below 20%), but higher-tier companions also grant
+/// coin/XP multipliers, free hints, streak protection, and fuel efficiency.
+class CompanionAbilities {
+  const CompanionAbilities._({
+    required this.coinBonus,
+    required this.xpBonus,
+    required this.freeHintsPerGame,
+    required this.streakShields,
+    required this.fuelEfficiencyBonus,
+  });
+
+  /// Fractional coin bonus (e.g. 0.05 = +5%).
+  final double coinBonus;
+
+  /// Fractional XP bonus (e.g. 0.10 = +10%).
+  final double xpBonus;
+
+  /// Number of free hint uses per game (no fuel cost).
+  final int freeHintsPerGame;
+
+  /// Number of times the companion protects a streak from breaking per game.
+  final int streakShields;
+
+  /// Fractional fuel-efficiency bonus (e.g. 0.10 = burn 10% slower).
+  final double fuelEfficiencyBonus;
+
+  /// Look up abilities for a given companion.
+  static CompanionAbilities forCompanion(AvatarCompanion c) => switch (c) {
+        AvatarCompanion.none => none,
+        AvatarCompanion.pidgey => _pidgey,
+        AvatarCompanion.sparrow => _sparrow,
+        AvatarCompanion.eagle => _eagle,
+        AvatarCompanion.parrot => _parrot,
+        AvatarCompanion.phoenix => _phoenix,
+        AvatarCompanion.dragon => _dragon,
+        AvatarCompanion.charizard => _charizard,
+      };
+
+  // ── Tier definitions ──────────────────────────────────────────────────────
+
+  static const none = CompanionAbilities._(
+    coinBonus: 0,
+    xpBonus: 0,
+    freeHintsPerGame: 0,
+    streakShields: 0,
+    fuelEfficiencyBonus: 0,
+  );
+
+  static const _pidgey = CompanionAbilities._(
+    coinBonus: 0.05,
+    xpBonus: 0.05,
+    freeHintsPerGame: 0,
+    streakShields: 0,
+    fuelEfficiencyBonus: 0.05,
+  );
+
+  static const _sparrow = CompanionAbilities._(
+    coinBonus: 0.08,
+    xpBonus: 0.08,
+    freeHintsPerGame: 0,
+    streakShields: 0,
+    fuelEfficiencyBonus: 0.08,
+  );
+
+  static const _eagle = CompanionAbilities._(
+    coinBonus: 0.12,
+    xpBonus: 0.10,
+    freeHintsPerGame: 1,
+    streakShields: 0,
+    fuelEfficiencyBonus: 0.10,
+  );
+
+  static const _parrot = CompanionAbilities._(
+    coinBonus: 0.15,
+    xpBonus: 0.12,
+    freeHintsPerGame: 1,
+    streakShields: 0,
+    fuelEfficiencyBonus: 0.12,
+  );
+
+  static const _phoenix = CompanionAbilities._(
+    coinBonus: 0.20,
+    xpBonus: 0.15,
+    freeHintsPerGame: 2,
+    streakShields: 1,
+    fuelEfficiencyBonus: 0.15,
+  );
+
+  static const _dragon = CompanionAbilities._(
+    coinBonus: 0.25,
+    xpBonus: 0.20,
+    freeHintsPerGame: 2,
+    streakShields: 1,
+    fuelEfficiencyBonus: 0.20,
+  );
+
+  static const _charizard = CompanionAbilities._(
+    coinBonus: 0.30,
+    xpBonus: 0.25,
+    freeHintsPerGame: 3,
+    streakShields: 2,
+    fuelEfficiencyBonus: 0.25,
+  );
+
+  /// Human-readable summary of all non-zero bonuses.
+  List<String> get summaryLines {
+    final lines = <String>[];
+    if (coinBonus > 0) lines.add('+${(coinBonus * 100).round()}% coins');
+    if (xpBonus > 0) lines.add('+${(xpBonus * 100).round()}% XP');
+    if (freeHintsPerGame > 0) {
+      lines.add(
+        '$freeHintsPerGame free hint${freeHintsPerGame > 1 ? 's' : ''}/game',
+      );
+    }
+    if (streakShields > 0) {
+      lines.add(
+        '$streakShields streak shield${streakShields > 1 ? 's' : ''}/game',
+      );
+    }
+    if (fuelEfficiencyBonus > 0) {
+      lines.add('+${(fuelEfficiencyBonus * 100).round()}% fuel efficiency');
+    }
+    return lines;
+  }
+}
+
 /// Configuration that fully describes a player avatar.
 ///
 /// Each field corresponds to a DiceBear customisation option.

@@ -912,12 +912,17 @@ class AccountNotifier extends StateNotifier<AccountState> {
       updateBestStreak(consecutiveCorrect);
     }
 
-    // XP: base 50 + 10 per round + score/100
-    final xpEarned = 50 + (roundsCompleted * 10) + (score ~/ 100);
+    // XP: base 50 + 10 per round + score/100, with companion bonus.
+    final abilities = CompanionAbilities.forCompanion(state.avatar.companion);
+    final baseXp = 50 + (roundsCompleted * 10) + (score ~/ 100);
+    final xpEarned = (baseXp * (1.0 + abilities.xpBonus)).round();
     addXp(xpEarned);
 
     if (coinReward > 0) {
-      addCoins(coinReward, source: 'game_completion');
+      // Companion coin bonus stacks with license/level multipliers inside
+      // addCoins (applyBoost = true).
+      final boostedReward = (coinReward * (1.0 + abilities.coinBonus)).round();
+      addCoins(boostedReward, source: 'game_completion');
     }
 
     // Persist individual game result to scores table.

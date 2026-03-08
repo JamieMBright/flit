@@ -138,6 +138,7 @@ class QuizSession {
     required this.category,
     required this.region,
     this.difficulty = QuizDifficulty.medium,
+    this.streakShields = 0,
     int? seed,
   })  : _generator = QuizQuestionGenerator(region: region, seed: seed),
         _random = Random(seed),
@@ -148,6 +149,7 @@ class QuizSession {
         _startTime = null,
         _currentIndex = 0,
         _streak = 0,
+        _streakShieldsRemaining = streakShields,
         _totalScore = 0,
         _wrongCount = 0,
         _hintsUsed = 0,
@@ -159,6 +161,10 @@ class QuizSession {
   final QuizCategory category;
   final GameRegion region;
   final QuizDifficulty difficulty;
+
+  /// Number of streak shields granted at the start (from companion).
+  final int streakShields;
+
   final QuizQuestionGenerator _generator;
   final Random _random;
 
@@ -171,6 +177,7 @@ class QuizSession {
   DateTime? _startTime;
   int _currentIndex;
   int _streak;
+  int _streakShieldsRemaining;
   int _totalScore;
   int _wrongCount;
   int _hintsUsed;
@@ -608,14 +615,21 @@ class QuizSession {
 
       return result;
     } else {
-      _streak = 0;
+      // Companion streak shield: absorb one wrong answer without breaking
+      // the streak.
+      if (_streakShieldsRemaining > 0) {
+        _streakShieldsRemaining--;
+        // Streak stays intact — don't reset.
+      } else {
+        _streak = 0;
+      }
       _wrongCount++;
 
       final penalty = _calculatePenalty();
       final result = QuizAnswerResult(
         correct: false,
         points: -penalty,
-        streak: 0,
+        streak: _streak,
         questionIndex: _currentIndex,
         answerCode: tappedCode,
         correctCode: question.answerCode,

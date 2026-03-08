@@ -194,6 +194,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// Current hint tier (0 = no hints, 1 = clue cycled, 2 = country revealed, 3 = wayline shown).
   int _hintTier = 0;
 
+  /// Number of free hints remaining this game (granted by companion).
+  late int _freeHintsRemaining;
+
+  /// Number of streak shields remaining this game (granted by companion).
+  /// When > 0, an incomplete round won't break the current streak.
+  late int _streakShieldsRemaining;
+
   /// Timer for auto-hint after 2 minutes of no progress.
   Timer? _autoHintTimer;
 
@@ -235,6 +242,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           'totalRounds': widget.totalRounds,
         },
       );
+      final _companionAbilities = CompanionAbilities.forCompanion(
+        widget.companionType,
+      );
+      _freeHintsRemaining = _companionAbilities.freeHintsPerGame;
+      _streakShieldsRemaining = _companionAbilities.streakShields;
       _game = FlitGame(
         onGameReady: _onGameReady,
         onAltitudeChanged: _onAltitudeChanged,
@@ -364,12 +376,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   }
 
   /// Use a hint — tiered system with 4 levels.
-  /// Each hint costs a small amount of fuel.
+  /// Each hint costs a small amount of fuel unless the companion grants free
+  /// hints.
   void _useHint() {
     if (_session == null || _hintTier >= 4) return;
 
-    // Deduct fuel for using a hint. If tank is empty, abort.
-    if (!_game.useHintFuel()) return;
+    // Companion free hints bypass fuel cost.
+    if (_freeHintsRemaining > 0) {
+      _freeHintsRemaining--;
+    } else {
+      // Deduct fuel for using a hint. If tank is empty, abort.
+      if (!_game.useHintFuel()) return;
+    }
 
     setState(() {
       _hintTier++;
@@ -1191,6 +1209,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   _ClueStatsResult _computeClueStats() {
     int flags = 0, capitals = 0, outlines = 0, borders = 0, stats = 0;
     int streak = 0, currentStreak = 0;
+    int shieldsLeft = _streakShieldsRemaining;
     for (final r in _roundResults) {
       if (r.completed) {
         currentStreak++;
@@ -1212,6 +1231,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           case ClueType.landmark:
             stats++;
         }
+      } else if (shieldsLeft > 0) {
+        // Companion streak shield — don't break the streak.
+        shieldsLeft--;
       } else {
         currentStreak = 0;
       }

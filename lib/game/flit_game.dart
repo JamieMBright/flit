@@ -918,10 +918,13 @@ class FlitGame extends FlameGame
       final isLow = _planeReady && !_plane.isHighAltitude;
       final altitudeFactor = isLow ? 0.25 : 1.0;
       // planeFuelEfficiency > 1 = less burn; divide to invert.
+      // Companion fuel-efficiency bonus stacks additively with plane stat.
+      final companionFuelEff =
+          CompanionAbilities.forCompanion(companionType).fuelEfficiencyBonus;
       final burnRate = _baseFuelBurnRate *
           _speedMultiplier *
           altitudeFactor /
-          planeFuelEfficiency;
+          (planeFuelEfficiency + companionFuelEff);
       _fuel = (_fuel - burnRate * dt).clamp(0.0, maxFuel);
       if (_fuel <= 0) {
         onFuelEmpty?.call();
