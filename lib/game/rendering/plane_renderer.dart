@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import 'watercolor_style.dart';
 
 /// Shared plane rendering utility used by both in-game [PlaneComponent] and
 /// shop [PlanePainter]. All methods draw with (0, 0) as the plane's center,
@@ -50,13 +51,12 @@ class PlaneRenderer {
   static Random _sketchRng(String planeId) =>
       Random(planeId.codeUnits.fold<int>(0, (h, c) => h * 31 + c));
 
-  /// Draws [path] with a subtle random offset on each segment endpoint to
-  /// simulate the slight imprecision of hand-drawn line work.
+  /// Draws a soft watercolor edge along [path] — replaces the old hand-drawn
+  /// sketch wobble with a blurred, paint-like edge that simulates pigment
+  /// settling along a wet boundary.
   ///
-  /// [wobble] controls the maximum displacement in logical pixels (0.3–0.5 is
-  /// subtle; stay under 0.6 to avoid changing the apparent shape).
-  ///
-  /// Uses [rng] so the same path always produces identical wobble (stable).
+  /// [rng] and [wobble] are kept in the signature for backward-compat but
+  /// are no longer used; the watercolor blur handles visual softness.
   static void _sketchPath(
     Path path,
     Canvas canvas,
@@ -64,37 +64,20 @@ class PlaneRenderer {
     Random rng, {
     double wobble = 0.4,
   }) {
-    final metrics = path.computeMetrics();
-    for (final metric in metrics) {
-      final len = metric.length;
-      if (len < 1) continue;
-
-      // Sample points along the path and add tiny perpendicular jitter.
-      const step = 4.0; // sample every 4px of path length
-      final sketched = Path();
-      bool first = true;
-      for (double t = 0; t <= len; t += step) {
-        final tangent = metric.getTangentForOffset(t.clamp(0, len));
-        if (tangent == null) continue;
-        final pos = tangent.position;
-        final dx = (rng.nextDouble() - 0.5) * 2 * wobble;
-        final dy = (rng.nextDouble() - 0.5) * 2 * wobble;
-        if (first) {
-          sketched.moveTo(pos.dx + dx, pos.dy + dy);
-          first = false;
-        } else {
-          sketched.lineTo(pos.dx + dx, pos.dy + dy);
-        }
-      }
-      canvas.drawPath(sketched, paint);
-    }
+    WatercolorStyle.wetEdge(
+      canvas,
+      path,
+      paint.color,
+      width: paint.strokeWidth > 0 ? paint.strokeWidth : 1.2,
+      blur: 2.0,
+      opacity: (paint.color.opacity * 0.7).clamp(0.1, 0.5),
+    );
   }
 
-  /// Draws a pencil-sketch outline pass around [path]: a slightly offset,
-  /// slightly darker stroke with [StrokeCap.round] to simulate ink-on-pencil
-  /// hand-drawn lines.
+  /// Draws a soft watercolor wet-edge around [path] — paint darkens where it
+  /// pools at boundaries, creating the characteristic watercolour outline.
   ///
-  /// Call this AFTER the fill pass so the outline sits on top.
+  /// Replaces the old pencil-sketch outline with a blurred, organic edge.
   static void _pencilOutline(
     Path path,
     Canvas canvas,
@@ -104,34 +87,21 @@ class PlaneRenderer {
     double offsetY = 0.3,
     double opacity = 0.55,
   }) {
-    final outlinePaint = Paint()
-      ..color = _darken(baseColor, 0.45).withOpacity(opacity)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    // Primary outline (sits exactly on the path)
-    canvas.drawPath(path, outlinePaint);
-
-    // Offset shadow stroke — creates the "ink bleed" hand-drawn feel
-    final shadowPaint = Paint()
-      ..color = _darken(baseColor, 0.55).withOpacity(opacity * 0.35)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth * 0.7
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    canvas.save();
-    canvas.translate(offsetX, offsetY);
-    canvas.drawPath(path, shadowPaint);
-    canvas.restore();
+    WatercolorStyle.wetEdge(
+      canvas,
+      path,
+      baseColor,
+      width: strokeWidth * 1.4,
+      blur: 2.2,
+      opacity: opacity * 0.55,
+    );
   }
 
-  /// Draws light diagonal cross-hatch lines inside [bounds] to simulate
-  /// fabric-covered wing surfaces (biplanes, triplanes, paper planes).
+  /// Draws a subtle watercolour wash gradient inside [bounds] to simulate
+  /// uneven pigment distribution across a painted surface.
   ///
-  /// [opacity] should stay in the 0.08–0.12 range — extremely subtle.
+  /// Replaces the old diagonal cross-hatch lines with a soft colour variation
+  /// that reads as natural watercolour texture rather than fabric weave.
   static void _crossHatch(
     Canvas canvas,
     Rect bounds,
@@ -139,7 +109,7 @@ class PlaneRenderer {
     double spacing = 5.0,
     double opacity = 0.10,
   }) {
-    // Normalise so left < right, top < bottom (avoid degenerate rects)
+    // Normalise so left < right, top < bottom
     final normalised = Rect.fromLTRB(
       bounds.left < bounds.right ? bounds.left : bounds.right,
       bounds.top < bounds.bottom ? bounds.top : bounds.bottom,
@@ -149,28 +119,33 @@ class PlaneRenderer {
 
     if (normalised.width < 1 || normalised.height < 1) return;
 
-    final paint = Paint()
-      ..color = lineColor.withOpacity(opacity)
-      ..strokeWidth = 0.5
-      ..strokeCap = StrokeCap.butt;
+    final clipPath = Path()..addRect(normalised);
+    WatercolorStyle.washTexture(canvas, clipPath, lineColor, opacity: opacity);
+    WatercolorStyle.granulate(
+      canvas,
+      clipPath,
+      lineColor,
+      count: 8,
+      maxRadius: 1.2,
+      opacity: opacity * 0.6,
+      seed: '${normalised.hashCode}',
+    );
+  }
 
-    final w = normalised.width;
-    final h = normalised.height;
-    final diag = w + h;
+  /// Draw a path with watercolour wash layers — the primary way to fill
+  /// large surfaces (wings, fuselage, tail) in the watercolour style.
+  static void _wash(
+    Canvas canvas,
+    Path path,
+    Color color, {
+    String seed = '',
+  }) {
+    WatercolorStyle.washFill(canvas, path, color, seed: seed);
+  }
 
-    // Clip to the bounds so lines don't bleed outside
-    canvas.save();
-    canvas.clipRect(normalised);
-
-    // 45° lines going bottom-left to top-right
-    for (double t = -diag; t <= diag; t += spacing) {
-      canvas.drawLine(
-        Offset(normalised.left + t, normalised.bottom),
-        Offset(normalised.left + t + h, normalised.top),
-        paint,
-      );
-    }
-    canvas.restore();
+  /// Draw a soft watercolour shadow under a shape.
+  static void _softShadow(Canvas canvas, Path path) {
+    WatercolorStyle.softShadow(canvas, path);
   }
 
   /// Draws a soft ambient-occlusion shadow where a wing meets the fuselage.
@@ -412,10 +387,7 @@ class PlaneRenderer {
       )
       ..lineTo(-4, 7 + leftDip * 0.2)
       ..close();
-    canvas.drawPath(
-      lowerLeftWing,
-      Paint()..color = _darken(leftWingColor, 0.15),
-    );
+    _wash(canvas, lowerLeftWing, _darken(leftWingColor, 0.15), seed: planeId);
     _crossHatch(
       canvas,
       Rect.fromLTRB(-lowerLeftSpan, 3 + leftDip, -4, 9 + leftDip),
@@ -462,7 +434,7 @@ class PlaneRenderer {
       )
       ..lineTo(-4, 3 + leftDip * 0.2)
       ..close();
-    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _wash(canvas, leftWing, leftWingColor, seed: planeId);
 
     // Left wing cross-hatch (fabric texture)
     _crossHatch(
@@ -523,10 +495,7 @@ class PlaneRenderer {
       )
       ..lineTo(4, 7 + rightDip * 0.2)
       ..close();
-    canvas.drawPath(
-      lowerRightWing,
-      Paint()..color = _darken(rightWingColor, 0.15),
-    );
+    _wash(canvas, lowerRightWing, _darken(rightWingColor, 0.15), seed: planeId);
     _crossHatch(
       canvas,
       Rect.fromLTRB(4, 3 + rightDip, lowerRightSpan, 9 + rightDip),
@@ -570,7 +539,7 @@ class PlaneRenderer {
       )
       ..lineTo(4, 3 + rightDip * 0.2)
       ..close();
-    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _wash(canvas, rightWing, rightWingColor, seed: planeId);
 
     // Right wing cross-hatch (fabric texture)
     _crossHatch(
@@ -649,7 +618,7 @@ class PlaneRenderer {
       ..lineTo(tailSpan, 18 - wingDip * 0.3)
       ..quadraticBezierTo(tailSpan + 2, 16, tailSpan, 14 - wingDip * 0.3)
       ..close();
-    canvas.drawPath(tailPath, Paint()..color = _darken(detail, 0.1));
+    _wash(canvas, tailPath, _darken(detail, 0.1), seed: planeId);
     _pencilOutline(tailPath, canvas, _darken(detail, 0.1), strokeWidth: 0.9);
 
     // Vertical fin
@@ -671,7 +640,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(-4 + bodyShift, 10, -5 + bodyShift, -2)
       ..quadraticBezierTo(-5 + bodyShift, -12, bodyShift, -16)
       ..close();
-    canvas.drawPath(fuselagePath, bodyPaint);
+    _wash(canvas, fuselagePath, bodyPaint.color, seed: planeId);
 
     // Sketch outline on fuselage — slightly wobbly hand-drawn feel
     final sketchOutlinePaint = Paint()
@@ -778,7 +747,7 @@ class PlaneRenderer {
       ..lineTo(-leftSpan + 2, 5 + wingDip) // sharp trailing edge
       ..lineTo(bodyShift, 4) // center trailing edge
       ..close();
-    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _wash(canvas, leftWing, leftWingColor, seed: planeId);
 
     // Paper wing cross-hatch (fold crease texture)
     _crossHatch(
@@ -813,7 +782,7 @@ class PlaneRenderer {
       ..lineTo(rightSpan - 2, 5 - wingDip) // sharp trailing edge
       ..lineTo(bodyShift, 4) // center trailing edge
       ..close();
-    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _wash(canvas, rightWing, rightWingColor, seed: planeId);
 
     _crossHatch(
       canvas,
@@ -856,7 +825,7 @@ class PlaneRenderer {
       ..lineTo(bodyShift - 1.5, 6)
       ..lineTo(bodyShift - 2, -10)
       ..close();
-    canvas.drawPath(keelPath, Paint()..color = primary);
+    _wash(canvas, keelPath, primary, seed: planeId);
 
     // Sketch wobble on keel — paper creases are imprecise
     final keelSketchPaint = Paint()
@@ -927,7 +896,7 @@ class PlaneRenderer {
       ..lineTo(-leftSpan + 2, 5 + wingDip) // narrow tip trailing edge
       ..lineTo(-3 + bodyShift, 3) // root trailing edge (wider)
       ..close();
-    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _wash(canvas, leftWing, leftWingColor, seed: planeId);
     _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 0.9);
     _wingJointAO(canvas, Offset(-4 + bodyShift, 0), radius: 4.0);
 
@@ -939,7 +908,7 @@ class PlaneRenderer {
       ..lineTo(rightSpan - 2, 5 - wingDip) // narrow tip trailing edge
       ..lineTo(3 + bodyShift, 3) // root trailing edge
       ..close();
-    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _wash(canvas, rightWing, rightWingColor, seed: planeId);
     _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 0.9);
     _wingJointAO(canvas, Offset(4 + bodyShift, 0), radius: 4.0);
 
@@ -951,7 +920,7 @@ class PlaneRenderer {
       ..lineTo(-stabSpan + 3 + bodyShift, 15 + wingDip * 0.2)
       ..lineTo(-1 + bodyShift, 13)
       ..close();
-    canvas.drawPath(stabLeft, Paint()..color = leftWingColor);
+    _wash(canvas, stabLeft, leftWingColor, seed: planeId);
     _pencilOutline(stabLeft, canvas, leftWingColor, strokeWidth: 0.9);
     final stabRight = Path()
       ..moveTo(2 + bodyShift, 12)
@@ -959,7 +928,7 @@ class PlaneRenderer {
       ..lineTo(stabSpan - 3 + bodyShift, 15 - wingDip * 0.2)
       ..lineTo(1 + bodyShift, 13)
       ..close();
-    canvas.drawPath(stabRight, Paint()..color = rightWingColor);
+    _wash(canvas, stabRight, rightWingColor, seed: planeId);
     _pencilOutline(stabRight, canvas, rightWingColor, strokeWidth: 0.9);
 
     // --- Body group ---
@@ -976,7 +945,7 @@ class PlaneRenderer {
       ..lineTo(bodyShift + 1, 16)
       ..quadraticBezierTo(bodyShift + 2.5, 12, bodyShift, 9)
       ..close();
-    canvas.drawPath(finPath, Paint()..color = secondary);
+    _wash(canvas, finPath, secondary, seed: planeId);
     _pencilOutline(finPath, canvas, secondary, strokeWidth: 0.8);
 
     // Sleek fuselage
@@ -988,7 +957,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(-2.5 + bodyShift, 8, -3 + bodyShift, -4)
       ..quadraticBezierTo(-3 + bodyShift, -14, bodyShift, -18)
       ..close();
-    canvas.drawPath(fuselagePath, Paint()..color = primary);
+    _wash(canvas, fuselagePath, primary, seed: planeId);
 
     // Sketch outline on fuselage
     final fuselageSketchPaint = Paint()
@@ -1101,7 +1070,7 @@ class PlaneRenderer {
       ..lineTo(-leftSpan * 0.5, 3 + wingDip * 0.5) // inner notch of W
       ..lineTo(bodyShift, 7) // center trailing edge
       ..close();
-    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _wash(canvas, leftWing, leftWingColor, seed: planeId);
 
     // Stealth panels — subtle radar-absorbing panel lines
     final leftSketchPaint = Paint()
@@ -1125,7 +1094,7 @@ class PlaneRenderer {
       ..lineTo(rightSpan * 0.5, 3 - wingDip * 0.5)
       ..lineTo(bodyShift, 7)
       ..close();
-    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _wash(canvas, rightWing, rightWingColor, seed: planeId);
 
     final rightSketchPaint = Paint()
       ..color = const Color(0xFF555555).withOpacity(0.30)
@@ -1148,7 +1117,7 @@ class PlaneRenderer {
       ..lineTo(bodyShift + 3, 6)
       ..quadraticBezierTo(bodyShift + 4, 0, bodyShift + 5, -8)
       ..close();
-    canvas.drawPath(centerBody, Paint()..color = detail);
+    _wash(canvas, centerBody, detail, seed: planeId);
     _pencilOutline(centerBody, canvas, detail, strokeWidth: 0.8, opacity: 0.40);
 
     // Exhaust slots on trailing edge (flush with wing, not protruding)
@@ -1326,7 +1295,7 @@ class PlaneRenderer {
       ..lineTo(4, 16)
       ..lineTo(4, 12)
       ..close();
-    canvas.drawPath(tailPath, Paint()..color = wingColor);
+    _wash(canvas, tailPath, wingColor, seed: planeId);
     _pencilOutline(tailPath, canvas, wingColor, strokeWidth: 0.9);
 
     // Fuselage
@@ -1338,7 +1307,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(-3 + bodyShift, 10, -4 + bodyShift, -2)
       ..quadraticBezierTo(-4 + bodyShift, -12, bodyShift, -16)
       ..close();
-    canvas.drawPath(fuselagePath, Paint()..color = primary);
+    _wash(canvas, fuselagePath, primary, seed: planeId);
 
     // Sketch outline on fuselage
     final fuselageSketchPaint = Paint()
@@ -1457,7 +1426,7 @@ class PlaneRenderer {
       ..lineTo(-leftSpan + 3, 12 + wingDip)
       ..lineTo(bodyShift - 2, 14)
       ..close();
-    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _wash(canvas, leftWing, leftWingColor, seed: planeId);
     _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 1.0);
     _wingJointAO(canvas, Offset(bodyShift - 2, -4), radius: 5.5);
 
@@ -1480,7 +1449,7 @@ class PlaneRenderer {
       ..lineTo(rightSpan - 3, 12 - wingDip)
       ..lineTo(bodyShift + 2, 14)
       ..close();
-    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _wash(canvas, rightWing, rightWingColor, seed: planeId);
     _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 1.0);
     _wingJointAO(canvas, Offset(bodyShift + 2, -4), radius: 5.5);
 
@@ -1500,7 +1469,7 @@ class PlaneRenderer {
       ..lineTo(-2.5 + bodyShift, 0)
       ..quadraticBezierTo(-2.5 + bodyShift, -12, bodyShift, -20)
       ..close();
-    canvas.drawPath(fuselagePath, Paint()..color = primary);
+    _wash(canvas, fuselagePath, primary, seed: planeId);
 
     // Sketch outline on fuselage
     final fuselageSketchPaint = Paint()
@@ -1517,7 +1486,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(bodyShift - 0.5, -23, bodyShift, -25)
       ..quadraticBezierTo(bodyShift + 0.5, -23, bodyShift + 1.5, -20)
       ..close();
-    canvas.drawPath(droopNose, Paint()..color = secondary);
+    _wash(canvas, droopNose, secondary, seed: planeId);
     _pencilOutline(droopNose, canvas, secondary, strokeWidth: 0.8);
 
     // Accent stripe running along fuselage
@@ -1606,7 +1575,7 @@ class PlaneRenderer {
       ..lineTo(lx - 3.5, ly - 2)
       ..quadraticBezierTo(lx - 3.5, ly - 7, lx, ly - 9) // back to bow
       ..close();
-    canvas.drawPath(leftFloat, pontoonPaint);
+    _wash(canvas, leftFloat, pontoonPaint.color, seed: planeId);
     _pencilOutline(leftFloat, canvas, detail, strokeWidth: 0.9, opacity: 0.45);
     // Step line indicator
     canvas.drawLine(
@@ -1631,7 +1600,7 @@ class PlaneRenderer {
       ..lineTo(rx - 3.5, ry - 2)
       ..quadraticBezierTo(rx - 3.5, ry - 7, rx, ry - 9)
       ..close();
-    canvas.drawPath(rightFloat, pontoonPaint);
+    _wash(canvas, rightFloat, pontoonPaint.color, seed: planeId);
     _pencilOutline(rightFloat, canvas, detail, strokeWidth: 0.9, opacity: 0.45);
     canvas.drawLine(
       Offset(rx - 3, ry),
@@ -1719,7 +1688,7 @@ class PlaneRenderer {
       ..lineTo(-leftSpan + 5, 8 + wingDip)
       ..quadraticBezierTo(-leftSpan * 0.4, 5 + wingDip * 0.5, -5 + bodyShift, 2)
       ..close();
-    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _wash(canvas, leftWing, leftWingColor, seed: planeId);
     _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 1.0);
     _wingJointAO(canvas, Offset(-6 + bodyShift, 1), radius: 5.0);
 
@@ -1746,7 +1715,7 @@ class PlaneRenderer {
       ..lineTo(rightSpan - 5, 8 - wingDip)
       ..quadraticBezierTo(rightSpan * 0.4, 5 - wingDip * 0.5, 5 + bodyShift, 2)
       ..close();
-    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _wash(canvas, rightWing, rightWingColor, seed: planeId);
     _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 1.0);
     _wingJointAO(canvas, Offset(6 + bodyShift, 1), radius: 5.0);
 
@@ -1778,7 +1747,7 @@ class PlaneRenderer {
       ..lineTo(-stabSpan + 4 + bodyShift, 16 + wingDip * 0.2)
       ..lineTo(-2 + bodyShift, 14)
       ..close();
-    canvas.drawPath(stabLeft, Paint()..color = detail);
+    _wash(canvas, stabLeft, detail, seed: planeId);
     _pencilOutline(stabLeft, canvas, detail, strokeWidth: 0.9);
     final stabRight = Path()
       ..moveTo(3 + bodyShift, 13)
@@ -1786,7 +1755,7 @@ class PlaneRenderer {
       ..lineTo(stabSpan - 4 + bodyShift, 16 - wingDip * 0.2)
       ..lineTo(2 + bodyShift, 14)
       ..close();
-    canvas.drawPath(stabRight, Paint()..color = detail);
+    _wash(canvas, stabRight, detail, seed: planeId);
     _pencilOutline(stabRight, canvas, detail, strokeWidth: 0.9);
 
     // Vertical stabilizer
@@ -1795,7 +1764,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(-2 + bodyShift, 14, bodyShift, 17)
       ..quadraticBezierTo(2 + bodyShift, 14, bodyShift, 12)
       ..close();
-    canvas.drawPath(finPath, Paint()..color = secondary);
+    _wash(canvas, finPath, secondary, seed: planeId);
     _pencilOutline(finPath, canvas, secondary, strokeWidth: 0.9);
 
     // Wide fuselage
@@ -1807,7 +1776,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(-5 + bodyShift, 10, -6 + bodyShift, 0)
       ..quadraticBezierTo(-6 + bodyShift, -12, bodyShift, -17)
       ..close();
-    canvas.drawPath(fuselagePath, Paint()..color = primary);
+    _wash(canvas, fuselagePath, primary, seed: planeId);
 
     // Sketch outline on fuselage
     final fuselageSketchPaint = Paint()
@@ -1921,7 +1890,7 @@ class PlaneRenderer {
         1,
       )
       ..close();
-    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _wash(canvas, leftWing, leftWingColor, seed: planeId);
     _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 1.0);
     _wingJointAO(canvas, Offset(-5 + bodyShift, 0), radius: 5.5);
 
@@ -1938,7 +1907,7 @@ class PlaneRenderer {
       ..lineTo(rightSpan - 4, 7 - wingDip)
       ..quadraticBezierTo(rightSpan * 0.35, 4 - wingDip * 0.5, 4 + bodyShift, 1)
       ..close();
-    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _wash(canvas, rightWing, rightWingColor, seed: planeId);
     _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 1.0);
     _wingJointAO(canvas, Offset(5 + bodyShift, 0), radius: 5.5);
 
@@ -1957,7 +1926,7 @@ class PlaneRenderer {
       ..lineTo(-stabSpan + 3 + bodyShift, 18 + wingDip * 0.2)
       ..lineTo(-1 + bodyShift, 16)
       ..close();
-    canvas.drawPath(stabLeft, Paint()..color = primary);
+    _wash(canvas, stabLeft, primary, seed: planeId);
     _pencilOutline(stabLeft, canvas, primary, strokeWidth: 0.9);
     final stabRight = Path()
       ..moveTo(2 + bodyShift, 15)
@@ -1965,7 +1934,7 @@ class PlaneRenderer {
       ..lineTo(stabSpan - 3 + bodyShift, 18 - wingDip * 0.2)
       ..lineTo(1 + bodyShift, 16)
       ..close();
-    canvas.drawPath(stabRight, Paint()..color = primary);
+    _wash(canvas, stabRight, primary, seed: planeId);
     _pencilOutline(stabRight, canvas, primary, strokeWidth: 0.9);
 
     // Tall vertical fin — distinctive T-tail
@@ -1975,7 +1944,7 @@ class PlaneRenderer {
       ..lineTo(bodyShift + 1.5, 19)
       ..quadraticBezierTo(bodyShift + 3, 14, bodyShift + 1, 11)
       ..close();
-    canvas.drawPath(finPath, Paint()..color = secondary);
+    _wash(canvas, finPath, secondary, seed: planeId);
     _pencilOutline(finPath, canvas, secondary, strokeWidth: 0.9);
     // Gold accent on fin
     canvas.drawLine(
@@ -1995,7 +1964,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(-6 + bodyShift, 10, -7 + bodyShift, 0)
       ..quadraticBezierTo(-7 + bodyShift, -14, bodyShift, -19)
       ..close();
-    canvas.drawPath(fuselagePath, Paint()..color = primary);
+    _wash(canvas, fuselagePath, primary, seed: planeId);
 
     // Sketch outline on fuselage
     final fuselageSketchPaint = Paint()
@@ -2013,7 +1982,7 @@ class PlaneRenderer {
       ..lineTo(-7 + bodyShift, -6)
       ..quadraticBezierTo(-7 + bodyShift, -14, bodyShift, -19)
       ..close();
-    canvas.drawPath(blueHead, Paint()..color = secondary);
+    _wash(canvas, blueHead, secondary, seed: planeId);
 
     // Red accent stripe across the middle
     final redStripe = Path()
@@ -2022,7 +1991,7 @@ class PlaneRenderer {
       ..lineTo(bodyShift + 6, 2)
       ..lineTo(bodyShift - 6, 2)
       ..close();
-    canvas.drawPath(redStripe, Paint()..color = const Color(0xFFCC3333));
+    _wash(canvas, redStripe, const Color(0xFFCC3333), seed: planeId);
 
     // Gold pinstripe borders on the red stripe
     canvas.drawLine(
@@ -2047,7 +2016,7 @@ class PlaneRenderer {
       ..lineTo(bodyShift + 3, 18)
       ..quadraticBezierTo(bodyShift + 5, 10, bodyShift + 6, 2)
       ..close();
-    canvas.drawPath(blueBelly, Paint()..color = secondary.withOpacity(0.35));
+    _wash(canvas, blueBelly, secondary.withOpacity(0.35), seed: planeId);
 
     // Cockpit windows — larger, more prominent
     canvas.drawOval(
@@ -2193,7 +2162,7 @@ class PlaneRenderer {
       ..lineTo(-leftSpan * 0.3, 4 + wingDip * 0.3)
       ..lineTo(-4 + bodyShift, 2)
       ..close();
-    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _wash(canvas, leftWing, leftWingColor, seed: planeId);
 
     // Feather detail lines on wing
     final featherPaint = Paint()
@@ -2236,7 +2205,7 @@ class PlaneRenderer {
       ..lineTo(rightSpan * 0.3, 4 - wingDip * 0.3)
       ..lineTo(4 + bodyShift, 2)
       ..close();
-    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _wash(canvas, rightWing, rightWingColor, seed: planeId);
 
     // Right wing feather details
     for (var i = 0; i < 4; i++) {
@@ -2269,7 +2238,7 @@ class PlaneRenderer {
       ..lineTo(bodyShift + 7, 17) // right outer feather
       ..lineTo(bodyShift + 3, 10)
       ..close();
-    canvas.drawPath(tailPath, Paint()..color = secondary);
+    _wash(canvas, tailPath, secondary, seed: planeId);
     _pencilOutline(tailPath, canvas, secondary, strokeWidth: 1.0);
     // Tail feather detail lines
     for (final dx in [-5.0, -2.0, 0.0, 2.0, 5.0]) {
@@ -2291,7 +2260,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(-3 + bodyShift, 6, -4 + bodyShift, -2)
       ..quadraticBezierTo(-4 + bodyShift, -10, bodyShift, -16)
       ..close();
-    canvas.drawPath(fuselagePath, Paint()..color = primary);
+    _wash(canvas, fuselagePath, primary, seed: planeId);
 
     // Sketch outline on body — feathered, slightly organic
     final fuselageSketchPaint = Paint()
@@ -2308,7 +2277,7 @@ class PlaneRenderer {
       ..quadraticBezierTo(bodyShift + 1, -18, bodyShift, -20) // beak tip
       ..quadraticBezierTo(bodyShift - 0.5, -18, bodyShift, -16)
       ..close();
-    canvas.drawPath(beakPath, Paint()..color = const Color(0xFFDAA520));
+    _wash(canvas, beakPath, const Color(0xFFDAA520), seed: planeId);
     _pencilOutline(beakPath, canvas, const Color(0xFFDAA520), strokeWidth: 0.7);
 
     // Eagle eye (fierce, forward-facing)
@@ -2405,7 +2374,7 @@ class PlaneRenderer {
         -22,
       ) // Left bulge back to crown
       ..close();
-    canvas.drawPath(envelopePath, Paint()..color = primary);
+    _wash(canvas, envelopePath, primary, seed: planeId);
 
     // Coloured gore stripes (vertical panels) — alternating secondary colour
     canvas.save();
@@ -2461,7 +2430,7 @@ class PlaneRenderer {
       ..lineTo(basketShift + 3, 20) // Bottom right
       ..lineTo(basketShift - 3, 20) // Bottom left
       ..close();
-    canvas.drawPath(basketPath, Paint()..color = detail);
+    _wash(canvas, basketPath, detail, seed: planeId);
 
     // Basket weave texture — horizontal lines
     final weavePaint = Paint()
@@ -2528,7 +2497,7 @@ class PlaneRenderer {
       ..lineTo(-leftSpan + 2, 8 + wingDip) // Trailing edge tip
       ..lineTo(-2 + bodyShift, 8) // Wing root trailing edge
       ..close();
-    canvas.drawPath(leftWing, Paint()..color = leftWingColor);
+    _wash(canvas, leftWing, leftWingColor, seed: planeId);
     _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 0.9);
     _wingJointAO(canvas, Offset(-3 + bodyShift, 2), radius: 3.5);
 
@@ -2540,7 +2509,7 @@ class PlaneRenderer {
       ..lineTo(rightSpan - 2, 8 - wingDip)
       ..lineTo(2 + bodyShift, 8)
       ..close();
-    canvas.drawPath(rightWing, Paint()..color = rightWingColor);
+    _wash(canvas, rightWing, rightWingColor, seed: planeId);
     _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 0.9);
     _wingJointAO(canvas, Offset(3 + bodyShift, 2), radius: 3.5);
 
@@ -2558,7 +2527,7 @@ class PlaneRenderer {
       ..lineTo(bodyShift + 1, 18)
       ..quadraticBezierTo(bodyShift + 1, 14, bodyShift, 8)
       ..close();
-    canvas.drawPath(finPath, Paint()..color = primary);
+    _wash(canvas, finPath, primary, seed: planeId);
     _pencilOutline(finPath, canvas, primary, strokeWidth: 0.8);
 
     // OMS pods (small bumps on either side of tail)
@@ -2590,7 +2559,7 @@ class PlaneRenderer {
         -20,
       ) // Left side of nose
       ..close();
-    canvas.drawPath(fuselagePath, Paint()..color = primary);
+    _wash(canvas, fuselagePath, primary, seed: planeId);
 
     // Sketch outline on fuselage
     final fuselageSketchPaint = Paint()
@@ -2608,7 +2577,7 @@ class PlaneRenderer {
       ..lineTo(bodyShift - 2.5, -12)
       ..quadraticBezierTo(bodyShift - 2, -17, bodyShift, -20)
       ..close();
-    canvas.drawPath(heatShieldPath, Paint()..color = secondary);
+    _wash(canvas, heatShieldPath, secondary, seed: planeId);
 
     // Payload bay doors (lines along body)
     final doorPaint = Paint()

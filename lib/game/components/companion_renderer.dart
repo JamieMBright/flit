@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/avatar_config.dart';
 import '../flit_game.dart';
+import '../rendering/watercolor_style.dart';
 
 /// Renders the player's companion creature flying behind and slightly to the
 /// side of the plane. The companion follows the plane with a slight delay,
@@ -244,6 +245,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
   // ---------------------------------------------------------------------------
 
   /// Draw a smooth wing using cubic bezier curves with feathered tips.
+  /// Uses watercolour wash fills for soft, organic-looking wings.
   void _drawWing({
     required Canvas canvas,
     required double size,
@@ -288,7 +290,10 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
       ..lineTo(sign * size * 0.1, size * 0.05)
       ..close();
 
-    canvas.drawPath(wing, paint);
+    // Watercolour wash instead of solid fill.
+    WatercolorStyle.washFill(canvas, wing, paint.color,
+        seed: '${isLeft ? "L" : "R"}wing');
+    WatercolorStyle.wetEdge(canvas, wing, paint.color, opacity: 0.2);
 
     // Optional wing tip accent.
     if (tipPaint != null) {
@@ -304,11 +309,11 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         )
         ..lineTo(sign * size * (spread - 0.12), flapOffset - size * 0.12)
         ..close();
-      canvas.drawPath(tip, tipPaint);
+      WatercolorStyle.washFill(canvas, tip, tipPaint.color, seed: 'tip');
     }
   }
 
-  /// Draw a layered body for depth (base + shadow + belly + highlight).
+  /// Draw a layered body with watercolour washes for soft, organic depth.
   void _drawBody({
     required Canvas canvas,
     required double width,
@@ -317,37 +322,41 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     required Color bellyColor,
     Offset center = Offset.zero,
   }) {
-    // Shadow under body.
-    canvas.drawOval(
-      Rect.fromCenter(
+    // Soft shadow under body.
+    final shadowPath = Path()
+      ..addOval(Rect.fromCenter(
         center: Offset(center.dx, center.dy + height * 0.08),
         width: width * 0.95,
         height: height * 0.6,
-      ),
-      Paint()..color = _darken(baseColor, 0.3),
-    );
-    // Main body.
-    canvas.drawOval(
-      Rect.fromCenter(center: center, width: width, height: height),
-      Paint()..color = baseColor,
-    );
-    // Belly highlight.
-    canvas.drawOval(
-      Rect.fromCenter(
+      ));
+    WatercolorStyle.softShadow(canvas, shadowPath);
+
+    // Main body — watercolour wash.
+    final bodyPath = Path()
+      ..addOval(Rect.fromCenter(center: center, width: width, height: height));
+    WatercolorStyle.washFill(canvas, bodyPath, baseColor, seed: 'body');
+    WatercolorStyle.wetEdge(canvas, bodyPath, baseColor, opacity: 0.18);
+
+    // Belly highlight — softer wash.
+    final bellyPath = Path()
+      ..addOval(Rect.fromCenter(
         center: Offset(center.dx, center.dy + height * 0.06),
         width: width * 0.6,
         height: height * 0.45,
-      ),
-      Paint()..color = bellyColor,
-    );
-    // Top highlight (simulates light from above).
+      ));
+    WatercolorStyle.washFill(canvas, bellyPath, bellyColor,
+        seed: 'belly', opacity: 0.25);
+
+    // Top highlight — soft light wash.
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(center.dx, center.dy - height * 0.12),
         width: width * 0.35,
         height: height * 0.15,
       ),
-      Paint()..color = _lighten(baseColor, 0.2).withOpacity(0.4),
+      Paint()
+        ..color = _lighten(baseColor, 0.2).withOpacity(0.3)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5),
     );
   }
 
@@ -439,7 +448,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         )
         ..close();
     }
-    canvas.drawPath(upperBeak, Paint()..color = color);
+    WatercolorStyle.washFill(canvas, upperBeak, color, seed: 'beak');
     // Lower mandible (darker).
     final lower = Path()
       ..moveTo(tip.dx - size * 0.25, tip.dy + size * 0.45)
@@ -450,7 +459,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         tip.dy + size * 0.45,
       )
       ..close();
-    canvas.drawPath(lower, Paint()..color = _darken(color, 0.2));
+    WatercolorStyle.washFill(canvas, lower, _darken(color, 0.2),
+        seed: 'beak_lo');
   }
 
   /// Draw a stylized tail with separated feathers.
@@ -481,7 +491,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         ..close();
       // Alternate slightly lighter/darker for depth.
       final featherColor = i.isEven ? color : _darken(color, 0.1);
-      canvas.drawPath(feather, Paint()..color = featherColor);
+      WatercolorStyle.washFill(canvas, feather, featherColor, seed: 'tail$i');
     }
   }
 
@@ -509,16 +519,15 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     const cream = Color(0xFFF5E8D0);
     const darkBrown = Color(0xFF6B5238);
 
-    // Soft drop shadow.
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: const Offset(0.5, 1.5),
-        width: s * 1.0,
-        height: s * 0.3,
-      ),
-      Paint()
-        ..color = const Color(0xFF000000).withOpacity(0.1)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+    // Soft watercolour drop shadow.
+    WatercolorStyle.softShadow(
+      canvas,
+      Path()
+        ..addOval(Rect.fromCenter(
+          center: const Offset(0.5, 1.5),
+          width: s * 1.0,
+          height: s * 0.3,
+        )),
     );
 
     // Tail feathers (behind body).
@@ -560,23 +569,24 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
       bellyColor: cream,
     );
 
-    // Round head (oversized for cuteness).
-    canvas.drawCircle(
-      const Offset(0, -s * 0.32),
-      s * 0.28,
-      Paint()..color = brown,
-    );
-    // Cream face.
-    canvas.drawCircle(
-      const Offset(0, -s * 0.28),
-      s * 0.18,
-      Paint()..color = cream,
-    );
-    // Head highlight.
+    // Round head — watercolour wash (oversized for cuteness).
+    final headPath = Path()
+      ..addOval(Rect.fromCircle(
+          center: const Offset(0, -s * 0.32), radius: s * 0.28));
+    WatercolorStyle.washFill(canvas, headPath, brown, seed: 'pidgey_head');
+    WatercolorStyle.wetEdge(canvas, headPath, brown, opacity: 0.15);
+    // Cream face wash.
+    final facePath = Path()
+      ..addOval(Rect.fromCircle(
+          center: const Offset(0, -s * 0.28), radius: s * 0.18));
+    WatercolorStyle.washFill(canvas, facePath, cream, seed: 'pidgey_face');
+    // Head highlight — soft glow.
     canvas.drawCircle(
       const Offset(-s * 0.05, -s * 0.42),
       s * 0.08,
-      Paint()..color = _lighten(brown, 0.15).withOpacity(0.5),
+      Paint()
+        ..color = _lighten(brown, 0.15).withOpacity(0.4)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5),
     );
 
     // Big cute eyes.
@@ -629,8 +639,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
       ..quadraticBezierTo(s * 0.2, s * 0.55, s * 0.18, s * 0.7)
       ..quadraticBezierTo(s * 0.12, s * 0.5, s * 0.02, s * 0.35)
       ..close();
-    canvas.drawPath(leftFork, Paint()..color = navy);
-    canvas.drawPath(rightFork, Paint()..color = navy);
+    WatercolorStyle.washFill(canvas, leftFork, navy, seed: 'sparrow_lf');
+    WatercolorStyle.washFill(canvas, rightFork, navy, seed: 'sparrow_rf');
 
     // Long swept wings.
     _drawWing(
@@ -663,21 +673,21 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
       bellyColor: cream,
     );
 
-    // Small neat head.
-    canvas.drawCircle(
-      const Offset(0, -s * 0.28),
-      s * 0.18,
-      Paint()..color = navy,
-    );
-    // Russet throat patch.
-    canvas.drawOval(
-      Rect.fromCenter(
+    // Small neat head — watercolour wash.
+    final headPath = Path()
+      ..addOval(Rect.fromCircle(
+          center: const Offset(0, -s * 0.28), radius: s * 0.18));
+    WatercolorStyle.washFill(canvas, headPath, navy, seed: 'sparrow_head');
+    WatercolorStyle.wetEdge(canvas, headPath, navy, opacity: 0.15);
+    // Russet throat patch — wash.
+    final throatPath = Path()
+      ..addOval(Rect.fromCenter(
         center: const Offset(0, -s * 0.2),
         width: s * 0.2,
         height: s * 0.12,
-      ),
-      Paint()..color = russet,
-    );
+      ));
+    WatercolorStyle.washFill(canvas, throatPath, russet,
+        seed: 'sparrow_throat');
 
     // Sharp eyes.
     _drawEyes(
@@ -770,18 +780,18 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
       bellyColor: const Color(0xFFE8D8B8),
     );
 
-    // White head (bald eagle style).
-    canvas.drawCircle(
-      const Offset(0, -s * 0.32),
-      s * 0.22,
-      Paint()..color = white,
-    );
-    // Subtle head shadow.
-    canvas.drawCircle(
-      const Offset(0, -s * 0.28),
-      s * 0.18,
-      Paint()..color = const Color(0xFFE8E0D0),
-    );
+    // White head (bald eagle style) — watercolour wash.
+    final eagleHeadPath = Path()
+      ..addOval(Rect.fromCircle(
+          center: const Offset(0, -s * 0.32), radius: s * 0.22));
+    WatercolorStyle.washFill(canvas, eagleHeadPath, white, seed: 'eagle_head');
+    WatercolorStyle.wetEdge(canvas, eagleHeadPath, white, opacity: 0.12);
+    // Subtle head shadow wash.
+    final eagleFacePath = Path()
+      ..addOval(Rect.fromCircle(
+          center: const Offset(0, -s * 0.28), radius: s * 0.18));
+    WatercolorStyle.washFill(canvas, eagleFacePath, const Color(0xFFE8E0D0),
+        seed: 'eagle_face');
 
     // Fierce piercing eyes.
     _drawEyes(
@@ -855,7 +865,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
           s * 0.2,
         )
         ..close();
-      canvas.drawPath(streamer, Paint()..color = colors[i].withOpacity(0.85));
+      WatercolorStyle.washFill(canvas, streamer, colors[i].withOpacity(0.85),
+          seed: 'parrot_s$i');
     }
 
     // Wings — multicolored like a real macaw.
@@ -879,7 +890,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         ..lineTo(sign * s * 0.58, flapOffset - s * 0.18)
         ..lineTo(sign * s * 0.28, flapOffset * 0.3 + s * 0.02)
         ..close();
-      canvas.drawPath(greenBand, Paint()..color = emerald.withOpacity(0.7));
+      WatercolorStyle.washFill(canvas, greenBand, emerald.withOpacity(0.7),
+          seed: 'parrot_gb');
       // Gold covert stripe.
       final goldStripe = Path()
         ..moveTo(sign * s * 0.2, flapOffset * 0.2)
@@ -887,7 +899,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         ..lineTo(sign * s * 0.47, flapOffset - s * 0.08)
         ..lineTo(sign * s * 0.22, flapOffset * 0.2 + s * 0.04)
         ..close();
-      canvas.drawPath(goldStripe, Paint()..color = gold.withOpacity(0.5));
+      WatercolorStyle.washFill(canvas, goldStripe, gold.withOpacity(0.5),
+          seed: 'parrot_gs');
     }
 
     // Scarlet body.
@@ -899,17 +912,19 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
       bellyColor: const Color(0xFFEE5555),
     );
 
-    // Round head.
-    canvas.drawCircle(
-      const Offset(0, -s * 0.3),
-      s * 0.2,
-      Paint()..color = scarlet,
-    );
+    // Round head — watercolour.
+    final parrotHeadPath = Path()
+      ..addOval(
+          Rect.fromCircle(center: const Offset(0, -s * 0.3), radius: s * 0.2));
+    WatercolorStyle.washFill(canvas, parrotHeadPath, scarlet, seed: 'parrot_h');
+    WatercolorStyle.wetEdge(canvas, parrotHeadPath, scarlet, opacity: 0.15);
     // Head highlight.
     canvas.drawCircle(
       const Offset(-s * 0.04, -s * 0.38),
       s * 0.06,
-      Paint()..color = _lighten(scarlet, 0.15).withOpacity(0.4),
+      Paint()
+        ..color = _lighten(scarlet, 0.15).withOpacity(0.3)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1),
     );
 
     // White eye patches (bare skin like real macaw).
@@ -972,21 +987,21 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     const paleGold = Color(0xFFFFE888);
     const crimson = Color(0xFFCC1100);
 
-    // Outer warm aura (pulses gently).
-    canvas.drawCircle(
+    // Outer warm aura (pulses gently) — watercolour radial glow.
+    WatercolorStyle.auraGlow(
+      canvas,
       Offset.zero,
       s * 0.9 * breathPulse,
-      Paint()
-        ..color = const Color(0xFFFF6600).withOpacity(0.08 * breathPulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+      const Color(0xFFFF6600),
+      opacity: 0.10 * breathPulse,
     );
     // Inner bright glow.
-    canvas.drawCircle(
+    WatercolorStyle.auraGlow(
+      canvas,
       const Offset(0, -s * 0.1),
       s * 0.5 * breathPulse,
-      Paint()
-        ..color = gold.withOpacity(0.12 * breathPulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+      gold,
+      opacity: 0.14 * breathPulse,
     );
 
     // Flame tail — multiple flickering tongues.
@@ -1006,10 +1021,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         ..quadraticBezierTo(s * t, s * (0.6 + i * 0.03), s * t * 0.5, s * 0.2)
         ..close();
       final tongueColors = [crimson, deepOrange, gold, brightOrange, crimson];
-      canvas.drawPath(
-        tongue,
-        Paint()..color = tongueColors[i].withOpacity(0.7),
-      );
+      WatercolorStyle.washFill(canvas, tongue, tongueColors[i].withOpacity(0.7),
+          seed: 'phx_t$i');
     }
     // Tail glow.
     canvas.drawCircle(
@@ -1088,19 +1101,19 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
     );
 
-    // Elegant head.
-    canvas.drawCircle(
-      const Offset(0, -s * 0.28),
-      s * 0.18,
-      Paint()..color = brightOrange,
-    );
+    // Elegant head — watercolour wash.
+    final phxHeadPath = Path()
+      ..addOval(Rect.fromCircle(
+          center: const Offset(0, -s * 0.28), radius: s * 0.18));
+    WatercolorStyle.washFill(canvas, phxHeadPath, brightOrange,
+        seed: 'phx_head');
     // Head glow.
-    canvas.drawCircle(
+    WatercolorStyle.auraGlow(
+      canvas,
       const Offset(0, -s * 0.28),
       s * 0.12,
-      Paint()
-        ..color = gold.withOpacity(0.2)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+      gold,
+      opacity: 0.22,
     );
 
     // Crown crest — three flame plumes.
@@ -1159,13 +1172,13 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     const amber = Color(0xFFE8A820);
     const hornColor = Color(0xFF5C4A32);
 
-    // Fire breath glow near mouth.
-    canvas.drawCircle(
+    // Fire breath glow near mouth — watercolour radial glow.
+    WatercolorStyle.auraGlow(
+      canvas,
       const Offset(0, -s * 0.65),
       s * 0.2 * breathPulse,
-      Paint()
-        ..color = const Color(0xFFFF6600).withOpacity(0.12 * breathPulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+      const Color(0xFFFF6600),
+      opacity: 0.14 * breathPulse,
     );
 
     // Spined tail with flame tip.
@@ -1176,7 +1189,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
       ..lineTo(s * 0.08, s * 0.95)
       ..cubicTo(s * 0.15, s * 0.7, s * 0.08, s * 0.5, 0, s * 0.25)
       ..close();
-    canvas.drawPath(tail, Paint()..color = forestGreen);
+    WatercolorStyle.washFill(canvas, tail, forestGreen, seed: 'drag_tail');
     // Tail spines.
     for (var i = 0; i < 3; i++) {
       final t = 0.35 + i * 0.2;
@@ -1186,7 +1199,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         ..lineTo(spineX - s * 0.06, s * t - s * 0.04)
         ..lineTo(spineX, s * t - s * 0.01)
         ..close();
-      canvas.drawPath(spine, Paint()..color = darkGreen);
+      WatercolorStyle.washFill(canvas, spine, darkGreen, seed: 'drag_sp');
     }
     // Flame tail tip.
     final flameTip = Path()
@@ -1196,7 +1209,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
       ..lineTo(s * 0.12, s * 1.08)
       ..lineTo(s * 0.1, s * 0.9)
       ..close();
-    canvas.drawPath(flameTip, Paint()..color = const Color(0xFFFF6600));
+    WatercolorStyle.washFill(canvas, flameTip, const Color(0xFFFF6600),
+        seed: 'drag_flame');
     canvas.drawPath(
       flameTip,
       Paint()
@@ -1239,13 +1253,12 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
           s * 0.02,
         )
         ..close();
-      canvas.drawPath(
-        membrane,
-        Paint()..color = const Color(0xFF3D8B55).withOpacity(0.7),
-      );
+      WatercolorStyle.washFill(
+          canvas, membrane, const Color(0xFF3D8B55).withOpacity(0.7),
+          seed: 'drag_mem');
 
       // Wing membrane inner (lighter, translucent for membrane feel).
-      canvas.drawPath(membrane, Paint()..color = paleGreen.withOpacity(0.1));
+      WatercolorStyle.colorBleed(canvas, membrane, paleGreen, opacity: 0.1);
 
       // Finger bones (dark lines).
       final bonePaint = Paint()
@@ -1283,7 +1296,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         ..lineTo(sign * s * 0.58, flapOffset - s * 0.42)
         ..lineTo(sign * s * 0.67, flapOffset - s * 0.37)
         ..close();
-      canvas.drawPath(claw, Paint()..color = hornColor);
+      WatercolorStyle.washFill(canvas, claw, hornColor, seed: 'claw');
     }
 
     // Muscular body with scale texture.
@@ -1322,7 +1335,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         ..lineTo(sx, sy - s * 0.06)
         ..lineTo(sx + s * 0.015, sy)
         ..close();
-      canvas.drawPath(spine, Paint()..color = darkGreen);
+      WatercolorStyle.washFill(canvas, spine, darkGreen, seed: 'drag_dsp');
     }
 
     // Powerful head.
@@ -1331,13 +1344,13 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
       ..moveTo(-s * 0.12, -s * 0.32)
       ..quadraticBezierTo(0, -s * 0.55, s * 0.12, -s * 0.32)
       ..quadraticBezierTo(0, -s * 0.28, -s * 0.12, -s * 0.32);
-    canvas.drawPath(snout, Paint()..color = forestGreen);
-    // Head dome.
-    canvas.drawCircle(
-      const Offset(0, -s * 0.34),
-      s * 0.18,
-      Paint()..color = forestGreen,
-    );
+    WatercolorStyle.washFill(canvas, snout, forestGreen, seed: 'drag_snout');
+    // Head dome — watercolour.
+    final dragHeadPath = Path()
+      ..addOval(Rect.fromCircle(
+          center: const Offset(0, -s * 0.34), radius: s * 0.18));
+    WatercolorStyle.washFill(canvas, dragHeadPath, forestGreen,
+        seed: 'drag_head');
     // Jaw underside (lighter).
     canvas.drawOval(
       Rect.fromCenter(
@@ -1362,7 +1375,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         )
         ..lineTo(sign * s * 0.08, -s * 0.5)
         ..close();
-      canvas.drawPath(horn, Paint()..color = hornColor);
+      WatercolorStyle.washFill(canvas, horn, hornColor, seed: 'drag_horn');
       // Horn highlight.
       canvas.drawLine(
         Offset(sign * s * 0.1, -s * 0.48),
@@ -1430,21 +1443,21 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
     const fireRed = Color(0xFFEE2200);
     const fireGold = Color(0xFFFFCC00);
 
-    // Massive fiery aura (outer).
-    canvas.drawCircle(
+    // Massive fiery aura (outer) — watercolour glow.
+    WatercolorStyle.auraGlow(
+      canvas,
       Offset.zero,
       s * 1.0 * breathPulse,
-      Paint()
-        ..color = const Color(0xFFFF4400).withOpacity(0.06 * breathPulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16),
+      const Color(0xFFFF4400),
+      opacity: 0.08 * breathPulse,
     );
     // Inner warm glow.
-    canvas.drawCircle(
+    WatercolorStyle.auraGlow(
+      canvas,
       const Offset(0, -s * 0.15),
       s * 0.55 * breathPulse,
-      Paint()
-        ..color = fireGold.withOpacity(0.08 * breathPulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+      fireGold,
+      opacity: 0.10 * breathPulse,
     );
 
     // Ember particles (small dots floating up from body).
@@ -1474,7 +1487,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
       ..lineTo(s * 0.1, s * 1.0)
       ..cubicTo(s * 0.18, s * 0.75, s * 0.1, s * 0.55, 0, s * 0.25)
       ..close();
-    canvas.drawPath(tail, Paint()..color = deepOrange);
+    WatercolorStyle.washFill(canvas, tail, deepOrange, seed: 'char_tail');
     // Tail belly stripe.
     final tailBelly = Path()
       ..moveTo(-s * 0.03, s * 0.3)
@@ -1482,7 +1495,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
       ..lineTo(s * 0.03, s * 0.9)
       ..cubicTo(s * 0.06, s * 0.75, s * 0.04, s * 0.55, s * 0.03, s * 0.3)
       ..close();
-    canvas.drawPath(tailBelly, Paint()..color = paleYellow.withOpacity(0.4));
+    WatercolorStyle.washFill(canvas, tailBelly, paleYellow,
+        seed: 'char_tbelly', opacity: 0.25);
 
     // Massive tail flame.
     canvas.drawCircle(
@@ -1520,7 +1534,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         brightOrange,
         fireRed,
       ];
-      canvas.drawPath(flame, Paint()..color = flameColors[i].withOpacity(0.7));
+      WatercolorStyle.washFill(canvas, flame, flameColors[i],
+          seed: 'char_fl$i', opacity: 0.22);
     }
     // Bright core.
     final core = Path()
@@ -1528,7 +1543,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
       ..lineTo(0, s * 1.18)
       ..lineTo(s * 0.04, s * 1.0)
       ..close();
-    canvas.drawPath(core, Paint()..color = const Color(0xFFFFEE88));
+    WatercolorStyle.washFill(canvas, core, const Color(0xFFFFEE88),
+        seed: 'char_core', opacity: 0.25);
 
     // Massive bat-membrane wings with scalloped edges.
     for (final isLeft in [true, false]) {
@@ -1582,7 +1598,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         s * 0.05,
       );
       membrane.close();
-      canvas.drawPath(membrane, Paint()..color = tealWing.withOpacity(0.8));
+      WatercolorStyle.washFill(canvas, membrane, tealWing.withOpacity(0.8),
+          seed: 'char_mem');
 
       // Inner membrane (lighter, more translucent).
       final inner = Path()
@@ -1596,10 +1613,10 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
           s * 0.03,
         )
         ..close();
-      canvas.drawPath(
-        inner,
-        Paint()..color = const Color(0xFF40C4B0).withOpacity(0.2),
-      );
+      WatercolorStyle.washFill(canvas, inner, const Color(0xFF40C4B0),
+          seed: 'char_inner', opacity: 0.15);
+      WatercolorStyle.colorBleed(canvas, inner, const Color(0xFF40C4B0),
+          opacity: 0.06);
 
       // Finger bones.
       final bonePaint = Paint()
@@ -1637,7 +1654,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         ..lineTo(sign * s * 0.62, flapOffset - s * 0.48)
         ..lineTo(sign * s * 0.72, flapOffset - s * 0.42)
         ..close();
-      canvas.drawPath(claw, Paint()..color = hornColor);
+      WatercolorStyle.washFill(canvas, claw, hornColor, seed: 'claw');
     }
 
     // Powerful muscular body.
@@ -1676,7 +1693,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         ..lineTo(0, sy - spineHeight)
         ..lineTo(s * 0.018, sy)
         ..close();
-      canvas.drawPath(spine, Paint()..color = _darken(deepOrange, 0.15));
+      WatercolorStyle.washFill(canvas, spine, _darken(deepOrange, 0.15),
+          seed: 'char_sp');
     }
 
     // Powerful head with elongated snout.
@@ -1684,13 +1702,16 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
       ..moveTo(-s * 0.14, -s * 0.33)
       ..cubicTo(-s * 0.08, -s * 0.52, s * 0.08, -s * 0.52, s * 0.14, -s * 0.33)
       ..quadraticBezierTo(0, -s * 0.3, -s * 0.14, -s * 0.33);
-    canvas.drawPath(snout, Paint()..color = deepOrange);
+    WatercolorStyle.washFill(canvas, snout, deepOrange, seed: 'char_snout');
+    WatercolorStyle.wetEdge(canvas, snout, deepOrange, opacity: 0.15);
     // Head dome.
-    canvas.drawCircle(
-      const Offset(0, -s * 0.36),
-      s * 0.2,
-      Paint()..color = deepOrange,
-    );
+    final headDome = Path()
+      ..addOval(Rect.fromCenter(
+        center: const Offset(0, -s * 0.36),
+        width: s * 0.4,
+        height: s * 0.4,
+      ));
+    WatercolorStyle.washFill(canvas, headDome, deepOrange, seed: 'char_head');
     // Jaw underside.
     canvas.drawOval(
       Rect.fromCenter(
@@ -1716,7 +1737,7 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         )
         ..lineTo(sign * s * 0.08, -s * 0.54)
         ..close();
-      canvas.drawPath(outerHorn, Paint()..color = hornColor);
+      WatercolorStyle.washFill(canvas, outerHorn, hornColor, seed: 'char_oh');
       // Horn highlight.
       canvas.drawLine(
         Offset(sign * s * 0.12, -s * 0.52),
@@ -1731,7 +1752,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
         ..lineTo(sign * s * 0.1, -s * 0.66)
         ..lineTo(sign * s * 0.03, -s * 0.54)
         ..close();
-      canvas.drawPath(innerHorn, Paint()..color = _lighten(hornColor, 0.1));
+      WatercolorStyle.washFill(canvas, innerHorn, _lighten(hornColor, 0.1),
+          seed: 'char_ih');
     }
 
     // Fierce glowing slit eyes.
@@ -1787,7 +1809,8 @@ class CompanionRenderer extends Component with HasGameRef<FlitGame> {
       ..moveTo(-s * 0.07, -s * 0.48)
       ..quadraticBezierTo(0, -s * 0.52, s * 0.07, -s * 0.48)
       ..quadraticBezierTo(0, -s * 0.46, -s * 0.07, -s * 0.48);
-    canvas.drawPath(mouth, Paint()..color = const Color(0xFFBB1100));
+    WatercolorStyle.washFill(canvas, mouth, const Color(0xFFBB1100),
+        seed: 'char_mouth');
     // Fire breath glow.
     canvas.drawCircle(
       const Offset(0, -s * 0.62),

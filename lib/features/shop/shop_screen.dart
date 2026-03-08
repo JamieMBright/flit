@@ -9,6 +9,7 @@ import '../../data/models/economy_config.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/economy_config_service.dart';
 import '../../game/rendering/plane_renderer.dart';
+import '../../game/rendering/watercolor_style.dart';
 
 /// Shop screen for purchasing cosmetics and gold.
 class ShopScreen extends ConsumerStatefulWidget {
@@ -1806,16 +1807,13 @@ class _CompanionPreviewPainter extends CustomPainter {
     const darkBrown = Color(0xFF6B5238);
 
     // Soft drop shadow.
-    canvas.drawOval(
-      Rect.fromCenter(
+    final shadowPath = Path()
+      ..addOval(Rect.fromCenter(
         center: const Offset(0.5, s * 0.22),
         width: s * 1.0,
         height: s * 0.3,
-      ),
-      Paint()
-        ..color = const Color(0xFF000000).withOpacity(0.1)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
-    );
+      ));
+    WatercolorStyle.softShadow(canvas, shadowPath);
 
     // Tail feathers.
     _drawTailFeathers(canvas, s, darkBrown, 3, 0.35, 0.12);
@@ -1828,16 +1826,15 @@ class _CompanionPreviewPainter extends CustomPainter {
     _drawBody(canvas, s * 0.95, s * 0.6, brown, cream);
 
     // Round head.
-    canvas.drawCircle(
-      const Offset(0, -s * 0.32),
-      s * 0.28,
-      Paint()..color = brown,
-    );
-    canvas.drawCircle(
-      const Offset(0, -s * 0.28),
-      s * 0.18,
-      Paint()..color = cream,
-    );
+    final headPath = Path()
+      ..addOval(Rect.fromCircle(
+          center: const Offset(0, -s * 0.32), radius: s * 0.28));
+    WatercolorStyle.washFill(canvas, headPath, brown, seed: 'head');
+    WatercolorStyle.wetEdge(canvas, headPath, brown, opacity: 0.18);
+    final facePath = Path()
+      ..addOval(Rect.fromCircle(
+          center: const Offset(0, -s * 0.28), radius: s * 0.18));
+    WatercolorStyle.washFill(canvas, facePath, cream, seed: 'face');
     canvas.drawCircle(
       const Offset(-s * 0.05, -s * 0.42),
       s * 0.08,
@@ -1893,8 +1890,8 @@ class _CompanionPreviewPainter extends CustomPainter {
       ..quadraticBezierTo(s * 0.2, s * 0.55, s * 0.18, s * 0.7)
       ..quadraticBezierTo(s * 0.12, s * 0.5, s * 0.02, s * 0.35)
       ..close();
-    canvas.drawPath(leftFork, Paint()..color = navy);
-    canvas.drawPath(rightFork, Paint()..color = navy);
+    WatercolorStyle.washFill(canvas, leftFork, navy, seed: 'tail_l');
+    WatercolorStyle.washFill(canvas, rightFork, navy, seed: 'tail_r');
 
     // Long swept wings.
     _drawWing(
@@ -1922,20 +1919,19 @@ class _CompanionPreviewPainter extends CustomPainter {
     _drawBody(canvas, s * 0.8, s * 0.45, navy, cream);
 
     // Head.
-    canvas.drawCircle(
-      const Offset(0, -s * 0.28),
-      s * 0.18,
-      Paint()..color = navy,
-    );
+    final sparrowHeadPath = Path()
+      ..addOval(Rect.fromCircle(
+          center: const Offset(0, -s * 0.28), radius: s * 0.18));
+    WatercolorStyle.washFill(canvas, sparrowHeadPath, navy, seed: 'head');
+    WatercolorStyle.wetEdge(canvas, sparrowHeadPath, navy, opacity: 0.18);
     // Russet throat patch.
-    canvas.drawOval(
-      Rect.fromCenter(
+    final throatPath = Path()
+      ..addOval(Rect.fromCenter(
         center: const Offset(0, -s * 0.2),
         width: s * 0.2,
         height: s * 0.12,
-      ),
-      Paint()..color = russet,
-    );
+      ));
+    WatercolorStyle.washFill(canvas, throatPath, russet, seed: 'throat');
 
     // Sharp eyes.
     _drawEyes(
@@ -1998,23 +1994,24 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..lineTo(sign * s * 0.82, -s * 0.27)
         ..lineTo(sign * s * 0.42, -s * 0.15)
         ..close();
-      canvas.drawPath(bar, Paint()..color = gold.withOpacity(0.3));
+      WatercolorStyle.washFill(canvas, bar, gold.withOpacity(0.3),
+          seed: 'bar$sign');
     }
 
     // Powerful body.
     _drawBody(canvas, s * 0.85, s * 0.5, goldenBrown, const Color(0xFFE8D8B8));
 
     // White head.
-    canvas.drawCircle(
-      const Offset(0, -s * 0.32),
-      s * 0.22,
-      Paint()..color = white,
-    );
-    canvas.drawCircle(
-      const Offset(0, -s * 0.28),
-      s * 0.18,
-      Paint()..color = const Color(0xFFE8E0D0),
-    );
+    final eagleHeadPath = Path()
+      ..addOval(Rect.fromCircle(
+          center: const Offset(0, -s * 0.32), radius: s * 0.22));
+    WatercolorStyle.washFill(canvas, eagleHeadPath, white, seed: 'head');
+    WatercolorStyle.wetEdge(canvas, eagleHeadPath, white, opacity: 0.18);
+    final eagleFacePath = Path()
+      ..addOval(Rect.fromCircle(
+          center: const Offset(0, -s * 0.28), radius: s * 0.18));
+    WatercolorStyle.washFill(canvas, eagleFacePath, const Color(0xFFE8E0D0),
+        seed: 'face');
 
     // Fierce eyes.
     _drawEyes(
@@ -2087,7 +2084,8 @@ class _CompanionPreviewPainter extends CustomPainter {
           s * 0.2,
         )
         ..close();
-      canvas.drawPath(streamer, Paint()..color = colors[i].withOpacity(0.85));
+      WatercolorStyle.washFill(canvas, streamer, colors[i].withOpacity(0.85),
+          seed: 'tail$i');
     }
 
     // Multicolored wings.
@@ -2110,7 +2108,8 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..lineTo(sign * s * 0.58, -s * 0.18)
         ..lineTo(sign * s * 0.28, s * 0.02)
         ..close();
-      canvas.drawPath(greenBand, Paint()..color = emerald.withOpacity(0.7));
+      WatercolorStyle.washFill(canvas, greenBand, emerald.withOpacity(0.7),
+          seed: 'green$sign');
       // Gold covert stripe.
       final goldStripe = Path()
         ..moveTo(sign * s * 0.2, 0)
@@ -2118,18 +2117,19 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..lineTo(sign * s * 0.47, -s * 0.08)
         ..lineTo(sign * s * 0.22, s * 0.04)
         ..close();
-      canvas.drawPath(goldStripe, Paint()..color = gold.withOpacity(0.5));
+      WatercolorStyle.washFill(canvas, goldStripe, gold.withOpacity(0.5),
+          seed: 'gold$sign');
     }
 
     // Scarlet body.
     _drawBody(canvas, s * 0.8, s * 0.48, scarlet, const Color(0xFFEE5555));
 
     // Round head.
-    canvas.drawCircle(
-      const Offset(0, -s * 0.3),
-      s * 0.2,
-      Paint()..color = scarlet,
-    );
+    final parrotHeadPath = Path()
+      ..addOval(
+          Rect.fromCircle(center: const Offset(0, -s * 0.3), radius: s * 0.2));
+    WatercolorStyle.washFill(canvas, parrotHeadPath, scarlet, seed: 'head');
+    WatercolorStyle.wetEdge(canvas, parrotHeadPath, scarlet, opacity: 0.18);
     canvas.drawCircle(
       const Offset(-s * 0.04, -s * 0.38),
       s * 0.06,
@@ -2137,22 +2137,22 @@ class _CompanionPreviewPainter extends CustomPainter {
     );
 
     // White eye patches.
-    canvas.drawOval(
-      Rect.fromCenter(
+    final leftEyePatch = Path()
+      ..addOval(Rect.fromCenter(
         center: const Offset(-s * 0.09, -s * 0.3),
         width: s * 0.12,
         height: s * 0.14,
-      ),
-      Paint()..color = white.withOpacity(0.85),
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
+      ));
+    WatercolorStyle.washFill(canvas, leftEyePatch, white.withOpacity(0.85),
+        seed: 'eyeL');
+    final rightEyePatch = Path()
+      ..addOval(Rect.fromCenter(
         center: const Offset(s * 0.09, -s * 0.3),
         width: s * 0.12,
         height: s * 0.14,
-      ),
-      Paint()..color = white.withOpacity(0.85),
-    );
+      ));
+    WatercolorStyle.washFill(canvas, rightEyePatch, white.withOpacity(0.85),
+        seed: 'eyeR');
 
     // Eyes.
     _drawEyes(
@@ -2168,12 +2168,14 @@ class _CompanionPreviewPainter extends CustomPainter {
       ..moveTo(0, -s * 0.42)
       ..cubicTo(-s * 0.1, -s * 0.48, -s * 0.08, -s * 0.56, 0, -s * 0.58)
       ..cubicTo(s * 0.08, -s * 0.56, s * 0.1, -s * 0.48, 0, -s * 0.42);
-    canvas.drawPath(upperBeak, Paint()..color = const Color(0xFF1A1A1A));
+    WatercolorStyle.washFill(canvas, upperBeak, const Color(0xFF1A1A1A),
+        seed: 'beak_u');
     final lowerBeak = Path()
       ..moveTo(-s * 0.04, -s * 0.42)
       ..quadraticBezierTo(0, -s * 0.46, s * 0.04, -s * 0.42)
       ..quadraticBezierTo(0, -s * 0.39, -s * 0.04, -s * 0.42);
-    canvas.drawPath(lowerBeak, Paint()..color = const Color(0xFF333333));
+    WatercolorStyle.washFill(canvas, lowerBeak, const Color(0xFF333333),
+        seed: 'beak_l');
   }
 
   // ---------------------------------------------------------------------------
@@ -2188,20 +2190,11 @@ class _CompanionPreviewPainter extends CustomPainter {
     const crimson = Color(0xFFCC1100);
 
     // Warm aura.
-    canvas.drawCircle(
-      Offset.zero,
-      s * 0.9,
-      Paint()
-        ..color = const Color(0xFFFF6600).withOpacity(0.08)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
-    );
-    canvas.drawCircle(
-      const Offset(0, -s * 0.1),
-      s * 0.5,
-      Paint()
-        ..color = gold.withOpacity(0.12)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
-    );
+    WatercolorStyle.auraGlow(
+        canvas, Offset.zero, s * 0.9, const Color(0xFFFF6600),
+        opacity: 0.08, blur: 12);
+    WatercolorStyle.auraGlow(canvas, const Offset(0, -s * 0.1), s * 0.5, gold,
+        opacity: 0.12, blur: 6);
 
     // Flame tail tongues.
     final tongueColors = [crimson, deepOrange, gold, brightOrange, crimson];
@@ -2219,10 +2212,8 @@ class _CompanionPreviewPainter extends CustomPainter {
         )
         ..quadraticBezierTo(s * t, s * (0.6 + i * 0.03), s * t * 0.5, s * 0.2)
         ..close();
-      canvas.drawPath(
-        tongue,
-        Paint()..color = tongueColors[i].withOpacity(0.7),
-      );
+      WatercolorStyle.washFill(canvas, tongue, tongueColors[i].withOpacity(0.7),
+          seed: 'tongue$i');
     }
 
     // Flame wings.
@@ -2241,12 +2232,7 @@ class _CompanionPreviewPainter extends CustomPainter {
         )
         ..lineTo(sign * s * 0.1, s * 0.05)
         ..close();
-      canvas.drawPath(
-        glowWing,
-        Paint()
-          ..color = gold.withOpacity(0.15)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
-      );
+      WatercolorStyle.colorBleed(canvas, glowWing, gold, opacity: 0.15);
       _drawWing(
         canvas,
         s,
@@ -2261,26 +2247,21 @@ class _CompanionPreviewPainter extends CustomPainter {
 
     // Luminous body.
     _drawBody(canvas, s * 0.75, s * 0.42, deepOrange, paleGold);
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset.zero, width: s * 0.5, height: s * 0.25),
-      Paint()
-        ..color = gold.withOpacity(0.15)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-    );
+    final bodyGlowPath = Path()
+      ..addOval(Rect.fromCenter(
+          center: Offset.zero, width: s * 0.5, height: s * 0.25));
+    WatercolorStyle.colorBleed(canvas, bodyGlowPath, gold, opacity: 0.15);
 
     // Elegant head.
-    canvas.drawCircle(
-      const Offset(0, -s * 0.28),
-      s * 0.18,
-      Paint()..color = brightOrange,
-    );
-    canvas.drawCircle(
-      const Offset(0, -s * 0.28),
-      s * 0.12,
-      Paint()
-        ..color = gold.withOpacity(0.2)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
-    );
+    final phoenixHeadPath = Path()
+      ..addOval(Rect.fromCircle(
+          center: const Offset(0, -s * 0.28), radius: s * 0.18));
+    WatercolorStyle.washFill(canvas, phoenixHeadPath, brightOrange,
+        seed: 'head');
+    WatercolorStyle.wetEdge(canvas, phoenixHeadPath, brightOrange,
+        opacity: 0.18);
+    WatercolorStyle.auraGlow(canvas, const Offset(0, -s * 0.28), s * 0.12, gold,
+        opacity: 0.2);
 
     // Crown crest — three flame plumes.
     final plumeColors = [crimson, gold, deepOrange];
@@ -2302,7 +2283,8 @@ class _CompanionPreviewPainter extends CustomPainter {
           -s * 0.42,
         )
         ..close();
-      canvas.drawPath(plume, Paint()..color = plumeColors[i].withOpacity(0.8));
+      WatercolorStyle.washFill(canvas, plume, plumeColors[i].withOpacity(0.8),
+          seed: 'plume$i');
     }
 
     // Bright eyes.
@@ -2342,7 +2324,7 @@ class _CompanionPreviewPainter extends CustomPainter {
       ..lineTo(s * 0.08, s * 0.85)
       ..cubicTo(s * 0.15, s * 0.7, s * 0.08, s * 0.5, 0, s * 0.25)
       ..close();
-    canvas.drawPath(tail, Paint()..color = forestGreen);
+    WatercolorStyle.washFill(canvas, tail, forestGreen, seed: 'tail');
     // Tail spines.
     for (var i = 0; i < 3; i++) {
       final t = 0.35 + i * 0.15;
@@ -2351,7 +2333,7 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..lineTo(-s * 0.06, s * t - s * 0.04)
         ..lineTo(0, s * t - s * 0.01)
         ..close();
-      canvas.drawPath(spine, Paint()..color = darkGreen);
+      WatercolorStyle.washFill(canvas, spine, darkGreen, seed: 'spine$i');
     }
     // Flame tail tip.
     final flameTip = Path()
@@ -2361,13 +2343,10 @@ class _CompanionPreviewPainter extends CustomPainter {
       ..lineTo(s * 0.1, s * 0.96)
       ..lineTo(s * 0.08, s * 0.82)
       ..close();
-    canvas.drawPath(flameTip, Paint()..color = const Color(0xFFFF6600));
-    canvas.drawPath(
-      flameTip,
-      Paint()
-        ..color = amber.withOpacity(0.4)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-    );
+    WatercolorStyle.washFill(canvas, flameTip, const Color(0xFFFF6600),
+        seed: 'flame_tip');
+    WatercolorStyle.auraGlow(canvas, const Offset(0, s * 0.89), s * 0.1, amber,
+        opacity: 0.4);
 
     // Bat-like membrane wings with finger bones.
     for (final isLeft in [true, false]) {
@@ -2391,11 +2370,10 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..lineTo(sign * s * 1.05, -s * 0.15)
         ..quadraticBezierTo(sign * s * 0.7, s * 0.05, sign * s * 0.15, s * 0.02)
         ..close();
-      canvas.drawPath(
-        membrane,
-        Paint()..color = const Color(0xFF3D8B55).withOpacity(0.7),
-      );
-      canvas.drawPath(membrane, Paint()..color = paleGreen.withOpacity(0.1));
+      WatercolorStyle.washFill(
+          canvas, membrane, const Color(0xFF3D8B55).withOpacity(0.7),
+          seed: 'mem$sign');
+      WatercolorStyle.colorBleed(canvas, membrane, paleGreen, opacity: 0.06);
 
       // Finger bones.
       final bonePaint = Paint()
@@ -2450,20 +2428,20 @@ class _CompanionPreviewPainter extends CustomPainter {
       ..moveTo(-s * 0.12, -s * 0.32)
       ..quadraticBezierTo(0, -s * 0.55, s * 0.12, -s * 0.32)
       ..quadraticBezierTo(0, -s * 0.28, -s * 0.12, -s * 0.32);
-    canvas.drawPath(snout, Paint()..color = forestGreen);
-    canvas.drawCircle(
-      const Offset(0, -s * 0.34),
-      s * 0.18,
-      Paint()..color = forestGreen,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
+    WatercolorStyle.washFill(canvas, snout, forestGreen, seed: 'snout');
+    final dragonHeadPath = Path()
+      ..addOval(Rect.fromCircle(
+          center: const Offset(0, -s * 0.34), radius: s * 0.18));
+    WatercolorStyle.washFill(canvas, dragonHeadPath, forestGreen, seed: 'head');
+    WatercolorStyle.wetEdge(canvas, dragonHeadPath, forestGreen, opacity: 0.18);
+    final jawPath = Path()
+      ..addOval(Rect.fromCenter(
         center: const Offset(0, -s * 0.3),
         width: s * 0.18,
         height: s * 0.08,
-      ),
-      Paint()..color = paleGreen.withOpacity(0.6),
-    );
+      ));
+    WatercolorStyle.washFill(canvas, jawPath, paleGreen.withOpacity(0.6),
+        seed: 'jaw');
 
     // Horns.
     for (final sign in [-1.0, 1.0]) {
@@ -2479,7 +2457,7 @@ class _CompanionPreviewPainter extends CustomPainter {
         )
         ..lineTo(sign * s * 0.08, -s * 0.5)
         ..close();
-      canvas.drawPath(horn, Paint()..color = hornColor);
+      WatercolorStyle.washFill(canvas, horn, hornColor, seed: 'horn$sign');
     }
 
     // Fierce slit eyes.
@@ -2525,20 +2503,12 @@ class _CompanionPreviewPainter extends CustomPainter {
     const fireGold = Color(0xFFFFCC00);
 
     // Fiery aura.
-    canvas.drawCircle(
-      Offset.zero,
-      s * 1.0,
-      Paint()
-        ..color = const Color(0xFFFF4400).withOpacity(0.06)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16),
-    );
-    canvas.drawCircle(
-      const Offset(0, -s * 0.15),
-      s * 0.55,
-      Paint()
-        ..color = fireGold.withOpacity(0.08)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
-    );
+    WatercolorStyle.auraGlow(
+        canvas, Offset.zero, s * 1.0, const Color(0xFFFF4400),
+        opacity: 0.06, blur: 16);
+    WatercolorStyle.auraGlow(
+        canvas, const Offset(0, -s * 0.15), s * 0.55, fireGold,
+        opacity: 0.08, blur: 8);
 
     // Thick tail with multi-layered flame.
     final tail = Path()
@@ -2548,7 +2518,7 @@ class _CompanionPreviewPainter extends CustomPainter {
       ..lineTo(s * 0.1, s * 0.9)
       ..cubicTo(s * 0.18, s * 0.75, s * 0.1, s * 0.55, 0, s * 0.25)
       ..close();
-    canvas.drawPath(tail, Paint()..color = deepOrange);
+    WatercolorStyle.washFill(canvas, tail, deepOrange, seed: 'tail');
     // Tail belly stripe.
     final tailBelly = Path()
       ..moveTo(-s * 0.03, s * 0.3)
@@ -2556,21 +2526,19 @@ class _CompanionPreviewPainter extends CustomPainter {
       ..lineTo(s * 0.03, s * 0.82)
       ..cubicTo(s * 0.06, s * 0.75, s * 0.04, s * 0.55, s * 0.03, s * 0.3)
       ..close();
-    canvas.drawPath(tailBelly, Paint()..color = paleYellow.withOpacity(0.4));
+    WatercolorStyle.washFill(canvas, tailBelly, paleYellow.withOpacity(0.4),
+        seed: 'tail_belly');
     // Tail flame.
     final flameCore = Path()
       ..moveTo(-s * 0.04, s * 0.88)
       ..lineTo(0, s * 1.05)
       ..lineTo(s * 0.04, s * 0.88)
       ..close();
-    canvas.drawPath(flameCore, Paint()..color = const Color(0xFFFFEE88));
-    canvas.drawCircle(
-      const Offset(0, s * 0.95),
-      s * 0.12,
-      Paint()
-        ..color = fireRed.withOpacity(0.25)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
-    );
+    WatercolorStyle.washFill(canvas, flameCore, const Color(0xFFFFEE88),
+        seed: 'flame_core');
+    WatercolorStyle.auraGlow(
+        canvas, const Offset(0, s * 0.95), s * 0.12, fireRed,
+        opacity: 0.25);
 
     // Massive bat-membrane wings with scalloped edges.
     for (final isLeft in [true, false]) {
@@ -2598,7 +2566,9 @@ class _CompanionPreviewPainter extends CustomPainter {
         s * 0.05,
       );
       membrane.close();
-      canvas.drawPath(membrane, Paint()..color = tealWing.withOpacity(0.8));
+      WatercolorStyle.washFill(canvas, membrane, tealWing.withOpacity(0.8),
+          seed: 'mem$sign');
+      WatercolorStyle.colorBleed(canvas, membrane, tealWing, opacity: 0.06);
       // Inner membrane lighter.
       final inner = Path()
         ..moveTo(sign * s * 0.35, -s * 0.05)
@@ -2606,10 +2576,9 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..lineTo(sign * s * 1.0, -s * 0.12)
         ..quadraticBezierTo(sign * s * 0.6, s * 0.06, sign * s * 0.15, s * 0.03)
         ..close();
-      canvas.drawPath(
-        inner,
-        Paint()..color = const Color(0xFF40C4B0).withOpacity(0.2),
-      );
+      WatercolorStyle.washFill(
+          canvas, inner, const Color(0xFF40C4B0).withOpacity(0.2),
+          seed: 'inner$sign');
 
       // Finger bones.
       final bonePaint = Paint()
@@ -2643,7 +2612,7 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..lineTo(sign * s * 0.62, -s * 0.48)
         ..lineTo(sign * s * 0.72, -s * 0.42)
         ..close();
-      canvas.drawPath(claw, Paint()..color = hornColor);
+      WatercolorStyle.washFill(canvas, claw, hornColor, seed: 'claw$sign');
     }
 
     // Powerful body.
@@ -2672,20 +2641,23 @@ class _CompanionPreviewPainter extends CustomPainter {
       ..moveTo(-s * 0.14, -s * 0.33)
       ..cubicTo(-s * 0.08, -s * 0.52, s * 0.08, -s * 0.52, s * 0.14, -s * 0.33)
       ..quadraticBezierTo(0, -s * 0.3, -s * 0.14, -s * 0.33);
-    canvas.drawPath(snout, Paint()..color = deepOrange);
-    canvas.drawCircle(
-      const Offset(0, -s * 0.36),
-      s * 0.2,
-      Paint()..color = deepOrange,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
+    WatercolorStyle.washFill(canvas, snout, deepOrange, seed: 'snout');
+    final charizardHeadPath = Path()
+      ..addOval(
+          Rect.fromCircle(center: const Offset(0, -s * 0.36), radius: s * 0.2));
+    WatercolorStyle.washFill(canvas, charizardHeadPath, deepOrange,
+        seed: 'head');
+    WatercolorStyle.wetEdge(canvas, charizardHeadPath, deepOrange,
+        opacity: 0.18);
+    final charizardJawPath = Path()
+      ..addOval(Rect.fromCenter(
         center: const Offset(0, -s * 0.32),
         width: s * 0.2,
         height: s * 0.08,
-      ),
-      Paint()..color = paleYellow.withOpacity(0.5),
-    );
+      ));
+    WatercolorStyle.washFill(
+        canvas, charizardJawPath, paleYellow.withOpacity(0.5),
+        seed: 'jaw');
 
     // Prominent double horns.
     for (final sign in [-1.0, 1.0]) {
@@ -2701,13 +2673,15 @@ class _CompanionPreviewPainter extends CustomPainter {
         )
         ..lineTo(sign * s * 0.08, -s * 0.54)
         ..close();
-      canvas.drawPath(outerHorn, Paint()..color = hornColor);
+      WatercolorStyle.washFill(canvas, outerHorn, hornColor,
+          seed: 'ohorn$sign');
       final innerHorn = Path()
         ..moveTo(sign * s * 0.06, -s * 0.52)
         ..lineTo(sign * s * 0.1, -s * 0.66)
         ..lineTo(sign * s * 0.03, -s * 0.54)
         ..close();
-      canvas.drawPath(innerHorn, Paint()..color = _lighten(hornColor, 0.1));
+      WatercolorStyle.washFill(canvas, innerHorn, _lighten(hornColor, 0.1),
+          seed: 'ihorn$sign');
     }
 
     // Fierce glowing slit eyes.
@@ -2759,7 +2733,8 @@ class _CompanionPreviewPainter extends CustomPainter {
       ..moveTo(-s * 0.07, -s * 0.48)
       ..quadraticBezierTo(0, -s * 0.52, s * 0.07, -s * 0.48)
       ..quadraticBezierTo(0, -s * 0.46, -s * 0.07, -s * 0.48);
-    canvas.drawPath(mouth, Paint()..color = const Color(0xFFBB1100));
+    WatercolorStyle.washFill(canvas, mouth, const Color(0xFFBB1100),
+        seed: 'mouth');
   }
 
   // ---------------------------------------------------------------------------
@@ -2777,7 +2752,6 @@ class _CompanionPreviewPainter extends CustomPainter {
     Color? tipColor,
   }) {
     final sign = isLeft ? -1.0 : 1.0;
-    final paint = Paint()..color = color;
     final wing = Path()
       ..moveTo(sign * size * 0.2, 0)
       ..cubicTo(
@@ -2807,7 +2781,8 @@ class _CompanionPreviewPainter extends CustomPainter {
     wing
       ..lineTo(sign * size * 0.1, size * 0.05)
       ..close();
-    canvas.drawPath(wing, paint);
+    WatercolorStyle.washFill(canvas, wing, color,
+        seed: 'wing${isLeft ? 'L' : 'R'}');
 
     if (tipColor != null) {
       final tip = Path()
@@ -2822,7 +2797,8 @@ class _CompanionPreviewPainter extends CustomPainter {
         )
         ..lineTo(sign * size * (spread - 0.12), flapOffset - size * 0.12)
         ..close();
-      canvas.drawPath(tip, Paint()..color = tipColor);
+      WatercolorStyle.washFill(canvas, tip, tipColor,
+          seed: 'tip${isLeft ? 'L' : 'R'}');
     }
   }
 
@@ -2834,28 +2810,27 @@ class _CompanionPreviewPainter extends CustomPainter {
     Color bellyColor,
   ) {
     // Shadow.
-    canvas.drawOval(
-      Rect.fromCenter(
+    final bodyShadowPath = Path()
+      ..addOval(Rect.fromCenter(
         center: Offset(0, height * 0.08),
         width: width * 0.95,
         height: height * 0.6,
-      ),
-      Paint()..color = _darken(baseColor, 0.3),
-    );
+      ));
+    WatercolorStyle.softShadow(canvas, bodyShadowPath);
     // Main body.
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset.zero, width: width, height: height),
-      Paint()..color = baseColor,
-    );
+    final bodyPath = Path()
+      ..addOval(
+          Rect.fromCenter(center: Offset.zero, width: width, height: height));
+    WatercolorStyle.washFill(canvas, bodyPath, baseColor, seed: 'body');
+    WatercolorStyle.wetEdge(canvas, bodyPath, baseColor, opacity: 0.18);
     // Belly.
-    canvas.drawOval(
-      Rect.fromCenter(
+    final bellyPath = Path()
+      ..addOval(Rect.fromCenter(
         center: Offset(0, height * 0.06),
         width: width * 0.6,
         height: height * 0.45,
-      ),
-      Paint()..color = bellyColor,
-    );
+      ));
+    WatercolorStyle.washFill(canvas, bellyPath, bellyColor, seed: 'belly');
     // Top highlight.
     canvas.drawOval(
       Rect.fromCenter(
@@ -2946,7 +2921,7 @@ class _CompanionPreviewPainter extends CustomPainter {
         )
         ..close();
     }
-    canvas.drawPath(upperBeak, Paint()..color = color);
+    WatercolorStyle.washFill(canvas, upperBeak, color, seed: 'beak');
     final lower = Path()
       ..moveTo(tip.dx - size * 0.25, tip.dy + size * 0.45)
       ..quadraticBezierTo(
@@ -2956,7 +2931,8 @@ class _CompanionPreviewPainter extends CustomPainter {
         tip.dy + size * 0.45,
       )
       ..close();
-    canvas.drawPath(lower, Paint()..color = _darken(color, 0.2));
+    WatercolorStyle.washFill(canvas, lower, _darken(color, 0.2),
+        seed: 'beak_lower');
   }
 
   void _drawTailFeathers(
@@ -2985,7 +2961,7 @@ class _CompanionPreviewPainter extends CustomPainter {
         )
         ..close();
       final featherColor = i.isEven ? color : _darken(color, 0.1);
-      canvas.drawPath(feather, Paint()..color = featherColor);
+      WatercolorStyle.washFill(canvas, feather, featherColor, seed: 'tail$i');
     }
   }
 
