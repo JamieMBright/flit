@@ -20,7 +20,8 @@ import '../guide/gameplay_guide_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
 import '../matchmaking/find_challenger_screen.dart';
 import '../play/practice_screen.dart';
-import '../play/region_select_screen.dart';
+import '../../game/map/region.dart';
+import '../play/free_flight_setup_screen.dart';
 import '../profile/profile_screen.dart';
 import '../quiz/daily_briefing_screen.dart';
 import '../quiz/flight_school_screen.dart';
@@ -437,8 +438,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   icon: Icons.today_rounded,
                   isHighlighted: true,
                   isRedHighlighted: true,
-                  onTap: () =>
-                      _closeSheetAndNavigate(ctx, const DailyChallengeScreen()),
+                  onTap: () => _closeSheetAndNavigate(
+                    ctx,
+                    const DailyChallengeScreen(),
+                  ),
                 ),
                 const SizedBox(height: 10),
               ],
@@ -448,16 +451,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 icon: Icons.assignment_rounded,
                 isHighlighted: true,
                 isRedHighlighted: true,
-                onTap: () =>
-                    _closeSheetAndNavigate(ctx, const DailyBriefingScreen()),
+                onTap: () => _closeSheetAndNavigate(
+                  ctx,
+                  const DailyBriefingScreen(),
+                ),
               ),
               const SizedBox(height: 10),
               _GameModeCard(
                 title: 'Free Flight',
                 subtitle: 'Explore the world at your own pace',
                 icon: Icons.flight_takeoff,
-                onTap: () =>
-                    _closeSheetAndNavigate(ctx, const RegionSelectScreen()),
+                onTap: () => _closeSheetAndNavigate(
+                  ctx,
+                  const FreeFlightSetupScreen(region: GameRegion.world),
+                ),
               ),
               const SizedBox(height: 10),
               _GameModeCard(
@@ -472,8 +479,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 title: 'Flight School',
                 subtitle: 'Quiz yourself on states, capitals & more',
                 icon: Icons.quiz_rounded,
-                onTap: () =>
-                    _closeSheetAndNavigate(ctx, const FlightSchoolScreen()),
+                onTap: () => _closeSheetAndNavigate(
+                  ctx,
+                  const FlightSchoolScreen(),
+                ),
               ),
               const SizedBox(height: 10),
               _GameModeCard(
@@ -488,8 +497,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   title: 'Find a Challenger',
                   subtitle: 'Matchmake against pilots at your level',
                   icon: Icons.radar,
-                  onTap: () =>
-                      _closeSheetAndNavigate(ctx, const FindChallengerScreen()),
+                  onTap: () => _closeSheetAndNavigate(
+                    ctx,
+                    const FindChallengerScreen(),
+                  ),
                 ),
                 const SizedBox(height: 10),
               ],
@@ -623,7 +634,10 @@ class _GlobeBackgroundPainter extends CustomPainter {
       ..shader = RadialGradient(
         center: const Alignment(0.4, 0.5),
         radius: 0.9,
-        colors: [Colors.transparent, const Color(0xFF000000).withOpacity(0.25)],
+        colors: [
+          Colors.transparent,
+          const Color(0xFF000000).withOpacity(0.25),
+        ],
         stops: const [0.3, 1.0],
       ).createShader(Rect.fromCircle(center: globeCenter, radius: globeR));
     canvas.drawCircle(globeCenter, globeR, sphereShadow);
@@ -633,7 +647,10 @@ class _GlobeBackgroundPainter extends CustomPainter {
       ..shader = RadialGradient(
         center: const Alignment(-0.45, -0.5),
         radius: 0.5,
-        colors: [const Color(0xFF88CCFF).withOpacity(0.18), Colors.transparent],
+        colors: [
+          const Color(0xFF88CCFF).withOpacity(0.18),
+          Colors.transparent,
+        ],
       ).createShader(Rect.fromCircle(center: globeCenter, radius: globeR));
     canvas.drawCircle(globeCenter, globeR, specular);
 
@@ -876,7 +893,9 @@ class _GlobeBackgroundPainter extends CustomPainter {
           Colors.transparent,
         ],
         stops: const [0.0, 0.88, 0.96, 1.0],
-      ).createShader(Rect.fromCircle(center: globeCenter, radius: globeR + 2));
+      ).createShader(
+        Rect.fromCircle(center: globeCenter, radius: globeR + 2),
+      );
     canvas.drawCircle(globeCenter, globeR + 2, rimPaint);
 
     // Globe edge (subtle ring)
@@ -922,7 +941,10 @@ class _GlobeBackgroundPainter extends CustomPainter {
 
     // Arc from N. America to Europe
     final path = Path()
-      ..moveTo(globeCenter.dx - globeR * 0.30, globeCenter.dy - globeR * 0.26)
+      ..moveTo(
+        globeCenter.dx - globeR * 0.30,
+        globeCenter.dy - globeR * 0.26,
+      )
       ..cubicTo(
         globeCenter.dx - globeR * 0.10,
         globeCenter.dy - globeR * 0.60,
@@ -979,7 +1001,10 @@ class _GlobeBackgroundPainter extends CustomPainter {
 
     // Second fainter arc: Europe to Asia
     final path2 = Path()
-      ..moveTo(globeCenter.dx + globeR * 0.14, globeCenter.dy - globeR * 0.28)
+      ..moveTo(
+        globeCenter.dx + globeR * 0.14,
+        globeCenter.dy - globeR * 0.28,
+      )
       ..cubicTo(
         globeCenter.dx + globeR * 0.24,
         globeCenter.dy - globeR * 0.50,

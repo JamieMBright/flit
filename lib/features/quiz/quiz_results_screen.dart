@@ -550,7 +550,56 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
 
   // ── Bottom bar ──────────────────────────────────────────────────────────
 
-  Widget _buildBottomBar() => Container(
+  bool get _isDailyBriefing => widget.dailyBriefingDateKey != null;
+
+  Widget _buildBottomBar() {
+    // Daily briefings are one-attempt-per-day — show a single DONE button
+    // instead of PLAY AGAIN / CHANGE MODE.
+    if (_isDailyBriefing) {
+      return _buildDailyBriefingBottomBar();
+    }
+    return _buildDefaultBottomBar();
+  }
+
+  Widget _buildDailyBriefingBottomBar() => Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        decoration: const BoxDecoration(
+          color: FlitColors.backgroundMid,
+          border: Border(top: BorderSide(color: FlitColors.cardBorder)),
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: FlitColors.success,
+              foregroundColor: FlitColors.textPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 4,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.check_circle, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'DONE',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+  Widget _buildDefaultBottomBar() => Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         decoration: const BoxDecoration(
           color: FlitColors.backgroundMid,
