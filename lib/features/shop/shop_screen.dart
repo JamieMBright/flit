@@ -144,6 +144,11 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
               children: [
                 Column(
                   children: [
+                    const _CategoryHeader(
+                      icon: Icons.flight,
+                      text:
+                          'Choose your aircraft — balance handling, speed and fuel efficiency for the journey ahead.',
+                    ),
                     _MysteryPlaneButton(
                       coins: coins,
                       ownedIds: ownedIds,
@@ -169,25 +174,47 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
                     ),
                   ],
                 ),
-                _CosmeticGrid(
-                  items: CosmeticCatalog.contrails,
-                  ownedIds: ownedIds,
-                  equippedId: equippedContrail,
-                  coins: coins,
-                  level: level,
-                  onPurchase: _purchaseItem,
-                  onEquip: _equipContrail,
-                  economyConfig: _economyConfig,
+                Column(
+                  children: [
+                    const _CategoryHeader(
+                      icon: Icons.auto_awesome,
+                      text:
+                          'Leave your mark in the sky — pick a contrail that trails behind your plane as you fly.',
+                    ),
+                    Expanded(
+                      child: _CosmeticGrid(
+                        items: CosmeticCatalog.contrails,
+                        ownedIds: ownedIds,
+                        equippedId: equippedContrail,
+                        coins: coins,
+                        level: level,
+                        onPurchase: _purchaseItem,
+                        onEquip: _equipContrail,
+                        economyConfig: _economyConfig,
+                      ),
+                    ),
+                  ],
                 ),
-                _CosmeticGrid(
-                  items: CosmeticCatalog.companions,
-                  ownedIds: ownedIds,
-                  equippedId: equippedCompanion,
-                  coins: coins,
-                  level: level,
-                  onPurchase: _purchaseItem,
-                  onEquip: _equipCompanion,
-                  economyConfig: _economyConfig,
+                Column(
+                  children: [
+                    const _CategoryHeader(
+                      icon: Icons.pets,
+                      text:
+                          'Pick a companion to fly by your side — when fuel runs low, they\'ll fetch extra to keep you airborne.',
+                    ),
+                    Expanded(
+                      child: _CosmeticGrid(
+                        items: CosmeticCatalog.companions,
+                        ownedIds: ownedIds,
+                        equippedId: equippedCompanion,
+                        coins: coins,
+                        level: level,
+                        onPurchase: _purchaseItem,
+                        onEquip: _equipCompanion,
+                        economyConfig: _economyConfig,
+                      ),
+                    ),
+                  ],
                 ),
                 _GoldShopTab(economyConfig: _economyConfig),
               ],
@@ -257,6 +284,45 @@ String _rarityLabel(CosmeticRarity rarity) {
       return 'EPIC';
     case CosmeticRarity.legendary:
       return 'LEGENDARY';
+  }
+}
+
+// =============================================================================
+// Category header — descriptive banner above each shop tab
+// =============================================================================
+
+class _CategoryHeader extends StatelessWidget {
+  const _CategoryHeader({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: FlitColors.backgroundMid,
+        border: Border(bottom: BorderSide(color: Color(0xFF2A2A2A))),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: FlitColors.textMuted, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 13,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -677,7 +743,9 @@ class _MysteryPlaneButton extends StatelessWidget {
                       ),
                       title: Text(
                         'You got: ${plane.name}!',
-                        style: const TextStyle(color: FlitColors.textPrimary),
+                        style: const TextStyle(
+                          color: FlitColors.textPrimary,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       content: Column(
@@ -689,7 +757,10 @@ class _MysteryPlaneButton extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: FlitColors.backgroundMid,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: rarityCol, width: 2),
+                              border: Border.all(
+                                color: rarityCol,
+                                width: 2,
+                              ),
                             ),
                             child: CustomPaint(
                               size: const Size(100, 100),
@@ -1019,7 +1090,10 @@ class _CosmeticGrid extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'You need $deficit more coins to buy this!',
-                style: const TextStyle(color: FlitColors.error, fontSize: 13),
+                style: const TextStyle(
+                  color: FlitColors.error,
+                  fontSize: 13,
+                ),
               ),
             ],
           ],
@@ -1044,7 +1118,9 @@ class _CosmeticGrid extends StatelessWidget {
                   ? FlitColors.accent
                   : FlitColors.textMuted.withOpacity(0.3),
               foregroundColor: FlitColors.textPrimary,
-              disabledBackgroundColor: FlitColors.textMuted.withOpacity(0.3),
+              disabledBackgroundColor: FlitColors.textMuted.withOpacity(
+                0.3,
+              ),
               disabledForegroundColor: FlitColors.textMuted,
             ),
             child: const Text('Buy'),
@@ -1063,7 +1139,9 @@ class _CosmeticGrid extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: FlitColors.gold,
               foregroundColor: FlitColors.backgroundDark,
-              disabledBackgroundColor: FlitColors.textMuted.withOpacity(0.3),
+              disabledBackgroundColor: FlitColors.textMuted.withOpacity(
+                0.3,
+              ),
               disabledForegroundColor: FlitColors.textMuted,
             ),
           ),
@@ -1097,7 +1175,9 @@ class _CosmeticGrid extends StatelessWidget {
                 hintText: 'Friend\'s username',
                 hintStyle: const TextStyle(color: FlitColors.textMuted),
                 prefixText: '@',
-                prefixStyle: const TextStyle(color: FlitColors.textSecondary),
+                prefixStyle: const TextStyle(
+                  color: FlitColors.textSecondary,
+                ),
                 filled: true,
                 fillColor: FlitColors.backgroundMid,
                 border: OutlineInputBorder(
@@ -2217,7 +2297,12 @@ class _CompanionPreviewPainter extends CustomPainter {
           s * t * 1.5,
           s * (0.75 + i * 0.06),
         )
-        ..quadraticBezierTo(s * t, s * (0.6 + i * 0.03), s * t * 0.5, s * 0.2)
+        ..quadraticBezierTo(
+          s * t,
+          s * (0.6 + i * 0.03),
+          s * t * 0.5,
+          s * 0.2,
+        )
         ..close();
       canvas.drawPath(
         tongue,
@@ -2389,7 +2474,12 @@ class _CompanionPreviewPainter extends CustomPainter {
           -s * 0.08,
         )
         ..lineTo(sign * s * 1.05, -s * 0.15)
-        ..quadraticBezierTo(sign * s * 0.7, s * 0.05, sign * s * 0.15, s * 0.02)
+        ..quadraticBezierTo(
+          sign * s * 0.7,
+          s * 0.05,
+          sign * s * 0.15,
+          s * 0.02,
+        )
         ..close();
       canvas.drawPath(
         membrane,
@@ -2552,7 +2642,14 @@ class _CompanionPreviewPainter extends CustomPainter {
     // Tail belly stripe.
     final tailBelly = Path()
       ..moveTo(-s * 0.03, s * 0.3)
-      ..cubicTo(-s * 0.04, s * 0.55, -s * 0.06, s * 0.75, -s * 0.03, s * 0.82)
+      ..cubicTo(
+        -s * 0.04,
+        s * 0.55,
+        -s * 0.06,
+        s * 0.75,
+        -s * 0.03,
+        s * 0.82,
+      )
       ..lineTo(s * 0.03, s * 0.82)
       ..cubicTo(s * 0.06, s * 0.75, s * 0.04, s * 0.55, s * 0.03, s * 0.3)
       ..close();
@@ -2604,7 +2701,12 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..moveTo(sign * s * 0.35, -s * 0.05)
         ..lineTo(sign * s * 0.82, -s * 0.35)
         ..lineTo(sign * s * 1.0, -s * 0.12)
-        ..quadraticBezierTo(sign * s * 0.6, s * 0.06, sign * s * 0.15, s * 0.03)
+        ..quadraticBezierTo(
+          sign * s * 0.6,
+          s * 0.06,
+          sign * s * 0.15,
+          s * 0.03,
+        )
         ..close();
       canvas.drawPath(
         inner,
@@ -2670,7 +2772,14 @@ class _CompanionPreviewPainter extends CustomPainter {
     // Head.
     final snout = Path()
       ..moveTo(-s * 0.14, -s * 0.33)
-      ..cubicTo(-s * 0.08, -s * 0.52, s * 0.08, -s * 0.52, s * 0.14, -s * 0.33)
+      ..cubicTo(
+        -s * 0.08,
+        -s * 0.52,
+        s * 0.08,
+        -s * 0.52,
+        s * 0.14,
+        -s * 0.33,
+      )
       ..quadraticBezierTo(0, -s * 0.3, -s * 0.14, -s * 0.33);
     canvas.drawPath(snout, Paint()..color = deepOrange);
     canvas.drawCircle(
