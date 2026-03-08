@@ -25,6 +25,7 @@ import '../play/free_flight_setup_screen.dart';
 import '../profile/profile_screen.dart';
 import '../quiz/daily_briefing_screen.dart';
 import '../quiz/flight_school_screen.dart';
+import '../quiz/uncharted_setup_screen.dart';
 import '../shop/shop_screen.dart';
 import 'announcement_banner.dart';
 
@@ -482,6 +483,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 onTap: () => _closeSheetAndNavigate(
                   ctx,
                   const FlightSchoolScreen(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              _GameModeCard(
+                title: 'Uncharted',
+                subtitle: 'Type country names to reveal the map',
+                icon: Icons.explore,
+                onTap: () => _closeSheetAndNavigate(
+                  ctx,
+                  const UnchartedSetupScreen(),
                 ),
               ),
               const SizedBox(height: 10),
