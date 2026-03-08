@@ -289,6 +289,13 @@ class FlitGame extends FlameGame
     _fuel = (_fuel + 0.75).clamp(0.0, maxFuel);
   }
 
+  /// Companion delivers fuel after a fetch trip.
+  /// Amount is typically [CompanionRenderer.companionFuelGift] (12.5%).
+  void companionRefuel(double amount) {
+    if (!fuelEnabled) return;
+    _fuel = (_fuel + amount).clamp(0.0, maxFuel);
+  }
+
   /// Deduct fuel for using a hint. Returns false if tank is empty.
   bool useHintFuel() {
     if (!fuelEnabled) return true;
@@ -394,6 +401,10 @@ class FlitGame extends FlameGame
 
   /// Previous frame's heading — used to detect pole-crossing heading flips.
   double _prevHeading = 0;
+
+  /// Raw camera heading in math convention (radians). Used by components
+  /// (e.g. CompanionRenderer) that need the same reference frame as the plane.
+  double get cameraHeading => _cameraHeading;
 
   /// Navigation bearing for the camera position offset (radians).
   /// Includes chase camera lag.
