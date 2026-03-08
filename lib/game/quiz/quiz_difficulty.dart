@@ -66,40 +66,47 @@ extension QuizDifficultyExtension on QuizDifficulty {
     }
   }
 
-  /// Filter categories for US-specific regions by difficulty.
+  /// Easy categories (difficulty multiplier <= 1.3).
+  static const _easyCategories = {
+    QuizCategory.stateName,
+    QuizCategory.capital,
+    QuizCategory.nickname,
+    QuizCategory.landmark,
+    QuizCategory.mixed,
+  };
+
+  /// Hard categories (difficulty multiplier >= 1.4).
+  static const _hardCategories = {
+    QuizCategory.sportsTeam,
+    QuizCategory.celebrity,
+    QuizCategory.filmSetting,
+    QuizCategory.flagDescription,
+    QuizCategory.stateBird,
+    QuizCategory.stateFlower,
+    QuizCategory.motto,
+    QuizCategory.mixed,
+  };
+
+  /// Filter available categories by difficulty.
   /// Easy: only the easiest categories.
   /// Medium: all categories.
   /// Hard: only the hardest categories.
   List<QuizCategory> filterCategories(List<QuizCategory> available) {
-    // For non-US regions with only name/capital/mixed, return as-is
+    // Regions with only name/capital/mixed have no filtering to do.
     if (available.length <= 3) return available;
 
     switch (this) {
       case QuizDifficulty.easy:
-        return available
-            .where(
-              (c) =>
-                  c == QuizCategory.stateName ||
-                  c == QuizCategory.capital ||
-                  c == QuizCategory.nickname ||
-                  c == QuizCategory.landmark ||
-                  c == QuizCategory.mixed,
-            )
-            .toList();
+        final filtered =
+            available.where((c) => _easyCategories.contains(c)).toList();
+        return filtered.length >= 2 ? filtered : available;
       case QuizDifficulty.medium:
         return available;
       case QuizDifficulty.hard:
-        return available
-            .where(
-              (c) =>
-                  c == QuizCategory.flagDescription ||
-                  c == QuizCategory.motto ||
-                  c == QuizCategory.stateBird ||
-                  c == QuizCategory.stateFlower ||
-                  c == QuizCategory.filmSetting ||
-                  c == QuizCategory.mixed,
-            )
-            .toList();
+        final filtered =
+            available.where((c) => _hardCategories.contains(c)).toList();
+        // Fall back to all categories if filtering yields too few results.
+        return filtered.length >= 2 ? filtered : available;
     }
   }
 }

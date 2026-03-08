@@ -9,6 +9,7 @@ class CountyClueData {
     required this.famousLandmark,
     required this.gaaTeam,
     required this.nickname,
+    required this.flag,
   });
 
   final String province;
@@ -17,6 +18,7 @@ class CountyClueData {
   final String famousLandmark;
   final String gaaTeam;
   final String nickname;
+  final String flag;
 }
 
 abstract class IrelandClues {
@@ -29,6 +31,7 @@ abstract class IrelandClues {
       famousLandmark: 'GPO on O\'Connell Street',
       gaaTeam: 'The Dubs (Sky Blue)',
       nickname: 'The Pale',
+      flag: 'Sky blue with navy blue',
     ),
     'WW': CountyClueData(
       province: 'Leinster',
@@ -37,6 +40,7 @@ abstract class IrelandClues {
       famousLandmark: 'Glendalough Monastic Site',
       gaaTeam: 'The Garden County (Blue & Gold)',
       nickname: 'The Garden of Ireland',
+      flag: 'Blue and gold vertical stripes',
     ),
     'WX': CountyClueData(
       province: 'Leinster',
@@ -45,6 +49,7 @@ abstract class IrelandClues {
       famousLandmark: 'Hook Lighthouse',
       gaaTeam: 'The Model County (Purple & Gold)',
       nickname: 'The Model County',
+      flag: 'Purple and gold vertical stripes',
     ),
     'KK': CountyClueData(
       province: 'Leinster',
@@ -53,6 +58,7 @@ abstract class IrelandClues {
       famousLandmark: 'Kilkenny Castle',
       gaaTeam: 'The Cats (Black & Amber)',
       nickname: 'The Marble City',
+      flag: 'Black and amber vertical stripes',
     ),
     'CW': CountyClueData(
       province: 'Leinster',
@@ -61,6 +67,7 @@ abstract class IrelandClues {
       famousLandmark: 'Brownshill Dolmen',
       gaaTeam: 'The Scallion Eaters (Green, Red & Yellow)',
       nickname: 'The Dolmen County',
+      flag: 'Green, red, and yellow vertical stripes',
     ),
     'KE': CountyClueData(
       province: 'Leinster',
@@ -69,6 +76,7 @@ abstract class IrelandClues {
       famousLandmark: 'The Curragh Racecourse',
       gaaTeam: 'The Lilywhites (White)',
       nickname: 'The Thoroughbred County',
+      flag: 'All white',
     ),
     'MH': CountyClueData(
       province: 'Leinster',
@@ -77,6 +85,7 @@ abstract class IrelandClues {
       famousLandmark: 'Newgrange',
       gaaTeam: 'The Royals (Green & Gold)',
       nickname: 'The Royal County',
+      flag: 'Green and gold vertical stripes',
     ),
     'WH': CountyClueData(
       province: 'Leinster',
@@ -85,6 +94,7 @@ abstract class IrelandClues {
       famousLandmark: 'Athlone Castle',
       gaaTeam: 'The Lake County (Maroon & White)',
       nickname: 'The Lake County',
+      flag: 'Maroon and white vertical stripes',
     ),
     'LS': CountyClueData(
       province: 'Leinster',
@@ -93,6 +103,7 @@ abstract class IrelandClues {
       famousLandmark: 'Rock of Dunamase',
       gaaTeam: 'The O\'Moore County (Blue & White)',
       nickname: 'The O\'Moore County',
+      flag: 'Blue and white vertical stripes',
     ),
     'OY': CountyClueData(
       province: 'Leinster',
@@ -101,6 +112,7 @@ abstract class IrelandClues {
       famousLandmark: 'Clonmacnoise',
       gaaTeam: 'The Faithful County (Green, White & Gold)',
       nickname: 'The Faithful County',
+      flag: 'Green, white, and gold vertical stripes',
     ),
     'LD': CountyClueData(
       province: 'Leinster',
@@ -109,6 +121,7 @@ abstract class IrelandClues {
       famousLandmark: 'Corlea Trackway',
       gaaTeam: 'The Slashers (Blue & Gold)',
       nickname: 'The Midlands',
+      flag: 'Blue and gold vertical stripes',
     ),
     'LH': CountyClueData(
       province: 'Leinster',
@@ -117,6 +130,7 @@ abstract class IrelandClues {
       famousLandmark: 'Proleek Dolmen',
       gaaTeam: 'The Wee County (Red)',
       nickname: 'The Wee County',
+      flag: 'Red and white',
     ),
 
     // MUNSTER
@@ -127,6 +141,7 @@ abstract class IrelandClues {
       famousLandmark: 'Blarney Castle',
       gaaTeam: 'The Rebels (Red & White)',
       nickname: 'The Rebel County',
+      flag: 'Red and white vertical stripes',
     ),
     'KY': CountyClueData(
       province: 'Munster',
@@ -135,6 +150,7 @@ abstract class IrelandClues {
       famousLandmark: 'Gap of Dunloe',
       gaaTeam: 'The Kingdom (Green & Gold)',
       nickname: 'The Kingdom',
+      flag: 'Green and gold vertical stripes',
     ),
     'L': CountyClueData(
       province: 'Munster',
@@ -143,6 +159,7 @@ abstract class IrelandClues {
       famousLandmark: 'King John\'s Castle',
       gaaTeam: 'The Treaty County (Green & White)',
       nickname: 'The Treaty City',
+      flag: 'Green and white vertical stripes',
     ),
     'CE': CountyClueData(
       province: 'Munster',
@@ -151,6 +168,7 @@ abstract class IrelandClues {
       famousLandmark: 'Cliffs of Moher',
       gaaTeam: 'The Banner County (Saffron & Blue)',
       nickname: 'The Banner County',
+      flag: 'Saffron and blue vertical stripes',
     ),
     'T': CountyClueData(
       province: 'Munster',
@@ -159,6 +177,7 @@ abstract class IrelandClues {
       famousLandmark: 'Rock of Cashel',
       gaaTeam: 'The Premier County (Blue & Gold)',
       nickname: 'The Premier County',
+      flag: 'Blue and gold vertical stripes',
     ),
     'W': CountyClueData(
       province: 'Munster',
@@ -167,6 +186,7 @@ abstract class IrelandClues {
       famousLandmark: 'Waterford Crystal Factory',
       gaaTeam: 'The Déise (White & Blue)',
       nickname: 'The Déise',
+      flag: 'White and blue vertical stripes',
     ),
 
     // CONNACHT
@@ -177,6 +197,7 @@ abstract class IrelandClues {
       famousLandmark: 'Connemara National Park',
       gaaTeam: 'The Tribesmen (Maroon & White)',
       nickname: 'The City of the Tribes',
+      flag: 'Maroon and white vertical stripes',
     ),
     'MO': CountyClueData(
       province: 'Connacht',
@@ -185,6 +206,7 @@ abstract class IrelandClues {
       famousLandmark: 'Croagh Patrick',
       gaaTeam: 'The Green & Red',
       nickname: 'The Heather County',
+      flag: 'Green and red vertical stripes',
     ),
     'SO': CountyClueData(
       province: 'Connacht',
@@ -193,6 +215,7 @@ abstract class IrelandClues {
       famousLandmark: 'Ben Bulben',
       gaaTeam: 'The Yeats County (Black & White)',
       nickname: 'The Yeats County',
+      flag: 'Black and white vertical stripes',
     ),
     'RN': CountyClueData(
       province: 'Connacht',
@@ -201,6 +224,7 @@ abstract class IrelandClues {
       famousLandmark: 'Strokestown Park House',
       gaaTeam: 'The Rossies (Primrose & Blue)',
       nickname: 'The Rossies',
+      flag: 'Primrose and blue vertical stripes',
     ),
     'LM': CountyClueData(
       province: 'Connacht',
@@ -209,6 +233,7 @@ abstract class IrelandClues {
       famousLandmark: 'Glencar Waterfall',
       gaaTeam: 'Green & Gold',
       nickname: 'The Wild Rose County',
+      flag: 'Green and gold vertical stripes',
     ),
 
     // ULSTER (Republic of Ireland)
@@ -219,6 +244,7 @@ abstract class IrelandClues {
       famousLandmark: 'Slieve League Cliffs',
       gaaTeam: 'The Tír Chonaill (Green & Gold)',
       nickname: 'The Forgotten County',
+      flag: 'Green and gold vertical stripes',
     ),
     'CN': CountyClueData(
       province: 'Ulster',
@@ -227,6 +253,7 @@ abstract class IrelandClues {
       famousLandmark: 'Cuilcagh Mountain',
       gaaTeam: 'The Breffni County (Blue & White)',
       nickname: 'The Breffni County',
+      flag: 'Blue and white vertical stripes',
     ),
     'MN': CountyClueData(
       province: 'Ulster',
@@ -235,6 +262,7 @@ abstract class IrelandClues {
       famousLandmark: 'Rossmore Forest Park',
       gaaTeam: 'The Farney County (White & Blue)',
       nickname: 'The Farney County',
+      flag: 'White and blue vertical stripes',
     ),
 
     // ULSTER (Northern Ireland)
@@ -245,6 +273,7 @@ abstract class IrelandClues {
       famousLandmark: 'Giant\'s Causeway',
       gaaTeam: 'The Saffrons (Saffron & White)',
       nickname: 'The Glens',
+      flag: 'Saffron and white vertical stripes',
     ),
     'ARM': CountyClueData(
       province: 'Ulster',
@@ -253,6 +282,7 @@ abstract class IrelandClues {
       famousLandmark: 'Navan Fort',
       gaaTeam: 'The Orchard County (Orange & White)',
       nickname: 'The Orchard County',
+      flag: 'Orange and white vertical stripes',
     ),
     'DWN': CountyClueData(
       province: 'Ulster',
@@ -261,6 +291,7 @@ abstract class IrelandClues {
       famousLandmark: 'Mourne Mountains',
       gaaTeam: 'The Mourne County (Red & Black)',
       nickname: 'The Mourne County',
+      flag: 'Red and black vertical stripes',
     ),
     'FRM': CountyClueData(
       province: 'Ulster',
@@ -269,6 +300,7 @@ abstract class IrelandClues {
       famousLandmark: 'Marble Arch Caves',
       gaaTeam: 'The Erne County (Green & White)',
       nickname: 'The Lakeland County',
+      flag: 'Green and white vertical stripes',
     ),
     'LDY': CountyClueData(
       province: 'Ulster',
@@ -277,6 +309,7 @@ abstract class IrelandClues {
       famousLandmark: 'Derry City Walls',
       gaaTeam: 'The Oak Leaf County (Red & White)',
       nickname: 'The Maiden City',
+      flag: 'Red and white vertical stripes',
     ),
     'TYR': CountyClueData(
       province: 'Ulster',
@@ -285,6 +318,7 @@ abstract class IrelandClues {
       famousLandmark: 'Ulster American Folk Park',
       gaaTeam: 'The Red Hand County (White & Red)',
       nickname: 'The Red Hand County',
+      flag: 'White and red vertical stripes',
     ),
   };
 }
