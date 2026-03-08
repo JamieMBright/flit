@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/avatar_config.dart';
+import '../../game/rendering/watercolor_style.dart';
 
 /// Debug screen that renders every companion creature side-by-side at large
 /// scale with animated wing flapping.
@@ -244,16 +245,13 @@ class _CompanionPreviewPainter extends CustomPainter {
     const cream = Color(0xFFF5E8D0);
     const darkBrown = Color(0xFF6B5238);
 
-    canvas.drawOval(
-      Rect.fromCenter(
+    final shadowPath = Path()
+      ..addOval(Rect.fromCenter(
         center: const Offset(0.5, s * 0.22),
         width: s * 1.0,
         height: s * 0.3,
-      ),
-      Paint()
-        ..color = const Color(0xFF000000).withOpacity(0.1)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
-    );
+      ));
+    WatercolorStyle.softShadow(canvas, shadowPath);
 
     _drawTailFeathers(canvas, s, darkBrown, 3, 0.35, 0.12);
     _drawWing(canvas, s, flapOffset, darkBrown.withOpacity(0.85), true, 0.7, 2);
@@ -268,16 +266,21 @@ class _CompanionPreviewPainter extends CustomPainter {
     );
     _drawBody(canvas, s * 0.95, s * 0.6, brown, cream);
 
-    canvas.drawCircle(
-      const Offset(0, -s * 0.32),
-      s * 0.28,
-      Paint()..color = brown,
-    );
-    canvas.drawCircle(
-      const Offset(0, -s * 0.28),
-      s * 0.18,
-      Paint()..color = cream,
-    );
+    final pidgeyHeadPath = Path()
+      ..addOval(Rect.fromCircle(
+        center: const Offset(0, -s * 0.32),
+        radius: s * 0.28,
+      ));
+    WatercolorStyle.washFill(canvas, pidgeyHeadPath, brown,
+        seed: 'pidgey_head');
+    WatercolorStyle.wetEdge(canvas, pidgeyHeadPath, brown, opacity: 0.15);
+    final pidgeyFacePath = Path()
+      ..addOval(Rect.fromCircle(
+        center: const Offset(0, -s * 0.28),
+        radius: s * 0.18,
+      ));
+    WatercolorStyle.washFill(canvas, pidgeyFacePath, cream,
+        seed: 'pidgey_face');
     canvas.drawCircle(
       const Offset(-s * 0.05, -s * 0.42),
       s * 0.08,
@@ -328,27 +331,30 @@ class _CompanionPreviewPainter extends CustomPainter {
       ..quadraticBezierTo(s * 0.2, s * 0.55, s * 0.18, s * 0.7)
       ..quadraticBezierTo(s * 0.12, s * 0.5, s * 0.02, s * 0.35)
       ..close();
-    canvas.drawPath(leftFork, Paint()..color = navy);
-    canvas.drawPath(rightFork, Paint()..color = navy);
+    WatercolorStyle.washFill(canvas, leftFork, navy, seed: 'sparrow_lf');
+    WatercolorStyle.washFill(canvas, rightFork, navy, seed: 'sparrow_rf');
 
     _drawWing(canvas, s, flapOffset, navy.withOpacity(0.9), true, 0.85, 3);
     _drawWing(canvas, s, flapOffset, navy.withOpacity(0.9), false, 0.85, 3);
     _drawBody(canvas, s * 0.7, s * 0.5, navy, cream);
 
-    canvas.drawOval(
-      Rect.fromCenter(
+    final sparrowThroatPath = Path()
+      ..addOval(Rect.fromCenter(
         center: const Offset(0, -s * 0.05),
         width: s * 0.35,
         height: s * 0.15,
-      ),
-      Paint()..color = russet,
-    );
+      ));
+    WatercolorStyle.washFill(canvas, sparrowThroatPath, russet,
+        seed: 'sparrow_throat');
 
-    canvas.drawCircle(
-      const Offset(0, -s * 0.28),
-      s * 0.2,
-      Paint()..color = navy,
-    );
+    final sparrowHeadPath = Path()
+      ..addOval(Rect.fromCircle(
+        center: const Offset(0, -s * 0.28),
+        radius: s * 0.2,
+      ));
+    WatercolorStyle.washFill(canvas, sparrowHeadPath, navy,
+        seed: 'sparrow_head');
+    WatercolorStyle.wetEdge(canvas, sparrowHeadPath, navy, opacity: 0.15);
     canvas.drawCircle(
       const Offset(-s * 0.04, -s * 0.35),
       s * 0.06,
@@ -404,11 +410,13 @@ class _CompanionPreviewPainter extends CustomPainter {
 
     _drawBody(canvas, s * 0.75, s * 0.55, golden, _lighten(golden, 0.2));
 
-    canvas.drawCircle(
-      const Offset(0, -s * 0.3),
-      s * 0.22,
-      Paint()..color = white,
-    );
+    final eagleHeadPath = Path()
+      ..addOval(Rect.fromCircle(
+        center: const Offset(0, -s * 0.3),
+        radius: s * 0.22,
+      ));
+    WatercolorStyle.washFill(canvas, eagleHeadPath, white, seed: 'eagle_head');
+    WatercolorStyle.wetEdge(canvas, eagleHeadPath, white, opacity: 0.12);
     canvas.drawCircle(
       const Offset(-s * 0.04, -s * 0.38),
       s * 0.07,
@@ -450,7 +458,8 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..quadraticBezierTo(i * s * 0.04, s * 0.6, i * s * 0.02, s * 0.25)
         ..close();
       final c = [scarlet, blue, green][i + 1];
-      canvas.drawPath(streamer, Paint()..color = c.withOpacity(0.8));
+      WatercolorStyle.washFill(canvas, streamer, c.withOpacity(0.85),
+          seed: 'parrot_tail_$i');
     }
 
     _drawWing(
@@ -476,19 +485,21 @@ class _CompanionPreviewPainter extends CustomPainter {
 
     _drawBody(canvas, s * 0.7, s * 0.5, scarlet, gold.withOpacity(0.5));
 
-    canvas.drawCircle(
-      const Offset(0, -s * 0.28),
-      s * 0.22,
-      Paint()..color = scarlet,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
+    final parrotHeadPath = Path()
+      ..addOval(Rect.fromCircle(
+        center: const Offset(0, -s * 0.28),
+        radius: s * 0.22,
+      ));
+    WatercolorStyle.washFill(canvas, parrotHeadPath, scarlet, seed: 'parrot_h');
+    WatercolorStyle.wetEdge(canvas, parrotHeadPath, scarlet, opacity: 0.15);
+    final parrotFacePath = Path()
+      ..addOval(Rect.fromCenter(
         center: const Offset(0, -s * 0.25),
         width: s * 0.3,
         height: s * 0.2,
-      ),
-      Paint()..color = const Color(0xFFF8F4F0),
-    );
+      ));
+    WatercolorStyle.washFill(canvas, parrotFacePath, const Color(0xFFF8F4F0),
+        seed: 'parrot_face');
     canvas.drawCircle(
       const Offset(-s * 0.04, -s * 0.36),
       s * 0.06,
@@ -534,7 +545,8 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..close();
       final t = (i + 2) / 4.0;
       final c = Color.lerp(flameRed, flameYellow, t)!;
-      canvas.drawPath(streamer, Paint()..color = c.withOpacity(0.7));
+      WatercolorStyle.washFill(canvas, streamer, c.withOpacity(0.7),
+          seed: 'phx_tail_$i');
     }
 
     _drawWing(
@@ -560,10 +572,19 @@ class _CompanionPreviewPainter extends CustomPainter {
 
     _drawBody(canvas, s * 0.7, s * 0.5, goldenOrange, flameYellow);
 
-    canvas.drawCircle(
+    final phxHeadPath = Path()
+      ..addOval(Rect.fromCircle(
+        center: const Offset(0, -s * 0.3),
+        radius: s * 0.22,
+      ));
+    WatercolorStyle.washFill(canvas, phxHeadPath, goldenOrange,
+        seed: 'phx_head');
+    WatercolorStyle.auraGlow(
+      canvas,
       const Offset(0, -s * 0.3),
-      s * 0.22,
-      Paint()..color = goldenOrange,
+      s * 0.35,
+      flameYellow,
+      opacity: 0.18,
     );
     canvas.drawCircle(
       const Offset(-s * 0.04, -s * 0.38),
@@ -603,7 +624,7 @@ class _CompanionPreviewPainter extends CustomPainter {
       ..cubicTo(-s * 0.1, s * 0.5, s * 0.15, s * 0.7, -s * 0.05, s * 0.9)
       ..cubicTo(-s * 0.08, s * 0.75, s * 0.08, s * 0.5, 0, s * 0.25)
       ..close();
-    canvas.drawPath(tail, Paint()..color = darkPurple);
+    WatercolorStyle.washFill(canvas, tail, darkPurple, seed: 'drag_tail');
 
     // Scaled wings.
     _drawWing(
@@ -652,11 +673,13 @@ class _CompanionPreviewPainter extends CustomPainter {
       }
     }
 
-    canvas.drawCircle(
-      const Offset(0, -s * 0.28),
-      s * 0.2,
-      Paint()..color = purple,
-    );
+    final dragHeadPath = Path()
+      ..addOval(Rect.fromCircle(
+        center: const Offset(0, -s * 0.28),
+        radius: s * 0.2,
+      ));
+    WatercolorStyle.washFill(canvas, dragHeadPath, purple, seed: 'drag_head');
+    WatercolorStyle.wetEdge(canvas, dragHeadPath, purple, opacity: 0.15);
     canvas.drawCircle(
       const Offset(-s * 0.04, -s * 0.36),
       s * 0.06,
@@ -689,7 +712,7 @@ class _CompanionPreviewPainter extends CustomPainter {
           -s * 0.38,
         )
         ..close();
-      canvas.drawPath(horn, Paint()..color = darkPurple);
+      WatercolorStyle.washFill(canvas, horn, darkPurple, seed: 'drag_horn');
     }
 
     // Fire breath effect.
@@ -709,7 +732,15 @@ class _CompanionPreviewPainter extends CustomPainter {
         -s * 0.45,
       )
       ..close();
-    canvas.drawPath(flame, Paint()..color = teal.withOpacity(0.5));
+    WatercolorStyle.washFill(canvas, flame, teal.withOpacity(0.5),
+        seed: 'drag_flame');
+    WatercolorStyle.auraGlow(
+      canvas,
+      Offset(0, -s * 0.55 * breathScale),
+      s * 0.15,
+      teal,
+      opacity: 0.2,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -728,7 +759,7 @@ class _CompanionPreviewPainter extends CustomPainter {
       ..quadraticBezierTo(-s * 0.08, s * 0.55, -s * 0.05, s * 0.7)
       ..quadraticBezierTo(s * 0.02, s * 0.55, 0, s * 0.25)
       ..close();
-    canvas.drawPath(tail, Paint()..color = darkOrange);
+    WatercolorStyle.washFill(canvas, tail, darkOrange, seed: 'char_tail');
 
     final breathScale = 0.8 + sin(breathPhase) * 0.2;
     final flameTip = Path()
@@ -741,9 +772,15 @@ class _CompanionPreviewPainter extends CustomPainter {
       )
       ..quadraticBezierTo(s * 0.05, s * 0.8 * breathScale, -s * 0.02, s * 0.65)
       ..close();
-    canvas.drawPath(
-      flameTip,
-      Paint()..color = const Color(0xFFFFAA30).withOpacity(0.8),
+    WatercolorStyle.washFill(
+        canvas, flameTip, const Color(0xFFFFAA30).withOpacity(0.8),
+        seed: 'char_flame');
+    WatercolorStyle.auraGlow(
+      canvas,
+      Offset(-s * 0.03, s * 0.75 * breathScale),
+      s * 0.12,
+      const Color(0xFFFFAA30),
+      opacity: 0.2,
     );
 
     _drawWing(
@@ -769,11 +806,13 @@ class _CompanionPreviewPainter extends CustomPainter {
 
     _drawBody(canvas, s * 0.65, s * 0.5, orange, cream);
 
-    canvas.drawCircle(
-      const Offset(0, -s * 0.28),
-      s * 0.2,
-      Paint()..color = orange,
-    );
+    final charHeadPath = Path()
+      ..addOval(Rect.fromCircle(
+        center: const Offset(0, -s * 0.28),
+        radius: s * 0.2,
+      ));
+    WatercolorStyle.washFill(canvas, charHeadPath, orange, seed: 'char_head');
+    WatercolorStyle.wetEdge(canvas, charHeadPath, orange, opacity: 0.15);
     canvas.drawCircle(
       const Offset(-s * 0.04, -s * 0.36),
       s * 0.06,
@@ -802,7 +841,7 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..lineTo(sign * s * 0.2, -s * 0.52)
         ..lineTo(sign * s * 0.1, -s * 0.38)
         ..close();
-      canvas.drawPath(spike, Paint()..color = darkOrange);
+      WatercolorStyle.washFill(canvas, spike, darkOrange, seed: 'char_spike');
     }
   }
 
@@ -851,7 +890,9 @@ class _CompanionPreviewPainter extends CustomPainter {
     wing
       ..lineTo(sign * size * 0.1, size * 0.05)
       ..close();
-    canvas.drawPath(wing, paint);
+    WatercolorStyle.washFill(canvas, wing, paint.color,
+        seed: isLeft ? 'wing_l' : 'wing_r');
+    WatercolorStyle.wetEdge(canvas, wing, paint.color, opacity: 0.2);
 
     if (tipColor != null) {
       final tip = Path()
@@ -866,7 +907,7 @@ class _CompanionPreviewPainter extends CustomPainter {
         )
         ..lineTo(sign * size * (spread - 0.12), flapOffset - size * 0.12)
         ..close();
-      canvas.drawPath(tip, Paint()..color = tipColor);
+      WatercolorStyle.washFill(canvas, tip, tipColor, seed: 'tip');
     }
   }
 
@@ -877,26 +918,25 @@ class _CompanionPreviewPainter extends CustomPainter {
     Color baseColor,
     Color bellyColor,
   ) {
-    canvas.drawOval(
-      Rect.fromCenter(
+    final shadowPath = Path()
+      ..addOval(Rect.fromCenter(
         center: Offset(0, height * 0.08),
         width: width * 0.95,
         height: height * 0.6,
-      ),
-      Paint()..color = _darken(baseColor, 0.3),
-    );
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset.zero, width: width, height: height),
-      Paint()..color = baseColor,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
+      ));
+    WatercolorStyle.softShadow(canvas, shadowPath);
+    final bodyPath = Path()
+      ..addOval(
+          Rect.fromCenter(center: Offset.zero, width: width, height: height));
+    WatercolorStyle.washFill(canvas, bodyPath, baseColor, seed: 'body');
+    WatercolorStyle.wetEdge(canvas, bodyPath, baseColor, opacity: 0.18);
+    final bellyPath = Path()
+      ..addOval(Rect.fromCenter(
         center: Offset(0, height * 0.06),
         width: width * 0.6,
         height: height * 0.45,
-      ),
-      Paint()..color = bellyColor,
-    );
+      ));
+    WatercolorStyle.washFill(canvas, bellyPath, bellyColor, seed: 'belly');
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(0, -height * 0.12),
@@ -986,7 +1026,7 @@ class _CompanionPreviewPainter extends CustomPainter {
         )
         ..close();
     }
-    canvas.drawPath(upperBeak, Paint()..color = color);
+    WatercolorStyle.washFill(canvas, upperBeak, color, seed: 'beak');
     final lower = Path()
       ..moveTo(tip.dx - size * 0.25, tip.dy + size * 0.45)
       ..quadraticBezierTo(
@@ -996,7 +1036,8 @@ class _CompanionPreviewPainter extends CustomPainter {
         tip.dy + size * 0.45,
       )
       ..close();
-    canvas.drawPath(lower, Paint()..color = _darken(color, 0.2));
+    WatercolorStyle.washFill(canvas, lower, _darken(color, 0.2),
+        seed: 'beak_lower');
   }
 
   void _drawTailFeathers(
@@ -1025,7 +1066,7 @@ class _CompanionPreviewPainter extends CustomPainter {
         )
         ..close();
       final featherColor = i.isEven ? color : _darken(color, 0.1);
-      canvas.drawPath(feather, Paint()..color = featherColor);
+      WatercolorStyle.washFill(canvas, feather, featherColor, seed: 'tail_$i');
     }
   }
 
