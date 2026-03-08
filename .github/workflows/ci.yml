@@ -19,9 +19,54 @@ env:
   FLUTTER_VERSION: '3.29.3'
 
 jobs:
-  # ── Lint, Test, Security (single job, one flutter create) ──
-  lint-and-test:
-    name: Lint, Test & Security
+  # ── Lint & Format (advisory, non-blocking, runs in parallel) ──
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Check code formatting
+        run: dart format --set-exit-if-changed lib/ test/
+        continue-on-error: true
+
+      - name: Analyze
+        run: flutter analyze --fatal-warnings
+        continue-on-error: true
+
+      - name: Security — check for hardcoded secrets
+        run: |
+          if grep -rn "AKIA\|sk_live\|sk_test\|password\s*=\s*['\"]" lib/ --include="*.dart" | grep -v "test_accounts.dart"; then
+            echo "ERROR: Potential hardcoded secrets found"
+            exit 1
+          else
+            echo "No hardcoded secrets detected"
+          fi
+
+      - name: Security — dependency audit
+        run: flutter pub outdated
+
+  # ── Unit Tests (blocking gate, runs in parallel with builds) ──
+  test:
+    name: Unit Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,14 +96,6 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Check code formatting
-        run: dart format --set-exit-if-changed lib/ test/
-        continue-on-error: true
-
-      - name: Analyze
-        run: flutter analyze --fatal-warnings
-        continue-on-error: true
-
       - name: Unit tests
         run: flutter test --coverage
 
@@ -68,23 +105,10 @@ jobs:
           files: coverage/lcov.info
           fail_ci_if_error: false
 
-      - name: Security — check for hardcoded secrets
-        run: |
-          if grep -rn "AKIA\|sk_live\|sk_test\|password\s*=\s*['\"]" lib/ --include="*.dart" | grep -v "test_accounts.dart"; then
-            echo "ERROR: Potential hardcoded secrets found"
-            exit 1
-          else
-            echo "No hardcoded secrets detected"
-          fi
-
-      - name: Security — dependency audit
-        run: flutter pub outdated
-
-  # ── Build Web (also validates shader compilation for WebGL) ──
+  # ── Build Web (runs in parallel with test + lint) ──
   build-web:
     name: Build Web
     runs-on: ubuntu-latest
-    needs: lint-and-test
     steps:
       - uses: actions/checkout@v4
 
@@ -111,19 +135,6 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Increase swap space
-        run: |
-          # GitHub runners already have a swapfile; resize it for dart2js
-          sudo swapoff /swapfile || true
-          sudo rm -f /swapfile
-          sudo fallocate -l 8G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          echo "Swap enabled:"
-          swapon --show
-          free -h
 
       - name: Verify shader assets
         run: test -f shaders/globe.frag && echo "globe.frag OK"
@@ -171,11 +182,10 @@ jobs:
           path: flutter-build.log
           retention-days: 7
 
-  # ── Build Android (validates shader compilation for GLES/Vulkan) ──
+  # ── Build Android (runs in parallel with test + lint) ──
   build-android:
     name: Build Android
     runs-on: ubuntu-latest
-    needs: lint-and-test
     steps:
       - uses: actions/checkout@v4
 
@@ -200,6 +210,15 @@ jobs:
           key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-${{ runner.os }}-
 
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/build.gradle', 'android/app/build.gradle', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
       - name: Ensure android platform files exist
         run: |
           if [ ! -d android ]; then
@@ -217,19 +236,19 @@ jobs:
           if [ -n "$VERCEL_ERRORS_API_KEY" ]; then
             DART_DEFINES="--dart-define=VERCEL_ERRORS_API_KEY=$VERCEL_ERRORS_API_KEY"
           fi
-          flutter build apk --release $DART_DEFINES
+          flutter build apk --release --split-per-abi --target-platform android-arm64 $DART_DEFINES
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-build
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           retention-days: 7
 
-  # ── Deploy to GitHub Pages ──
+  # ── Deploy to GitHub Pages (waits for tests + web build) ──
   deploy:
     name: Deploy
-    needs: build-web
+    needs: [test, build-web]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -262,7 +281,7 @@ jobs:
   # ── Deploy to Vercel (only after CI passes on main) ──
   deploy-vercel:
     name: Deploy Vercel
-    needs: [build-web]
+    needs: [test, build-web]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
