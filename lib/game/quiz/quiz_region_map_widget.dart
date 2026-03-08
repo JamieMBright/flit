@@ -117,6 +117,11 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
     // so localPosition is already in content coordinates. No inverse
     // transform needed — applying one would double-invert and shift the
     // tap point proportionally to the zoom level.
+    //
+    // However, the actual zoom scale IS needed so that tiny-area marker
+    // hit targets shrink as the user zooms in (countries that are too
+    // small to tap at 1× become normal polygons at 5×).
+    final scale = _transformController.value.getMaxScaleOnAxis();
     final painter = _RegionMapPainter(
       region: widget.region,
       stateVisuals: widget.stateVisuals,
@@ -125,7 +130,7 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
       showLabels: widget.showLabels,
       eliminatedCodes: widget.eliminatedCodes,
       correctCodes: widget.correctCodes,
-      zoomScale: 1.0,
+      zoomScale: scale,
       satelliteImage: _satelliteImage,
     );
 
@@ -467,8 +472,8 @@ class _RegionMapPainter extends CustomPainter {
       if (cp.dy < minY) minY = cp.dy;
       if (cp.dy > maxY) maxY = cp.dy;
     }
-    final w = (maxX - minX) / zoomScale;
-    final h = (maxY - minY) / zoomScale;
+    final w = (maxX - minX) * zoomScale;
+    final h = (maxY - minY) * zoomScale;
     return w < _tinyThreshold && h < _tinyThreshold;
   }
 

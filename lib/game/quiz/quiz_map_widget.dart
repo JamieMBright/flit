@@ -155,6 +155,10 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
     // so localPosition is already in content coordinates. No inverse
     // transform needed — applying one would double-invert and shift the
     // tap point proportionally to the zoom level.
+    //
+    // Pass the real zoom scale so any zoom-dependent hit-test logic
+    // (e.g. stroke tolerance) uses the correct value.
+    final scale = _transformController.value.getMaxScaleOnAxis();
     final painter = _UsaMapPainter(
       stateVisuals: widget.stateVisuals,
       highlightCode: widget.highlightCode,
@@ -162,7 +166,7 @@ class _QuizMapWidgetState extends State<QuizMapWidget>
       showLabels: widget.showLabels,
       eliminatedCodes: widget.eliminatedCodes,
       correctCodes: widget.correctCodes,
-      zoomScale: 1.0,
+      zoomScale: scale,
       satelliteImage: _satelliteImage,
     );
 
