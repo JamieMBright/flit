@@ -1697,42 +1697,42 @@ class _TurnButtonState extends State<_TurnButton> {
 
   @override
   Widget build(BuildContext context) => Listener(
-    onPointerDown: (_) {
-      setState(() => _pressed = true);
-      widget.onPressStart();
-    },
-    onPointerUp: (_) {
-      setState(() => _pressed = false);
-      widget.onPressEnd();
-    },
-    onPointerCancel: (_) {
-      setState(() => _pressed = false);
-      widget.onPressEnd();
-    },
-    child: AnimatedOpacity(
-      opacity: _pressed ? 0.9 : 0.45,
-      duration: const Duration(milliseconds: 100),
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground.withOpacity(0.7),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: _pressed
-                ? FlitColors.accent.withOpacity(0.8)
-                : FlitColors.cardBorder.withOpacity(0.5),
-            width: 2,
+        onPointerDown: (_) {
+          setState(() => _pressed = true);
+          widget.onPressStart();
+        },
+        onPointerUp: (_) {
+          setState(() => _pressed = false);
+          widget.onPressEnd();
+        },
+        onPointerCancel: (_) {
+          setState(() => _pressed = false);
+          widget.onPressEnd();
+        },
+        child: AnimatedOpacity(
+          opacity: _pressed ? 0.9 : 0.45,
+          duration: const Duration(milliseconds: 100),
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: FlitColors.cardBackground.withOpacity(0.7),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: _pressed
+                    ? FlitColors.accent.withOpacity(0.8)
+                    : FlitColors.cardBorder.withOpacity(0.5),
+                width: 2,
+              ),
+            ),
+            child: Icon(
+              widget.icon,
+              color: _pressed ? FlitColors.accent : FlitColors.textSecondary,
+              size: 28,
+            ),
           ),
         ),
-        child: Icon(
-          widget.icon,
-          color: _pressed ? FlitColors.accent : FlitColors.textSecondary,
-          size: 28,
-        ),
-      ),
-    ),
-  );
+      );
 }
 
 /// Aggregated clue-type correct counts and streak from round results.

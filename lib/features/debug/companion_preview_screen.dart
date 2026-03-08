@@ -24,9 +24,8 @@ class _CompanionPreviewScreenState extends State<CompanionPreviewScreen>
   late final AnimationController _animController;
 
   /// Companions to display (skip `none`).
-  static final _companions = AvatarCompanion.values
-      .where((c) => c != AvatarCompanion.none)
-      .toList();
+  static final _companions =
+      AvatarCompanion.values.where((c) => c != AvatarCompanion.none).toList();
 
   @override
   void initState() {
@@ -45,37 +44,37 @@ class _CompanionPreviewScreenState extends State<CompanionPreviewScreen>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: FlitColors.backgroundDark,
-    appBar: AppBar(
-      backgroundColor: FlitColors.cardBackground,
-      title: const Text(
-        'Companion Preview',
-        style: TextStyle(color: FlitColors.textPrimary),
-      ),
-      iconTheme: const IconThemeData(color: FlitColors.textPrimary),
-    ),
-    body: AnimatedBuilder(
-      animation: _animController,
-      builder: (context, _) => GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.72,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
+        backgroundColor: FlitColors.backgroundDark,
+        appBar: AppBar(
+          backgroundColor: FlitColors.cardBackground,
+          title: const Text(
+            'Companion Preview',
+            style: TextStyle(color: FlitColors.textPrimary),
+          ),
+          iconTheme: const IconThemeData(color: FlitColors.textPrimary),
         ),
-        itemCount: _companions.length,
-        itemBuilder: (context, index) {
-          final companion = _companions[index];
-          return _CompanionCard(
-            companion: companion,
-            flapPhase: _animController.value * 2 * pi * 2,
-            breathPhase: _animController.value * 2 * pi * 1.4,
-          );
-        },
-      ),
-    ),
-  );
+        body: AnimatedBuilder(
+          animation: _animController,
+          builder: (context, _) => GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.72,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: _companions.length,
+            itemBuilder: (context, index) {
+              final companion = _companions[index];
+              return _CompanionCard(
+                companion: companion,
+                flapPhase: _animController.value * 2 * pi * 2,
+                breathPhase: _animController.value * 2 * pi * 1.4,
+              );
+            },
+          ),
+        ),
+      );
 }
 
 class _CompanionCard extends StatelessWidget {
@@ -161,15 +160,15 @@ class _CompanionCard extends StatelessWidget {
   }
 
   static String _companionLabel(AvatarCompanion c) => switch (c) {
-    AvatarCompanion.none => 'None',
-    AvatarCompanion.pidgey => 'Pidgey',
-    AvatarCompanion.sparrow => 'Sparrow',
-    AvatarCompanion.eagle => 'Eagle',
-    AvatarCompanion.parrot => 'Parrot',
-    AvatarCompanion.phoenix => 'Phoenix',
-    AvatarCompanion.dragon => 'Dragon',
-    AvatarCompanion.charizard => 'Charizard',
-  };
+        AvatarCompanion.none => 'None',
+        AvatarCompanion.pidgey => 'Pidgey',
+        AvatarCompanion.sparrow => 'Sparrow',
+        AvatarCompanion.eagle => 'Eagle',
+        AvatarCompanion.parrot => 'Parrot',
+        AvatarCompanion.phoenix => 'Phoenix',
+        AvatarCompanion.dragon => 'Dragon',
+        AvatarCompanion.charizard => 'Charizard',
+      };
 
   static String _tierLabel(int price) {
     if (price >= 30000) return 'Legendary';
