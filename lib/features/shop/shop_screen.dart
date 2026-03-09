@@ -1016,6 +1016,55 @@ class _CosmeticGrid extends StatelessWidget {
                 ],
               ],
             ),
+            // Companion perks in purchase dialog
+            if (item.type == CosmeticType.coPilot &&
+                item.id != 'companion_none') ...[
+              const SizedBox(height: 12),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Perks',
+                  style: TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(Icons.local_gas_station,
+                      size: 14, color: FlitColors.warning),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Auto fuel fetch when tank drops below 20%',
+                      style: TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(Icons.flight, size: 14, color: FlitColors.accent),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Flies alongside your plane',
+                      style: TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             if (!canAfford) ...[
               const SizedBox(height: 8),
               Text(
@@ -1297,6 +1346,10 @@ class _CosmeticCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                   ],
+                  // Companion perks (only for non-none companions)
+                  if (item.type == CosmeticType.coPilot &&
+                      item.id != 'companion_none')
+                    const _CompanionPerks(),
                   // Price or status
                   if (isOwned)
                     Text(
@@ -1484,6 +1537,74 @@ class _AttrBar extends StatelessWidget {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Companion Perks  (compact perk list for companion cards)
+// =============================================================================
+
+class _CompanionPerks extends StatelessWidget {
+  const _CompanionPerks();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _PerkRow(
+            icon: Icons.local_gas_station,
+            label: 'Auto fuel fetch',
+            color: FlitColors.warning,
+          ),
+          _PerkRow(
+            icon: Icons.flight,
+            label: 'Flies with you',
+            color: FlitColors.accent,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PerkRow extends StatelessWidget {
+  const _PerkRow({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Row(
+        children: [
+          Icon(icon, size: 10, color: color),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: color,
+                fontSize: 8,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
               ),
             ),
           ),
@@ -1744,27 +1865,63 @@ class _ContrailPainter extends CustomPainter {
 // Companion Preview  (icon-based preview for companion creatures)
 // =============================================================================
 
-class _CompanionPreview extends StatelessWidget {
+class _CompanionPreview extends StatefulWidget {
   const _CompanionPreview({required this.companionId});
 
   final String companionId;
 
   @override
+  State<_CompanionPreview> createState() => _CompanionPreviewState();
+}
+
+class _CompanionPreviewState extends State<_CompanionPreview>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _anim = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _anim.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (companionId == 'companion_none') {
+    if (widget.companionId == 'companion_none') {
       return const Icon(Icons.block, size: 48, color: FlitColors.textMuted);
     }
-    return CustomPaint(
-      size: const Size(64, 64),
-      painter: _CompanionPreviewPainter(companionId: companionId),
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (context, _) => CustomPaint(
+        size: Size.infinite,
+        painter: _CompanionPreviewPainter(
+          companionId: widget.companionId,
+          flapPhase: _anim.value * 2 * math.pi * 2,
+          breathPhase: _anim.value * 2 * math.pi * 1.4,
+        ),
+      ),
     );
   }
 }
 
 class _CompanionPreviewPainter extends CustomPainter {
-  _CompanionPreviewPainter({required this.companionId});
+  _CompanionPreviewPainter({
+    required this.companionId,
+    this.flapPhase = 0.0,
+    this.breathPhase = 0.0,
+  });
 
   final String companionId;
+  final double flapPhase;
+  final double breathPhase;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1777,21 +1934,23 @@ class _CompanionPreviewPainter extends CustomPainter {
     final scale = size.shortestSide / 64;
     canvas.scale(scale);
 
+    final flapOffset = math.sin(flapPhase) * 3.0;
+
     switch (companionId) {
       case 'companion_pidgey':
-        _paintPidgey(canvas);
+        _paintPidgey(canvas, flapOffset);
       case 'companion_sparrow':
-        _paintSparrow(canvas);
+        _paintSparrow(canvas, flapOffset);
       case 'companion_eagle':
-        _paintEagle(canvas);
+        _paintEagle(canvas, flapOffset);
       case 'companion_parrot':
-        _paintParrot(canvas);
+        _paintParrot(canvas, flapOffset);
       case 'companion_phoenix':
-        _paintPhoenix(canvas);
+        _paintPhoenix(canvas, flapOffset);
       case 'companion_dragon':
-        _paintDragon(canvas);
+        _paintDragon(canvas, flapOffset);
       case 'companion_charizard':
-        _paintCharizard(canvas);
+        _paintCharizard(canvas, flapOffset);
     }
 
     canvas.restore();
@@ -1800,7 +1959,7 @@ class _CompanionPreviewPainter extends CustomPainter {
   // ---------------------------------------------------------------------------
   // Pidgey — Adorable chibi bird with rosy cheeks and big eyes.
   // ---------------------------------------------------------------------------
-  void _paintPidgey(Canvas canvas) {
+  void _paintPidgey(Canvas canvas, double flapOffset) {
     const s = 14.0; // doubled from in-game 7.0 for preview clarity
     const brown = Color(0xFF9E7B5A);
     const cream = Color(0xFFF5E8D0);
@@ -1818,9 +1977,10 @@ class _CompanionPreviewPainter extends CustomPainter {
     // Tail feathers.
     _drawTailFeathers(canvas, s, darkBrown, 3, 0.35, 0.12);
 
-    // Wings (spread, static flapOffset=0).
-    _drawWing(canvas, s, 0, darkBrown.withOpacity(0.85), true, 0.7, 2);
-    _drawWing(canvas, s, 0, darkBrown.withOpacity(0.85), false, 0.7, 2);
+    // Wings (spread, animated).
+    _drawWing(canvas, s, flapOffset, darkBrown.withOpacity(0.85), true, 0.7, 2);
+    _drawWing(
+        canvas, s, flapOffset, darkBrown.withOpacity(0.85), false, 0.7, 2);
 
     // Pudgy body.
     _drawBody(canvas, s * 0.95, s * 0.6, brown, cream);
@@ -1873,7 +2033,7 @@ class _CompanionPreviewPainter extends CustomPainter {
   // ---------------------------------------------------------------------------
   // Sparrow — Sleek barn swallow with navy back, forked tail.
   // ---------------------------------------------------------------------------
-  void _paintSparrow(Canvas canvas) {
+  void _paintSparrow(Canvas canvas, double flapOffset) {
     const s = 16.0;
     const navy = Color(0xFF2C3E6B);
     const russet = Color(0xFFB85C38);
@@ -1897,7 +2057,7 @@ class _CompanionPreviewPainter extends CustomPainter {
     _drawWing(
       canvas,
       s,
-      0,
+      flapOffset,
       navy.withOpacity(0.9),
       true,
       0.95,
@@ -1907,7 +2067,7 @@ class _CompanionPreviewPainter extends CustomPainter {
     _drawWing(
       canvas,
       s,
-      0,
+      flapOffset,
       navy.withOpacity(0.9),
       false,
       0.95,
@@ -1954,7 +2114,7 @@ class _CompanionPreviewPainter extends CustomPainter {
   // ---------------------------------------------------------------------------
   // Eagle — Majestic golden raptor with white head.
   // ---------------------------------------------------------------------------
-  void _paintEagle(Canvas canvas) {
+  void _paintEagle(Canvas canvas, double flapOffset) {
     const s = 20.0;
     const darkBrown = Color(0xFF4A3222);
     const goldenBrown = Color(0xFF8B6B3A);
@@ -1968,7 +2128,7 @@ class _CompanionPreviewPainter extends CustomPainter {
     _drawWing(
       canvas,
       s,
-      0,
+      flapOffset,
       goldenBrown.withOpacity(0.9),
       true,
       1.15,
@@ -1978,7 +2138,7 @@ class _CompanionPreviewPainter extends CustomPainter {
     _drawWing(
       canvas,
       s,
-      0,
+      flapOffset,
       goldenBrown.withOpacity(0.9),
       false,
       1.15,
@@ -1989,10 +2149,10 @@ class _CompanionPreviewPainter extends CustomPainter {
     // Wing bar pattern.
     for (final sign in [-1.0, 1.0]) {
       final bar = Path()
-        ..moveTo(sign * s * 0.4, -s * 0.2)
-        ..lineTo(sign * s * 0.8, -s * 0.32)
-        ..lineTo(sign * s * 0.82, -s * 0.27)
-        ..lineTo(sign * s * 0.42, -s * 0.15)
+        ..moveTo(sign * s * 0.4, flapOffset - s * 0.2)
+        ..lineTo(sign * s * 0.8, flapOffset - s * 0.32)
+        ..lineTo(sign * s * 0.82, flapOffset - s * 0.27)
+        ..lineTo(sign * s * 0.42, flapOffset - s * 0.15)
         ..close();
       WatercolorStyle.washFill(canvas, bar, gold.withOpacity(0.3),
           seed: 'bar$sign');
@@ -2054,7 +2214,7 @@ class _CompanionPreviewPainter extends CustomPainter {
   // ---------------------------------------------------------------------------
   // Parrot — Vivid scarlet macaw with multicolor wings and tail streamers.
   // ---------------------------------------------------------------------------
-  void _paintParrot(Canvas canvas) {
+  void _paintParrot(Canvas canvas, double flapOffset) {
     const s = 16.0;
     const scarlet = Color(0xFFDD2828);
     const royalBlue = Color(0xFF1845A0);
@@ -2093,7 +2253,7 @@ class _CompanionPreviewPainter extends CustomPainter {
       _drawWing(
         canvas,
         s,
-        0,
+        flapOffset,
         royalBlue.withOpacity(0.9),
         isLeft,
         0.85,
@@ -2103,19 +2263,19 @@ class _CompanionPreviewPainter extends CustomPainter {
       final sign = isLeft ? -1.0 : 1.0;
       // Green secondary band.
       final greenBand = Path()
-        ..moveTo(sign * s * 0.25, -s * 0.05)
-        ..lineTo(sign * s * 0.55, -s * 0.25)
-        ..lineTo(sign * s * 0.58, -s * 0.18)
-        ..lineTo(sign * s * 0.28, s * 0.02)
+        ..moveTo(sign * s * 0.25, flapOffset - s * 0.05)
+        ..lineTo(sign * s * 0.55, flapOffset - s * 0.25)
+        ..lineTo(sign * s * 0.58, flapOffset - s * 0.18)
+        ..lineTo(sign * s * 0.28, flapOffset + s * 0.02)
         ..close();
       WatercolorStyle.washFill(canvas, greenBand, emerald.withOpacity(0.7),
           seed: 'green$sign');
       // Gold covert stripe.
       final goldStripe = Path()
-        ..moveTo(sign * s * 0.2, 0)
-        ..lineTo(sign * s * 0.45, -s * 0.12)
-        ..lineTo(sign * s * 0.47, -s * 0.08)
-        ..lineTo(sign * s * 0.22, s * 0.04)
+        ..moveTo(sign * s * 0.2, flapOffset)
+        ..lineTo(sign * s * 0.45, flapOffset - s * 0.12)
+        ..lineTo(sign * s * 0.47, flapOffset - s * 0.08)
+        ..lineTo(sign * s * 0.22, flapOffset + s * 0.04)
         ..close();
       WatercolorStyle.washFill(canvas, goldStripe, gold.withOpacity(0.5),
           seed: 'gold$sign');
@@ -2181,7 +2341,7 @@ class _CompanionPreviewPainter extends CustomPainter {
   // ---------------------------------------------------------------------------
   // Phoenix — Ethereal fire bird with warm aura glow and flame crest.
   // ---------------------------------------------------------------------------
-  void _paintPhoenix(Canvas canvas) {
+  void _paintPhoenix(Canvas canvas, double flapOffset) {
     const s = 18.0;
     const deepOrange = Color(0xFFE85D04);
     const brightOrange = Color(0xFFFF8C22);
@@ -2196,7 +2356,8 @@ class _CompanionPreviewPainter extends CustomPainter {
     WatercolorStyle.auraGlow(canvas, const Offset(0, -s * 0.1), s * 0.5, gold,
         opacity: 0.12, blur: 6);
 
-    // Flame tail tongues.
+    // Flame tail tongues (breath-animated).
+    final breathScale = 0.9 + math.sin(breathPhase) * 0.1;
     final tongueColors = [crimson, deepOrange, gold, brightOrange, crimson];
     for (var i = 0; i < 5; i++) {
       final t = (i - 2) * 0.06;
@@ -2204,11 +2365,11 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..moveTo(s * t, s * 0.2)
         ..cubicTo(
           s * t,
-          s * 0.5,
+          s * 0.5 * breathScale,
           s * t * 2,
-          s * 0.7,
+          s * 0.7 * breathScale,
           s * t * 1.5,
-          s * (0.75 + i * 0.06),
+          s * (0.75 + i * 0.06) * breathScale,
         )
         ..quadraticBezierTo(s * t, s * (0.6 + i * 0.03), s * t * 0.5, s * 0.2)
         ..close();
@@ -2224,11 +2385,11 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..moveTo(sign * s * 0.15, 0)
         ..cubicTo(
           sign * s * 0.5,
-          -s * 0.3,
+          flapOffset - s * 0.3,
           sign * s * 0.8,
-          -s * 0.55,
+          flapOffset - s * 0.55,
           sign * s * 1.05,
-          -s * 0.15,
+          flapOffset - s * 0.15,
         )
         ..lineTo(sign * s * 0.1, s * 0.05)
         ..close();
@@ -2236,7 +2397,7 @@ class _CompanionPreviewPainter extends CustomPainter {
       _drawWing(
         canvas,
         s,
-        0,
+        flapOffset,
         deepOrange.withOpacity(0.85),
         isLeft,
         1.05,
@@ -2308,7 +2469,7 @@ class _CompanionPreviewPainter extends CustomPainter {
   // ---------------------------------------------------------------------------
   // Dragon — Western wyvern with bat-membrane wings, horns, fire tail.
   // ---------------------------------------------------------------------------
-  void _paintDragon(Canvas canvas) {
+  void _paintDragon(Canvas canvas, double flapOffset) {
     const s = 20.0;
     const forestGreen = Color(0xFF2D6B3F);
     const darkGreen = Color(0xFF1A4228);
@@ -2335,40 +2496,44 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..close();
       WatercolorStyle.washFill(canvas, spine, darkGreen, seed: 'spine$i');
     }
-    // Flame tail tip.
+    // Flame tail tip (breath-animated).
+    final dragonBreath = 0.9 + math.sin(breathPhase) * 0.1;
     final flameTip = Path()
       ..moveTo(-s * 0.08, s * 0.82)
-      ..lineTo(-s * 0.1, s * 0.96)
-      ..lineTo(0, s * 0.9)
-      ..lineTo(s * 0.1, s * 0.96)
+      ..lineTo(-s * 0.1, s * 0.96 * dragonBreath)
+      ..lineTo(0, s * 0.9 * dragonBreath)
+      ..lineTo(s * 0.1, s * 0.96 * dragonBreath)
       ..lineTo(s * 0.08, s * 0.82)
       ..close();
     WatercolorStyle.washFill(canvas, flameTip, const Color(0xFFFF6600),
         seed: 'flame_tip');
-    WatercolorStyle.auraGlow(canvas, const Offset(0, s * 0.89), s * 0.1, amber,
+    WatercolorStyle.auraGlow(
+        canvas, Offset(0, s * 0.89 * dragonBreath), s * 0.1, amber,
         opacity: 0.4);
 
     // Bat-like membrane wings with finger bones.
+    final fo = flapOffset;
     for (final isLeft in [true, false]) {
       final sign = isLeft ? -1.0 : 1.0;
       final membrane = Path()
-        ..moveTo(sign * s * 0.3, -s * 0.05)
-        ..lineTo(sign * s * 0.95, -s * 0.7)
+        ..moveTo(sign * s * 0.3, fo - s * 0.05)
+        ..lineTo(sign * s * 0.95, fo - s * 0.7)
         ..quadraticBezierTo(
           sign * s * 0.7,
-          -s * 0.3,
+          fo - s * 0.3,
           sign * s * 0.75,
-          -s * 0.28,
+          fo - s * 0.28,
         )
-        ..lineTo(sign * s * 1.15, -s * 0.45)
+        ..lineTo(sign * s * 1.15, fo - s * 0.45)
         ..quadraticBezierTo(
           sign * s * 0.85,
-          -s * 0.12,
+          fo - s * 0.12,
           sign * s * 0.88,
-          -s * 0.08,
+          fo - s * 0.08,
         )
-        ..lineTo(sign * s * 1.05, -s * 0.15)
-        ..quadraticBezierTo(sign * s * 0.7, s * 0.05, sign * s * 0.15, s * 0.02)
+        ..lineTo(sign * s * 1.05, fo - s * 0.15)
+        ..quadraticBezierTo(
+            sign * s * 0.7, fo + s * 0.05, sign * s * 0.15, s * 0.02)
         ..close();
       WatercolorStyle.washFill(
           canvas, membrane, const Color(0xFF3D8B55).withOpacity(0.7),
@@ -2381,23 +2546,23 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..strokeWidth = 1.2
         ..strokeCap = StrokeCap.round;
       canvas.drawLine(
-        Offset(sign * s * 0.3, -s * 0.05),
-        Offset(sign * s * 0.65, -s * 0.35),
+        Offset(sign * s * 0.3, fo - s * 0.05),
+        Offset(sign * s * 0.65, fo - s * 0.35),
         bonePaint,
       );
       canvas.drawLine(
-        Offset(sign * s * 0.65, -s * 0.35),
-        Offset(sign * s * 0.95, -s * 0.7),
+        Offset(sign * s * 0.65, fo - s * 0.35),
+        Offset(sign * s * 0.95, fo - s * 0.7),
         bonePaint,
       );
       canvas.drawLine(
-        Offset(sign * s * 0.65, -s * 0.35),
-        Offset(sign * s * 1.15, -s * 0.45),
+        Offset(sign * s * 0.65, fo - s * 0.35),
+        Offset(sign * s * 1.15, fo - s * 0.45),
         bonePaint,
       );
       canvas.drawLine(
-        Offset(sign * s * 0.65, -s * 0.35),
-        Offset(sign * s * 1.05, -s * 0.15),
+        Offset(sign * s * 0.65, fo - s * 0.35),
+        Offset(sign * s * 1.05, fo - s * 0.15),
         bonePaint,
       );
     }
@@ -2491,7 +2656,7 @@ class _CompanionPreviewPainter extends CustomPainter {
   // ---------------------------------------------------------------------------
   // Charizard — Ultimate flame dragon with scalloped wings and fire aura.
   // ---------------------------------------------------------------------------
-  void _paintCharizard(Canvas canvas) {
+  void _paintCharizard(Canvas canvas, double flapOffset) {
     const s = 22.0;
     const deepOrange = Color(0xFFD85A10);
     const brightOrange = Color(0xFFFF8833);
@@ -2528,40 +2693,42 @@ class _CompanionPreviewPainter extends CustomPainter {
       ..close();
     WatercolorStyle.washFill(canvas, tailBelly, paleYellow.withOpacity(0.4),
         seed: 'tail_belly');
-    // Tail flame.
+    // Tail flame (breath-animated).
+    final breathScale = 0.8 + math.sin(breathPhase) * 0.2;
     final flameCore = Path()
       ..moveTo(-s * 0.04, s * 0.88)
-      ..lineTo(0, s * 1.05)
+      ..lineTo(0, s * (0.95 + 0.1 * breathScale))
       ..lineTo(s * 0.04, s * 0.88)
       ..close();
     WatercolorStyle.washFill(canvas, flameCore, const Color(0xFFFFEE88),
         seed: 'flame_core');
     WatercolorStyle.auraGlow(
-        canvas, const Offset(0, s * 0.95), s * 0.12, fireRed,
+        canvas, Offset(0, s * (0.9 + 0.05 * breathScale)), s * 0.12, fireRed,
         opacity: 0.25);
 
     // Massive bat-membrane wings with scalloped edges.
+    final fo = flapOffset;
     for (final isLeft in [true, false]) {
       final sign = isLeft ? -1.0 : 1.0;
-      final membrane = Path()..moveTo(sign * s * 0.3, -s * 0.08);
-      membrane.lineTo(sign * s * 1.0, -s * 0.8);
+      final membrane = Path()..moveTo(sign * s * 0.3, fo - s * 0.08);
+      membrane.lineTo(sign * s * 1.0, fo - s * 0.8);
       membrane.quadraticBezierTo(
         sign * s * 0.78,
-        -s * 0.38,
+        fo - s * 0.38,
         sign * s * 0.82,
-        -s * 0.35,
+        fo - s * 0.35,
       );
-      membrane.lineTo(sign * s * 1.3, -s * 0.55);
+      membrane.lineTo(sign * s * 1.3, fo - s * 0.55);
       membrane.quadraticBezierTo(
         sign * s * 0.98,
-        -s * 0.18,
+        fo - s * 0.18,
         sign * s * 1.0,
-        -s * 0.12,
+        fo - s * 0.12,
       );
-      membrane.lineTo(sign * s * 1.18, -s * 0.18);
+      membrane.lineTo(sign * s * 1.18, fo - s * 0.18);
       membrane.quadraticBezierTo(
         sign * s * 0.75,
-        s * 0.08,
+        fo + s * 0.08,
         sign * s * 0.15,
         s * 0.05,
       );
@@ -2571,10 +2738,11 @@ class _CompanionPreviewPainter extends CustomPainter {
       WatercolorStyle.colorBleed(canvas, membrane, tealWing, opacity: 0.06);
       // Inner membrane lighter.
       final inner = Path()
-        ..moveTo(sign * s * 0.35, -s * 0.05)
-        ..lineTo(sign * s * 0.82, -s * 0.35)
-        ..lineTo(sign * s * 1.0, -s * 0.12)
-        ..quadraticBezierTo(sign * s * 0.6, s * 0.06, sign * s * 0.15, s * 0.03)
+        ..moveTo(sign * s * 0.35, fo - s * 0.05)
+        ..lineTo(sign * s * 0.82, fo - s * 0.35)
+        ..lineTo(sign * s * 1.0, fo - s * 0.12)
+        ..quadraticBezierTo(
+            sign * s * 0.6, fo + s * 0.06, sign * s * 0.15, s * 0.03)
         ..close();
       WatercolorStyle.washFill(
           canvas, inner, const Color(0xFF40C4B0).withOpacity(0.2),
@@ -2586,31 +2754,31 @@ class _CompanionPreviewPainter extends CustomPainter {
         ..strokeWidth = 1.5
         ..strokeCap = StrokeCap.round;
       canvas.drawLine(
-        Offset(sign * s * 0.3, -s * 0.08),
-        Offset(sign * s * 0.7, -s * 0.4),
+        Offset(sign * s * 0.3, fo - s * 0.08),
+        Offset(sign * s * 0.7, fo - s * 0.4),
         bonePaint,
       );
       canvas.drawLine(
-        Offset(sign * s * 0.7, -s * 0.4),
-        Offset(sign * s * 1.0, -s * 0.8),
+        Offset(sign * s * 0.7, fo - s * 0.4),
+        Offset(sign * s * 1.0, fo - s * 0.8),
         bonePaint,
       );
       canvas.drawLine(
-        Offset(sign * s * 0.7, -s * 0.4),
-        Offset(sign * s * 1.3, -s * 0.55),
+        Offset(sign * s * 0.7, fo - s * 0.4),
+        Offset(sign * s * 1.3, fo - s * 0.55),
         bonePaint,
       );
       canvas.drawLine(
-        Offset(sign * s * 0.7, -s * 0.4),
-        Offset(sign * s * 1.18, -s * 0.18),
+        Offset(sign * s * 0.7, fo - s * 0.4),
+        Offset(sign * s * 1.18, fo - s * 0.18),
         bonePaint,
       );
 
       // Wing claw.
       final claw = Path()
-        ..moveTo(sign * s * 0.68, -s * 0.4)
-        ..lineTo(sign * s * 0.62, -s * 0.48)
-        ..lineTo(sign * s * 0.72, -s * 0.42)
+        ..moveTo(sign * s * 0.68, fo - s * 0.4)
+        ..lineTo(sign * s * 0.62, fo - s * 0.48)
+        ..lineTo(sign * s * 0.72, fo - s * 0.42)
         ..close();
       WatercolorStyle.washFill(canvas, claw, hornColor, seed: 'claw$sign');
     }
@@ -2752,50 +2920,74 @@ class _CompanionPreviewPainter extends CustomPainter {
     Color? tipColor,
   }) {
     final sign = isLeft ? -1.0 : 1.0;
+
+    // Primary feathers (individual finger-like tips for bird realism).
+    final featherStep = size * 0.12;
+    final tipX = sign * size * spread;
+    final tipY = flapOffset - size * 0.2;
+
+    // Main wing membrane with smooth leading edge.
     final wing = Path()
-      ..moveTo(sign * size * 0.2, 0)
+      ..moveTo(sign * size * 0.15, size * 0.02)
       ..cubicTo(
-        sign * size * 0.5,
-        flapOffset - size * 0.3,
-        sign * size * 0.75,
-        flapOffset - size * 0.55,
-        sign * size * spread,
-        flapOffset - size * 0.2,
+        sign * size * 0.4,
+        flapOffset - size * 0.25,
+        sign * size * 0.65,
+        flapOffset - size * 0.5,
+        tipX,
+        tipY,
       );
 
-    final featherStep = size * 0.15;
+    // Trailing edge with distinct feather notches.
     for (var i = 0; i < featherCount; i++) {
-      final fx = sign * (size * spread - (i + 1) * featherStep * 0.6);
-      final fy = flapOffset - size * 0.2 + (i + 1) * featherStep * 0.4;
-      wing.lineTo(fx, fy);
-      if (i < featherCount - 1) {
-        wing.lineTo(
-          sign *
-              (size * spread -
-                  (i + 1) * featherStep * 0.6 -
-                  featherStep * 0.15),
-          fy - featherStep * 0.1,
-        );
-      }
+      final t = (i + 1) / featherCount;
+      final fx = sign * (size * spread * (1.0 - t * 0.7));
+      final fy = tipY + t * (size * 0.25 + featherStep * featherCount * 0.3);
+      // Feather notch — dip in then out for realistic separation.
+      final notchX = sign *
+          (size * spread * (1.0 - t * 0.7) + featherStep * 0.2 * sign.abs());
+      final notchY = fy - featherStep * 0.25;
+      wing.quadraticBezierTo(notchX, notchY, fx, fy);
     }
+
     wing
       ..lineTo(sign * size * 0.1, size * 0.05)
       ..close();
+
     WatercolorStyle.washFill(canvas, wing, color,
         seed: 'wing${isLeft ? 'L' : 'R'}');
+    WatercolorStyle.wetEdge(canvas, wing, color, opacity: 0.12);
 
+    // Feather barb lines for texture.
+    for (var i = 0; i < featherCount; i++) {
+      final t = (i + 0.5) / featherCount;
+      final startX = sign * size * (0.3 + spread * 0.3 * (1 - t));
+      final startY = flapOffset - size * 0.15 + t * size * 0.15;
+      final endX = sign * size * spread * (1.0 - t * 0.5);
+      final endY = tipY + t * size * 0.2;
+      canvas.drawLine(
+        Offset(startX, startY),
+        Offset(endX, endY),
+        Paint()
+          ..color = _darken(color, 0.12).withOpacity(0.25)
+          ..strokeWidth = 0.6
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+
+    // Wing tip highlight / color accent.
     if (tipColor != null) {
       final tip = Path()
-        ..moveTo(sign * size * (spread - 0.15), flapOffset - size * 0.35)
+        ..moveTo(sign * size * (spread - 0.2), flapOffset - size * 0.4)
         ..cubicTo(
-          sign * size * (spread - 0.05),
-          flapOffset - size * 0.3,
+          sign * size * (spread - 0.08),
+          flapOffset - size * 0.35,
           sign * size * spread,
-          flapOffset - size * 0.25,
-          sign * size * spread,
-          flapOffset - size * 0.2,
+          flapOffset - size * 0.28,
+          tipX,
+          tipY,
         )
-        ..lineTo(sign * size * (spread - 0.12), flapOffset - size * 0.12)
+        ..lineTo(sign * size * (spread - 0.15), tipY + featherStep)
         ..close();
       WatercolorStyle.washFill(canvas, tip, tipColor,
           seed: 'tip${isLeft ? 'L' : 'R'}');
@@ -2981,7 +3173,9 @@ class _CompanionPreviewPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _CompanionPreviewPainter old) =>
-      companionId != old.companionId;
+      companionId != old.companionId ||
+      flapPhase != old.flapPhase ||
+      breathPhase != old.breathPhase;
 }
 
 // =============================================================================
