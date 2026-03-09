@@ -1229,7 +1229,7 @@ class _MiniStat extends StatelessWidget {
       );
 }
 
-class _FriendTile extends StatelessWidget {
+class _FriendTile extends StatefulWidget {
   const _FriendTile({
     required this.friend,
     this.h2h,
@@ -1247,8 +1247,73 @@ class _FriendTile extends StatelessWidget {
   final VoidCallback onPlayChallenge;
 
   @override
+  State<_FriendTile> createState() => _FriendTileState();
+}
+
+class _FriendTileState extends State<_FriendTile> {
+  bool _expanded = false;
+  List<MatchSummary>? _matchHistory;
+  bool _loadingHistory = false;
+
+  void _toggleExpand() {
+    if (!_expanded &&
+        _matchHistory == null &&
+        !_loadingHistory &&
+        widget.h2h != null &&
+        widget.h2h!.totalChallenges > 0) {
+      _loadHistory();
+    }
+    setState(() => _expanded = !_expanded);
+  }
+
+  Future<void> _loadHistory() async {
+    setState(() => _loadingHistory = true);
+    final history = await FriendsService.instance.fetchDetailedH2HHistory(
+      widget.friend.playerId,
+      limit: 50,
+    );
+    if (!mounted) return;
+    setState(() {
+      _matchHistory = history;
+      _loadingHistory = false;
+    });
+  }
+
+  /// Aggregate round-level stats by game mode (levelName).
+  Map<String, _ModeBreakdown> _computeModeBreakdown() {
+    if (_matchHistory == null) return {};
+    final map = <String, _ModeBreakdown>{};
+    for (final match in _matchHistory!) {
+      for (final round in match.rounds) {
+        if (!round.isComplete) continue;
+        final modeName = round.levelName ?? round.levelId ?? 'Unknown';
+        final entry = map.putIfAbsent(modeName, _ModeBreakdown.new);
+        entry.rounds++;
+        if (round.youWon == true) {
+          entry.wins++;
+        } else if (round.youWon == false) {
+          entry.losses++;
+        }
+        if (round.yourScore != null) {
+          entry.totalYourScore += round.yourScore!;
+          entry.totalTheirScore += round.theirScore ?? 0;
+          entry.scoredRounds++;
+        }
+        if (round.yourTimeMs != null) {
+          entry.totalYourTimeMs += round.yourTimeMs!;
+          entry.totalTheirTimeMs += round.theirTimeMs ?? 0;
+          entry.timedRounds++;
+        }
+      }
+    }
+    return map;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final hasH2H = h2h != null && h2h!.totalChallenges > 0;
+    final h2h = widget.h2h;
+    final friend = widget.friend;
+    final hasH2H = h2h != null && h2h.totalChallenges > 0;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -1257,134 +1322,392 @@ class _FriendTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: FlitColors.cardBorder),
       ),
-      child: InkWell(
-        onTap: onViewProfile,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              // Avatar with online indicator
-              Stack(
+      child: Column(
+        children: [
+          // ── Main row (tap to expand, long-press for profile) ──
+          InkWell(
+            onTap: hasH2H ? _toggleExpand : widget.onViewProfile,
+            onLongPress: widget.onViewProfile,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
                 children: [
-                  if (friend.avatarConfig != null)
-                    AvatarWidget(config: friend.avatarConfig!, size: 48)
-                  else
-                    AvatarFromUrl(
-                      avatarUrl: friend.avatarUrl,
-                      name: friend.name,
-                      size: 48,
-                    ),
-                  if (friend.isOnline)
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: FlitColors.success,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: FlitColors.cardBackground,
-                            width: 2,
+                  // Avatar with online indicator
+                  Stack(
+                    children: [
+                      if (friend.avatarConfig != null)
+                        AvatarWidget(config: friend.avatarConfig!, size: 48)
+                      else
+                        AvatarFromUrl(
+                          avatarUrl: friend.avatarUrl,
+                          name: friend.name,
+                          size: 48,
+                        ),
+                      if (friend.isOnline)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: FlitColors.success,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: FlitColors.cardBackground,
+                                width: 2,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(width: 12),
-              // Name, level, H2H info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Row 1: Name + friendship level
-                    Row(
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  // Name, level, H2H info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Flexible(
-                          child: Text(
-                            friend.name,
-                            style: const TextStyle(
-                              color: FlitColors.textPrimary,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (hasH2H) ...[
-                          const SizedBox(width: 8),
-                          _FriendshipLevelBadge(h2h: h2h!),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    // Row 2: H2H record + trend
-                    if (hasH2H)
-                      Text.rich(
-                        TextSpan(
+                        // Row 1: Name + friendship level
+                        Row(
                           children: [
-                            TextSpan(
-                              text: 'Matches: ${h2h!.record}',
-                              style: const TextStyle(
-                                color: FlitColors.textSecondary,
-                                fontSize: 12,
-                              ),
-                            ),
-                            TextSpan(
-                              text: ' \u2022 ${h2h!.leadText}',
-                              style: const TextStyle(
-                                color: FlitColors.textSecondary,
-                                fontSize: 12,
-                              ),
-                            ),
-                            if (h2h!.last10Total > 0) ...[
-                              TextSpan(
-                                text: ' \u2022 L10: ${h2h!.last10Record} ',
+                            Flexible(
+                              child: Text(
+                                friend.name,
                                 style: const TextStyle(
-                                  color: FlitColors.textMuted,
-                                  fontSize: 12,
+                                  color: FlitColors.textPrimary,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              TextSpan(
-                                text: h2h!.trendArrow,
-                                style: TextStyle(
-                                  color: h2h!.recentTrend > 0
-                                      ? FlitColors.success
-                                      : h2h!.recentTrend < 0
-                                          ? FlitColors.error
-                                          : FlitColors.textMuted,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                            ),
+                            if (hasH2H) ...[
+                              const SizedBox(width: 8),
+                              _FriendshipLevelBadge(h2h: h2h),
                             ],
                           ],
                         ),
-                      )
-                    else
-                      const Text(
-                        'No challenges yet',
-                        style: TextStyle(
-                          color: FlitColors.textMuted,
-                          fontSize: 12,
-                        ),
-                      ),
-                  ],
+                        const SizedBox(height: 2),
+                        // Row 2: H2H record + trend
+                        if (hasH2H)
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'Matches: ${h2h.record}',
+                                  style: const TextStyle(
+                                    color: FlitColors.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: ' \u2022 ${h2h.leadText}',
+                                  style: const TextStyle(
+                                    color: FlitColors.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                if (h2h.last10Total > 0) ...[
+                                  TextSpan(
+                                    text: ' \u2022 L10: ${h2h.last10Record} ',
+                                    style: const TextStyle(
+                                      color: FlitColors.textMuted,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: h2h.trendArrow,
+                                    style: TextStyle(
+                                      color: h2h.recentTrend > 0
+                                          ? FlitColors.success
+                                          : h2h.recentTrend < 0
+                                              ? FlitColors.error
+                                              : FlitColors.textMuted,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          )
+                        else
+                          const Text(
+                            'No challenges yet',
+                            style: TextStyle(
+                              color: FlitColors.textMuted,
+                              fontSize: 12,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  // Expand arrow (only if H2H data exists)
+                  if (hasH2H)
+                    Icon(
+                      _expanded ? Icons.expand_less : Icons.expand_more,
+                      color: FlitColors.textMuted,
+                      size: 20,
+                    ),
+                  const SizedBox(width: 4),
+                  // Challenge status badge
+                  _ChallengeStatusBadge(
+                    info: widget.challengeInfo,
+                    onChallenge: widget.onChallenge,
+                    onPlay: widget.onPlayChallenge,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // ── Expanded: per-mode breakdown ──
+          if (_expanded && hasH2H)
+            _ExpandedH2HBreakdown(
+              loading: _loadingHistory,
+              breakdown: _computeModeBreakdown(),
+              onViewProfile: widget.onViewProfile,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Per-game-mode stats aggregated from round-level data.
+class _ModeBreakdown {
+  int rounds = 0;
+  int wins = 0;
+  int losses = 0;
+  int totalYourScore = 0;
+  int totalTheirScore = 0;
+  int scoredRounds = 0;
+  int totalYourTimeMs = 0;
+  int totalTheirTimeMs = 0;
+  int timedRounds = 0;
+
+  int get draws => rounds - wins - losses;
+  String get record => '$wins-$losses';
+  double get winRate => rounds > 0 ? wins / rounds : 0;
+
+  String get avgYourScore => scoredRounds > 0
+      ? (totalYourScore / scoredRounds).toStringAsFixed(0)
+      : '-';
+  String get avgTheirScore => scoredRounds > 0
+      ? (totalTheirScore / scoredRounds).toStringAsFixed(0)
+      : '-';
+
+  String get avgYourTime {
+    if (timedRounds == 0) return '-';
+    final avg = totalYourTimeMs / timedRounds / 1000;
+    return '${avg.toStringAsFixed(1)}s';
+  }
+
+  String get avgTheirTime {
+    if (timedRounds == 0) return '-';
+    final avg = totalTheirTimeMs / timedRounds / 1000;
+    return '${avg.toStringAsFixed(1)}s';
+  }
+}
+
+class _ExpandedH2HBreakdown extends StatelessWidget {
+  const _ExpandedH2HBreakdown({
+    required this.loading,
+    required this.breakdown,
+    required this.onViewProfile,
+  });
+
+  final bool loading;
+  final Map<String, _ModeBreakdown> breakdown;
+  final VoidCallback onViewProfile;
+
+  List<MapEntry<String, _ModeBreakdown>> get _sortedEntries {
+    final list = breakdown.entries.toList()
+      ..sort((a, b) => b.value.rounds.compareTo(a.value.rounds));
+    return list;
+  }
+
+  Widget _buildModeRow(MapEntry<String, _ModeBreakdown> entry) {
+    final mode = entry.value;
+    final winColor = mode.wins > mode.losses
+        ? FlitColors.success
+        : mode.losses > mode.wins
+            ? FlitColors.error
+            : FlitColors.textSecondary;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Text(
+              entry.key,
+              style: const TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          SizedBox(
+            width: 50,
+            child: Text(
+              mode.record,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: winColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 40,
+            child: Text(
+              '${(mode.winRate * 100).toStringAsFixed(0)}%',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: winColor,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 60,
+            child: Text(
+              mode.avgYourScore,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 55,
+            child: Text(
+              mode.avgYourTime,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: FlitColors.cardBorder)),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (loading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    color: FlitColors.accent,
+                    strokeWidth: 2,
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              // Challenge status badge
-              _ChallengeStatusBadge(
-                info: challengeInfo,
-                onChallenge: onChallenge,
-                onPlay: onPlayChallenge,
+            )
+          else if (breakdown.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 6),
+              child: Text(
+                'No round data available',
+                style: TextStyle(color: FlitColors.textMuted, fontSize: 12),
               ),
-            ],
+            )
+          else ...[
+            const Text(
+              'HEAD TO HEAD BY MODE',
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 6),
+            // Header row.
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Text('Mode',
+                        style: TextStyle(
+                            color: FlitColors.textMuted, fontSize: 10)),
+                  ),
+                  SizedBox(
+                    width: 50,
+                    child: Text('W-L',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: FlitColors.textMuted, fontSize: 10)),
+                  ),
+                  SizedBox(
+                    width: 40,
+                    child: Text('Win%',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: FlitColors.textMuted, fontSize: 10)),
+                  ),
+                  SizedBox(
+                    width: 60,
+                    child: Text('Avg Pts',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: FlitColors.textMuted, fontSize: 10)),
+                  ),
+                  SizedBox(
+                    width: 55,
+                    child: Text('Avg Spd',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: FlitColors.textMuted, fontSize: 10)),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(color: FlitColors.cardBorder, height: 8),
+            // Mode rows sorted by rounds played.
+            ..._sortedEntries.map(_buildModeRow),
+          ],
+          // View full profile link.
+          const SizedBox(height: 6),
+          Center(
+            child: GestureDetector(
+              onTap: onViewProfile,
+              child: const Text(
+                'View full profile',
+                style: TextStyle(
+                  color: FlitColors.accent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
