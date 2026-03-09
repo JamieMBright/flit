@@ -339,6 +339,7 @@ abstract class RegionalData {
     'SN',
     'SO',
     'SS',
+    'XS',
     'ST',
     'SZ',
     'TD',
