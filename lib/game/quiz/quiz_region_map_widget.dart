@@ -184,7 +184,7 @@ class _RegionMapPainter extends CustomPainter {
     // Draw clean borders (subtle, single pass).
     // Divide strokeWidth by zoom scale so borders stay visually constant.
     final borderPaint = Paint()
-      ..color = const Color(0xFF1A2A32).withValues(alpha: 0.6)
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0 / zoomScale
       ..strokeJoin = StrokeJoin.round
@@ -329,6 +329,41 @@ class _RegionMapPainter extends CustomPainter {
 
     canvas.save();
     canvas.clipPath(path);
+    canvas.drawImageRect(
+      img,
+      srcRect,
+      dstRect,
+      Paint()..filterQuality = FilterQuality.high,
+    );
+    canvas.restore();
+  }
+
+  /// Draw the Blue Marble satellite texture clipped to a circle for tiny areas.
+  void _drawSatelliteCircle(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    _GeoTransform transform,
+  ) {
+    final img = satelliteImage!;
+    final circlePath = Path()
+      ..addOval(Rect.fromCircle(center: center, radius: radius));
+
+    final srcLeft = ((transform.minLng + 180.0) / 360.0) * img.width;
+    final srcRight = ((transform.maxLng + 180.0) / 360.0) * img.width;
+    final srcTop = ((90.0 - transform.maxLat) / 180.0) * img.height;
+    final srcBottom = ((90.0 - transform.minLat) / 180.0) * img.height;
+
+    final srcRect = Rect.fromLTRB(srcLeft, srcTop, srcRight, srcBottom);
+    final dstRect = Rect.fromLTWH(
+      transform.offsetX,
+      transform.offsetY,
+      transform.width,
+      transform.height,
+    );
+
+    canvas.save();
+    canvas.clipPath(circlePath);
     canvas.drawImageRect(
       img,
       srcRect,
@@ -503,21 +538,25 @@ class _RegionMapPainter extends CustomPainter {
         status == StateVisualStatus.wrong;
 
     if (hasActiveFill) {
-      Color fillColor;
-      if (isHighlighted) {
-        final opacity = 0.6 + 0.3 * pulseValue;
-        fillColor = Color.fromRGBO(232, 122, 90, opacity);
-      } else if (isCorrectlyGuessed || status == StateVisualStatus.correct) {
-        fillColor = const Color(0xFF2A8A4A);
+      if ((isCorrectlyGuessed || status == StateVisualStatus.correct) &&
+          satelliteImage != null) {
+        // Clip Blue Marble satellite texture to the circle.
+        _drawSatelliteCircle(canvas, pos, r, transform);
       } else {
-        fillColor = const Color(0xFFAA3333);
+        Color fillColor;
+        if (isHighlighted) {
+          final opacity = 0.6 + 0.3 * pulseValue;
+          fillColor = Color.fromRGBO(232, 122, 90, opacity);
+        } else {
+          fillColor = const Color(0xFFAA3333);
+        }
+        canvas.drawCircle(pos, r, Paint()..color = fillColor);
       }
-      canvas.drawCircle(pos, r, Paint()..color = fillColor);
     }
 
     // Dashed border ring.
     final borderPaint = Paint()
-      ..color = const Color(0xFF8AB0C0)
+      ..color = const Color(0xFFFFFFFF)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2 / zoomScale;
     const int dashCount = 16;

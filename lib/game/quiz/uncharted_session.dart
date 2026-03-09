@@ -129,6 +129,16 @@ class UnchartedSession {
     _startTime = DateTime.now();
   }
 
+  /// Check if [input] exactly matches an unrevealed area (no side effects).
+  ///
+  /// Returns true only for exact or alias matches (distance 0), so that
+  /// auto-submit doesn't fire on partial fuzzy matches.
+  bool hasExactMatch(String input) {
+    if (isComplete) return false;
+    final result = _matcher.bestMatch(input, excludeCodes: _revealedCodes);
+    return result != null && result.isExact;
+  }
+
   /// Submit a guess. Returns whether it matched.
   UnchartedGuessResult submitGuess(String input) {
     if (!isStarted) start();

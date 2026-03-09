@@ -90,6 +90,13 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
     super.dispose();
   }
 
+  void _handleInputChanged(String value) {
+    if (value.trim().isEmpty) return;
+    if (_session.hasExactMatch(value.trim())) {
+      _handleSubmit(value);
+    }
+  }
+
   void _handleSubmit(String value) {
     if (value.trim().isEmpty) return;
 
@@ -331,6 +338,7 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
+                onChanged: _handleInputChanged,
                 onSubmitted: _handleSubmit,
                 textInputAction: TextInputAction.go,
               ),
