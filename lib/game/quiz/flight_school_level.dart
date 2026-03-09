@@ -243,7 +243,7 @@ const List<FlightSchoolLevel> flightSchoolLevels = [
     region: GameRegion.ukCounties,
     requiredLevel: 13,
     unlockCost: 1000,
-    areaCount: 100,
+    areaCount: 107,
     icon: 'castle',
     availableCategories: [
       QuizCategory.stateName,

@@ -207,6 +207,14 @@ abstract class UkClues {
     // =========================================================================
     // ENGLAND - South West
     // =========================================================================
+    'BST': UkCountyClueData(
+      country: 'England',
+      famousPerson: 'Banksy',
+      famousLandmark: 'Clifton Suspension Bridge',
+      footballTeam: 'Bristol City / Bristol Rovers',
+      nickname: 'City of Bridges',
+      flag: 'White field with the coat of arms featuring a ship and castle',
+    ),
     'DEV': UkCountyClueData(
       country: 'England',
       famousPerson: 'Agatha Christie',
@@ -792,6 +800,78 @@ abstract class UkClues {
       footballTeam: 'Holyhead Hotspur',
       nickname: 'Mother of Wales',
       flag: 'Green and white field with gold coronet and red lions',
+    ),
+    'BGE': UkCountyClueData(
+      country: 'Wales',
+      famousPerson: 'Gareth Thomas',
+      famousLandmark: 'Porthcawl Lighthouse',
+      footballTeam: 'Bridgend Town',
+      nickname: 'Gateway to the Valleys',
+      flag: 'Blue field with a gold castle and bridge',
+    ),
+    'BGW': UkCountyClueData(
+      country: 'Wales',
+      famousPerson: 'Aneurin Bevan',
+      famousLandmark: 'Big Pit National Coal Museum',
+      footballTeam: 'Ebbw Vale',
+      nickname: 'Valleys Gateway',
+      flag: 'Green and white with a mining symbol',
+    ),
+    'CWY': UkCountyClueData(
+      country: 'Wales',
+      famousPerson: 'Bryn Terfel',
+      famousLandmark: 'Conwy Castle',
+      footballTeam: 'Conwy Borough',
+      nickname: 'Land of Castles',
+      flag: 'Gold field with a red eagle',
+    ),
+    'DEN': UkCountyClueData(
+      country: 'Wales',
+      famousPerson: 'Beatrix Potter (holidayed)',
+      famousLandmark: 'Denbigh Castle',
+      footballTeam: 'Rhyl',
+      nickname: 'Heart of the Vale',
+      flag: 'Red and gold stripes with a black lion',
+    ),
+    'MON': UkCountyClueData(
+      country: 'Wales',
+      famousPerson: 'Henry V',
+      famousLandmark: 'Tintern Abbey',
+      footballTeam: 'Monmouth Town',
+      nickname: 'Gateway to Wales',
+      flag: 'Gold field with three chevrons',
+    ),
+    'MTY': UkCountyClueData(
+      country: 'Wales',
+      famousPerson: 'Laura Ashley',
+      famousLandmark: 'Cyfarthfa Castle',
+      footballTeam: 'Merthyr Town',
+      nickname: 'Iron Capital of the World',
+      flag: 'Red field with a gold crown',
+    ),
+    'NPT': UkCountyClueData(
+      country: 'Wales',
+      famousPerson: 'Richard Burton',
+      famousLandmark: 'Gnoll Estate Country Park',
+      footballTeam: 'Port Talbot Town',
+      nickname: 'Steel Town',
+      flag: 'Blue and gold with industrial symbols',
+    ),
+    'TOF': UkCountyClueData(
+      country: 'Wales',
+      famousPerson: 'Terry Matthews',
+      famousLandmark: 'Blaenavon Ironworks',
+      footballTeam: 'Cwmbran Celtic',
+      nickname: 'Land of the Torrent',
+      flag: 'Green with a gold torch',
+    ),
+    'VGL': UkCountyClueData(
+      country: 'Wales',
+      famousPerson: 'Roald Dahl (raised in Penarth)',
+      famousLandmark: 'Dunraven Bay',
+      footballTeam: 'Barry Town United',
+      nickname: 'Garden of Wales',
+      flag: 'Green and gold with a rose',
     ),
 
     // =========================================================================
