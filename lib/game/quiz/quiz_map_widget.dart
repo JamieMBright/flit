@@ -286,7 +286,7 @@ class _UsaMapPainter extends CustomPainter {
     // Draw clean borders — single pass with anti-aliased strokes.
     // Divide strokeWidth by zoom scale so borders stay visually constant.
     final borderPaint = Paint()
-      ..color = const Color(0xFF1A2A32).withValues(alpha: 0.6)
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0 / zoomScale
       ..strokeJoin = StrokeJoin.round
