@@ -28,7 +28,7 @@ class UnchartedGameScreen extends StatefulWidget {
 }
 
 class _UnchartedGameScreenState extends State<UnchartedGameScreen>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late UnchartedSession _session;
   Timer? _timer;
 
@@ -37,12 +37,9 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
 
   String? _lastRevealedCode;
   String? _feedbackText;
-  bool _lastGuessCorrect = false;
 
   late AnimationController _feedbackController;
   late Animation<double> _feedbackOpacity;
-  late AnimationController _shakeController;
-  late Animation<double> _shakeAnimation;
 
   @override
   void initState() {
@@ -66,14 +63,6 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
       ),
     );
 
-    _shakeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    _shakeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _shakeController, curve: Curves.elasticIn),
-    );
-
     // Auto-focus the text field.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
@@ -86,7 +75,6 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
     _textController.dispose();
     _focusNode.dispose();
     _feedbackController.dispose();
-    _shakeController.dispose();
     super.dispose();
   }
 
@@ -104,15 +92,10 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
     _textController.clear();
 
     setState(() {
-      _lastGuessCorrect = result.matched;
       if (result.matched) {
         _lastRevealedCode = result.code;
         _feedbackText = result.areaName;
         _feedbackController.forward(from: 0);
-      } else {
-        _lastRevealedCode = null;
-        _feedbackText = null;
-        _shakeController.forward(from: 0);
       }
     });
 
@@ -172,8 +155,6 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
           mode: widget.mode,
           revealedCount: _session.revealedCount,
           totalCount: _session.totalCount,
-          totalGuesses: _session.totalGuesses,
-          wrongGuesses: _session.wrongGuesses,
           elapsedMs: _session.elapsedMs,
           score: _session.finalScore,
           givenUp: _session.givenUp,
@@ -199,6 +180,7 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
                 region: widget.region,
                 revealedCodes: _session.revealedCodes,
                 lastRevealedCode: _lastRevealedCode,
+                capitalsMode: widget.mode == UnchartedMode.capitals,
               ),
             ),
             // Top bar HUD.
@@ -292,9 +274,8 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
             child: Center(
               child: Text(
                 _feedbackText!,
-                style: TextStyle(
-                  color:
-                      _lastGuessCorrect ? FlitColors.success : FlitColors.error,
+                style: const TextStyle(
+                  color: FlitColors.success,
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),
@@ -307,69 +288,57 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
   }
 
   Widget _buildInputBar() {
-    return AnimatedBuilder(
-      animation: _shakeController,
-      builder: (context, child) {
-        final dx = _shakeAnimation.value *
-            8 *
-            ((_shakeController.value * 10).toInt().isEven ? 1 : -1);
-        return Transform.translate(
-          offset: Offset(dx, 0),
-          child: child,
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-        color: FlitColors.backgroundMid,
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _textController,
-                focusNode: _focusNode,
-                enabled: !_session.isComplete,
-                autofocus: true,
-                textCapitalization: TextCapitalization.words,
-                autocorrect: false,
-                enableSuggestions: false,
-                autofillHints: const [],
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 18,
-                ),
-                decoration: InputDecoration(
-                  hintText: widget.mode == UnchartedMode.countries
-                      ? 'Type a country name...'
-                      : 'Type a capital city...',
-                  hintStyle: TextStyle(
-                    color: FlitColors.textSecondary.withOpacity(0.5),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: FlitColors.accent),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        BorderSide(color: FlitColors.accent.withOpacity(0.4)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: FlitColors.accent, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFF1A2A3A),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-                onChanged: _handleInputChanged,
-                onSubmitted: _handleSubmit,
-                textInputAction: TextInputAction.go,
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      color: FlitColors.backgroundMid,
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _textController,
+              focusNode: _focusNode,
+              enabled: !_session.isComplete,
+              autofocus: true,
+              textCapitalization: TextCapitalization.words,
+              autocorrect: false,
+              enableSuggestions: false,
+              autofillHints: const [],
+              style: const TextStyle(
+                color: FlitColors.textPrimary,
+                fontSize: 18,
               ),
+              decoration: InputDecoration(
+                hintText: widget.mode == UnchartedMode.countries
+                    ? 'Type a country name...'
+                    : 'Type a capital city...',
+                hintStyle: TextStyle(
+                  color: FlitColors.textSecondary.withOpacity(0.5),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: FlitColors.accent),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      BorderSide(color: FlitColors.accent.withOpacity(0.4)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: FlitColors.accent, width: 2),
+                ),
+                filled: true,
+                fillColor: const Color(0xFF1A2A3A),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              onChanged: _handleInputChanged,
+              onSubmitted: _handleSubmit,
+              textInputAction: TextInputAction.go,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -386,8 +355,6 @@ class UnchartedResultsScreen extends StatelessWidget {
     required this.mode,
     required this.revealedCount,
     required this.totalCount,
-    required this.totalGuesses,
-    required this.wrongGuesses,
     required this.elapsedMs,
     required this.score,
     required this.givenUp,
@@ -398,8 +365,6 @@ class UnchartedResultsScreen extends StatelessWidget {
   final UnchartedMode mode;
   final int revealedCount;
   final int totalCount;
-  final int totalGuesses;
-  final int wrongGuesses;
   final int elapsedMs;
   final int score;
   final bool givenUp;
@@ -412,11 +377,9 @@ class UnchartedResultsScreen extends StatelessWidget {
     return '$minutes:${secs.toString().padLeft(2, '0')}';
   }
 
-  double get _accuracy => totalGuesses > 0 ? revealedCount / totalGuesses : 0;
-
   String get _grade {
     final pct = revealedCount / totalCount;
-    if (pct >= 1.0 && _accuracy >= 0.9) return 'S';
+    if (pct >= 1.0) return 'S';
     if (pct >= 0.9) return 'A';
     if (pct >= 0.75) return 'B';
     if (pct >= 0.5) return 'C';
@@ -427,10 +390,25 @@ class UnchartedResultsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final areas = RegionalData.getAreas(region);
-    final found = areas.where((a) => revealedCodes.contains(a.code)).toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
-    final missed = areas.where((a) => !revealedCodes.contains(a.code)).toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    final isCapitals = mode == UnchartedMode.capitals;
+
+    // For capitals mode, show capital name + (code); for countries, show name.
+    String displayName(RegionalArea a) =>
+        isCapitals && a.capital != null ? '${a.capital} (${a.code})' : a.name;
+
+    // Filter areas that have a capital (in capitals mode, skip areas w/o capital).
+    final eligible = isCapitals
+        ? areas
+            .where((a) => a.capital != null && a.capital!.isNotEmpty)
+            .toList()
+        : areas;
+
+    final found = eligible.where((a) => revealedCodes.contains(a.code)).toList()
+      ..sort((a, b) => displayName(a).compareTo(displayName(b)));
+    final missed = eligible
+        .where((a) => !revealedCodes.contains(a.code))
+        .toList()
+      ..sort((a, b) => displayName(a).compareTo(displayName(b)));
 
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
@@ -524,14 +502,6 @@ class UnchartedResultsScreen extends StatelessWidget {
             value: '$revealedCount / $totalCount',
           ),
           _StatRow(label: 'Time', value: _elapsedFormatted),
-          _StatRow(
-            label: 'Accuracy',
-            value: '${(_accuracy * 100).toStringAsFixed(0)}%',
-          ),
-          _StatRow(
-            label: 'Wrong Guesses',
-            value: '$wrongGuesses',
-          ),
           const SizedBox(height: 24),
 
           // Actions.
@@ -588,7 +558,7 @@ class UnchartedResultsScreen extends StatelessWidget {
               spacing: 6,
               runSpacing: 6,
               children: found
-                  .map((a) => _AreaChip(name: a.name, found: true))
+                  .map((a) => _AreaChip(name: displayName(a), found: true))
                   .toList(),
             ),
             const SizedBox(height: 20),
@@ -606,7 +576,7 @@ class UnchartedResultsScreen extends StatelessWidget {
               spacing: 6,
               runSpacing: 6,
               children: missed
-                  .map((a) => _AreaChip(name: a.name, found: false))
+                  .map((a) => _AreaChip(name: displayName(a), found: false))
                   .toList(),
             ),
             const SizedBox(height: 24),

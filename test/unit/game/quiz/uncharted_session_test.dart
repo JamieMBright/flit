@@ -42,7 +42,6 @@ void main() {
       final result = session.submitGuess('Atlantis');
       expect(result.matched, false);
       expect(session.revealedCount, 0);
-      expect(session.wrongGuesses, 1);
     });
 
     test('same area cannot be revealed twice', () {

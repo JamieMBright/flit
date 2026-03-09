@@ -90,8 +90,6 @@ class UnchartedSession {
 
   final Set<String> _revealedCodes = {};
   DateTime? _startTime;
-  int _totalGuesses = 0;
-  int _wrongGuesses = 0;
   bool _givenUp = false;
 
   // ── Public getters ──
@@ -102,8 +100,6 @@ class UnchartedSession {
   int get totalCount => _totalCount;
   int get revealedCount => _revealedCodes.length;
   int get remainingCount => _totalCount - _revealedCodes.length;
-  int get totalGuesses => _totalGuesses;
-  int get wrongGuesses => _wrongGuesses;
   int get correctGuesses => _revealedCodes.length;
   Set<String> get revealedCodes => Set.unmodifiable(_revealedCodes);
   double get progress =>
@@ -146,11 +142,9 @@ class UnchartedSession {
       return const UnchartedGuessResult(matched: false);
     }
 
-    _totalGuesses++;
     final result = _matcher.bestMatch(input, excludeCodes: _revealedCodes);
 
     if (result == null) {
-      _wrongGuesses++;
       return const UnchartedGuessResult(matched: false);
     }
 
@@ -175,17 +169,12 @@ class UnchartedSession {
   ///
   /// Formula:
   /// - Base: 100 points per correct answer
-  /// - Accuracy bonus: (correct / totalGuesses) multiplier (1.0–1.5)
   /// - Time bonus: faster = higher (decays over 10 minutes)
+  /// - Completion bonus: 2000 extra for finding all areas
   int get finalScore {
     if (_revealedCodes.isEmpty) return 0;
 
     final basePoints = _revealedCodes.length * 100;
-
-    // Accuracy multiplier: 1.0 if all wrong, 1.5 if perfect.
-    final accuracy =
-        _totalGuesses > 0 ? _revealedCodes.length / _totalGuesses : 0.0;
-    final accuracyMult = 1.0 + (accuracy * 0.5);
 
     // Time bonus: up to 1.5x for under 2 minutes, decays to 1.0x over 10 min.
     final seconds = elapsedMs / 1000.0;
@@ -197,6 +186,6 @@ class UnchartedSession {
     final completionBonus =
         (!_givenUp && _revealedCodes.length >= _totalCount) ? 2000 : 0;
 
-    return (basePoints * accuracyMult * timeMult).round() + completionBonus;
+    return (basePoints * timeMult).round() + completionBonus;
   }
 }
