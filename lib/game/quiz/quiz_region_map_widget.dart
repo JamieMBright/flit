@@ -496,45 +496,63 @@ class _RegionMapPainter extends CustomPainter {
 
     final r = _markerRadius / zoomScale;
 
-    // Background circle
-    Color fillColor;
-    if (isHighlighted) {
-      final opacity = 0.6 + 0.3 * pulseValue;
-      fillColor = Color.fromRGBO(232, 122, 90, opacity);
-    } else if (isCorrectlyGuessed || status == StateVisualStatus.correct) {
-      fillColor = const Color(0xFF2A8A4A);
-    } else if (status == StateVisualStatus.wrong) {
-      fillColor = const Color(0xFFAA3333);
-    } else {
-      fillColor = const Color(0xFF3A6A7A);
+    // Background circle — transparent for idle, filled for active states.
+    final bool hasActiveFill = isHighlighted ||
+        isCorrectlyGuessed ||
+        status == StateVisualStatus.correct ||
+        status == StateVisualStatus.wrong;
+
+    if (hasActiveFill) {
+      Color fillColor;
+      if (isHighlighted) {
+        final opacity = 0.6 + 0.3 * pulseValue;
+        fillColor = Color.fromRGBO(232, 122, 90, opacity);
+      } else if (isCorrectlyGuessed || status == StateVisualStatus.correct) {
+        fillColor = const Color(0xFF2A8A4A);
+      } else {
+        fillColor = const Color(0xFFAA3333);
+      }
+      canvas.drawCircle(pos, r, Paint()..color = fillColor);
     }
-    canvas.drawCircle(pos, r, Paint()..color = fillColor);
 
-    // Border ring
-    canvas.drawCircle(
-      pos,
-      r,
-      Paint()
-        ..color = const Color(0xFF8AB0C0)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2 / zoomScale,
-    );
+    // Dashed border ring.
+    final borderPaint = Paint()
+      ..color = const Color(0xFF8AB0C0)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2 / zoomScale;
+    const int dashCount = 16;
+    const double gapFraction = 0.4;
+    const double dashAngle =
+        (2 * 3.1415926535) / dashCount * (1.0 - gapFraction);
+    const double totalStep = (2 * 3.1415926535) / dashCount;
+    for (int i = 0; i < dashCount; i++) {
+      final double startAngle = i * totalStep;
+      final path = Path()
+        ..addArc(
+          Rect.fromCircle(center: pos, radius: r),
+          startAngle,
+          dashAngle,
+        );
+      canvas.drawPath(path, borderPaint);
+    }
 
-    // Label
-    final fontSize = 6.0 / zoomScale;
-    final tp = TextPainter(
-      text: TextSpan(
-        text: area.code,
-        style: TextStyle(
-          color: const Color(0xFFE0F0FF),
-          fontSize: fontSize.clamp(4.0, 8.0),
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.3,
+    // Label — only when difficulty enables labels.
+    if (showLabels) {
+      final fontSize = 6.0 / zoomScale;
+      final tp = TextPainter(
+        text: TextSpan(
+          text: area.code,
+          style: TextStyle(
+            color: const Color(0xFFE0F0FF),
+            fontSize: fontSize.clamp(4.0, 8.0),
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.3,
+          ),
         ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas, Offset(pos.dx - tp.width / 2, pos.dy - tp.height / 2));
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset(pos.dx - tp.width / 2, pos.dy - tp.height / 2));
+    }
   }
 
   String? hitTestArea(Offset position, Size size) {
