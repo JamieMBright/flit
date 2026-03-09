@@ -54,7 +54,7 @@ extension QuizCategoryExtension on QuizCategory {
       case QuizCategory.filmSetting:
         return 'Film Settings';
       case QuizCategory.mixed:
-        return 'Mixed';
+        return 'All';
     }
   }
 
@@ -83,7 +83,7 @@ extension QuizCategoryExtension on QuizCategory {
       case QuizCategory.filmSetting:
         return 'Where was this film/show set?';
       case QuizCategory.mixed:
-        return 'A random mix of all categories';
+        return 'Random mix of all available categories';
     }
   }
 
@@ -253,13 +253,18 @@ class QuizQuestionGenerator {
   List<QuizCategory> get _pool =>
       _regionCategories[region] ?? _universalCategories;
 
-  /// Generate a list of questions for the given category, covering all areas.
-  List<QuizQuestion> generateQuestions(QuizCategory category) {
+  /// Generate a list of questions for the given categories, covering all areas.
+  ///
+  /// When [categories] contains a single non-mixed category, all questions use
+  /// that category. When it contains multiple categories, each question picks
+  /// randomly from the set. When it contains [QuizCategory.mixed], it picks
+  /// from all available categories for the region.
+  List<QuizQuestion> generateQuestions(Set<QuizCategory> categories) {
     final areas = RegionalData.getAreas(region);
     final questions = <QuizQuestion>[];
 
     for (final area in areas) {
-      final question = _generateForArea(area, category);
+      final question = _generateForArea(area, categories);
       if (question != null) {
         questions.add(question);
       }
@@ -269,13 +274,19 @@ class QuizQuestionGenerator {
     return questions;
   }
 
-  /// Generate a single question for an area in the given category.
-  QuizQuestion? _generateForArea(RegionalArea area, QuizCategory category) {
+  /// Generate a single question for an area from the given category set.
+  QuizQuestion? _generateForArea(
+      RegionalArea area, Set<QuizCategory> categories) {
     QuizCategory effectiveCategory;
-    if (category == QuizCategory.mixed) {
+    if (categories.contains(QuizCategory.mixed)) {
+      // "All" — pick from the full region pool.
       effectiveCategory = _pool[_random.nextInt(_pool.length)];
+    } else if (categories.length == 1) {
+      effectiveCategory = categories.first;
     } else {
-      effectiveCategory = category;
+      // Multi-select — pick randomly from the selected subset.
+      final list = categories.toList();
+      effectiveCategory = list[_random.nextInt(list.length)];
     }
 
     switch (effectiveCategory) {

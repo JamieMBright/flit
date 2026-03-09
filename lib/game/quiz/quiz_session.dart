@@ -135,7 +135,7 @@ enum HintLevel {
 class QuizSession {
   QuizSession({
     required this.mode,
-    required this.category,
+    required this.categories,
     required this.region,
     this.difficulty = QuizDifficulty.medium,
     int? seed,
@@ -156,7 +156,7 @@ class QuizSession {
         _extraClueTexts = [];
 
   final QuizMode mode;
-  final QuizCategory category;
+  final Set<QuizCategory> categories;
   final GameRegion region;
   final QuizDifficulty difficulty;
   final QuizQuestionGenerator _generator;
@@ -250,7 +250,7 @@ class QuizSession {
 
   /// Initialize and start the quiz.
   void start() {
-    _questions = _generator.generateQuestions(category);
+    _questions = _generator.generateQuestions(categories);
     _startTime = DateTime.now();
   }
 
@@ -720,7 +720,7 @@ class QuizSession {
   /// Generate a summary of the quiz results.
   QuizSummary get summary => QuizSummary(
         mode: mode,
-        category: category,
+        categories: categories,
         difficulty: difficulty,
         totalScore: _totalScore,
         correctCount: correctCount,
@@ -740,7 +740,7 @@ class QuizSession {
 class QuizSummary {
   const QuizSummary({
     required this.mode,
-    required this.category,
+    required this.categories,
     required this.difficulty,
     required this.totalScore,
     required this.correctCount,
@@ -753,7 +753,7 @@ class QuizSummary {
   });
 
   final QuizMode mode;
-  final QuizCategory category;
+  final Set<QuizCategory> categories;
   final QuizDifficulty difficulty;
   final int totalScore;
   final int correctCount;

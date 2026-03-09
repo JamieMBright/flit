@@ -132,7 +132,7 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
         'score': summary.totalScore,
         'time_ms': summary.elapsedMs,
         'level_id': widget.flightSchoolLevelId ?? '',
-        'category': summary.category.name,
+        'category': summary.categories.map((c) => c.name).join(','),
         'difficulty': summary.difficulty.name,
         'mode': summary.mode.name,
       }, onConflict: 'user_id,date_key');
@@ -202,7 +202,7 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${summary.mode.displayName} — ${summary.category.displayName}',
+                        '${summary.mode.displayName} — ${summary.categories.length == 1 ? summary.categories.first.displayName : 'Multi'}',
                         style: const TextStyle(
                           color: FlitColors.textSecondary,
                           fontSize: 14,
