@@ -330,6 +330,9 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
                 enabled: !_session.isComplete,
                 autofocus: true,
                 textCapitalization: TextCapitalization.words,
+                autocorrect: false,
+                enableSuggestions: false,
+                autofillHints: const [],
                 style: const TextStyle(
                   color: FlitColors.textPrimary,
                   fontSize: 18,

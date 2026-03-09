@@ -29,6 +29,7 @@ import '../debug/companion_preview_screen.dart';
 import '../debug/country_preview_screen.dart';
 import '../debug/plane_preview_screen.dart';
 import 'admin_stats_screen.dart';
+import 'alias_admin_screen.dart';
 import 'flight_school_admin_screen.dart';
 import 'gold_management_screen.dart';
 
@@ -2316,6 +2317,17 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const GoldManagementScreen(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            _AdminActionCard(
+              icon: Icons.spellcheck,
+              iconColor: FlitColors.success,
+              label: 'Country Aliases',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const AliasAdminScreen(),
                 ),
               ),
             ),

@@ -5,6 +5,7 @@
 library;
 
 import '../data/country_aliases.dart';
+import 'alias_service.dart';
 
 /// Result of a fuzzy match attempt.
 class FuzzyMatchResult {
@@ -32,6 +33,9 @@ class FuzzyMatcher {
   ///
   /// [candidates] maps area code → canonical name (e.g., 'FR' → 'France').
   FuzzyMatcher(Map<String, String> candidates) {
+    // Merge baseline aliases with any runtime overrides.
+    final allAliases = AliasService.instance.mergedAliases;
+
     for (final entry in candidates.entries) {
       final code = entry.key;
       final name = entry.value;
@@ -40,14 +44,14 @@ class FuzzyMatcher {
       _codeToName[code] = name;
 
       // Also index alias → code mappings.
-      final aliases = countryAliases[normalized];
+      final aliases = allAliases[normalized];
       if (aliases != null) {
         for (final alias in aliases) {
           _aliasToCode[_normalize(alias)] = code;
         }
       }
       // Reverse: check if the canonical name appears as a value in aliases.
-      for (final entry in countryAliases.entries) {
+      for (final entry in allAliases.entries) {
         for (final alias in entry.value) {
           if (_normalize(alias) == normalized) {
             _aliasToCode[entry.key] = code;
