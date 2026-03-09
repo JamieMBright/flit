@@ -55,7 +55,7 @@ void main() {
         region: GameRegion.usStates,
         seed: 42,
       );
-      final questions = generator.generateQuestions(QuizCategory.stateName);
+      final questions = generator.generateQuestions({QuizCategory.stateName});
 
       expect(questions.length, equals(50));
       expect(
@@ -72,7 +72,7 @@ void main() {
         region: GameRegion.usStates,
         seed: 42,
       );
-      final questions = generator.generateQuestions(QuizCategory.capital);
+      final questions = generator.generateQuestions({QuizCategory.capital});
 
       expect(questions.length, equals(50));
       for (final q in questions) {
@@ -85,7 +85,7 @@ void main() {
         region: GameRegion.usStates,
         seed: 42,
       );
-      final questions = generator.generateQuestions(QuizCategory.nickname);
+      final questions = generator.generateQuestions({QuizCategory.nickname});
 
       expect(questions.length, equals(50));
       for (final q in questions) {
@@ -98,7 +98,7 @@ void main() {
         region: GameRegion.usStates,
         seed: 42,
       );
-      final questions = generator.generateQuestions(QuizCategory.sportsTeam);
+      final questions = generator.generateQuestions({QuizCategory.sportsTeam});
 
       expect(questions, isNotEmpty);
       for (final q in questions) {
@@ -111,7 +111,7 @@ void main() {
         region: GameRegion.usStates,
         seed: 42,
       );
-      final questions = generator.generateQuestions(QuizCategory.mixed);
+      final questions = generator.generateQuestions({QuizCategory.mixed});
 
       expect(questions, isNotEmpty);
       // Mixed should have variety of categories
@@ -122,8 +122,8 @@ void main() {
     test('seeded generator produces deterministic results', () {
       final gen1 = QuizQuestionGenerator(region: GameRegion.usStates, seed: 42);
       final gen2 = QuizQuestionGenerator(region: GameRegion.usStates, seed: 42);
-      final q1 = gen1.generateQuestions(QuizCategory.stateName);
-      final q2 = gen2.generateQuestions(QuizCategory.stateName);
+      final q1 = gen1.generateQuestions({QuizCategory.stateName});
+      final q2 = gen2.generateQuestions({QuizCategory.stateName});
 
       expect(q1.length, equals(q2.length));
       for (var i = 0; i < q1.length; i++) {
@@ -136,7 +136,7 @@ void main() {
         region: GameRegion.usStates,
         seed: 42,
       );
-      final questions = generator.generateQuestions(QuizCategory.stateName);
+      final questions = generator.generateQuestions({QuizCategory.stateName});
       final areas = RegionalData.getAreas(GameRegion.usStates);
       final validCodes = areas.map((a) => a.code).toSet();
 
@@ -154,7 +154,7 @@ void main() {
     test('session starts with correct initial state', () {
       final session = QuizSession(
         mode: QuizMode.allStates,
-        category: QuizCategory.stateName,
+        categories: {QuizCategory.stateName},
         region: GameRegion.usStates,
         seed: 42,
       );
@@ -175,7 +175,7 @@ void main() {
     test('correct answer increases score and streak', () {
       final session = QuizSession(
         mode: QuizMode.allStates,
-        category: QuizCategory.stateName,
+        categories: {QuizCategory.stateName},
         region: GameRegion.usStates,
         seed: 42,
       );
@@ -196,7 +196,7 @@ void main() {
     test('wrong answer resets streak and deducts points', () {
       final session = QuizSession(
         mode: QuizMode.allStates,
-        category: QuizCategory.stateName,
+        categories: {QuizCategory.stateName},
         region: GameRegion.usStates,
         seed: 42,
       );
@@ -223,7 +223,7 @@ void main() {
     test('already answered codes are rejected', () {
       final session = QuizSession(
         mode: QuizMode.allStates,
-        category: QuizCategory.stateName,
+        categories: {QuizCategory.stateName},
         region: GameRegion.usStates,
         seed: 42,
       );
@@ -241,7 +241,7 @@ void main() {
     test('rapid fire ends after max wrong answers', () {
       final session = QuizSession(
         mode: QuizMode.rapidFire,
-        category: QuizCategory.stateName,
+        categories: {QuizCategory.stateName},
         region: GameRegion.usStates,
         seed: 42,
       );
@@ -261,7 +261,7 @@ void main() {
     test('allStates ends after all questions answered', () {
       final session = QuizSession(
         mode: QuizMode.allStates,
-        category: QuizCategory.stateName,
+        categories: {QuizCategory.stateName},
         region: GameRegion.usStates,
         seed: 42,
       );
@@ -280,7 +280,7 @@ void main() {
     test('finish() manually ends the session', () {
       final session = QuizSession(
         mode: QuizMode.allStates,
-        category: QuizCategory.stateName,
+        categories: {QuizCategory.stateName},
         region: GameRegion.usStates,
         seed: 42,
       );
@@ -293,7 +293,7 @@ void main() {
     test('cannot submit answers after session is finished', () {
       final session = QuizSession(
         mode: QuizMode.allStates,
-        category: QuizCategory.stateName,
+        categories: {QuizCategory.stateName},
         region: GameRegion.usStates,
         seed: 42,
       );
@@ -309,7 +309,7 @@ void main() {
     test('summary has correct accuracy', () {
       final session = QuizSession(
         mode: QuizMode.allStates,
-        category: QuizCategory.stateName,
+        categories: {QuizCategory.stateName},
         region: GameRegion.usStates,
         seed: 42,
       );
@@ -335,7 +335,7 @@ void main() {
     test('summary grades based on accuracy', () {
       const summary90 = QuizSummary(
         mode: QuizMode.allStates,
-        category: QuizCategory.stateName,
+        categories: {QuizCategory.stateName},
         difficulty: QuizDifficulty.medium,
         totalScore: 10000,
         correctCount: 45,
@@ -350,7 +350,7 @@ void main() {
 
       const summary50 = QuizSummary(
         mode: QuizMode.allStates,
-        category: QuizCategory.stateName,
+        categories: {QuizCategory.stateName},
         difficulty: QuizDifficulty.medium,
         totalScore: 5000,
         correctCount: 25,
@@ -367,7 +367,7 @@ void main() {
     test('elapsed time format is correct', () {
       const summary = QuizSummary(
         mode: QuizMode.allStates,
-        category: QuizCategory.stateName,
+        categories: {QuizCategory.stateName},
         difficulty: QuizDifficulty.medium,
         totalScore: 10000,
         correctCount: 50,

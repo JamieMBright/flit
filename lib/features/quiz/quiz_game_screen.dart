@@ -24,7 +24,7 @@ class QuizGameScreen extends StatefulWidget {
   const QuizGameScreen({
     super.key,
     required this.mode,
-    required this.category,
+    required this.categories,
     this.region = GameRegion.usStates,
     this.challengeId,
     this.challengeOpponentName,
@@ -36,7 +36,7 @@ class QuizGameScreen extends StatefulWidget {
   });
 
   final QuizMode mode;
-  final QuizCategory category;
+  final Set<QuizCategory> categories;
   final GameRegion region;
   final QuizDifficulty difficulty;
 
@@ -98,7 +98,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
   void _initSession() {
     _session = QuizSession(
       mode: widget.mode,
-      category: widget.category,
+      categories: widget.categories,
       region: widget.region,
       difficulty: widget.difficulty,
       seed: widget.seed,
@@ -421,7 +421,9 @@ class _QuizGameScreenState extends State<QuizGameScreen>
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              widget.category.displayName.toUpperCase(),
+              widget.categories.length == 1
+                  ? widget.categories.first.displayName.toUpperCase()
+                  : 'MULTI',
               style: const TextStyle(
                 color: FlitColors.gold,
                 fontSize: 11,

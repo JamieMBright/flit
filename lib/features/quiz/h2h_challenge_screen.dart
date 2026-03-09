@@ -735,7 +735,7 @@ class _MyChallengesTabState extends ConsumerState<_MyChallengesTab> {
           MaterialPageRoute<void>(
             builder: (_) => QuizGameScreen(
               mode: QuizMode.allStates,
-              category: round.category,
+              categories: {round.category},
               region: level.region,
               difficulty: round.difficulty,
               challengeId: challenge.id,

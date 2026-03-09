@@ -521,7 +521,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       MaterialPageRoute<void>(
         builder: (_) => QuizGameScreen(
           mode: quizMode,
-          category: category,
+          categories: {category},
           challengeId: challengeId,
           challengeOpponentName: opponentName,
           seed: seed,

@@ -18,14 +18,14 @@ class TypeInGameScreen extends StatefulWidget {
   const TypeInGameScreen({
     super.key,
     required this.mode,
-    required this.category,
+    required this.categories,
     this.region = GameRegion.usStates,
     this.difficulty = QuizDifficulty.medium,
     this.flightSchoolLevelId,
   });
 
   final QuizMode mode;
-  final QuizCategory category;
+  final Set<QuizCategory> categories;
   final GameRegion region;
   final QuizDifficulty difficulty;
   final String? flightSchoolLevelId;
@@ -84,7 +84,7 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
   void _initSession() {
     _session = QuizSession(
       mode: widget.mode,
-      category: widget.category,
+      categories: widget.categories,
       region: widget.region,
       difficulty: widget.difficulty,
     );
@@ -497,7 +497,9 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              widget.category.displayName.toUpperCase(),
+              widget.categories.length == 1
+                  ? widget.categories.first.displayName.toUpperCase()
+                  : 'MULTI',
               style: const TextStyle(
                 color: FlitColors.gold,
                 fontSize: 11,

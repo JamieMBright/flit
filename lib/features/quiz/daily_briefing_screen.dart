@@ -86,7 +86,7 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen>
       MaterialPageRoute<QuizSummary>(
         builder: (_) => QuizGameScreen(
           mode: _briefing.mode,
-          category: _briefing.category,
+          categories: {_briefing.category},
           region: _briefing.level.region,
           difficulty: _briefing.difficulty,
           seed: _briefing.seed,

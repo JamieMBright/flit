@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
@@ -12,7 +14,7 @@ import 'type_in_game_screen.dart';
 /// Setup/lobby screen for Flight School quiz mode.
 ///
 /// Lets the player choose:
-/// 1. Quiz category (filtered by region)
+/// 1. Quiz categories (multi-select, filtered by region)
 /// 2. Game mode (all areas, time trial, rapid fire)
 ///
 /// The [level] parameter determines which region and categories are available.
@@ -26,7 +28,7 @@ class QuizSetupScreen extends StatefulWidget {
 }
 
 class _QuizSetupScreenState extends State<QuizSetupScreen> {
-  QuizCategory _selectedCategory = QuizCategory.mixed;
+  Set<QuizCategory> _selectedCategories = {QuizCategory.mixed};
   QuizMode _selectedMode = QuizMode.allStates;
   QuizDifficulty _selectedDifficulty = QuizDifficulty.medium;
 
@@ -48,13 +50,61 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
   List<QuizCategory> get _availableCategories =>
       _selectedDifficulty.filterCategories(widget.level.availableCategories);
 
+  /// Non-mixed categories available for the current difficulty.
+  List<QuizCategory> get _selectableCategories =>
+      _availableCategories.where((c) => c != QuizCategory.mixed).toList();
+
+  /// Whether "All" is effectively selected (mixed or all individual categories).
+  bool get _isAllSelected => _selectedCategories.contains(QuizCategory.mixed);
+
   @override
   void initState() {
     super.initState();
-    // Ensure default selection is valid for this level
-    if (!_availableCategories.contains(_selectedCategory)) {
-      _selectedCategory = _availableCategories.first;
-    }
+    // Default to "All"
+    _selectedCategories = {QuizCategory.mixed};
+  }
+
+  void _toggleCategory(QuizCategory category) {
+    setState(() {
+      // If "All" is currently selected, switching to a specific category.
+      if (_isAllSelected) {
+        _selectedCategories = {category};
+        return;
+      }
+
+      final updated = Set<QuizCategory>.from(_selectedCategories);
+      if (updated.contains(category)) {
+        updated.remove(category);
+      } else {
+        updated.add(category);
+      }
+
+      // If nothing selected, fall back to "All".
+      if (updated.isEmpty) {
+        _selectedCategories = {QuizCategory.mixed};
+      } else {
+        _selectedCategories = updated;
+      }
+    });
+  }
+
+  void _selectAll() {
+    setState(() {
+      _selectedCategories = {QuizCategory.mixed};
+    });
+  }
+
+  void _selectRandom() {
+    final rng = Random();
+    final pool = _selectableCategories;
+    if (pool.isEmpty) return;
+
+    // Pick 1 to pool.length categories randomly.
+    final count = 1 + rng.nextInt(pool.length);
+    final shuffled = List<QuizCategory>.from(pool)..shuffle(rng);
+    setState(() {
+      _selectedCategories = shuffled.take(count).toSet();
+    });
   }
 
   void _startQuiz() {
@@ -62,7 +112,7 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
     if (_selectedMode == QuizMode.typeIn) {
       screen = TypeInGameScreen(
         mode: _selectedMode,
-        category: _selectedCategory,
+        categories: _selectedCategories,
         region: widget.level.region,
         difficulty: _selectedDifficulty,
         flightSchoolLevelId: widget.level.id,
@@ -70,7 +120,7 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
     } else {
       screen = QuizGameScreen(
         mode: _selectedMode,
-        category: _selectedCategory,
+        categories: _selectedCategories,
         region: widget.level.region,
         difficulty: _selectedDifficulty,
         flightSchoolLevelId: widget.level.id,
@@ -118,9 +168,9 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                     ..._buildModeCards(),
                     const SizedBox(height: 24),
 
-                    _buildSectionLabel('CATEGORY', Icons.category),
+                    _buildSectionLabel('CATEGORIES', Icons.category),
                     const SizedBox(height: 10),
-                    _buildCategoryGrid(),
+                    _buildCategorySection(),
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -311,59 +361,131 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
     }).toList();
   }
 
-  Widget _buildCategoryGrid() {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: _availableCategories.map((category) {
-        final isSelected = _selectedCategory == category;
-        final iconData = _iconMap[category.icon] ?? Icons.help;
+  Widget _buildCategorySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Action buttons: All and Random.
+        Row(
+          children: [
+            _buildActionChip(
+              label: 'All',
+              icon: Icons.select_all,
+              selected: _isAllSelected,
+              onTap: _selectAll,
+            ),
+            const SizedBox(width: 8),
+            _buildActionChip(
+              label: 'Random',
+              icon: Icons.casino,
+              selected: false,
+              onTap: _selectRandom,
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        // Individual category chips (multi-select).
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _selectableCategories.map((category) {
+            final isSelected =
+                !_isAllSelected && _selectedCategories.contains(category);
+            final iconData = _iconMap[category.icon] ?? Icons.help;
 
-        return GestureDetector(
-          onTap: () => setState(() => _selectedCategory = category),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: (MediaQuery.of(context).size.width - 48) / 3,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? FlitColors.gold.withOpacity(0.15)
-                  : FlitColors.cardBackground,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isSelected
-                    ? FlitColors.gold.withOpacity(0.6)
-                    : FlitColors.cardBorder,
-                width: isSelected ? 1.5 : 1,
+            return GestureDetector(
+              onTap: () => _toggleCategory(category),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: (MediaQuery.of(context).size.width - 48) / 3,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? FlitColors.gold.withOpacity(0.15)
+                      : FlitColors.cardBackground,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isSelected
+                        ? FlitColors.gold.withOpacity(0.6)
+                        : FlitColors.cardBorder,
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      iconData,
+                      color:
+                          isSelected ? FlitColors.gold : FlitColors.textMuted,
+                      size: 22,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      category.displayName,
+                      style: TextStyle(
+                        color: isSelected
+                            ? FlitColors.textPrimary
+                            : FlitColors.textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionChip({
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected
+              ? FlitColors.accent.withOpacity(0.15)
+              : FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected
+                ? FlitColors.accent.withOpacity(0.6)
+                : FlitColors.cardBorder,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                color: selected ? FlitColors.accent : FlitColors.textMuted,
+                size: 16),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? FlitColors.accent : FlitColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  iconData,
-                  color: isSelected ? FlitColors.gold : FlitColors.textMuted,
-                  size: 22,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  category.displayName,
-                  style: TextStyle(
-                    color: isSelected
-                        ? FlitColors.textPrimary
-                        : FlitColors.textSecondary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
+          ],
+        ),
+      ),
     );
   }
 
@@ -382,9 +504,13 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
               onTap: () {
                 setState(() {
                   _selectedDifficulty = diff;
-                  // Re-validate category selection
-                  if (!_availableCategories.contains(_selectedCategory)) {
-                    _selectedCategory = _availableCategories.first;
+                  // Re-validate category selection: remove any that
+                  // aren't available in the new difficulty.
+                  if (!_isAllSelected) {
+                    final available = _selectableCategories.toSet();
+                    final valid = _selectedCategories.intersection(available);
+                    _selectedCategories =
+                        valid.isNotEmpty ? valid : {QuizCategory.mixed};
                   }
                 });
               },
