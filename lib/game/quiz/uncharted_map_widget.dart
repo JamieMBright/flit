@@ -1,19 +1,22 @@
 /// Map widget for the Uncharted game mode.
 ///
-/// Renders all area outlines on a dark background. Revealed areas are
-/// filled with colour and labelled. Supports pinch-to-zoom and pan.
+/// Renders all area outlines on a dark background. Revealed areas show
+/// the Blue Marble satellite texture clipped to the country polygon.
+/// Supports pinch-to-zoom and pan.
 library;
 
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../map/region.dart';
 
 /// A zoomable, pannable map showing outlines of all areas for a region.
 ///
-/// Areas in [revealedCodes] are filled and labelled; the rest are
-/// outline-only silhouettes.
+/// Areas in [revealedCodes] show the Blue Marble satellite imagery clipped
+/// to the polygon shape; the rest are outline-only silhouettes.
 class UnchartedMapWidget extends StatefulWidget {
   const UnchartedMapWidget({
     super.key,
@@ -38,6 +41,7 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
   final TransformationController _transformController =
       TransformationController();
   late List<RegionalArea> _areas;
+  ui.Image? _satelliteImage;
 
   @override
   void initState() {
@@ -47,6 +51,16 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
+    _loadSatelliteImage();
+  }
+
+  Future<void> _loadSatelliteImage() async {
+    final data = await rootBundle.load('assets/textures/blue_marble.png');
+    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+    final frame = await codec.getNextFrame();
+    if (mounted) {
+      setState(() => _satelliteImage = frame.image);
+    }
   }
 
   @override
@@ -63,6 +77,7 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
 
   @override
   void dispose() {
+    _satelliteImage?.dispose();
     _flashController.dispose();
     _transformController.dispose();
     super.dispose();
@@ -89,6 +104,7 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
                   lastRevealedCode: widget.lastRevealedCode,
                   flashProgress: _flashController.value,
                   zoomScale: _currentZoomScale,
+                  satelliteImage: _satelliteImage,
                 ),
               ),
             );
@@ -112,6 +128,7 @@ class _UnchartedMapPainter extends CustomPainter {
     required this.lastRevealedCode,
     required this.flashProgress,
     required this.zoomScale,
+    this.satelliteImage,
   });
 
   final List<RegionalArea> areas;
@@ -120,6 +137,7 @@ class _UnchartedMapPainter extends CustomPainter {
   final String? lastRevealedCode;
   final double flashProgress;
   final double zoomScale;
+  final ui.Image? satelliteImage;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -130,7 +148,7 @@ class _UnchartedMapPainter extends CustomPainter {
     );
 
     final bounds = region.bounds;
-    final transform = _GeoTransform(
+    final transform = _GeoTransform.fromBounds(
       minLng: bounds[0],
       maxLng: bounds[2],
       minLat: bounds[1],
@@ -144,10 +162,6 @@ class _UnchartedMapPainter extends CustomPainter {
       ..strokeWidth = 1.0 / zoomScale
       ..color = const Color(0xFF3A5A7A);
 
-    final revealedFill = Paint()
-      ..style = PaintingStyle.fill
-      ..color = const Color(0xFF1B6B4A);
-
     final revealedStroke = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2 / zoomScale
@@ -159,17 +173,27 @@ class _UnchartedMapPainter extends CustomPainter {
       final isFlashing = area.code == lastRevealedCode && flashProgress < 1.0;
 
       if (isRevealed) {
-        if (isFlashing) {
-          // Flash effect: bright green fading to normal.
-          final flashColor = Color.lerp(
-            const Color(0xFF2ECC71),
-            const Color(0xFF1B6B4A),
-            flashProgress,
-          )!;
-          canvas.drawPath(path, Paint()..color = flashColor);
+        // Reveal satellite imagery clipped to the area polygon.
+        if (satelliteImage != null) {
+          _drawSatelliteFill(canvas, path, transform);
         } else {
-          canvas.drawPath(path, revealedFill);
+          // Fallback if image hasn't loaded yet.
+          canvas.drawPath(
+            path,
+            Paint()..color = const Color(0xFF1B6B4A),
+          );
         }
+
+        if (isFlashing) {
+          // Flash overlay: bright green fading out to reveal satellite.
+          final flashAlpha = (1.0 - flashProgress).clamp(0.0, 1.0);
+          canvas.drawPath(
+            path,
+            Paint()
+              ..color = const Color(0xFF2ECC71).withValues(alpha: flashAlpha),
+          );
+        }
+
         canvas.drawPath(path, revealedStroke);
         _drawLabel(canvas, area, transform);
       } else {
@@ -177,6 +201,45 @@ class _UnchartedMapPainter extends CustomPainter {
         canvas.drawPath(path, outlinePaint);
       }
     }
+  }
+
+  /// Draw the Blue Marble satellite texture clipped to a polygon path.
+  ///
+  /// Maps the equirectangular satellite image (full world: -180..180 lng,
+  /// -90..90 lat) to the region's canvas transform so the texture aligns
+  /// with the geographic coordinates.
+  void _drawSatelliteFill(
+    Canvas canvas,
+    Path path,
+    _GeoTransform transform,
+  ) {
+    final img = satelliteImage!;
+
+    // Map from geographic bounds to image pixels.
+    final srcLeft = ((transform.minLng + 180.0) / 360.0) * img.width;
+    final srcRight = ((transform.maxLng + 180.0) / 360.0) * img.width;
+    final srcTop = ((90.0 - transform.maxLat) / 180.0) * img.height;
+    final srcBottom = ((90.0 - transform.minLat) / 180.0) * img.height;
+
+    final srcRect = Rect.fromLTRB(srcLeft, srcTop, srcRight, srcBottom);
+
+    // Destination rect is the region's projected canvas area.
+    final dstRect = Rect.fromLTWH(
+      transform.offsetX,
+      transform.offsetY,
+      transform.projectedWidth,
+      transform.projectedHeight,
+    );
+
+    canvas.save();
+    canvas.clipPath(path);
+    canvas.drawImageRect(
+      img,
+      srcRect,
+      dstRect,
+      Paint()..filterQuality = FilterQuality.high,
+    );
+    canvas.restore();
   }
 
   Path _buildAreaPath(RegionalArea area, _GeoTransform transform) {
@@ -242,44 +305,52 @@ class _UnchartedMapPainter extends CustomPainter {
     return revealedCodes.length != oldDelegate.revealedCodes.length ||
         lastRevealedCode != oldDelegate.lastRevealedCode ||
         flashProgress != oldDelegate.flashProgress ||
-        zoomScale != oldDelegate.zoomScale;
+        zoomScale != oldDelegate.zoomScale ||
+        satelliteImage != oldDelegate.satelliteImage;
   }
 }
 
 /// Longitude/latitude → canvas coordinate transformer.
+///
+/// Also exposes [offsetX], [offsetY], [projectedWidth], [projectedHeight]
+/// for satellite texture mapping.
 class _GeoTransform {
-  const _GeoTransform({
+  _GeoTransform.fromBounds({
     required this.minLng,
     required this.maxLng,
     required this.minLat,
     required this.maxLat,
-    required this.canvasWidth,
-    required this.canvasHeight,
-  });
-
-  final double minLng, maxLng, minLat, maxLat;
-  final double canvasWidth, canvasHeight;
-
-  Offset toCanvas(double lng, double lat) {
-    // Aspect-correct projection.
+    required double canvasWidth,
+    required double canvasHeight,
+  }) {
     final lngRange = maxLng - minLng;
     final latRange = maxLat - minLat;
     final midLat = (minLat + maxLat) / 2;
-    final aspectCorrection = math.cos(midLat * math.pi / 180);
+    _aspectCorrection = math.cos(midLat * math.pi / 180);
 
-    final effectiveLngRange = lngRange * aspectCorrection;
-    final scale = math.min(
+    final effectiveLngRange = lngRange * _aspectCorrection;
+    _scale = math.min(
       canvasWidth / effectiveLngRange,
       canvasHeight / latRange,
     );
 
-    final projectedWidth = effectiveLngRange * scale;
-    final projectedHeight = latRange * scale;
-    final offsetX = (canvasWidth - projectedWidth) / 2;
-    final offsetY = (canvasHeight - projectedHeight) / 2;
+    projectedWidth = effectiveLngRange * _scale;
+    projectedHeight = latRange * _scale;
+    offsetX = (canvasWidth - projectedWidth) / 2;
+    offsetY = (canvasHeight - projectedHeight) / 2;
+  }
 
-    final x = offsetX + ((lng - minLng) * aspectCorrection) * scale;
-    final y = offsetY + ((maxLat - lat)) * scale;
+  final double minLng, maxLng, minLat, maxLat;
+  late final double _aspectCorrection;
+  late final double _scale;
+  late final double offsetX;
+  late final double offsetY;
+  late final double projectedWidth;
+  late final double projectedHeight;
+
+  Offset toCanvas(double lng, double lat) {
+    final x = offsetX + ((lng - minLng) * _aspectCorrection) * _scale;
+    final y = offsetY + ((maxLat - lat)) * _scale;
     return Offset(x, y);
   }
 }

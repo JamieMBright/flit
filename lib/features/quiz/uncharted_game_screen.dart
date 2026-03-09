@@ -184,21 +184,42 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Use resizeToAvoidBottomInset: false so the map doesn't shrink when
+    // the keyboard appears. The HUD floats on top via a Stack.
     return Scaffold(
       backgroundColor: const Color(0xFF0D1B2A),
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            _buildTopBar(),
-            Expanded(
+            // Full-screen map — stays still regardless of keyboard state.
+            Positioned.fill(
               child: UnchartedMapWidget(
                 region: widget.region,
                 revealedCodes: _session.revealedCodes,
                 lastRevealedCode: _lastRevealedCode,
               ),
             ),
-            _buildFeedback(),
-            _buildInputBar(),
+            // Top bar HUD.
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: _buildTopBar(),
+            ),
+            // Feedback + input bar at the bottom.
+            Positioned(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 0,
+              right: 0,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildFeedback(),
+                  _buildInputBar(),
+                ],
+              ),
+            ),
           ],
         ),
       ),
