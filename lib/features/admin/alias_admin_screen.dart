@@ -9,9 +9,10 @@ import '../../game/quiz/alias_service.dart';
 /// Admin screen for viewing and editing country/area name aliases.
 ///
 /// Shows every area (countries, US states, UK counties) with all accepted
-/// spellings. Baseline aliases from [countryAliases] are shown with a lock
-/// icon; runtime overrides (stored in SharedPreferences) can be added or
-/// removed.
+/// spellings. Baseline aliases can be removed (struck through) and restored.
+/// Runtime overrides (stored in SharedPreferences) can be added or removed.
+/// All changes flow through [AliasService] and are picked up by the game's
+/// [FuzzyMatcher] immediately.
 class AliasAdminScreen extends StatefulWidget {
   const AliasAdminScreen({super.key});
 
@@ -22,6 +23,7 @@ class AliasAdminScreen extends StatefulWidget {
 class _AliasAdminScreenState extends State<AliasAdminScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _showRemoved = false;
 
   late List<_AliasEntry> _allEntries;
 
@@ -102,7 +104,12 @@ class _AliasAdminScreenState extends State<AliasAdminScreen> {
       if (e.code.toLowerCase().contains(q)) return true;
       // Also search within aliases.
       final aliases = AliasService.instance.getAliases(e.normalizedName);
-      return aliases.any((a) => a.contains(q));
+      if (aliases.any((a) => a.contains(q))) return true;
+      // Also search removed baseline aliases.
+      final removed =
+          AliasService.instance.getRemovedBaseline(e.normalizedName);
+      if (removed.any((a) => a.contains(q))) return true;
+      return false;
     }).toList();
   }
 
@@ -167,8 +174,14 @@ class _AliasAdminScreenState extends State<AliasAdminScreen> {
     ).then((_) => controller.dispose());
   }
 
-  Future<void> _removeOverride(_AliasEntry entry, String alias) async {
+  Future<void> _removeAlias(_AliasEntry entry, String alias) async {
     await AliasService.instance.removeAlias(entry.normalizedName, alias);
+    setState(() {});
+  }
+
+  Future<void> _restoreBaselineAlias(_AliasEntry entry, String alias) async {
+    await AliasService.instance
+        .restoreBaselineAlias(entry.normalizedName, alias);
     setState(() {});
   }
 
@@ -184,6 +197,20 @@ class _AliasAdminScreenState extends State<AliasAdminScreen> {
             style: TextStyle(color: FlitColors.textPrimary)),
         centerTitle: true,
         iconTheme: const IconThemeData(color: FlitColors.textPrimary),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _showRemoved
+                  ? Icons.visibility_off_rounded
+                  : Icons.visibility_rounded,
+              color: _showRemoved ? FlitColors.error : FlitColors.textSecondary,
+              size: 20,
+            ),
+            tooltip:
+                _showRemoved ? 'Hide removed aliases' : 'Show removed aliases',
+            onPressed: () => setState(() => _showRemoved = !_showRemoved),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -223,10 +250,24 @@ class _AliasAdminScreenState extends State<AliasAdminScreen> {
           // Count.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              '${filtered.length} areas',
-              style: const TextStyle(
-                  color: FlitColors.textSecondary, fontSize: 13),
+            child: Row(
+              children: [
+                Text(
+                  '${filtered.length} areas',
+                  style: const TextStyle(
+                      color: FlitColors.textSecondary, fontSize: 13),
+                ),
+                const Spacer(),
+                if (_showRemoved)
+                  Text(
+                    'Showing removed',
+                    style: TextStyle(
+                      color: FlitColors.error.withValues(alpha: 0.7),
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 4),
@@ -239,8 +280,10 @@ class _AliasAdminScreenState extends State<AliasAdminScreen> {
                 final entry = filtered[index];
                 return _AliasCard(
                   entry: entry,
+                  showRemoved: _showRemoved,
                   onAdd: () => _showAddAliasDialog(entry),
-                  onRemoveOverride: (alias) => _removeOverride(entry, alias),
+                  onRemove: (alias) => _removeAlias(entry, alias),
+                  onRestore: (alias) => _restoreBaselineAlias(entry, alias),
                 );
               },
             ),
@@ -266,19 +309,30 @@ class _AliasEntry {
 class _AliasCard extends StatelessWidget {
   const _AliasCard({
     required this.entry,
+    required this.showRemoved,
     required this.onAdd,
-    required this.onRemoveOverride,
+    required this.onRemove,
+    required this.onRestore,
   });
 
   final _AliasEntry entry;
+  final bool showRemoved;
   final VoidCallback onAdd;
-  final void Function(String alias) onRemoveOverride;
+  final void Function(String alias) onRemove;
+  final void Function(String alias) onRestore;
 
   @override
   Widget build(BuildContext context) {
     final service = AliasService.instance;
     final aliases = service.getAliases(entry.normalizedName);
+    final removedBaseline = service.getRemovedBaseline(entry.normalizedName);
     final hasAliases = aliases.isNotEmpty;
+    final hasRemoved = removedBaseline.isNotEmpty;
+
+    // Skip entries with no active or removed aliases when not searching.
+    if (!hasAliases && !hasRemoved && !showRemoved) {
+      // Still show the card for adding.
+    }
 
     return Card(
       color: FlitColors.backgroundMid,
@@ -343,10 +397,31 @@ class _AliasCard extends StatelessWidget {
                 children: aliases.map((alias) {
                   final isOverride =
                       service.isOverride(entry.normalizedName, alias);
+                  final isBaseline =
+                      service.isBaseline(entry.normalizedName, alias);
                   return _AliasChip(
                     alias: alias,
                     isOverride: isOverride,
-                    onRemove: isOverride ? () => onRemoveOverride(alias) : null,
+                    isBaseline: isBaseline,
+                    isRemoved: false,
+                    onRemove: () => onRemove(alias),
+                  );
+                }).toList(),
+              ),
+            ],
+            // Show removed baseline aliases when toggled.
+            if (showRemoved && hasRemoved) ...[
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 5,
+                runSpacing: 5,
+                children: removedBaseline.map((alias) {
+                  return _AliasChip(
+                    alias: alias,
+                    isOverride: false,
+                    isBaseline: true,
+                    isRemoved: true,
+                    onRestore: () => onRestore(alias),
                   );
                 }).toList(),
               ),
@@ -362,15 +437,58 @@ class _AliasChip extends StatelessWidget {
   const _AliasChip({
     required this.alias,
     required this.isOverride,
+    required this.isBaseline,
+    required this.isRemoved,
     this.onRemove,
+    this.onRestore,
   });
 
   final String alias;
   final bool isOverride;
+  final bool isBaseline;
+  final bool isRemoved;
   final VoidCallback? onRemove;
+  final VoidCallback? onRestore;
 
   @override
   Widget build(BuildContext context) {
+    if (isRemoved) {
+      // Removed baseline — strike-through, muted, with restore button.
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: FlitColors.error.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: FlitColors.error.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.remove_circle_outline,
+                size: 11, color: FlitColors.error.withValues(alpha: 0.5)),
+            const SizedBox(width: 3),
+            Text(
+              alias,
+              style: TextStyle(
+                color: FlitColors.error.withValues(alpha: 0.6),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                decoration: TextDecoration.lineThrough,
+              ),
+            ),
+            if (onRestore != null) ...[
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: onRestore,
+                child: Icon(Icons.undo_rounded,
+                    size: 14, color: FlitColors.success.withValues(alpha: 0.7)),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
     final chipColor = isOverride ? FlitColors.gold : FlitColors.accent;
 
     return Container(
@@ -383,10 +501,10 @@ class _AliasChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (!isOverride)
+          if (isBaseline && !isOverride)
             Padding(
               padding: const EdgeInsets.only(right: 3),
-              child: Icon(Icons.lock,
+              child: Icon(Icons.lock_open_rounded,
                   size: 10,
                   color: FlitColors.textSecondary.withValues(alpha: 0.6)),
             ),
@@ -398,7 +516,7 @@ class _AliasChip extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
-          if (isOverride && onRemove != null) ...[
+          if (onRemove != null) ...[
             const SizedBox(width: 4),
             GestureDetector(
               onTap: onRemove,
