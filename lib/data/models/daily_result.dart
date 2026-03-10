@@ -1,3 +1,5 @@
+import '../../game/data/country_difficulty.dart';
+
 /// Per-round result data for daily challenge share text.
 class DailyRoundResult {
   const DailyRoundResult({
@@ -5,6 +7,7 @@ class DailyRoundResult {
     required this.completed,
     required this.timeMs,
     required this.score,
+    this.countryCode = '',
   });
 
   /// Number of hints used this round (0-4).
@@ -16,22 +19,29 @@ class DailyRoundResult {
   /// Time in milliseconds for this round.
   final int timeMs;
 
-  /// Score for this round (time-based: full at ≤10s, minimum at ≥60s).
+  /// Score for this round (time-based with difficulty multiplier applied).
   final int score;
 
-  /// Compute a time-based score from elapsed time and hints used.
+  /// ISO country code for this round (used for difficulty multiplier).
+  final String countryCode;
+
+  /// Compute a time-based score from elapsed time and hints used,
+  /// with difficulty multiplier applied.
   ///
   /// Formula:
   ///   base     = 10,000
   ///   hints    = escalating penalty per tier (500, 1000, 1500, 2500)
   ///   time     = 0 at ≤10s, linear to 5,000 at ≥60s
+  ///   raw      = base - hints - time
+  ///   final    = raw × difficultyMultiplier(countryCode)
   ///
-  /// This is used to recalculate scores from stored data so that old
-  /// fuel-based scores and new time-based scores are consistent.
+  /// When [countryCode] is empty or not provided, no multiplier is applied
+  /// (backwards-compatible with old data).
   static int computeTimeScore({
     required int timeMs,
     required int hintsUsed,
     required bool completed,
+    String countryCode = '',
   }) {
     if (!completed) return 0;
     const int base = 10000;
@@ -48,7 +58,10 @@ class DailyRoundResult {
       timePenalty = 5000;
     }
     final raw = base - hintPenalty - timePenalty;
-    return raw < 0 ? 0 : raw;
+    if (raw <= 0) return 0;
+    if (countryCode.isEmpty) return raw;
+    final multiplier = difficultyMultiplier(countryCode);
+    return (raw * multiplier).round().clamp(0, 10000);
   }
 
   /// Emoji representation of this round's performance.
@@ -65,22 +78,26 @@ class DailyRoundResult {
         'completed': completed,
         'time_ms': timeMs,
         'score': score,
+        'country_code': countryCode,
       };
 
   /// Deserialize from JSON, recalculating the score using the time-based
-  /// formula so that old fuel-based scores align with new time-based ones.
+  /// formula with difficulty multiplier so scores reflect country difficulty.
   factory DailyRoundResult.fromJson(Map<String, dynamic> json) {
     final hintsUsed = json['hints_used'] as int? ?? 0;
     final completed = json['completed'] as bool? ?? false;
     final timeMs = json['time_ms'] as int? ?? 0;
+    final countryCode = json['country_code'] as String? ?? '';
     return DailyRoundResult(
       hintsUsed: hintsUsed,
       completed: completed,
       timeMs: timeMs,
+      countryCode: countryCode,
       score: computeTimeScore(
         timeMs: timeMs,
         hintsUsed: hintsUsed,
         completed: completed,
+        countryCode: countryCode,
       ),
     );
   }
