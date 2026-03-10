@@ -7,6 +7,7 @@ import '../../data/models/cosmetic.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/challenge_service.dart';
 import '../../data/services/matchmaking_service.dart';
+import '../guide/gameplay_guide_screen.dart';
 import '../play/play_screen.dart';
 
 /// Matchmaking states for the UI flow.
@@ -304,6 +305,17 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
         title: const Text('Find a Challenger'),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: 'How to Play',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const GameplayGuideScreen(
+                  initialTab: GuideTab.dogfight,
+                ),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {

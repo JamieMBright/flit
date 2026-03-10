@@ -4,25 +4,24 @@
 /// Keys are normalized (lowercase, no diacritics, no punctuation).
 /// Values are lists of alternative spellings that should match.
 ///
-/// The fuzzy matcher uses this bidirectionally: if the canonical name maps
-/// to aliases, OR if an alias maps back to the canonical name.
+/// Only include the canonical country name as the key — the FuzzyMatcher
+/// handles reverse lookups automatically. Do NOT add reverse entries
+/// (e.g. 'uae' → 'united arab emirates') as these create orphaned entries
+/// in the admin panel.
 library;
 
 const Map<String, List<String>> countryAliases = {
   // ── Africa ──
-  'cote divoire': ['ivory coast', 'cote d ivoire', 'cote divoire'],
-  'ivory coast': ['cote divoire', 'cote d ivoire'],
+  'cote divoire': ['ivory coast', 'cote d ivoire'],
   'democratic republic of the congo': [
     'drc',
     'dr congo',
     'congo kinshasa',
-    'zaire'
+    'zaire',
   ],
   'republic of the congo': ['congo brazzaville', 'congo republic'],
   'eswatini': ['swaziland'],
-  'swaziland': ['eswatini'],
   'cabo verde': ['cape verde'],
-  'cape verde': ['cabo verde'],
   'central african republic': ['car'],
   'south sudan': ['s sudan'],
   'burkina faso': ['upper volta'],
@@ -33,15 +32,12 @@ const Map<String, List<String>> countryAliases = {
 
   // ── Asia ──
   'myanmar': ['burma', 'myanmmar'],
-  'burma': ['myanmar'],
   'timor leste': ['east timor', 'timorleste'],
-  'east timor': ['timor leste', 'timorleste'],
   'brunei': ['brunei darussalam'],
   'laos': ['lao', 'lao pdr', 'lao peoples democratic republic'],
   'south korea': ['korea', 'republic of korea', 'rok'],
   'north korea': ['dprk', 'democratic peoples republic of korea'],
   'united arab emirates': ['uae'],
-  'uae': ['united arab emirates'],
   'saudi arabia': ['ksa'],
   'kyrgyzstan': [
     'kirghizia',
@@ -61,7 +57,6 @@ const Map<String, List<String>> countryAliases = {
     'kirghizstan',
     'kirghistan',
     'kyrgysstan',
-    'kyrgyzstan',
     'kyrgyzsatan',
     'kyrgyzstaan',
     'kyrgyzstatn',
@@ -81,17 +76,11 @@ const Map<String, List<String>> countryAliases = {
 
   // ── Europe ──
   'united kingdom': ['uk', 'britain', 'great britain', 'gb'],
-  'uk': ['united kingdom', 'britain', 'great britain'],
   'czechia': ['czech republic'],
-  'czech republic': ['czechia'],
   'bosnia and herzegovina': ['bosnia', 'bih'],
-  'bosnia': ['bosnia and herzegovina', 'bih'],
   'north macedonia': ['macedonia', 'fyrom'],
-  'macedonia': ['north macedonia', 'fyrom'],
   'netherlands': ['holland'],
-  'holland': ['netherlands'],
   'vatican': ['vatican city', 'holy see'],
-  'vatican city': ['vatican', 'holy see'],
   'russia': ['russian federation'],
   'moldova': ['republic of moldova'],
   'belarus': ['byelorussia'],
@@ -99,10 +88,7 @@ const Map<String, List<String>> countryAliases = {
 
   // ── Americas ──
   'united states': ['usa', 'us', 'america', 'united states of america'],
-  'usa': ['united states', 'us', 'america'],
-  'us': ['united states', 'usa', 'america'],
   'antigua and barbuda': ['antigua'],
-  'antigua': ['antigua and barbuda'],
   'saint kitts and nevis': ['st kitts', 'st kitts and nevis', 'saint kitts'],
   'saint lucia': ['st lucia'],
   'saint vincent and the grenadines': [
@@ -111,7 +97,6 @@ const Map<String, List<String>> countryAliases = {
     'svg',
   ],
   'trinidad and tobago': ['trinidad', 'tt'],
-  'trinidad': ['trinidad and tobago'],
   'dominican republic': ['dr', 'dominican rep'],
   'el salvador': ['salvador'],
   'costa rica': ['costarica'],

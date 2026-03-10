@@ -6,6 +6,7 @@ import '../../data/models/cosmetic.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/map/region.dart';
+import '../guide/gameplay_guide_screen.dart';
 import '../shop/shop_screen.dart';
 import 'play_screen.dart';
 
@@ -270,6 +271,17 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         centerTitle: true,
         iconTheme: const IconThemeData(color: FlitColors.textPrimary),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: 'How to Play',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const GameplayGuideScreen(
+                  initialTab: GuideTab.trainingSortie,
+                ),
+              ),
+            ),
+          ),
           // Coin balance chip - tappable to open shop
           GestureDetector(
             onTap: () => Navigator.of(

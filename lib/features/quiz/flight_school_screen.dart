@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/quiz/flight_school_level.dart';
+import '../guide/gameplay_guide_screen.dart';
 import 'h2h_challenge_screen.dart';
 import 'quiz_setup_screen.dart';
 
@@ -49,6 +50,17 @@ class _FlightSchoolScreenState extends ConsumerState<FlightSchoolScreen> {
           },
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: 'How to Play',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const GameplayGuideScreen(
+                  initialTab: GuideTab.flightSchool,
+                ),
+              ),
+            ),
+          ),
           // Coin balance
           Container(
             margin: const EdgeInsets.only(right: 12),

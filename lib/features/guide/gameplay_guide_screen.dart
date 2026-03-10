@@ -4,14 +4,65 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 
+/// Identifies a tab within the gameplay guide.
+///
+/// Each game mode has its own tab so players can jump directly to instructions
+/// for the mode they are about to play.
+enum GuideTab {
+  overview,
+  dailyScramble,
+  freeFlight,
+  trainingSortie,
+  dailyBriefing,
+  flightSchool,
+  uncharted,
+  dogfight,
+}
+
 /// Gameplay guide / how-to-play screen for Flit.
 ///
-/// A scrollable reference that walks new players through every facet of the
-/// game: the globe, missions, scoring, game modes, controls, and tips.
-/// All visual illustrations are built with CustomPaint, Container decorations,
-/// and Material icons — no external image assets are used.
-class GameplayGuideScreen extends StatelessWidget {
-  const GameplayGuideScreen({super.key});
+/// Organised as a set of scrollable tabs — one overview plus one per game mode.
+/// Pass [initialTab] to deep-link from a game-mode setup screen.
+class GameplayGuideScreen extends StatefulWidget {
+  const GameplayGuideScreen({super.key, this.initialTab = GuideTab.overview});
+
+  /// Which tab to show when the screen first opens.
+  final GuideTab initialTab;
+
+  @override
+  State<GameplayGuideScreen> createState() => _GameplayGuideScreenState();
+}
+
+class _GameplayGuideScreenState extends State<GameplayGuideScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  static const _tabMeta = <({String label, IconData icon})>[
+    (label: 'Overview', icon: Icons.info_outline_rounded),
+    (label: 'Daily Scramble', icon: Icons.calendar_today_rounded),
+    (label: 'Free Flight', icon: Icons.flight_takeoff_rounded),
+    (label: 'Training Sortie', icon: Icons.school_rounded),
+    (label: 'Daily Briefing', icon: Icons.assignment_rounded),
+    (label: 'Flight School', icon: Icons.menu_book_rounded),
+    (label: 'Uncharted', icon: Icons.explore_rounded),
+    (label: 'Dogfight', icon: Icons.sports_esports_rounded),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(
+      length: _tabMeta.length,
+      vsync: this,
+      initialIndex: widget.initialTab.index,
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,28 +98,614 @@ class GameplayGuideScreen extends StatelessWidget {
             ),
           ],
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: FlitColors.cardBorder),
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          indicatorColor: FlitColors.accent,
+          indicatorWeight: 2.5,
+          labelColor: FlitColors.accent,
+          unselectedLabelColor: FlitColors.textMuted,
+          labelStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+          dividerColor: FlitColors.cardBorder,
+          tabs: [
+            for (final t in _tabMeta)
+              Tab(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(t.icon, size: 16),
+                    const SizedBox(width: 6),
+                    Text(t.label),
+                  ],
+                ),
+              ),
+          ],
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+      body: TabBarView(
+        controller: _tabController,
         children: const [
-          _WelcomeSection(),
-          SizedBox(height: 16),
-          _GlobeSection(),
-          SizedBox(height: 16),
-          _MissionSection(),
-          SizedBox(height: 16),
-          _ScoringSection(),
-          SizedBox(height: 16),
-          _GameModesSection(),
-          SizedBox(height: 16),
-          _ControlsSection(),
-          SizedBox(height: 16),
-          _TipsSection(),
-          SizedBox(height: 8),
+          _OverviewTab(),
+          _DailyScrambleTab(),
+          _FreeFlightTab(),
+          _TrainingSortieTab(),
+          _DailyBriefingTab(),
+          _FlightSchoolTab(),
+          _UnchartedTab(),
+          _DogfightTab(),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tab bodies
+// ---------------------------------------------------------------------------
+
+class _OverviewTab extends StatelessWidget {
+  const _OverviewTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+      children: const [
+        _WelcomeSection(),
+        SizedBox(height: 16),
+        _GlobeSection(),
+        SizedBox(height: 16),
+        _MissionSection(),
+        SizedBox(height: 16),
+        _ScoringSection(),
+        SizedBox(height: 16),
+        _ControlsSection(),
+        SizedBox(height: 16),
+        _TipsSection(),
+        SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+class _DailyScrambleTab extends StatelessWidget {
+  const _DailyScrambleTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+      children: [
+        _modeHeader(
+          icon: Icons.calendar_today_rounded,
+          iconColor: FlitColors.gold,
+          name: 'Daily Scramble',
+          tagline: 'One shot. Every day.',
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.flight_rounded,
+          iconColor: FlitColors.gold,
+          title: 'How It Works',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _BodyText(
+                'A fresh set of five countries every day, the same for every '
+                'player on Earth. Compare your score on the global leaderboard.',
+              ),
+              SizedBox(height: 12),
+              _BodyText(
+                'You fly a plane over a 3D satellite globe. Swipe left/right to '
+                'steer and up/down to change altitude. Read the clue at the top, '
+                'then fly to the target country and tap it to guess. Lower '
+                'altitude gives you a closer look but costs fuel. Use hints if '
+                'you are stuck — each hint tier costs points.',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.military_tech_rounded,
+          iconColor: FlitColors.gold,
+          title: 'Scoring',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _BodyText(
+                'Score is based on speed, accuracy, hints used, and fuel '
+                'remaining. Each round starts with 10,000 points. Hint penalties '
+                'escalate: new clue (-500), reveal country (-1,000), wayline '
+                '(-1,500), auto-navigate (-2,500). Fuel burned costs up to '
+                '-5,000 pts. Harder countries give a higher difficulty multiplier.',
+              ),
+              SizedBox(height: 12),
+              _ScoreBar(),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.emoji_events_rounded,
+          iconColor: FlitColors.gold,
+          title: 'Leaderboard & Streaks',
+          child: _BodyText(
+            'Your total score across all five rounds is posted to the daily '
+            'leaderboard. Keep a daily streak going to earn bonus rewards. '
+            'Everyone gets the same countries, so skill is the only variable.',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FreeFlightTab extends StatelessWidget {
+  const _FreeFlightTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+      children: [
+        _modeHeader(
+          icon: Icons.flight_takeoff_rounded,
+          iconColor: FlitColors.oceanHighlight,
+          name: 'Free Flight',
+          tagline: 'No pressure. Just explore.',
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.flight_rounded,
+          iconColor: FlitColors.oceanHighlight,
+          title: 'How It Works',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _BodyText(
+                'Fly wherever you like, identify countries at your own pace, '
+                'and learn the globe with no timer and no score pressure.',
+              ),
+              SizedBox(height: 12),
+              _BodyText(
+                'Same flying controls as Daily Scramble — swipe to steer, '
+                'change altitude, and tap countries. The difference is there is '
+                'no timer, no scoring, and no limit on hints. Fly around, '
+                'explore the globe, and learn where countries are at your own '
+                'pace.',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.tune_rounded,
+          iconColor: FlitColors.oceanHighlight,
+          title: 'Setup Options',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _BodyText(
+                'Before flying you can configure:',
+              ),
+              SizedBox(height: 8),
+              _BulletPoint('Choose which clue types to show (flags, outlines, '
+                  'borders, capitals, stats)'),
+              _BulletPoint('Set the number of rounds (1, 5, 10, or endless)'),
+              _BulletPoint('Pick a difficulty level (Easy, Normal, Hard)'),
+              SizedBox(height: 8),
+              _BodyText(
+                'Great for building geographic knowledge before competing in '
+                'Daily Scramble or Dogfight.',
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TrainingSortieTab extends StatelessWidget {
+  const _TrainingSortieTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+      children: [
+        _modeHeader(
+          icon: Icons.school_rounded,
+          iconColor: FlitColors.success,
+          name: 'Training Sortie',
+          tagline: 'Learn the ropes.',
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.flight_rounded,
+          iconColor: FlitColors.success,
+          title: 'How It Works',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _BodyText(
+                'Guided missions with hints and slower pacing. Perfect for '
+                'building your geographic knowledge before going competitive.',
+              ),
+              SizedBox(height: 12),
+              _BodyText(
+                'Fly across the globe just like Daily Scramble, but with '
+                'gentler pacing and guided hints. Each mission focuses on a '
+                'region or theme. Hints are provided more freely, and the timer '
+                'is more generous. Complete sorties to build confidence before '
+                'taking on daily challenges and head-to-head dogfights.',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.tune_rounded,
+          iconColor: FlitColors.success,
+          title: 'Setup Options',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _BodyText('Before your sortie you can configure:'),
+              SizedBox(height: 8),
+              _BulletPoint('Select a region to practise'),
+              _BulletPoint('Choose clue types to drill'),
+              _BulletPoint('Set difficulty — Easy provides map labels and more '
+                  'hints; Hard removes all assists'),
+              _BulletPoint('Training uses coins — earn them by playing other '
+                  'modes or purchase in the shop'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DailyBriefingTab extends StatelessWidget {
+  const _DailyBriefingTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+      children: [
+        _modeHeader(
+          icon: Icons.assignment_rounded,
+          iconColor: FlitColors.error,
+          name: 'Daily Briefing',
+          tagline: 'Daily quiz. Same for all.',
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.touch_app_rounded,
+          iconColor: FlitColors.error,
+          title: 'How It Works',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _BodyText(
+                'A daily set of quiz questions testing your geography knowledge. '
+                'The same questions for every player — compare on the leaderboard.',
+              ),
+              SizedBox(height: 12),
+              _BodyText(
+                'No flying here — this is a pure quiz. You are shown a clue and '
+                'a flat map of a region. Tap the country you think matches the '
+                'clue. The faster and more accurately you answer, the higher '
+                'your score. Each round shows a different clue type (flag, '
+                'capital, borders, etc.).',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.military_tech_rounded,
+          iconColor: FlitColors.error,
+          title: 'Scoring',
+          child: _BodyText(
+            'Like Daily Scramble, everyone gets the same set each day. Speed '
+            'and accuracy determine your score. Wrong taps cost points, but '
+            'the correct country is always highlighted so you learn as you go.',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FlightSchoolTab extends StatelessWidget {
+  const _FlightSchoolTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+      children: [
+        _modeHeader(
+          icon: Icons.menu_book_rounded,
+          iconColor: FlitColors.accent,
+          name: 'Flight School',
+          tagline: 'Study and drill.',
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.touch_app_rounded,
+          iconColor: FlitColors.accent,
+          title: 'How It Works',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _BodyText(
+                'Pick a region, pick a category, and drill countries on a flat '
+                'map. Learn at your own pace with instant feedback.',
+              ),
+              SizedBox(height: 12),
+              _BodyText(
+                'A flat 2D map is shown with country outlines. A clue appears '
+                'at the top — it could be a flag, capital city, border list, or '
+                'other geographic fact. Tap the country on the map that matches. '
+                'Green flash = correct, red flash = wrong. The correct country '
+                'is always highlighted so you learn as you go.',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.tune_rounded,
+          iconColor: FlitColors.accent,
+          title: 'Modes & Setup',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _BodyText('Flight School offers four quiz modes:'),
+              SizedBox(height: 8),
+              _BulletPoint('All States — answer every area; fastest time wins'),
+              _BulletPoint('Time Trial — 60 seconds; how many can you get?'),
+              _BulletPoint('Rapid Fire — 3 strikes and you\'re out'),
+              _BulletPoint(
+                  'Type-In — type the country name from the clue (90 sec)'),
+              SizedBox(height: 8),
+              _BodyText(
+                'You choose the region and clue category, so you can focus on '
+                'weak areas. Difficulty (Easy/Medium/Hard) controls map labels, '
+                'hints, and score multiplier.',
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _UnchartedTab extends StatelessWidget {
+  const _UnchartedTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+      children: [
+        _modeHeader(
+          icon: Icons.explore_rounded,
+          iconColor: FlitColors.landMassHighlight,
+          name: 'Uncharted',
+          tagline: 'Name them all.',
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.keyboard_rounded,
+          iconColor: FlitColors.landMassHighlight,
+          title: 'How It Works',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _BodyText(
+                'A blank map with outlines only. Type country names (or capitals) '
+                'to reveal them. How many can you name from memory?',
+              ),
+              SizedBox(height: 12),
+              _BodyText(
+                'You see a dark map showing only country/region outlines. A text '
+                'field at the bottom lets you type names. As soon as you type a '
+                'correct name, it auto-submits and the country is revealed with '
+                'satellite imagery.',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.tune_rounded,
+          iconColor: FlitColors.landMassHighlight,
+          title: 'Modes & Setup',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _BodyText('Two modes are available:'),
+              SizedBox(height: 8),
+              _BulletPoint(
+                  'Countries — type country names to reveal them on the map'),
+              _BulletPoint(
+                  'Capitals — type capital cities to reveal the country'),
+              SizedBox(height: 8),
+              _BodyText(
+                'Pick a region to focus on, or challenge yourself with the '
+                'whole world. Pinch to zoom and pan the map. Your score is '
+                'based on how many you found and how fast.',
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DogfightTab extends StatelessWidget {
+  const _DogfightTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+      children: [
+        _modeHeader(
+          icon: Icons.sports_esports_rounded,
+          iconColor: FlitColors.accent,
+          name: 'Dogfight',
+          tagline: 'Head-to-head geography.',
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.people_rounded,
+          iconColor: FlitColors.accent,
+          title: 'How It Works',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _BodyText(
+                'Race a friend or a random opponent to identify the same country '
+                'first. First correct answer wins the round. Best of five.',
+              ),
+              SizedBox(height: 12),
+              _BodyText(
+                'Both players get the same clue at the same time. The first to '
+                'identify the correct country wins the round. Best of five '
+                'rounds wins the match.',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        const _GuideCard(
+          icon: Icons.person_add_rounded,
+          iconColor: FlitColors.accent,
+          title: 'Finding Opponents',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _BulletPoint('Challenge friends directly from your friends list'),
+              _BulletPoint(
+                  'Use "Find a Challenger" to matchmake against random opponents'),
+              _BulletPoint('Track your head-to-head record and rivalry level'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Builds the coloured header banner for a game-mode tab.
+Widget _modeHeader({
+  required IconData icon,
+  required Color iconColor,
+  required String name,
+  required String tagline,
+}) {
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          iconColor.withOpacity(0.15),
+          FlitColors.cardBackground,
+        ],
+      ),
+      border: Border.all(color: iconColor.withOpacity(0.3)),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: iconColor.withOpacity(0.4)),
+          ),
+          child: Icon(icon, color: iconColor, size: 28),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                tagline,
+                style: TextStyle(
+                  color: iconColor.withOpacity(0.8),
+                  fontSize: 13,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// A simple bullet-point text row for guide content.
+class _BulletPoint extends StatelessWidget {
+  const _BulletPoint(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 6),
+            child: Icon(Icons.circle, color: FlitColors.textMuted, size: 5),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 13,
+                height: 1.45,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1175,309 +1812,8 @@ class _ScoreBarRow extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// 5. Game Modes
+// (Game mode sections are now individual tabs above)
 // ---------------------------------------------------------------------------
-
-class _GameModesSection extends StatelessWidget {
-  const _GameModesSection();
-
-  static const List<_GameModeData> _modes = [
-    // ── Flying modes ──
-    _GameModeData(
-      icon: Icons.calendar_today_rounded,
-      iconColor: FlitColors.gold,
-      name: 'Daily Scramble',
-      tagline: 'One shot. Every day.',
-      description:
-          'A fresh set of five countries every day, the same for every '
-          'player on Earth. Compare your score on the global leaderboard.',
-      details: 'You fly a plane over a 3D satellite globe. Swipe left/right to '
-          'steer and up/down to change altitude. Read the clue at the top, '
-          'then fly to the target country and tap it to guess. Lower '
-          'altitude gives you a closer look but costs fuel. Use hints if '
-          'you are stuck — each hint tier costs points. Score is based on '
-          'speed, accuracy, hints used, and fuel remaining.',
-    ),
-    _GameModeData(
-      icon: Icons.flight_takeoff_rounded,
-      iconColor: FlitColors.oceanHighlight,
-      name: 'Free Flight',
-      tagline: 'No pressure. Just explore.',
-      description:
-          'Fly wherever you like, identify countries at your own pace, '
-          'and learn the globe with no timer and no score pressure.',
-      details: 'Same flying controls as Daily Scramble — swipe to steer, '
-          'change altitude, and tap countries. The difference is there is '
-          'no timer, no scoring, and no limit on hints. Fly around, '
-          'explore the globe, and learn where countries are at your own '
-          'pace. Great for building geographic knowledge before competing.',
-    ),
-    _GameModeData(
-      icon: Icons.school_rounded,
-      iconColor: FlitColors.success,
-      name: 'Training Sortie',
-      tagline: 'Learn the ropes.',
-      description: 'Guided missions with hints and slower pacing. Perfect for '
-          'building your geographic knowledge before going competitive.',
-      details:
-          'Fly across the globe just like Daily Scramble, but with gentler '
-          'pacing and guided hints. Each mission focuses on a region or '
-          'theme. Hints are provided more freely, and the timer is more '
-          'generous. Complete sorties to build confidence before taking on '
-          'daily challenges and head-to-head dogfights.',
-    ),
-    // ── Quiz / tapping modes ──
-    _GameModeData(
-      icon: Icons.assignment_rounded,
-      iconColor: FlitColors.error,
-      name: 'Daily Briefing',
-      tagline: 'Daily quiz. Same for all.',
-      description:
-          'A daily set of quiz questions testing your geography knowledge. '
-          'The same questions for every player — compare on the leaderboard.',
-      details: 'No flying here — this is a pure quiz. You are shown a clue and '
-          'a flat map of a region. Tap the country you think matches the '
-          'clue. The faster and more accurately you answer, the higher '
-          'your score. Each round shows a different clue type (flag, '
-          'capital, borders, etc.). Like Daily Scramble, everyone gets '
-          'the same set each day.',
-    ),
-    _GameModeData(
-      icon: Icons.menu_book_rounded,
-      iconColor: FlitColors.accent,
-      name: 'Flight School',
-      tagline: 'Study and drill.',
-      description:
-          'Pick a region, pick a category, and drill countries on a flat '
-          'map. Learn at your own pace with instant feedback.',
-      details: 'A flat 2D map is shown with country outlines. A clue appears '
-          'at the top — it could be a flag, capital city, border list, or '
-          'other geographic fact. Tap the country on the map that matches. '
-          'Green flash = correct, red flash = wrong. The correct country '
-          'is always highlighted so you learn as you go. You choose the '
-          'region and clue category, so you can focus on weak areas.',
-    ),
-    // ── Typing modes ──
-    _GameModeData(
-      icon: Icons.explore_rounded,
-      iconColor: FlitColors.landMassHighlight,
-      name: 'Uncharted',
-      tagline: 'Name them all.',
-      description:
-          'A blank map with outlines only. Type country names (or capitals) '
-          'to reveal them. How many can you name from memory?',
-      details:
-          'You see a dark map showing only country/region outlines. A text '
-          'field at the bottom lets you type names. As soon as you type a '
-          'correct name, it auto-submits and the country is revealed with '
-          'satellite imagery. In Countries mode you type country names; in '
-          'Capitals mode you type capital cities to reveal countries. '
-          'Pinch to zoom and pan the map. Try to reveal them all before '
-          'giving up — your score is based on how many you found and '
-          'how fast.',
-    ),
-    // ── Multiplayer ──
-    _GameModeData(
-      icon: Icons.sports_esports_rounded,
-      iconColor: FlitColors.accent,
-      name: 'Dogfight',
-      tagline: 'Head-to-head geography.',
-      description:
-          'Race a friend or a random opponent to identify the same country '
-          'first. First correct answer wins the round. Best of five.',
-      details: 'Both players get the same clue at the same time. The first to '
-          'identify the correct country wins the round. Best of five '
-          'rounds wins the match. You can challenge friends directly or '
-          'matchmake against random opponents. Track your head-to-head '
-          'record and rivalry level on the friends screen.',
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return _GuideCard(
-      icon: Icons.grid_view_rounded,
-      iconColor: FlitColors.accent,
-      title: 'Game Modes',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _categoryLabel('Flying Modes', Icons.flight_rounded),
-          const SizedBox(height: 8),
-          ..._modes.sublist(0, 3).map(
-                (mode) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _GameModeCard(data: mode),
-                ),
-              ),
-          const SizedBox(height: 4),
-          _categoryLabel('Quiz Modes', Icons.touch_app_rounded),
-          const SizedBox(height: 8),
-          ..._modes.sublist(3, 5).map(
-                (mode) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _GameModeCard(data: mode),
-                ),
-              ),
-          const SizedBox(height: 4),
-          _categoryLabel('Typing Modes', Icons.keyboard_rounded),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _GameModeCard(data: _modes[5]),
-          ),
-          const SizedBox(height: 4),
-          _categoryLabel('Multiplayer', Icons.people_rounded),
-          const SizedBox(height: 8),
-          _GameModeCard(data: _modes[6]),
-        ],
-      ),
-    );
-  }
-
-  static Widget _categoryLabel(String label, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, color: FlitColors.textMuted, size: 14),
-        const SizedBox(width: 6),
-        Text(
-          label.toUpperCase(),
-          style: const TextStyle(
-            color: FlitColors.textMuted,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.5,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _GameModeData {
-  const _GameModeData({
-    required this.icon,
-    required this.iconColor,
-    required this.name,
-    required this.tagline,
-    required this.description,
-    this.details,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final String name;
-  final String tagline;
-  final String description;
-
-  /// Expanded how-to-play details shown below the description.
-  final String? details;
-}
-
-class _GameModeCard extends StatelessWidget {
-  const _GameModeCard({required this.data});
-
-  final _GameModeData data;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: FlitColors.backgroundDark,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: data.iconColor.withOpacity(0.25)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: data.iconColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: data.iconColor.withOpacity(0.3)),
-            ),
-            child: Icon(data.icon, color: data.iconColor, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      data.name,
-                      style: const TextStyle(
-                        color: FlitColors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      data.tagline,
-                      style: const TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 11,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  data.description,
-                  style: const TextStyle(
-                    color: FlitColors.textSecondary,
-                    fontSize: 12,
-                    height: 1.4,
-                  ),
-                ),
-                if (data.details != null) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: data.iconColor.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: data.iconColor.withValues(alpha: 0.15),
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          color: data.iconColor.withValues(alpha: 0.6),
-                          size: 14,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            data.details!,
-                            style: const TextStyle(
-                              color: FlitColors.textSecondary,
-                              fontSize: 11,
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ---------------------------------------------------------------------------
 // 6. Controls

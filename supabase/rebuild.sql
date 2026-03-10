@@ -2416,6 +2416,261 @@ CREATE INDEX IF NOT EXISTS idx_iap_receipts_user ON public.iap_receipts (user_id
 CREATE INDEX IF NOT EXISTS idx_iap_receipts_created ON public.iap_receipts (created_at DESC);
 
 -- ---------------------------------------------------------------------------
+-- 18. CLUE_REPORTS — player-submitted clue corrections
+-- ---------------------------------------------------------------------------
+-- Allows players to report incorrect clues (flags, outlines, etc.).
+-- Admins can review, resolve, or dismiss reports.
+
+CREATE TABLE IF NOT EXISTS public.clue_reports (
+  id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  reporter_id   UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  country_code  TEXT NOT NULL,
+  country_name  TEXT NOT NULL,
+  issue         TEXT NOT NULL,
+  notes         TEXT,
+  status        TEXT NOT NULL DEFAULT 'pending',
+  reviewed_by   UUID REFERENCES auth.users(id),
+  reviewed_at   TIMESTAMPTZ,
+  action_taken  TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_clue_reports_status ON public.clue_reports (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_clue_reports_country ON public.clue_reports (country_code);
+
+ALTER TABLE public.clue_reports ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'clue_reports' AND policyname = 'Users can submit clue reports'
+  ) THEN
+    CREATE POLICY "Users can submit clue reports"
+      ON public.clue_reports FOR INSERT WITH CHECK (auth.uid() = reporter_id);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'clue_reports' AND policyname = 'Users can read own clue reports'
+  ) THEN
+    CREATE POLICY "Users can read own clue reports"
+      ON public.clue_reports FOR SELECT USING (auth.uid() = reporter_id);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'clue_reports' AND policyname = 'Admins can read all clue reports'
+  ) THEN
+    CREATE POLICY "Admins can read all clue reports"
+      ON public.clue_reports FOR SELECT
+      USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND admin_role IS NOT NULL));
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'clue_reports' AND policyname = 'Admins can update clue reports'
+  ) THEN
+    CREATE POLICY "Admins can update clue reports"
+      ON public.clue_reports FOR UPDATE
+      USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND admin_role IS NOT NULL));
+  END IF;
+END $$;
+
+-- Resolve a clue report (admin RPC).
+CREATE OR REPLACE FUNCTION public.admin_resolve_clue_report(
+  p_report_id BIGINT, p_status TEXT, p_action_taken TEXT
+)
+RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE v_role TEXT;
+BEGIN
+  SELECT admin_role INTO v_role FROM profiles WHERE id = auth.uid();
+  IF v_role IS NULL THEN RAISE EXCEPTION 'Not an admin'; END IF;
+  IF p_status NOT IN ('actioned', 'dismissed', 'reviewed') THEN
+    RAISE EXCEPTION 'Invalid status: %', p_status;
+  END IF;
+
+  UPDATE clue_reports SET
+    status = p_status, reviewed_by = auth.uid(),
+    reviewed_at = NOW(), action_taken = p_action_taken
+  WHERE id = p_report_id;
+
+  PERFORM _log_admin_action('resolve_clue_report', NULL,
+    jsonb_build_object('report_id', p_report_id, 'status', p_status, 'action', p_action_taken));
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_resolve_clue_report(BIGINT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_resolve_clue_report(BIGINT, TEXT, TEXT) TO service_role;
+
+
+-- ---------------------------------------------------------------------------
+-- 19. REMOTE_CONFIG — generic key/value store for admin-managed config
+-- ---------------------------------------------------------------------------
+-- Used by Flight School admin, Gold Management, and other admin screens
+-- to persist JSONB configuration blobs keyed by a unique string.
+
+CREATE TABLE IF NOT EXISTS public.remote_config (
+  key        TEXT PRIMARY KEY,
+  value      JSONB NOT NULL DEFAULT '{}',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.remote_config ENABLE ROW LEVEL SECURITY;
+
+-- Anyone can read remote config (needed for client-side feature loading).
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'remote_config' AND policyname = 'Anyone can read remote config'
+  ) THEN
+    CREATE POLICY "Anyone can read remote config"
+      ON public.remote_config FOR SELECT USING (true);
+  END IF;
+END $$;
+
+-- Only admins can write remote config.
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'remote_config' AND policyname = 'Admins can write remote config'
+  ) THEN
+    CREATE POLICY "Admins can write remote config"
+      ON public.remote_config FOR ALL
+      USING ((SELECT admin_role FROM public.profiles WHERE id = auth.uid()) IS NOT NULL);
+  END IF;
+END $$;
+
+
+-- ---------------------------------------------------------------------------
+-- 20. COIN_LEDGER — audit trail of admin gold operations
+-- ---------------------------------------------------------------------------
+-- Records every admin gift/remove/set gold operation for traceability.
+
+CREATE TABLE IF NOT EXISTS public.coin_ledger (
+  id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id    UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  amount     INT NOT NULL,
+  source     TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.coin_ledger ENABLE ROW LEVEL SECURITY;
+
+-- Admins can read all ledger entries (needed for Gold Management audit log).
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'coin_ledger' AND policyname = 'Admins can read coin ledger'
+  ) THEN
+    CREATE POLICY "Admins can read coin ledger"
+      ON public.coin_ledger FOR SELECT
+      USING ((SELECT admin_role FROM public.profiles WHERE id = auth.uid()) IS NOT NULL);
+  END IF;
+END $$;
+
+-- Admins can insert ledger entries.
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'coin_ledger' AND policyname = 'Admins can insert coin ledger'
+  ) THEN
+    CREATE POLICY "Admins can insert coin ledger"
+      ON public.coin_ledger FOR INSERT
+      WITH CHECK ((SELECT admin_role FROM public.profiles WHERE id = auth.uid()) IS NOT NULL);
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_coin_ledger_user ON public.coin_ledger (user_id);
+CREATE INDEX IF NOT EXISTS idx_coin_ledger_created ON public.coin_ledger (created_at DESC);
+
+
+-- ---------------------------------------------------------------------------
+-- 21. DIFFICULTY CONFIG — upsert and recalibrate functions
+-- ---------------------------------------------------------------------------
+-- Stores per-country difficulty overrides and clue-type weights in
+-- remote_config, then optionally recalibrates existing scores.
+
+CREATE OR REPLACE FUNCTION public.upsert_difficulty_config(
+  p_country_overrides JSONB,
+  p_clue_weights JSONB
+)
+RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE v_role TEXT;
+BEGIN
+  SELECT admin_role INTO v_role FROM profiles WHERE id = auth.uid();
+  IF v_role != 'owner' THEN RAISE EXCEPTION 'Owner only'; END IF;
+
+  INSERT INTO remote_config (key, value, updated_at)
+  VALUES (
+    'difficulty_config',
+    jsonb_build_object(
+      'country_overrides', p_country_overrides,
+      'clue_weights', p_clue_weights
+    ),
+    NOW()
+  )
+  ON CONFLICT (key) DO UPDATE SET
+    value = jsonb_build_object(
+      'country_overrides', p_country_overrides,
+      'clue_weights', p_clue_weights
+    ),
+    updated_at = NOW();
+
+  PERFORM _log_admin_action(
+    'upsert_difficulty_config',
+    NULL,
+    jsonb_build_object(
+      'country_count', jsonb_array_length(
+        COALESCE((SELECT jsonb_agg(k) FROM jsonb_object_keys(p_country_overrides) AS k), '[]'::jsonb)
+      ),
+      'clue_weight_count', jsonb_array_length(
+        COALESCE((SELECT jsonb_agg(k) FROM jsonb_object_keys(p_clue_weights) AS k), '[]'::jsonb)
+      )
+    )
+  );
+END;
+$$;
+
+
+-- Recalibrate existing scores using per-country difficulty multipliers.
+-- Returns the number of scores processed.
+--
+-- NOTE: The scores table stores country info inside round_details JSONB,
+-- not as a top-level column. This function logs the request and returns 0
+-- as a placeholder — full recalibration logic should be implemented once
+-- the round_details schema is finalized.
+CREATE OR REPLACE FUNCTION public.recalibrate_scores(
+  country_multipliers JSONB
+)
+RETURNS INT
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_role TEXT;
+  v_count INT := 0;
+BEGIN
+  SELECT admin_role INTO v_role FROM profiles WHERE id = auth.uid();
+  IF v_role != 'owner' THEN RAISE EXCEPTION 'Owner only'; END IF;
+
+  -- Placeholder: log the recalibration request.
+  -- Full implementation will iterate round_details to apply multipliers.
+  PERFORM _log_admin_action(
+    'recalibrate_scores',
+    NULL,
+    jsonb_build_object(
+      'country_count', (SELECT count(*) FROM jsonb_object_keys(country_multipliers)),
+      'scores_updated', v_count
+    )
+  );
+
+  RETURN v_count;
+END;
+$$;
+
+
+-- ---------------------------------------------------------------------------
 -- DONE
 -- ---------------------------------------------------------------------------
 -- Run supabase/verify.sql next to validate the schema is correct.

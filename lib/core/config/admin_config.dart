@@ -58,6 +58,7 @@ enum AdminPermission {
   tempBanUser,
   triggerPasswordReset,
   createInfoAnnouncements,
+  editAliases,
 
   // ── Owner-only ──
   selfServiceActions,
@@ -115,6 +116,7 @@ abstract final class AdminPermissions {
     AdminPermission.tempBanUser,
     AdminPermission.triggerPasswordReset,
     AdminPermission.createInfoAnnouncements,
+    AdminPermission.editAliases,
   };
 
   /// Permissions granted to collaborators — everything except economy and

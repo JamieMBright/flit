@@ -148,6 +148,10 @@ void main() {
       expect(modPerms, contains(AdminPermission.createInfoAnnouncements));
     });
 
+    test('moderator CAN editAliases', () {
+      expect(modPerms, contains(AdminPermission.editAliases));
+    });
+
     // Owner-only permissions that moderator MUST NOT have
     test('moderator CANNOT selfServiceActions', () {
       expect(modPerms, isNot(contains(AdminPermission.selfServiceActions)));

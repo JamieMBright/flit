@@ -14,6 +14,7 @@ import '../../data/providers/account_provider.dart';
 import '../../data/services/economy_config_service.dart';
 import '../../data/services/leaderboard_service.dart';
 import '../../game/map/region.dart';
+import '../guide/gameplay_guide_screen.dart';
 import '../play/play_screen.dart';
 
 /// Daily challenge screen showing today's challenge details, seasonal events,
@@ -77,6 +78,19 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           backgroundColor: FlitColors.backgroundMid,
           title: const Text('Daily Challenge'),
           centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.help_outline_rounded),
+              tooltip: 'How to Play',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const GameplayGuideScreen(
+                    initialTab: GuideTab.dailyScramble,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         body: Column(
           children: [

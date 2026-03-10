@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/uncharted_session.dart';
+import '../guide/gameplay_guide_screen.dart';
 import 'uncharted_game_screen.dart';
 
 /// Setup screen for the Uncharted game mode.
@@ -75,6 +76,19 @@ class _UnchartedSetupScreenState extends State<UnchartedSetupScreen> {
         ),
         centerTitle: true,
         iconTheme: const IconThemeData(color: FlitColors.textPrimary),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: 'How to Play',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const GameplayGuideScreen(
+                  initialTab: GuideTab.uncharted,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(

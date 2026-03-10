@@ -87,6 +87,15 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
     _loadFeatureFlags();
   }
 
+  /// Reload all admin data — call after returning from sub-screens.
+  void _refreshAdminData() {
+    if (!mounted) return;
+    _loadEconomyConfig();
+    _loadReportCount();
+    _loadClueReportCount();
+    _loadFeatureFlags();
+  }
+
   Future<void> _loadEconomyConfig() async {
     try {
       final config = await EconomyConfigService.instance.getConfig();
@@ -1713,10 +1722,11 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
 
   // ── Difficulty Editor ──
 
-  void _showDifficultyEditorDialog(BuildContext context) {
-    Navigator.of(context).push(
+  Future<void> _showDifficultyEditorDialog(BuildContext context) async {
+    await Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const _DifficultyEditorScreen()),
     );
+    _refreshAdminData();
   }
 
   // ── Ban Management ──
@@ -1915,11 +1925,14 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               icon: Icons.analytics,
               iconColor: FlitColors.oceanHighlight,
               label: 'Usage Stats',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const AdminStatsScreen(),
-                ),
-              ),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AdminStatsScreen(),
+                  ),
+                );
+                _refreshAdminData();
+              },
             ),
             if (_can(state, AdminPermission.viewCoinLedger)) ...[
               const SizedBox(height: 8),
@@ -2159,11 +2172,14 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               label: _pendingReportCount > 0
                   ? 'Player Reports ($_pendingReportCount pending)'
                   : 'Player Reports',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const _ReportQueuePlaceholder(),
-                ),
-              ),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const _ReportQueuePlaceholder(),
+                  ),
+                );
+                _refreshAdminData();
+              },
             ),
             const SizedBox(height: 8),
             _AdminActionCard(
@@ -2172,11 +2188,14 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               label: _pendingClueReportCount > 0
                   ? 'Clue Reports ($_pendingClueReportCount pending)'
                   : 'Clue Reports',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const _ClueReportQueue(),
-                ),
-              ),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const _ClueReportQueue(),
+                  ),
+                );
+                _refreshAdminData();
+              },
             ),
             const SizedBox(height: 24),
           ],
@@ -2204,51 +2223,63 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               icon: Icons.flight,
               iconColor: FlitColors.accent,
               label: 'Plane Preview (all variants)',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const PlanePreviewScreen(),
-                ),
-              ),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const PlanePreviewScreen(),
+                  ),
+                );
+                _refreshAdminData();
+              },
             ),
             const SizedBox(height: 8),
             _AdminActionCard(
               icon: Icons.face,
               iconColor: FlitColors.oceanHighlight,
               label: 'Avatar Preview (all styles)',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const AvatarPreviewScreen(),
-                ),
-              ),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AvatarPreviewScreen(),
+                  ),
+                );
+                _refreshAdminData();
+              },
             ),
             const SizedBox(height: 8),
             _AdminActionCard(
               icon: Icons.flag,
               iconColor: FlitColors.landMassHighlight,
               label: 'Country Preview (flags & outlines)',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const CountryPreviewScreen(),
-                ),
-              ),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const CountryPreviewScreen(),
+                  ),
+                );
+                _refreshAdminData();
+              },
             ),
             const SizedBox(height: 8),
             _AdminActionCard(
               icon: Icons.pets,
               iconColor: FlitColors.gold,
               label: 'Companion Preview (all creatures)',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const CompanionPreviewScreen(),
-                ),
-              ),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const CompanionPreviewScreen(),
+                  ),
+                );
+                _refreshAdminData();
+              },
             ),
             const SizedBox(height: 24),
           ],
 
-          // ── Economy Config (owner only) ──
+          // ── Economy & Gold (owner only) ──
           if (_can(state, AdminPermission.editEarnings)) ...[
-            const _SectionHeader(title: 'Economy Config'),
+            const _SectionHeader(title: 'Economy & Gold'),
             const SizedBox(height: 8),
             if (_economyConfigLoading)
               const Center(
@@ -2260,6 +2291,20 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             else ...[
               _AdminActionCard(
                 icon: Icons.monetization_on,
+                iconColor: FlitColors.gold,
+                label: 'Gold Management',
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const GoldManagementScreen(),
+                    ),
+                  );
+                  _refreshAdminData();
+                },
+              ),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.attach_money,
                 iconColor: FlitColors.gold,
                 label: 'Set Earnings',
                 onTap: () => _showEarningsConfigDialog(context),
@@ -2303,33 +2348,34 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               icon: Icons.school,
               iconColor: FlitColors.oceanHighlight,
               label: 'Flight School Config',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const FlightSchoolAdminScreen(),
-                ),
-              ),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const FlightSchoolAdminScreen(),
+                  ),
+                );
+                _refreshAdminData();
+              },
             ),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.monetization_on,
-              iconColor: FlitColors.gold,
-              label: 'Gold Management',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const GoldManagementScreen(),
-                ),
-              ),
-            ),
+            const SizedBox(height: 24),
+          ],
+
+          // ── Country Aliases (moderator + owner) ──
+          if (_can(state, AdminPermission.editAliases)) ...[
+            const _SectionHeader(title: 'Country Aliases'),
             const SizedBox(height: 8),
             _AdminActionCard(
               icon: Icons.spellcheck,
               iconColor: FlitColors.success,
               label: 'Country Aliases',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const AliasAdminScreen(),
-                ),
-              ),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AliasAdminScreen(),
+                  ),
+                );
+                _refreshAdminData();
+              },
             ),
             const SizedBox(height: 24),
           ],
@@ -2342,11 +2388,14 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               icon: Icons.system_update,
               iconColor: FlitColors.accent,
               label: 'Version Gate & Maintenance',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const _AppConfigPlaceholder(),
-                ),
-              ),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const _AppConfigPlaceholder(),
+                  ),
+                );
+                _refreshAdminData();
+              },
             ),
             const SizedBox(height: 24),
           ],
@@ -2359,11 +2408,14 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               icon: Icons.campaign,
               iconColor: FlitColors.gold,
               label: 'Manage Announcements',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const _AnnouncementsPlaceholder(),
-                ),
-              ),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const _AnnouncementsPlaceholder(),
+                  ),
+                );
+                _refreshAdminData();
+              },
             ),
             const SizedBox(height: 24),
           ],
@@ -2469,11 +2521,14 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               icon: Icons.warning_amber,
               iconColor: FlitColors.error,
               label: 'Suspicious Activity',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const _SuspiciousActivityPlaceholder(),
-                ),
-              ),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const _SuspiciousActivityPlaceholder(),
+                  ),
+                );
+                _refreshAdminData();
+              },
             ),
             const SizedBox(height: 24),
           ],
@@ -2487,9 +2542,13 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               iconColor: FlitColors.warning,
               label:
                   'View Game Log (${GameLog.instance.entries.length} entries)',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const _GameLogScreen()),
-              ),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                      builder: (_) => const _GameLogScreen()),
+                );
+                _refreshAdminData();
+              },
             ),
             const SizedBox(height: 24),
           ],

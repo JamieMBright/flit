@@ -22,10 +22,10 @@ BEGIN
   _results := array_append(_results, '========================================');
 
   -- =========================================================================
-  -- TABLES (16)
+  -- TABLES (18)
   -- =========================================================================
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- Tables (16) ---');
+  _results := array_append(_results, '--- Tables (19) ---');
 
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='profiles') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: profiles'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: profiles — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='user_settings') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: user_settings'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: user_settings — MISSING'); END IF;
@@ -43,6 +43,9 @@ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='economy_config') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: economy_config'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: economy_config — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='gdpr_requests') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: gdpr_requests'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: gdpr_requests — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='iap_receipts') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: iap_receipts'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: iap_receipts — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='remote_config') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: remote_config'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: remote_config — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='coin_ledger') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: coin_ledger'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: coin_ledger — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='clue_reports') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  table: clue_reports'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  table: clue_reports — MISSING'); END IF;
 
   -- =========================================================================
   -- PROFILES COLUMNS (24)
@@ -316,10 +319,49 @@ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='iap_receipts' AND column_name='created_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: iap_receipts.created_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: iap_receipts.created_at — MISSING'); END IF;
 
   -- =========================================================================
-  -- RLS POLICIES (40)
+  -- REMOTE_CONFIG COLUMNS (3)
   -- =========================================================================
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- RLS Policies (40) ---');
+  _results := array_append(_results, '--- remote_config columns (3) ---');
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='remote_config' AND column_name='key') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: remote_config.key'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: remote_config.key — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='remote_config' AND column_name='value') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: remote_config.value'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: remote_config.value — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='remote_config' AND column_name='updated_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: remote_config.updated_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: remote_config.updated_at — MISSING'); END IF;
+
+  -- =========================================================================
+  -- COIN_LEDGER COLUMNS (5)
+  -- =========================================================================
+  _results := array_append(_results, '');
+  _results := array_append(_results, '--- coin_ledger columns (5) ---');
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='coin_ledger' AND column_name='id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: coin_ledger.id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: coin_ledger.id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='coin_ledger' AND column_name='user_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: coin_ledger.user_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: coin_ledger.user_id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='coin_ledger' AND column_name='amount') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: coin_ledger.amount'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: coin_ledger.amount — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='coin_ledger' AND column_name='source') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: coin_ledger.source'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: coin_ledger.source — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='coin_ledger' AND column_name='created_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: coin_ledger.created_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: coin_ledger.created_at — MISSING'); END IF;
+
+  -- =========================================================================
+  -- CLUE_REPORTS COLUMNS (10)
+  -- =========================================================================
+  _results := array_append(_results, '');
+  _results := array_append(_results, '--- clue_reports columns (10) ---');
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clue_reports' AND column_name='id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: clue_reports.id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: clue_reports.id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clue_reports' AND column_name='reporter_id') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: clue_reports.reporter_id'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: clue_reports.reporter_id — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clue_reports' AND column_name='country_code') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: clue_reports.country_code'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: clue_reports.country_code — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clue_reports' AND column_name='country_name') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: clue_reports.country_name'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: clue_reports.country_name — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clue_reports' AND column_name='issue') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: clue_reports.issue'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: clue_reports.issue — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clue_reports' AND column_name='notes') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: clue_reports.notes'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: clue_reports.notes — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clue_reports' AND column_name='status') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: clue_reports.status'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: clue_reports.status — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clue_reports' AND column_name='reviewed_by') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: clue_reports.reviewed_by'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: clue_reports.reviewed_by — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clue_reports' AND column_name='action_taken') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: clue_reports.action_taken'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: clue_reports.action_taken — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clue_reports' AND column_name='created_at') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  column: clue_reports.created_at'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  column: clue_reports.created_at — MISSING'); END IF;
+
+  -- =========================================================================
+  -- RLS POLICIES (48)
+  -- =========================================================================
+  _results := array_append(_results, '');
+  _results := array_append(_results, '--- RLS Policies (48) ---');
 
   -- profiles (4)
   IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='profiles' AND policyname='Profiles are publicly readable') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: profiles / Profiles are publicly readable'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: profiles / Profiles are publicly readable — MISSING'); END IF;
@@ -393,11 +435,25 @@ BEGIN
   IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='iap_receipts' AND policyname='Users read own receipts') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: iap_receipts / Users read own receipts'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: iap_receipts / Users read own receipts — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='iap_receipts' AND policyname='Admins read all receipts') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: iap_receipts / Admins read all receipts'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: iap_receipts / Admins read all receipts — MISSING'); END IF;
 
+  -- remote_config (2)
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='remote_config' AND policyname='Anyone can read remote config') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: remote_config / Anyone can read remote config'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: remote_config / Anyone can read remote config — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='remote_config' AND policyname='Admins can write remote config') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: remote_config / Admins can write remote config'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: remote_config / Admins can write remote config — MISSING'); END IF;
+
+  -- coin_ledger (2)
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='coin_ledger' AND policyname='Admins can read coin ledger') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: coin_ledger / Admins can read coin ledger'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: coin_ledger / Admins can read coin ledger — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='coin_ledger' AND policyname='Admins can insert coin ledger') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: coin_ledger / Admins can insert coin ledger'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: coin_ledger / Admins can insert coin ledger — MISSING'); END IF;
+
+  -- clue_reports (4)
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='clue_reports' AND policyname='Users can submit clue reports') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: clue_reports / Users can submit clue reports'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: clue_reports / Users can submit clue reports — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='clue_reports' AND policyname='Users can read own clue reports') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: clue_reports / Users can read own clue reports'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: clue_reports / Users can read own clue reports — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='clue_reports' AND policyname='Admins can read all clue reports') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: clue_reports / Admins can read all clue reports'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: clue_reports / Admins can read all clue reports — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='clue_reports' AND policyname='Admins can update clue reports') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  policy: clue_reports / Admins can update clue reports'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  policy: clue_reports / Admins can update clue reports — MISSING'); END IF;
+
   -- =========================================================================
-  -- FUNCTIONS (26)
+  -- FUNCTIONS (28)
   -- =========================================================================
   _results := array_append(_results, '');
-  _results := array_append(_results, '--- Functions (26) ---');
+  _results := array_append(_results, '--- Functions (29) ---');
 
   -- Utility functions (3)
   IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid WHERE n.nspname='public' AND p.proname='handle_new_user') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: handle_new_user'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: handle_new_user — MISSING'); END IF;
@@ -414,7 +470,7 @@ BEGIN
   -- Game functions (1)
   IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid WHERE n.nspname='public' AND p.proname='expire_stale_challenges') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: expire_stale_challenges'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: expire_stale_challenges — MISSING'); END IF;
 
-  -- Admin functions (16)
+  -- Admin functions (19)
   IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid WHERE n.nspname='public' AND p.proname='admin_increment_stat') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: admin_increment_stat'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: admin_increment_stat — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid WHERE n.nspname='public' AND p.proname='admin_set_stat') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: admin_set_stat'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: admin_set_stat — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid WHERE n.nspname='public' AND p.proname='admin_set_avatar') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: admin_set_avatar'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: admin_set_avatar — MISSING'); END IF;
@@ -431,6 +487,9 @@ BEGIN
   IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid WHERE n.nspname='public' AND p.proname='admin_economy_summary') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: admin_economy_summary'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: admin_economy_summary — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid WHERE n.nspname='public' AND p.proname='admin_process_gdpr_request') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: admin_process_gdpr_request'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: admin_process_gdpr_request — MISSING'); END IF;
   IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid WHERE n.nspname='public' AND p.proname='upsert_economy_config') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: upsert_economy_config'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: upsert_economy_config — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid WHERE n.nspname='public' AND p.proname='upsert_difficulty_config') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: upsert_difficulty_config'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: upsert_difficulty_config — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid WHERE n.nspname='public' AND p.proname='recalibrate_scores') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: recalibrate_scores'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: recalibrate_scores — MISSING'); END IF;
+  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid WHERE n.nspname='public' AND p.proname='admin_resolve_clue_report') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: admin_resolve_clue_report'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: admin_resolve_clue_report — MISSING'); END IF;
 
   -- Internal helper (1)
   IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace=n.oid WHERE n.nspname='public' AND p.proname='_log_admin_action') THEN _pass:=_pass+1; _results:=array_append(_results,'PASS  function: _log_admin_action'); ELSE _fail:=_fail+1; _results:=array_append(_results,'FAIL  function: _log_admin_action — MISSING'); END IF;
