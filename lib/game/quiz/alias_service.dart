@@ -70,7 +70,7 @@ class AliasService {
   List<String> _effectiveBaseline(String canonicalName) {
     final baseline = countryAliases[canonicalName] ?? <String>[];
     final removed = _removedBaseline[canonicalName] ?? <String>[];
-    if (removed.isEmpty) return baseline;
+    if (removed.isEmpty) return List<String>.of(baseline);
     return baseline.where((a) => !removed.contains(a)).toList();
   }
 
