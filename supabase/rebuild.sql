@@ -1662,12 +1662,33 @@ CREATE INDEX IF NOT EXISTS idx_h2h_challenges_challenged ON public.h2h_challenge
 CREATE INDEX IF NOT EXISTS idx_h2h_challenges_status ON public.h2h_challenges (status);
 CREATE INDEX IF NOT EXISTS idx_h2h_challenges_created ON public.h2h_challenges (created_at DESC);
 ALTER TABLE public.h2h_challenges ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "h2h_challenges_select_own" ON public.h2h_challenges FOR SELECT
-  USING (auth.uid() = challenger_id OR auth.uid() = challenged_id);
-CREATE POLICY "h2h_challenges_insert_own" ON public.h2h_challenges FOR INSERT
-  WITH CHECK (auth.uid() = challenger_id);
-CREATE POLICY "h2h_challenges_update_own" ON public.h2h_challenges FOR UPDATE
-  USING (auth.uid() = challenger_id OR auth.uid() = challenged_id);
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'h2h_challenges' AND policyname = 'h2h_challenges_select_own'
+  ) THEN
+    CREATE POLICY "h2h_challenges_select_own" ON public.h2h_challenges FOR SELECT
+      USING (auth.uid() = challenger_id OR auth.uid() = challenged_id);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'h2h_challenges' AND policyname = 'h2h_challenges_insert_own'
+  ) THEN
+    CREATE POLICY "h2h_challenges_insert_own" ON public.h2h_challenges FOR INSERT
+      WITH CHECK (auth.uid() = challenger_id);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'h2h_challenges' AND policyname = 'h2h_challenges_update_own'
+  ) THEN
+    CREATE POLICY "h2h_challenges_update_own" ON public.h2h_challenges FOR UPDATE
+      USING (auth.uid() = challenger_id OR auth.uid() = challenged_id);
+  END IF;
+END $$;
 
 -- Daily Flight Briefing scores
 CREATE TABLE IF NOT EXISTS public.daily_briefing_scores (
@@ -1682,19 +1703,50 @@ CREATE TABLE IF NOT EXISTS public.daily_briefing_scores (
   mode text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );
-ALTER TABLE public.daily_briefing_scores
-  ADD CONSTRAINT daily_briefing_scores_user_date_unique UNIQUE (user_id, date_key);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'daily_briefing_scores_user_date_unique'
+      AND table_schema = 'public'
+      AND table_name = 'daily_briefing_scores'
+  ) THEN
+    ALTER TABLE public.daily_briefing_scores
+      ADD CONSTRAINT daily_briefing_scores_user_date_unique UNIQUE (user_id, date_key);
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_daily_briefing_scores_date_score
   ON public.daily_briefing_scores (date_key, score DESC);
 CREATE INDEX IF NOT EXISTS idx_daily_briefing_scores_user
   ON public.daily_briefing_scores (user_id, created_at DESC);
 ALTER TABLE public.daily_briefing_scores ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can read daily briefing scores" ON public.daily_briefing_scores
-  FOR SELECT USING (true);
-CREATE POLICY "Users can insert own daily briefing scores" ON public.daily_briefing_scores
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own daily briefing scores" ON public.daily_briefing_scores
-  FOR UPDATE USING (auth.uid() = user_id);
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'daily_briefing_scores' AND policyname = 'Anyone can read daily briefing scores'
+  ) THEN
+    CREATE POLICY "Anyone can read daily briefing scores" ON public.daily_briefing_scores
+      FOR SELECT USING (true);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'daily_briefing_scores' AND policyname = 'Users can insert own daily briefing scores'
+  ) THEN
+    CREATE POLICY "Users can insert own daily briefing scores" ON public.daily_briefing_scores
+      FOR INSERT WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'daily_briefing_scores' AND policyname = 'Users can update own daily briefing scores'
+  ) THEN
+    CREATE POLICY "Users can update own daily briefing scores" ON public.daily_briefing_scores
+      FOR UPDATE USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 
 -- ---------------------------------------------------------------------------
