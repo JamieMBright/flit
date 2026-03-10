@@ -35,6 +35,10 @@ class GameSession {
   /// Fuel fraction (0.0–1.0) when this round was completed (set by [complete]).
   double _fuelFraction = 1.0;
 
+  /// Whether this session uses time-based scoring instead of fuel-based.
+  /// When true, points decrease linearly from max at ≤10s to minimum at ≥60s.
+  bool _useTimeScoring = false;
+
   /// Whether the session is complete
   bool get isCompleted => _completed;
 
@@ -51,14 +55,29 @@ class GameSession {
   /// without duplicating the list.
   static const List<int> hintTierPenalties = [500, 1000, 1500, 2500];
 
+  /// Time penalty for time-based scoring.
+  ///
+  /// ≤10 seconds → 0 penalty (full points)
+  /// ≥60 seconds → 5,000 penalty (minimum points)
+  /// Linear interpolation between 10s and 60s.
+  int get timePenalty {
+    if (!_completed || !_useTimeScoring) return 0;
+    final seconds = elapsed.inMilliseconds / 1000.0;
+    if (seconds <= 10) return 0;
+    if (seconds >= 60) return 5000;
+    // Linear from 0 at 10s to 5000 at 60s
+    return ((seconds - 10) / 50.0 * 5000).round();
+  }
+
   /// Raw score before difficulty multiplier (base − penalties).
   ///
   /// Formula:
   ///   base     = 10,000 per round
   ///   hints    = non-linear escalating penalty per tier (see [hintTierPenalties])
   ///             (0 hints = 0, all 4 = −5,500)
-  ///   fuel     = −up to 5,000 scaled linearly by fuel burned
-  ///             (100% fuel remaining = 0 penalty, 0% = −5,000)
+  ///   fuel/time = −up to 5,000:
+  ///     fuel mode: scaled linearly by fuel burned (100% = 0, 0% = −5,000)
+  ///     time mode: scaled linearly from ≤10s (0) to ≥60s (−5,000)
   ///
   /// Result is clamped to [0, 10000].
   int get rawScore {
@@ -68,8 +87,9 @@ class GameSession {
     for (int i = 0; i < _hintsUsed && i < hintTierPenalties.length; i++) {
       hintPenalty += hintTierPenalties[i];
     }
-    final int fuelPenalty = ((1.0 - _fuelFraction) * 5000).round();
-    return max(0, base - hintPenalty - fuelPenalty);
+    final int resourcePenalty =
+        _useTimeScoring ? timePenalty : ((1.0 - _fuelFraction) * 5000).round();
+    return max(0, base - hintPenalty - resourcePenalty);
   }
 
   /// Final score for this round, with difficulty multiplier applied.
@@ -89,11 +109,18 @@ class GameSession {
   ///
   /// [hintsUsed] — number of hint tiers used this round (0–4).
   /// [fuelFraction] — fuel remaining as a fraction of max (0.0–1.0).
-  void complete({int hintsUsed = 0, double fuelFraction = 1.0}) {
+  /// [useTimeScoring] — when true, uses elapsed time instead of fuel for
+  ///   the resource penalty (≤10s = 0, ≥60s = −5,000).
+  void complete({
+    int hintsUsed = 0,
+    double fuelFraction = 1.0,
+    bool useTimeScoring = false,
+  }) {
     if (!_completed) {
       _completed = true;
       _hintsUsed = hintsUsed;
       _fuelFraction = fuelFraction.clamp(0.0, 1.0);
+      _useTimeScoring = useTimeScoring;
       endTime = DateTime.now();
     }
   }
