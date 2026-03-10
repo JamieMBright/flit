@@ -698,12 +698,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       fuelFraction: fuelFrac,
       useTimeScoring: true,
     );
-    // For daily, use the canonical time-based score (no difficulty multiplier).
+    // For daily, use time-based score with difficulty multiplier.
     if (widget.isDailyChallenge) {
       _totalScore += DailyRoundResult.computeTimeScore(
         timeMs: _elapsed.inMilliseconds,
         hintsUsed: _hintTier,
         completed: true,
+        countryCode: _session?.targetCountry.code ?? '',
       );
     } else {
       _totalScore += _session?.score ?? 0;
@@ -717,10 +718,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               timeMs: _elapsed.inMilliseconds,
               hintsUsed: _hintTier,
               completed: true,
+              countryCode: _session!.targetCountry.code,
             )
           : _session!.score;
       final roundRawScore =
-          widget.isDailyChallenge ? roundScore : _session!.rawScore;
+          widget.isDailyChallenge ? _session!.rawScore : _session!.rawScore;
       _roundResults.add(
         _RoundResult(
           countryName: _session!.targetName,
@@ -876,13 +878,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       fuelFraction: fuelFrac,
       useTimeScoring: true,
     );
-    // Use time-based scoring for all modes. Daily has no difficulty multiplier;
+    // Use time-based scoring with difficulty multiplier for daily;
     // other modes use the difficulty-adjusted session score.
     if (widget.isDailyChallenge) {
       _totalScore += DailyRoundResult.computeTimeScore(
         timeMs: _elapsed.inMilliseconds,
         hintsUsed: _hintTier,
         completed: !fuelDepleted,
+        countryCode: _session?.targetCountry.code ?? '',
       );
     } else {
       _totalScore += _session?.score ?? 0;
@@ -898,10 +901,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               timeMs: _elapsed.inMilliseconds,
               hintsUsed: _hintTier,
               completed: completed,
+              countryCode: _session!.targetCountry.code,
             )
           : _session!.score;
       final roundRawScore =
-          widget.isDailyChallenge ? roundScore : _session!.rawScore;
+          widget.isDailyChallenge ? _session!.rawScore : _session!.rawScore;
       _roundResults.add(
         _RoundResult(
           countryName: _session!.targetName,
@@ -989,8 +993,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     widget.onComplete?.call(_totalScore);
 
     // Build and report daily result if this is a daily challenge.
-    // Use time-based scores (consistent with DailyRoundResult.fromJson
-    // recalculation) so saved and loaded scores always match.
+    // Use time-based scores with difficulty multiplier (consistent with
+    // DailyRoundResult.fromJson recalculation) so saved and loaded scores
+    // always match.
     if (widget.isDailyChallenge) {
       final now = DateTime.now().toUtc();
       final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-'
@@ -1001,10 +1006,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               hintsUsed: r.hintsUsed,
               completed: r.completed,
               timeMs: r.elapsed.inMilliseconds,
+              countryCode: r.countryCode,
               score: DailyRoundResult.computeTimeScore(
                 timeMs: r.elapsed.inMilliseconds,
                 hintsUsed: r.hintsUsed,
                 completed: r.completed,
+                countryCode: r.countryCode,
               ),
             ),
           )
@@ -1082,6 +1089,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                     hintsUsed: r.hintsUsed,
                     completed: r.completed,
                     timeMs: r.elapsed.inMilliseconds,
+                    countryCode: r.countryCode,
                     score: r.score,
                   ),
                 )
@@ -1388,10 +1396,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               hintsUsed: r.hintsUsed,
               completed: r.completed,
               timeMs: r.elapsed.inMilliseconds,
+              countryCode: r.countryCode,
               score: DailyRoundResult.computeTimeScore(
                 timeMs: r.elapsed.inMilliseconds,
                 hintsUsed: r.hintsUsed,
                 completed: r.completed,
+                countryCode: r.countryCode,
               ),
             ),
           )

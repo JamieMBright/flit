@@ -11,11 +11,8 @@
 --   raw_score  = GREATEST(0, base - hint_penalty - time_penalty)
 --               (0 if not completed)
 --
--- Non-daily scores also get a difficulty multiplier:
+-- All scores (including daily) get a difficulty multiplier:
 --   score = ROUND(raw_score * (0.5 + difficulty * 0.5))
---
--- Daily scores (region = 'daily') have NO difficulty multiplier:
---   score = raw_score
 --
 -- After recalculating round-level scores, the migration:
 --   1. Updates each scores row's total score
@@ -273,8 +270,7 @@ INSERT INTO country_diff (name, code, difficulty) VALUES
 --   time_penalty = 0 if ≤10s, ROUND((seconds-10)/50*5000) if 10s<x<60s, 5000 if ≥60s
 --   raw_score    = GREATEST(0, 10000 - hint_penalty - time_penalty)  [0 if not completed]
 --
--- For daily (region = 'daily'): final score = raw_score (no difficulty)
--- For all others:               final score = ROUND(raw_score * (0.5 + difficulty * 0.5))
+-- All modes:                    final score = ROUND(raw_score * (0.5 + difficulty * 0.5))
 
 UPDATE public.scores s
 SET
@@ -313,25 +309,8 @@ SET
         END,
         'score',        CASE
           WHEN NOT COALESCE((r.value ->> 'completed')::BOOLEAN, false) THEN 0
-          WHEN s.region = 'daily' THEN
-            -- Daily: no difficulty multiplier
-            GREATEST(0,
-              10000
-              - CASE COALESCE((r.value ->> 'hints_used')::INT, 0)
-                  WHEN 0 THEN 0
-                  WHEN 1 THEN 500
-                  WHEN 2 THEN 1500
-                  WHEN 3 THEN 3000
-                  ELSE 5500
-                END
-              - CASE
-                  WHEN COALESCE((r.value ->> 'time_ms')::INT, 0) / 1000.0 <= 10 THEN 0
-                  WHEN COALESCE((r.value ->> 'time_ms')::INT, 0) / 1000.0 >= 60 THEN 5000
-                  ELSE ROUND((COALESCE((r.value ->> 'time_ms')::INT, 0) / 1000.0 - 10) / 50.0 * 5000)
-                END
-            )
           ELSE
-            -- Non-daily: apply difficulty multiplier
+            -- All modes: apply difficulty multiplier
             ROUND(
               GREATEST(0,
                 10000
@@ -361,22 +340,6 @@ SET
     SELECT COALESCE(SUM(
       CASE
         WHEN NOT COALESCE((r.value ->> 'completed')::BOOLEAN, false) THEN 0
-        WHEN s.region = 'daily' THEN
-          GREATEST(0,
-            10000
-            - CASE COALESCE((r.value ->> 'hints_used')::INT, 0)
-                WHEN 0 THEN 0
-                WHEN 1 THEN 500
-                WHEN 2 THEN 1500
-                WHEN 3 THEN 3000
-                ELSE 5500
-              END
-            - CASE
-                WHEN COALESCE((r.value ->> 'time_ms')::INT, 0) / 1000.0 <= 10 THEN 0
-                WHEN COALESCE((r.value ->> 'time_ms')::INT, 0) / 1000.0 >= 60 THEN 5000
-                ELSE ROUND((COALESCE((r.value ->> 'time_ms')::INT, 0) / 1000.0 - 10) / 50.0 * 5000)
-              END
-          )
         ELSE
           ROUND(
             GREATEST(0,
