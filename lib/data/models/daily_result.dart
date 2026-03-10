@@ -10,14 +10,46 @@ class DailyRoundResult {
   /// Number of hints used this round (0-4).
   final int hintsUsed;
 
-  /// Whether the player found the target (false = fuel ran out).
+  /// Whether the player found the target (false = fuel ran out / aborted).
   final bool completed;
 
   /// Time in milliseconds for this round.
   final int timeMs;
 
-  /// Score for this round.
+  /// Score for this round (time-based: full at ≤10s, minimum at ≥60s).
   final int score;
+
+  /// Compute a time-based score from elapsed time and hints used.
+  ///
+  /// Formula:
+  ///   base     = 10,000
+  ///   hints    = escalating penalty per tier (500, 1000, 1500, 2500)
+  ///   time     = 0 at ≤10s, linear to 5,000 at ≥60s
+  ///
+  /// This is used to recalculate scores from stored data so that old
+  /// fuel-based scores and new time-based scores are consistent.
+  static int computeTimeScore({
+    required int timeMs,
+    required int hintsUsed,
+    required bool completed,
+  }) {
+    if (!completed) return 0;
+    const int base = 10000;
+    const List<int> hintPenalties = [500, 1000, 1500, 2500];
+    int hintPenalty = 0;
+    for (int i = 0; i < hintsUsed && i < hintPenalties.length; i++) {
+      hintPenalty += hintPenalties[i];
+    }
+    final seconds = timeMs / 1000.0;
+    int timePenalty = 0;
+    if (seconds > 10 && seconds < 60) {
+      timePenalty = ((seconds - 10) / 50.0 * 5000).round();
+    } else if (seconds >= 60) {
+      timePenalty = 5000;
+    }
+    final raw = base - hintPenalty - timePenalty;
+    return raw < 0 ? 0 : raw;
+  }
 
   /// Emoji representation of this round's performance.
   String get emoji {
@@ -35,13 +67,23 @@ class DailyRoundResult {
         'score': score,
       };
 
-  factory DailyRoundResult.fromJson(Map<String, dynamic> json) =>
-      DailyRoundResult(
-        hintsUsed: json['hints_used'] as int? ?? 0,
-        completed: json['completed'] as bool? ?? false,
-        timeMs: json['time_ms'] as int? ?? 0,
-        score: json['score'] as int? ?? 0,
-      );
+  /// Deserialize from JSON, recalculating the score using the time-based
+  /// formula so that old fuel-based scores align with new time-based ones.
+  factory DailyRoundResult.fromJson(Map<String, dynamic> json) {
+    final hintsUsed = json['hints_used'] as int? ?? 0;
+    final completed = json['completed'] as bool? ?? false;
+    final timeMs = json['time_ms'] as int? ?? 0;
+    return DailyRoundResult(
+      hintsUsed: hintsUsed,
+      completed: completed,
+      timeMs: timeMs,
+      score: computeTimeScore(
+        timeMs: timeMs,
+        hintsUsed: hintsUsed,
+        completed: completed,
+      ),
+    );
+  }
 }
 
 /// Complete daily challenge result for sharing and persistence.
@@ -143,14 +185,22 @@ class DailyResult {
         'theme': theme,
       };
 
-  factory DailyResult.fromJson(Map<String, dynamic> json) => DailyResult(
-        date: json['date'] as String,
-        rounds: (json['rounds'] as List)
-            .map((r) => DailyRoundResult.fromJson(r as Map<String, dynamic>))
-            .toList(),
-        totalScore: json['total_score'] as int,
-        totalTimeMs: json['total_time_ms'] as int,
-        totalRounds: json['total_rounds'] as int? ?? 5,
-        theme: json['theme'] as String? ?? '',
-      );
+  /// Deserialize from JSON, recalculating totalScore from round data so
+  /// that old fuel-based scores align with the current time-based formula.
+  factory DailyResult.fromJson(Map<String, dynamic> json) {
+    final rounds = (json['rounds'] as List)
+        .map((r) => DailyRoundResult.fromJson(r as Map<String, dynamic>))
+        .toList();
+    // Recalculate total from per-round scores (which are themselves
+    // recalculated in DailyRoundResult.fromJson using time-based formula).
+    final recalculatedTotal = rounds.fold<int>(0, (sum, r) => sum + r.score);
+    return DailyResult(
+      date: json['date'] as String,
+      rounds: rounds,
+      totalScore: recalculatedTotal,
+      totalTimeMs: json['total_time_ms'] as int,
+      totalRounds: json['total_rounds'] as int? ?? 5,
+      theme: json['theme'] as String? ?? '',
+    );
+  }
 }

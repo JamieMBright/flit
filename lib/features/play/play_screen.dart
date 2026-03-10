@@ -698,19 +698,37 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       fuelFraction: fuelFrac,
       useTimeScoring: widget.isDailyChallenge,
     );
-    _totalScore += _session?.score ?? 0;
+    // For daily, use the canonical time-based score (no difficulty multiplier).
+    if (widget.isDailyChallenge) {
+      _totalScore += DailyRoundResult.computeTimeScore(
+        timeMs: _elapsed.inMilliseconds,
+        hintsUsed: _hintTier,
+        completed: true,
+      );
+    } else {
+      _totalScore += _session?.score ?? 0;
+    }
     _cumulativeTime += _elapsed;
 
     // Record per-round result for summary (capture hint tier before reset).
     if (_session != null) {
+      final roundScore = widget.isDailyChallenge
+          ? DailyRoundResult.computeTimeScore(
+              timeMs: _elapsed.inMilliseconds,
+              hintsUsed: _hintTier,
+              completed: true,
+            )
+          : _session!.score;
+      final roundRawScore =
+          widget.isDailyChallenge ? roundScore : _session!.rawScore;
       _roundResults.add(
         _RoundResult(
           countryName: _session!.targetName,
           countryCode: _session!.targetCountry.code,
           clueType: _session!.clue.type,
           elapsed: _elapsed,
-          score: _session!.score,
-          rawScore: _session!.rawScore,
+          score: roundScore,
+          rawScore: roundRawScore,
           hintsUsed: _hintTier,
           completed: true,
           fuelFraction: fuelFrac,
@@ -858,22 +876,43 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       fuelFraction: fuelFrac,
       useTimeScoring: widget.isDailyChallenge,
     );
-    _totalScore += _session?.score ?? 0;
+    // For daily, use the canonical time-based score (no difficulty multiplier)
+    // so it matches DailyRoundResult.computeTimeScore and stays consistent
+    // across save/load cycles.
+    if (widget.isDailyChallenge) {
+      _totalScore += DailyRoundResult.computeTimeScore(
+        timeMs: _elapsed.inMilliseconds,
+        hintsUsed: _hintTier,
+        completed: !fuelDepleted,
+      );
+    } else {
+      _totalScore += _session?.score ?? 0;
+    }
     _cumulativeTime += _elapsed;
     AudioManager.instance.playSfx(SfxType.landingSuccess);
 
     // Record final round result for summary.
     if (_session != null) {
+      final completed = !fuelDepleted;
+      final roundScore = widget.isDailyChallenge
+          ? DailyRoundResult.computeTimeScore(
+              timeMs: _elapsed.inMilliseconds,
+              hintsUsed: _hintTier,
+              completed: completed,
+            )
+          : _session!.score;
+      final roundRawScore =
+          widget.isDailyChallenge ? roundScore : _session!.rawScore;
       _roundResults.add(
         _RoundResult(
           countryName: _session!.targetName,
           countryCode: _session!.targetCountry.code,
           clueType: _session!.clue.type,
           elapsed: _elapsed,
-          score: _session!.score,
-          rawScore: _session!.rawScore,
+          score: roundScore,
+          rawScore: roundRawScore,
           hintsUsed: _hintTier,
-          completed: !fuelDepleted,
+          completed: completed,
           fuelFraction: fuelFrac,
           useTimeScoring: widget.isDailyChallenge,
           timePenalty: widget.isDailyChallenge ? _session!.timePenalty : null,
@@ -951,23 +990,30 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     widget.onComplete?.call(_totalScore);
 
     // Build and report daily result if this is a daily challenge.
+    // Use time-based scores (consistent with DailyRoundResult.fromJson
+    // recalculation) so saved and loaded scores always match.
     if (widget.isDailyChallenge) {
       final now = DateTime.now().toUtc();
       final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-'
           '${now.day.toString().padLeft(2, '0')}';
-      final dailyResult = DailyResult(
-        date: dateStr,
-        rounds: _roundResults
-            .map(
-              (r) => DailyRoundResult(
+      final dailyRounds = _roundResults
+          .map(
+            (r) => DailyRoundResult(
+              hintsUsed: r.hintsUsed,
+              completed: r.completed,
+              timeMs: r.elapsed.inMilliseconds,
+              score: DailyRoundResult.computeTimeScore(
+                timeMs: r.elapsed.inMilliseconds,
                 hintsUsed: r.hintsUsed,
                 completed: r.completed,
-                timeMs: r.elapsed.inMilliseconds,
-                score: r.score,
               ),
-            )
-            .toList(),
-        totalScore: _totalScore,
+            ),
+          )
+          .toList();
+      final dailyResult = DailyResult(
+        date: dateStr,
+        rounds: dailyRounds,
+        totalScore: dailyRounds.fold<int>(0, (sum, r) => sum + r.score),
         totalTimeMs: _cumulativeTime.inMilliseconds,
         totalRounds: widget.totalRounds,
         theme: widget.dailyTheme,
@@ -1337,19 +1383,24 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       final now = DateTime.now().toUtc();
       final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-'
           '${now.day.toString().padLeft(2, '0')}';
-      final dailyResult = DailyResult(
-        date: dateStr,
-        rounds: _roundResults
-            .map(
-              (r) => DailyRoundResult(
+      final dailyRounds = _roundResults
+          .map(
+            (r) => DailyRoundResult(
+              hintsUsed: r.hintsUsed,
+              completed: r.completed,
+              timeMs: r.elapsed.inMilliseconds,
+              score: DailyRoundResult.computeTimeScore(
+                timeMs: r.elapsed.inMilliseconds,
                 hintsUsed: r.hintsUsed,
                 completed: r.completed,
-                timeMs: r.elapsed.inMilliseconds,
-                score: r.score,
               ),
-            )
-            .toList(),
-        totalScore: _totalScore,
+            ),
+          )
+          .toList();
+      final dailyResult = DailyResult(
+        date: dateStr,
+        rounds: dailyRounds,
+        totalScore: dailyRounds.fold<int>(0, (sum, r) => sum + r.score),
         totalTimeMs: _cumulativeTime.inMilliseconds,
         totalRounds: widget.totalRounds,
         theme: widget.dailyTheme,
