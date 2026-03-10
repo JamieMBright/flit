@@ -424,7 +424,7 @@ class _UsaMapPainter extends CustomPainter {
   }
 
   Rect _neInsetRect(Size size) {
-    final insetW = size.width * 0.28;
+    final insetW = size.width * 0.42;
     final insetH = insetW * 0.75;
     final right = size.width - size.width * _insetPadding;
     final top = size.height - insetH - size.height * _insetPadding;

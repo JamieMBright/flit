@@ -1182,23 +1182,7 @@ class _GameModesSection extends StatelessWidget {
   const _GameModesSection();
 
   static const List<_GameModeData> _modes = [
-    _GameModeData(
-      icon: Icons.flight_takeoff_rounded,
-      iconColor: FlitColors.oceanHighlight,
-      name: 'Free Flight',
-      tagline: 'No pressure. Just explore.',
-      description:
-          'Fly wherever you like, identify countries at your own pace, '
-          'and learn the globe with no timer and no score pressure.',
-    ),
-    _GameModeData(
-      icon: Icons.school_rounded,
-      iconColor: FlitColors.success,
-      name: 'Training Sortie',
-      tagline: 'Learn the ropes.',
-      description: 'Guided missions with hints and slower pacing. Perfect for '
-          'building your geographic knowledge before going competitive.',
-    ),
+    // ── Flying modes ──
     _GameModeData(
       icon: Icons.calendar_today_rounded,
       iconColor: FlitColors.gold,
@@ -1207,7 +1191,92 @@ class _GameModesSection extends StatelessWidget {
       description:
           'A fresh set of five countries every day, the same for every '
           'player on Earth. Compare your score on the global leaderboard.',
+      details: 'You fly a plane over a 3D satellite globe. Swipe left/right to '
+          'steer and up/down to change altitude. Read the clue at the top, '
+          'then fly to the target country and tap it to guess. Lower '
+          'altitude gives you a closer look but costs fuel. Use hints if '
+          'you are stuck — each hint tier costs points. Score is based on '
+          'speed, accuracy, hints used, and fuel remaining.',
     ),
+    _GameModeData(
+      icon: Icons.flight_takeoff_rounded,
+      iconColor: FlitColors.oceanHighlight,
+      name: 'Free Flight',
+      tagline: 'No pressure. Just explore.',
+      description:
+          'Fly wherever you like, identify countries at your own pace, '
+          'and learn the globe with no timer and no score pressure.',
+      details: 'Same flying controls as Daily Scramble — swipe to steer, '
+          'change altitude, and tap countries. The difference is there is '
+          'no timer, no scoring, and no limit on hints. Fly around, '
+          'explore the globe, and learn where countries are at your own '
+          'pace. Great for building geographic knowledge before competing.',
+    ),
+    _GameModeData(
+      icon: Icons.school_rounded,
+      iconColor: FlitColors.success,
+      name: 'Training Sortie',
+      tagline: 'Learn the ropes.',
+      description: 'Guided missions with hints and slower pacing. Perfect for '
+          'building your geographic knowledge before going competitive.',
+      details:
+          'Fly across the globe just like Daily Scramble, but with gentler '
+          'pacing and guided hints. Each mission focuses on a region or '
+          'theme. Hints are provided more freely, and the timer is more '
+          'generous. Complete sorties to build confidence before taking on '
+          'daily challenges and head-to-head dogfights.',
+    ),
+    // ── Quiz / tapping modes ──
+    _GameModeData(
+      icon: Icons.assignment_rounded,
+      iconColor: FlitColors.error,
+      name: 'Daily Briefing',
+      tagline: 'Daily quiz. Same for all.',
+      description:
+          'A daily set of quiz questions testing your geography knowledge. '
+          'The same questions for every player — compare on the leaderboard.',
+      details: 'No flying here — this is a pure quiz. You are shown a clue and '
+          'a flat map of a region. Tap the country you think matches the '
+          'clue. The faster and more accurately you answer, the higher '
+          'your score. Each round shows a different clue type (flag, '
+          'capital, borders, etc.). Like Daily Scramble, everyone gets '
+          'the same set each day.',
+    ),
+    _GameModeData(
+      icon: Icons.menu_book_rounded,
+      iconColor: FlitColors.accent,
+      name: 'Flight School',
+      tagline: 'Study and drill.',
+      description:
+          'Pick a region, pick a category, and drill countries on a flat '
+          'map. Learn at your own pace with instant feedback.',
+      details: 'A flat 2D map is shown with country outlines. A clue appears '
+          'at the top — it could be a flag, capital city, border list, or '
+          'other geographic fact. Tap the country on the map that matches. '
+          'Green flash = correct, red flash = wrong. The correct country '
+          'is always highlighted so you learn as you go. You choose the '
+          'region and clue category, so you can focus on weak areas.',
+    ),
+    // ── Typing modes ──
+    _GameModeData(
+      icon: Icons.explore_rounded,
+      iconColor: FlitColors.landMassHighlight,
+      name: 'Uncharted',
+      tagline: 'Name them all.',
+      description:
+          'A blank map with outlines only. Type country names (or capitals) '
+          'to reveal them. How many can you name from memory?',
+      details:
+          'You see a dark map showing only country/region outlines. A text '
+          'field at the bottom lets you type names. As soon as you type a '
+          'correct name, it auto-submits and the country is revealed with '
+          'satellite imagery. In Countries mode you type country names; in '
+          'Capitals mode you type capital cities to reveal countries. '
+          'Pinch to zoom and pan the map. Try to reveal them all before '
+          'giving up — your score is based on how many you found and '
+          'how fast.',
+    ),
+    // ── Multiplayer ──
     _GameModeData(
       icon: Icons.sports_esports_rounded,
       iconColor: FlitColors.accent,
@@ -1216,6 +1285,11 @@ class _GameModesSection extends StatelessWidget {
       description:
           'Race a friend or a random opponent to identify the same country '
           'first. First correct answer wins the round. Best of five.',
+      details: 'Both players get the same clue at the same time. The first to '
+          'identify the correct country wins the round. Best of five '
+          'rounds wins the match. You can challenge friends directly or '
+          'matchmake against random opponents. Track your head-to-head '
+          'record and rivalry level on the friends screen.',
     ),
   ];
 
@@ -1226,15 +1300,56 @@ class _GameModesSection extends StatelessWidget {
       iconColor: FlitColors.accent,
       title: 'Game Modes',
       child: Column(
-        children: _modes
-            .map(
-              (mode) => Padding(
-                padding: EdgeInsets.only(bottom: mode == _modes.last ? 0 : 12),
-                child: _GameModeCard(data: mode),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _categoryLabel('Flying Modes', Icons.flight_rounded),
+          const SizedBox(height: 8),
+          ..._modes.sublist(0, 3).map(
+                (mode) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _GameModeCard(data: mode),
+                ),
               ),
-            )
-            .toList(),
+          const SizedBox(height: 4),
+          _categoryLabel('Quiz Modes', Icons.touch_app_rounded),
+          const SizedBox(height: 8),
+          ..._modes.sublist(3, 5).map(
+                (mode) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _GameModeCard(data: mode),
+                ),
+              ),
+          const SizedBox(height: 4),
+          _categoryLabel('Typing Modes', Icons.keyboard_rounded),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _GameModeCard(data: _modes[5]),
+          ),
+          const SizedBox(height: 4),
+          _categoryLabel('Multiplayer', Icons.people_rounded),
+          const SizedBox(height: 8),
+          _GameModeCard(data: _modes[6]),
+        ],
       ),
+    );
+  }
+
+  static Widget _categoryLabel(String label, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: FlitColors.textMuted, size: 14),
+        const SizedBox(width: 6),
+        Text(
+          label.toUpperCase(),
+          style: const TextStyle(
+            color: FlitColors.textMuted,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.5,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1246,6 +1361,7 @@ class _GameModeData {
     required this.name,
     required this.tagline,
     required this.description,
+    this.details,
   });
 
   final IconData icon;
@@ -1253,6 +1369,9 @@ class _GameModeData {
   final String name;
   final String tagline;
   final String description;
+
+  /// Expanded how-to-play details shown below the description.
+  final String? details;
 }
 
 class _GameModeCard extends StatelessWidget {
@@ -1317,6 +1436,40 @@ class _GameModeCard extends StatelessWidget {
                     height: 1.4,
                   ),
                 ),
+                if (data.details != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: data.iconColor.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: data.iconColor.withValues(alpha: 0.15),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: data.iconColor.withValues(alpha: 0.6),
+                          size: 14,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            data.details!,
+                            style: const TextStyle(
+                              color: FlitColors.textSecondary,
+                              fontSize: 11,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

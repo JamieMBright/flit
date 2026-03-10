@@ -600,6 +600,9 @@ class FriendsService {
             theirHintsUsed: isChallenger ? challengedHints : challengerHints,
             countryName: round['country_name'] as String?,
             clueType: round['clue_type'] as String?,
+            levelId: round['level_id'] as String?,
+            levelName: round['level_name'] as String?,
+            category: round['category'] as String?,
           );
           rounds.add(outcome);
 

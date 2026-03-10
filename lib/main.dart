@@ -18,6 +18,7 @@ import 'core/utils/web_error_bridge.dart';
 import 'core/utils/web_flush_bridge.dart';
 import 'core/widgets/error_overlay_manager.dart';
 import 'data/services/user_preferences_service.dart';
+import 'game/quiz/alias_service.dart';
 import 'features/auth/login_screen.dart';
 
 final _log = GameLog.instance;
@@ -68,6 +69,9 @@ Future<void> main() async {
   _log.info('app', 'Loading cached settings...');
   await GameSettings.instance.loadFromLocal();
   _log.info('app', 'Settings loaded');
+
+  // Load runtime country alias overrides (for fuzzy matching).
+  await AliasService.instance.load();
 
   // Initialize Supabase (auth session auto-restores from local storage).
   _log.info('app', 'Initializing Supabase...');

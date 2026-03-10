@@ -49,6 +49,7 @@
 | 1.4 | **No subscription purchase flow** | Build paywall screen, wire subscription tiers to IAP products, handle restore purchases, manage entitlements. | 2 days |
 | 1.5 | **Gold package purchase flow** | Wire existing shop gold tab to IAP. 4 products: Pouch ($0.99), Sack ($4.99), Chest ($9.99), Vault ($19.99). | 1 day |
 | 1.6 | **App Store product registration** | Create IAP products in App Store Connect and Google Play Console matching the product IDs. | 2 hours per store |
+| 1.7 | **Define membership tiers & entitlements** | Finalize what each membership tier unlocks: Free vs Premium vs Pro. Map features to tiers (e.g., ad-free, unlimited H2H, exclusive companions, regional game modes, custom avatars, priority matchmaking). Define tier names, pricing, trial periods, and family sharing rules. Document in `MEMBERSHIPS.md`. | 1-2 days |
 
 ### Tier 2 — Signing & Building
 
@@ -278,13 +279,14 @@ RevenueCat is recommended over raw `in_app_purchase` because:
 6. Set up Codemagic account and connect repo
 
 ### Sprint 2: Revenue (Week 2)
-1. Add `purchases_flutter` (RevenueCat SDK) to `pubspec.yaml`
-2. Create products in App Store Connect + Play Console
-3. Configure RevenueCat project with both stores
-4. Build paywall screen (subscription purchase UI)
-5. Wire gold package buttons to consumable IAP
-6. Implement entitlement checks (replace mock subscription tier)
-7. Add `google_mobile_ads` and wire to existing `AdConfig` placements
+1. **Define membership tiers** — Finalize Free/Premium/Pro feature matrix, pricing, trial periods. Document in `MEMBERSHIPS.md`
+2. Add `purchases_flutter` (RevenueCat SDK) to `pubspec.yaml`
+3. Create products in App Store Connect + Play Console (matching tier definitions)
+4. Configure RevenueCat project with both stores
+5. Build paywall screen (subscription purchase UI)
+6. Wire gold package buttons to consumable IAP
+7. Implement entitlement checks (replace mock subscription tier)
+8. Add `google_mobile_ads` and wire to existing `AdConfig` placements
 
 ### Sprint 3: CI/CD Pipeline (Week 2-3)
 1. Create `dev` branch, repoint GitHub Pages to `dev`

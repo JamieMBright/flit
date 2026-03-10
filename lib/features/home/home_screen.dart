@@ -259,32 +259,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           // Daily streak stats card
           const _DailyStreakCard(),
           const SizedBox(height: 10),
-          // Daily modes — highlighted in red at top for easy access
-          Row(
-            children: [
-              if (_dailyScrambleEnabled)
-                Expanded(
-                  child: _DailyModeButton(
-                    label: 'Daily Scramble',
-                    icon: Icons.today_rounded,
-                    onTap: () =>
-                        _navigateSafely(context, const DailyChallengeScreen()),
-                  ),
-                )
-              else
-                const Expanded(child: SizedBox()),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _DailyModeButton(
-                  label: 'Daily Briefing',
-                  icon: Icons.assignment_rounded,
-                  onTap: () =>
-                      _navigateSafely(context, const DailyBriefingScreen()),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
           // Primary PLAY button with glow
           _PlayButton(onTap: () => _showGameModes(context)),
           const SizedBox(height: 10),
@@ -1408,54 +1382,6 @@ class _FriendsMenuTileState extends State<_FriendsMenuTile>
 
 /// Square-ish tile for secondary menu items (2x2 grid).
 /// Red-highlighted daily mode button for prominent placement at the top.
-class _DailyModeButton extends StatelessWidget {
-  const _DailyModeButton({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Material(
-        color: FlitColors.error.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: FlitColors.error.withOpacity(0.5)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: FlitColors.error, size: 20),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    label.toUpperCase(),
-                    style: const TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-}
-
 class _MenuTile extends StatelessWidget {
   const _MenuTile({
     required this.label,

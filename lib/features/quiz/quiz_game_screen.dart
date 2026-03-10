@@ -203,13 +203,14 @@ class _QuizGameScreenState extends State<QuizGameScreen>
     if (question == null) return;
 
     setState(() {
-      if (level >= 5) {
-        // Level 5+: Highlight the exact correct answer
+      if (level >= 6) {
+        // Level 6+: Highlight the exact correct answer
         _highlightCode = question.answerCode;
       }
       // Levels 1-2: Extra clue texts (handled by session, shown in clue card)
-      // Levels 3-4: Elimination (handled by session via eliminatedCodes)
-      // Level 6+: Country removal (handled by session via eliminatedCodes)
+      // Level 3: Answer name reveal (handled by session via extraClueTexts)
+      // Levels 4-5: Elimination (handled by session via eliminatedCodes)
+      // Level 7+: Country removal (handled by session via eliminatedCodes)
     });
   }
 

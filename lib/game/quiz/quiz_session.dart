@@ -105,12 +105,13 @@ class QuizAnswerResult {
 /// Progressive hint levels used in the hint system.
 ///
 /// Each level provides increasingly helpful clues:
-/// 1. Show additional clue (border countries, continent, etc.)
-/// 2. Show another clue (flag, population, etc.)
-/// 3. Eliminate 50% of wrong answers
-/// 4. Eliminate 75% of wrong answers
-/// 5. Highlight the exact correct answer
-/// 6+. Start removing countries one by one until they get it
+/// 1. Show additional clue (capital, nickname, landmark, etc.)
+/// 2. Show another clue (flag, sports team, celebrity, etc.)
+/// 3. Reveal the answer name (e.g. "Answer: France")
+/// 4. Eliminate 50% of wrong answers
+/// 5. Eliminate 75% of wrong answers
+/// 6. Highlight the exact correct answer
+/// 7+. Start removing countries one by one until they get it
 enum HintLevel {
   /// Level 1: Show bordering countries/regions as extra clue text.
   showBorders,
@@ -118,16 +119,19 @@ enum HintLevel {
   /// Level 2: Show flag or additional identifying info.
   showFlag,
 
-  /// Level 3: Eliminate 50% of wrong answers.
+  /// Level 3: Reveal the answer name.
+  revealName,
+
+  /// Level 4: Eliminate 50% of wrong answers.
   eliminate50,
 
-  /// Level 4: Eliminate 75% of wrong answers.
+  /// Level 5: Eliminate 75% of wrong answers.
   eliminate75,
 
-  /// Level 5: Highlight the exact correct answer.
+  /// Level 6: Highlight the exact correct answer.
   highlightAnswer,
 
-  /// Level 6+: Remove countries one at a time.
+  /// Level 7+: Remove countries one at a time.
   removeCountries,
 }
 
@@ -259,10 +263,11 @@ class QuizSession {
   /// Progressive hint system:
   /// 1. Factual clue (capital, nickname, landmark)
   /// 2. Second factual clue (flag, sports team, celebrity)
-  /// 3. Eliminate 50% of wrong answers
-  /// 4. Eliminate 75% of wrong answers
-  /// 5. Highlight the exact correct answer
-  /// 6+. Remove countries one at a time until they guess correctly
+  /// 3. Reveal the answer name (e.g. "Answer: France")
+  /// 4. Eliminate 50% of wrong answers
+  /// 5. Eliminate 75% of wrong answers
+  /// 6. Highlight the exact correct answer
+  /// 7+. Remove countries one at a time until they guess correctly
   ///
   /// Each hint reduces the score multiplier for this question.
   int? useHint() {
@@ -289,21 +294,30 @@ class QuizSession {
         break;
 
       case 3:
+        // Reveal the answer name — tell the player what to look for
+        final area =
+            areas.where((a) => a.code == question.answerCode).firstOrNull;
+        if (area != null) {
+          _extraClueTexts.add('Answer: ${area.name}');
+        }
+        break;
+
+      case 4:
         // Eliminate 50% of wrong answers
         _eliminateWrongAnswers(0.50, question.answerCode, areas);
         break;
 
-      case 4:
+      case 5:
         // Eliminate 75% of wrong answers
         _eliminateWrongAnswers(0.75, question.answerCode, areas);
         break;
 
-      case 5:
+      case 6:
         // Highlight the exact correct answer (handled in UI via highlightCode)
         break;
 
       default:
-        // Level 6+: Remove one more country each time
+        // Level 7+: Remove one more country each time
         _removeOneWrongCountry(question.answerCode, areas);
         break;
     }

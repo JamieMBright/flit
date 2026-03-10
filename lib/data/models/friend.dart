@@ -196,6 +196,9 @@ class RoundOutcome {
     this.theirHintsUsed,
     this.countryName,
     this.clueType,
+    this.levelId,
+    this.levelName,
+    this.category,
   });
 
   final int roundNumber;
@@ -215,6 +218,11 @@ class RoundOutcome {
   /// Country name (e.g. "Brazil") and clue type (e.g. "borders").
   final String? countryName;
   final String? clueType;
+
+  /// Game mode metadata from the H2H round.
+  final String? levelId;
+  final String? levelName;
+  final String? category;
 
   bool get isComplete => yourTimeMs != null && theirTimeMs != null;
 

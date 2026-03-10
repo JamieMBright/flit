@@ -23,6 +23,7 @@ class UnchartedMapWidget extends StatefulWidget {
     required this.region,
     required this.revealedCodes,
     this.lastRevealedCode,
+    this.capitalsMode = false,
   });
 
   final GameRegion region;
@@ -30,6 +31,9 @@ class UnchartedMapWidget extends StatefulWidget {
 
   /// The most recently revealed code — shown with a highlight animation.
   final String? lastRevealedCode;
+
+  /// When true, labels show capital name with red dot + (country code).
+  final bool capitalsMode;
 
   @override
   State<UnchartedMapWidget> createState() => _UnchartedMapWidgetState();
@@ -105,6 +109,7 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
                   flashProgress: _flashController.value,
                   zoomScale: _currentZoomScale,
                   satelliteImage: _satelliteImage,
+                  capitalsMode: widget.capitalsMode,
                 ),
               ),
             );
@@ -129,6 +134,7 @@ class _UnchartedMapPainter extends CustomPainter {
     required this.flashProgress,
     required this.zoomScale,
     this.satelliteImage,
+    this.capitalsMode = false,
   });
 
   final List<RegionalArea> areas;
@@ -138,6 +144,7 @@ class _UnchartedMapPainter extends CustomPainter {
   final double flashProgress;
   final double zoomScale;
   final ui.Image? satelliteImage;
+  final bool capitalsMode;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -265,26 +272,69 @@ class _UnchartedMapPainter extends CustomPainter {
     // Scale font size inversely with zoom so it doesn't get huge when zoomed.
     final fontSize = (10.0 / zoomScale).clamp(3.0, 14.0);
 
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: area.name,
-        style: TextStyle(
-          color: const Color(0xFFE0F0E0),
-          fontSize: fontSize,
-          fontWeight: FontWeight.w600,
-          shadows: const [
-            Shadow(color: Color(0xFF000000), blurRadius: 2),
-          ],
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-      textAlign: TextAlign.center,
-    )..layout();
+    if (capitalsMode && area.capital != null) {
+      // Capitals mode: red dot + "CapitalName (CC)"
+      final dotRadius = (3.0 / zoomScale).clamp(1.0, 5.0);
+      canvas.drawCircle(
+        centroid,
+        dotRadius,
+        Paint()..color = const Color(0xFFE74C3C),
+      );
+      canvas.drawCircle(
+        centroid,
+        dotRadius,
+        Paint()
+          ..color = const Color(0xFFFFFFFF)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.5 / zoomScale,
+      );
 
-    textPainter.paint(
-      canvas,
-      centroid - Offset(textPainter.width / 2, textPainter.height / 2),
-    );
+      final label = '${area.capital} (${area.code})';
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: TextStyle(
+            color: const Color(0xFFE0F0E0),
+            fontSize: fontSize,
+            fontWeight: FontWeight.w600,
+            shadows: const [
+              Shadow(color: Color(0xFF000000), blurRadius: 2),
+            ],
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+      )..layout();
+
+      // Offset text to the right of the dot.
+      final textOffset = Offset(
+        centroid.dx + dotRadius + 3.0 / zoomScale,
+        centroid.dy - textPainter.height / 2,
+      );
+      textPainter.paint(canvas, textOffset);
+    } else {
+      // Country name mode.
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: area.name,
+          style: TextStyle(
+            color: const Color(0xFFE0F0E0),
+            fontSize: fontSize,
+            fontWeight: FontWeight.w600,
+            shadows: const [
+              Shadow(color: Color(0xFF000000), blurRadius: 2),
+            ],
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+      )..layout();
+
+      textPainter.paint(
+        canvas,
+        centroid - Offset(textPainter.width / 2, textPainter.height / 2),
+      );
+    }
   }
 
   Offset? _computeCentroid(RegionalArea area, _GeoTransform transform) {
