@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/services/user_preferences_service.dart';
+import '../../game/quiz/language_alias_service.dart';
 import '../services/game_settings.dart';
 import '../theme/flit_colors.dart';
 
@@ -241,6 +242,15 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
               value: GameSettings.instance.difficulty,
               onChanged: (value) {
                 GameSettings.instance.difficulty = value;
+                setState(() {});
+              },
+            ),
+            const Divider(color: FlitColors.cardBorder, height: 1),
+            _LanguageSelector(
+              value: GameSettings.instance.language,
+              onChanged: (value) {
+                GameSettings.instance.language = value;
+                LanguageAliasService.instance.syncLanguageAliases(value);
                 setState(() {});
               },
             ),
@@ -648,6 +658,106 @@ class _MapStyleSelector extends StatelessWidget {
         return Icons.palette_outlined;
       case MapStyle.topo:
         return Icons.terrain_outlined;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Language selector
+// ---------------------------------------------------------------------------
+
+class _LanguageSelector extends StatelessWidget {
+  const _LanguageSelector({required this.value, required this.onChanged});
+
+  final GameLanguage value;
+  final ValueChanged<GameLanguage> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.language,
+                    color: FlitColors.textSecondary, size: 22),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Language',
+                    style:
+                        TextStyle(color: FlitColors.textPrimary, fontSize: 16),
+                  ),
+                ),
+                Text(
+                  value.displayName,
+                  style: const TextStyle(
+                      color: FlitColors.textSecondary, fontSize: 14),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _subtitle(value),
+              style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: GameLanguage.values.map((lang) {
+                final isActive = lang == value;
+                return GestureDetector(
+                  onTap: () => onChanged(lang),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? FlitColors.accent.withOpacity(0.2)
+                          : FlitColors.backgroundMid,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isActive
+                            ? FlitColors.accent
+                            : FlitColors.cardBorder,
+                        width: isActive ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Text(
+                      lang.displayName,
+                      style: TextStyle(
+                        color:
+                            isActive ? FlitColors.accent : FlitColors.textMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      );
+
+  static String _subtitle(GameLanguage lang) {
+    switch (lang) {
+      case GameLanguage.english:
+        return 'Default — country names in English';
+      case GameLanguage.french:
+        return 'Accepte les noms de pays en francais';
+      case GameLanguage.spanish:
+        return 'Acepta nombres de paises en espanol';
+      case GameLanguage.german:
+        return 'Akzeptiert Landernamen auf Deutsch';
+      case GameLanguage.italian:
+        return 'Accetta nomi di paesi in italiano';
+      case GameLanguage.portuguese:
+        return 'Aceita nomes de paises em portugues';
+      case GameLanguage.dutch:
+        return 'Accepteert landnamen in het Nederlands';
     }
   }
 }

@@ -424,6 +424,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // skip this to avoid overwriting local settings with stale server data
     // (debounced writes may not have reached the server yet).
     if (hydrateSettings) {
+      final langName = snapshot.language;
       await GameSettings.instance.hydrateFrom(
         turnSensitivity: snapshot.turnSensitivity,
         invertControls: snapshot.invertControls,
@@ -440,6 +441,12 @@ class AccountNotifier extends StateNotifier<AccountState> {
           (d) => d.name == snapshot.difficulty,
           orElse: () => GameDifficulty.normal,
         ),
+        language: langName != null
+            ? GameLanguage.values.firstWhere(
+                (l) => l.name == langName,
+                orElse: () => GameLanguage.english,
+              )
+            : null,
         soundEnabled: snapshot.soundEnabled,
         musicVolume: snapshot.musicVolume,
         effectsVolume: snapshot.effectsVolume,

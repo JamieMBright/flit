@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
-import '../../game/data/country_aliases.dart';
 import '../../game/map/country_data.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/alias_service.dart';
@@ -489,7 +488,7 @@ class _AliasChip extends StatelessWidget {
       );
     }
 
-    final chipColor = isOverride ? FlitColors.gold : FlitColors.accent;
+    const chipColor = FlitColors.gold;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -501,16 +500,9 @@ class _AliasChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (isBaseline && !isOverride)
-            Padding(
-              padding: const EdgeInsets.only(right: 3),
-              child: Icon(Icons.lock_open_rounded,
-                  size: 10,
-                  color: FlitColors.textSecondary.withValues(alpha: 0.6)),
-            ),
           Text(
             alias,
-            style: TextStyle(
+            style: const TextStyle(
               color: chipColor,
               fontSize: 12,
               fontWeight: FontWeight.w500,
@@ -520,7 +512,7 @@ class _AliasChip extends StatelessWidget {
             const SizedBox(width: 4),
             GestureDetector(
               onTap: onRemove,
-              child: Icon(Icons.close, size: 13, color: chipColor),
+              child: const Icon(Icons.close, size: 13, color: chipColor),
             ),
           ],
         ],

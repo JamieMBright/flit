@@ -6,6 +6,74 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/services/user_preferences_service.dart';
 import 'audio_manager.dart';
 
+/// User language for country/capital name translations.
+///
+/// When set to a non-English language, the game accepts country and capital
+/// names in that language as valid answers (registered as aliases).
+/// Display names in clues and UI can also be shown in the selected language.
+enum GameLanguage {
+  /// English (default) — no translations applied.
+  english,
+
+  /// French — e.g. Allemagne, Espagne, Royaume-Uni.
+  french,
+
+  /// Spanish — e.g. Alemania, Francia, Reino Unido.
+  spanish,
+
+  /// German — e.g. Frankreich, Spanien, Vereinigtes Königreich.
+  german,
+
+  /// Italian — e.g. Germania, Francia, Regno Unito.
+  italian,
+
+  /// Portuguese — e.g. Alemanha, França, Reino Unido.
+  portuguese,
+
+  /// Dutch — e.g. Duitsland, Frankrijk, Verenigd Koninkrijk.
+  dutch;
+
+  /// Human-readable display name.
+  String get displayName {
+    switch (this) {
+      case GameLanguage.english:
+        return 'English';
+      case GameLanguage.french:
+        return 'Français';
+      case GameLanguage.spanish:
+        return 'Español';
+      case GameLanguage.german:
+        return 'Deutsch';
+      case GameLanguage.italian:
+        return 'Italiano';
+      case GameLanguage.portuguese:
+        return 'Português';
+      case GameLanguage.dutch:
+        return 'Nederlands';
+    }
+  }
+
+  /// Two-letter language code (ISO 639-1).
+  String get code {
+    switch (this) {
+      case GameLanguage.english:
+        return 'en';
+      case GameLanguage.french:
+        return 'fr';
+      case GameLanguage.spanish:
+        return 'es';
+      case GameLanguage.german:
+        return 'de';
+      case GameLanguage.italian:
+        return 'it';
+      case GameLanguage.portuguese:
+        return 'pt';
+      case GameLanguage.dutch:
+        return 'nl';
+    }
+  }
+}
+
 /// Map tile style for descent mode — different visual themes.
 /// All tile servers are free and open-license (no API key required).
 enum MapStyle {
@@ -101,6 +169,7 @@ class GameSettings extends ChangeNotifier {
       mapStyle: _mapStyle.name,
       englishLabels: _englishLabels,
       difficulty: _difficulty.name,
+      language: _language.name,
       soundEnabled: _soundEnabled,
       musicVolume: _musicVolume,
       effectsVolume: _effectsVolume,
@@ -127,6 +196,7 @@ class GameSettings extends ChangeNotifier {
     required bool englishLabels,
     required MapStyle mapStyle,
     required GameDifficulty difficulty,
+    GameLanguage? language,
     required bool soundEnabled,
     required double musicVolume,
     required double effectsVolume,
@@ -150,6 +220,7 @@ class GameSettings extends ChangeNotifier {
       this.englishLabels = englishLabels;
       this.mapStyle = mapStyle;
       this.difficulty = difficulty;
+      if (language != null) this.language = language;
       this.soundEnabled = soundEnabled;
       this.musicVolume = musicVolume;
       this.effectsVolume = effectsVolume;
@@ -179,6 +250,7 @@ class GameSettings extends ChangeNotifier {
         'map_style': _mapStyle.name,
         'english_labels': _englishLabels,
         'difficulty': _difficulty.name,
+        'language': _language.name,
         'sound_enabled': _soundEnabled,
         'music_volume': _musicVolume,
         'effects_volume': _effectsVolume,
@@ -237,6 +309,13 @@ class GameSettings extends ChangeNotifier {
         _difficulty = GameDifficulty.values.firstWhere(
           (d) => d.name == diffName,
           orElse: () => _difficulty,
+        );
+      }
+      final langName = data['language'] as String?;
+      if (langName != null) {
+        _language = GameLanguage.values.firstWhere(
+          (l) => l.name == langName,
+          orElse: () => _language,
         );
       }
       _soundEnabled = data['sound_enabled'] as bool? ?? _soundEnabled;
@@ -423,6 +502,22 @@ class GameSettings extends ChangeNotifier {
 
   /// Human-readable label for the current difficulty (flight-themed).
   String get difficultyLabel => _difficulty.displayName;
+
+  // ─── Language ─────────────────────────────────────────────────
+
+  /// Preferred language for country/capital name translations.
+  /// When non-English, translated names are accepted as valid answers.
+  GameLanguage _language = GameLanguage.english;
+
+  GameLanguage get language => _language;
+
+  set language(GameLanguage value) {
+    _language = value;
+    notifyListeners();
+  }
+
+  /// Human-readable label for the current language.
+  String get languageLabel => _language.displayName;
 
   // ─── Audio & Feedback ─────────────────────────────────────────
 

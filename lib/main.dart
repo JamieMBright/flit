@@ -19,6 +19,7 @@ import 'core/utils/web_flush_bridge.dart';
 import 'core/widgets/error_overlay_manager.dart';
 import 'data/services/user_preferences_service.dart';
 import 'game/quiz/alias_service.dart';
+import 'game/quiz/language_alias_service.dart';
 import 'features/auth/login_screen.dart';
 
 final _log = GameLog.instance;
@@ -72,6 +73,10 @@ Future<void> main() async {
 
   // Load runtime country alias overrides (for fuzzy matching).
   await AliasService.instance.load();
+
+  // Sync language-based aliases if a non-English language is selected.
+  await LanguageAliasService.instance
+      .syncLanguageAliases(GameSettings.instance.language);
 
   // Initialize Supabase (auth session auto-restores from local storage).
   _log.info('app', 'Initializing Supabase...');

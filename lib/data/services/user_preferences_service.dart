@@ -381,6 +381,7 @@ class UserPreferencesService {
     required String mapStyle,
     required bool englishLabels,
     required String difficulty,
+    String? language,
     required bool soundEnabled,
     required double musicVolume,
     required double effectsVolume,
@@ -400,6 +401,7 @@ class UserPreferencesService {
       'map_style': mapStyle,
       'english_labels': englishLabels,
       'difficulty': difficulty,
+      if (language != null) 'language': language,
       'sound_enabled': soundEnabled,
       'music_volume': musicVolume,
       'effects_volume': effectsVolume,
@@ -1194,6 +1196,10 @@ class UserPreferencesSnapshot {
 
   String get difficulty {
     return settings?['difficulty'] as String? ?? 'normal';
+  }
+
+  String? get language {
+    return settings?['language'] as String?;
   }
 
   bool get soundEnabled {
