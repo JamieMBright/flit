@@ -167,7 +167,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           clueChance: license.clueChance,
           preferredClueType: license.preferredClueType,
           enabledClueTypes: _challenge.enabledClueTypes,
-          enableFuel: true,
+          enableFuel: false,
           planeHandling: plane?.handling ?? 1.0,
           planeSpeed: plane?.speed ?? 1.0,
           planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,

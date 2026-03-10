@@ -597,6 +597,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       _game.fuelEnabled = widget.enableFuel;
       _game.onFuelEmpty = _onFuelEmpty;
 
+      // Daily scramble starts in slow speed for a relaxed experience.
+      if (widget.isDailyChallenge) {
+        _game.setFlightSpeed(FlightSpeed.slow);
+      }
+
       // Play clue popup sound.
       AudioManager.instance.playSfx(SfxType.cluePop);
 
@@ -688,7 +693,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   void _advanceRound() {
     _timer?.cancel();
     final fuelFrac = _game.maxFuel > 0 ? _game.fuel / _game.maxFuel : 1.0;
-    _session?.complete(hintsUsed: _hintTier, fuelFraction: fuelFrac);
+    _session?.complete(
+      hintsUsed: _hintTier,
+      fuelFraction: fuelFrac,
+      useTimeScoring: widget.isDailyChallenge,
+    );
     _totalScore += _session?.score ?? 0;
     _cumulativeTime += _elapsed;
 
@@ -705,6 +714,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           hintsUsed: _hintTier,
           completed: true,
           fuelFraction: fuelFrac,
+          useTimeScoring: widget.isDailyChallenge,
+          timePenalty: widget.isDailyChallenge ? _session!.timePenalty : null,
         ),
       );
     }
@@ -842,7 +853,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     final fuelFrac = fuelDepleted
         ? 0.0
         : (_game.maxFuel > 0 ? _game.fuel / _game.maxFuel : 1.0);
-    _session?.complete(hintsUsed: _hintTier, fuelFraction: fuelFrac);
+    _session?.complete(
+      hintsUsed: _hintTier,
+      fuelFraction: fuelFrac,
+      useTimeScoring: widget.isDailyChallenge,
+    );
     _totalScore += _session?.score ?? 0;
     _cumulativeTime += _elapsed;
     AudioManager.instance.playSfx(SfxType.landingSuccess);
@@ -860,6 +875,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           hintsUsed: _hintTier,
           completed: !fuelDepleted,
           fuelFraction: fuelFrac,
+          useTimeScoring: widget.isDailyChallenge,
+          timePenalty: widget.isDailyChallenge ? _session!.timePenalty : null,
         ),
       );
     }
@@ -1229,7 +1246,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   Future<void> _recordAbort() async {
     _timer?.cancel();
     _autoHintTimer?.cancel();
-    _session?.complete(hintsUsed: 4, fuelFraction: 0.0);
+    _session?.complete(
+      hintsUsed: 4,
+      fuelFraction: 0.0,
+      useTimeScoring: widget.isDailyChallenge,
+    );
     _cumulativeTime += _elapsed;
 
     // Record the current in-progress round as a failed round.
@@ -1766,6 +1787,8 @@ class _RoundResult {
     this.hintsUsed = 0,
     this.completed = true,
     this.fuelFraction = 1.0,
+    this.useTimeScoring = false,
+    this.timePenalty,
   });
 
   final String countryName;
@@ -1787,6 +1810,12 @@ class _RoundResult {
 
   /// Fuel remaining as a fraction (0.0–1.0) when the round ended.
   final double fuelFraction;
+
+  /// Whether this round used time-based scoring instead of fuel.
+  final bool useTimeScoring;
+
+  /// Time penalty from [GameSession.timePenalty] (null if fuel-based).
+  final int? timePenalty;
 
   /// Hint penalty computed from [hintsUsed] and tier penalties.
   int get hintPenalty {
@@ -1933,6 +1962,8 @@ class _ScoreBreakdown extends StatelessWidget {
     final r = result;
     final fuelPct = (r.fuelFraction * 100).round();
     final mult = r.diffMultiplier;
+    final tp = r.timePenalty ?? 0;
+    final elapsedSec = r.elapsed.inSeconds;
 
     return Container(
       margin: const EdgeInsets.only(left: 24, top: 4, bottom: 4),
@@ -1952,7 +1983,13 @@ class _ScoreBreakdown extends StatelessWidget {
               '-${_formatNum(r.hintPenalty)}',
               valueColor: FlitColors.error,
             ),
-          if (r.fuelPenalty > 0)
+          if (r.useTimeScoring && tp > 0)
+            _breakdownLine(
+              'Time (${elapsedSec}s)',
+              '-${_formatNum(tp)}',
+              valueColor: FlitColors.warning,
+            ),
+          if (!r.useTimeScoring && r.fuelPenalty > 0)
             _breakdownLine(
               'Fuel ($fuelPct%)',
               '-${_formatNum(r.fuelPenalty)}',
