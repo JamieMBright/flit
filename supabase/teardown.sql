@@ -26,6 +26,11 @@ DROP TRIGGER IF EXISTS trg_friendships_updated_at ON public.friendships;
 DROP TRIGGER IF EXISTS trg_protect_profile_stats ON public.profiles;
 
 -- Drop tables (order matters for foreign keys).
+DROP TABLE IF EXISTS public.daily_briefing_scores CASCADE;
+DROP TABLE IF EXISTS public.h2h_challenges CASCADE;
+DROP TABLE IF EXISTS public.clue_reports CASCADE;
+DROP TABLE IF EXISTS public.coin_ledger CASCADE;
+DROP TABLE IF EXISTS public.remote_config CASCADE;
 DROP TABLE IF EXISTS public.iap_receipts CASCADE;
 DROP TABLE IF EXISTS public.gdpr_requests CASCADE;
 DROP TABLE IF EXISTS public.matchmaking_pool CASCADE;
@@ -69,4 +74,7 @@ DROP FUNCTION IF EXISTS public.admin_search_users(TEXT, INT) CASCADE;
 DROP FUNCTION IF EXISTS public.admin_economy_summary() CASCADE;
 DROP FUNCTION IF EXISTS public.admin_process_gdpr_request(BIGINT, TEXT, TEXT) CASCADE;
 DROP FUNCTION IF EXISTS public.upsert_economy_config(JSONB) CASCADE;
+DROP FUNCTION IF EXISTS public.upsert_difficulty_config(JSONB, JSONB) CASCADE;
+DROP FUNCTION IF EXISTS public.recalibrate_scores(JSONB) CASCADE;
+DROP FUNCTION IF EXISTS public.admin_resolve_clue_report(BIGINT, TEXT, TEXT) CASCADE;
 DROP FUNCTION IF EXISTS public._log_admin_action(TEXT, UUID, JSONB) CASCADE;
