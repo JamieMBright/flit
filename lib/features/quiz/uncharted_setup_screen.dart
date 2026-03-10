@@ -105,7 +105,8 @@ class _UnchartedSetupScreenState extends State<UnchartedSetupScreen> {
                       icon: Icons.map_outlined,
                       selected: _selectedMode == UnchartedMode.countries,
                       onTap: () => setState(
-                          () => _selectedMode = UnchartedMode.countries),
+                        () => _selectedMode = UnchartedMode.countries,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -116,7 +117,8 @@ class _UnchartedSetupScreenState extends State<UnchartedSetupScreen> {
                       icon: Icons.location_city,
                       selected: _selectedMode == UnchartedMode.capitals,
                       onTap: () => setState(
-                          () => _selectedMode = UnchartedMode.capitals),
+                        () => _selectedMode = UnchartedMode.capitals,
+                      ),
                     ),
                   ),
                 ],
@@ -157,9 +159,19 @@ class _UnchartedSetupScreenState extends State<UnchartedSetupScreen> {
                 },
               ),
             ),
-            // Start button.
-            Padding(
-              padding: const EdgeInsets.all(16),
+            // Fixed bottom start button.
+            Container(
+              decoration: BoxDecoration(
+                color: FlitColors.backgroundDark,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               child: SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -222,9 +234,11 @@ class _ModeChip extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(icon,
-                color: selected ? FlitColors.accent : FlitColors.textSecondary,
-                size: 24),
+            Icon(
+              icon,
+              color: selected ? FlitColors.accent : FlitColors.textSecondary,
+              size: 24,
+            ),
             const SizedBox(height: 6),
             Text(
               label,
@@ -285,10 +299,11 @@ class _RegionCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(icon,
-                  color:
-                      selected ? FlitColors.accent : FlitColors.textSecondary,
-                  size: 28),
+              Icon(
+                icon,
+                color: selected ? FlitColors.accent : FlitColors.textSecondary,
+                size: 28,
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -315,8 +330,11 @@ class _RegionCard extends StatelessWidget {
                 ),
               ),
               if (selected)
-                const Icon(Icons.check_circle,
-                    color: FlitColors.accent, size: 22),
+                const Icon(
+                  Icons.check_circle,
+                  color: FlitColors.accent,
+                  size: 22,
+                ),
             ],
           ),
         ),
