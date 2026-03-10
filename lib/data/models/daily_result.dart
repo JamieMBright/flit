@@ -1,3 +1,5 @@
+import 'package:flit/game/data/country_difficulty.dart';
+
 /// Per-round result data for daily challenge share text.
 class DailyRoundResult {
   const DailyRoundResult({
@@ -5,6 +7,7 @@ class DailyRoundResult {
     required this.completed,
     required this.timeMs,
     required this.score,
+    this.countryCode,
   });
 
   /// Number of hints used this round (0-4).
@@ -16,22 +19,27 @@ class DailyRoundResult {
   /// Time in milliseconds for this round.
   final int timeMs;
 
-  /// Score for this round (time-based: full at ≤10s, minimum at ≥60s).
+  /// Score for this round (time-based with difficulty multiplier).
   final int score;
 
-  /// Compute a time-based score from elapsed time and hints used.
+  /// ISO country code for difficulty lookup (nullable for old data).
+  final String? countryCode;
+
+  /// Compute a time-based score from elapsed time, hints, and difficulty.
   ///
   /// Formula:
-  ///   base     = 10,000
+  ///   raw      = 10,000 − hintPenalties − timePenalty
   ///   hints    = escalating penalty per tier (500, 1000, 1500, 2500)
   ///   time     = 0 at ≤10s, linear to 5,000 at ≥60s
+  ///   final    = raw × difficultyMultiplier (0.5–1.0)
   ///
-  /// This is used to recalculate scores from stored data so that old
-  /// fuel-based scores and new time-based scores are consistent.
+  /// When [countryCode] is null (old data without it), the difficulty
+  /// multiplier defaults to 0.75 (midpoint).
   static int computeTimeScore({
     required int timeMs,
     required int hintsUsed,
     required bool completed,
+    String? countryCode,
   }) {
     if (!completed) return 0;
     const int base = 10000;
@@ -48,7 +56,10 @@ class DailyRoundResult {
       timePenalty = 5000;
     }
     final raw = base - hintPenalty - timePenalty;
-    return raw < 0 ? 0 : raw;
+    if (raw <= 0) return 0;
+    final multiplier =
+        countryCode != null ? difficultyMultiplier(countryCode) : 0.75;
+    return (raw * multiplier).round().clamp(0, 10000);
   }
 
   /// Emoji representation of this round's performance.
@@ -65,6 +76,7 @@ class DailyRoundResult {
         'completed': completed,
         'time_ms': timeMs,
         'score': score,
+        if (countryCode != null) 'country_code': countryCode,
       };
 
   /// Deserialize from JSON, recalculating the score using the time-based
@@ -73,14 +85,17 @@ class DailyRoundResult {
     final hintsUsed = json['hints_used'] as int? ?? 0;
     final completed = json['completed'] as bool? ?? false;
     final timeMs = json['time_ms'] as int? ?? 0;
+    final countryCode = json['country_code'] as String?;
     return DailyRoundResult(
       hintsUsed: hintsUsed,
       completed: completed,
       timeMs: timeMs,
+      countryCode: countryCode,
       score: computeTimeScore(
         timeMs: timeMs,
         hintsUsed: hintsUsed,
         completed: completed,
+        countryCode: countryCode,
       ),
     );
   }

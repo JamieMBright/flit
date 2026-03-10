@@ -698,12 +698,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       fuelFraction: fuelFrac,
       useTimeScoring: widget.isDailyChallenge,
     );
-    // For daily, use the canonical time-based score (no difficulty multiplier).
+    // For daily, use the canonical time-based score (with difficulty multiplier).
     if (widget.isDailyChallenge) {
       _totalScore += DailyRoundResult.computeTimeScore(
         timeMs: _elapsed.inMilliseconds,
         hintsUsed: _hintTier,
         completed: true,
+        countryCode: _session?.targetCountry.code,
       );
     } else {
       _totalScore += _session?.score ?? 0;
@@ -717,6 +718,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               timeMs: _elapsed.inMilliseconds,
               hintsUsed: _hintTier,
               completed: true,
+              countryCode: _session!.targetCountry.code,
             )
           : _session!.score;
       final roundRawScore =
@@ -876,7 +878,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       fuelFraction: fuelFrac,
       useTimeScoring: widget.isDailyChallenge,
     );
-    // For daily, use the canonical time-based score (no difficulty multiplier)
+    // For daily, use the canonical time-based score (with difficulty multiplier)
     // so it matches DailyRoundResult.computeTimeScore and stays consistent
     // across save/load cycles.
     if (widget.isDailyChallenge) {
@@ -884,6 +886,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         timeMs: _elapsed.inMilliseconds,
         hintsUsed: _hintTier,
         completed: !fuelDepleted,
+        countryCode: _session?.targetCountry.code,
       );
     } else {
       _totalScore += _session?.score ?? 0;
@@ -899,6 +902,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               timeMs: _elapsed.inMilliseconds,
               hintsUsed: _hintTier,
               completed: completed,
+              countryCode: _session!.targetCountry.code,
             )
           : _session!.score;
       final roundRawScore =
@@ -1002,10 +1006,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               hintsUsed: r.hintsUsed,
               completed: r.completed,
               timeMs: r.elapsed.inMilliseconds,
+              countryCode: r.countryCode,
               score: DailyRoundResult.computeTimeScore(
                 timeMs: r.elapsed.inMilliseconds,
                 hintsUsed: r.hintsUsed,
                 completed: r.completed,
+                countryCode: r.countryCode,
               ),
             ),
           )
@@ -1083,7 +1089,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                     hintsUsed: r.hintsUsed,
                     completed: r.completed,
                     timeMs: r.elapsed.inMilliseconds,
-                    score: r.score,
+                    countryCode: r.countryCode,
+                    score: DailyRoundResult.computeTimeScore(
+                      timeMs: r.elapsed.inMilliseconds,
+                      hintsUsed: r.hintsUsed,
+                      completed: r.completed,
+                      countryCode: r.countryCode,
+                    ),
                   ),
                 )
                 .toList(),
@@ -1389,10 +1401,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               hintsUsed: r.hintsUsed,
               completed: r.completed,
               timeMs: r.elapsed.inMilliseconds,
+              countryCode: r.countryCode,
               score: DailyRoundResult.computeTimeScore(
                 timeMs: r.elapsed.inMilliseconds,
                 hintsUsed: r.hintsUsed,
                 completed: r.completed,
+                countryCode: r.countryCode,
               ),
             ),
           )
