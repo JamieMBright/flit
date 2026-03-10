@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/quiz/daily_briefing.dart';
+import '../guide/gameplay_guide_screen.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_difficulty.dart';
 import '../../game/quiz/quiz_session.dart';
@@ -116,6 +117,19 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen>
         backgroundColor: FlitColors.backgroundMid,
         title: const Text('Daily Flight Briefing'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: 'How to Play',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const GameplayGuideScreen(
+                  initialTab: GuideTab.dailyBriefing,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

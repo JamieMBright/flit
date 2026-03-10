@@ -13,6 +13,7 @@ import '../../data/services/friends_service.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_session.dart';
 import '../avatar/avatar_widget.dart';
+import '../guide/gameplay_guide_screen.dart';
 import '../play/play_screen.dart';
 import '../quiz/quiz_game_screen.dart';
 
@@ -181,6 +182,17 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           title: const Text('Friends & Challenges'),
           centerTitle: true,
           actions: [
+            IconButton(
+              icon: const Icon(Icons.help_outline_rounded),
+              tooltip: 'How to Play',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const GameplayGuideScreen(
+                    initialTab: GuideTab.dogfight,
+                  ),
+                ),
+              ),
+            ),
             IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
             IconButton(
               icon: const Icon(Icons.person_add),
