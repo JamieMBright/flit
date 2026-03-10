@@ -696,7 +696,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     _session?.complete(
       hintsUsed: _hintTier,
       fuelFraction: fuelFrac,
-      useTimeScoring: widget.isDailyChallenge,
+      useTimeScoring: true,
     );
     // For daily, use the canonical time-based score (no difficulty multiplier).
     if (widget.isDailyChallenge) {
@@ -732,8 +732,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           hintsUsed: _hintTier,
           completed: true,
           fuelFraction: fuelFrac,
-          useTimeScoring: widget.isDailyChallenge,
-          timePenalty: widget.isDailyChallenge ? _session!.timePenalty : null,
+          useTimeScoring: true,
+          timePenalty: _session!.timePenalty,
         ),
       );
     }
@@ -874,11 +874,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     _session?.complete(
       hintsUsed: _hintTier,
       fuelFraction: fuelFrac,
-      useTimeScoring: widget.isDailyChallenge,
+      useTimeScoring: true,
     );
-    // For daily, use the canonical time-based score (no difficulty multiplier)
-    // so it matches DailyRoundResult.computeTimeScore and stays consistent
-    // across save/load cycles.
+    // Use time-based scoring for all modes. Daily has no difficulty multiplier;
+    // other modes use the difficulty-adjusted session score.
     if (widget.isDailyChallenge) {
       _totalScore += DailyRoundResult.computeTimeScore(
         timeMs: _elapsed.inMilliseconds,
@@ -914,8 +913,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           hintsUsed: _hintTier,
           completed: completed,
           fuelFraction: fuelFrac,
-          useTimeScoring: widget.isDailyChallenge,
-          timePenalty: widget.isDailyChallenge ? _session!.timePenalty : null,
+          useTimeScoring: true,
+          timePenalty: _session!.timePenalty,
         ),
       );
     }
@@ -1295,7 +1294,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     _session?.complete(
       hintsUsed: 4,
       fuelFraction: 0.0,
-      useTimeScoring: widget.isDailyChallenge,
+      useTimeScoring: true,
     );
     _cumulativeTime += _elapsed;
 
@@ -2011,7 +2010,6 @@ class _ScoreBreakdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final r = result;
-    final fuelPct = (r.fuelFraction * 100).round();
     final mult = r.diffMultiplier;
     final tp = r.timePenalty ?? 0;
     final elapsedSec = r.elapsed.inSeconds;
@@ -2034,16 +2032,10 @@ class _ScoreBreakdown extends StatelessWidget {
               '-${_formatNum(r.hintPenalty)}',
               valueColor: FlitColors.error,
             ),
-          if (r.useTimeScoring && tp > 0)
+          if (tp > 0)
             _breakdownLine(
               'Time (${elapsedSec}s)',
               '-${_formatNum(tp)}',
-              valueColor: FlitColors.warning,
-            ),
-          if (!r.useTimeScoring && r.fuelPenalty > 0)
-            _breakdownLine(
-              'Fuel ($fuelPct%)',
-              '-${_formatNum(r.fuelPenalty)}',
               valueColor: FlitColors.warning,
             ),
           const Padding(
