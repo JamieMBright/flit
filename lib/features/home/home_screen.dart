@@ -27,6 +27,8 @@ import '../quiz/daily_briefing_screen.dart';
 import '../quiz/flight_school_screen.dart';
 import '../quiz/uncharted_setup_screen.dart';
 import '../shop/shop_screen.dart';
+import '../campaign/campaign_screen.dart';
+import '../../game/tutorial/mode_requirements.dart';
 import 'announcement_banner.dart';
 
 /// Home screen with animated map background and menu overlay.
@@ -379,6 +381,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _showGameModes(BuildContext context) {
+    final account = ref.read(accountProvider);
+    final playerLevel = account.currentPlayer.level;
+    final completedMissions = account.completedMissionIds;
+
+    bool _isLocked(String modeId) {
+      final req = getModeRequirement(modeId);
+      if (req == null) return false;
+      return !req.isUnlocked(playerLevel, completedMissions);
+    }
+
+    String? _lockHint(String modeId) {
+      final req = getModeRequirement(modeId);
+      if (req == null) return null;
+      return req.unlockHint(playerLevel);
+    }
+
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: FlitColors.cardBackground,
@@ -405,6 +423,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
               ),
               const SizedBox(height: 20),
+              // Pilot Training (campaign) — always first for new players
+              _GameModeCard(
+                title: 'Pilot Training',
+                subtitle: 'Learn to fly — progressive campaign missions',
+                icon: Icons.military_tech_rounded,
+                isHighlighted: true,
+                onTap: () => _closeSheetAndNavigate(
+                  ctx,
+                  const CampaignScreen(),
+                ),
+              ),
+              const SizedBox(height: 10),
               // Daily modes at the top in red
               if (_dailyScrambleEnabled) ...[
                 _GameModeCard(
@@ -413,6 +443,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   icon: Icons.today_rounded,
                   isHighlighted: true,
                   isRedHighlighted: true,
+                  isLocked: _isLocked('daily_challenge'),
+                  unlockHint: _lockHint('daily_challenge'),
                   onTap: () => _closeSheetAndNavigate(
                     ctx,
                     const DailyChallengeScreen(),
@@ -426,6 +458,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 icon: Icons.assignment_rounded,
                 isHighlighted: true,
                 isRedHighlighted: true,
+                isLocked: _isLocked('daily_briefing'),
+                unlockHint: _lockHint('daily_briefing'),
                 onTap: () => _closeSheetAndNavigate(
                   ctx,
                   const DailyBriefingScreen(),
@@ -474,6 +508,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 title: 'Dogfight',
                 subtitle: 'Challenge your friends head-to-head',
                 icon: Icons.people_rounded,
+                isLocked: _isLocked('dogfight'),
+                unlockHint: _lockHint('dogfight'),
                 onTap: () => _closeSheetAndNavigate(ctx, const FriendsScreen()),
               ),
               const SizedBox(height: 10),
@@ -482,6 +518,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   title: 'Find a Challenger',
                   subtitle: 'Matchmake against pilots at your level',
                   icon: Icons.radar,
+                  isLocked: _isLocked('matchmaking'),
+                  unlockHint: _lockHint('matchmaking'),
                   onTap: () => _closeSheetAndNavigate(
                     ctx,
                     const FindChallengerScreen(),
@@ -1484,6 +1522,8 @@ class _GameModeCard extends StatelessWidget {
     required this.onTap,
     this.isHighlighted = false,
     this.isRedHighlighted = false,
+    this.isLocked = false,
+    this.unlockHint,
   });
 
   final String title;
@@ -1492,27 +1532,50 @@ class _GameModeCard extends StatelessWidget {
   final VoidCallback onTap;
   final bool isHighlighted;
   final bool isRedHighlighted;
+  final bool isLocked;
+  final String? unlockHint;
 
   Color get _highlightColor =>
       isRedHighlighted ? FlitColors.error : FlitColors.accent;
 
   @override
-  Widget build(BuildContext context) => Material(
-        color: isHighlighted
+  Widget build(BuildContext context) {
+    final effectiveColor = isLocked
+        ? FlitColors.backgroundDark
+        : isHighlighted
             ? _highlightColor.withOpacity(0.15)
-            : FlitColors.backgroundMid,
+            : FlitColors.backgroundMid;
+
+    return Opacity(
+      opacity: isLocked ? 0.5 : 1.0,
+      child: Material(
+        color: effectiveColor,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          onTap: onTap,
+          onTap: isLocked
+              ? () {
+                  if (unlockHint != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(unlockHint!),
+                        duration: const Duration(seconds: 2),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                }
+              : onTap,
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isHighlighted
-                    ? _highlightColor.withOpacity(0.5)
-                    : FlitColors.cardBorder,
+                color: isLocked
+                    ? FlitColors.cardBorder.withOpacity(0.3)
+                    : isHighlighted
+                        ? _highlightColor.withOpacity(0.5)
+                        : FlitColors.cardBorder,
               ),
             ),
             child: Row(
@@ -1521,16 +1584,20 @@ class _GameModeCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: isHighlighted
-                        ? _highlightColor.withOpacity(0.2)
-                        : FlitColors.backgroundDark.withOpacity(0.5),
+                    color: isLocked
+                        ? FlitColors.backgroundDark.withOpacity(0.3)
+                        : isHighlighted
+                            ? _highlightColor.withOpacity(0.2)
+                            : FlitColors.backgroundDark.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
-                    icon,
-                    color: isHighlighted
-                        ? _highlightColor
-                        : FlitColors.textPrimary,
+                    isLocked ? Icons.lock_outline : icon,
+                    color: isLocked
+                        ? FlitColors.textMuted
+                        : isHighlighted
+                            ? _highlightColor
+                            : FlitColors.textPrimary,
                     size: 24,
                   ),
                 ),
@@ -1541,27 +1608,37 @@ class _GameModeCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
-                          color: FlitColors.textPrimary,
+                        style: TextStyle(
+                          color: isLocked
+                              ? FlitColors.textMuted
+                              : FlitColors.textPrimary,
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        subtitle,
-                        style: const TextStyle(
-                          color: FlitColors.textSecondary,
+                        isLocked ? (unlockHint ?? subtitle) : subtitle,
+                        style: TextStyle(
+                          color: isLocked
+                              ? FlitColors.textMuted
+                              : FlitColors.textSecondary,
                           fontSize: 12,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right, color: FlitColors.textMuted),
+                Icon(
+                  isLocked ? Icons.lock_outline : Icons.chevron_right,
+                  color: FlitColors.textMuted,
+                  size: isLocked ? 18 : 24,
+                ),
               ],
             ),
           ),
         ),
-      );
+      ),
+    );
+  }
 }

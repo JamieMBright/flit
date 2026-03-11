@@ -28,7 +28,10 @@ import '../../game/flit_game.dart';
 import '../../game/map/descent_map_view.dart';
 import '../../game/map/region.dart';
 import '../../game/session/game_session.dart';
+import '../../game/tutorial/campaign_mission.dart';
 import '../../game/ui/game_hud.dart';
+import '../campaign/coach_overlay.dart';
+import '../campaign/mission_dialog.dart';
 
 final _log = GameLog.instance;
 
@@ -67,6 +70,7 @@ class PlayScreen extends ConsumerStatefulWidget {
     this.dailyTheme = '',
     this.dailySeed,
     this.challengeSeeds,
+    this.campaignMission,
   });
 
   /// The region to play in.
@@ -157,6 +161,10 @@ class PlayScreen extends ConsumerStatefulWidget {
   /// same countries on the same day.
   final int? dailySeed;
 
+  /// Campaign mission being played (null for non-campaign games).
+  /// When set, enables coach overlay and records campaign progress on completion.
+  final CampaignMission? campaignMission;
+
   @override
   ConsumerState<PlayScreen> createState() => _PlayScreenState();
 }
@@ -209,6 +217,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// Per-round results for the summary screen.
   final List<_RoundResult> _roundResults = [];
   late final Random _sessionSeedRandom;
+
+  /// Key for accessing the coach overlay during campaign missions.
+  final GlobalKey<CoachOverlayState> _coachOverlayKey =
+      GlobalKey<CoachOverlayState>();
+
+  /// Whether fuel-low coach tip has been triggered this session.
+  bool _fuelLowTipFired = false;
   bool _isCheckingProximity = false;
 
   /// Economy config (fetched on init for free flight earning).
@@ -371,6 +386,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     // Deduct fuel for using a hint. If tank is empty, abort.
     if (!_game.useHintFuel()) return;
 
+    // Fire coach tip for first hint usage (campaign missions only).
+    _coachOverlayKey.currentState?.showTip('firstHint');
+
     setState(() {
       _hintTier++;
 
@@ -507,11 +525,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   bool get _isFinalRound =>
       !widget.isEndless && _currentRound >= widget.totalRounds;
 
-  /// Called when fuel runs out — ends the current session.
+  /// Called when fuel runs out — no longer ends the session.
+  /// Fuel depletion only affects the score bonus (no emergency landing).
   void _onFuelEmpty() {
     if (_session == null || _session!.isCompleted) return;
-    _log.info('fuel', 'Fuel depleted — ending session');
-    _completeLanding(fuelDepleted: true);
+    _log.info('fuel', 'Fuel depleted — continuing without fuel bonus');
+    // Fire coach tip for fuel empty (campaign only).
+    _coachOverlayKey.currentState?.showTip('fuelEmpty');
   }
 
   /// Create a GameSession for the current round, using the daily seed when
@@ -626,6 +646,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             _session!.recordPosition(_game.worldPosition);
           }
 
+          // Fire coach tip when fuel drops below 25% (campaign only).
+          if (widget.campaignMission != null &&
+              !_fuelLowTipFired &&
+              _game.fuelEnabled &&
+              _game.maxFuel > 0 &&
+              _game.fuel / _game.maxFuel < 0.25 &&
+              _game.fuel > 0) {
+            _fuelLowTipFired = true;
+            _coachOverlayKey.currentState?.showTip('fuelLow');
+          }
+
           // Check for proximity to target
           await _checkProximity();
         }
@@ -633,6 +664,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
       // Start auto-hint timer (gives free hint after 2 minutes of no progress).
       _startAutoHintTimer();
+
+      // Fire coach tip for first clue (campaign missions only).
+      if (widget.campaignMission != null && _currentRound == 1) {
+        Future<void>.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            _coachOverlayKey.currentState?.showTip('firstClue');
+          }
+        });
+      }
 
       setState(() {
         _error = null;
@@ -792,6 +832,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       },
     );
 
+    // Fire coach tips for correct answer and halfway point (campaign only).
+    if (widget.campaignMission != null) {
+      _coachOverlayKey.currentState?.showTip('correctAnswer');
+      if (_currentRound == (widget.totalRounds / 2).ceil()) {
+        _coachOverlayKey.currentState?.showTip('halfwayDone');
+      }
+    }
+
     setState(() {
       _currentRound++;
     });
@@ -870,9 +918,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
   Future<void> _completeLanding({bool fuelDepleted = false}) async {
     _timer?.cancel();
-    final fuelFrac = fuelDepleted
-        ? 0.0
-        : (_game.maxFuel > 0 ? _game.fuel / _game.maxFuel : 1.0);
+    // Fuel fraction is always read from the game — no special case for depletion.
+    // Running out of fuel just means fuelFrac ≈ 0 → no fuel bonus.
+    final fuelFrac = _game.maxFuel > 0 ? _game.fuel / _game.maxFuel : 1.0;
     _session?.complete(
       hintsUsed: _hintTier,
       fuelFraction: fuelFrac,
@@ -1072,6 +1120,33 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           consecutiveCorrect: clueStats.streak,
         );
     if (!mounted) return;
+
+    // Campaign mission completion — record progress and show campaign dialog.
+    if (widget.campaignMission != null) {
+      final mission = widget.campaignMission!;
+      final notifier = ref.read(accountProvider.notifier);
+      final isFirst =
+          !ref.read(accountProvider).campaignProgress.containsKey(mission.id);
+      final campaignResult = notifier.completeCampaignMission(
+        missionId: mission.id,
+        score: _totalScore,
+        rounds: mission.rounds,
+        xpReward: mission.xpReward,
+        coinReward: mission.coinReward,
+      );
+      if (mounted) {
+        MissionDialog.showCompletion(
+          context,
+          mission: mission,
+          result: campaignResult,
+          isFirstCompletion: isFirst,
+          onContinue: () {
+            if (mounted) Navigator.of(context).pop();
+          },
+        );
+      }
+      return;
+    }
 
     final friendName = widget.challengeFriendName;
 
@@ -1738,6 +1813,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               ),
             ],
 
+            // Coach overlay for campaign missions
+            if (widget.campaignMission != null && _gameReady)
+              CoachOverlay(
+                key: _coachOverlayKey,
+                mission: widget.campaignMission!,
+              ),
+
             // Loading overlay
             if (!_gameReady)
               Container(
@@ -1888,8 +1970,8 @@ class _RoundResult {
     return penalty;
   }
 
-  /// Fuel penalty computed from [fuelFraction].
-  int get fuelPenalty => ((1.0 - fuelFraction) * 5000).round();
+  /// Fuel bonus computed from [fuelFraction] (0–5,000 points).
+  int get fuelBonus => (fuelFraction * 5000).round();
 
   /// Difficulty multiplier for this country.
   double get diffMultiplier => difficultyMultiplier(countryCode);
@@ -2035,7 +2117,13 @@ class _ScoreBreakdown extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _breakdownLine('Base', '10,000'),
+          _breakdownLine('Base', '5,000'),
+          if (r.fuelBonus > 0)
+            _breakdownLine(
+              'Fuel (${(r.fuelFraction * 100).round()}%)',
+              '+${_formatNum(r.fuelBonus)}',
+              valueColor: FlitColors.success,
+            ),
           if (r.hintPenalty > 0)
             _breakdownLine(
               'Hints (${r.hintsUsed})',
@@ -2214,19 +2302,17 @@ class _ResultDialog extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                fuelDepleted ? Icons.local_gas_station : Icons.flight_land,
-                color: fuelDepleted ? FlitColors.warning : FlitColors.success,
+              const Icon(
+                Icons.flight_land,
+                color: FlitColors.success,
                 size: 44,
               ),
               const SizedBox(height: 12),
-              Text(
-                fuelDepleted ? 'EMERGENCY LANDING' : 'LANDED',
+              const Text(
+                'LANDED',
                 style: TextStyle(
-                  color: fuelDepleted
-                      ? FlitColors.warning
-                      : FlitColors.textPrimary,
-                  fontSize: fuelDepleted ? 18 : 22,
+                  color: FlitColors.textPrimary,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 3,
                 ),

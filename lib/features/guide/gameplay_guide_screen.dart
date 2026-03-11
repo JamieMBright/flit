@@ -224,10 +224,11 @@ class _DailyScrambleTab extends StatelessWidget {
             children: [
               _BodyText(
                 'Score is based on speed, accuracy, hints used, and fuel '
-                'remaining. Each round starts with 10,000 points. Hint penalties '
-                'escalate: new clue (-500), reveal country (-1,000), wayline '
-                '(-1,500), auto-navigate (-2,500). Fuel burned costs up to '
-                '-5,000 pts. Harder countries give a higher difficulty multiplier.',
+                'remaining. Each round starts with a base of 5,000 points. '
+                'Hint penalties escalate: new clue (-500), reveal country '
+                '(-1,000), wayline (-1,500), auto-navigate (-2,500). Remaining '
+                'fuel earns up to +5,000 bonus pts. Harder countries give a '
+                'higher difficulty multiplier.',
               ),
               SizedBox(height: 12),
               _ScoreBar(),
@@ -1529,8 +1530,9 @@ class _ScoringSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _BodyText(
-            'Each round starts with a base of 10,000 points. Using hints '
-            'and burning fuel costs you points, while harder countries '
+            'Each round starts with a base of 5,000 points. Remaining fuel '
+            'earns up to +5,000 bonus points, for a maximum of 10,000 per '
+            'round. Using hints costs you points, while harder countries '
             'reward you with a higher score multiplier. Land quickly with '
             'fuel to spare and no hints for the best score.',
           ),
@@ -1540,7 +1542,7 @@ class _ScoringSection extends StatelessWidget {
             step: 1,
             color: FlitColors.success,
             label: 'Base Score',
-            detail: '10,000 pts per round',
+            detail: '5,000 pts per round',
             icon: Icons.check_rounded,
           ),
           SizedBox(height: 8),
@@ -1555,8 +1557,8 @@ class _ScoringSection extends StatelessWidget {
           _ScoringStep(
             step: 3,
             color: FlitColors.oceanHighlight,
-            label: 'Fuel Penalty',
-            detail: 'Up to -5,000 pts based on fuel burned',
+            label: 'Fuel Bonus',
+            detail: 'Up to +5,000 pts for remaining fuel',
             icon: Icons.local_gas_station_rounded,
           ),
           SizedBox(height: 8),
@@ -1663,7 +1665,7 @@ class _ScoreBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Example: base 10,000 − 500 hints − 1,500 fuel = 8,000 raw
+    // Example: base 5,000 + 3,500 fuel bonus − 500 hints = 8,000 raw
     // Difficulty multiplier ×0.72 (medium country) → 5,760 final
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1687,9 +1689,16 @@ class _ScoreBar extends StatelessWidget {
           SizedBox(height: 10),
           _ScoreBarRow(
             label: 'Base',
-            value: 10000,
+            value: 5000,
             max: 10000,
             color: FlitColors.success,
+          ),
+          SizedBox(height: 6),
+          _ScoreBarRow(
+            label: 'Fuel Bonus',
+            value: 3500,
+            max: 5000,
+            color: FlitColors.oceanHighlight,
           ),
           SizedBox(height: 6),
           _ScoreBarRow(
@@ -1697,13 +1706,6 @@ class _ScoreBar extends StatelessWidget {
             value: -500,
             max: 5500,
             color: FlitColors.gold,
-          ),
-          SizedBox(height: 6),
-          _ScoreBarRow(
-            label: 'Fuel',
-            value: -1500,
-            max: 5000,
-            color: FlitColors.oceanHighlight,
           ),
           SizedBox(height: 6),
           _ScoreBarRow(
