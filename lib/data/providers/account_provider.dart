@@ -788,6 +788,22 @@ class AccountNotifier extends StateNotifier<AccountState> {
     return state.isGameModeUnlocked(modeId);
   }
 
+  /// Debug-only: reset player level, XP, and campaign progress.
+  /// Only available in debug/profile builds.
+  void debugResetProgress() {
+    assert(() {
+      // ignore: avoid_print
+      print('[DEBUG] Resetting level, XP, and campaign progress');
+      return true;
+    }());
+    state = state.copyWith(
+      currentPlayer: state.currentPlayer.copyWith(level: 1, xp: 0),
+      campaignProgress: {},
+    );
+    _syncProfile();
+    _syncAccountState();
+  }
+
   /// Unlock a flight school level with coins (early unlock).
   /// Returns true if successful, false if insufficient funds.
   bool unlockFlightSchoolLevel(String levelId, int cost) {
