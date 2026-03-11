@@ -19,7 +19,7 @@ const Set<ClueType> _allClueTypes = {
 /// The ordered list of tutorial campaign missions.
 const List<CampaignMission> campaignMissions = [
   // -----------------------------------------------------------------------
-  // Mission 1 — First Flight (Feng Ru)
+  // Mission 1 — First Flight (J.R.D. Tata)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'first_flight',
@@ -30,7 +30,7 @@ const List<CampaignMission> campaignMissions = [
         'This is your first sortie, cadet. I\'ll show you a country\'s '
         'neighbours — your job is to fly to the country they all share a '
         'border with.',
-    coach: coachFengRu,
+    coach: coachJRDTata,
     allowedClues: {ClueType.borders},
     rounds: 1,
     maxDifficulty: 0.15,
@@ -279,17 +279,17 @@ const List<CampaignMission> campaignMissions = [
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 7 — Stats & Facts (Valentina Tereshkova)
+  // Mission 7 — Stats & Facts (Jorge Chávez)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'stats_and_facts',
     order: 7,
     title: 'Stats & Facts',
     subtitle: 'Read the numbers',
-    description: 'From orbit, the world is numbers: speed, altitude, pressure. '
-        'Population, area, GDP — each statistic is a fingerprint. '
-        'Let\'s see if you can decode them.',
-    coach: coachTereshkova,
+    description: 'To fly over the Alps, I calculated altitude, wind, and fuel '
+        'to the decimal. Population, area, GDP — each statistic is a '
+        'fingerprint. Let\'s see if you can decode them.',
+    coach: coachJorgeChavez,
     allowedClues: {ClueType.stats},
     rounds: 2,
     maxDifficulty: 0.30,
@@ -366,7 +366,7 @@ const List<CampaignMission> campaignMissions = [
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 9 — World Tour (Amelia Earhart)
+  // Mission 9 — World Tour (Emilio Carranza)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'world_tour',
@@ -376,7 +376,7 @@ const List<CampaignMission> campaignMissions = [
     description:
         'Time to put it all together. Every clue type is in play — flags, '
         'borders, capitals, stats, outlines. Show me what you\'ve learned.',
-    coach: coachAmelia,
+    coach: coachEmilioCarranza,
     allowedClues: _allClueTypes,
     rounds: 3,
     maxDifficulty: 0.45,
@@ -452,7 +452,7 @@ const List<CampaignMission> campaignMissions = [
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 11 — Daily Prep (Al-Muqaddasi)
+  // Mission 11 — Daily Prep (Jesús Villamor)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'daily_prep',
@@ -462,7 +462,7 @@ const List<CampaignMission> campaignMissions = [
     description:
         'The daily modes are tougher — timed, competitive, and unforgiving. '
         'This mission simulates real conditions so you\'re ready for anything.',
-    coach: coachMuqaddasi,
+    coach: coachVillamor,
     allowedClues: _allClueTypes,
     rounds: 3,
     maxDifficulty: 0.55,
@@ -496,7 +496,7 @@ const List<CampaignMission> campaignMissions = [
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 12 — Ready for Takeoff (Al-Muqaddasi)
+  // Mission 12 — Ready for Takeoff (Halim Perdanakusuma)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'ready_for_takeoff',
@@ -506,20 +506,18 @@ const List<CampaignMission> campaignMissions = [
     description:
         'This is your graduation flight, cadet. Everything you\'ve learned '
         'comes together here. Pass this and the entire world opens up.',
-    coach: coachMuqaddasi,
+    coach: coachHalim,
     allowedClues: _allClueTypes,
     rounds: 3,
     maxDifficulty: 0.60,
     fuelEnabled: true,
     xpReward: 200,
     coinReward: 150,
-    unlockMessage: 'All game modes unlocked! Fly safe, pilot.',
     tips: [
       CoachTip(
         trigger: 'firstClue',
-        message:
-            'This is it — your final exam. Use every skill you\'ve learned. '
-            'I believe in you.',
+        message: 'This is it — your graduation flight. Use every skill you\'ve '
+            'learned. I believe in you.',
       ),
       CoachTip(
         trigger: 'halfwayDone',
@@ -528,7 +526,7 @@ const List<CampaignMission> campaignMissions = [
       ),
       CoachTip(
         trigger: 'correctAnswer',
-        message: 'Welcome to the skies, pilot. You\'ve earned your wings.',
+        message: 'You fly with the courage of a freedom fighter. Well done.',
       ),
       CoachTip(
         trigger: 'lost',
@@ -536,6 +534,50 @@ const List<CampaignMission> campaignMissions = [
             'This is your graduation flight — everything you\'ve learned is '
             'here. Combine clues, manage fuel, and trust the skills you\'ve '
             'built. You\'re ready.',
+      ),
+    ],
+  ),
+
+  // -----------------------------------------------------------------------
+  // Mission 13 — Ace Pilot (Errol Barrow)
+  // -----------------------------------------------------------------------
+  CampaignMission(
+    id: 'ace_pilot',
+    order: 13,
+    title: 'Ace Pilot',
+    subtitle: 'The ultimate test',
+    description:
+        'I flew 45 combat missions over Europe and led a nation to freedom. '
+        'This is the ace challenge — maximum difficulty, all clues, no mercy. '
+        'Show me you belong in the sky.',
+    coach: coachErrolBarrow,
+    allowedClues: _allClueTypes,
+    rounds: 4,
+    maxDifficulty: 0.70,
+    fuelEnabled: true,
+    xpReward: 250,
+    coinReward: 200,
+    unlockMessage: 'All game modes unlocked! Fly safe, ace.',
+    tips: [
+      CoachTip(
+        trigger: 'firstClue',
+        message: 'This is the ace challenge. No safety net. Use everything you '
+            'know and trust your instincts.',
+      ),
+      CoachTip(
+        trigger: 'fuelLow',
+        message: 'Fuel is critical. In combat, hesitation costs lives. '
+            'Commit to your best answer now.',
+      ),
+      CoachTip(
+        trigger: 'correctAnswer',
+        message: 'That\'s ace-level flying. Outstanding.',
+      ),
+      CoachTip(
+        trigger: 'lost',
+        message:
+            'Even aces get lost sometimes. Narrow the continent first, then '
+            'cross-reference every clue. You have the skills — use them all.',
       ),
     ],
   ),

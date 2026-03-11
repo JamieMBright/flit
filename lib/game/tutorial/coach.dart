@@ -66,23 +66,22 @@ class Coach {
 // Coach roster — all real, researchable historical figures
 // ---------------------------------------------------------------------------
 
-/// Mission 1: Navigation / Borders — Chinese aviation pioneer (1884–1912)
-const Coach coachFengRu = Coach(
-  id: 'feng_ru',
-  name: 'Feng Ru',
-  nationality: 'Chinese',
-  countryCode: 'CN',
+/// Mission 1: Navigation / Borders — Indian aviation pioneer (1904–1993)
+const Coach coachJRDTata = Coach(
+  id: 'jrd_tata',
+  name: 'J.R.D. Tata',
+  nationality: 'Indian',
+  countryCode: 'IN',
   title: 'Navigation Instructor',
-  bio: 'Father of Chinese Aviation who built and flew China\'s first airplane '
-      'in Oakland in 1909, then returned home to build China\'s air force.',
+  bio: 'First Indian to earn a pilot\'s licence in 1929, who pioneered '
+      'commercial aviation in India and founded what became Air India.',
   introduction:
-      'I am Feng Ru. In 1909, I built and flew the first Chinese airplane '
-      'in California, then brought aviation home to China. I learned that '
-      'before you can fly, you must know where you are going — borders, '
-      'neighbours, landmarks. Let me teach you to navigate.',
+      'I am J.R.D. Tata. In 1929, I became the first Indian to earn a '
+      'pilot\'s licence. I flew the first airmail in India — Karachi to '
+      'Bombay in a tiny Puss Moth. Before you can fly a route, you must '
+      'know your borders and neighbours. Let me teach you to navigate.',
   greeting:
-      'You navigate with the confidence of a pioneer. China\'s first aviator '
-      'approves.',
+      'You navigate with the confidence of an airline founder. Well done.',
 );
 
 /// Mission 2: Flags — Egyptian aviator (1907–2002)
@@ -171,21 +170,21 @@ const Coach coachSaintExupery = Coach(
       'the heart that one can see rightly."',
 );
 
-/// Mission 7: Statistics / Data — Soviet cosmonaut (1937–)
-const Coach coachTereshkova = Coach(
-  id: 'tereshkova',
-  name: 'Valentina Tereshkova',
-  nationality: 'Russian',
-  countryCode: 'RU',
+/// Mission 7: Statistics / Data — Peruvian aviator (1887–1910)
+const Coach coachJorgeChavez = Coach(
+  id: 'jorge_chavez',
+  name: 'Jorge Chávez',
+  nationality: 'Peruvian',
+  countryCode: 'PE',
   title: 'Statistics Analyst',
-  bio: 'First woman in space, orbiting Earth 48 times aboard Vostok 6 '
-      'in June 1963 — a record that stood for 19 years.',
+  bio: 'Peruvian aviator who became the first person to fly over the Alps '
+      'in 1910 — Lima\'s international airport bears his name.',
   introduction:
-      'I am Valentina Tereshkova. In 1963, I orbited the Earth 48 times '
-      'aboard Vostok 6 — the first woman to see our planet from space. '
-      'From up there, you see the world in numbers: orbital speed, altitude, '
-      'atmospheric pressure. Numbers are clues if you know how to read them.',
-  greeting: 'Your data analysis is stellar — worthy of mission control.',
+      'I am Jorge Chávez. In 1910, I flew a Blériot monoplane over the '
+      'Alps — the first person to cross those peaks by air. I calculated '
+      'altitude, wind speed, and fuel to the decimal. Numbers are the '
+      'language of the sky. Let me teach you to read them.',
+  greeting: 'Your data analysis would make any flight engineer proud.',
 );
 
 /// Mission 8: Outline / Shape Recognition — Kenyan-British aviator (1902–1986)
@@ -207,26 +206,26 @@ const Coach coachBerylMarkham = Coach(
       'You\'ve got the eye of a bush pilot. That silhouette didn\'t fool you.',
 );
 
-/// Mission 9: World Tour / All Clues — American aviator (1897–1937)
-const Coach coachAmelia = Coach(
-  id: 'amelia',
-  name: 'Amelia Earhart',
-  nationality: 'American',
-  countryCode: 'US',
+/// Mission 9: World Tour / All Clues — Mexican aviator (1905–1928)
+const Coach coachEmilioCarranza = Coach(
+  id: 'emilio_carranza',
+  name: 'Emilio Carranza',
+  nationality: 'Mexican',
+  countryCode: 'MX',
   title: 'Advanced Flight Instructor',
-  bio: 'First woman to fly solo across the Atlantic Ocean in 1932, '
-      'who disappeared during an attempt to circumnavigate the globe.',
+  bio: 'The "Lindbergh of Mexico" who flew nonstop from Mexico City to '
+      'Washington D.C. on a goodwill mission in 1928, becoming a national hero.',
   introduction:
-      'I\'m Amelia Earhart. In 1932, I flew solo across the Atlantic — '
-      'the first woman to do it. I spent my life proving that adventure '
-      'knows no gender. Now every clue type is in play. Let\'s see if you '
-      'can handle everything the world throws at you.',
-  greeting:
-      'You flew that like a seasoned world navigator. Adventure suits you.',
+      'I am Captain Emilio Carranza. In 1928, I flew nonstop from Mexico '
+      'City to Washington — a goodwill flight across mountains and storms. '
+      'They called me the Lindbergh of Mexico, but my mission was peace '
+      'between nations. Now every clue type is in play. Show me what you '
+      'have learned.',
+  greeting: 'You flew that like a captain on a goodwill mission. The world is '
+      'yours to explore.',
 );
 
-/// Missions 10–12: License, Daily Prep, Graduation — Palestinian geographer
-/// (c. 946–c. 1000)
+/// Mission 10: License — Palestinian geographer (c. 946–c. 1000)
 const Coach coachMuqaddasi = Coach(
   id: 'muqaddasi',
   name: 'Al-Muqaddasi',
@@ -248,16 +247,72 @@ const Coach coachMuqaddasi = Coach(
       'unexplored. Fly well, pilot.',
 );
 
+/// Mission 11: Daily Prep — Filipino fighter ace (1914–1971)
+const Coach coachVillamor = Coach(
+  id: 'villamor',
+  name: 'Jesús Villamor',
+  nationality: 'Filipino',
+  countryCode: 'PH',
+  title: 'Daily Prep Instructor',
+  bio: 'Filipino WWII fighter ace who led the aerial defence of Manila '
+      'against the Japanese invasion, flying against overwhelming odds.',
+  introduction: 'I am Captain Jesús Villamor. When the Japanese attacked the '
+      'Philippines, I led five biplanes against their bombers — outnumbered '
+      'but never outfought. Daily challenges are like combat: preparation '
+      'is everything. Let me sharpen your reflexes.',
+  greeting: 'You handled that pressure like a true ace. Ready for anything.',
+);
+
+/// Mission 12: Graduation — Indonesian aviation hero (1922–1947)
+const Coach coachHalim = Coach(
+  id: 'halim',
+  name: 'Halim Perdanakusuma',
+  nationality: 'Indonesian',
+  countryCode: 'ID',
+  title: 'Graduation Examiner',
+  bio: 'Indonesian national hero who flew daring missions during the war '
+      'of independence, giving his life for his country\'s freedom at age 25.',
+  introduction:
+      'I am Halim Perdanakusuma. I flew for Indonesia\'s freedom — daring '
+      'missions against colonial forces in skies I refused to surrender. '
+      'This is your graduation flight. Everything you have learned comes '
+      'together here. Show me you are ready.',
+  greeting:
+      'You have earned your wings. Fly with the courage of those who fought '
+      'for the freedom to explore.',
+);
+
+/// Mission 13: Ace Pilot — Barbadian RAF combat pilot (1920–1987)
+const Coach coachErrolBarrow = Coach(
+  id: 'errol_barrow',
+  name: 'Errol Barrow',
+  nationality: 'Barbadian',
+  countryCode: 'BB',
+  title: 'Ace Pilot Mentor',
+  bio: 'Barbadian WWII RAF combat pilot who flew 45+ missions over Europe, '
+      'then returned home to lead Barbados to independence as Prime Minister.',
+  introduction:
+      'I am Errol Barrow. I flew 45 combat missions with the RAF over '
+      'Europe, then came home to lead Barbados to independence. I learned '
+      'that true mastery means performing under any conditions. This is '
+      'your final test — the ace challenge. Hold nothing back.',
+  greeting: 'From combat pilot to prime minister, I have seen excellence — and '
+      'you have it. Fly proud, ace.',
+);
+
 /// All available coaches indexed by [Coach.id].
 const List<Coach> coaches = [
-  coachFengRu,
+  coachJRDTata,
   coachLotfia,
   coachSantosDumont,
   coachSabiha,
   coachJeanBatten,
   coachSaintExupery,
-  coachTereshkova,
+  coachJorgeChavez,
   coachBerylMarkham,
-  coachAmelia,
+  coachEmilioCarranza,
   coachMuqaddasi,
+  coachVillamor,
+  coachHalim,
+  coachErrolBarrow,
 ];
