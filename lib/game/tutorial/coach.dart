@@ -82,6 +82,7 @@ const Coach coachJRDTata = Coach(
       'know your borders and neighbours. Let me teach you to navigate.',
   greeting:
       'You navigate with the confidence of an airline founder. Well done.',
+  imageAsset: 'assets/images/coaches/Jrd tata.PNG',
 );
 
 /// Mission 2: Flags — Egyptian aviator (1907–2002)
@@ -99,6 +100,7 @@ const Coach coachLotfia = Coach(
       'world to earn her wings. Every flag tells the story of a nation\'s '
       'spirit. Let me teach you to read them.',
   greeting: 'You read those flags like poetry. I\'m proud of you.',
+  imageAsset: 'assets/images/coaches/Lotfia el nadi.PNG',
 );
 
 /// Mission 3: Capital Cities — Brazilian aviation pioneer (1873–1932)
@@ -116,6 +118,7 @@ const Coach coachSantosDumont = Coach(
       'Eiffel Tower in an airship and landed near capitals across Europe. '
       'Knowing where you are is just as important as knowing how to fly.',
   greeting: 'Bravo! You know your capitals like a true aviator of the world.',
+  imageAsset: 'assets/images/coaches/Alberto Santos-Dumont.PNG',
 );
 
 /// Mission 4: Mixed Signals — Turkish fighter pilot (1913–2001)
@@ -133,6 +136,7 @@ const Coach coachSabiha = Coach(
       'instinct all at once. I\'ll teach you to combine every signal into '
       'one clear picture.',
   greeting: 'You combined those clues like a true combat pilot. Exceptional.',
+  imageAsset: 'assets/images/coaches/Sabiha Gokcen.PNG',
 );
 
 /// Mission 5: Fuel Management — New Zealand aviator (1909–1982)
@@ -151,6 +155,7 @@ const Coach coachJeanBatten = Coach(
       'discipline.',
   greeting: 'Efficient and precise. You\'d have made it across the Tasman with '
       'fuel to spare.',
+  imageAsset: 'assets/images/coaches/Jean batten.PNG',
 );
 
 /// Mission 6: Hint Strategy — French aviator & author (1900–1944)
@@ -168,6 +173,7 @@ const Coach coachSaintExupery = Coach(
       'invisible to the eye — but sometimes you need a hint to find it.',
   greeting: 'You found your way with grace. As I once wrote: "It is only with '
       'the heart that one can see rightly."',
+  imageAsset: 'assets/images/coaches/Antoine de Saint-Exupery.PNG',
 );
 
 /// Mission 7: Statistics / Data — Peruvian aviator (1887–1910)
@@ -185,6 +191,7 @@ const Coach coachJorgeChavez = Coach(
       'altitude, wind speed, and fuel to the decimal. Numbers are the '
       'language of the sky. Let me teach you to read them.',
   greeting: 'Your data analysis would make any flight engineer proud.',
+  imageAsset: 'assets/images/coaches/Jorge Chavez.PNG',
 );
 
 /// Mission 8: Outline / Shape Recognition — Kenyan-British aviator (1902–1986)
@@ -204,6 +211,7 @@ const Coach coachBerylMarkham = Coach(
       'distinctive as a fingerprint.',
   greeting:
       'You\'ve got the eye of a bush pilot. That silhouette didn\'t fool you.',
+  imageAsset: 'assets/images/coaches/Beryl Markham.PNG',
 );
 
 /// Mission 9: World Tour / All Clues — Mexican aviator (1905–1928)
@@ -223,6 +231,7 @@ const Coach coachEmilioCarranza = Coach(
       'have learned.',
   greeting: 'You flew that like a captain on a goodwill mission. The world is '
       'yours to explore.',
+  imageAsset: 'assets/images/coaches/Emilio Carranza.PNG',
 );
 
 /// Mission 10: License — Palestinian geographer (c. 946–c. 1000)
@@ -245,6 +254,7 @@ const Coach coachMuqaddasi = Coach(
       'You have earned your wings, just as I earned my knowledge — through '
       'patience, curiosity, and a refusal to leave any corner of the world '
       'unexplored. Fly well, pilot.',
+  imageAsset: 'assets/images/coaches/Al-Muqaddasi.PNG',
 );
 
 /// Mission 11: Daily Prep — Filipino fighter ace (1914–1971)
@@ -261,6 +271,7 @@ const Coach coachVillamor = Coach(
       'but never outfought. Daily challenges are like combat: preparation '
       'is everything. Let me sharpen your reflexes.',
   greeting: 'You handled that pressure like a true ace. Ready for anything.',
+  imageAsset: 'assets/images/coaches/Jesus Villamor.PNG',
 );
 
 /// Mission 12: Graduation — Indonesian aviation hero (1922–1947)
@@ -280,6 +291,7 @@ const Coach coachHalim = Coach(
   greeting:
       'You have earned your wings. Fly with the courage of those who fought '
       'for the freedom to explore.',
+  imageAsset: 'assets/images/coaches/Halim Perdanakusuma.PNG',
 );
 
 /// Mission 13: Ace Pilot — Barbadian RAF combat pilot (1920–1987)
@@ -298,6 +310,7 @@ const Coach coachErrolBarrow = Coach(
       'your final test — the ace challenge. Hold nothing back.',
   greeting: 'From combat pilot to prime minister, I have seen excellence — and '
       'you have it. Fly proud, ace.',
+  imageAsset: 'assets/images/coaches/Errol Barrow.PNG',
 );
 
 /// All available coaches indexed by [Coach.id].
