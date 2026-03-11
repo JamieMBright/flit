@@ -409,7 +409,7 @@ const List<CampaignMission> campaignMissions = [
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 10 — License to Fly (Edward Said)
+  // Mission 10 — License to Fly (Al-Muqaddasi)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'license_to_fly',
@@ -419,7 +419,7 @@ const List<CampaignMission> campaignMissions = [
     description:
         'Your pilot licence isn\'t just a badge — it represents your journey. '
         'Learn how XP, coins, and stars work so you can progress efficiently.',
-    coach: coachEdwardSaid,
+    coach: coachMuqaddasi,
     allowedClues: _allClueTypes,
     rounds: 3,
     maxDifficulty: 0.50,
@@ -452,7 +452,7 @@ const List<CampaignMission> campaignMissions = [
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 11 — Daily Prep (Edward Said)
+  // Mission 11 — Daily Prep (Al-Muqaddasi)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'daily_prep',
@@ -462,7 +462,7 @@ const List<CampaignMission> campaignMissions = [
     description:
         'The daily modes are tougher — timed, competitive, and unforgiving. '
         'This mission simulates real conditions so you\'re ready for anything.',
-    coach: coachEdwardSaid,
+    coach: coachMuqaddasi,
     allowedClues: _allClueTypes,
     rounds: 3,
     maxDifficulty: 0.55,
@@ -496,7 +496,7 @@ const List<CampaignMission> campaignMissions = [
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 12 — Ready for Takeoff (Edward Said)
+  // Mission 12 — Ready for Takeoff (Al-Muqaddasi)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'ready_for_takeoff',
@@ -506,7 +506,7 @@ const List<CampaignMission> campaignMissions = [
     description:
         'This is your graduation flight, cadet. Everything you\'ve learned '
         'comes together here. Pass this and the entire world opens up.',
-    coach: coachEdwardSaid,
+    coach: coachMuqaddasi,
     allowedClues: _allClueTypes,
     rounds: 3,
     maxDifficulty: 0.60,

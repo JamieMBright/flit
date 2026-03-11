@@ -225,24 +225,27 @@ const Coach coachAmelia = Coach(
       'You flew that like a seasoned world navigator. Adventure suits you.',
 );
 
-/// Missions 10–12: License, Daily Prep, Graduation — Palestinian-American
-/// scholar (1935–2003)
-const Coach coachEdwardSaid = Coach(
-  id: 'edward_said',
-  name: 'Edward Said',
+/// Missions 10–12: License, Daily Prep, Graduation — Palestinian geographer
+/// (c. 946–c. 1000)
+const Coach coachMuqaddasi = Coach(
+  id: 'muqaddasi',
+  name: 'Al-Muqaddasi',
   nationality: 'Palestinian',
   countryCode: 'PS',
-  title: 'Geography & Identity Mentor',
-  bio: 'Palestinian-American scholar whose groundbreaking work on geography, '
-      'place, and cultural identity reshaped how the world understands '
-      'borders and belonging.',
+  title: 'Geography & Regions Mentor',
+  bio: 'Medieval Arab geographer born in Jerusalem who travelled the entire '
+      'known world and authored the first scientific regional geography, '
+      'complete with colour maps.',
   introduction:
-      'I am Edward Said. I spent my life studying how maps, borders, and '
-      'names shape the way we see each other. Geography is never neutral — '
-      'it tells the story of who we are and where we belong. In these final '
-      'missions, I\'ll help you see the world with new eyes.',
-  greeting: 'You\'ve proven that understanding geography means understanding '
-      'people. Fly on, pilot.',
+      'I am al-Muqaddasi, the Jerusalemite. A thousand years ago, I walked '
+      'every province of the known world and wrote the first true geography '
+      '— mapping not just lands, but their trade, their people, and their '
+      'worth. I will be your final instructor. Let us see if you are ready '
+      'for your licence.',
+  greeting:
+      'You have earned your wings, just as I earned my knowledge — through '
+      'patience, curiosity, and a refusal to leave any corner of the world '
+      'unexplored. Fly well, pilot.',
 );
 
 /// All available coaches indexed by [Coach.id].
@@ -256,5 +259,5 @@ const List<Coach> coaches = [
   coachTereshkova,
   coachBerylMarkham,
   coachAmelia,
-  coachEdwardSaid,
+  coachMuqaddasi,
 ];
