@@ -217,6 +217,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// Per-round results for the summary screen.
   final List<_RoundResult> _roundResults = [];
   late final Random _sessionSeedRandom;
+
+  /// Key for accessing the coach overlay during campaign missions.
+  final GlobalKey<CoachOverlayState> _coachOverlayKey =
+      GlobalKey<CoachOverlayState>();
+
+  /// Whether fuel-low coach tip has been triggered this session.
+  bool _fuelLowTipFired = false;
   bool _isCheckingProximity = false;
 
   /// Economy config (fetched on init for free flight earning).
@@ -379,6 +386,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     // Deduct fuel for using a hint. If tank is empty, abort.
     if (!_game.useHintFuel()) return;
 
+    // Fire coach tip for first hint usage (campaign missions only).
+    _coachOverlayKey.currentState?.showTip('firstHint');
+
     setState(() {
       _hintTier++;
 
@@ -520,6 +530,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   void _onFuelEmpty() {
     if (_session == null || _session!.isCompleted) return;
     _log.info('fuel', 'Fuel depleted — continuing without fuel bonus');
+    // Fire coach tip for fuel empty (campaign only).
+    _coachOverlayKey.currentState?.showTip('fuelEmpty');
   }
 
   /// Create a GameSession for the current round, using the daily seed when
@@ -634,6 +646,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             _session!.recordPosition(_game.worldPosition);
           }
 
+          // Fire coach tip when fuel drops below 25% (campaign only).
+          if (widget.campaignMission != null &&
+              !_fuelLowTipFired &&
+              _game.fuelEnabled &&
+              _game.maxFuel > 0 &&
+              _game.fuel / _game.maxFuel < 0.25 &&
+              _game.fuel > 0) {
+            _fuelLowTipFired = true;
+            _coachOverlayKey.currentState?.showTip('fuelLow');
+          }
+
           // Check for proximity to target
           await _checkProximity();
         }
@@ -641,6 +664,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
       // Start auto-hint timer (gives free hint after 2 minutes of no progress).
       _startAutoHintTimer();
+
+      // Fire coach tip for first clue (campaign missions only).
+      if (widget.campaignMission != null && _currentRound == 1) {
+        Future<void>.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            _coachOverlayKey.currentState?.showTip('firstClue');
+          }
+        });
+      }
 
       setState(() {
         _error = null;
@@ -799,6 +831,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         'totalScore': _totalScore,
       },
     );
+
+    // Fire coach tips for correct answer and halfway point (campaign only).
+    if (widget.campaignMission != null) {
+      _coachOverlayKey.currentState?.showTip('correctAnswer');
+      if (_currentRound == (widget.totalRounds / 2).ceil()) {
+        _coachOverlayKey.currentState?.showTip('halfwayDone');
+      }
+    }
 
     setState(() {
       _currentRound++;
@@ -1772,6 +1812,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 ),
               ),
             ],
+
+            // Coach overlay for campaign missions
+            if (widget.campaignMission != null && _gameReady)
+              CoachOverlay(
+                key: _coachOverlayKey,
+                mission: widget.campaignMission!,
+              ),
 
             // Loading overlay
             if (!_gameReady)

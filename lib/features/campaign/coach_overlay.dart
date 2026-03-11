@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/tutorial/campaign_mission.dart';
-import '../../game/tutorial/coach.dart';
 
 /// Semi-transparent overlay that shows coach tips during campaign missions.
 ///
