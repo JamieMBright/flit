@@ -1,11 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../data/providers/account_provider.dart';
+import '../../game/clues/clue_types.dart';
 import '../../game/tutorial/campaign_mission.dart';
 import '../../game/tutorial/campaign_missions.dart';
-import '../../game/tutorial/coach.dart';
 import '../play/play_screen.dart';
 import '../../game/map/region.dart';
 import 'mission_dialog.dart';
@@ -33,6 +34,55 @@ class CampaignScreen extends ConsumerWidget {
           ),
         ),
         centerTitle: true,
+        actions: [
+          // Debug-only reset button (tree-shaken in release builds).
+          if (!kReleaseMode)
+            IconButton(
+              icon: const Icon(Icons.restart_alt, color: FlitColors.accent),
+              tooltip: 'Reset level & campaign (debug)',
+              onPressed: () {
+                showDialog<void>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: FlitColors.cardBackground,
+                    title: const Text(
+                      'Reset Progress?',
+                      style: TextStyle(color: FlitColors.textPrimary),
+                    ),
+                    content: const Text(
+                      'This will set your level to 1, XP to 0, and clear all '
+                      'campaign progress. Debug only.',
+                      style: TextStyle(color: FlitColors.textSecondary),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          ref
+                              .read(accountProvider.notifier)
+                              .debugResetProgress();
+                          Navigator.of(ctx).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content:
+                                  Text('Reset to Level 1 — campaign cleared'),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(color: FlitColors.error),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+        ],
       ),
       body: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
