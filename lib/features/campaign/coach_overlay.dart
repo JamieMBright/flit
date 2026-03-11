@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
@@ -7,6 +9,9 @@ import '../../game/tutorial/campaign_mission.dart';
 ///
 /// Place this in a Stack on top of the game view. Call [showTip] when a
 /// trigger event fires. Tips auto-dismiss after a delay or on user tap.
+///
+/// Also supports time-based "lost" detection: if no correct answer is given
+/// within a configurable interval, the coach proactively offers help.
 class CoachOverlay extends StatefulWidget {
   const CoachOverlay({super.key, required this.mission});
 
@@ -25,6 +30,16 @@ class CoachOverlayState extends State<CoachOverlay>
   late final AnimationController _animController;
   late final Animation<double> _slideAnim;
 
+  /// Timer for detecting when the player seems lost.
+  Timer? _lostTimer;
+
+  /// How long without progress before showing a "lost" hint.
+  static const _lostThreshold = Duration(seconds: 20);
+
+  /// Number of "lost" hints shown this session (caps at 3 to avoid nagging).
+  int _lostHintCount = 0;
+  static const _maxLostHints = 3;
+
   @override
   void initState() {
     super.initState();
@@ -40,30 +55,86 @@ class CoachOverlayState extends State<CoachOverlay>
 
   @override
   void dispose() {
+    _lostTimer?.cancel();
     _animController.dispose();
     super.dispose();
   }
 
+  /// Start the "lost" detection timer. Call this when a new round/clue begins.
+  /// Resets any existing timer.
+  void startLostTimer() {
+    _lostTimer?.cancel();
+    if (_lostHintCount >= _maxLostHints) return;
+    _lostTimer = Timer(_lostThreshold, _onPlayerLost);
+  }
+
+  /// Reset the lost timer (call on any player activity: movement, hint use).
+  void resetLostTimer() {
+    if (_lostTimer == null || !_lostTimer!.isActive) return;
+    startLostTimer();
+  }
+
+  /// Cancel the lost timer (call on correct answer or round end).
+  void cancelLostTimer() {
+    _lostTimer?.cancel();
+    _lostTimer = null;
+  }
+
+  void _onPlayerLost() {
+    if (!mounted || _lostHintCount >= _maxLostHints) return;
+    _lostHintCount++;
+
+    // Try to show the 'lost' trigger first, then fall back to encouragement.
+    if (!showTip('lost')) {
+      _showMessage(_lostEncouragement());
+    }
+    // Restart for another potential nudge.
+    startLostTimer();
+  }
+
+  String _lostEncouragement() {
+    final coach = widget.mission.coach.shortName;
+    switch (_lostHintCount) {
+      case 1:
+        return 'Take your time — study the clues carefully. '
+            'You\'ve got this!';
+      case 2:
+        return 'Stuck? Try using a hint to narrow things down. '
+            '$coach believes in you.';
+      default:
+        return 'Don\'t give up. Look at the clue again and think about '
+            'which region of the world it points to.';
+    }
+  }
+
   /// Show a tip for the given trigger, if one exists for this mission and
-  /// hasn't been shown yet.
-  void showTip(String trigger) {
-    if (_shownTriggers.contains(trigger)) return;
+  /// hasn't been shown yet. Returns true if a tip was shown.
+  bool showTip(String trigger) {
+    if (_shownTriggers.contains(trigger)) return false;
     final tip = widget.mission.tips.cast<CoachTip?>().firstWhere(
           (t) => t!.trigger == trigger,
           orElse: () => null,
         );
-    if (tip == null) return;
+    if (tip == null) return false;
 
     _shownTriggers.add(trigger);
+    _showMessage(tip.message);
+    return true;
+  }
+
+  /// Show a custom message from the coach (not tied to a trigger).
+  void showCustomMessage(String message) => _showMessage(message);
+
+  void _showMessage(String message) {
     setState(() {
-      _currentMessage = tip.message;
+      _currentMessage = message;
       _visible = true;
     });
     _animController.forward(from: 0);
 
     // Auto-dismiss after 6 seconds.
     Future.delayed(const Duration(seconds: 6), () {
-      if (mounted && _visible && _currentMessage == tip.message) {
+      if (mounted && _visible && _currentMessage == message) {
         _dismiss();
       }
     });
@@ -102,14 +173,14 @@ class CoachOverlayState extends State<CoachOverlay>
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: FlitColors.cardBackground.withOpacity(0.95),
+              color: FlitColors.cardBackground.withValues(alpha: 0.95),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: FlitColors.accent.withOpacity(0.3),
+                color: FlitColors.accent.withValues(alpha: 0.3),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -124,7 +195,7 @@ class CoachOverlayState extends State<CoachOverlay>
                   height: 36,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: FlitColors.accent.withOpacity(0.2),
+                    color: FlitColors.accent.withValues(alpha: 0.2),
                   ),
                   child: Center(
                     child: Text(
@@ -161,15 +232,22 @@ class CoachOverlayState extends State<CoachOverlay>
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Dismiss button
+                // Dismiss button — tick in circle
                 GestureDetector(
                   onTap: _dismiss,
-                  child: const Text(
-                    'Got it',
-                    style: TextStyle(
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: FlitColors.textMuted.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      size: 16,
                       color: FlitColors.textMuted,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),

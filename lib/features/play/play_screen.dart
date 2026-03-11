@@ -388,6 +388,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
     // Fire coach tip for first hint usage (campaign missions only).
     _coachOverlayKey.currentState?.showTip('firstHint');
+    // Reset the "lost" timer — using a hint shows engagement.
+    _coachOverlayKey.currentState?.resetLostTimer();
 
     setState(() {
       _hintTier++;
@@ -666,12 +668,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       _startAutoHintTimer();
 
       // Fire coach tip for first clue (campaign missions only).
-      if (widget.campaignMission != null && _currentRound == 1) {
-        Future<void>.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            _coachOverlayKey.currentState?.showTip('firstClue');
-          }
-        });
+      if (widget.campaignMission != null) {
+        if (_currentRound == 1) {
+          Future<void>.delayed(const Duration(seconds: 2), () {
+            if (mounted) {
+              _coachOverlayKey.currentState?.showTip('firstClue');
+            }
+          });
+        }
+        // Start the "lost" detection timer — coach will nudge the player
+        // if they seem stuck for too long.
+        _coachOverlayKey.currentState?.startLostTimer();
       }
 
       setState(() {
@@ -834,6 +841,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
     // Fire coach tips for correct answer and halfway point (campaign only).
     if (widget.campaignMission != null) {
+      _coachOverlayKey.currentState?.cancelLostTimer();
       _coachOverlayKey.currentState?.showTip('correctAnswer');
       if (_currentRound == (widget.totalRounds / 2).ceil()) {
         _coachOverlayKey.currentState?.showTip('halfwayDone');

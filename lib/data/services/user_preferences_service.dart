@@ -678,6 +678,19 @@ class UserPreferencesService {
     _accountStateWriteVersion++;
   }
 
+  /// Clear crash-safe local caches so the next [load] doesn't merge stale
+  /// data over the server snapshot.
+  ///
+  /// Used by admin force-refresh: after an admin set-stat the server has the
+  /// authoritative value and we must prevent [_recoverLocalCache] from
+  /// overriding it with a stale cached profile (e.g. old level value).
+  void clearLocalCaches() {
+    _clearLocalCache(_kLocalProfile);
+    _clearLocalCache(_kLocalSettings);
+    _clearLocalCache(_kLocalAccountState);
+    _pendingRecoveryKeys.clear();
+  }
+
   /// Clear cached user, cancel pending writes, and purge the offline queue.
   ///
   /// Called on sign-out or account deletion. The offline queue is cleared to

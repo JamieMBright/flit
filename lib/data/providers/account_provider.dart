@@ -522,9 +522,20 @@ class AccountNotifier extends StateNotifier<AccountState> {
 
   /// Force-refresh from server, bypassing monotonic stat protection.
   /// Used after admin set-stat to allow decreasing stats.
+  ///
+  /// Instead of flushing pending writes (which would upsert stale local
+  /// data like the old level back to the DB and trigger the monotonic
+  /// protection), we discard all pending local writes and crash-safe
+  /// caches so the next load reads the admin-set value cleanly.
   Future<void> adminForceRefresh() async {
     if (_userId == null) return;
-    await _prefs.flush();
+    // Discard pending local writes — they carry the pre-admin-set values
+    // and would overwrite the admin's change via normal upsert (which
+    // does NOT bypass the stat-protection trigger).
+    _prefs.clearDirtyFlags();
+    // Clear crash-safe local caches so load() doesn't merge stale cached
+    // data (e.g. old level) over the server snapshot via _recoverLocalCache.
+    _prefs.clearLocalCaches();
     try {
       final snapshot = await _prefs.load(_userId!);
       if (snapshot != null) {
