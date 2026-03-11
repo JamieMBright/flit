@@ -67,10 +67,14 @@ class AliasService {
   }
 
   /// The effective baseline aliases for a name, with removals applied.
+  ///
+  /// Always returns a mutable copy — the source [countryAliases] map is
+  /// `const`, so returning its lists directly would crash on mutation
+  /// (e.g. on iOS Safari / Dart2JS where const lists are strictly immutable).
   List<String> _effectiveBaseline(String canonicalName) {
     final baseline = countryAliases[canonicalName] ?? <String>[];
     final removed = _removedBaseline[canonicalName] ?? <String>[];
-    if (removed.isEmpty) return baseline;
+    if (removed.isEmpty) return List<String>.of(baseline);
     return baseline.where((a) => !removed.contains(a)).toList();
   }
 
