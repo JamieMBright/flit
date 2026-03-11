@@ -19,7 +19,7 @@ const Set<ClueType> _allClueTypes = {
 /// The ordered list of tutorial campaign missions.
 const List<CampaignMission> campaignMissions = [
   // -----------------------------------------------------------------------
-  // Mission 1 — First Flight
+  // Mission 1 — First Flight (Zheng He)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'first_flight',
@@ -30,7 +30,7 @@ const List<CampaignMission> campaignMissions = [
         'This is your first sortie, cadet. I\'ll show you a country\'s '
         'neighbours — your job is to fly to the country they all share a '
         'border with.',
-    coach: coachNadia,
+    coach: coachZhengHe,
     allowedClues: {ClueType.borders},
     rounds: 1,
     maxDifficulty: 0.15,
@@ -54,11 +54,16 @@ const List<CampaignMission> campaignMissions = [
             'Not quite — look at the neighbours again and think about which '
             'region of the world they share.',
       ),
+      CoachTip(
+        trigger: 'lost',
+        message: 'Take your time. Read each neighbour carefully — what region '
+            'of the world do they belong to? That will guide you.',
+      ),
     ],
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 2 — Flag Spotter
+  // Mission 2 — Flag Spotter (Lotfia El Nadi)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'flag_spotter',
@@ -68,7 +73,7 @@ const List<CampaignMission> campaignMissions = [
     description:
         'Every flag has a story. I\'ll show you a flag and you tell me '
         'which country flies it. Watch for colours, symbols, and patterns.',
-    coach: coachAmara,
+    coach: coachLotfia,
     allowedClues: {ClueType.flag},
     rounds: 2,
     maxDifficulty: 0.20,
@@ -92,20 +97,26 @@ const List<CampaignMission> campaignMissions = [
             'That flag belongs to a different part of the world. Think about '
             'which regions use those colour combinations.',
       ),
+      CoachTip(
+        trigger: 'lost',
+        message: 'Look at the flag\'s colours and symbols. Many regions share '
+            'colour palettes — Pan-African, Pan-Arab, Scandinavian crosses. '
+            'That\'s your starting point.',
+      ),
     ],
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 3 — Capital Knowledge
+  // Mission 3 — Capital Knowledge (Alberto Santos-Dumont)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'capital_knowledge',
     order: 3,
     title: 'Capital Knowledge',
     subtitle: 'Name the capitals',
-    description: 'I\'ve landed in 140 capitals and I remember every runway. '
+    description: 'I\'ve flown over more capital cities than I can count. '
         'Now let\'s see if you can match a capital city to its country.',
-    coach: coachMateo,
+    coach: coachSantosDumont,
     allowedClues: {ClueType.capital},
     rounds: 2,
     maxDifficulty: 0.25,
@@ -129,21 +140,27 @@ const List<CampaignMission> campaignMissions = [
         message:
             'Halfway through — you\'re building a solid mental map. Keep it up.',
       ),
+      CoachTip(
+        trigger: 'lost',
+        message: 'Don\'t know this capital? Think about the language — does it '
+            'sound French, Spanish, Arabic? That narrows the region.',
+      ),
     ],
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 4 — Mixed Signals
+  // Mission 4 — Mixed Signals (Sabiha Gökçen)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'mixed_signals',
     order: 4,
     title: 'Mixed Signals',
     subtitle: 'Multiple clue types',
-    description: 'In the steppe you must read wind, stars, and land together. '
-        'This mission gives you borders AND flags — combine them to find '
-        'your target.',
-    coach: coachBayarmaa,
+    description:
+        'In combat you must read instruments, terrain, and instinct all at '
+        'once. This mission gives you borders AND flags — combine them to '
+        'find your target.',
+    coach: coachSabiha,
     allowedClues: {ClueType.borders, ClueType.flag},
     rounds: 2,
     maxDifficulty: 0.30,
@@ -158,7 +175,7 @@ const List<CampaignMission> campaignMissions = [
       ),
       CoachTip(
         trigger: 'correctAnswer',
-        message: 'You read those signals like a true nomad. Well done.',
+        message: 'You read those signals like a true pilot. Well done.',
       ),
       CoachTip(
         trigger: 'wrongRegion',
@@ -166,11 +183,16 @@ const List<CampaignMission> campaignMissions = [
             'Cross-reference your clues. The flag and borders should point '
             'to the same region.',
       ),
+      CoachTip(
+        trigger: 'lost',
+        message: 'Use both clues together. If the flag looks European but the '
+            'borders mention Asian neighbours, rethink your approach.',
+      ),
     ],
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 5 — Fuel Management
+  // Mission 5 — Fuel Management (Jean Batten)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'fuel_management',
@@ -178,9 +200,9 @@ const List<CampaignMission> campaignMissions = [
     title: 'Fuel Management',
     subtitle: 'Master your fuel',
     description:
-        'Out in the islands, fuel is life. This mission enables the fuel '
-        'gauge — fly efficiently or you\'ll be swimming home.',
-    coach: coachRizal,
+        'On my solo flights, fuel was everything. This mission enables the '
+        'fuel gauge — fly efficiently or you\'ll never make it.',
+    coach: coachJeanBatten,
     allowedClues: {ClueType.borders, ClueType.flag, ClueType.capital},
     rounds: 2,
     maxDifficulty: 0.25,
@@ -203,11 +225,17 @@ const List<CampaignMission> campaignMissions = [
         message: 'You\'re running on fumes! Make your best guess now before '
             'the engine quits.',
       ),
+      CoachTip(
+        trigger: 'lost',
+        message:
+            'Don\'t wander — every mile burns fuel. Study your clues, pick '
+            'a direction, and commit. Efficiency is survival.',
+      ),
     ],
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 6 — Hint Strategy
+  // Mission 6 — Hint Strategy (Antoine de Saint-Exupéry)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'hint_strategy',
@@ -215,10 +243,9 @@ const List<CampaignMission> campaignMissions = [
     title: 'Hint Strategy',
     subtitle: 'Use hints wisely',
     description:
-        'Sometimes you need a nudge. I\'ll teach you when to spend a hint '
-        'and when to trust your instincts. Every hint costs points, so '
-        'choose wisely.',
-    coach: coachSiobhan,
+        'What is essential is invisible to the eye — but sometimes you need '
+        'a hint to find it. Every hint costs points, so choose wisely.',
+    coach: coachSaintExupery,
     allowedClues: {ClueType.flag, ClueType.capital},
     rounds: 2,
     maxDifficulty: 0.35,
@@ -242,21 +269,27 @@ const List<CampaignMission> campaignMissions = [
         message:
             'Nicely done. Knowing when to ask for help is a skill in itself.',
       ),
+      CoachTip(
+        trigger: 'lost',
+        message:
+            'Remember — hints exist for a reason. Sometimes spending a few '
+            'points on a hint saves you fuel and time in the long run.',
+      ),
     ],
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 7 — Stats & Facts
+  // Mission 7 — Stats & Facts (Valentina Tereshkova)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'stats_and_facts',
     order: 7,
     title: 'Stats & Facts',
     subtitle: 'Read the numbers',
-    description:
-        'Numbers don\'t lie. Population, area, GDP — each statistic is a '
-        'fingerprint. Let\'s see if you can decode them.',
-    coach: coachLina,
+    description: 'From orbit, the world is numbers: speed, altitude, pressure. '
+        'Population, area, GDP — each statistic is a fingerprint. '
+        'Let\'s see if you can decode them.',
+    coach: coachTereshkova,
     allowedClues: {ClueType.stats},
     rounds: 2,
     maxDifficulty: 0.30,
@@ -280,11 +313,16 @@ const List<CampaignMission> campaignMissions = [
         message: 'Check the numbers again. Compare them to countries you know '
             'in different regions.',
       ),
+      CoachTip(
+        trigger: 'lost',
+        message: 'Use the numbers as elimination. Very high population? Only a '
+            'handful of countries qualify. Very small area? Even fewer.',
+      ),
     ],
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 8 — Shape Shifter
+  // Mission 8 — Shape Shifter (Beryl Markham)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'shape_shifter',
@@ -294,7 +332,7 @@ const List<CampaignMission> campaignMissions = [
     description:
         'I\'ve flown over every shape the Earth has to offer. Now I\'ll '
         'show you a country\'s outline — can you name it from its silhouette?',
-    coach: coachDiego,
+    coach: coachBerylMarkham,
     allowedClues: {ClueType.outline},
     rounds: 2,
     maxDifficulty: 0.25,
@@ -318,11 +356,17 @@ const List<CampaignMission> campaignMissions = [
         message: 'Think about the shape\'s proportions. Is it wide? Tall? '
             'Does it have islands?',
       ),
+      CoachTip(
+        trigger: 'lost',
+        message:
+            'Focus on distinctive features: long coastlines, island chains, '
+            'peninsulas. Even a vague shape can rule out entire continents.',
+      ),
     ],
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 9 — World Tour
+  // Mission 9 — World Tour (Amelia Earhart)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'world_tour',
@@ -332,7 +376,7 @@ const List<CampaignMission> campaignMissions = [
     description:
         'Time to put it all together. Every clue type is in play — flags, '
         'borders, capitals, stats, outlines. Show me what you\'ve learned.',
-    coach: coachAyu,
+    coach: coachAmelia,
     allowedClues: _allClueTypes,
     rounds: 3,
     maxDifficulty: 0.45,
@@ -355,20 +399,27 @@ const List<CampaignMission> campaignMissions = [
         trigger: 'correctAnswer',
         message: 'Outstanding — you flew that like a seasoned captain.',
       ),
+      CoachTip(
+        trigger: 'lost',
+        message:
+            'With all clue types active, start by narrowing the continent. '
+            'Then use each clue to zoom in further. Process of elimination.',
+      ),
     ],
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 10 — License to Fly
+  // Mission 10 — License to Fly (Edward Said)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'license_to_fly',
     order: 10,
     title: 'License to Fly',
     subtitle: 'Understand your license',
-    description: 'Your pilot licence isn\'t just a badge — it\'s your economy. '
+    description:
+        'Your pilot licence isn\'t just a badge — it represents your journey. '
         'Learn how XP, coins, and stars work so you can progress efficiently.',
-    coach: coachHarpa,
+    coach: coachEdwardSaid,
     allowedClues: _allClueTypes,
     rounds: 3,
     maxDifficulty: 0.50,
@@ -391,11 +442,17 @@ const List<CampaignMission> campaignMissions = [
         trigger: 'correctAnswer',
         message: 'Solid work. That\'s more XP in the bank for your licence.',
       ),
+      CoachTip(
+        trigger: 'lost',
+        message: 'Think about efficiency — the faster and more accurately you '
+            'answer, the more XP and coins you earn. Don\'t rush, but '
+            'don\'t dawdle.',
+      ),
     ],
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 11 — Daily Prep
+  // Mission 11 — Daily Prep (Edward Said)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'daily_prep',
@@ -405,7 +462,7 @@ const List<CampaignMission> campaignMissions = [
     description:
         'The daily modes are tougher — timed, competitive, and unforgiving. '
         'This mission simulates real conditions so you\'re ready for anything.',
-    coach: coachNadia,
+    coach: coachEdwardSaid,
     allowedClues: _allClueTypes,
     rounds: 3,
     maxDifficulty: 0.55,
@@ -429,11 +486,17 @@ const List<CampaignMission> campaignMissions = [
         message: 'That\'s the precision I expect. You\'re almost ready for '
             'the real thing.',
       ),
+      CoachTip(
+        trigger: 'lost',
+        message:
+            'This simulates competitive conditions. In the real daily modes, '
+            'every second matters. Trust your instincts and commit.',
+      ),
     ],
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 12 — Ready for Takeoff
+  // Mission 12 — Ready for Takeoff (Edward Said)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'ready_for_takeoff',
@@ -443,7 +506,7 @@ const List<CampaignMission> campaignMissions = [
     description:
         'This is your graduation flight, cadet. Everything you\'ve learned '
         'comes together here. Pass this and the entire world opens up.',
-    coach: coachNadia,
+    coach: coachEdwardSaid,
     allowedClues: _allClueTypes,
     rounds: 3,
     maxDifficulty: 0.60,
@@ -466,6 +529,13 @@ const List<CampaignMission> campaignMissions = [
       CoachTip(
         trigger: 'correctAnswer',
         message: 'Welcome to the skies, pilot. You\'ve earned your wings.',
+      ),
+      CoachTip(
+        trigger: 'lost',
+        message:
+            'This is your graduation flight — everything you\'ve learned is '
+            'here. Combine clues, manage fuel, and trust the skills you\'ve '
+            'built. You\'re ready.',
       ),
     ],
   ),

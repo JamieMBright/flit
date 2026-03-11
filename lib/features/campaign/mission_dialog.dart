@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/tutorial/campaign_mission.dart';
+import '../../game/tutorial/coach.dart';
 
 /// Dialogs for mission briefing (before) and completion (after) screens.
 class MissionDialog {
@@ -20,70 +21,113 @@ class MissionDialog {
         backgroundColor: FlitColors.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Coach flag + name
-              Text(
-                mission.coach.flagEmoji,
-                style: const TextStyle(fontSize: 40),
+              // Coach portrait + name row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Coach portrait (top-left)
+                  _CoachPortrait(coach: mission.coach, size: 56),
+                  const SizedBox(width: 12),
+                  // Name and title
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          mission.coach.name,
+                          style: const TextStyle(
+                            color: FlitColors.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${mission.coach.title} — '
+                          '${mission.coach.nationality}',
+                          style: const TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 11,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          mission.coach.bio,
+                          style: const TextStyle(
+                            color: FlitColors.textSecondary,
+                            fontSize: 11,
+                            height: 1.3,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                mission.coach.name,
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(height: 14),
+              // Mission title (centered)
+              Center(
+                child: Text(
+                  'MISSION ${mission.order}: ${mission.title.toUpperCase()}',
+                  style: const TextStyle(
+                    color: FlitColors.accent,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
-              Text(
-                '${mission.coach.title} — ${mission.coach.nationality}',
-                style: const TextStyle(
-                  color: FlitColors.textMuted,
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Mission title
-              Text(
-                'MISSION ${mission.order}: ${mission.title.toUpperCase()}',
-                style: const TextStyle(
-                  color: FlitColors.accent,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              // Coach greeting / briefing
+              const SizedBox(height: 10),
+              // Coach self-introduction
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: FlitColors.backgroundDark.withOpacity(0.5),
+                  color: FlitColors.backgroundDark.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: FlitColors.cardBorder.withOpacity(0.3),
+                    color: FlitColors.cardBorder.withValues(alpha: 0.3),
                   ),
                 ),
-                child: Column(
-                  children: [
-                    Text(
-                      '"${mission.description}"',
-                      style: const TextStyle(
-                        color: FlitColors.textSecondary,
-                        fontSize: 13,
-                        fontStyle: FontStyle.italic,
-                        height: 1.4,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                child: Text(
+                  '"${mission.coach.introduction}"',
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
+              // Mission briefing
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: FlitColors.accent.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '"${mission.description}"',
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    height: 1.3,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 12),
               // Mission details
               _MissionDetail(
                 icon: Icons.flag,
@@ -105,26 +149,29 @@ class MissionDialog {
                 label: 'Coins',
                 value: '+${mission.coinReward}',
               ),
-              const SizedBox(height: 20),
-              // Buttons
+              const SizedBox(height: 16),
+              // Buttons: tick dismiss + start
               Row(
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
+                  // Tick-in-circle dismiss button
+                  SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: IconButton(
                       onPressed: () => Navigator.of(ctx).pop(),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: FlitColors.textSecondary,
+                      style: IconButton.styleFrom(
                         side: const BorderSide(color: FlitColors.cardBorder),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        shape: const CircleBorder(),
                       ),
-                      child: const Text('Back'),
+                      icon: const Icon(
+                        Icons.check_circle_outline,
+                        color: FlitColors.textSecondary,
+                        size: 24,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    flex: 2,
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.of(ctx).pop();
@@ -236,10 +283,10 @@ class MissionDialog {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: FlitColors.accent.withOpacity(0.15),
+                    color: FlitColors.accent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: FlitColors.accent.withOpacity(0.3),
+                      color: FlitColors.accent.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -263,19 +310,16 @@ class MissionDialog {
                 ),
               ],
               const SizedBox(height: 8),
-              // Coach congratulation
+              // Coach congratulation with portrait
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: FlitColors.backgroundDark.withOpacity(0.5),
+                  color: FlitColors.backgroundDark.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    Text(
-                      mission.coach.flagEmoji,
-                      style: const TextStyle(fontSize: 24),
-                    ),
+                    _CoachPortrait(coach: mission.coach, size: 36),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -322,6 +366,94 @@ class MissionDialog {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Coach portrait widget — shows asset image with initial-circle fallback
+// ---------------------------------------------------------------------------
+
+class _CoachPortrait extends StatelessWidget {
+  const _CoachPortrait({required this.coach, this.size = 48});
+
+  final Coach coach;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    // If an asset image is provided, try loading it.
+    if (coach.imageAsset != null) {
+      return ClipOval(
+        child: Image.asset(
+          coach.imageAsset!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _initialCircle(),
+        ),
+      );
+    }
+    return _initialCircle();
+  }
+
+  Widget _initialCircle() {
+    // Deterministic colour from coach ID hash.
+    final colors = [
+      FlitColors.accent,
+      FlitColors.success,
+      FlitColors.warning,
+      const Color(0xFF7C4DFF),
+      const Color(0xFF00BFA5),
+      const Color(0xFFFF6D00),
+      const Color(0xFFAA00FF),
+      const Color(0xFF2979FF),
+      const Color(0xFFD50000),
+      const Color(0xFF00C853),
+    ];
+    final colorIndex = coach.id.hashCode.abs() % colors.length;
+    final bgColor = colors[colorIndex];
+
+    // Extract initials (first letter of first and last name).
+    final parts = coach.name.split(' ');
+    final initials = parts.length >= 2
+        ? '${parts.first[0]}${parts.last[0]}'
+        : parts.first.substring(0, 2);
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: bgColor.withValues(alpha: 0.2),
+        border: Border.all(color: bgColor.withValues(alpha: 0.5), width: 2),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Text(
+            initials.toUpperCase(),
+            style: TextStyle(
+              color: bgColor,
+              fontSize: size * 0.35,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          // Flag badge at bottom-right
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Text(
+              coach.flagEmoji,
+              style: TextStyle(fontSize: size * 0.28),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Supporting widgets
+// ---------------------------------------------------------------------------
 
 class _MissionDetail extends StatelessWidget {
   const _MissionDetail({
