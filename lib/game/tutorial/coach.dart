@@ -66,23 +66,23 @@ class Coach {
 // Coach roster — all real, researchable historical figures
 // ---------------------------------------------------------------------------
 
-/// Mission 1: Navigation / Borders — Chinese admiral (1371–1433)
-const Coach coachZhengHe = Coach(
-  id: 'zheng_he',
-  name: 'Zheng He',
+/// Mission 1: Navigation / Borders — Chinese aviation pioneer (1884–1912)
+const Coach coachFengRu = Coach(
+  id: 'feng_ru',
+  name: 'Feng Ru',
   nationality: 'Chinese',
   countryCode: 'CN',
   title: 'Navigation Instructor',
-  bio: 'Ming Dynasty admiral who commanded 300 ships and 28,000 sailors '
-      'across the Indian Ocean — the largest fleet the world had ever seen.',
+  bio: 'Father of Chinese Aviation who built and flew China\'s first airplane '
+      'in Oakland in 1909, then returned home to build China\'s air force.',
   introduction:
-      'I am Zheng He. I once commanded the largest fleet the world had ever '
-      'seen — 300 ships sailing from Nanjing to the coast of Africa. If I '
-      'can navigate those seas with nothing but the stars, you can learn to '
-      'read a globe. Let me show you how borders and neighbours guide you '
-      'to your destination.',
+      'I am Feng Ru. In 1909, I built and flew the first Chinese airplane '
+      'in California, then brought aviation home to China. I learned that '
+      'before you can fly, you must know where you are going — borders, '
+      'neighbours, landmarks. Let me teach you to navigate.',
   greeting:
-      'You navigate with the confidence of a Ming Dynasty admiral. Well done.',
+      'You navigate with the confidence of a pioneer. China\'s first aviator '
+      'approves.',
 );
 
 /// Mission 2: Flags — Egyptian aviator (1907–2002)
@@ -250,7 +250,7 @@ const Coach coachMuqaddasi = Coach(
 
 /// All available coaches indexed by [Coach.id].
 const List<Coach> coaches = [
-  coachZhengHe,
+  coachFengRu,
   coachLotfia,
   coachSantosDumont,
   coachSabiha,

@@ -19,7 +19,7 @@ const Set<ClueType> _allClueTypes = {
 /// The ordered list of tutorial campaign missions.
 const List<CampaignMission> campaignMissions = [
   // -----------------------------------------------------------------------
-  // Mission 1 — First Flight (Zheng He)
+  // Mission 1 — First Flight (Feng Ru)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'first_flight',
@@ -30,7 +30,7 @@ const List<CampaignMission> campaignMissions = [
         'This is your first sortie, cadet. I\'ll show you a country\'s '
         'neighbours — your job is to fly to the country they all share a '
         'border with.',
-    coach: coachZhengHe,
+    coach: coachFengRu,
     allowedClues: {ClueType.borders},
     rounds: 1,
     maxDifficulty: 0.15,
