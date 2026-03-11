@@ -115,25 +115,19 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Higher values (fast flight) → snappier tilt animation.
   double effectiveSpeedFactor = 1.0;
 
-  /// Fuel boost multiplier from pilot license (solo play only, 1.0 = no boost).
-  double fuelBoostMultiplier = 1.0;
-
   bool get isHighAltitude => _isHighAltitude;
   double get turnDirection => _turnDirection;
   double get continuousAltitude => _continuousAltitude;
 
   double get currentSpeed =>
-      highAltitudeSpeed *
-      (_isHighAltitude ? 1.0 : lowAltitudeSpeedMultiplier) *
-      fuelBoostMultiplier;
+      highAltitudeSpeed * (_isHighAltitude ? 1.0 : lowAltitudeSpeedMultiplier);
 
   /// Get current speed based on continuous altitude (0.0 = slowest, 1.0 = fastest).
   /// Interpolates between low altitude speed and high altitude speed.
   double get currentSpeedContinuous =>
       highAltitudeSpeed *
       (lowAltitudeSpeedMultiplier +
-          _continuousAltitude * (1.0 - lowAltitudeSpeedMultiplier)) *
-      fuelBoostMultiplier;
+          _continuousAltitude * (1.0 - lowAltitudeSpeedMultiplier));
 
   @override
   void update(double dt) {

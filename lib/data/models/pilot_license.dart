@@ -29,7 +29,8 @@ class PilotLicense {
   /// Bonus percentage chance of receiving extra clues (1-25).
   final int clueChance;
 
-  /// Bonus fuel / speed-boost duration percentage in solo play (1-25).
+  /// Fuel efficiency bonus percentage in solo play (1-25).
+  /// Reduces fuel burn rate: effective efficiency = plane × (1 + fuelBoost/100).
   final int fuelBoost;
 
   /// Which clue type the pilot prefers.

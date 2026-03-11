@@ -8,6 +8,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/game_settings.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/flight_school_level.dart';
+import '../../game/tutorial/campaign_mission.dart';
+import '../../game/tutorial/mode_requirements.dart';
 import '../models/avatar_config.dart';
 import '../models/daily_result.dart';
 import '../models/daily_streak.dart';
@@ -36,6 +38,7 @@ class AccountState {
     this.freeFlightCoinsToday = 0,
     this.freeFlightCoinDate,
     this.flightSchoolProgress = const {},
+    this.campaignProgress = const {},
   })  : avatar = avatar ?? const AvatarConfig(),
         license = license ?? PilotLicense.random();
 
@@ -95,6 +98,19 @@ class AccountState {
   /// Flight school progress per level ID.
   final Map<String, FlightSchoolProgress> flightSchoolProgress;
 
+  /// Campaign mission progress keyed by mission ID.
+  final Map<String, CampaignMissionResult> campaignProgress;
+
+  /// Set of completed campaign mission IDs.
+  Set<String> get completedMissionIds => campaignProgress.keys.toSet();
+
+  /// Check whether a game mode is unlocked for the current player.
+  bool isGameModeUnlocked(String modeId) {
+    final req = getModeRequirement(modeId);
+    if (req == null) return true; // Unknown mode = unlocked by default.
+    return req.isUnlocked(currentPlayer.level, completedMissionIds);
+  }
+
   static String _todayStr() {
     final today = DateTime.now().toUtc();
     return '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
@@ -150,6 +166,7 @@ class AccountState {
     int? freeFlightCoinsToday,
     Object? freeFlightCoinDate = _sentinel,
     Map<String, FlightSchoolProgress>? flightSchoolProgress,
+    Map<String, CampaignMissionResult>? campaignProgress,
   }) =>
       AccountState(
         currentPlayer: currentPlayer ?? this.currentPlayer,
@@ -175,6 +192,7 @@ class AccountState {
             ? this.freeFlightCoinDate
             : freeFlightCoinDate as String?,
         flightSchoolProgress: flightSchoolProgress ?? this.flightSchoolProgress,
+        campaignProgress: campaignProgress ?? this.campaignProgress,
       );
 }
 
@@ -414,6 +432,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       freeFlightCoinsToday: snapshot.freeFlightCoinsToday,
       freeFlightCoinDate: snapshot.freeFlightCoinDate,
       flightSchoolProgress: snapshot.toFlightSchoolProgress(),
+      campaignProgress: snapshot.toCampaignProgress(),
     );
 
     // Mark Supabase data as loaded — enables writes. Must happen AFTER
@@ -581,6 +600,9 @@ class AccountNotifier extends StateNotifier<AccountState> {
       freeFlightCoinsToday: state.freeFlightCoinsToday,
       freeFlightCoinDate: state.freeFlightCoinDate,
       flightSchoolProgress: state.flightSchoolProgress,
+      campaignProgress: state.campaignProgress.map(
+        (k, v) => MapEntry(k, v.toJson()),
+      ),
     );
   }
 
@@ -719,6 +741,51 @@ class AccountNotifier extends StateNotifier<AccountState> {
   bool isRegionUnlocked(GameRegion region) {
     if (state.currentPlayer.level >= region.requiredLevel) return true;
     return state.unlockedRegions.contains(region.name);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Campaign progress
+  // ---------------------------------------------------------------------------
+
+  /// Record a completed campaign mission. Awards XP and coins.
+  /// Returns the [CampaignMissionResult] with calculated stars.
+  CampaignMissionResult completeCampaignMission({
+    required String missionId,
+    required int score,
+    required int rounds,
+    required int xpReward,
+    required int coinReward,
+  }) {
+    final stars = CampaignMissionResult.calculateStars(score, rounds);
+    final existing = state.campaignProgress[missionId];
+
+    // Only update if first completion or better score.
+    final result = CampaignMissionResult(
+      missionId: missionId,
+      score:
+          existing != null && existing.score > score ? existing.score : score,
+      stars:
+          existing != null && existing.stars > stars ? existing.stars : stars,
+      completedAt: DateTime.now(),
+    );
+
+    state = state.copyWith(
+      campaignProgress: {...state.campaignProgress, missionId: result},
+    );
+
+    // Award XP and coins only on first completion.
+    if (existing == null) {
+      addXp(xpReward);
+      addCoins(coinReward, source: 'campaign_mission');
+    }
+
+    _syncAccountState();
+    return result;
+  }
+
+  /// Check whether a game mode is unlocked for the current player.
+  bool isGameModeUnlocked(String modeId) {
+    return state.isGameModeUnlocked(modeId);
   }
 
   /// Unlock a flight school level with coins (early unlock).

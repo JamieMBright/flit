@@ -265,9 +265,8 @@ class FlitGame extends FlameGame
   /// Current fuel level (0.0 = empty, [maxFuel] = full tank).
   late double _fuel;
 
-  /// Maximum fuel level. License boost gives a larger tank:
-  /// e.g. 10% boost → maxFuel = 1.1 → displayed as "110%".
-  double get maxFuel => fuelBoostMultiplier;
+  /// Maximum fuel level (always 1.0 — license boost affects burn rate, not tank).
+  double get maxFuel => 1.0;
 
   /// Base fuel burn rate per second at normal speed.
   /// At 1/90 per second, a full base tank lasts 90 seconds.
@@ -296,14 +295,11 @@ class FlitGame extends FlameGame
     _fuel = (_fuel + amount).clamp(0.0, maxFuel);
   }
 
-  /// Deduct fuel for using a hint. Returns false if tank is empty.
+  /// Deduct fuel for using a hint. Always returns true (fuel depletion no
+  /// longer ends the round — it only affects the score bonus).
   bool useHintFuel() {
     if (!fuelEnabled) return true;
     _fuel = (_fuel - _hintFuelCost).clamp(0.0, maxFuel);
-    if (_fuel <= 0) {
-      onFuelEmpty?.call();
-      return false;
-    }
     return true;
   }
 
@@ -705,9 +701,8 @@ class FlitGame extends FlameGame
       await add(_plane);
       _planeReady = true;
 
-      if (!isChallenge) {
-        _plane.fuelBoostMultiplier = fuelBoostMultiplier;
-      }
+      // License fuelBoost is applied in the fuel burn rate calculation
+      // (see fuel consumption section in update()), not on the plane speed.
 
       // Start at region center for flat map modes, or (0°, 0°) for the globe.
       _worldPosition = isFlatMapMode ? region.center : Vector2(0, 0);
@@ -910,6 +905,8 @@ class FlitGame extends FlameGame
     }
 
     // --- Fuel consumption ---
+    // Fuel depletion no longer ends the round. Running out of fuel simply
+    // means no fuel bonus at the end. License fuelBoost reduces burn rate.
     if (fuelEnabled && _fuel > 0) {
       // Burn rate scales with speed setting AND altitude:
       //   - Faster speeds burn more fuel (2.5× at fast vs 0.5× at slow)
@@ -917,15 +914,15 @@ class FlitGame extends FlameGame
       //     exploration without fuel anxiety
       final isLow = _planeReady && !_plane.isHighAltitude;
       final altitudeFactor = isLow ? 0.25 : 1.0;
-      // planeFuelEfficiency > 1 = less burn; divide to invert.
+      // Effective efficiency = plane attribute × license boost.
+      // fuelBoostMultiplier is (1.0 + licenseBoost/100), so a 15% license
+      // boost gives 1.15× efficiency → 15% slower burn.
+      final effectiveEfficiency = planeFuelEfficiency * fuelBoostMultiplier;
       final burnRate = _baseFuelBurnRate *
           _speedMultiplier *
           altitudeFactor /
-          planeFuelEfficiency;
+          effectiveEfficiency;
       _fuel = (_fuel - burnRate * dt).clamp(0.0, maxFuel);
-      if (_fuel <= 0) {
-        onFuelEmpty?.call();
-      }
     }
 
     // --- Motion-gated: input, steering, movement ---

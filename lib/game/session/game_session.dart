@@ -69,27 +69,31 @@ class GameSession {
     return ((seconds - 10) / 50.0 * 5000).round();
   }
 
-  /// Raw score before difficulty multiplier (base − penalties).
+  /// Fuel bonus awarded for remaining fuel (0–5,000 points).
+  ///
+  /// 100% fuel → +5,000 bonus (perfect fuel management)
+  /// 0% fuel   → +0 bonus (ran out of fuel)
+  int get fuelBonus => (_fuelFraction * 5000).round();
+
+  /// Raw score before difficulty multiplier (base + fuel bonus − penalties).
   ///
   /// Formula:
-  ///   base     = 10,000 per round
-  ///   hints    = non-linear escalating penalty per tier (see [hintTierPenalties])
-  ///             (0 hints = 0, all 4 = −5,500)
-  ///   fuel/time = −up to 5,000:
-  ///     fuel mode: scaled linearly by fuel burned (100% = 0, 0% = −5,000)
-  ///     time mode: scaled linearly from ≤10s (0) to ≥60s (−5,000)
+  ///   base      = 5,000 per round
+  ///   fuelBonus = +up to 5,000 (remaining fuel × 5,000)
+  ///   hints     = non-linear escalating penalty per tier (see [hintTierPenalties])
+  ///               (0 hints = 0, all 4 = −5,500)
+  ///   time      = −up to 5,000 (only in time-scoring mode, e.g. daily challenge)
   ///
   /// Result is clamped to [0, 10000].
   int get rawScore {
     if (!_completed) return 0;
-    const int base = 10000;
+    const int base = 5000;
     int hintPenalty = 0;
     for (int i = 0; i < _hintsUsed && i < hintTierPenalties.length; i++) {
       hintPenalty += hintTierPenalties[i];
     }
-    final int resourcePenalty =
-        _useTimeScoring ? timePenalty : ((1.0 - _fuelFraction) * 5000).round();
-    return max(0, base - hintPenalty - resourcePenalty);
+    final int timeDeduction = _useTimeScoring ? timePenalty : 0;
+    return max(0, base + fuelBonus - hintPenalty - timeDeduction);
   }
 
   /// Final score for this round, with difficulty multiplier applied.
