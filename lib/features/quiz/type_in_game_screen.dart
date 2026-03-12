@@ -7,6 +7,7 @@ import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_difficulty.dart';
 import '../../game/quiz/quiz_session.dart';
 import '../../game/map/region.dart';
+import '../../game/ui/ink_burst_overlay.dart';
 import 'quiz_results_screen.dart';
 
 /// Type-In game screen for Flight School.
@@ -54,6 +55,8 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
   late Animation<double> _feedbackOpacity;
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
+  final GlobalKey<InkBurstOverlayState> _inkBurstKey =
+      GlobalKey<InkBurstOverlayState>();
 
   @override
   void initState() {
@@ -256,6 +259,10 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
         _textController.clear();
         _suggestions = [];
       });
+
+      // Fire ink-burst success animation from the clue card area.
+      final mq = MediaQuery.of(context);
+      _inkBurstKey.currentState?.trigger(Offset(mq.size.width / 2, 165));
     } else {
       // Submit a synthetic wrong code, then advance past the question
       final result = _session.submitAnswer('__wrong_typein__');
@@ -383,59 +390,66 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
       resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top bar
-            _buildTopBar(remaining),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                // Top bar
+                _buildTopBar(remaining),
 
-            // Scrollable content area
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 8),
+                // Scrollable content area
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 8),
 
-                    // Score bar
-                    _buildScoreBar(),
-                    const SizedBox(height: 12),
+                        // Score bar
+                        _buildScoreBar(),
+                        const SizedBox(height: 12),
 
-                    // Clue card
-                    _buildClueCard(question),
-                    const SizedBox(height: 8),
+                        // Clue card
+                        _buildClueCard(question),
+                        const SizedBox(height: 8),
 
-                    // First letter hint (easy mode)
-                    if (widget.difficulty == QuizDifficulty.easy &&
-                        question != null)
-                      _buildFirstLetterHint(question.answerName),
+                        // First letter hint (easy mode)
+                        if (widget.difficulty == QuizDifficulty.easy &&
+                            question != null)
+                          _buildFirstLetterHint(question.answerName),
 
-                    const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                    // Feedback animation
-                    if (_showFeedback) _buildFeedback(),
+                        // Feedback animation
+                        if (_showFeedback) _buildFeedback(),
 
-                    // Text input
-                    _buildTextInput(),
-                    const SizedBox(height: 8),
+                        // Text input
+                        _buildTextInput(),
+                        const SizedBox(height: 8),
 
-                    // Action buttons
-                    _buildActionButtons(),
-                    const SizedBox(height: 8),
+                        // Action buttons
+                        _buildActionButtons(),
+                        const SizedBox(height: 8),
 
-                    // Autocomplete suggestions
-                    if (_suggestions.isNotEmpty) _buildSuggestions(),
+                        // Autocomplete suggestions
+                        if (_suggestions.isNotEmpty) _buildSuggestions(),
 
-                    const SizedBox(height: 16),
-                  ],
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
 
-            // Progress bar
-            _buildProgressBar(),
-          ],
-        ),
+                // Progress bar
+                _buildProgressBar(),
+              ],
+            ),
+          ),
+
+          // Ink-burst success animation overlay
+          InkBurstOverlay(key: _inkBurstKey),
+        ],
       ),
     );
   }
@@ -983,7 +997,10 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
             onTap: () => _selectSuggestion(name),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
               decoration: BoxDecoration(
                 border: isLast
                     ? null

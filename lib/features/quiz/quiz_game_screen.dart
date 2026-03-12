@@ -10,6 +10,7 @@ import '../../game/quiz/quiz_map_widget.dart';
 import '../../game/quiz/quiz_region_map_widget.dart';
 import '../../game/quiz/quiz_session.dart';
 import '../../game/map/region.dart';
+import '../../game/ui/ink_burst_overlay.dart';
 import 'quiz_results_screen.dart';
 
 /// Main quiz game screen for Flight School.
@@ -77,6 +78,8 @@ class _QuizGameScreenState extends State<QuizGameScreen>
   bool _showPointsPopup = false;
   late AnimationController _pointsAnimController;
   late AnimationController _shakeController;
+  final GlobalKey<InkBurstOverlayState> _inkBurstKey =
+      GlobalKey<InkBurstOverlayState>();
 
   @override
   void initState() {
@@ -153,6 +156,10 @@ class _QuizGameScreenState extends State<QuizGameScreen>
             setState(() => _showPointsPopup = false);
           }
         });
+
+        // Fire ink-burst success animation from the clue card area.
+        final mq = MediaQuery.of(context);
+        _inkBurstKey.currentState?.trigger(Offset(mq.size.width / 2, 110));
 
         // After a brief flash, mark as completed (muted green via correctCodes)
         Future.delayed(const Duration(milliseconds: 400), () {
@@ -309,64 +316,71 @@ class _QuizGameScreenState extends State<QuizGameScreen>
 
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top bar: back button, mode label, timer
-            _buildTopBar(remaining),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                // Top bar: back button, mode label, timer
+                _buildTopBar(remaining),
 
-            // Clue card (with extra hint clues)
-            _buildClueCard(question),
+                // Clue card (with extra hint clues)
+                _buildClueCard(question),
 
-            // Score and streak bar
-            _buildScoreBar(),
+                // Score and streak bar
+                _buildScoreBar(),
 
-            // Map (takes remaining space)
-            Expanded(
-              child: Stack(
-                children: [
-                  // Interactive map (US-specific or generic region map)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: widget.region == GameRegion.usStates
-                        ? QuizMapWidget(
-                            stateVisuals: _stateVisuals,
-                            onStateTapped: _handleStateTapped,
-                            highlightCode: _highlightCode,
-                            showLabels: _session.showLabels,
-                            eliminatedCodes: _session.eliminatedCodes,
-                            correctCodes: _session.correctCodes,
-                          )
-                        : QuizRegionMapWidget(
-                            region: widget.region,
-                            stateVisuals: _stateVisuals,
-                            onStateTapped: _handleStateTapped,
-                            highlightCode: _highlightCode,
-                            showLabels: _session.showLabels,
-                            eliminatedCodes: _session.eliminatedCodes,
-                            correctCodes: _session.correctCodes,
-                          ),
+                // Map (takes remaining space)
+                Expanded(
+                  child: Stack(
+                    children: [
+                      // Interactive map (US-specific or generic region map)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: widget.region == GameRegion.usStates
+                            ? QuizMapWidget(
+                                stateVisuals: _stateVisuals,
+                                onStateTapped: _handleStateTapped,
+                                highlightCode: _highlightCode,
+                                showLabels: _session.showLabels,
+                                eliminatedCodes: _session.eliminatedCodes,
+                                correctCodes: _session.correctCodes,
+                              )
+                            : QuizRegionMapWidget(
+                                region: widget.region,
+                                stateVisuals: _stateVisuals,
+                                onStateTapped: _handleStateTapped,
+                                highlightCode: _highlightCode,
+                                showLabels: _session.showLabels,
+                                eliminatedCodes: _session.eliminatedCodes,
+                                correctCodes: _session.correctCodes,
+                              ),
+                      ),
+
+                      // Points popup animation
+                      if (_showPointsPopup && _lastPoints != null)
+                        _buildPointsPopup(),
+
+                      // Wrong answer indicator (strikes for rapid fire)
+                      if (widget.mode == QuizMode.rapidFire)
+                        Positioned(
+                          bottom: 16,
+                          right: 16,
+                          child: _buildStrikesIndicator(),
+                        ),
+                    ],
                   ),
+                ),
 
-                  // Points popup animation
-                  if (_showPointsPopup && _lastPoints != null)
-                    _buildPointsPopup(),
-
-                  // Wrong answer indicator (strikes for rapid fire)
-                  if (widget.mode == QuizMode.rapidFire)
-                    Positioned(
-                      bottom: 16,
-                      right: 16,
-                      child: _buildStrikesIndicator(),
-                    ),
-                ],
-              ),
+                // Progress bar (for allStates mode)
+                if (widget.mode == QuizMode.allStates) _buildProgressBar(),
+              ],
             ),
+          ),
 
-            // Progress bar (for allStates mode)
-            if (widget.mode == QuizMode.allStates) _buildProgressBar(),
-          ],
-        ),
+          // Ink-burst success animation overlay
+          InkBurstOverlay(key: _inkBurstKey),
+        ],
       ),
     );
   }
@@ -498,9 +512,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
       child: Container(
-        key: ValueKey(
-          '${question?.clueText ?? 'empty'}_${extraClues.length}',
-        ),
+        key: ValueKey('${question?.clueText ?? 'empty'}_${extraClues.length}'),
         width: double.infinity,
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -544,10 +556,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                   // Extra clue texts from hints
                   if (extraClues.isNotEmpty) ...[
                     const SizedBox(height: 6),
-                    const Divider(
-                      color: FlitColors.cardBorder,
-                      height: 1,
-                    ),
+                    const Divider(color: FlitColors.cardBorder, height: 1),
                     const SizedBox(height: 6),
                     for (final clue in extraClues)
                       Padding(
