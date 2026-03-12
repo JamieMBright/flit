@@ -160,6 +160,9 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         final path = ui.Path();
         var started = false;
         var anyVisible = false;
+        var hasOccluded = false;
+        var lastX = 0.0;
+        var lastY = 0.0;
 
         for (var i = 0; i < polygon.length; i += stride) {
           final screenPos = gameRef.worldToScreenGlobe(polygon[i]);
@@ -167,6 +170,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
           // Occluded (far side of globe)
           if (screenPos.x < -500 || screenPos.y < -500) {
             started = false;
+            hasOccluded = true;
             continue;
           }
 
@@ -181,12 +185,26 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
             path.moveTo(screenPos.x, screenPos.y);
             started = true;
           } else {
-            path.lineTo(screenPos.x, screenPos.y);
+            // Guard against huge screen-space jumps (antimeridian wrap or
+            // vertices straddling the globe limb). Start a new sub-path
+            // instead of drawing a line across the screen.
+            final dx = screenPos.x - lastX;
+            final dy = screenPos.y - lastY;
+            if (dx * dx + dy * dy > screenW * screenW * 0.25) {
+              path.moveTo(screenPos.x, screenPos.y);
+              hasOccluded = true;
+            } else {
+              path.lineTo(screenPos.x, screenPos.y);
+            }
           }
+          lastX = screenPos.x;
+          lastY = screenPos.y;
         }
 
-        if (anyVisible && started) {
-          path.close();
+        if (anyVisible) {
+          if (!hasOccluded) {
+            path.close();
+          }
           canvas.drawPath(path, outlinePaint);
         }
       }
@@ -273,6 +291,8 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       var started = false;
       var anyVisible = false;
       var hasOccluded = false;
+      var lastX = 0.0;
+      var lastY = 0.0;
 
       for (var i = 0; i < polygon.length; i += stride) {
         final screenPos = gameRef.worldToScreenGlobe(polygon[i]);
@@ -294,8 +314,18 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
           path.moveTo(screenPos.x, screenPos.y);
           started = true;
         } else {
-          path.lineTo(screenPos.x, screenPos.y);
+          // Guard against huge screen-space jumps (antimeridian wrap).
+          final dx = screenPos.x - lastX;
+          final dy = screenPos.y - lastY;
+          if (dx * dx + dy * dy > screenW * screenW * 0.25) {
+            path.moveTo(screenPos.x, screenPos.y);
+            hasOccluded = true;
+          } else {
+            path.lineTo(screenPos.x, screenPos.y);
+          }
         }
+        lastX = screenPos.x;
+        lastY = screenPos.y;
       }
 
       if (anyVisible) {
