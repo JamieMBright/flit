@@ -34,6 +34,7 @@ const List<CampaignMission> campaignMissions = [
     allowedClues: {ClueType.borders},
     rounds: 1,
     maxDifficulty: 0.15,
+    targetCountryCodes: ['IN'],
     fuelEnabled: false,
     xpReward: 50,
     coinReward: 25,

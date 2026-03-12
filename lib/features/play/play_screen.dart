@@ -559,6 +559,22 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         preferredClueType: widget.preferredClueType,
       );
     }
+    // Campaign missions use a fixed seed derived from the mission ID so the
+    // country is identical every playthrough. This lets coach tips reference
+    // the specific target country. Per-round seed offsets use a large prime
+    // so multi-round missions get different but deterministic countries.
+    if (widget.campaignMission != null) {
+      final mission = widget.campaignMission!;
+      final baseSeed = mission.id.hashCode;
+      final roundSeed = baseSeed + (_currentRound - 1) * 7919;
+      return GameSession.seeded(
+        roundSeed,
+        allowedClueTypes: widget.enabledClueTypes,
+        preferredClueType: widget.preferredClueType,
+        maxDifficulty: mission.maxDifficulty,
+        targetCountryCodes: mission.targetCountryCodes,
+      );
+    }
     if (widget.region == GameRegion.world) {
       final seed = DateTime.now().microsecondsSinceEpoch ^
           _sessionSeedRandom.nextInt(1 << 31);
@@ -566,8 +582,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         seed,
         allowedClueTypes: widget.enabledClueTypes,
         preferredClueType: widget.preferredClueType,
-        maxDifficulty: widget.campaignMission?.maxDifficulty,
-        targetCountryCodes: widget.campaignMission?.targetCountryCodes,
       );
     }
     return GameSession.random(
