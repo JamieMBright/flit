@@ -252,9 +252,9 @@ const List<CampaignMission> campaignMissions = [
       CoachTip(
         trigger: 'fuelLow',
         message:
-            'Fuel\'s getting low — exactly how it felt mid-Pacific with no '
-            'runway in sight. Descend to conserve and commit to your answer. '
-            'Wellington, New Zealand.',
+            'Fuel\'s getting low! The more fuel you have when you land, the '
+            'higher your score — up to 5,000 bonus points. Descend to '
+            'conserve and commit. Wellington, New Zealand.',
       ),
       CoachTip(
         trigger: 'fuelEmpty',
@@ -302,9 +302,9 @@ const List<CampaignMission> campaignMissions = [
       ),
       CoachTip(
         trigger: 'firstHint',
-        message: 'A good pilot knows when to consult the chart. I used every '
-            'star in the Saharan sky when my instruments failed. Use your '
-            'hint — but keep the cost in mind.',
+        message: 'A good pilot knows when to consult the chart — but each hint '
+            'costs more than the last: −500, then −1,000, then −1,500, up to '
+            '−2,500 for auto-navigate. Use them wisely, cadet.',
       ),
       CoachTip(
         trigger: 'correctAnswer',
@@ -353,9 +353,9 @@ const List<CampaignMission> campaignMissions = [
       CoachTip(
         trigger: 'halfwayDone',
         message:
-            'Arriba, siempre arriba — higher, always higher. Those were my '
-            'last words after crossing the Alps. Keep climbing through the '
-            'data; you\'re getting closer.',
+            'Arriba, siempre arriba — higher, always higher! Harder countries '
+            'earn a higher score multiplier. An obscure nation can be worth '
+            'nearly double a well-known one. Risk and reward, cadet.',
       ),
       CoachTip(
         trigger: 'wrongRegion',
@@ -408,9 +408,9 @@ const List<CampaignMission> campaignMissions = [
       ),
       CoachTip(
         trigger: 'wrongRegion',
-        message: 'Look to East Africa. In "West with the Night" I wrote of '
-            'hunting elephants by silhouette at dawn — this country\'s '
-            'outline is just as unmistakable on the map.',
+        message: 'Wrong region — and every wrong approach burns fuel. Flying '
+            'accurately matters: less fuel wasted means a bigger fuel bonus. '
+            'Look to East Africa — this silhouette is unmistakable.',
       ),
       CoachTip(
         trigger: 'lost',
@@ -453,9 +453,9 @@ const List<CampaignMission> campaignMissions = [
       ),
       CoachTip(
         trigger: 'fuelLow',
-        message: 'My goodwill flight had no room for hesitation either. Commit '
-            'to the answer your clues are pointing to — cross the border '
-            'south of the United States.',
+        message: 'Fuel low — and stars are on the line! Score 80% or above for '
+            '3 stars, 50% for 2. My goodwill flight had no room for '
+            'hesitation either. Commit now — south of the United States.',
       ),
       CoachTip(
         trigger: 'correctAnswer',
@@ -504,9 +504,9 @@ const List<CampaignMission> campaignMissions = [
       ),
       CoachTip(
         trigger: 'halfwayDone',
-        message: 'Halfway — just as I was when I reached Baghdad on my great '
-            'journey. Every correct answer earns XP for your licence. '
-            'Keep building your knowledge.',
+        message: 'Halfway — just as I was when I reached Baghdad. Every flight '
+            'earns XP and coins. Level up your Pilot Licence to boost fuel '
+            'capacity and coin earnings. Knowledge compounds, cadet.',
       ),
       CoachTip(
         trigger: 'correctAnswer',
@@ -555,9 +555,9 @@ const List<CampaignMission> campaignMissions = [
       ),
       CoachTip(
         trigger: 'fuelLow',
-        message: 'I flew until my engines quit over Manila Bay. Fuel low means '
-            'commit now — pick your target and go, just as I did against '
-            'those bombers.',
+        message: 'In daily challenges, speed is score — land within 10 seconds '
+            'for full points, or lose up to 5,000 to the clock. Fuel low '
+            'means commit now, just as I did over Manila Bay.',
       ),
       CoachTip(
         trigger: 'correctAnswer',
@@ -606,10 +606,9 @@ const List<CampaignMission> campaignMissions = [
       ),
       CoachTip(
         trigger: 'halfwayDone',
-        message:
-            'Halfway to your wings. I fought for Indonesian freedom so that '
-            'others could fly freely. Keep the momentum — you\'re almost '
-            'there.',
+        message: 'Halfway to your wings. Remember everything: fuel bonus, hint '
+            'costs, difficulty multiplier, star thresholds, and your licence. '
+            'Master them all and the world is yours.',
       ),
       CoachTip(
         trigger: 'correctAnswer',
