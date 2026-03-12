@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/tutorial/campaign_mission.dart';
+import '../../game/tutorial/coach.dart';
 
 /// Aviation-themed tap-to-continue labels for the tutorial.
 const _continueLabels = [
@@ -72,7 +73,15 @@ class TutorialOverlay extends StatefulWidget {
 
 class TutorialOverlayState extends State<TutorialOverlay>
     with SingleTickerProviderStateMixin {
+  static final _rng = Random();
+
   TutorialPhase _phase = TutorialPhase.welcome;
+
+  /// The aviation-themed label shown on the continue button. Picked once per
+  /// phase change so it doesn't cycle on every rebuild.
+  String _continueLabel = _continueLabels[Random().nextInt(
+    _continueLabels.length,
+  )];
 
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnim;
@@ -104,26 +113,36 @@ class TutorialOverlayState extends State<TutorialOverlay>
     super.dispose();
   }
 
+  // ─── Phase transitions ─────────────────────────────────────────────
+
+  /// Advance to [next] and pick a fresh dismiss label for the new phase.
+  void _setPhase(TutorialPhase next) {
+    setState(() {
+      _phase = next;
+      _continueLabel = _continueLabels[_rng.nextInt(_continueLabels.length)];
+    });
+  }
+
   // ─── Callbacks from PlayScreen when the player performs actions ──────
 
   /// Called when the player presses a turn button.
   void onTurnPressed() {
     if (_phase == TutorialPhase.tryTurning) {
-      setState(() => _phase = TutorialPhase.tryWaypoint);
+      _setPhase(TutorialPhase.tryWaypoint);
     }
   }
 
   /// Called when the player taps the globe (sets a waypoint).
   void onWaypointSet() {
     if (_phase == TutorialPhase.tryWaypoint) {
-      setState(() => _phase = TutorialPhase.waypointSet);
+      _setPhase(TutorialPhase.waypointSet);
     }
   }
 
   /// Called when the player changes speed.
   void onSpeedChanged() {
     if (_phase == TutorialPhase.trySpeed) {
-      setState(() => _phase = TutorialPhase.tryAltitude);
+      _setPhase(TutorialPhase.tryAltitude);
     }
   }
 
@@ -137,9 +156,9 @@ class TutorialOverlayState extends State<TutorialOverlay>
   void _onTap() {
     switch (_phase) {
       case TutorialPhase.welcome:
-        setState(() => _phase = TutorialPhase.tryTurning);
+        _setPhase(TutorialPhase.tryTurning);
       case TutorialPhase.waypointSet:
-        setState(() => _phase = TutorialPhase.trySpeed);
+        _setPhase(TutorialPhase.trySpeed);
       case TutorialPhase.ready:
         _finishTutorial();
       // For action phases, tapping does nothing — player must use the control.
@@ -253,7 +272,7 @@ class TutorialOverlayState extends State<TutorialOverlay>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Coach avatar
-                  _CoachAvatar(flagEmoji: coach.flagEmoji),
+                  _CoachAvatar(coach: coach),
                   const SizedBox(height: 4),
                   // Speech bubble
                   _CoachCard(
@@ -261,6 +280,7 @@ class TutorialOverlayState extends State<TutorialOverlay>
                     message: _message,
                     showPulse: _isActionPhase,
                     showContinueButton: _isTapPhase,
+                    continueLabel: _continueLabel,
                     onTap: _isTapPhase ? _onTap : null,
                   ),
                 ],
@@ -293,11 +313,11 @@ enum TutorialTarget {
   altitudeToggle,
 }
 
-/// Small circular coach avatar for the tutorial overlay.
+/// Small circular coach portrait for the tutorial overlay.
 class _CoachAvatar extends StatelessWidget {
-  const _CoachAvatar({required this.flagEmoji});
+  const _CoachAvatar({required this.coach});
 
-  final String flagEmoji;
+  final Coach coach;
 
   @override
   Widget build(BuildContext context) {
@@ -319,8 +339,26 @@ class _CoachAvatar extends StatelessWidget {
           ),
         ],
       ),
-      child: Center(
-        child: Text(flagEmoji, style: const TextStyle(fontSize: 22)),
+      child: ClipOval(
+        child: coach.imageAsset != null
+            ? Image.asset(
+                coach.imageAsset!,
+                width: 42,
+                height: 42,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Center(
+                  child: Text(
+                    coach.flagEmoji,
+                    style: const TextStyle(fontSize: 22),
+                  ),
+                ),
+              )
+            : Center(
+                child: Text(
+                  coach.flagEmoji,
+                  style: const TextStyle(fontSize: 22),
+                ),
+              ),
       ),
     );
   }
@@ -328,21 +366,21 @@ class _CoachAvatar extends StatelessWidget {
 
 /// Speech bubble coach message card used by the tutorial overlay.
 class _CoachCard extends StatelessWidget {
-  _CoachCard({
+  const _CoachCard({
     required this.coachName,
     required this.message,
     this.showPulse = false,
     this.showContinueButton = false,
+    this.continueLabel = 'Roger!',
     this.onTap,
-  }) : _continueLabel =
-            _continueLabels[Random().nextInt(_continueLabels.length)];
+  });
 
   final String coachName;
   final String message;
   final bool showPulse;
   final bool showContinueButton;
+  final String continueLabel;
   final VoidCallback? onTap;
-  final String _continueLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -426,7 +464,7 @@ class _CoachCard extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          _continueLabel,
+                          continueLabel,
                           style: const TextStyle(
                             color: FlitColors.accent,
                             fontSize: 12,

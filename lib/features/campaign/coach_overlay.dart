@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/tutorial/campaign_mission.dart';
+import '../../game/tutorial/coach.dart';
 
 /// Aviation-themed dismiss button labels. A random one is picked each time.
 const _dismissLabels = [
@@ -182,10 +183,7 @@ class CoachOverlayState extends State<CoachOverlay>
         mainAxisSize: MainAxisSize.min,
         children: [
           // Coach avatar — always visible during campaign
-          _CoachAvatar(
-            flagEmoji: coach.flagEmoji,
-            name: coach.shortName,
-          ),
+          _CoachAvatar(coach: coach),
 
           // Speech bubble — slides in when a tip is active
           if (_visible && _currentMessage != null)
@@ -213,12 +211,14 @@ class CoachOverlayState extends State<CoachOverlay>
   }
 }
 
-/// Small circular coach avatar shown in the top-right corner.
+/// Small circular coach portrait shown in the top-right corner.
+///
+/// Uses the coach's image asset when available, falling back to initials
+/// with the flag emoji as a badge.
 class _CoachAvatar extends StatelessWidget {
-  const _CoachAvatar({required this.flagEmoji, required this.name});
+  const _CoachAvatar({required this.coach});
 
-  final String flagEmoji;
-  final String name;
+  final Coach coach;
 
   @override
   Widget build(BuildContext context) {
@@ -240,10 +240,42 @@ class _CoachAvatar extends StatelessWidget {
           ),
         ],
       ),
+      child: ClipOval(
+        child: coach.imageAsset != null
+            ? Image.asset(
+                coach.imageAsset!,
+                width: 42,
+                height: 42,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _initialsFallback(),
+              )
+            : _initialsFallback(),
+      ),
+    );
+  }
+
+  Widget _initialsFallback() {
+    // Deterministic colour from coach ID, initials text, flag badge.
+    final hue = (coach.id.hashCode % 360).abs().toDouble();
+    final initials = coach.shortName
+        .split(' ')
+        .where((w) => w.isNotEmpty)
+        .map((w) => w[0])
+        .take(2)
+        .join()
+        .toUpperCase();
+    return Container(
+      width: 42,
+      height: 42,
+      color: HSLColor.fromAHSL(1, hue, 0.5, 0.3).toColor(),
       child: Center(
         child: Text(
-          flagEmoji,
-          style: const TextStyle(fontSize: 22),
+          initials,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
