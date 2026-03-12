@@ -32,6 +32,7 @@ import '../../game/tutorial/campaign_mission.dart';
 import '../../game/ui/game_hud.dart';
 import '../campaign/coach_overlay.dart';
 import '../campaign/mission_dialog.dart';
+import '../campaign/tutorial_overlay.dart';
 
 final _log = GameLog.instance;
 
@@ -222,6 +223,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   final GlobalKey<CoachOverlayState> _coachOverlayKey =
       GlobalKey<CoachOverlayState>();
 
+  /// Key for accessing the tutorial overlay during Mission 1.
+  final GlobalKey<TutorialOverlayState> _tutorialKey =
+      GlobalKey<TutorialOverlayState>();
+
+  /// Whether the interactive tutorial is active (clue hidden, controls
+  /// being introduced one by one). Only true for the first campaign mission.
+  bool _tutorialActive = false;
+
   /// Whether fuel-low coach tip has been triggered this session.
   bool _fuelLowTipFired = false;
   bool _isCheckingProximity = false;
@@ -254,6 +263,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         onGameReady: _onGameReady,
         onAltitudeChanged: _onAltitudeChanged,
         onError: _onGameError,
+        onWaypointSet: () => _tutorialKey.currentState?.onWaypointSet(),
         isChallenge: widget.challengeFriendName != null,
         fuelBoostMultiplier: widget.fuelBoostMultiplier,
         planeColorScheme: widget.planeColorScheme,
@@ -559,6 +569,22 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         preferredClueType: widget.preferredClueType,
       );
     }
+    // Campaign missions use a fixed seed derived from the mission ID so the
+    // country is identical every playthrough. This lets coach tips reference
+    // the specific target country. Per-round seed offsets use a large prime
+    // so multi-round missions get different but deterministic countries.
+    if (widget.campaignMission != null) {
+      final mission = widget.campaignMission!;
+      final baseSeed = mission.id.hashCode;
+      final roundSeed = baseSeed + (_currentRound - 1) * 7919;
+      return GameSession.seeded(
+        roundSeed,
+        allowedClueTypes: widget.enabledClueTypes,
+        preferredClueType: widget.preferredClueType,
+        maxDifficulty: mission.maxDifficulty,
+        targetCountryCodes: mission.targetCountryCodes,
+      );
+    }
     if (widget.region == GameRegion.world) {
       final seed = DateTime.now().microsecondsSinceEpoch ^
           _sessionSeedRandom.nextInt(1 << 31);
@@ -575,6 +601,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     );
   }
 
+  /// Called when the Mission 1 interactive tutorial finishes.
+  /// Shows the clue and triggers the normal firstClue coach tip.
+  void _onTutorialComplete() {
+    if (!mounted || _session == null) return;
+    setState(() {
+      _tutorialActive = false;
+      _currentClue = _session!.clue;
+    });
+    // Fire the firstClue coach tip now that the clue is visible.
+    Future<void>.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        _coachOverlayKey.currentState?.showTip('firstClue');
+        _coachOverlayKey.currentState?.startLostTimer();
+      }
+    });
+  }
+
   void _startNewGame() {
     _log.info('session', 'Starting round $_currentRound/${widget.totalRounds}');
     try {
@@ -586,7 +629,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       // Reset hint state for new round
       _hintTier = 0;
       _revealedCountry = null;
-      _currentClue = _session!.clue;
+
+      // For Mission 1 (first_flight), hide the clue until the interactive
+      // tutorial finishes walking the player through all controls.
+      _tutorialActive =
+          widget.campaignMission?.id == 'first_flight' && _currentRound == 1;
+      _currentClue = _tutorialActive ? null : _session!.clue;
 
       _log.info(
         'session',
@@ -668,7 +716,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       _startAutoHintTimer();
 
       // Fire coach tip for first clue (campaign missions only).
-      if (widget.campaignMission != null) {
+      // Skip this when the interactive tutorial is active — it will fire
+      // the firstClue tip after the tutorial completes.
+      if (widget.campaignMission != null && !_tutorialActive) {
         if (_currentRound == 1) {
           Future<void>.delayed(const Duration(seconds: 2), () {
             if (mounted) {
@@ -1774,6 +1824,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                     : () {
                         _game.plane.toggleAltitude();
                         AudioManager.instance.playSfx(SfxType.altitudeChange);
+                        _tutorialKey.currentState?.onAltitudeToggled();
                       },
                 onExit: _requestExit,
                 onSettings: () => showSettingsSheet(context),
@@ -1782,6 +1833,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                   setState(() {
                     _game.setFlightSpeed(speed);
                   });
+                  _tutorialKey.currentState?.onSpeedChanged();
                 },
                 onHint: _hintTier < 4 ? _useHint : null,
                 hintTier: _hintTier,
@@ -1806,7 +1858,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 bottom: MediaQuery.of(context).padding.bottom + 80,
                 child: _TurnButton(
                   icon: Icons.turn_left,
-                  onPressStart: () => _game.setButtonTurn(-1),
+                  onPressStart: () {
+                    _game.setButtonTurn(-1);
+                    _tutorialKey.currentState?.onTurnPressed();
+                  },
                   onPressEnd: () => _game.releaseButtonTurn(),
                 ),
               ),
@@ -1815,7 +1870,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 bottom: MediaQuery.of(context).padding.bottom + 80,
                 child: _TurnButton(
                   icon: Icons.turn_right,
-                  onPressStart: () => _game.setButtonTurn(1),
+                  onPressStart: () {
+                    _game.setButtonTurn(1);
+                    _tutorialKey.currentState?.onTurnPressed();
+                  },
                   onPressEnd: () => _game.releaseButtonTurn(),
                 ),
               ),
@@ -1826,6 +1884,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               CoachOverlay(
                 key: _coachOverlayKey,
                 mission: widget.campaignMission!,
+              ),
+
+            // Interactive tutorial overlay for Mission 1
+            if (_tutorialActive && _gameReady)
+              TutorialOverlay(
+                key: _tutorialKey,
+                mission: widget.campaignMission!,
+                onComplete: _onTutorialComplete,
               ),
 
             // Loading overlay

@@ -51,6 +51,7 @@ class FlitGame extends FlameGame
     this.onGameReady,
     this.onAltitudeChanged,
     this.onError,
+    this.onWaypointSet,
     this.fuelBoostMultiplier = 1.0,
     this.isChallenge = false,
     this.planeColorScheme,
@@ -78,6 +79,9 @@ class FlitGame extends FlameGame
 
   final VoidCallback? onGameReady;
   final void Function(bool isHigh)? onAltitudeChanged;
+
+  /// Called when the player taps the globe to set a waypoint.
+  final VoidCallback? onWaypointSet;
 
   /// Called when the game loop hits an unrecoverable error.
   final void Function(Object error, StackTrace? stack)? onError;
@@ -1513,6 +1517,7 @@ class FlitGame extends FlameGame
     if (latLng != null) {
       _waymarker = latLng;
       _waymarkerAge = 0.0; // Reset ramp-up timer for smooth turn onset
+      onWaypointSet?.call();
       _log.info(
         'game',
         'Waymarker set',
