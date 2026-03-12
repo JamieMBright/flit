@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/tutorial/campaign_mission.dart';
+import '../../game/tutorial/coach.dart';
 
 /// Aviation-themed tap-to-continue labels for the tutorial.
 const _continueLabels = [
@@ -77,6 +78,10 @@ class TutorialOverlayState extends State<TutorialOverlay>
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnim;
 
+  static final _rng = Random();
+  String _continueLabel =
+      _continueLabels[Random().nextInt(_continueLabels.length)];
+
   /// Whether the tutorial is still active (clue should be hidden).
   bool get isActive => _phase != TutorialPhase.complete;
 
@@ -137,9 +142,17 @@ class TutorialOverlayState extends State<TutorialOverlay>
   void _onTap() {
     switch (_phase) {
       case TutorialPhase.welcome:
-        setState(() => _phase = TutorialPhase.tryTurning);
+        setState(() {
+          _phase = TutorialPhase.tryTurning;
+          _continueLabel =
+              _continueLabels[_rng.nextInt(_continueLabels.length)];
+        });
       case TutorialPhase.waypointSet:
-        setState(() => _phase = TutorialPhase.trySpeed);
+        setState(() {
+          _phase = TutorialPhase.trySpeed;
+          _continueLabel =
+              _continueLabels[_rng.nextInt(_continueLabels.length)];
+        });
       case TutorialPhase.ready:
         _finishTutorial();
       // For action phases, tapping does nothing — player must use the control.
@@ -225,49 +238,55 @@ class TutorialOverlayState extends State<TutorialOverlay>
 
     return FadeTransition(
       opacity: _fadeAnim,
-      child: GestureDetector(
-        behavior: _showOverlay
-            ? HitTestBehavior.translucent
-            : HitTestBehavior.deferToChild,
-        onTap: _onTap,
-        child: Stack(
-          children: [
-            // Dark overlay with spotlight cutout (only during active phases).
-            if (_showOverlay)
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _SpotlightPainter(
-                    target: _target,
-                    screenSize: screenSize,
-                    safePadding: safePadding,
+      child: Stack(
+        children: [
+          // Dark overlay with spotlight cutout (only during active phases).
+          // During action phases the overlay ignores pointer events so the
+          // underlying controls (turn buttons, globe, etc.) receive touches.
+          // During tap phases (welcome, waypointSet, ready) the overlay
+          // captures taps to advance the tutorial.
+          if (_showOverlay)
+            Positioned.fill(
+              child: IgnorePointer(
+                ignoring: _isActionPhase,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _isTapPhase ? _onTap : null,
+                  child: CustomPaint(
+                    painter: _SpotlightPainter(
+                      target: _target,
+                      screenSize: screenSize,
+                      safePadding: safePadding,
+                    ),
                   ),
                 ),
               ),
-
-            // Coach avatar + speech bubble in top-right corner.
-            Positioned(
-              top: safePadding.top + 40,
-              right: 12,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Coach avatar
-                  _CoachAvatar(flagEmoji: coach.flagEmoji),
-                  const SizedBox(height: 4),
-                  // Speech bubble
-                  _CoachCard(
-                    coachName: coach.name,
-                    message: _message,
-                    showPulse: _isActionPhase,
-                    showContinueButton: _isTapPhase,
-                    onTap: _isTapPhase ? _onTap : null,
-                  ),
-                ],
-              ),
             ),
-          ],
-        ),
+
+          // Coach avatar + speech bubble in top-right corner.
+          Positioned(
+            top: safePadding.top + 40,
+            right: 12,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Coach avatar
+                _CoachAvatar(coach: coach),
+                const SizedBox(height: 4),
+                // Speech bubble
+                _CoachCard(
+                  coachName: coach.name,
+                  message: _message,
+                  showPulse: _isActionPhase,
+                  showContinueButton: _isTapPhase,
+                  continueLabel: _continueLabel,
+                  onTap: _isTapPhase ? _onTap : null,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -294,33 +313,71 @@ enum TutorialTarget {
 }
 
 /// Small circular coach avatar for the tutorial overlay.
+///
+/// Shows the coach's portrait image when available, falling back to styled
+/// initials with a flag badge.
 class _CoachAvatar extends StatelessWidget {
-  const _CoachAvatar({required this.flagEmoji});
+  const _CoachAvatar({required this.coach});
 
-  final String flagEmoji;
+  final Coach coach;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 42,
-      height: 42,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: FlitColors.cardBackground,
-        border: Border.all(
-          color: FlitColors.accent.withValues(alpha: 0.6),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    const size = 42.0;
+    final decoration = BoxDecoration(
+      shape: BoxShape.circle,
+      color: FlitColors.cardBackground,
+      border: Border.all(
+        color: FlitColors.accent.withValues(alpha: 0.6),
+        width: 2,
       ),
-      child: Center(
-        child: Text(flagEmoji, style: const TextStyle(fontSize: 22)),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.4),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    );
+
+    if (coach.imageAsset != null) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: decoration,
+        child: ClipOval(
+          child: Image.asset(
+            coach.imageAsset!,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _initialsFallback(size),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: decoration,
+      child: _initialsFallback(size),
+    );
+  }
+
+  Widget _initialsFallback(double size) {
+    final parts = coach.name.split(' ');
+    final initials = parts.length >= 2
+        ? '${parts.first[0]}${parts.last[0]}'
+        : parts.first.substring(0, 2);
+    return Center(
+      child: Text(
+        initials.toUpperCase(),
+        style: TextStyle(
+          color: FlitColors.accent,
+          fontSize: size * 0.35,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
   }
@@ -328,21 +385,21 @@ class _CoachAvatar extends StatelessWidget {
 
 /// Speech bubble coach message card used by the tutorial overlay.
 class _CoachCard extends StatelessWidget {
-  _CoachCard({
+  const _CoachCard({
     required this.coachName,
     required this.message,
+    required this.continueLabel,
     this.showPulse = false,
     this.showContinueButton = false,
     this.onTap,
-  }) : _continueLabel =
-            _continueLabels[Random().nextInt(_continueLabels.length)];
+  });
 
   final String coachName;
   final String message;
+  final String continueLabel;
   final bool showPulse;
   final bool showContinueButton;
   final VoidCallback? onTap;
-  final String _continueLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -426,7 +483,7 @@ class _CoachCard extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          _continueLabel,
+                          continueLabel,
                           style: const TextStyle(
                             color: FlitColors.accent,
                             fontSize: 12,
