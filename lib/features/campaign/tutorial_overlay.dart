@@ -109,12 +109,38 @@ class TutorialOverlayState extends State<TutorialOverlay>
     super.dispose();
   }
 
+  /// Minimum breathing room between the player performing an action and the
+  /// next tutorial tip appearing, so they can enjoy flying for a moment.
+  static const _tipDelay = Duration(seconds: 5);
+
+  /// Whether a delayed phase transition is pending — prevents double-firing
+  /// if the player triggers the same action multiple times.
+  bool _advancing = false;
+
+  /// Advance to [next] after [_tipDelay], fading the current tip out first
+  /// and then fading the new one in.
+  void _advanceAfterDelay(TutorialPhase next) {
+    if (_advancing) return;
+    _advancing = true;
+
+    // Immediately fade out the current coach card so the player can fly
+    // unobstructed during the delay.
+    _fadeController.reverse();
+
+    Future.delayed(_tipDelay, () {
+      if (!mounted) return;
+      _advancing = false;
+      setState(() => _phase = next);
+      _fadeController.forward();
+    });
+  }
+
   // ─── Callbacks from PlayScreen when the player performs actions ──────
 
   /// Called when the player presses a turn button.
   void onTurnPressed() {
     if (_phase == TutorialPhase.tryTurning) {
-      setState(() => _phase = TutorialPhase.tryWaypoint);
+      _advanceAfterDelay(TutorialPhase.tryWaypoint);
     }
   }
 
@@ -128,7 +154,7 @@ class TutorialOverlayState extends State<TutorialOverlay>
   /// Called when the player changes speed.
   void onSpeedChanged() {
     if (_phase == TutorialPhase.trySpeed) {
-      setState(() => _phase = TutorialPhase.tryAltitude);
+      _advanceAfterDelay(TutorialPhase.tryAltitude);
     }
   }
 
