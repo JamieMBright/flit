@@ -1,14 +1,26 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/tutorial/campaign_mission.dart';
 
+/// Aviation-themed dismiss button labels. A random one is picked each time.
+const _dismissLabels = [
+  'Roger!',
+  'Affirmative!',
+  'Copy that!',
+  'Wilco!',
+  'Understood!',
+  '10-4!',
+];
+
 /// Semi-transparent overlay that shows coach tips during campaign missions.
 ///
-/// Place this in a Stack on top of the game view. Call [showTip] when a
-/// trigger event fires. Tips auto-dismiss after a delay or on user tap.
+/// The coach's avatar sits in the top-right corner of the screen. When a tip
+/// is active, a speech bubble appears below the avatar with an aviation-themed
+/// dismiss button. Tips auto-dismiss after a delay or when the button is tapped.
 ///
 /// Also supports time-based "lost" detection: if no correct answer is given
 /// within a configurable interval, the coach proactively offers help.
@@ -24,6 +36,7 @@ class CoachOverlay extends StatefulWidget {
 class CoachOverlayState extends State<CoachOverlay>
     with SingleTickerProviderStateMixin {
   String? _currentMessage;
+  String _dismissLabel = _dismissLabels[0];
   bool _visible = false;
   final Set<String> _shownTriggers = {};
 
@@ -39,6 +52,8 @@ class CoachOverlayState extends State<CoachOverlay>
   /// Number of "lost" hints shown this session (caps at 3 to avoid nagging).
   int _lostHintCount = 0;
   static const _maxLostHints = 3;
+
+  static final _rng = Random();
 
   @override
   void initState() {
@@ -128,12 +143,13 @@ class CoachOverlayState extends State<CoachOverlay>
   void _showMessage(String message) {
     setState(() {
       _currentMessage = message;
+      _dismissLabel = _dismissLabels[_rng.nextInt(_dismissLabels.length)];
       _visible = true;
     });
     _animController.forward(from: 0);
 
-    // Auto-dismiss after 6 seconds.
-    Future.delayed(const Duration(seconds: 6), () {
+    // Auto-dismiss after 8 seconds (slightly longer to give time to read).
+    Future.delayed(const Duration(seconds: 8), () {
       if (mounted && _visible && _currentMessage == message) {
         _dismiss();
       }
@@ -153,109 +169,227 @@ class CoachOverlayState extends State<CoachOverlay>
 
   @override
   Widget build(BuildContext context) {
-    if (!_visible || _currentMessage == null) {
-      return const SizedBox.shrink();
-    }
-
     final coach = widget.mission.coach;
+    final safePadding = MediaQuery.of(context).padding;
 
+    // Always show the coach avatar in the top-right. Speech bubble appears
+    // below it only when a tip is active.
     return Positioned(
-      left: 16,
-      right: 16,
-      bottom: 100,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 1),
-          end: Offset.zero,
-        ).animate(_slideAnim),
-        child: GestureDetector(
-          onTap: _dismiss,
-          child: Container(
-            padding: const EdgeInsets.all(14),
+      top: safePadding.top + 40,
+      right: 12,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Coach avatar — always visible during campaign
+          _CoachAvatar(
+            flagEmoji: coach.flagEmoji,
+            name: coach.shortName,
+          ),
+
+          // Speech bubble — slides in when a tip is active
+          if (_visible && _currentMessage != null)
+            SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, -0.3),
+                end: Offset.zero,
+              ).animate(_slideAnim),
+              child: FadeTransition(
+                opacity: _slideAnim,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: _SpeechBubble(
+                    coachName: coach.name,
+                    message: _currentMessage!,
+                    dismissLabel: _dismissLabel,
+                    onDismiss: _dismiss,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Small circular coach avatar shown in the top-right corner.
+class _CoachAvatar extends StatelessWidget {
+  const _CoachAvatar({required this.flagEmoji, required this.name});
+
+  final String flagEmoji;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: FlitColors.cardBackground,
+        border: Border.all(
+          color: FlitColors.accent.withValues(alpha: 0.6),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          flagEmoji,
+          style: const TextStyle(fontSize: 22),
+        ),
+      ),
+    );
+  }
+}
+
+/// Speech bubble widget with a small tail pointing up-right toward the avatar.
+class _SpeechBubble extends StatelessWidget {
+  const _SpeechBubble({
+    required this.coachName,
+    required this.message,
+    required this.dismissLabel,
+    required this.onDismiss,
+  });
+
+  final String coachName;
+  final String message;
+  final String dismissLabel;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    // Constrain width so it doesn't stretch the full screen on tablets.
+    final screenWidth = MediaQuery.of(context).size.width;
+    final maxWidth = (screenWidth * 0.7).clamp(200.0, 320.0);
+
+    return SizedBox(
+      width: maxWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Tail triangle pointing up toward the avatar
+          Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: CustomPaint(
+              size: const Size(14, 8),
+              painter: _BubbleTailPainter(),
+            ),
+          ),
+          // Bubble body
+          Container(
+            width: maxWidth,
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
             decoration: BoxDecoration(
               color: FlitColors.cardBackground.withValues(alpha: 0.95),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: FlitColors.accent.withValues(alpha: 0.3),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
+                  color: Colors.black.withValues(alpha: 0.35),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
-            child: Row(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Coach avatar
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: FlitColors.accent.withValues(alpha: 0.2),
-                  ),
-                  child: Center(
-                    child: Text(
-                      coach.flagEmoji,
-                      style: const TextStyle(fontSize: 20),
-                    ),
+                // Coach name
+                Text(
+                  coachName,
+                  style: const TextStyle(
+                    color: FlitColors.accent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(width: 10),
-                // Message
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        coach.name,
+                const SizedBox(height: 4),
+                // Message text
+                Text(
+                  message,
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 13,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Aviation-themed dismiss button
+                Center(
+                  child: GestureDetector(
+                    onTap: onDismiss,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: FlitColors.accent.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: FlitColors.accent.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Text(
+                        dismissLabel,
                         style: const TextStyle(
                           color: FlitColors.accent,
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        _currentMessage!,
-                        style: const TextStyle(
-                          color: FlitColors.textPrimary,
-                          fontSize: 13,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Dismiss button — tick in circle
-                GestureDetector(
-                  onTap: _dismiss,
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: FlitColors.textMuted.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      size: 16,
-                      color: FlitColors.textMuted,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
+}
+
+/// Paints the small triangular tail that connects the speech bubble to the
+/// coach avatar above.
+class _BubbleTailPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = FlitColors.cardBackground.withValues(alpha: 0.95)
+      ..style = PaintingStyle.fill;
+
+    final path = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(size.width / 2, 0)
+      ..lineTo(size.width, size.height)
+      ..close();
+    canvas.drawPath(path, paint);
+
+    // Border on the tail edges (not the bottom, which merges with the bubble).
+    final borderPaint = Paint()
+      ..color = FlitColors.accent.withValues(alpha: 0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    final borderPath = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(size.width / 2, 0)
+      ..lineTo(size.width, size.height);
+    canvas.drawPath(borderPath, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -1,7 +1,19 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/tutorial/campaign_mission.dart';
+
+/// Aviation-themed tap-to-continue labels for the tutorial.
+const _continueLabels = [
+  'Roger!',
+  'Affirmative!',
+  'Copy that!',
+  'Wilco!',
+  'Understood!',
+  '10-4!',
+];
 
 /// Tutorial phases for Mission 1's interactive control introduction.
 ///
@@ -161,7 +173,7 @@ class TutorialOverlayState extends State<TutorialOverlay>
     switch (_phase) {
       case TutorialPhase.welcome:
         return 'Welcome aboard, cadet! I\'m ${coach.name}. Before we fly, '
-            'let me show you the controls. Tap to begin.';
+            'let me show you the controls.';
       case TutorialPhase.tryTurning:
         return 'See the arrows at the bottom corners? Hold one to turn '
             'your plane left or right. Try it now!';
@@ -170,7 +182,7 @@ class TutorialOverlayState extends State<TutorialOverlay>
             'Your plane will steer towards it automatically.';
       case TutorialPhase.waypointSet:
         return 'The plane is heading to your waypoint. You can set a new '
-            'one any time by tapping the globe. Tap to continue.';
+            'one any time by tapping the globe.';
       case TutorialPhase.trySpeed:
         return 'Now try the speed controls — tap SLOW, MED, or FAST to '
             'change how quickly you fly.';
@@ -232,16 +244,26 @@ class TutorialOverlayState extends State<TutorialOverlay>
                 ),
               ),
 
-            // Coach message card at bottom.
+            // Coach avatar + speech bubble in top-right corner.
             Positioned(
-              left: 16,
-              right: 16,
-              bottom: safePadding.bottom + 16,
-              child: _CoachCard(
-                coachName: coach.name,
-                flagEmoji: coach.flagEmoji,
-                message: _message,
-                showPulse: _isActionPhase,
+              top: safePadding.top + 40,
+              right: 12,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Coach avatar
+                  _CoachAvatar(flagEmoji: coach.flagEmoji),
+                  const SizedBox(height: 4),
+                  // Speech bubble
+                  _CoachCard(
+                    coachName: coach.name,
+                    message: _message,
+                    showPulse: _isActionPhase,
+                    showContinueButton: _isTapPhase,
+                    onTap: _isTapPhase ? _onTap : null,
+                  ),
+                ],
               ),
             ),
           ],
@@ -255,6 +277,12 @@ class TutorialOverlayState extends State<TutorialOverlay>
       _phase == TutorialPhase.tryWaypoint ||
       _phase == TutorialPhase.trySpeed ||
       _phase == TutorialPhase.tryAltitude;
+
+  /// Whether the current phase advances on a simple tap (not a control action).
+  bool get _isTapPhase =>
+      _phase == TutorialPhase.welcome ||
+      _phase == TutorialPhase.waypointSet ||
+      _phase == TutorialPhase.ready;
 }
 
 /// HUD element regions for spotlight positioning.
@@ -265,85 +293,187 @@ enum TutorialTarget {
   altitudeToggle,
 }
 
-/// Coach message card used by the tutorial overlay.
-class _CoachCard extends StatelessWidget {
-  const _CoachCard({
-    required this.coachName,
-    required this.flagEmoji,
-    required this.message,
-    this.showPulse = false,
-  });
+/// Small circular coach avatar for the tutorial overlay.
+class _CoachAvatar extends StatelessWidget {
+  const _CoachAvatar({required this.flagEmoji});
 
-  final String coachName;
   final String flagEmoji;
-  final String message;
-  final bool showPulse;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      width: 42,
+      height: 42,
       decoration: BoxDecoration(
-        color: FlitColors.cardBackground.withValues(alpha: 0.97),
-        borderRadius: BorderRadius.circular(14),
+        shape: BoxShape.circle,
+        color: FlitColors.cardBackground,
         border: Border.all(
-          color: FlitColors.accent.withValues(alpha: 0.4),
+          color: FlitColors.accent.withValues(alpha: 0.6),
+          width: 2,
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
+      child: Center(
+        child: Text(flagEmoji, style: const TextStyle(fontSize: 22)),
+      ),
+    );
+  }
+}
+
+/// Speech bubble coach message card used by the tutorial overlay.
+class _CoachCard extends StatelessWidget {
+  _CoachCard({
+    required this.coachName,
+    required this.message,
+    this.showPulse = false,
+    this.showContinueButton = false,
+    this.onTap,
+  }) : _continueLabel =
+            _continueLabels[Random().nextInt(_continueLabels.length)];
+
+  final String coachName;
+  final String message;
+  final bool showPulse;
+  final bool showContinueButton;
+  final VoidCallback? onTap;
+  final String _continueLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final maxWidth = (screenWidth * 0.7).clamp(200.0, 320.0);
+
+    return SizedBox(
+      width: maxWidth,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: FlitColors.accent.withValues(alpha: 0.2),
-                ),
-                child: Center(
-                  child: Text(flagEmoji, style: const TextStyle(fontSize: 18)),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                coachName,
-                style: const TextStyle(
-                  color: FlitColors.accent,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            style: const TextStyle(
-              color: FlitColors.textPrimary,
-              fontSize: 13,
-              height: 1.35,
+          // Tail pointing up toward the avatar
+          Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: CustomPaint(
+              size: const Size(14, 8),
+              painter: _BubbleTailPainter(),
             ),
           ),
-          if (showPulse) ...[
-            const SizedBox(height: 6),
-            Center(
-              child: _PulsingHint(),
+          // Bubble body
+          Container(
+            width: maxWidth,
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+            decoration: BoxDecoration(
+              color: FlitColors.cardBackground.withValues(alpha: 0.97),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: FlitColors.accent.withValues(alpha: 0.4),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Coach name
+                Text(
+                  coachName,
+                  style: const TextStyle(
+                    color: FlitColors.accent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // Message text
+                Text(
+                  message,
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 13,
+                    height: 1.35,
+                  ),
+                ),
+                if (showPulse) ...[
+                  const SizedBox(height: 6),
+                  Center(child: _PulsingHint()),
+                ],
+                if (showContinueButton && onTap != null) ...[
+                  const SizedBox(height: 8),
+                  Center(
+                    child: GestureDetector(
+                      onTap: onTap,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: FlitColors.accent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: FlitColors.accent.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Text(
+                          _continueLabel,
+                          style: const TextStyle(
+                            color: FlitColors.accent,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
+}
+
+/// Paints the small triangular tail connecting the speech bubble to the avatar.
+class _BubbleTailPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = FlitColors.cardBackground.withValues(alpha: 0.97)
+      ..style = PaintingStyle.fill;
+
+    final path = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(size.width / 2, 0)
+      ..lineTo(size.width, size.height)
+      ..close();
+    canvas.drawPath(path, paint);
+
+    final borderPaint = Paint()
+      ..color = FlitColors.accent.withValues(alpha: 0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    final borderPath = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(size.width / 2, 0)
+      ..lineTo(size.width, size.height);
+    canvas.drawPath(borderPath, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 /// Pulsing "Try it!" indicator for action phases.

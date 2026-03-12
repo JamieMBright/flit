@@ -231,6 +231,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// being introduced one by one). Only true for the first campaign mission.
   bool _tutorialActive = false;
 
+  /// Brief grace period after the clue is first revealed — prevents
+  /// instant-solve when the player spawns on top of the target country.
+  bool _clueGracePeriod = false;
+
   /// Whether fuel-low coach tip has been triggered this session.
   bool _fuelLowTipFired = false;
   bool _isCheckingProximity = false;
@@ -605,13 +609,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// Shows the clue and triggers the normal firstClue coach tip.
   void _onTutorialComplete() {
     if (!mounted || _session == null) return;
+    // Brief grace period so the player doesn't instantly solve the clue
+    // if they spawned on top of the target country.
+    _clueGracePeriod = true;
     setState(() {
       _tutorialActive = false;
       _currentClue = _session!.clue;
     });
     // Fire the firstClue coach tip now that the clue is visible.
-    Future<void>.delayed(const Duration(seconds: 1), () {
+    Future<void>.delayed(const Duration(seconds: 3), () {
       if (mounted) {
+        _clueGracePeriod = false;
         _coachOverlayKey.currentState?.showTip('firstClue');
         _coachOverlayKey.currentState?.startLostTimer();
       }
@@ -760,6 +768,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   Future<void> _checkProximity() async {
     if (_isCheckingProximity) return;
     if (_session == null || _session!.isCompleted) return;
+    // Don't auto-complete while the tutorial is active or during the
+    // grace period right after clue reveal (prevents instant-solve when
+    // the player spawns on top of the target country).
+    if (_tutorialActive || _clueGracePeriod) return;
     _isCheckingProximity = true;
 
     try {
