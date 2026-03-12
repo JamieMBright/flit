@@ -30,6 +30,7 @@ import '../../game/map/region.dart';
 import '../../game/session/game_session.dart';
 import '../../game/tutorial/campaign_mission.dart';
 import '../../game/ui/game_hud.dart';
+import '../../game/ui/ink_burst_overlay.dart';
 import '../campaign/coach_overlay.dart';
 import '../campaign/mission_dialog.dart';
 import '../campaign/tutorial_overlay.dart';
@@ -226,6 +227,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// Key for accessing the tutorial overlay during Mission 1.
   final GlobalKey<TutorialOverlayState> _tutorialKey =
       GlobalKey<TutorialOverlayState>();
+
+  /// Key for triggering the ink-burst success animation.
+  final GlobalKey<InkBurstOverlayState> _inkBurstKey =
+      GlobalKey<InkBurstOverlayState>();
 
   /// Whether the interactive tutorial is active (clue hidden, controls
   /// being introduced one by one). Only true for the first campaign mission.
@@ -910,6 +915,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       }
     }
 
+    // Fire ink-burst success animation from the clue card area.
+    final mq = MediaQuery.of(context);
+    _inkBurstKey.currentState?.trigger(
+      Offset(mq.size.width / 2, mq.padding.top + 56),
+    );
+
     setState(() {
       _currentRound++;
     });
@@ -1010,6 +1021,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     }
     _cumulativeTime += _elapsed;
     AudioManager.instance.playSfx(SfxType.landingSuccess);
+
+    // Fire ink-burst success animation from the clue card area.
+    final mq = MediaQuery.of(context);
+    _inkBurstKey.currentState?.trigger(
+      Offset(mq.size.width / 2, mq.padding.top + 56),
+    );
 
     // Record final round result for summary.
     if (_session != null) {
@@ -1326,7 +1343,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       context: context,
       builder: (dialogContext) => Dialog(
         backgroundColor: FlitColors.cardBackground,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -1444,11 +1463,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   Future<void> _recordAbort() async {
     _timer?.cancel();
     _autoHintTimer?.cancel();
-    _session?.complete(
-      hintsUsed: 4,
-      fuelFraction: 0.0,
-      useTimeScoring: true,
-    );
+    _session?.complete(hintsUsed: 4, fuelFraction: 0.0, useTimeScoring: true);
     _cumulativeTime += _elapsed;
 
     // Record the current in-progress round as a failed round.
@@ -1861,6 +1876,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 maxFuel: _game.maxFuel,
                 onSkipClue: widget.isFreeFlight ? _skipClue : null,
               ),
+
+            // Ink-burst success animation overlay
+            InkBurstOverlay(key: _inkBurstKey),
 
             // Mobile turn buttons (L/R) — positioned at bottom corners.
             // Use GestureDetector for press/release to get progressive turning.
