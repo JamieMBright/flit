@@ -566,6 +566,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         seed,
         allowedClueTypes: widget.enabledClueTypes,
         preferredClueType: widget.preferredClueType,
+        maxDifficulty: widget.campaignMission?.maxDifficulty,
+        targetCountryCodes: widget.campaignMission?.targetCountryCodes,
       );
     }
     return GameSession.random(

@@ -274,16 +274,44 @@ class GameSession {
   /// Uses a deterministic [Random] so all players with the same seed get the
   /// same country and start position. Supports the same clue-type filtering
   /// as [GameSession.random].
+  ///
+  /// When [maxDifficulty] is provided (e.g. from a campaign mission), the
+  /// country pool is filtered to only include countries at or below that
+  /// difficulty rating. When [targetCountryCodes] is provided, the pool is
+  /// restricted to those specific country codes.
   factory GameSession.seeded(
     int seed, {
     String? preferredClueType,
     Set<String>? allowedClueTypes,
+    double? maxDifficulty,
+    List<String>? targetCountryCodes,
   }) {
     final random = Random(seed);
 
-    // Pick country based on seed (from playable pool, excluding obscure territories)
-    final countryIndex = random.nextInt(CountryData.playableCountries.length);
-    final country = CountryData.playableCountries[countryIndex];
+    // Build country pool, optionally filtered by difficulty or target codes.
+    List<CountryShape> pool;
+    if (targetCountryCodes != null && targetCountryCodes.isNotEmpty) {
+      final codeSet = targetCountryCodes.toSet();
+      pool = CountryData.playableCountries
+          .where((c) => codeSet.contains(c.code))
+          .toList();
+    } else if (maxDifficulty != null) {
+      pool = CountryData.playableCountries
+          .where((c) => countryDifficultyRating(c.code) <= maxDifficulty)
+          .toList();
+    } else {
+      pool = CountryData.playableCountries;
+    }
+
+    // Fallback to full pool if filtering yields nothing (shouldn't happen
+    // with valid data, but avoids a crash).
+    if (pool.isEmpty) {
+      pool = CountryData.playableCountries;
+    }
+
+    // Pick country based on seed
+    final countryIndex = random.nextInt(pool.length);
+    final country = pool[countryIndex];
 
     // Use Clue.random() with the seeded Random so clue type selection is
     // deterministic — both challenge players get the same clue type.
