@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../game/tutorial/campaign_mission.dart';
+import '../../game/tutorial/coach.dart';
 
 /// Aviation-themed dismiss button labels. A random one is picked each time.
 const _dismissLabels = [
@@ -182,10 +183,7 @@ class CoachOverlayState extends State<CoachOverlay>
         mainAxisSize: MainAxisSize.min,
         children: [
           // Coach avatar — always visible during campaign
-          _CoachAvatar(
-            flagEmoji: coach.flagEmoji,
-            name: coach.shortName,
-          ),
+          _CoachAvatar(coach: coach),
 
           // Speech bubble — slides in when a tip is active
           if (_visible && _currentMessage != null)
@@ -214,36 +212,70 @@ class CoachOverlayState extends State<CoachOverlay>
 }
 
 /// Small circular coach avatar shown in the top-right corner.
+///
+/// Shows the coach's portrait image when available, falling back to styled
+/// initials with a flag badge.
 class _CoachAvatar extends StatelessWidget {
-  const _CoachAvatar({required this.flagEmoji, required this.name});
+  const _CoachAvatar({required this.coach});
 
-  final String flagEmoji;
-  final String name;
+  final Coach coach;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 42,
-      height: 42,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: FlitColors.cardBackground,
-        border: Border.all(
-          color: FlitColors.accent.withValues(alpha: 0.6),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    const size = 42.0;
+    final decoration = BoxDecoration(
+      shape: BoxShape.circle,
+      color: FlitColors.cardBackground,
+      border: Border.all(
+        color: FlitColors.accent.withValues(alpha: 0.6),
+        width: 2,
       ),
-      child: Center(
-        child: Text(
-          flagEmoji,
-          style: const TextStyle(fontSize: 22),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.4),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    );
+
+    if (coach.imageAsset != null) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: decoration,
+        child: ClipOval(
+          child: Image.asset(
+            coach.imageAsset!,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _initialsFallback(size),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: decoration,
+      child: _initialsFallback(size),
+    );
+  }
+
+  Widget _initialsFallback(double size) {
+    final parts = coach.name.split(' ');
+    final initials = parts.length >= 2
+        ? '${parts.first[0]}${parts.last[0]}'
+        : parts.first.substring(0, 2);
+    return Center(
+      child: Text(
+        initials.toUpperCase(),
+        style: TextStyle(
+          color: FlitColors.accent,
+          fontSize: size * 0.35,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
