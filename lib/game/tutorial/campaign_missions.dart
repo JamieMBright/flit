@@ -29,7 +29,7 @@ const List<CampaignMission> campaignMissions = [
     description:
         'This is your first sortie, cadet. I\'ll show you a country\'s '
         'neighbours — your job is to fly to the country they all share a '
-        'border with.',
+        'border with. We\'re heading to my homeland.',
     coach: coachJRDTata,
     allowedClues: {ClueType.borders},
     rounds: 1,
@@ -42,23 +42,30 @@ const List<CampaignMission> campaignMissions = [
       CoachTip(
         trigger: 'firstClue',
         message:
-            'This is your first clue — it shows the neighbouring countries. '
-            'Fly to the country they all border!',
+            'These are the neighbouring countries. Pakistan, China, Nepal, '
+            'Bhutan, Bangladesh, Myanmar — which great nation do they all '
+            'share a border with? This is my homeland. Fly there!',
       ),
       CoachTip(
         trigger: 'correctAnswer',
-        message: 'Excellent navigation! You found it.',
+        message:
+            'India! My beloved homeland. I made my first flight from Karachi '
+            'to Bombay in a tiny Puss Moth — and from that single flight, '
+            'an airline was born. Welcome to the land that taught me to dream.',
       ),
       CoachTip(
         trigger: 'wrongRegion',
         message:
-            'Not quite — look at the neighbours again and think about which '
-            'region of the world they share.',
+            'Not quite, cadet. Look at those neighbours — Pakistan, China, '
+            'Nepal. They surround one of the world\'s greatest nations. '
+            'Head south-east towards Asia.',
       ),
       CoachTip(
         trigger: 'lost',
-        message: 'Take your time. Read each neighbour carefully — what region '
-            'of the world do they belong to? That will guide you.',
+        message:
+            'When I planned my first airmail route, I studied every border '
+            'and every neighbour. Six countries surround this one — and it\'s '
+            'the second most populous nation on Earth. You know this.',
       ),
     ],
   ),
