@@ -43,8 +43,11 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   bool _isHighAltitude = true;
 
   /// Continuous altitude value (0.0 = low, 1.0 = high).
-  /// Used when altitude slider is enabled for gradual altitude control.
+  /// Lerps smoothly toward [_targetAltitude] for fluid descent transitions.
   double _continuousAltitude = 1.0;
+
+  /// Target altitude for smooth lerping (0.0 = low, 1.0 = high).
+  double _targetAltitude = 1.0;
 
   /// Visual heading set by the game (radians)
   double visualHeading = 0;
@@ -151,9 +154,19 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
     final bankRate = baseBankRate * bankSpeedScale;
     _currentBank += (targetBank - _currentBank) * min(1.0, dt * bankRate);
 
-    // Smooth altitude transition using continuous altitude
+    // Smooth altitude: lerp continuous altitude toward target for fluid descent.
+    // dt * 2.5 gives a smooth ~1s transition that feels responsive but not jerky.
+    _continuousAltitude +=
+        (_targetAltitude - _continuousAltitude) * min(1.0, dt * 2.5);
+
+    // Snap when very close to avoid asymptotic crawl.
+    if ((_continuousAltitude - _targetAltitude).abs() < 0.005) {
+      _continuousAltitude = _targetAltitude;
+    }
+
+    // Plane visual altitude tracks continuous altitude.
     _altitudeTransition +=
-        (_continuousAltitude - _altitudeTransition) * min(1.0, dt * 3);
+        (_continuousAltitude - _altitudeTransition) * min(1.0, dt * 4);
 
     // Spin propeller
     _propAngle += dt * 20;
@@ -421,14 +434,14 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
 
   void toggleAltitude() {
     _isHighAltitude = !_isHighAltitude;
-    _continuousAltitude = _isHighAltitude ? 1.0 : 0.0;
+    _targetAltitude = _isHighAltitude ? 1.0 : 0.0;
     onAltitudeChanged(_isHighAltitude);
   }
 
   void setAltitude({required bool high}) {
     if (_isHighAltitude != high) {
       _isHighAltitude = high;
-      _continuousAltitude = high ? 1.0 : 0.0;
+      _targetAltitude = high ? 1.0 : 0.0;
       onAltitudeChanged(_isHighAltitude);
     }
   }
@@ -437,7 +450,8 @@ class PlaneComponent extends PositionComponent with HasGameRef<FlitGame> {
   /// Updates both continuous value and binary high/low state.
   /// Threshold at 0.5: < 0.5 = low altitude, >= 0.5 = high altitude.
   void setContinuousAltitude(double value) {
-    _continuousAltitude = value.clamp(0.0, 1.0);
+    _targetAltitude = value.clamp(0.0, 1.0);
+    _continuousAltitude = _targetAltitude;
     final newIsHigh = _continuousAltitude >= 0.5;
     if (_isHighAltitude != newIsHigh) {
       _isHighAltitude = newIsHigh;

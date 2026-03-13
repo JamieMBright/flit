@@ -26,20 +26,20 @@ enum TutorialPhase {
   /// Coach welcomes player. Tap to continue.
   welcome,
 
-  /// Spotlight on turn buttons. Waiting for player to press a turn button.
+  /// Spotlight on turn buttons. Player must turn several times.
   tryTurning,
 
-  /// Spotlight on globe. Waiting for player to tap the globe (waypoint).
+  /// Spotlight on globe. Player must set multiple waypoints.
   tryWaypoint,
 
-  /// Brief acknowledgement that waypoint was set. Tap to continue.
-  waypointSet,
-
-  /// Spotlight on speed controls. Waiting for player to change speed.
+  /// Spotlight on speed controls. Player must change speed several times.
   trySpeed,
 
-  /// Spotlight on altitude toggle. Waiting for player to toggle altitude.
+  /// Spotlight on altitude toggle. Player descends.
   tryAltitude,
+
+  /// After descending, encourage the player to ascend back up.
+  tryAscend,
 
   /// All controls explored. Clue is about to appear.
   ready,
@@ -81,6 +81,16 @@ class TutorialOverlayState extends State<TutorialOverlay>
   static final _rng = Random();
   String _continueLabel =
       _continueLabels[Random().nextInt(_continueLabels.length)];
+
+  /// Count-based progression trackers.
+  int _turnCount = 0;
+  int _waypointCount = 0;
+  int _speedChangeCount = 0;
+
+  /// Thresholds for progressing past each phase.
+  static const _turnThreshold = 3;
+  static const _waypointThreshold = 10;
+  static const _speedThreshold = 3;
 
   /// Whether the tutorial is still active (clue should be hidden).
   bool get isActive => _phase != TutorialPhase.complete;
@@ -140,27 +150,46 @@ class TutorialOverlayState extends State<TutorialOverlay>
   /// Called when the player presses a turn button.
   void onTurnPressed() {
     if (_phase == TutorialPhase.tryTurning) {
-      _advanceAfterDelay(TutorialPhase.tryWaypoint);
+      _turnCount++;
+      if (_turnCount >= _turnThreshold) {
+        _advanceAfterDelay(TutorialPhase.tryWaypoint);
+      } else {
+        setState(() {}); // Refresh message with updated count
+      }
     }
   }
 
   /// Called when the player taps the globe (sets a waypoint).
   void onWaypointSet() {
     if (_phase == TutorialPhase.tryWaypoint) {
-      setState(() => _phase = TutorialPhase.waypointSet);
+      _waypointCount++;
+      if (_waypointCount >= _waypointThreshold) {
+        _advanceAfterDelay(TutorialPhase.trySpeed);
+      } else {
+        setState(() {}); // Refresh message with encouragement
+      }
     }
   }
 
   /// Called when the player changes speed.
   void onSpeedChanged() {
     if (_phase == TutorialPhase.trySpeed) {
-      _advanceAfterDelay(TutorialPhase.tryAltitude);
+      _speedChangeCount++;
+      if (_speedChangeCount >= _speedThreshold) {
+        _advanceAfterDelay(TutorialPhase.tryAltitude);
+      } else {
+        setState(() {}); // Refresh message with updated count
+      }
     }
   }
 
-  /// Called when the player toggles altitude.
+  /// Called when the player toggles altitude (descend).
   void onAltitudeToggled() {
     if (_phase == TutorialPhase.tryAltitude) {
+      // Player descended — now encourage them to ascend.
+      _advanceAfterDelay(TutorialPhase.tryAscend);
+    } else if (_phase == TutorialPhase.tryAscend) {
+      // Player ascended back up — tutorial complete.
       _finishTutorial();
     }
   }
@@ -173,12 +202,6 @@ class TutorialOverlayState extends State<TutorialOverlay>
           _continueLabel =
               _continueLabels[_rng.nextInt(_continueLabels.length)];
         });
-      case TutorialPhase.waypointSet:
-        setState(() {
-          _phase = TutorialPhase.trySpeed;
-          _continueLabel =
-              _continueLabels[_rng.nextInt(_continueLabels.length)];
-        });
       case TutorialPhase.ready:
         _finishTutorial();
       // For action phases, tapping does nothing — player must use the control.
@@ -186,6 +209,7 @@ class TutorialOverlayState extends State<TutorialOverlay>
       case TutorialPhase.tryWaypoint:
       case TutorialPhase.trySpeed:
       case TutorialPhase.tryAltitude:
+      case TutorialPhase.tryAscend:
       case TutorialPhase.complete:
         break;
     }
@@ -214,20 +238,49 @@ class TutorialOverlayState extends State<TutorialOverlay>
         return 'Welcome aboard, cadet! I\'m ${coach.name}. Before we fly, '
             'let me show you the controls.';
       case TutorialPhase.tryTurning:
-        return 'See the arrows at the bottom corners? Hold one to turn '
-            'your plane left or right. Try it now!';
+        final remaining = _turnThreshold - _turnCount;
+        if (_turnCount == 0) {
+          return 'See the arrows at the bottom corners? Hold one to turn '
+              'your plane left or right. Try it a few times!';
+        }
+        return 'Nice turn! Keep going — '
+            '${remaining > 1 ? '$remaining more' : 'one more'} to go!';
       case TutorialPhase.tryWaypoint:
-        return 'Good! Now tap anywhere on the globe to set a waypoint. '
-            'Your plane will steer towards it automatically.';
-      case TutorialPhase.waypointSet:
-        return 'The plane is heading to your waypoint. You can set a new '
-            'one any time by tapping the globe.';
+        final remaining = _waypointThreshold - _waypointCount;
+        if (_waypointCount == 0) {
+          return 'Now tap anywhere on the globe to set a waypoint. '
+              'Your plane will steer towards it automatically. '
+              'Set $_waypointThreshold waypoints to get the feel!';
+        }
+        if (_waypointCount < 3) {
+          return 'Great waypoint! Keep setting more — '
+              '$remaining to go. Tap different spots on the globe!';
+        }
+        if (_waypointCount < 6) {
+          return 'You\'re getting the hang of it! '
+              '$remaining more waypoints — try different directions!';
+        }
+        if (_waypointCount < 9) {
+          return 'Almost there! Just $remaining more. '
+              'Try setting one far away!';
+        }
+        return 'One more waypoint and you\'ve got it!';
       case TutorialPhase.trySpeed:
-        return 'Now try the speed controls — tap SLOW, MED, or FAST to '
-            'change how quickly you fly.';
+        final remaining = _speedThreshold - _speedChangeCount;
+        if (_speedChangeCount == 0) {
+          return 'Now try the speed controls — tap SLOW, MED, or FAST '
+              'to change how quickly you fly. Try all of them!';
+        }
+        return 'Good! Try a different speed — '
+            '${remaining > 1 ? '$remaining more changes' : 'one more'} '
+            'to go!';
       case TutorialPhase.tryAltitude:
-        return 'Last one — tap the altitude button to switch between high '
-            'and low. Fly high to see more, descend low to land.';
+        return 'Now tap the altitude button to descend. '
+            'Fly low to see the map up close!';
+      case TutorialPhase.tryAscend:
+        return 'Nice view down here! Now tap altitude again to climb '
+            'back up. You\'ll want to be high up when searching for '
+            'countries — it gives you a better view of the globe!';
       case TutorialPhase.ready:
         return 'You\'re ready! Here comes your first clue...';
       case TutorialPhase.complete:
@@ -244,11 +297,11 @@ class TutorialOverlayState extends State<TutorialOverlay>
       case TutorialPhase.tryTurning:
         return TutorialTarget.turnButtons;
       case TutorialPhase.tryWaypoint:
-      case TutorialPhase.waypointSet:
         return TutorialTarget.globe;
       case TutorialPhase.trySpeed:
         return TutorialTarget.speedControls;
       case TutorialPhase.tryAltitude:
+      case TutorialPhase.tryAscend:
         return TutorialTarget.altitudeToggle;
     }
   }
@@ -325,13 +378,12 @@ class TutorialOverlayState extends State<TutorialOverlay>
       _phase == TutorialPhase.tryTurning ||
       _phase == TutorialPhase.tryWaypoint ||
       _phase == TutorialPhase.trySpeed ||
-      _phase == TutorialPhase.tryAltitude;
+      _phase == TutorialPhase.tryAltitude ||
+      _phase == TutorialPhase.tryAscend;
 
   /// Whether the current phase advances on a simple tap (not a control action).
   bool get _isTapPhase =>
-      _phase == TutorialPhase.welcome ||
-      _phase == TutorialPhase.waypointSet ||
-      _phase == TutorialPhase.ready;
+      _phase == TutorialPhase.welcome || _phase == TutorialPhase.ready;
 }
 
 /// HUD element regions for spotlight positioning.
