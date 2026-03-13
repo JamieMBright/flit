@@ -71,11 +71,15 @@ class CampaignMissionResult {
   final DateTime completedAt;
 
   /// Calculate stars from score (out of max possible ~10 000 per round x rounds).
+  ///
+  /// Thresholds are generous because tutorial missions involve exploring
+  /// controls for the first time — players shouldn't be penalised for
+  /// taking time to learn.
   static int calculateStars(int score, int rounds) {
     final maxScore = rounds * 10000;
     final ratio = score / maxScore;
-    if (ratio >= 0.8) return 3;
-    if (ratio >= 0.5) return 2;
+    if (ratio >= 0.5) return 3;
+    if (ratio >= 0.25) return 2;
     return 1;
   }
 

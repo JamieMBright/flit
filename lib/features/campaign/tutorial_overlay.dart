@@ -289,10 +289,11 @@ class TutorialOverlayState extends State<TutorialOverlay>
               ),
             ),
 
-          // Coach avatar + speech bubble in top-right corner.
+          // Coach avatar below compass + speech bubble centred on screen.
           Positioned(
-            top: safePadding.top + 40,
+            top: safePadding.top + 110,
             right: 12,
+            left: 12,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
@@ -300,14 +301,17 @@ class TutorialOverlayState extends State<TutorialOverlay>
                 // Coach avatar
                 _CoachAvatar(coach: coach),
                 const SizedBox(height: 4),
-                // Speech bubble
-                _CoachCard(
-                  coachName: coach.name,
-                  message: _message,
-                  showPulse: _isActionPhase,
-                  showContinueButton: _isTapPhase,
-                  continueLabel: _continueLabel,
-                  onTap: _isTapPhase ? _onTap : null,
+                // Speech bubble — centred
+                Align(
+                  alignment: Alignment.center,
+                  child: _CoachCard(
+                    coachName: coach.name,
+                    message: _message,
+                    showPulse: _isActionPhase,
+                    showContinueButton: _isTapPhase,
+                    continueLabel: _continueLabel,
+                    onTap: _isTapPhase ? _onTap : null,
+                  ),
                 ),
               ],
             ),
@@ -451,14 +455,14 @@ class _CoachCard extends StatelessWidget {
             width: maxWidth,
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
             decoration: BoxDecoration(
-              color: FlitColors.cardBackground.withValues(alpha: 0.97),
+              color: const Color(0xFFF5F0E8),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: FlitColors.accent.withValues(alpha: 0.4),
+                color: const Color(0xFFD4C9B8),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.4),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 16,
                   offset: const Offset(0, 4),
                 ),
@@ -472,7 +476,7 @@ class _CoachCard extends StatelessWidget {
                 Text(
                   coachName,
                   style: const TextStyle(
-                    color: FlitColors.accent,
+                    color: Color(0xFFC45E2C),
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
@@ -482,7 +486,7 @@ class _CoachCard extends StatelessWidget {
                 Text(
                   message,
                   style: const TextStyle(
-                    color: FlitColors.textPrimary,
+                    color: Color(0xFF2D2D2D),
                     fontSize: 13,
                     height: 1.35,
                   ),
@@ -534,7 +538,7 @@ class _BubbleTailPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = FlitColors.cardBackground.withValues(alpha: 0.97)
+      ..color = const Color(0xFFF5F0E8)
       ..style = PaintingStyle.fill;
 
     final path = Path()
@@ -545,7 +549,7 @@ class _BubbleTailPainter extends CustomPainter {
     canvas.drawPath(path, paint);
 
     final borderPaint = Paint()
-      ..color = FlitColors.accent.withValues(alpha: 0.4)
+      ..color = const Color(0xFFD4C9B8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
     final borderPath = Path()
@@ -681,11 +685,11 @@ class _SpotlightPainter extends CustomPainter {
         );
 
       case TutorialTarget.speedControls:
-        // Bottom row center: speed pills.
+        // Bottom row center: speed pills — centred between hint and altitude.
         return Rect.fromLTRB(
-          size.width * 0.28 - pad,
+          size.width * 0.25 - pad,
           bottom - 48 - pad,
-          size.width * 0.62 + pad,
+          size.width * 0.65 + pad,
           bottom + pad,
         );
 

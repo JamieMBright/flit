@@ -721,27 +721,27 @@ class _HintButtonState extends State<_HintButton>
 
   @override
   Widget build(BuildContext context) {
-    final String icon;
+    final IconData iconData;
     final String label;
     switch (widget.tier) {
       case 0:
-        icon = '💡';
+        iconData = Icons.lightbulb_outline;
         label = 'NEW CLUE';
         break;
       case 1:
-        icon = '🌍';
+        iconData = Icons.public;
         label = 'REVEAL';
         break;
       case 2:
-        icon = '🧭';
+        iconData = Icons.explore;
         label = 'WAYLINE';
         break;
       case 3:
-        icon = '📍';
+        iconData = Icons.near_me;
         label = 'NAVIGATE';
         break;
       default:
-        icon = '✓';
+        iconData = Icons.check;
         label = 'DONE';
         break;
     }
@@ -765,7 +765,7 @@ class _HintButtonState extends State<_HintButton>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(icon, style: const TextStyle(fontSize: 14)),
+                Icon(iconData, size: 16, color: FlitColors.gold),
                 const SizedBox(width: 6),
                 Text(
                   label,

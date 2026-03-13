@@ -58,6 +58,12 @@ class _DescentMapViewState extends State<DescentMapView> {
   bool _mapReady = false;
   double _widgetHeight = 800.0;
 
+  /// Throttle map updates — skip frames where position/zoom barely changed.
+  double _lastLat = double.nan;
+  double _lastLng = double.nan;
+  double _lastZoom = double.nan;
+  double _lastRotation = double.nan;
+
   /// Convert altitude transition (0.0–1.0) to flutter_map zoom level.
   /// Low altitude (0.0) → zoom 7 (regional overview)
   /// High altitude (1.0) → zoom 4 (continent-level)
@@ -106,9 +112,32 @@ class _DescentMapViewState extends State<DescentMapView> {
   @override
   void didUpdateWidget(DescentMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_mapReady) {
-      _mapController.move(_effectiveCenter(), _zoom);
-      _mapController.rotate(_rotation);
+    if (!_mapReady) return;
+
+    final center = _effectiveCenter();
+    final zoom = _zoom;
+    final rotation = _rotation;
+
+    // Only push camera updates when values changed meaningfully.
+    // This avoids hammering flutter_map with redundant moves every 16ms.
+    final latDelta = (center.latitude - _lastLat).abs();
+    final lngDelta = (center.longitude - _lastLng).abs();
+    final zoomDelta = (zoom - _lastZoom).abs();
+    final rotDelta = (rotation - _lastRotation).abs();
+
+    final needsMove =
+        latDelta > 0.0001 || lngDelta > 0.0001 || zoomDelta > 0.01;
+    final needsRotate = rotDelta > 0.1;
+
+    if (needsMove) {
+      _mapController.move(center, zoom);
+      _lastLat = center.latitude;
+      _lastLng = center.longitude;
+      _lastZoom = zoom;
+    }
+    if (needsRotate) {
+      _mapController.rotate(rotation);
+      _lastRotation = rotation;
     }
   }
 
@@ -131,14 +160,19 @@ class _DescentMapViewState extends State<DescentMapView> {
               ),
               onMapReady: () {
                 _mapReady = true;
+                _lastLat = center.latitude;
+                _lastLng = center.longitude;
+                _lastZoom = _zoom;
+                _lastRotation = _rotation;
               },
             ),
             children: [
-              // Map tiles (style selected in settings)
+              // Map tiles (style selected in settings) — capped at zoom 12
+              // to reduce tile requests and improve performance at descent.
               TileLayer(
                 urlTemplate: widget.tileUrl,
                 userAgentPackageName: 'com.jamiembright.flit',
-                maxZoom: 18,
+                maxZoom: 12,
                 subdomains: const ['a', 'b', 'c'],
                 // On web, the browser cache handles tile storage.
               ),

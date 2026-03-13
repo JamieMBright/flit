@@ -12,6 +12,8 @@ class Coach {
     required this.bio,
     required this.introduction,
     required this.greeting,
+    required this.farewell,
+    required this.nextCoachTeaser,
     this.imageAsset,
   });
 
@@ -39,6 +41,16 @@ class Coach {
 
   /// Congratulations line spoken when the player completes the mission.
   final String greeting;
+
+  /// Personal anecdote the coach shares before the game ends (2-3 sentences).
+  /// Starts with a memory referencing their real achievements, then
+  /// congratulates the player.
+  final String farewell;
+
+  /// Teaser for the next coach (1-2 sentences) mentioning the next coach by
+  /// name and hinting at what makes them remarkable. For the last coach,
+  /// acknowledges that all training is complete.
+  final String nextCoachTeaser;
 
   /// Optional asset path to a cartoonised portrait.
   /// Falls back to a styled initial circle when null.
@@ -82,6 +94,15 @@ const Coach coachJRDTata = Coach(
       'know your borders and neighbours. Let me teach you to navigate.',
   greeting:
       'You navigate with the confidence of an airline founder. Well done.',
+  farewell:
+      'This reminds me of that first airmail run — just me, a tiny Puss Moth, '
+      'and the vast patchwork of borders stretching below from Karachi to '
+      'Bombay. You have shown the same steady hand I had that day. '
+      'Congratulations, pilot — you have earned the skies.',
+  nextCoachTeaser:
+      'Your next instructor is Lotfia El Nadi — the remarkable Egyptian woman '
+      'who secretly enrolled in flight school and became the first female pilot '
+      'in Africa and the Arab world. She has some extraordinary stories to share.',
   imageAsset: 'assets/images/coaches/Jrd tata.PNG',
 );
 
@@ -100,6 +121,15 @@ const Coach coachLotfia = Coach(
       'world to earn her wings. Every flag tells the story of a nation\'s '
       'spirit. Let me teach you to read them.',
   greeting: 'You read those flags like poetry. I\'m proud of you.',
+  farewell:
+      'This reminds me of the day I finally received my pilot\'s licence in '
+      'Cairo — every flag on that airfield seemed to wave just for me, and '
+      'I understood that each one carried a whole world of meaning. You have '
+      'learned to read those worlds today. Congratulations, my friend.',
+  nextCoachTeaser:
+      'Next you will meet Alberto Santos-Dumont, the brilliant Brazilian who '
+      'flew his airship around the Eiffel Tower and made history over the '
+      'fields of Paris — he will teach you everything about capital cities.',
   imageAsset: 'assets/images/coaches/Lotfia el nadi.PNG',
 );
 
@@ -118,6 +148,15 @@ const Coach coachSantosDumont = Coach(
       'Eiffel Tower in an airship and landed near capitals across Europe. '
       'Knowing where you are is just as important as knowing how to fly.',
   greeting: 'Bravo! You know your capitals like a true aviator of the world.',
+  farewell:
+      'This reminds me of floating over Paris in my airship, gazing down at '
+      'the grand boulevards leading to the heart of the city — every capital '
+      'has that same pulse of power and culture when seen from above. You '
+      'found that pulse today, and I applaud you wholeheartedly.',
+  nextCoachTeaser:
+      'Your next guide is Sabiha Gökçen — the world\'s first female combat '
+      'pilot, who flew 22 missions for Turkey and logged over 8,000 hours. '
+      'She will teach you to combine many signals into one clear picture.',
   imageAsset: 'assets/images/coaches/Alberto Santos-Dumont.PNG',
 );
 
@@ -136,6 +175,14 @@ const Coach coachSabiha = Coach(
       'instinct all at once. I\'ll teach you to combine every signal into '
       'one clear picture.',
   greeting: 'You combined those clues like a true combat pilot. Exceptional.',
+  farewell: 'This reminds me of a combat mission over the Aegean — instruments '
+      'flickering, weather closing in, and only instinct and training to '
+      'guide me through. You showed that same composure today, reading every '
+      'signal without flinching. I am genuinely impressed.',
+  nextCoachTeaser:
+      'Jean Batten of New Zealand awaits you next — she flew solo from '
+      'England to New Zealand, 14,000 miles in a single-engine aircraft, '
+      'and she will challenge you to master fuel management like no one else.',
   imageAsset: 'assets/images/coaches/Sabiha Gokcen.PNG',
 );
 
@@ -155,6 +202,15 @@ const Coach coachJeanBatten = Coach(
       'discipline.',
   greeting: 'Efficient and precise. You\'d have made it across the Tasman with '
       'fuel to spare.',
+  farewell: 'This reminds me of crossing the Tasman Sea alone — the fuel gauge '
+      'ticking down with nothing but dark water in every direction, trusting '
+      'the numbers I had planned so carefully on the ground. You showed that '
+      'same trust and precision today. Congratulations on a beautifully '
+      'managed flight.',
+  nextCoachTeaser:
+      'Antoine de Saint-Exupéry is waiting for you — French aviator, mail '
+      'pilot across the Sahara, and author of The Little Prince. He has a '
+      'poet\'s eye for finding what is essential.',
   imageAsset: 'assets/images/coaches/Jean batten.PNG',
 );
 
@@ -173,6 +229,15 @@ const Coach coachSaintExupery = Coach(
       'invisible to the eye — but sometimes you need a hint to find it.',
   greeting: 'You found your way with grace. As I once wrote: "It is only with '
       'the heart that one can see rightly."',
+  farewell:
+      'This reminds me of a night over the Sahara, my engine quiet, stars '
+      'blazing overhead — I had no map that mattered, only the clues the '
+      'desert whispered to those willing to listen. You listened today, and '
+      'you found your way. That is all any pilot can ask.',
+  nextCoachTeaser:
+      'Jorge Chávez of Peru will be your next instructor — the first man to '
+      'fly over the Alps, who calculated every number to the decimal and '
+      'turned data into courage.',
   imageAsset: 'assets/images/coaches/Antoine de Saint-Exupery.PNG',
 );
 
@@ -191,6 +256,15 @@ const Coach coachJorgeChavez = Coach(
       'altitude, wind speed, and fuel to the decimal. Numbers are the '
       'language of the sky. Let me teach you to read them.',
   greeting: 'Your data analysis would make any flight engineer proud.',
+  farewell: 'This reminds me of the moment I crested the Alps in my little '
+      'Blériot — every figure I had calculated for weeks suddenly became '
+      'real in the roar of the wind and the white peaks below. You turned '
+      'numbers into understanding today, just as I did. Congratulations, '
+      'and fly always with precision.',
+  nextCoachTeaser:
+      'Beryl Markham from Kenya is next — the first person to fly the '
+      'Atlantic solo from east to west, who learned to track wildlife from '
+      'the Nandi people and can read any landscape from altitude.',
   imageAsset: 'assets/images/coaches/Jorge Chavez.PNG',
 );
 
@@ -211,6 +285,14 @@ const Coach coachBerylMarkham = Coach(
       'distinctive as a fingerprint.',
   greeting:
       'You\'ve got the eye of a bush pilot. That silhouette didn\'t fool you.',
+  farewell: 'This reminds me of gliding low over the Kenyan savannah at dawn, '
+      'learning every ridge and river bend until I could find my way home '
+      'blindfolded — the land speaks if you know how to look. You have '
+      'learned to look today, and I could not be more pleased.',
+  nextCoachTeaser:
+      'Emilio Carranza, the Lindbergh of Mexico, is your next guide — he '
+      'flew nonstop from Mexico City to Washington on a goodwill mission '
+      'and will put every skill you have learned to the ultimate test.',
   imageAsset: 'assets/images/coaches/Beryl Markham.PNG',
 );
 
@@ -231,6 +313,15 @@ const Coach coachEmilioCarranza = Coach(
       'have learned.',
   greeting: 'You flew that like a captain on a goodwill mission. The world is '
       'yours to explore.',
+  farewell: 'This reminds me of that long nonstop flight from Mexico City to '
+      'Washington — no single skill was enough; navigation, endurance, '
+      'instinct, and knowledge of the world all had to work as one. You '
+      'wove them all together today with the grace of a true aviator. '
+      'I salute you.',
+  nextCoachTeaser:
+      'Al-Muqaddasi, the great medieval geographer from Jerusalem, is '
+      'your next mentor — a thousand years ago he walked every province '
+      'of the known world and wrote the first scientific regional geography.',
   imageAsset: 'assets/images/coaches/Emilio Carranza.PNG',
 );
 
@@ -254,6 +345,16 @@ const Coach coachMuqaddasi = Coach(
       'You have earned your wings, just as I earned my knowledge — through '
       'patience, curiosity, and a refusal to leave any corner of the world '
       'unexplored. Fly well, pilot.',
+  farewell:
+      'This reminds me of the years I spent walking the markets of Basra, '
+      'the mountains of Persia, and the ports of the Nile — every region '
+      'revealing its secrets only to those patient enough to truly look. '
+      'You have shown that patience and earned your licence. Go forth and '
+      'explore with the curiosity of a true geographer.',
+  nextCoachTeaser:
+      'Jesús Villamor of the Philippines is next — a WWII fighter ace who '
+      'led five biplanes against an entire Japanese invasion force, and who '
+      'will prepare you for the daily challenges ahead.',
   imageAsset: 'assets/images/coaches/Al-Muqaddasi.PNG',
 );
 
@@ -271,6 +372,15 @@ const Coach coachVillamor = Coach(
       'but never outfought. Daily challenges are like combat: preparation '
       'is everything. Let me sharpen your reflexes.',
   greeting: 'You handled that pressure like a true ace. Ready for anything.',
+  farewell: 'This reminds me of the morning of 10 December 1941 — six of us in '
+      'old P-26 Peashooters rising to meet a sky full of Japanese Zeros, '
+      'knowing that preparation and nerve were the only advantages we had. '
+      'You showed both of those qualities today. I am proud to have trained '
+      'you.',
+  nextCoachTeaser:
+      'Halim Perdanakusuma of Indonesia will be your graduation examiner '
+      '— a national hero who flew daring independence missions at just '
+      '25 years old. This is where everything you have learned comes together.',
   imageAsset: 'assets/images/coaches/Jesus Villamor.PNG',
 );
 
@@ -291,6 +401,15 @@ const Coach coachHalim = Coach(
   greeting:
       'You have earned your wings. Fly with the courage of those who fought '
       'for the freedom to explore.',
+  farewell: 'This reminds me of my last mission over Java — the knowledge that '
+      'every skill I had was being asked of me at once, and that the sky '
+      'itself was the final examiner. You passed that examination today '
+      'with honour. I am proud to call you a graduate.',
+  nextCoachTeaser:
+      'One final challenge awaits with Errol Barrow of Barbados — RAF '
+      'combat pilot, 45 missions over wartime Europe, and later Prime '
+      'Minister of his nation. He reserves his toughest test for those '
+      'who have come this far.',
   imageAsset: 'assets/images/coaches/Halim Perdanakusuma.PNG',
 );
 
@@ -310,6 +429,16 @@ const Coach coachErrolBarrow = Coach(
       'your final test — the ace challenge. Hold nothing back.',
   greeting: 'From combat pilot to prime minister, I have seen excellence — and '
       'you have it. Fly proud, ace.',
+  farewell: 'This reminds me of returning to Barbados after 45 missions over '
+      'Europe — knowing that every sortie, every decision made at altitude, '
+      'had shaped me into something more than a pilot. You have completed '
+      'the full journey today, from your first navigation lesson to this '
+      'final ace challenge. The sky is no longer a test — it is your home. '
+      'Congratulations.',
+  nextCoachTeaser:
+      'You have trained with all thirteen coaches and conquered every '
+      'challenge from navigation to ace combat. The full world is yours '
+      'to explore — take to the skies whenever you are ready.',
   imageAsset: 'assets/images/coaches/Errol Barrow.PNG',
 );
 
