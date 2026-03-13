@@ -407,6 +407,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
     // Fire coach tip for first hint usage (campaign missions only).
     _coachOverlayKey.currentState?.showTip('firstHint');
+    // Notify coach overlay that a hint was used (explains what it does).
+    _coachOverlayKey.currentState?.onHintUsed(_hintTier + 1);
     // Reset the "lost" timer — using a hint shows engagement.
     _coachOverlayKey.currentState?.resetLostTimer();
 
@@ -1208,7 +1210,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         );
     if (!mounted) return;
 
-    // Campaign mission completion — record progress and show campaign dialog.
+    // Campaign mission completion — show coach farewell, then results.
     if (widget.campaignMission != null) {
       final mission = widget.campaignMission!;
       final notifier = ref.read(accountProvider.notifier);
@@ -1222,13 +1224,25 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         coinReward: mission.coinReward,
       );
       if (mounted) {
-        MissionDialog.showCompletion(
+        // Show coach farewell speech first — tapping dismiss shows results.
+        _coachOverlayKey.currentState?.cancelLostTimer();
+        final farewellText =
+            '${mission.coach.farewell}\n\n${mission.coach.nextCoachTeaser}';
+        MissionDialog.showFarewell(
           context,
           mission: mission,
-          result: campaignResult,
-          isFirstCompletion: isFirst,
+          farewellText: farewellText,
           onContinue: () {
-            if (mounted) Navigator.of(context).pop();
+            if (!mounted) return;
+            MissionDialog.showCompletion(
+              context,
+              mission: mission,
+              result: campaignResult,
+              isFirstCompletion: isFirst,
+              onContinue: () {
+                if (mounted) Navigator.of(context).pop();
+              },
+            );
           },
         );
       }
@@ -1911,9 +1925,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
             // Coach overlay for campaign missions
             if (widget.campaignMission != null && _gameReady)
-              CoachOverlay(
-                key: _coachOverlayKey,
-                mission: widget.campaignMission!,
+              Positioned.fill(
+                child: CoachOverlay(
+                  key: _coachOverlayKey,
+                  mission: widget.campaignMission!,
+                ),
               ),
 
             // Interactive tutorial overlay for Mission 1

@@ -14,6 +14,7 @@ class _InkParticle {
     required this.color,
     required this.birthT,
     required this.deathT,
+    this.gravity = 0.0,
   });
 
   /// Direction of travel (radians).
@@ -33,12 +34,17 @@ class _InkParticle {
 
   /// Controller value at which this particle has fully faded out.
   final double deathT;
+
+  /// Downward acceleration in pixels — makes particles trickle down the screen.
+  final double gravity;
 }
 
 /// [CustomPainter] that draws a watercolor ink-burst particle effect.
 ///
 /// Each particle is rendered as a soft blurred under-wash plus a crisp core
 /// dot, matching the layered wash pattern from [WatercolorStyle.washFill].
+/// Particles are subject to gravity, causing them to arc upward then trickle
+/// down the screen like sparks from a firework.
 class _InkBurstPainter extends CustomPainter {
   _InkBurstPainter({
     required this.particles,
@@ -76,9 +82,9 @@ class _InkBurstPainter extends CustomPainter {
       // Ease-out: fast start, slow finish.
       final ease = 1.0 - pow(1.0 - tLocal, 2.5).toDouble();
 
-      // Position.
+      // Position — initial burst direction + gravity pulling downward.
       final dx = cos(p.angle) * p.speed * ease;
-      final dy = sin(p.angle) * p.speed * ease;
+      final dy = sin(p.angle) * p.speed * ease + p.gravity * tLocal * tLocal;
       final pos = origin + Offset(dx, dy);
 
       // Opacity: full until deathT, then fade to 0.
@@ -90,8 +96,8 @@ class _InkBurstPainter extends CustomPainter {
       }
       if (opacity <= 0) continue;
 
-      // Radius grows slightly as the particle travels.
-      final r = p.radius * (0.5 + 0.5 * ease);
+      // Radius shrinks as particle falls (simulates sparks cooling).
+      final r = p.radius * (0.5 + 0.5 * ease) * (0.6 + 0.4 * (1.0 - tLocal));
 
       // Under-wash: blurred circle at low opacity.
       washPaint
@@ -115,6 +121,9 @@ class _InkBurstPainter extends CustomPainter {
 ///
 /// Use a [GlobalKey] to obtain the state and call [InkBurstOverlayState.trigger]
 /// with the screen-space origin where the burst should appear.
+///
+/// Particles burst outward, then gravity pulls them downward so the effect
+/// trickles down the screen like sparks from a firework.
 class InkBurstOverlay extends StatefulWidget {
   const InkBurstOverlay({super.key});
 
@@ -124,8 +133,8 @@ class InkBurstOverlay extends StatefulWidget {
 
 class InkBurstOverlayState extends State<InkBurstOverlay>
     with TickerProviderStateMixin {
-  static const _particleCount = 28;
-  static const _duration = Duration(milliseconds: 900);
+  static const _particleCount = 36;
+  static const _duration = Duration(milliseconds: 1400);
 
   static const _palette = [
     FlitColors.gold,
@@ -167,13 +176,18 @@ class InkBurstOverlayState extends State<InkBurstOverlay>
           ? WatercolorStyle.lighten(baseColor, variation)
           : WatercolorStyle.darken(baseColor, -variation);
 
+      // Bias angles upward (between -150° and -30° from horizontal)
+      // so particles burst up, then gravity pulls them down.
+      final angle = -pi * 0.17 + (_rng.nextDouble() - 0.5) * pi * 1.2;
+
       return _InkParticle(
-        angle: _rng.nextDouble() * 2 * pi,
-        speed: 40 + _rng.nextDouble() * 140, // 40–180 px
-        radius: 3 + _rng.nextDouble() * 6, // 3–9 px
+        angle: angle,
+        speed: 50 + _rng.nextDouble() * 160, // 50–210 px
+        radius: 2.5 + _rng.nextDouble() * 5, // 2.5–7.5 px
         color: color,
-        birthT: _rng.nextDouble() * 0.35,
-        deathT: 0.6 + _rng.nextDouble() * 0.4,
+        birthT: _rng.nextDouble() * 0.25,
+        deathT: 0.55 + _rng.nextDouble() * 0.45,
+        gravity: 200 + _rng.nextDouble() * 300, // 200–500 px downward pull
       );
     });
   }

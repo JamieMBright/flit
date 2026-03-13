@@ -194,7 +194,7 @@ class FlitGame extends FlameGame
   Vector2? _hintTarget;
 
   /// Current flight speed setting.
-  FlightSpeed _flightSpeed = FlightSpeed.medium;
+  FlightSpeed _flightSpeed = FlightSpeed.slow;
 
   /// Globe hit-test utility (screen-tap → lat/lng).
   final GlobeHitTest _hitTest = const GlobeHitTest();
@@ -1701,7 +1701,7 @@ class FlitGame extends FlameGame
     _currentClue = clue;
     _waymarker = null; // clear any previous waymarker
     _hintTarget = null; // clear any previous hint
-    _flightSpeed = FlightSpeed.medium; // reset speed
+    _flightSpeed = FlightSpeed.slow; // reset speed — always start slow
     _fuel = maxFuel; // full tank (includes licence bonus)
     // Start launch animation sequence.
     _launchPhase = LaunchPhase.positioning;

@@ -84,27 +84,52 @@ class CampaignScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        itemCount: campaignMissions.length,
-        itemBuilder: (context, index) {
-          final mission = campaignMissions[index];
-          final result = progress[mission.id];
-          final isCompleted = result != null;
+      body: Column(
+        children: [
+          // Clue type legend
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 12, 20, 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _LegendItem(icon: Icons.flag, label: 'Flag'),
+                SizedBox(width: 10),
+                _LegendItem(icon: Icons.crop_square, label: 'Outline'),
+                SizedBox(width: 10),
+                _LegendItem(icon: Icons.border_all, label: 'Borders'),
+                SizedBox(width: 10),
+                _LegendItem(icon: Icons.location_city, label: 'Capital'),
+                SizedBox(width: 10),
+                _LegendItem(icon: Icons.bar_chart, label: 'Stats'),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              itemCount: campaignMissions.length,
+              itemBuilder: (context, index) {
+                final mission = campaignMissions[index];
+                final result = progress[mission.id];
+                final isCompleted = result != null;
 
-          // A mission is unlocked if it's the first, or the previous one is complete.
-          final isUnlocked = index == 0 ||
-              progress.containsKey(campaignMissions[index - 1].id);
+                // A mission is unlocked if it's the first, or the previous one is complete.
+                final isUnlocked = index == 0 ||
+                    progress.containsKey(campaignMissions[index - 1].id);
 
-          return _MissionCard(
-            mission: mission,
-            result: result,
-            isUnlocked: isUnlocked,
-            isCompleted: isCompleted,
-            onTap:
-                isUnlocked ? () => _startMission(context, ref, mission) : null,
-          );
-        },
+                return _MissionCard(
+                  mission: mission,
+                  result: result,
+                  isUnlocked: isUnlocked,
+                  isCompleted: isCompleted,
+                  onTap: isUnlocked
+                      ? () => _startMission(context, ref, mission)
+                      : null,
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -349,6 +374,24 @@ class _ClueIcons extends StatelessWidget {
     }
   }
 
+  static String _labelFor(ClueType type) {
+    switch (type) {
+      case ClueType.flag:
+      case ClueType.flagDescription:
+        return 'Flag';
+      case ClueType.outline:
+        return 'Outline';
+      case ClueType.borders:
+        return 'Borders';
+      case ClueType.capital:
+        return 'Capital';
+      case ClueType.stats:
+        return 'Stats';
+      default:
+        return 'Clue';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -356,9 +399,42 @@ class _ClueIcons extends StatelessWidget {
       children: clues
           .map((c) => Padding(
                 padding: const EdgeInsets.only(left: 4),
-                child: Icon(_iconFor(c), size: 14, color: FlitColors.textMuted),
+                child: Tooltip(
+                  message: _labelFor(c),
+                  preferBelow: false,
+                  child: Icon(
+                    _iconFor(c),
+                    size: 14,
+                    color: FlitColors.textMuted,
+                  ),
+                ),
               ))
           .toList(),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: FlitColors.textMuted),
+        const SizedBox(width: 3),
+        Text(
+          label,
+          style: const TextStyle(
+            color: FlitColors.textMuted,
+            fontSize: 10,
+          ),
+        ),
+      ],
     );
   }
 }
