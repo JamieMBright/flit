@@ -51,5 +51,14 @@ if [ -f "$PROJECT_ROOT/scripts/lint-noflutter.sh" ]; then
     bash "$PROJECT_ROOT/scripts/lint-noflutter.sh" $CHANGED_DART
 fi
 
+# Step 3: Error log review (informational)
+echo ""
+echo "Step 3: Checking runtime error logs..."
+if [ -f "$PROJECT_ROOT/scripts/check-error-logs.sh" ]; then
+    bash "$PROJECT_ROOT/scripts/check-error-logs.sh" --summary || true
+else
+    echo "  check-error-logs.sh not found — skipping."
+fi
+
 echo ""
 echo "Pre-push checks passed. CI will run full validation on merge to main."

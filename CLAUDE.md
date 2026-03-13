@@ -107,6 +107,26 @@ If more textures needed → pack into RGBA channels or use multi-pass.
 - Tap-to-copy for easy bug reporting
 - Never ship overlay to production
 
+### Error Log Review (Pre-Commit / Pre-Push)
+- **`logs/runtime-errors.jsonl`** is the local error log fed by the Vercel endpoint and GitHub Action
+- **Pre-commit and pre-push hooks** automatically report a summary of outstanding errors
+- **Standard workflow**: Before each session or PR, review errors → fix root causes → clear the log
+- Use `./scripts/check-error-logs.sh` to view outstanding errors
+- Use `./scripts/check-error-logs.sh --clear` to purge the log after errors are resolved
+- **Never clear the log without reviewing and addressing the errors first**
+- Errors are informational (non-blocking) in hooks — but critical errors should be treated as bugs to fix
+
+```bash
+# Review outstanding runtime errors
+./scripts/check-error-logs.sh
+
+# One-line summary (used by hooks)
+./scripts/check-error-logs.sh --summary
+
+# Clear log after fixing all outstanding issues
+./scripts/check-error-logs.sh --clear
+```
+
 ---
 
 ## Testing Requirements
@@ -153,6 +173,7 @@ flutter test --coverage
 - [ ] Linting reviewed (advisory — won't block CI, but address warnings when convenient)
 - [ ] No platform-specific code without cross-platform equivalent
 - [ ] Error telemetry doesn't leak into release builds
+- [ ] Runtime error log reviewed (`./scripts/check-error-logs.sh`) — fix bugs, then clear
 
 ---
 
@@ -269,6 +290,8 @@ flutter analyze              # Static analysis
 # Error Telemetry
 curl -H "X-API-Key: $KEY" https://flit-olive.vercel.app/api/errors?limit=10
 gh workflow run fetch-errors.yml
+./scripts/check-error-logs.sh         # Review outstanding errors
+./scripts/check-error-logs.sh --clear # Clear after fixing
 ```
 
 ---
@@ -286,9 +309,10 @@ gh workflow run fetch-errors.yml
 3. Run linting: `./scripts/lint.sh` (advisory — reports but doesn't block)
 4. Verify shader compiles on 2+ platforms
 5. Verify cross-platform: integration tests for 2+ platforms
-6. **Update architecture docs if necessary** — If your changes affect the persistence layer, rendering pipeline, data flow, or any architecture described in this file or other docs, update those sections to reflect the new design before committing
-7. Commit with descriptive message
-8. Push after tests pass (formatting/lint warnings are acceptable)
+6. **Review runtime error log**: `./scripts/check-error-logs.sh` — fix outstanding bugs, then `./scripts/check-error-logs.sh --clear` to purge resolved entries
+7. **Update architecture docs if necessary** — If your changes affect the persistence layer, rendering pipeline, data flow, or any architecture described in this file or other docs, update those sections to reflect the new design before committing
+8. Commit with descriptive message
+9. Push after tests pass (formatting/lint warnings are acceptable)
 
 ### Flutter SDK (Claude Code web sessions)
 The SessionStart hook automatically installs Flutter SDK (including Dart) at `/tmp/flutter`.
