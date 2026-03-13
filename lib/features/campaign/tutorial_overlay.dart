@@ -686,10 +686,12 @@ class _SpotlightPainter extends CustomPainter {
 
       case TutorialTarget.speedControls:
         // Bottom row center: speed pills — centred between hint and altitude.
+        // The HUD Row uses spaceEvenly with 3 items, so the speed control
+        // sits roughly in the center third of the screen.
         return Rect.fromLTRB(
-          size.width * 0.25 - pad,
+          size.width * 0.30 - pad,
           bottom - 48 - pad,
-          size.width * 0.65 + pad,
+          size.width * 0.70 + pad,
           bottom + pad,
         );
 

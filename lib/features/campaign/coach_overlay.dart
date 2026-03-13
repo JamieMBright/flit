@@ -240,20 +240,13 @@ class CoachOverlayState extends State<CoachOverlay>
       children: [
         // Hint button highlight overlay — semi-transparent scrim with a
         // spotlight cutout over the hint button, forcing the player to tap it.
+        // Uses a custom hit-test widget so taps inside the cutout pass through
+        // to the hint button underneath, while taps elsewhere are absorbed.
         if (_hintForceMode)
           Positioned.fill(
-            child: IgnorePointer(
-              ignoring: false,
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: () {}, // Absorb taps outside the hint button
-                child: CustomPaint(
-                  painter: _HintSpotlightPainter(
-                    screenSize: screenSize,
-                    safePadding: safePadding,
-                  ),
-                ),
-              ),
+            child: _HintSpotlightOverlay(
+              screenSize: screenSize,
+              safePadding: safePadding,
             ),
           ),
 
@@ -477,6 +470,103 @@ class _SpeechBubble extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Overlay that paints a dark scrim with a cutout over the hint button.
+/// Taps inside the cutout pass through to the hint button; taps outside
+/// are absorbed so the player can only interact with the hint.
+///
+/// Uses two layers: a [GestureDetector] that absorbs taps in the scrim area,
+/// and a [Positioned] hole that is ignored by hit-testing so taps fall through
+/// to the hint button underneath the entire overlay.
+class _HintSpotlightOverlay extends StatelessWidget {
+  const _HintSpotlightOverlay({
+    required this.screenSize,
+    required this.safePadding,
+  });
+
+  final Size screenSize;
+  final EdgeInsets safePadding;
+
+  Rect _hintRect(Size size) {
+    final bottom = size.height - safePadding.bottom - 16;
+    const pad = 12.0;
+    return Rect.fromLTRB(
+      safePadding.left + 4,
+      bottom - 44 - pad,
+      size.width * 0.32 + pad,
+      bottom + pad,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = Size(constraints.maxWidth, constraints.maxHeight);
+        final cutout = _hintRect(size);
+        return Stack(
+          children: [
+            // Painted scrim covering the full screen.
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _HintSpotlightPainter(
+                  screenSize: screenSize,
+                  safePadding: safePadding,
+                ),
+              ),
+            ),
+            // Scrim region ABOVE the cutout — absorbs taps.
+            Positioned(
+              left: 0,
+              top: 0,
+              right: 0,
+              bottom: size.height - cutout.top,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {},
+              ),
+            ),
+            // Scrim region BELOW the cutout — absorbs taps.
+            Positioned(
+              left: 0,
+              top: cutout.bottom,
+              right: 0,
+              bottom: 0,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {},
+              ),
+            ),
+            // Scrim region LEFT of the cutout — absorbs taps.
+            Positioned(
+              left: 0,
+              top: cutout.top,
+              width: cutout.left,
+              height: cutout.height,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {},
+              ),
+            ),
+            // Scrim region RIGHT of the cutout — absorbs taps.
+            Positioned(
+              left: cutout.right,
+              top: cutout.top,
+              right: 0,
+              height: cutout.height,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {},
+              ),
+            ),
+            // The cutout area itself has NO gesture detector, so taps
+            // pass through to the hint button underneath.
+          ],
+        );
+      },
     );
   }
 }

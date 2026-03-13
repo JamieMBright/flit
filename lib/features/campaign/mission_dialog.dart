@@ -33,18 +33,29 @@ class MissionDialog {
                   // Coach portrait (top-left)
                   _CoachPortrait(coach: mission.coach, size: 56),
                   const SizedBox(width: 12),
-                  // Name and title
+                  // Name, flag, and title
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          mission.coach.name,
-                          style: const TextStyle(
-                            color: FlitColors.textPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              mission.coach.flagEmoji,
+                              style: const TextStyle(fontSize: 18),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                mission.coach.name,
+                                style: const TextStyle(
+                                  color: FlitColors.textPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -57,38 +68,37 @@ class MissionDialog {
                       ],
                     ),
                   ),
-                  // Flag emoji (top-right) + close button
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.of(ctx).pop(),
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: FlitColors.backgroundMid,
-                            border: Border.all(
-                              color:
-                                  FlitColors.cardBorder.withValues(alpha: 0.5),
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.close,
-                            color: FlitColors.textSecondary,
-                            size: 16,
-                          ),
+                  // Close button (top-right)
+                  GestureDetector(
+                    onTap: () => Navigator.of(ctx).pop(),
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: FlitColors.backgroundMid,
+                        border: Border.all(
+                          color: FlitColors.cardBorder.withValues(alpha: 0.5),
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        mission.coach.flagEmoji,
-                        style: const TextStyle(fontSize: 24),
+                      child: const Icon(
+                        Icons.close,
+                        color: FlitColors.textSecondary,
+                        size: 16,
                       ),
-                    ],
+                    ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              // Coach bio
+              Text(
+                mission.coach.bio,
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 12,
+                  height: 1.3,
+                ),
               ),
               const SizedBox(height: 14),
               // Mission title (centered)
@@ -200,13 +210,23 @@ class MissionDialog {
               // Coach portrait
               _CoachPortrait(coach: mission.coach, size: 64),
               const SizedBox(height: 12),
-              Text(
-                mission.coach.name,
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    mission.coach.flagEmoji,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    mission.coach.name,
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               // Farewell message
