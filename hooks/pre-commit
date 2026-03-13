@@ -154,6 +154,16 @@ if ! command -v flutter &> /dev/null; then
         echo "Install Dart SDK or run: curl -fsSL https://storage.googleapis.com/dart-archive/channels/stable/release/latest/sdk/dartsdk-linux-x64-release.zip -o /tmp/dart.zip && unzip -qo /tmp/dart.zip -d /tmp/"
     fi
 
+    # Error log review (informational)
+    echo ""
+    echo "Step: Checking runtime error logs..."
+    GIT_ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || echo ".")"
+    if [ -f "$GIT_ROOT_DIR/scripts/check-error-logs.sh" ]; then
+        bash "$GIT_ROOT_DIR/scripts/check-error-logs.sh" --summary || true
+    else
+        echo "  check-error-logs.sh not found — skipping."
+    fi
+
     echo ""
     echo "Pre-commit checks passed (no-Flutter mode)."
     exit 0
@@ -194,6 +204,19 @@ fi
 echo ""
 echo "Step 4: Running unit tests..."
 flutter test --coverage
+
+# -------------------------------------------------------------------
+# Step 5: Error log review (informational, non-blocking)
+# Reports outstanding runtime errors from logs/runtime-errors.jsonl.
+# -------------------------------------------------------------------
+echo ""
+echo "Step 5: Checking runtime error logs..."
+GIT_ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || echo ".")"
+if [ -f "$GIT_ROOT_DIR/scripts/check-error-logs.sh" ]; then
+    bash "$GIT_ROOT_DIR/scripts/check-error-logs.sh" --summary || true
+else
+    echo "  check-error-logs.sh not found — skipping."
+fi
 
 echo ""
 echo "Pre-commit checks passed!"
