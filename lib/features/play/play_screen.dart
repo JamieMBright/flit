@@ -179,6 +179,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   Duration _cumulativeTime = Duration.zero;
   bool _isHighAltitude = true;
   bool _gameReady = false;
+
+  /// Once true, the DescentMapView stays mounted even at high altitude so
+  /// in-flight tile requests are not aborted (avoiding ClientException spam).
+  bool _descentMapMounted = false;
   String? _error;
 
   /// Safety timeout — if the game engine hasn't signalled ready after 20s,
@@ -393,6 +397,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     if (mounted) {
       setState(() {
         _isHighAltitude = isHigh;
+        if (!isHigh) _descentMapMounted = true;
       });
     }
   }
@@ -1764,24 +1769,26 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 ),
               )
             // Globe mode — OSM tile map shown during descent transition.
-            // Appears when altitude drops below 0.6 and crossfades with the
-            // globe shader which fades out between 0.6→0.3.
+            // Crossfades with the globe shader between altitude 0.6→0.0.
+            // Once mounted, stays in the tree to avoid aborting in-flight
+            // tile requests on ascent (which caused ClientException spam).
             else if (_gameReady &&
                 _session != null &&
-                _game.plane.continuousAltitude < 0.6)
+                (_game.plane.continuousAltitude < 0.6 || _descentMapMounted))
               Positioned.fill(
-                child: Opacity(
-                  opacity: (1.0 - _game.plane.continuousAltitude / 0.6).clamp(
-                    0.0,
-                    1.0,
-                  ),
-                  child: DescentMapView(
-                    centerLng: _game.worldPosition.x,
-                    centerLat: _game.worldPosition.y,
-                    heading: _game.cameraHeadingBearing,
-                    altitudeTransition: _game.plane.continuousAltitude,
-                    tileUrl: GameSettings.instance.mapTileUrl,
-                    trackPlane: true,
+                child: Offstage(
+                  offstage: _game.plane.continuousAltitude >= 0.6,
+                  child: Opacity(
+                    opacity: (1.0 - _game.plane.continuousAltitude / 0.6)
+                        .clamp(0.0, 1.0),
+                    child: DescentMapView(
+                      centerLng: _game.worldPosition.x,
+                      centerLat: _game.worldPosition.y,
+                      heading: _game.cameraHeadingBearing,
+                      altitudeTransition: _game.plane.continuousAltitude,
+                      tileUrl: GameSettings.instance.mapTileUrl,
+                      trackPlane: true,
+                    ),
                   ),
                 ),
               ),

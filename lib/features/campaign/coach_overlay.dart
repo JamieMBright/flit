@@ -143,28 +143,166 @@ class CoachOverlayState extends State<CoachOverlay>
     _lostHintCount++;
 
     // Always suggest using a hint and force them to press it.
-    final coach = widget.mission.coach.shortName;
+    final coach = widget.mission.coach;
     final message = _lostSuggestion(coach);
     _showHintForceMessage(message);
 
     // Don't restart timer yet — wait until they use the hint.
   }
 
-  String _lostSuggestion(String coach) {
+  String _lostSuggestion(Coach coach) {
     switch (_lostHintCount) {
       case 1:
-        return 'Taking your time? That\'s wise — but let me help. '
-            'Try using a hint to narrow it down. Tap the hint button below!';
+        return _firstLostNudge(coach);
       case 2:
-        return 'Still searching? Every pilot needs instruments. '
-            'Use another hint — each one gets you closer. '
-            'Tap the hint button!';
+        return _secondLostNudge(coach);
       case 3:
-        return 'No shame in asking for help, cadet. Even $coach '
-            'checked the charts. Use a hint!';
+        return _thirdLostNudge(coach);
       default:
         return 'Let\'s get you there. Tap the hint button — '
             'I\'ll guide you closer with each one.';
+    }
+  }
+
+  String _firstLostNudge(Coach coach) {
+    switch (coach.id) {
+      case 'jrd_tata':
+        return 'When I plotted the Karachi-to-Bombay route, I checked '
+            'my charts at every turn. There\'s no shame in that — '
+            'tap the hint button!';
+      case 'lotfia':
+        return 'Even I needed help reading my first navigation charts '
+            'in Cairo. Try a hint — tap the button below!';
+      case 'santos_dumont':
+        return 'Before circling the Eiffel Tower, I studied every map '
+            'of Paris. A hint is just another chart — tap it!';
+      case 'sabiha':
+        return 'In combat, hesitation is the enemy. Use your instruments '
+            '— tap the hint button, cadet!';
+      case 'jean_batten':
+        return 'Over the Tasman, I would have given anything for a better '
+            'chart. You have one — tap the hint button!';
+      case 'saint_exupery':
+        return 'What is essential is invisible to the eye — but a hint '
+            'can reveal it. Tap the button below!';
+      case 'jorge_chavez':
+        return 'I calculated every variable before crossing the Alps. '
+            'A hint is just another data point — use it!';
+      case 'beryl_markham':
+        return 'Even a bush pilot checks the charts when the landscape '
+            'is unfamiliar. Try a hint — tap the button!';
+      case 'emilio_carranza':
+        return 'On my goodwill flight, I used every instrument available. '
+            'A hint costs less than getting lost — tap it!';
+      case 'muqaddasi':
+        return 'I walked the entire known world gathering knowledge. '
+            'A hint is just another step — tap the button!';
+      case 'villamor':
+        return 'Even an ace checks his instruments mid-flight. '
+            'Tap the hint button — it could save the mission!';
+      case 'halim':
+        return 'Every mission I flew for independence required preparation. '
+            'Use the hint — tap the button below!';
+      case 'errol_barrow':
+        return 'Forty-five missions taught me: use every advantage. '
+            'Tap the hint button, cadet!';
+      default:
+        return 'Taking your time? That\'s wise — but let me help. '
+            'Tap the hint button below!';
+    }
+  }
+
+  String _secondLostNudge(Coach coach) {
+    switch (coach.id) {
+      case 'jrd_tata':
+        return 'Still searching? I once circled over the Arabian Sea '
+            'for an hour finding my bearings. Use another hint!';
+      case 'lotfia':
+        return 'Still looking? My flight instructor gave me extra '
+            'charts when I was stuck. That\'s what hints are for!';
+      case 'santos_dumont':
+        return 'Still circling? Even my airship needed course corrections '
+            'over Paris. Each hint gets you closer — tap it!';
+      case 'sabiha':
+        return 'Still scanning? In 8,000 hours of flying, I never '
+            'hesitated to check my instruments twice. Tap the hint!';
+      case 'jean_batten':
+        return 'Still out there? Over 14,000 miles I recalculated my '
+            'position dozens of times. Use another hint!';
+      case 'saint_exupery':
+        return 'Still lost? I crashed in the Sahara once because I didn\'t '
+            'check the stars. Don\'t make my mistake — use a hint!';
+      case 'jorge_chavez':
+        return 'Still calculating? I revised my Alpine route three times '
+            'before takeoff. Another data point won\'t hurt — hint!';
+      case 'beryl_markham':
+        return 'Still tracking? The Nandi taught me patience, but also '
+            'when to ask the elders. This is that moment — use a hint!';
+      case 'emilio_carranza':
+        return 'Still flying? My nonstop flight had no room for pride '
+            'over preparation. Another hint, cadet!';
+      case 'muqaddasi':
+        return 'Still wandering? I spent years gathering knowledge before '
+            'I could write my geography. Each hint adds to yours!';
+      case 'villamor':
+        return 'Still circling? Over Manila Bay, every second counted. '
+            'Use another hint — that\'s an order!';
+      case 'halim':
+        return 'Still searching? I flew for freedom with limited fuel. '
+            'Every hint conserves yours — use it!';
+      case 'errol_barrow':
+        return 'Still hunting? Forty-five bombing runs taught me to '
+            'use my instruments without ego. Another hint, ace!';
+      default:
+        return 'Still searching? Every pilot needs instruments. '
+            'Use another hint — tap the button!';
+    }
+  }
+
+  String _thirdLostNudge(Coach coach) {
+    switch (coach.id) {
+      case 'jrd_tata':
+        return 'No shame in it, cadet. Even I got lost over the Deccan '
+            'Plateau on my second flight. Use a hint!';
+      case 'lotfia':
+        return 'Cadet, I defied my father to learn to fly — you can '
+            'certainly accept a little help. Tap the hint!';
+      case 'santos_dumont':
+        return 'Mon ami, even I landed in the wrong field once or twice. '
+            'A hint will set you right — tap it!';
+      case 'sabiha':
+        return 'Cadet, I flew 22 combat missions and still consulted '
+            'my wingman. Use the hint — now!';
+      case 'jean_batten':
+        return 'Cadet, I nearly ran dry over the Timor Sea. A hint '
+            'costs less than empty fuel tanks. Tap it!';
+      case 'saint_exupery':
+        return 'As I wrote — one sees clearly only with the heart. '
+            'But right now, use your eyes and tap the hint!';
+      case 'jorge_chavez':
+        return 'Arriba, siempre arriba — but first, check your '
+            'instruments! Tap the hint button, cadet!';
+      case 'beryl_markham':
+        return 'Even the best tracker loses a trail sometimes. '
+            'Pick it up with a hint — tap the button!';
+      case 'emilio_carranza':
+        return 'My Washington flight had no room for pride. Neither '
+            'does this. Tap the hint, cadet!';
+      case 'muqaddasi':
+        return 'I asked questions in every bazaar from Basra to Cairo. '
+            'Asking for help is wisdom, not weakness. Use a hint!';
+      case 'villamor':
+        return 'In aerial combat, survival beats pride every time. '
+            'Tap that hint button — that\'s a direct order!';
+      case 'halim':
+        return 'I gave my life at 25 for what I believed in. Believe '
+            'in the hint button — tap it!';
+      case 'errol_barrow':
+        return 'I went from cockpit to parliament because I knew when '
+            'to change tactics. Change yours — use the hint!';
+      default:
+        return 'No shame in asking for help, cadet. '
+            'Use a hint — tap the button!';
     }
   }
 

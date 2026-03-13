@@ -235,54 +235,70 @@ class TutorialOverlayState extends State<TutorialOverlay>
     final coach = widget.mission.coach;
     switch (_phase) {
       case TutorialPhase.welcome:
-        return 'Welcome aboard, cadet! I\'m ${coach.name}. Before we fly, '
-            'let me show you the controls.';
+        return 'Welcome aboard, cadet! I\'m ${coach.name}. In 1929 I became '
+            'the first Indian to earn a pilot\'s licence — and now I\'ll '
+            'teach you to fly. Let me show you the controls.';
       case TutorialPhase.tryTurning:
         final remaining = _turnThreshold - _turnCount;
         if (_turnCount == 0) {
-          return 'See the arrows at the bottom corners? Hold one to turn '
-              'your plane left or right. Try it a few times!';
+          return 'When I flew the first airmail from Karachi to Bombay, '
+              'I had to bank and turn through mountain passes. See the '
+              'arrows at the bottom corners? Hold one to turn. Try it!';
         }
-        return 'Nice turn! Keep going — '
-            '${remaining > 1 ? '$remaining more' : 'one more'} to go!';
+        if (remaining > 1) {
+          return 'Good banking! That\'s how I navigated the Western Ghats. '
+              '$remaining more turns — get comfortable!';
+        }
+        return 'One more turn and you\'ll fly like a natural!';
       case TutorialPhase.tryWaypoint:
         final remaining = _waypointThreshold - _waypointCount;
         if (_waypointCount == 0) {
-          return 'Now tap anywhere on the globe to set a waypoint. '
-              'Your plane will steer towards it automatically. '
-              'Set $_waypointThreshold waypoints to get the feel!';
+          return 'On my first flight, I plotted my route from Karachi to '
+              'Bombay — every waypoint mattered. Tap anywhere on the '
+              'globe to set a waypoint. Your plane will steer towards it. '
+              'Set $_waypointThreshold to get the feel!';
         }
         if (_waypointCount < 3) {
-          return 'Great waypoint! Keep setting more — '
-              '$remaining to go. Tap different spots on the globe!';
+          return 'Excellent! In my little Puss Moth, I had to plan every '
+              'stop carefully. Keep setting waypoints — $remaining to go!';
         }
         if (_waypointCount < 6) {
-          return 'You\'re getting the hang of it! '
-              '$remaining more waypoints — try different directions!';
+          return 'You\'re getting the hang of it! I once plotted a route '
+              'across half of India this way. $remaining more — try '
+              'different directions!';
         }
         if (_waypointCount < 9) {
-          return 'Almost there! Just $remaining more. '
+          return 'Almost there, cadet! Just $remaining more. When I '
+              'founded Tata Airlines, every pilot had to master this. '
               'Try setting one far away!';
         }
-        return 'One more waypoint and you\'ve got it!';
+        return 'One more waypoint! You\'d have made a fine Tata Airlines '
+            'pilot.';
       case TutorialPhase.trySpeed:
         final remaining = _speedThreshold - _speedChangeCount;
         if (_speedChangeCount == 0) {
-          return 'Now try the speed controls — tap SLOW, MED, or FAST '
-              'to change how quickly you fly. Try all of them!';
+          return 'My Puss Moth could only do 128 km/h — you\'ve got more '
+              'options! Tap SLOW, MED, or FAST to change your speed. '
+              'Try each one!';
         }
-        return 'Good! Try a different speed — '
-            '${remaining > 1 ? '$remaining more changes' : 'one more'} '
-            'to go!';
+        if (remaining > 1) {
+          return 'Feel the difference? I learned to read the wind and '
+              'adjust my speed over the Arabian Sea. '
+              '$remaining more changes to go!';
+        }
+        return 'One more speed change — then I\'ll show you altitude!';
       case TutorialPhase.tryAltitude:
-        return 'Now tap the altitude button to descend. '
-            'Fly low to see the map up close!';
+        return 'When I flew over Bombay, I\'d descend low to see the '
+            'coastline. Tap the altitude button to drop down and see '
+            'the map up close!';
       case TutorialPhase.tryAscend:
-        return 'Nice view down here! Now tap altitude again to climb '
-            'back up. You\'ll want to be high up when searching for '
-            'countries — it gives you a better view of the globe!';
+        return 'Beautiful, isn\'t it? I remember the first time I saw '
+            'India from above. Now climb back up — tap altitude again. '
+            'You\'ll want to be high when searching for countries. '
+            'The higher you fly, the more of the world you can see!';
       case TutorialPhase.ready:
-        return 'You\'re ready! Here comes your first clue...';
+        return 'You fly with the confidence of an airline founder! '
+            'Here comes your first clue...';
       case TutorialPhase.complete:
         return '';
     }
