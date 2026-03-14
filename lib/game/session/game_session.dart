@@ -285,6 +285,7 @@ class GameSession {
     Set<String>? allowedClueTypes,
     double? maxDifficulty,
     List<String>? targetCountryCodes,
+    Vector2? overrideStartPosition,
   }) {
     final random = Random(seed);
 
@@ -322,14 +323,15 @@ class GameSession {
       random: random,
     );
 
-    // Generate start position based on seed
+    // Generate start position based on seed, or use the override if provided.
     final startLng = (random.nextDouble() * 360) - 180;
     final startLat = (random.nextDouble() * 140) - 70;
+    final startPos = overrideStartPosition ?? Vector2(startLng, startLat);
 
     return GameSession(
       targetCountry: country,
       clue: clue,
-      startPosition: Vector2(startLng, startLat),
+      startPosition: startPos,
     );
   }
 }

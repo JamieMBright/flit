@@ -593,12 +593,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       final mission = widget.campaignMission!;
       final baseSeed = mission.id.hashCode;
       final roundSeed = baseSeed + (_currentRound - 1) * 7919;
+      // Only override start position on round 1 — subsequent rounds continue
+      // seamlessly from the plane's current position via continueWithNewTarget.
+      final overrideStart = (_currentRound == 1 &&
+              mission.startLat != null &&
+              mission.startLng != null)
+          ? Vector2(mission.startLng!, mission.startLat!)
+          : null;
       return GameSession.seeded(
         roundSeed,
         allowedClueTypes: widget.enabledClueTypes,
         preferredClueType: widget.preferredClueType,
         maxDifficulty: mission.maxDifficulty,
         targetCountryCodes: mission.targetCountryCodes,
+        overrideStartPosition: overrideStart,
       );
     }
     if (widget.region == GameRegion.world) {
@@ -681,6 +689,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         startPosition: _session!.startPosition,
         targetPosition: _session!.targetPosition,
         clue: _session!.clue.displayText,
+        heading: widget.campaignMission?.startHeading,
       );
 
       // Configure fuel system.
