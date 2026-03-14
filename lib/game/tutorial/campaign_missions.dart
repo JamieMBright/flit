@@ -80,42 +80,59 @@ const List<CampaignMission> campaignMissions = [
     subtitle: 'Identify flags',
     description:
         'My father said a woman had no place in the cockpit. I enrolled in '
-        'secret and proved him wrong. Now — can you identify the flag of my '
-        'homeland from its colours and symbol alone?',
+        'secret and proved him wrong. Before I take you to my homeland, '
+        'let\'s study some of the world\'s most recognisable flags — '
+        'starting with two nations whose banners everyone knows.',
     coach: coachLotfia,
     allowedClues: {ClueType.flag},
-    rounds: 2,
+    rounds: 3,
     maxDifficulty: 0.20,
-    targetCountryCodes: ['EG'],
+    targetCountryCodes: ['US', 'GB', 'EG'],
     fuelEnabled: false,
-    xpReward: 75,
-    coinReward: 50,
+    xpReward: 100,
+    coinReward: 75,
     tips: [
       CoachTip(
         trigger: 'firstClue',
-        message: 'Three horizontal stripes — red, white, black — with a golden '
-            'eagle at the centre. That eagle has watched over my homeland for '
-            'centuries. Which nation flies this flag?',
+        message:
+            'Let\'s start with the most famous flag in the world. Thirteen '
+            'red and white stripes for the original colonies, fifty white '
+            'stars on a blue field — one for every state. The red stands for '
+            'hardiness and valour, white for purity, blue for vigilance and '
+            'justice. Which nation flies the Stars and Stripes?',
+      ),
+      CoachTip(
+        trigger: 'halfwayDone',
+        message:
+            'Now a flag made of three crosses layered into one — the Union '
+            'Jack. The red cross of St George for England, the white saltire '
+            'of St Andrew for Scotland, and the red saltire of St Patrick '
+            'for Ireland — all woven together. It flies over the nation that '
+            'once ruled a quarter of the globe. Where does it fly?',
       ),
       CoachTip(
         trigger: 'correctAnswer',
         message:
-            'Egypt! The Eagle of Saladin stands proud on our flag, just as I '
-            'stood proud becoming the first Arab woman to earn a pilot\'s '
-            'licence. This nation soars — and so do we.',
+            'Well spotted! Now for my homeland — three horizontal stripes: '
+            'red for sacrifice, white for the bright future, black for the '
+            'dark colonial past. The golden Eagle of Saladin at the centre '
+            'has guarded Egypt since my foremothers\' time. I was proud to '
+            'become the first Arab woman with a pilot\'s licence under that '
+            'eagle\'s gaze.',
       ),
       CoachTip(
         trigger: 'wrongRegion',
-        message: 'Not that region, cadet. Those Pan-Arab colours — red, white, '
-            'black — belong to North Africa. Look towards the northeast '
-            'corner of the continent.',
+        message:
+            'Study the colours and symbols carefully, cadet. Every element '
+            'on a flag tells a story — stripes, stars, crosses, eagles. '
+            'Read the story and you\'ll find the nation.',
       ),
       CoachTip(
         trigger: 'lost',
-        message:
-            'Red above, white in the middle, black below — and a golden eagle '
-            'that has symbolised power since the time of Saladin. This is one '
-            'of the oldest civilisations on Earth. Think pyramids.',
+        message: 'Flags are a nation\'s identity stitched into cloth. Look at '
+            'the arrangement — horizontal or vertical stripes? Stars or '
+            'crescents? Each design is unique. Match the pattern to the '
+            'country you know it belongs to.',
       ),
     ],
   ),
@@ -130,43 +147,57 @@ const List<CampaignMission> campaignMissions = [
     subtitle: 'Name the capitals',
     description:
         'I circled the Eiffel Tower to prove flight was possible — then '
-        'flew home to my beloved Brazil. Everyone thinks Rio is our capital. '
-        'They are wrong. Can you name the true capital of my homeland?',
+        'flew home to my beloved Brazil. But capitals are tricky, cadet. '
+        'The biggest city is rarely the capital. Let me show you three '
+        'nations where everyone gets the capital wrong.',
     coach: coachSantosDumont,
     allowedClues: {ClueType.capital},
-    rounds: 2,
+    rounds: 3,
     maxDifficulty: 0.25,
-    targetCountryCodes: ['BR'],
+    targetCountryCodes: ['AU', 'ZA', 'BR'],
     fuelEnabled: false,
-    xpReward: 75,
-    coinReward: 50,
+    xpReward: 100,
+    coinReward: 75,
     tips: [
       CoachTip(
         trigger: 'firstClue',
-        message:
-            'The capital is Brasília — not Rio de Janeiro, as many assume. '
-            'It was purpose-built and inaugurated in 1960. Now fly to the '
-            'great South American nation that built a capital from nothing!',
+        message: 'Everyone says Sydney — the Opera House, the Harbour Bridge. '
+            'But Sydney is not the capital. When the new nation federated '
+            'in 1901, Sydney and Melbourne couldn\'t agree on who should '
+            'be capital, so they built a brand new city between them — '
+            'Canberra. Fly to the land down under!',
+      ),
+      CoachTip(
+        trigger: 'halfwayDone',
+        message: 'Here\'s a nation with not one but THREE capitals! Pretoria '
+            'is the administrative capital, Cape Town the legislative, and '
+            'Bloemfontein the judicial. People guess Johannesburg because '
+            'it\'s the biggest city — but Jo\'burg holds none of those '
+            'titles. Fly to the rainbow nation at Africa\'s southern tip.',
       ),
       CoachTip(
         trigger: 'correctAnswer',
         message:
-            'Brasil! I was born in São Paulo state and dreamed my whole life '
-            'of flight. When I circled the Eiffel Tower in 1906, I did it '
-            'for this country. Remember — Brasília, not Rio!',
+            'Excellent! Now for my homeland. Everyone thinks Rio de Janeiro '
+            'is Brazil\'s capital — the carnival, Copacabana, Christ the '
+            'Redeemer. But Rio lost that title in 1960 when President '
+            'Kubitschek built Brasília from scratch in the interior '
+            'highlands. A capital born from nothing but vision — just like '
+            'my flying machines. Remember: Brasília, not Rio!',
       ),
       CoachTip(
-        trigger: 'halfwayDone',
+        trigger: 'wrongRegion',
         message:
-            'You\'re building a solid mental map, cadet — just as I charted '
-            'the skies over Paris before conquering them. Keep going.',
+            'The biggest city tricks you every time, cadet. The capital is '
+            'often a compromise — built fresh or chosen precisely because '
+            'it wasn\'t the obvious city. Think carefully.',
       ),
       CoachTip(
         trigger: 'lost',
-        message:
-            'Think of the largest country in South America — that\'s where '
-            'you\'re headed. Its capital sits in the interior highlands, '
-            'not on the famous coastline. Brasília is your target.',
+        message: 'Capitals fool even seasoned travellers. Australia\'s capital '
+            'is Canberra (not Sydney), South Africa\'s is Pretoria (not '
+            'Johannesburg), and Brazil\'s is Brasília (not Rio). Which '
+            'one are you looking for right now?',
       ),
     ],
   ),
@@ -181,42 +212,56 @@ const List<CampaignMission> campaignMissions = [
     subtitle: 'Multiple clue types',
     description:
         'I flew 22 combat missions and logged over 8,000 hours — you learn '
-        'to read every signal at once. Borders AND flag together. Cross-'
-        'reference them and find my homeland.',
+        'to read every signal at once. Borders AND flags together. Before '
+        'we reach my homeland, I\'ll test you on two nations first — use '
+        'their borders and flags to cross-reference your way there.',
     coach: coachSabiha,
     allowedClues: {ClueType.borders, ClueType.flag},
-    rounds: 2,
+    rounds: 3,
     maxDifficulty: 0.30,
-    targetCountryCodes: ['TR'],
+    targetCountryCodes: ['FR', 'MX', 'TR'],
     fuelEnabled: false,
-    xpReward: 100,
-    coinReward: 75,
+    xpReward: 125,
+    coinReward: 100,
     tips: [
       CoachTip(
         trigger: 'firstClue',
+        message: 'First target — a European heavyweight. Check the borders: '
+            'Spain, Belgium, Luxembourg, Germany, Switzerland, Italy, '
+            'Monaco, and Andorra. Eight neighbours! And the flag is a '
+            'simple vertical tricolour — blue, white, red. That '
+            'combination of borders and flag points to one nation.',
+      ),
+      CoachTip(
+        trigger: 'halfwayDone',
         message:
-            'You have two signals: the neighbours and the flag. My homeland '
-            'touches Europe and Asia both — Greece, Bulgaria, Georgia, '
-            'Armenia, Iran, Iraq, Syria. And the flag is red with a crescent.',
+            'Now cross the Atlantic. This nation\'s flag has three vertical '
+            'stripes — green, white, red — with an eagle perched on a '
+            'cactus devouring a serpent at the centre. Its neighbours are '
+            'the USA to the north and Guatemala and Belize to the south. '
+            'Borders and flag together — where are you heading?',
       ),
       CoachTip(
         trigger: 'correctAnswer',
-        message:
-            'Turkey! The red flag with crescent and star is one of the most '
-            'recognised in the world. I was proud to defend it in the cockpit '
-            'as the world\'s first female combat pilot.',
+        message: 'Now for my homeland. The red flag with a white crescent and '
+            'star is one of the most recognised in the world. Eight '
+            'neighbours spanning two continents — Greece and Bulgaria to '
+            'the west, Georgia and Armenia to the northeast, Iran, Iraq, '
+            'and Syria to the south. Turkey — the nation I defended as '
+            'the world\'s first female combat pilot.',
       ),
       CoachTip(
         trigger: 'wrongRegion',
-        message: 'Cross-reference both clues. The red crescent flag and those '
-            'neighbours — Europe to the west, Middle East to the south — '
-            'point to one nation straddling two continents.',
+        message: 'Cross-reference both signals, cadet. The flag tells you the '
+            'identity, the borders tell you the neighbourhood. When both '
+            'agree, you have your answer. Don\'t guess — deduce.',
       ),
       CoachTip(
         trigger: 'lost',
-        message: 'In combat, I never had the luxury of guessing. Use the flag: '
-            'solid red, white crescent and star. Then use the borders: '
-            'eight neighbours from the Balkans to the Caucasus to Arabia.',
+        message: 'In combat, I never had the luxury of guessing. Read the flag '
+            'for the nation\'s identity, then confirm with the borders. '
+            'France, Mexico, Turkey — each has a distinctive flag and '
+            'a unique set of neighbours. Match them.',
       ),
     ],
   ),
@@ -231,94 +276,156 @@ const List<CampaignMission> campaignMissions = [
     subtitle: 'Master your fuel',
     description:
         'I flew 14,000 miles solo from England to my homeland in a single-'
-        'engine Percival Gull. Over open ocean, every drop of fuel was life '
-        'itself. Now the gauge is live — fly smart or you won\'t arrive.',
+        'engine Percival Gull — across continents, over open ocean, through '
+        'storms. Every drop of fuel was life itself. I\'m taking you on '
+        'the same kind of journey: far-flung corners of the globe before '
+        'we head home. Watch that gauge, cadet.',
     coach: coachJeanBatten,
     allowedClues: {ClueType.borders, ClueType.flag, ClueType.capital},
-    rounds: 2,
+    rounds: 4,
     maxDifficulty: 0.25,
-    targetCountryCodes: ['NZ'],
+    targetCountryCodes: ['IS', 'MG', 'FJ', 'NZ'],
     fuelEnabled: true,
-    xpReward: 100,
-    coinReward: 75,
+    xpReward: 125,
+    coinReward: 100,
     tips: [
       CoachTip(
         trigger: 'firstClue',
-        message:
-            'My homeland is an island nation — no land borders, so neighbours '
-            'won\'t help you here. Use the flag and capital: Wellington. '
-            'It sits at the bottom of the world, far from everything.',
+        message: 'We\'re heading to the far reaches of the world — places most '
+            'pilots never see. First stop: a volcanic island in the North '
+            'Atlantic, land of fire and ice, geysers and glaciers. Use your '
+            'clues and watch your fuel — it\'s a long way from anywhere.',
+      ),
+      CoachTip(
+        trigger: 'halfwayDone',
+        message: 'Now we swing to the other side of the world. An enormous '
+            'island off the southeast coast of Africa — the fourth largest '
+            'island on Earth, home to lemurs and baobabs. Then onward to '
+            'a scattering of islands in the South Pacific. Keep an eye on '
+            'that fuel gauge — we\'re far from home.',
       ),
       CoachTip(
         trigger: 'fuelLow',
-        message:
-            'Fuel\'s getting low! The more fuel you have when you land, the '
-            'higher your score — up to 5,000 bonus points. Descend to '
-            'conserve and commit. Wellington, New Zealand.',
+        message: 'Fuel\'s getting low — just like mine over the Tasman Sea! '
+            'We need to reach my homeland: New Zealand, capital Wellington, '
+            'at the bottom of the world. The more fuel you have when you '
+            'land, the higher your score — up to 5,000 bonus points. '
+            'Commit now and fly south into the Pacific.',
       ),
       CoachTip(
         trigger: 'fuelEmpty',
-        message: 'Running on fumes! I once nearly ditched in the Tasman Sea. '
-            'Make your best guess now — fly south into the Pacific.',
+        message: 'Running on fumes! I nearly ditched in the Tasman Sea on my '
+            'record flight. Make your best guess now — my homeland sits '
+            'at the bottom of the Pacific. Wellington, New Zealand. Go!',
+      ),
+      CoachTip(
+        trigger: 'correctAnswer',
+        message: 'New Zealand! After all those far-flung stops — Iceland, '
+            'Madagascar, Fiji — you made it home with fuel to spare. '
+            'That\'s how I felt touching down after 14,000 miles of solo '
+            'flight. Welcome to my homeland, cadet.',
       ),
       CoachTip(
         trigger: 'lost',
-        message: 'No neighbours means isolation — and isolation means fuel '
-            'discipline. Think remote Pacific, capital Wellington, flag with '
-            'Union Jack and Southern Cross. That\'s New Zealand.',
+        message: 'We\'ve been to Iceland in the North Atlantic, Madagascar off '
+            'Africa, and Fiji in the South Pacific. Now I need you to find '
+            'my homeland — an island nation even further south, capital '
+            'Wellington, flag with Union Jack and Southern Cross. That\'s '
+            'New Zealand.',
       ),
     ],
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 6 — Hint Strategy (Antoine de Saint-Exupéry)
+  // Mission 6 — The Sahara Mail Run (Antoine de Saint-Exupéry)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'hint_strategy',
     order: 6,
-    title: 'Hint Strategy',
-    subtitle: 'Use hints wisely',
+    title: 'The Sahara Mail Run',
+    subtitle: 'Deliver the post',
     description:
-        'What is essential is invisible to the eye — yet the flag and capital '
-        'of my homeland are plain to see, if you know where to look. I flew '
-        'mail across the Sahara by starlight. Fly now to the land of the '
-        'tricolour.',
+        'In 1927 I became airmail chief for the Casablanca–Dakar route — '
+        'flying alone over the Sahara at night, navigating by starlight '
+        'and instinct. Today you\'ll retrace my route. We start over the '
+        'Atlantic flying east. Watch the country names as you cross them '
+        '— you\'ll need that memory when the mail starts moving.',
     coach: coachSaintExupery,
     allowedClues: {ClueType.flag, ClueType.capital},
-    rounds: 2,
+    rounds: 7,
     maxDifficulty: 0.35,
-    targetCountryCodes: ['FR'],
+    targetCountryCodes: ['EG', 'MA', 'TD', 'DZ', 'SN', 'LY', 'FR'],
     fuelEnabled: true,
-    xpReward: 100,
-    coinReward: 75,
+    xpReward: 200,
+    coinReward: 150,
     unlockMessage: 'Daily Briefing unlocked!',
     tips: [
       CoachTip(
         trigger: 'firstClue',
-        message:
-            'Blue, white, red — three vertical stripes, the tricolour. And '
-            'the capital is Paris, city of lights I once circled by night '
-            'carrying the mail. Which homeland flies this flag?',
-      ),
-      CoachTip(
-        trigger: 'firstHint',
-        message: 'A good pilot knows when to consult the chart — but each hint '
-            'costs more than the last: −500, then −1,000, then −1,500, up to '
-            '−2,500 for auto-navigate. Use them wisely, cadet.',
+        message: 'We are now approaching the Sahara desert — the vast golden '
+            'ocean I once flew over alone in a rattling Bréguet 14. Below '
+            'us, sand dunes stretch to the horizon. Keep your eyes on the '
+            'country names as they appear — you\'ll need that memory. Our '
+            'first stop is Cairo to collect the mail. Head east!',
       ),
       CoachTip(
         trigger: 'correctAnswer',
         message:
-            'France! My dear homeland. I wrote The Little Prince in exile, '
-            'dreaming of her skies. To land in Paris is to come home — '
-            'the essential things were never invisible after all.',
+            'We\'ve got the mail! Cairo, the city where the Nile meets the '
+            'desert. Now our first shipment goes to Morocco — can you '
+            'remember where it was? Morocco\'s flag is solid red with a '
+            'green pentagram at the centre. The red represents the ruling '
+            'Alaouite dynasty and the descendants of the Prophet, while '
+            'the green star — the Seal of Solomon — stands for life, '
+            'health, and wisdom. Head to the capital: Rabat, not '
+            'Casablanca or Marrakech! And remember — slower speeds give '
+            'you much finer control, and descending makes steering even '
+            'easier. Use both when you need precision.',
+      ),
+      CoachTip(
+        trigger: 'halfwayDone',
+        message: 'Halfway through the mail run! Next shipment heads deep into '
+            'the heart of Africa. The Sahara swallowed many pilots before '
+            'me — I myself crashed in the Libyan desert and nearly died '
+            'of thirst. But the mail must go through. Use your flag and '
+            'capital clues to find each destination. Every hint costs '
+            'more than the last: −500, −1,000, −1,500, up to −2,500 for '
+            'auto-navigate. Spend them wisely!',
+      ),
+      CoachTip(
+        trigger: 'firstHint',
+        message: 'A good pilot knows when to consult the chart — but each hint '
+            'costs more than the last. I once flew the entire Sahara route '
+            'with nothing but a compass and the stars. You have more tools '
+            'than I ever did — use them wisely, cadet.',
+      ),
+      CoachTip(
+        trigger: 'fuelLow',
+        message: 'Fuel\'s running low! I remember the terror of watching my '
+            'gauge drop over the empty Sahara with no airstrip for five '
+            'hundred miles. Our final shipment brings us home to France — '
+            'the tricolour, blue-white-red, capital Paris. Commit now and '
+            'fly north to the land I wrote The Little Prince dreaming of.',
+      ),
+      CoachTip(
+        trigger: 'fuelEmpty',
+        message: 'Running on fumes — just as I was when I crash-landed in the '
+            'Libyan desert! Head north to France. Paris is waiting. The '
+            'mail must arrive!',
+      ),
+      CoachTip(
+        trigger: 'wrongRegion',
+        message: 'You\'ve drifted off the route, cadet. My mail runs crossed '
+            'North and West Africa — Morocco, Algeria, Senegal, Libya, '
+            'Chad, and Egypt are all in that belt. Check your flag and '
+            'capital clues to get your bearings.',
       ),
       CoachTip(
         trigger: 'lost',
-        message:
-            'The tricolour and the capital of romance point to one nation. '
-            'I survived a crash in the Libyan desert thinking of France. '
-            'Look to Western Europe — Paris is waiting.',
+        message: 'When I was lost in the desert, I followed the stars. Follow '
+            'your clues — the flag tells you the nation, the capital tells '
+            'you where to land. Our mail route covers Egypt, Morocco, '
+            'Chad, Algeria, Senegal, Libya, and finally home to France.',
       ),
     ],
   ),
