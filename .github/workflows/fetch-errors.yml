@@ -20,6 +20,15 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Ensure required labels exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Create labels if they do not already exist (--force updates existing ones).
+          gh label create "bug"         --color "d73a4a" --description "Something isn't working"    --force
+          gh label create "critical"    --color "b60205" --description "Critical severity issue"    --force
+          gh label create "auto-triage" --color "e4e669" --description "Auto-created by CI pipeline" --force
+
       - name: Fetch critical errors and create/update GitHub issues
         env:
           VERCEL_ERRORS_API_KEY: ${{ secrets.VERCEL_ERRORS_API_KEY }}
