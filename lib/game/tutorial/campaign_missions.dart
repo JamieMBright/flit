@@ -337,54 +337,95 @@ const List<CampaignMission> campaignMissions = [
   ),
 
   // -----------------------------------------------------------------------
-  // Mission 6 — Hint Strategy (Antoine de Saint-Exupéry)
+  // Mission 6 — The Sahara Mail Run (Antoine de Saint-Exupéry)
   // -----------------------------------------------------------------------
   CampaignMission(
     id: 'hint_strategy',
     order: 6,
-    title: 'Hint Strategy',
-    subtitle: 'Use hints wisely',
+    title: 'The Sahara Mail Run',
+    subtitle: 'Deliver the post',
     description:
-        'What is essential is invisible to the eye — yet the flag and capital '
-        'of my homeland are plain to see, if you know where to look. I flew '
-        'mail across the Sahara by starlight. Fly now to the land of the '
-        'tricolour.',
+        'In 1927 I became airmail chief for the Casablanca–Dakar route — '
+        'flying alone over the Sahara at night, navigating by starlight '
+        'and instinct. Today you\'ll retrace my route. We start over the '
+        'Atlantic flying east. Watch the country names as you cross them '
+        '— you\'ll need that memory when the mail starts moving.',
     coach: coachSaintExupery,
     allowedClues: {ClueType.flag, ClueType.capital},
-    rounds: 2,
+    rounds: 7,
     maxDifficulty: 0.35,
-    targetCountryCodes: ['FR'],
+    targetCountryCodes: ['EG', 'MA', 'TD', 'DZ', 'SN', 'LY', 'FR'],
     fuelEnabled: true,
-    xpReward: 100,
-    coinReward: 75,
+    xpReward: 200,
+    coinReward: 150,
     unlockMessage: 'Daily Briefing unlocked!',
     tips: [
       CoachTip(
         trigger: 'firstClue',
-        message:
-            'Blue, white, red — three vertical stripes, the tricolour. And '
-            'the capital is Paris, city of lights I once circled by night '
-            'carrying the mail. Which homeland flies this flag?',
-      ),
-      CoachTip(
-        trigger: 'firstHint',
-        message: 'A good pilot knows when to consult the chart — but each hint '
-            'costs more than the last: −500, then −1,000, then −1,500, up to '
-            '−2,500 for auto-navigate. Use them wisely, cadet.',
+        message: 'We are now approaching the Sahara desert — the vast golden '
+            'ocean I once flew over alone in a rattling Bréguet 14. Below '
+            'us, sand dunes stretch to the horizon. Keep your eyes on the '
+            'country names as they appear — you\'ll need that memory. Our '
+            'first stop is Cairo to collect the mail. Head east!',
       ),
       CoachTip(
         trigger: 'correctAnswer',
         message:
-            'France! My dear homeland. I wrote The Little Prince in exile, '
-            'dreaming of her skies. To land in Paris is to come home — '
-            'the essential things were never invisible after all.',
+            'We\'ve got the mail! Cairo, the city where the Nile meets the '
+            'desert. Now our first shipment goes to Morocco — can you '
+            'remember where it was? Morocco\'s flag is solid red with a '
+            'green pentagram at the centre. The red represents the ruling '
+            'Alaouite dynasty and the descendants of the Prophet, while '
+            'the green star — the Seal of Solomon — stands for life, '
+            'health, and wisdom. Head to the capital: Rabat, not '
+            'Casablanca or Marrakech! And remember — slower speeds give '
+            'you much finer control, and descending makes steering even '
+            'easier. Use both when you need precision.',
+      ),
+      CoachTip(
+        trigger: 'halfwayDone',
+        message: 'Halfway through the mail run! Next shipment heads deep into '
+            'the heart of Africa. The Sahara swallowed many pilots before '
+            'me — I myself crashed in the Libyan desert and nearly died '
+            'of thirst. But the mail must go through. Use your flag and '
+            'capital clues to find each destination. Every hint costs '
+            'more than the last: −500, −1,000, −1,500, up to −2,500 for '
+            'auto-navigate. Spend them wisely!',
+      ),
+      CoachTip(
+        trigger: 'firstHint',
+        message: 'A good pilot knows when to consult the chart — but each hint '
+            'costs more than the last. I once flew the entire Sahara route '
+            'with nothing but a compass and the stars. You have more tools '
+            'than I ever did — use them wisely, cadet.',
+      ),
+      CoachTip(
+        trigger: 'fuelLow',
+        message: 'Fuel\'s running low! I remember the terror of watching my '
+            'gauge drop over the empty Sahara with no airstrip for five '
+            'hundred miles. Our final shipment brings us home to France — '
+            'the tricolour, blue-white-red, capital Paris. Commit now and '
+            'fly north to the land I wrote The Little Prince dreaming of.',
+      ),
+      CoachTip(
+        trigger: 'fuelEmpty',
+        message: 'Running on fumes — just as I was when I crash-landed in the '
+            'Libyan desert! Head north to France. Paris is waiting. The '
+            'mail must arrive!',
+      ),
+      CoachTip(
+        trigger: 'wrongRegion',
+        message: 'You\'ve drifted off the route, cadet. My mail runs crossed '
+            'North and West Africa — Morocco, Algeria, Senegal, Libya, '
+            'Chad, and Egypt are all in that belt. Check your flag and '
+            'capital clues to get your bearings.',
       ),
       CoachTip(
         trigger: 'lost',
-        message:
-            'The tricolour and the capital of romance point to one nation. '
-            'I survived a crash in the Libyan desert thinking of France. '
-            'Look to Western Europe — Paris is waiting.',
+        message: 'When I was lost in the desert, I followed the stars. Follow '
+            'your clues — the flag tells you the nation, the capital tells '
+            'you where to land. Our mail route covers Egypt, Morocco, '
+            'Chad, Algeria, Senegal, Libya, and finally home to France.',
       ),
     ],
   ),

@@ -1215,7 +1215,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         );
     if (!mounted) return;
 
-    // Campaign mission completion — show coach farewell, then results.
+    // Campaign mission completion — show coach tip, then farewell, then results.
     if (widget.campaignMission != null) {
       final mission = widget.campaignMission!;
       final notifier = ref.read(accountProvider.notifier);
@@ -1229,27 +1229,45 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         coinReward: mission.coinReward,
       );
       if (mounted) {
-        // Show coach farewell speech first — tapping dismiss shows results.
+        // Fire the correctAnswer coach tip so the player sees it before the
+        // completion popup covers the overlay. Delay the farewell dialog to
+        // give time to read the coach's message.
         _coachOverlayKey.currentState?.cancelLostTimer();
-        final farewellText =
-            '${mission.coach.farewell}\n\n${mission.coach.nextCoachTeaser}';
-        MissionDialog.showFarewell(
-          context,
-          mission: mission,
-          farewellText: farewellText,
-          onContinue: () {
-            if (!mounted) return;
-            MissionDialog.showCompletion(
-              context,
-              mission: mission,
-              result: campaignResult,
-              isFirstCompletion: isFirst,
-              onContinue: () {
-                if (mounted) Navigator.of(context).pop();
-              },
-            );
-          },
-        );
+        final tipShown =
+            _coachOverlayKey.currentState?.showTip('correctAnswer') ?? false;
+
+        final showDialogs = () {
+          if (!mounted) return;
+          final farewellText =
+              '${mission.coach.farewell}\n\n${mission.coach.nextCoachTeaser}';
+          MissionDialog.showFarewell(
+            context,
+            mission: mission,
+            farewellText: farewellText,
+            onContinue: () {
+              if (!mounted) return;
+              MissionDialog.showCompletion(
+                context,
+                mission: mission,
+                result: campaignResult,
+                isFirstCompletion: isFirst,
+                onContinue: () {
+                  if (mounted) Navigator.of(context).pop();
+                },
+              );
+            },
+          );
+        };
+
+        if (tipShown) {
+          // Let the player read the coach's final tip before showing dialogs.
+          Future<void>.delayed(
+            const Duration(seconds: 4),
+            showDialogs,
+          );
+        } else {
+          showDialogs();
+        }
       }
       return;
     }
