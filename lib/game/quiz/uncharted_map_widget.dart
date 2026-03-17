@@ -166,12 +166,16 @@ class _UnchartedMapPainter extends CustomPainter {
 
     final outlinePaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0 / zoomScale
+      ..strokeWidth = 1.5 / zoomScale
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true
       ..color = const Color(0xFF3A5A7A);
 
     final revealedStroke = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2 / zoomScale
+      ..strokeWidth = 1.5 / zoomScale
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true
       ..color = const Color(0xFF2ECC71);
 
     for (final area in areas) {
