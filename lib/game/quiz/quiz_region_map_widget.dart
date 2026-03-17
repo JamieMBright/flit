@@ -516,8 +516,29 @@ class _RegionMapPainter extends CustomPainter {
   /// Radius of the expanded marker drawn for tiny areas.
   static const double _markerRadius = 10.0;
 
+  /// Area codes that always get an expanded hit target and marker,
+  /// regardless of polygon size (island micro-states, city-states, etc.).
+  static const Set<String> _alwaysTinyCodes = {
+    'MV', // Maldives
+    'SG', // Singapore
+    'BH', // Bahrain
+    'MU', // Mauritius
+    'SC', // Seychelles
+    'KM', // Comoros
+    'ST', // São Tomé and Príncipe
+    'CV', // Cape Verde
+    'MT', // Malta
+    'AD', // Andorra
+    'MC', // Monaco
+    'LI', // Liechtenstein
+    'SM', // San Marino
+    'VA', // Vatican City
+  };
+
   /// Whether an area's polygon footprint on canvas is too small to tap.
   bool _isTinyArea(RegionalArea area, _GeoTransform transform, Size size) {
+    // Force-tiny for known micro-states regardless of zoom.
+    if (_alwaysTinyCodes.contains(area.code)) return true;
     if (area.points.length < 3) return true;
     var minX = double.infinity, maxX = -double.infinity;
     var minY = double.infinity, maxY = -double.infinity;

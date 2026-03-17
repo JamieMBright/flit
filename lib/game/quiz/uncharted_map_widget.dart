@@ -247,8 +247,15 @@ class _UnchartedMapPainter extends CustomPainter {
   /// Radius of the dashed circle marker for tiny areas.
   static const double _markerRadius = 10.0;
 
+  /// Area codes that always get an expanded marker (micro-states).
+  static const Set<String> _alwaysTinyCodes = {
+    'MV', 'SG', 'BH', 'MU', 'SC', 'KM', 'ST', 'CV', // island/micro states
+    'MT', 'AD', 'MC', 'LI', 'SM', 'VA', // European micro-states
+  };
+
   /// Whether an area's polygon footprint on canvas is too small to see.
   bool _isTinyArea(RegionalArea area, _GeoTransform transform, Size size) {
+    if (_alwaysTinyCodes.contains(area.code)) return true;
     if (area.points.length < 3) return true;
     var minX = double.infinity, maxX = -double.infinity;
     var minY = double.infinity, maxY = -double.infinity;
