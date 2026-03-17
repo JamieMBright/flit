@@ -24,6 +24,7 @@ class UnchartedMapWidget extends StatefulWidget {
     required this.revealedCodes,
     this.lastRevealedCode,
     this.capitalsMode = false,
+    this.pingProgress = 0.0,
   });
 
   final GameRegion region;
@@ -34,6 +35,9 @@ class UnchartedMapWidget extends StatefulWidget {
 
   /// When true, labels show capital name with red dot + (country code).
   final bool capitalsMode;
+
+  /// 0.0 = no ping, 0.0-1.0 = ping animation progress for unrevealed areas.
+  final double pingProgress;
 
   @override
   State<UnchartedMapWidget> createState() => _UnchartedMapWidgetState();
@@ -111,6 +115,7 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
                   zoomScale: _currentZoomScale,
                   satelliteImage: _satelliteImage,
                   capitalsMode: widget.capitalsMode,
+                  pingProgress: widget.pingProgress,
                 ),
               ),
             );
@@ -136,6 +141,7 @@ class _UnchartedMapPainter extends CustomPainter {
     required this.zoomScale,
     this.satelliteImage,
     this.capitalsMode = false,
+    this.pingProgress = 0.0,
   });
 
   final List<RegionalArea> areas;
@@ -146,6 +152,7 @@ class _UnchartedMapPainter extends CustomPainter {
   final double zoomScale;
   final ui.Image? satelliteImage;
   final bool capitalsMode;
+  final double pingProgress;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -215,6 +222,20 @@ class _UnchartedMapPainter extends CustomPainter {
         // Draw dashed circle marker for tiny countries so they're visible.
         if (_isTinyArea(area, transform, size)) {
           _drawTinyMarker(canvas, area, transform);
+        }
+
+        // Ping flash: briefly highlight unrevealed areas.
+        if (pingProgress > 0.0 && pingProgress < 1.0) {
+          // Pulse alpha: rise then fall.
+          final alpha = (pingProgress < 0.5
+                  ? pingProgress * 2.0
+                  : (1.0 - pingProgress) * 2.0)
+              .clamp(0.0, 1.0);
+          canvas.drawPath(
+            path,
+            Paint()
+              ..color = const Color(0xFFE8A55A).withValues(alpha: alpha * 0.35),
+          );
         }
       }
     }
@@ -422,7 +443,8 @@ class _UnchartedMapPainter extends CustomPainter {
         lastRevealedCode != oldDelegate.lastRevealedCode ||
         flashProgress != oldDelegate.flashProgress ||
         zoomScale != oldDelegate.zoomScale ||
-        satelliteImage != oldDelegate.satelliteImage;
+        satelliteImage != oldDelegate.satelliteImage ||
+        pingProgress != oldDelegate.pingProgress;
   }
 }
 
