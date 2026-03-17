@@ -21,6 +21,7 @@ class QuizRegionMapWidget extends StatefulWidget {
     this.showLabels = true,
     this.eliminatedCodes = const {},
     this.correctCodes = const {},
+    this.excludedCodes = const {},
   });
 
   final GameRegion region;
@@ -34,6 +35,9 @@ class QuizRegionMapWidget extends StatefulWidget {
 
   /// Codes that were correctly guessed (shown in muted green).
   final Set<String> correctCodes;
+
+  /// Codes excluded from the quiz (grayed out, non-interactive).
+  final Set<String> excludedCodes;
 
   @override
   State<QuizRegionMapWidget> createState() => _QuizRegionMapWidgetState();
@@ -100,6 +104,7 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
                     showLabels: widget.showLabels,
                     eliminatedCodes: widget.eliminatedCodes,
                     correctCodes: widget.correctCodes,
+                    excludedCodes: widget.excludedCodes,
                     zoomScale: scale,
                     satelliteImage: _satelliteImage,
                   ),
@@ -130,12 +135,13 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
       showLabels: widget.showLabels,
       eliminatedCodes: widget.eliminatedCodes,
       correctCodes: widget.correctCodes,
+      excludedCodes: widget.excludedCodes,
       zoomScale: scale,
       satelliteImage: _satelliteImage,
     );
 
     final code = painter.hitTestArea(position, size);
-    if (code != null) {
+    if (code != null && !widget.excludedCodes.contains(code)) {
       widget.onStateTapped(code);
     }
   }
@@ -150,6 +156,7 @@ class _RegionMapPainter extends CustomPainter {
     this.showLabels = true,
     this.eliminatedCodes = const {},
     this.correctCodes = const {},
+    this.excludedCodes = const {},
     this.zoomScale = 1.0,
     this.satelliteImage,
   });
@@ -161,6 +168,7 @@ class _RegionMapPainter extends CustomPainter {
   final bool showLabels;
   final Set<String> eliminatedCodes;
   final Set<String> correctCodes;
+  final Set<String> excludedCodes;
   final double zoomScale;
   final ui.Image? satelliteImage;
 
@@ -277,12 +285,21 @@ class _RegionMapPainter extends CustomPainter {
     // Hidden (eliminated) countries
     if (eliminatedCodes.contains(area.code)) return;
 
+    final path = _buildPath(area.points, transform, polygons: area.polygons);
+
+    // Excluded countries: draw very dim, non-interactive.
+    if (excludedCodes.contains(area.code)) {
+      canvas.drawPath(
+        path,
+        Paint()..color = const Color(0xFF1A2A32).withValues(alpha: 0.6),
+      );
+      return;
+    }
+
     final visual = stateVisuals[area.code];
     final status = visual?.status ?? StateVisualStatus.idle;
     final isHighlighted = highlightCode == area.code;
     final isCorrectlyGuessed = correctCodes.contains(area.code);
-
-    final path = _buildPath(area.points, transform, polygons: area.polygons);
 
     // Reveal satellite imagery for correctly guessed countries
     if ((isCorrectlyGuessed || status == StateVisualStatus.correct) &&

@@ -32,6 +32,9 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
   QuizMode _selectedMode = QuizMode.allStates;
   QuizDifficulty _selectedDifficulty = QuizDifficulty.medium;
 
+  /// Fraction of areas to exclude on easy mode (0.0 = all, 0.5 = half).
+  double _excludePercent = 0.0;
+
   static const _iconMap = <String, IconData>{
     'map': Icons.map,
     'location_city': Icons.location_city,
@@ -108,6 +111,9 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
   }
 
   void _startQuiz() {
+    final excludePct =
+        _selectedDifficulty == QuizDifficulty.easy ? _excludePercent : 0.0;
+
     final Widget screen;
     if (_selectedMode == QuizMode.typeIn) {
       screen = TypeInGameScreen(
@@ -123,6 +129,7 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
         categories: _selectedCategories,
         region: widget.level.region,
         difficulty: _selectedDifficulty,
+        excludePercent: excludePct,
         flightSchoolLevelId: widget.level.id,
       );
     }
@@ -161,6 +168,11 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                     _buildSectionLabel('DIFFICULTY', Icons.tune),
                     const SizedBox(height: 10),
                     _buildDifficultySelector(),
+                    // Area reduction slider (easy mode only)
+                    if (_selectedDifficulty == QuizDifficulty.easy) ...[
+                      const SizedBox(height: 16),
+                      _buildAreaReductionSlider(),
+                    ],
                     const SizedBox(height: 24),
 
                     _buildSectionLabel('GAME MODE', Icons.videogame_asset),
@@ -577,6 +589,89 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildAreaReductionSlider() {
+    final totalAreas = RegionalData.getAreas(widget.level.region).length;
+    final activeCount =
+        (totalAreas * (1.0 - _excludePercent)).round().clamp(1, totalAreas);
+    final pctLabel = (_excludePercent * 100).round();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: FlitColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.remove_circle_outline,
+                  color: FlitColors.success, size: 16),
+              const SizedBox(width: 8),
+              const Text(
+                'AREA REDUCTION',
+                style: TextStyle(
+                  color: FlitColors.textMuted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                pctLabel == 0
+                    ? 'All $totalAreas areas'
+                    : '$activeCount / $totalAreas areas ($pctLabel% removed)',
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: FlitColors.success,
+              inactiveTrackColor: FlitColors.cardBorder,
+              thumbColor: FlitColors.success,
+              overlayColor: FlitColors.success.withValues(alpha: 0.2),
+              trackHeight: 4,
+            ),
+            child: Slider(
+              value: _excludePercent,
+              min: 0.0,
+              max: 0.75,
+              divisions: 3,
+              onChanged: (v) => setState(() => _excludePercent = v),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('0%',
+                    style:
+                        TextStyle(color: FlitColors.textMuted, fontSize: 10)),
+                Text('25%',
+                    style:
+                        TextStyle(color: FlitColors.textMuted, fontSize: 10)),
+                Text('50%',
+                    style:
+                        TextStyle(color: FlitColors.textMuted, fontSize: 10)),
+                Text('75%',
+                    style:
+                        TextStyle(color: FlitColors.textMuted, fontSize: 10)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

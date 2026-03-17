@@ -32,6 +32,7 @@ class QuizGameScreen extends StatefulWidget {
     this.seed,
     this.flightSchoolLevelId,
     this.difficulty = QuizDifficulty.medium,
+    this.excludePercent = 0.0,
     this.h2hRoundIndex,
     this.dailyBriefingDateKey,
   });
@@ -40,6 +41,9 @@ class QuizGameScreen extends StatefulWidget {
   final Set<QuizCategory> categories;
   final GameRegion region;
   final QuizDifficulty difficulty;
+
+  /// Fraction of areas to exclude in easy mode (0.0–1.0).
+  final double excludePercent;
 
   /// When non-null, this quiz is part of an H2H challenge.
   final String? challengeId;
@@ -123,6 +127,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
       categories: widget.categories,
       region: widget.region,
       difficulty: widget.difficulty,
+      excludePercent: widget.excludePercent,
       seed: widget.seed,
     );
 
@@ -364,6 +369,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                                 showLabels: _session.showLabels,
                                 eliminatedCodes: _session.eliminatedCodes,
                                 correctCodes: _session.correctCodes,
+                                excludedCodes: _session.excludedAreaCodes,
                               )
                             : QuizRegionMapWidget(
                                 region: widget.region,
@@ -373,6 +379,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                                 showLabels: _session.showLabels,
                                 eliminatedCodes: _session.eliminatedCodes,
                                 correctCodes: _session.correctCodes,
+                                excludedCodes: _session.excludedAreaCodes,
                               ),
                       ),
 

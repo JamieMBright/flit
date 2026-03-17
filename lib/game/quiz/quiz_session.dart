@@ -142,6 +142,7 @@ class QuizSession {
     required this.categories,
     required this.region,
     this.difficulty = QuizDifficulty.medium,
+    this.excludePercent = 0.0,
     int? seed,
   })  : _generator = QuizQuestionGenerator(region: region, seed: seed),
         _random = Random(seed),
@@ -163,8 +164,17 @@ class QuizSession {
   final Set<QuizCategory> categories;
   final GameRegion region;
   final QuizDifficulty difficulty;
+
+  /// Fraction of areas to exclude (0.0 = none, 0.5 = 50%).
+  /// Only effective in easy mode.
+  final double excludePercent;
+
   final QuizQuestionGenerator _generator;
   final Random _random;
+
+  /// Area codes excluded from this quiz (grayed out on map).
+  Set<String> get excludedAreaCodes => Set.unmodifiable(_excludedAreaCodes);
+  final Set<String> _excludedAreaCodes = {};
 
   late final List<QuizQuestion> _questions;
   final List<QuizAnswerResult> _results;
@@ -265,6 +275,18 @@ class QuizSession {
       categories,
       allowedPool: allowedPool,
     );
+
+    // Easy mode area exclusion: randomly remove a percentage of areas.
+    if (excludePercent > 0.0 && _questions.isNotEmpty) {
+      final allCodes = _questions.map((q) => q.answerCode).toSet().toList()
+        ..shuffle(_random);
+      final excludeCount = (allCodes.length * excludePercent).round();
+      _excludedAreaCodes.addAll(allCodes.take(excludeCount));
+      _questions.removeWhere(
+        (q) => _excludedAreaCodes.contains(q.answerCode),
+      );
+    }
+
     _startTime = DateTime.now();
   }
 
