@@ -293,7 +293,7 @@ class QuizQuestionGenerator {
       case QuizCategory.stateName:
         return QuizQuestion(
           category: QuizCategory.stateName,
-          clueText: 'Tap: ${area.name}',
+          clueText: area.name,
           answerCode: area.code,
           answerName: area.name,
         );
