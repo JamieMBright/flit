@@ -395,12 +395,15 @@ class _RegionMapPainter extends CustomPainter {
         ? const Color(0xFF5A7A8A)
         : const Color(0xFFB0C8D8);
 
+    // Scale font inversely with zoom so labels don't get enormous when zoomed.
+    final fontSize = (7.0 / zoomScale).clamp(3.0, 10.0);
+
     final textPainter = TextPainter(
       text: TextSpan(
         text: area.code,
         style: TextStyle(
           color: textColor,
-          fontSize: 7,
+          fontSize: fontSize,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.5,
         ),

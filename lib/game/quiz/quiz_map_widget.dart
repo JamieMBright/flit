@@ -460,13 +460,14 @@ class _UsaMapPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
-    // Label
+    // Label — scale inversely with zoom so it doesn't grow enormous.
+    final labelFontSize = (9.0 / zoomScale).clamp(3.0, 12.0);
     final textPainter = TextPainter(
       text: TextSpan(
         text: label,
-        style: const TextStyle(
-          color: Color(0xFF8AA0B0),
-          fontSize: 9,
+        style: TextStyle(
+          color: const Color(0xFF8AA0B0),
+          fontSize: labelFontSize,
           fontWeight: FontWeight.w600,
           letterSpacing: 1,
         ),
@@ -562,12 +563,15 @@ class _UsaMapPainter extends CustomPainter {
         ? const Color(0xFF5A7A8A)
         : const Color(0xFFB0C8D8);
 
+    // Scale font inversely with zoom so labels don't get enormous when zoomed.
+    final fontSize = (8.0 / zoomScale).clamp(3.0, 10.0);
+
     final textPainter = TextPainter(
       text: TextSpan(
         text: area.code,
         style: TextStyle(
           color: textColor,
-          fontSize: 8,
+          fontSize: fontSize,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.5,
         ),
