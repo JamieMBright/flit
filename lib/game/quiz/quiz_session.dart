@@ -254,7 +254,17 @@ class QuizSession {
 
   /// Initialize and start the quiz.
   void start() {
-    _questions = _generator.generateQuestions(categories);
+    // When in mixed mode, pass the difficulty-filtered pool so easy mode
+    // excludes hard categories (sportsTeam, celebrity, filmSetting, etc.).
+    final allowedPool = categories.contains(QuizCategory.mixed)
+        ? difficulty.filterCategories(
+            regionCategories[region] ?? universalCategories,
+          )
+        : null;
+    _questions = _generator.generateQuestions(
+      categories,
+      allowedPool: allowedPool,
+    );
     _startTime = DateTime.now();
   }
 
