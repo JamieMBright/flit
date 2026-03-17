@@ -302,7 +302,9 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
               textCapitalization: TextCapitalization.words,
               autocorrect: false,
               enableSuggestions: false,
-              autofillHints: const [],
+              autofillHints: null,
+              enableIMEPersonalizedLearning: false,
+              spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
               style: const TextStyle(
                 color: FlitColors.textPrimary,
                 fontSize: 18,

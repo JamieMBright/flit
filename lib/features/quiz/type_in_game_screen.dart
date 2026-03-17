@@ -842,6 +842,11 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
           focusNode: _focusNode,
           autofocus: true,
           textInputAction: TextInputAction.done,
+          autocorrect: false,
+          enableSuggestions: false,
+          autofillHints: null,
+          enableIMEPersonalizedLearning: false,
+          spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
           style: const TextStyle(
             color: FlitColors.textPrimary,
             fontSize: 18,
