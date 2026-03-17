@@ -81,6 +81,25 @@ class _QuizGameScreenState extends State<QuizGameScreen>
   final GlobalKey<InkBurstOverlayState> _inkBurstKey =
       GlobalKey<InkBurstOverlayState>();
 
+  /// Whether the region uses ISO 3166-1 alpha-2 codes that produce flag emoji.
+  bool get _hasIsoFlagEmoji {
+    switch (widget.region) {
+      case GameRegion.europe:
+      case GameRegion.asia:
+      case GameRegion.africa:
+      case GameRegion.latinAmerica:
+      case GameRegion.oceania:
+      case GameRegion.caribbean:
+      case GameRegion.world:
+        return true;
+      case GameRegion.usStates:
+      case GameRegion.ireland:
+      case GameRegion.ukCounties:
+      case GameRegion.canadianProvinces:
+        return false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -542,17 +561,38 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                     ),
                   ),
                   const SizedBox(height: 4),
-                  // Clue text
-                  Text(
-                    question.clueText,
-                    style: const TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      height: 1.3,
+                  // Flag clue: show flag emoji + description as lore
+                  // for international regions with ISO country codes.
+                  if (question.category == QuizCategory.flagDescription &&
+                      _hasIsoFlagEmoji) ...[
+                    Text(
+                      countryCodeToFlagEmoji(question.answerCode),
+                      style: const TextStyle(fontSize: 48),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
+                    const SizedBox(height: 6),
+                    Text(
+                      question.clueText.replaceFirst('Flag: ', ''),
+                      style: const TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        fontStyle: FontStyle.italic,
+                        height: 1.3,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ] else
+                    // Normal clue text
+                    Text(
+                      question.clueText,
+                      style: const TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        height: 1.3,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   // Extra clue texts from hints
                   if (extraClues.isNotEmpty) ...[
                     const SizedBox(height: 6),

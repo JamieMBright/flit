@@ -117,6 +117,16 @@ extension QuizCategoryExtension on QuizCategory {
   }
 }
 
+/// Convert a 2-letter country/state code to a flag emoji.
+///
+/// Works for ISO 3166-1 alpha-2 codes (e.g. 'US' → 🇺🇸, 'FR' → 🇫🇷).
+/// For sub-national codes this may not produce a valid flag.
+String countryCodeToFlagEmoji(String code) {
+  final codeUnits = code.toUpperCase().codeUnits;
+  final flagCodeUnits = codeUnits.map((c) => c + 127397).toList();
+  return String.fromCharCodes(flagCodeUnits);
+}
+
 /// A single quiz question for the player to answer by tapping a state.
 class QuizQuestion {
   const QuizQuestion({
