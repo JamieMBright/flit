@@ -125,9 +125,10 @@ class _DescentMapViewState extends State<DescentMapView> {
     final zoomDelta = (zoom - _lastZoom).abs();
     final rotDelta = (rotation - _lastRotation).abs();
 
-    final needsMove =
-        latDelta > 0.0001 || lngDelta > 0.0001 || zoomDelta > 0.01;
-    final needsRotate = rotDelta > 0.1;
+    // At zoom 7, 0.001° ≈ 111m — visually smooth at flight speed but
+    // reduces expensive mapController.move() calls by ~10x.
+    final needsMove = latDelta > 0.001 || lngDelta > 0.001 || zoomDelta > 0.05;
+    final needsRotate = rotDelta > 0.5;
 
     if (needsMove) {
       _mapController.move(center, zoom);
