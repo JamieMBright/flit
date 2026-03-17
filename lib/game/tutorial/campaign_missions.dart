@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import '../clues/clue_types.dart';
 import 'campaign_mission.dart';
 import 'coach.dart';
@@ -38,6 +40,10 @@ const List<CampaignMission> campaignMissions = [
     fuelEnabled: false,
     xpReward: 50,
     coinReward: 25,
+    // Start over the Mediterranean, facing east toward India.
+    startLat: 35.0,
+    startLng: 15.0,
+    startHeading: 0, // east
     tips: [
       CoachTip(
         trigger: 'firstClue',
@@ -91,6 +97,10 @@ const List<CampaignMission> campaignMissions = [
     fuelEnabled: false,
     xpReward: 100,
     coinReward: 75,
+    // Start over the North Atlantic, facing east — US then GB then Egypt.
+    startLat: 45.0,
+    startLng: -40.0,
+    startHeading: 0, // east
     tips: [
       CoachTip(
         trigger: 'firstClue',
@@ -158,6 +168,10 @@ const List<CampaignMission> campaignMissions = [
     fuelEnabled: false,
     xpReward: 100,
     coinReward: 75,
+    // Start over the South Atlantic, facing east — AU, then ZA, then BR.
+    startLat: 0.0,
+    startLng: -30.0,
+    startHeading: 0, // east
     tips: [
       CoachTip(
         trigger: 'firstClue',
@@ -223,6 +237,10 @@ const List<CampaignMission> campaignMissions = [
     fuelEnabled: false,
     xpReward: 125,
     coinReward: 100,
+    // Start over the North Atlantic, facing east — FR first.
+    startLat: 50.0,
+    startLng: -20.0,
+    startHeading: 0, // east
     tips: [
       CoachTip(
         trigger: 'firstClue',
@@ -288,6 +306,10 @@ const List<CampaignMission> campaignMissions = [
     fuelEnabled: true,
     xpReward: 125,
     coinReward: 100,
+    // Start over the North Atlantic heading north-east toward Iceland.
+    startLat: 52.0,
+    startLng: -30.0,
+    startHeading: -pi / 4, // north-east
     tips: [
       CoachTip(
         trigger: 'firstClue',
@@ -359,6 +381,10 @@ const List<CampaignMission> campaignMissions = [
     xpReward: 200,
     coinReward: 150,
     unlockMessage: 'Daily Briefing unlocked!',
+    // Start over the Atlantic west of the Sahara, facing east.
+    startLat: 25.0,
+    startLng: -25.0,
+    startHeading: 0, // east
     tips: [
       CoachTip(
         trigger: 'firstClue',
@@ -450,6 +476,10 @@ const List<CampaignMission> campaignMissions = [
     fuelEnabled: true,
     xpReward: 100,
     coinReward: 75,
+    // Start over the Caribbean, facing south toward Peru.
+    startLat: 20.0,
+    startLng: -70.0,
+    startHeading: pi / 2, // south
     tips: [
       CoachTip(
         trigger: 'firstClue',
@@ -500,6 +530,10 @@ const List<CampaignMission> campaignMissions = [
     fuelEnabled: true,
     xpReward: 100,
     coinReward: 75,
+    // Start over Central Africa, facing east toward Kenya.
+    startLat: 5.0,
+    startLng: 20.0,
+    startHeading: 0, // east
     tips: [
       CoachTip(
         trigger: 'firstClue',
@@ -550,6 +584,10 @@ const List<CampaignMission> campaignMissions = [
     xpReward: 125,
     coinReward: 100,
     unlockMessage: 'Daily Challenge unlocked!',
+    // Start over the southern US, facing south toward Mexico.
+    startLat: 35.0,
+    startLng: -95.0,
+    startHeading: pi / 2, // south
     tips: [
       CoachTip(
         trigger: 'firstClue',
@@ -601,6 +639,10 @@ const List<CampaignMission> campaignMissions = [
     fuelEnabled: true,
     xpReward: 125,
     coinReward: 100,
+    // Start over the eastern Mediterranean, facing south-east toward Arabia.
+    startLat: 38.0,
+    startLng: 25.0,
+    startHeading: pi / 4, // south-east
     tips: [
       CoachTip(
         trigger: 'firstClue',
@@ -652,6 +694,10 @@ const List<CampaignMission> campaignMissions = [
     xpReward: 150,
     coinReward: 100,
     unlockMessage: 'Dogfight unlocked!',
+    // Start over the Bay of Bengal, facing east toward the Philippines.
+    startLat: 15.0,
+    startLng: 90.0,
+    startHeading: 0, // east
     tips: [
       CoachTip(
         trigger: 'firstClue',
@@ -703,6 +749,10 @@ const List<CampaignMission> campaignMissions = [
     fuelEnabled: true,
     xpReward: 200,
     coinReward: 150,
+    // Start over the Indian Ocean, facing east toward Indonesia.
+    startLat: -5.0,
+    startLng: 80.0,
+    startHeading: 0, // east
     tips: [
       CoachTip(
         trigger: 'firstClue',
@@ -755,6 +805,10 @@ const List<CampaignMission> campaignMissions = [
     xpReward: 250,
     coinReward: 200,
     unlockMessage: 'All game modes unlocked! Fly safe, ace.',
+    // Start over the open Caribbean, facing east toward Barbados.
+    startLat: 15.0,
+    startLng: -70.0,
+    startHeading: 0, // east
     tips: [
       CoachTip(
         trigger: 'firstClue',

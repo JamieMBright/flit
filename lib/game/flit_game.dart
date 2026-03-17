@@ -1675,6 +1675,7 @@ class FlitGame extends FlameGame
     required Vector2 startPosition,
     required Vector2 targetPosition,
     required String clue,
+    double? heading,
   }) {
     _log.info(
       'game',
@@ -1690,9 +1691,14 @@ class FlitGame extends FlameGame
     // startPosition is already (lng, lat) degrees — use directly
     _worldPosition = startPosition.clone();
 
-    // Random initial heading so the player doesn't start facing the target.
-    final rng = Random();
-    _heading = (rng.nextDouble() * 2 * pi) - pi;
+    // Use the provided heading or pick a random one so the player doesn't
+    // start facing the target by accident.
+    if (heading != null) {
+      _heading = heading;
+    } else {
+      final rng = Random();
+      _heading = (rng.nextDouble() * 2 * pi) - pi;
+    }
     _cameraHeading = _heading; // snap camera to heading on game start
     _cameraFirstUpdate = true;
     _plane.fadeIn(); // Start invisible during positioning phase
