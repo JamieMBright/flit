@@ -35,6 +35,9 @@ class CampaignMission {
     this.coinReward = 50,
     this.unlockMessage,
     this.tips = const [],
+    this.startLat,
+    this.startLng,
+    this.startHeading,
   });
 
   final String id;
@@ -52,6 +55,16 @@ class CampaignMission {
   final int coinReward;
   final String? unlockMessage;
   final List<CoachTip> tips;
+
+  /// Fixed starting latitude (degrees). When null, the session picks randomly.
+  final double? startLat;
+
+  /// Fixed starting longitude (degrees). When null, the session picks randomly.
+  final double? startLng;
+
+  /// Fixed starting heading (radians, 0 = east, π/2 = north). When null,
+  /// the game picks a random heading.
+  final double? startHeading;
 }
 
 /// Result of completing a campaign mission.
