@@ -21,6 +21,7 @@ class QuizRegionMapWidget extends StatefulWidget {
     this.showLabels = true,
     this.eliminatedCodes = const {},
     this.correctCodes = const {},
+    this.excludedCodes = const {},
   });
 
   final GameRegion region;
@@ -34,6 +35,9 @@ class QuizRegionMapWidget extends StatefulWidget {
 
   /// Codes that were correctly guessed (shown in muted green).
   final Set<String> correctCodes;
+
+  /// Codes excluded from the quiz (grayed out, non-interactive).
+  final Set<String> excludedCodes;
 
   @override
   State<QuizRegionMapWidget> createState() => _QuizRegionMapWidgetState();
@@ -100,6 +104,7 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
                     showLabels: widget.showLabels,
                     eliminatedCodes: widget.eliminatedCodes,
                     correctCodes: widget.correctCodes,
+                    excludedCodes: widget.excludedCodes,
                     zoomScale: scale,
                     satelliteImage: _satelliteImage,
                   ),
@@ -130,12 +135,13 @@ class _QuizRegionMapWidgetState extends State<QuizRegionMapWidget>
       showLabels: widget.showLabels,
       eliminatedCodes: widget.eliminatedCodes,
       correctCodes: widget.correctCodes,
+      excludedCodes: widget.excludedCodes,
       zoomScale: scale,
       satelliteImage: _satelliteImage,
     );
 
     final code = painter.hitTestArea(position, size);
-    if (code != null) {
+    if (code != null && !widget.excludedCodes.contains(code)) {
       widget.onStateTapped(code);
     }
   }
@@ -150,6 +156,7 @@ class _RegionMapPainter extends CustomPainter {
     this.showLabels = true,
     this.eliminatedCodes = const {},
     this.correctCodes = const {},
+    this.excludedCodes = const {},
     this.zoomScale = 1.0,
     this.satelliteImage,
   });
@@ -161,6 +168,7 @@ class _RegionMapPainter extends CustomPainter {
   final bool showLabels;
   final Set<String> eliminatedCodes;
   final Set<String> correctCodes;
+  final Set<String> excludedCodes;
   final double zoomScale;
   final ui.Image? satelliteImage;
 
@@ -184,10 +192,11 @@ class _RegionMapPainter extends CustomPainter {
     // Draw clean borders (subtle, single pass).
     // Divide strokeWidth by zoom scale so borders stay visually constant.
     final borderPaint = Paint()
-      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6)
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.7)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0 / zoomScale
+      ..strokeWidth = 1.5 / zoomScale
       ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round
       ..isAntiAlias = true;
 
     for (final area in areas) {
@@ -276,12 +285,21 @@ class _RegionMapPainter extends CustomPainter {
     // Hidden (eliminated) countries
     if (eliminatedCodes.contains(area.code)) return;
 
+    final path = _buildPath(area.points, transform, polygons: area.polygons);
+
+    // Excluded countries: draw very dim, non-interactive.
+    if (excludedCodes.contains(area.code)) {
+      canvas.drawPath(
+        path,
+        Paint()..color = const Color(0xFF1A2A32).withValues(alpha: 0.6),
+      );
+      return;
+    }
+
     final visual = stateVisuals[area.code];
     final status = visual?.status ?? StateVisualStatus.idle;
     final isHighlighted = highlightCode == area.code;
     final isCorrectlyGuessed = correctCodes.contains(area.code);
-
-    final path = _buildPath(area.points, transform, polygons: area.polygons);
 
     // Reveal satellite imagery for correctly guessed countries
     if ((isCorrectlyGuessed || status == StateVisualStatus.correct) &&
@@ -395,12 +413,15 @@ class _RegionMapPainter extends CustomPainter {
         ? const Color(0xFF5A7A8A)
         : const Color(0xFFB0C8D8);
 
+    // Scale font inversely with zoom so labels don't get enormous when zoomed.
+    final fontSize = (7.0 / zoomScale).clamp(3.0, 10.0);
+
     final textPainter = TextPainter(
       text: TextSpan(
         text: area.code,
         style: TextStyle(
           color: textColor,
-          fontSize: 7,
+          fontSize: fontSize,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.5,
         ),
@@ -495,8 +516,29 @@ class _RegionMapPainter extends CustomPainter {
   /// Radius of the expanded marker drawn for tiny areas.
   static const double _markerRadius = 10.0;
 
+  /// Area codes that always get an expanded hit target and marker,
+  /// regardless of polygon size (island micro-states, city-states, etc.).
+  static const Set<String> _alwaysTinyCodes = {
+    'MV', // Maldives
+    'SG', // Singapore
+    'BH', // Bahrain
+    'MU', // Mauritius
+    'SC', // Seychelles
+    'KM', // Comoros
+    'ST', // São Tomé and Príncipe
+    'CV', // Cape Verde
+    'MT', // Malta
+    'AD', // Andorra
+    'MC', // Monaco
+    'LI', // Liechtenstein
+    'SM', // San Marino
+    'VA', // Vatican City
+  };
+
   /// Whether an area's polygon footprint on canvas is too small to tap.
   bool _isTinyArea(RegionalArea area, _GeoTransform transform, Size size) {
+    // Force-tiny for known micro-states regardless of zoom.
+    if (_alwaysTinyCodes.contains(area.code)) return true;
     if (area.points.length < 3) return true;
     var minX = double.infinity, maxX = -double.infinity;
     var minY = double.infinity, maxY = -double.infinity;

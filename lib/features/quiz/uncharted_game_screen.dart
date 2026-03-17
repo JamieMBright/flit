@@ -28,7 +28,7 @@ class UnchartedGameScreen extends StatefulWidget {
 }
 
 class _UnchartedGameScreenState extends State<UnchartedGameScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late UnchartedSession _session;
   Timer? _timer;
 
@@ -40,6 +40,13 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
 
   late AnimationController _feedbackController;
   late Animation<double> _feedbackOpacity;
+
+  /// Ping animation: flashes unrevealed areas to hint at remaining countries.
+  late AnimationController _pingController;
+
+  /// Seconds of inactivity before auto-ping fires.
+  static const int _autoPingDelaySec = 30;
+  Timer? _inactivityTimer;
 
   @override
   void initState() {
@@ -63,6 +70,13 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
       ),
     );
 
+    _pingController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    _resetInactivityTimer();
+
     // Auto-focus the text field.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
@@ -72,10 +86,26 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
   @override
   void dispose() {
     _timer?.cancel();
+    _inactivityTimer?.cancel();
     _textController.dispose();
     _focusNode.dispose();
     _feedbackController.dispose();
+    _pingController.dispose();
     super.dispose();
+  }
+
+  void _resetInactivityTimer() {
+    _inactivityTimer?.cancel();
+    if (_session.isComplete) return;
+    _inactivityTimer = Timer(
+      const Duration(seconds: _autoPingDelaySec),
+      _triggerPing,
+    );
+  }
+
+  void _triggerPing() {
+    if (_session.isComplete || !mounted) return;
+    _pingController.forward(from: 0);
   }
 
   void _handleInputChanged(String value) {
@@ -96,6 +126,7 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
         _lastRevealedCode = result.code;
         _feedbackText = result.areaName;
         _feedbackController.forward(from: 0);
+        _resetInactivityTimer();
       }
     });
 
@@ -176,11 +207,15 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
           children: [
             // Full-screen map — stays still regardless of keyboard state.
             Positioned.fill(
-              child: UnchartedMapWidget(
-                region: widget.region,
-                revealedCodes: _session.revealedCodes,
-                lastRevealedCode: _lastRevealedCode,
-                capitalsMode: widget.mode == UnchartedMode.capitals,
+              child: AnimatedBuilder(
+                animation: _pingController,
+                builder: (context, _) => UnchartedMapWidget(
+                  region: widget.region,
+                  revealedCodes: _session.revealedCodes,
+                  lastRevealedCode: _lastRevealedCode,
+                  capitalsMode: widget.mode == UnchartedMode.capitals,
+                  pingProgress: _pingController.value,
+                ),
               ),
             ),
             // Top bar HUD.
@@ -293,6 +328,14 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
       color: FlitColors.backgroundMid,
       child: Row(
         children: [
+          // Ping hint button — flashes unrevealed areas on the map.
+          IconButton(
+            icon: const Icon(Icons.radar, color: FlitColors.gold),
+            tooltip: 'Ping unrevealed areas',
+            onPressed: _session.isComplete ? null : _triggerPing,
+            padding: const EdgeInsets.only(right: 8),
+            constraints: const BoxConstraints(),
+          ),
           Expanded(
             child: TextField(
               controller: _textController,
@@ -302,7 +345,9 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
               textCapitalization: TextCapitalization.words,
               autocorrect: false,
               enableSuggestions: false,
-              autofillHints: const [],
+              autofillHints: null,
+              enableIMEPersonalizedLearning: false,
+              spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
               style: const TextStyle(
                 color: FlitColors.textPrimary,
                 fontSize: 18,

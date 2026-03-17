@@ -17,8 +17,9 @@ import '../../game/map/region.dart';
 
 /// Player-facing screen showing all game clues across tabs.
 ///
-/// Tabs: Countries | US States | UK | Ireland | Canada
-/// Each tab shows the clue data used in-game for that region.
+/// Tabs: All World | Regions | Sub-national
+/// Each tab shows the clue data used in-game for that category,
+/// with a region filter dropdown where applicable.
 class CountryCluesScreen extends StatefulWidget {
   const CountryCluesScreen({super.key});
 
@@ -33,13 +34,29 @@ class _CountryCluesScreenState extends State<CountryCluesScreen> {
   /// Codes known to be unsupported by the flag SVG package.
   static const _unsupportedFlagCodes = {'XC', 'XS', 'AN', 'CS', 'TP'};
 
-  /// Flight school tabs with rich clue data.
-  static const _flightSchoolTabs = <({String label, GameRegion region})>[
+  /// Continental/international regions (for the Regions tab).
+  static const _continentalRegions = <({String label, GameRegion region})>[
+    (label: 'Europe', region: GameRegion.europe),
+    (label: 'Asia', region: GameRegion.asia),
+    (label: 'Africa', region: GameRegion.africa),
+    (label: 'Latin America', region: GameRegion.latinAmerica),
+    (label: 'Oceania', region: GameRegion.oceania),
+    (label: 'Caribbean', region: GameRegion.caribbean),
+  ];
+
+  /// Sub-national regions (for the Sub-national tab).
+  static const _subNationalRegions = <({String label, GameRegion region})>[
     (label: 'US States', region: GameRegion.usStates),
-    (label: 'UK', region: GameRegion.ukCounties),
+    (label: 'British Counties', region: GameRegion.ukCounties),
     (label: 'Ireland', region: GameRegion.ireland),
     (label: 'Canada', region: GameRegion.canadianProvinces),
   ];
+
+  /// Currently selected region filter for the Regions tab.
+  GameRegion? _selectedContinental;
+
+  /// Currently selected region filter for the Sub-national tab.
+  GameRegion? _selectedSubNational;
 
   List<CountryShape> get _filteredCountries {
     var list = CountryData.countries;
@@ -82,7 +99,7 @@ class _CountryCluesScreenState extends State<CountryCluesScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 1 + _flightSchoolTabs.length,
+      length: 3,
       child: Scaffold(
         backgroundColor: FlitColors.backgroundDark,
         appBar: AppBar(
@@ -92,19 +109,18 @@ class _CountryCluesScreenState extends State<CountryCluesScreen> {
             style: TextStyle(color: FlitColors.textPrimary),
           ),
           iconTheme: const IconThemeData(color: FlitColors.textPrimary),
-          bottom: TabBar(
-            isScrollable: true,
+          bottom: const TabBar(
             labelColor: FlitColors.accent,
             unselectedLabelColor: FlitColors.textMuted,
             indicatorColor: FlitColors.accent,
-            labelStyle: const TextStyle(
+            labelStyle: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
-            tabAlignment: TabAlignment.start,
             tabs: [
-              const Tab(text: 'Countries'),
-              ..._flightSchoolTabs.map((t) => Tab(text: t.label)),
+              Tab(text: 'All World'),
+              Tab(text: 'Regions'),
+              Tab(text: 'Sub-national'),
             ],
           ),
         ),
@@ -159,15 +175,32 @@ class _CountryCluesScreenState extends State<CountryCluesScreen> {
             Expanded(
               child: TabBarView(
                 children: [
+                  // All World tab
                   _CountriesTab(
                     countries: _filteredCountries,
                     unsupportedFlags: _unsupportedFlagCodes,
                   ),
-                  ..._flightSchoolTabs.map(
-                    (t) => _RegionalTab(
-                      region: t.region,
-                      areas: _filteredAreas(t.region),
-                    ),
+
+                  // Regions tab (continental with filter)
+                  _FilteredRegionalTab(
+                    regions: _continentalRegions,
+                    selectedRegion: _selectedContinental,
+                    onRegionChanged: (r) =>
+                        setState(() => _selectedContinental = r),
+                    filteredAreas: _selectedContinental != null
+                        ? _filteredAreas(_selectedContinental!)
+                        : null,
+                  ),
+
+                  // Sub-national tab (with filter)
+                  _FilteredRegionalTab(
+                    regions: _subNationalRegions,
+                    selectedRegion: _selectedSubNational,
+                    onRegionChanged: (r) =>
+                        setState(() => _selectedSubNational = r),
+                    filteredAreas: _selectedSubNational != null
+                        ? _filteredAreas(_selectedSubNational!)
+                        : null,
                   ),
                 ],
               ),
@@ -304,6 +337,142 @@ class _RegionalTab extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Filtered regional tab (used by Regions and Sub-national tabs)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _FilteredRegionalTab extends StatelessWidget {
+  const _FilteredRegionalTab({
+    required this.regions,
+    required this.selectedRegion,
+    required this.onRegionChanged,
+    required this.filteredAreas,
+  });
+
+  final List<({String label, GameRegion region})> regions;
+  final GameRegion? selectedRegion;
+  final ValueChanged<GameRegion?> onRegionChanged;
+  final List<RegionalArea>? filteredAreas;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Region filter chips
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: SizedBox(
+            height: 36,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: regions.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final r = regions[index];
+                final isSelected = selectedRegion == r.region;
+                return FilterChip(
+                  label: Text(
+                    r.label,
+                    style: TextStyle(
+                      color: isSelected
+                          ? FlitColors.backgroundDark
+                          : FlitColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                  selected: isSelected,
+                  onSelected: (_) {
+                    onRegionChanged(isSelected ? null : r.region);
+                  },
+                  selectedColor: FlitColors.accent,
+                  backgroundColor: FlitColors.backgroundMid,
+                  checkmarkColor: FlitColors.backgroundDark,
+                  side: BorderSide(
+                    color:
+                        isSelected ? FlitColors.accent : FlitColors.cardBorder,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                );
+              },
+            ),
+          ),
+        ),
+
+        // Content: prompt or area list
+        Expanded(
+          child: selectedRegion == null
+              ? _buildRegionGrid()
+              : _RegionalTab(
+                  region: selectedRegion!,
+                  areas: filteredAreas ?? const [],
+                ),
+        ),
+      ],
+    );
+  }
+
+  /// Grid of region cards shown when no filter is selected.
+  Widget _buildRegionGrid() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.6,
+        ),
+        itemCount: regions.length,
+        itemBuilder: (context, index) {
+          final r = regions[index];
+          final areaCount = RegionalData.getAreas(r.region).length;
+          return Material(
+            color: FlitColors.cardBackground,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: () => onRegionChanged(r.region),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: FlitColors.cardBorder),
+                ),
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      r.label,
+                      style: const TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$areaCount areas',
+                      style: const TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

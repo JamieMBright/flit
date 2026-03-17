@@ -24,6 +24,7 @@ class UnchartedMapWidget extends StatefulWidget {
     required this.revealedCodes,
     this.lastRevealedCode,
     this.capitalsMode = false,
+    this.pingProgress = 0.0,
   });
 
   final GameRegion region;
@@ -34,6 +35,9 @@ class UnchartedMapWidget extends StatefulWidget {
 
   /// When true, labels show capital name with red dot + (country code).
   final bool capitalsMode;
+
+  /// 0.0 = no ping, 0.0-1.0 = ping animation progress for unrevealed areas.
+  final double pingProgress;
 
   @override
   State<UnchartedMapWidget> createState() => _UnchartedMapWidgetState();
@@ -98,7 +102,8 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
               transformationController: _transformController,
               minScale: 1.0,
               maxScale: 25.0,
-              boundaryMargin: const EdgeInsets.all(100),
+              constrained: false,
+              boundaryMargin: const EdgeInsets.all(double.infinity),
               child: CustomPaint(
                 size: Size(constraints.maxWidth, constraints.maxHeight),
                 painter: _UnchartedMapPainter(
@@ -110,6 +115,7 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
                   zoomScale: _currentZoomScale,
                   satelliteImage: _satelliteImage,
                   capitalsMode: widget.capitalsMode,
+                  pingProgress: widget.pingProgress,
                 ),
               ),
             );
@@ -135,6 +141,7 @@ class _UnchartedMapPainter extends CustomPainter {
     required this.zoomScale,
     this.satelliteImage,
     this.capitalsMode = false,
+    this.pingProgress = 0.0,
   });
 
   final List<RegionalArea> areas;
@@ -145,6 +152,7 @@ class _UnchartedMapPainter extends CustomPainter {
   final double zoomScale;
   final ui.Image? satelliteImage;
   final bool capitalsMode;
+  final double pingProgress;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -166,12 +174,16 @@ class _UnchartedMapPainter extends CustomPainter {
 
     final outlinePaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0 / zoomScale
+      ..strokeWidth = 1.5 / zoomScale
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true
       ..color = const Color(0xFF3A5A7A);
 
     final revealedStroke = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2 / zoomScale
+      ..strokeWidth = 1.5 / zoomScale
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true
       ..color = const Color(0xFF2ECC71);
 
     for (final area in areas) {
@@ -206,7 +218,89 @@ class _UnchartedMapPainter extends CustomPainter {
       } else {
         // Unrevealed: just outline.
         canvas.drawPath(path, outlinePaint);
+
+        // Draw dashed circle marker for tiny countries so they're visible.
+        if (_isTinyArea(area, transform, size)) {
+          _drawTinyMarker(canvas, area, transform);
+        }
+
+        // Ping flash: briefly highlight unrevealed areas.
+        if (pingProgress > 0.0 && pingProgress < 1.0) {
+          // Pulse alpha: rise then fall.
+          final alpha = (pingProgress < 0.5
+                  ? pingProgress * 2.0
+                  : (1.0 - pingProgress) * 2.0)
+              .clamp(0.0, 1.0);
+          canvas.drawPath(
+            path,
+            Paint()
+              ..color = const Color(0xFFE8A55A).withValues(alpha: alpha * 0.35),
+          );
+        }
       }
+    }
+  }
+
+  /// Minimum canvas diameter below which an area is considered "tiny".
+  static const double _tinyThreshold = 18.0;
+
+  /// Radius of the dashed circle marker for tiny areas.
+  static const double _markerRadius = 10.0;
+
+  /// Area codes that always get an expanded marker (micro-states).
+  static const Set<String> _alwaysTinyCodes = {
+    'MV', 'SG', 'BH', 'MU', 'SC', 'KM', 'ST', 'CV', // island/micro states
+    'MT', 'AD', 'MC', 'LI', 'SM', 'VA', // European micro-states
+  };
+
+  /// Whether an area's polygon footprint on canvas is too small to see.
+  bool _isTinyArea(RegionalArea area, _GeoTransform transform, Size size) {
+    if (_alwaysTinyCodes.contains(area.code)) return true;
+    if (area.points.length < 3) return true;
+    var minX = double.infinity, maxX = -double.infinity;
+    var minY = double.infinity, maxY = -double.infinity;
+    for (final p in area.points) {
+      final cp = transform.toCanvas(p.x, p.y);
+      if (cp.dx < minX) minX = cp.dx;
+      if (cp.dx > maxX) maxX = cp.dx;
+      if (cp.dy < minY) minY = cp.dy;
+      if (cp.dy > maxY) maxY = cp.dy;
+    }
+    final w = (maxX - minX) * zoomScale;
+    final h = (maxY - minY) * zoomScale;
+    return w < _tinyThreshold && h < _tinyThreshold;
+  }
+
+  /// Draw a faint dashed circle for a tiny unrevealed area.
+  void _drawTinyMarker(
+    Canvas canvas,
+    RegionalArea area,
+    _GeoTransform transform,
+  ) {
+    final centroid = _computeCentroid(area, transform);
+    if (centroid == null) return;
+
+    final r = _markerRadius / zoomScale;
+
+    // Faint dashed border ring.
+    final borderPaint = Paint()
+      ..color = const Color(0xFF5A7A9A)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0 / zoomScale;
+    const int dashCount = 16;
+    const double gapFraction = 0.4;
+    const double pi2 = 2 * 3.1415926535;
+    const double dashAngle = pi2 / dashCount * (1.0 - gapFraction);
+    const double totalStep = pi2 / dashCount;
+    for (int i = 0; i < dashCount; i++) {
+      final double startAngle = i * totalStep;
+      final path = Path()
+        ..addArc(
+          Rect.fromCircle(center: centroid, radius: r),
+          startAngle,
+          dashAngle,
+        );
+      canvas.drawPath(path, borderPaint);
     }
   }
 
@@ -356,7 +450,8 @@ class _UnchartedMapPainter extends CustomPainter {
         lastRevealedCode != oldDelegate.lastRevealedCode ||
         flashProgress != oldDelegate.flashProgress ||
         zoomScale != oldDelegate.zoomScale ||
-        satelliteImage != oldDelegate.satelliteImage;
+        satelliteImage != oldDelegate.satelliteImage ||
+        pingProgress != oldDelegate.pingProgress;
   }
 }
 

@@ -117,6 +117,16 @@ extension QuizCategoryExtension on QuizCategory {
   }
 }
 
+/// Convert a 2-letter country/state code to a flag emoji.
+///
+/// Works for ISO 3166-1 alpha-2 codes (e.g. 'US' → 🇺🇸, 'FR' → 🇫🇷).
+/// For sub-national codes this may not produce a valid flag.
+String countryCodeToFlagEmoji(String code) {
+  final codeUnits = code.toUpperCase().codeUnits;
+  final flagCodeUnits = codeUnits.map((c) => c + 127397).toList();
+  return String.fromCharCodes(flagCodeUnits);
+}
+
 /// A single quiz question for the player to answer by tapping a state.
 class QuizQuestion {
   const QuizQuestion({
@@ -142,7 +152,7 @@ class QuizQuestion {
 /// Non-mixed categories available for each region with rich clue data.
 ///
 /// Regions not listed here only support [stateName] and [capital].
-const Map<GameRegion, List<QuizCategory>> _regionCategories = {
+const Map<GameRegion, List<QuizCategory>> regionCategories = {
   GameRegion.usStates: [
     QuizCategory.stateName,
     QuizCategory.capital,
@@ -236,7 +246,7 @@ const Map<GameRegion, List<QuizCategory>> _regionCategories = {
 };
 
 /// Categories available for any region (name + capital).
-const List<QuizCategory> _universalCategories = [
+const List<QuizCategory> universalCategories = [
   QuizCategory.stateName,
   QuizCategory.capital,
 ];
@@ -251,20 +261,24 @@ class QuizQuestionGenerator {
 
   /// Non-mixed categories available for this region.
   List<QuizCategory> get _pool =>
-      _regionCategories[region] ?? _universalCategories;
+      regionCategories[region] ?? universalCategories;
 
   /// Generate a list of questions for the given categories, covering all areas.
   ///
   /// When [categories] contains a single non-mixed category, all questions use
   /// that category. When it contains multiple categories, each question picks
   /// randomly from the set. When it contains [QuizCategory.mixed], it picks
-  /// from all available categories for the region.
-  List<QuizQuestion> generateQuestions(Set<QuizCategory> categories) {
+  /// from [allowedPool] if provided, otherwise from all available categories
+  /// for the region.
+  List<QuizQuestion> generateQuestions(
+    Set<QuizCategory> categories, {
+    List<QuizCategory>? allowedPool,
+  }) {
     final areas = RegionalData.getAreas(region);
     final questions = <QuizQuestion>[];
 
     for (final area in areas) {
-      final question = _generateForArea(area, categories);
+      final question = _generateForArea(area, categories, allowedPool);
       if (question != null) {
         questions.add(question);
       }
@@ -276,11 +290,18 @@ class QuizQuestionGenerator {
 
   /// Generate a single question for an area from the given category set.
   QuizQuestion? _generateForArea(
-      RegionalArea area, Set<QuizCategory> categories) {
+    RegionalArea area,
+    Set<QuizCategory> categories,
+    List<QuizCategory>? allowedPool,
+  ) {
     QuizCategory effectiveCategory;
     if (categories.contains(QuizCategory.mixed)) {
-      // "All" — pick from the full region pool.
-      effectiveCategory = _pool[_random.nextInt(_pool.length)];
+      // "All" — pick from the allowed pool (difficulty-filtered) or region pool.
+      final pool = allowedPool ?? _pool;
+      // Exclude 'mixed' itself from the pool to avoid recursion.
+      final candidates = pool.where((c) => c != QuizCategory.mixed).toList();
+      if (candidates.isEmpty) return null;
+      effectiveCategory = candidates[_random.nextInt(candidates.length)];
     } else if (categories.length == 1) {
       effectiveCategory = categories.first;
     } else {
@@ -293,7 +314,7 @@ class QuizQuestionGenerator {
       case QuizCategory.stateName:
         return QuizQuestion(
           category: QuizCategory.stateName,
-          clueText: 'Tap: ${area.name}',
+          clueText: area.name,
           answerCode: area.code,
           answerName: area.name,
         );

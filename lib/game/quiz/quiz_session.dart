@@ -142,6 +142,7 @@ class QuizSession {
     required this.categories,
     required this.region,
     this.difficulty = QuizDifficulty.medium,
+    this.excludePercent = 0.0,
     int? seed,
   })  : _generator = QuizQuestionGenerator(region: region, seed: seed),
         _random = Random(seed),
@@ -163,8 +164,17 @@ class QuizSession {
   final Set<QuizCategory> categories;
   final GameRegion region;
   final QuizDifficulty difficulty;
+
+  /// Fraction of areas to exclude (0.0 = none, 0.5 = 50%).
+  /// Only effective in easy mode.
+  final double excludePercent;
+
   final QuizQuestionGenerator _generator;
   final Random _random;
+
+  /// Area codes excluded from this quiz (grayed out on map).
+  Set<String> get excludedAreaCodes => Set.unmodifiable(_excludedAreaCodes);
+  final Set<String> _excludedAreaCodes = {};
 
   late final List<QuizQuestion> _questions;
   final List<QuizAnswerResult> _results;
@@ -215,6 +225,24 @@ class QuizSession {
     return _questions[_currentIndex];
   }
 
+  /// Whether the current question can be skipped (shuffled to back).
+  bool get canSkip =>
+      currentQuestion != null &&
+      !_isFinished &&
+      _currentIndex < _questions.length - 1;
+
+  /// Skip the current question by moving it to the end of the queue.
+  /// Returns true if the skip was performed.
+  bool skipQuestion() {
+    if (!canSkip) return false;
+    final question = _questions.removeAt(_currentIndex);
+    _questions.add(question);
+    // Reset hint state for the new current question.
+    _currentHintLevel = 0;
+    _extraClueTexts = [];
+    return true;
+  }
+
   /// Elapsed time since quiz started, in milliseconds.
   int get elapsedMs {
     if (_startTime == null) return 0;
@@ -254,7 +282,29 @@ class QuizSession {
 
   /// Initialize and start the quiz.
   void start() {
-    _questions = _generator.generateQuestions(categories);
+    // When in mixed mode, pass the difficulty-filtered pool so easy mode
+    // excludes hard categories (sportsTeam, celebrity, filmSetting, etc.).
+    final allowedPool = categories.contains(QuizCategory.mixed)
+        ? difficulty.filterCategories(
+            regionCategories[region] ?? universalCategories,
+          )
+        : null;
+    _questions = _generator.generateQuestions(
+      categories,
+      allowedPool: allowedPool,
+    );
+
+    // Easy mode area exclusion: randomly remove a percentage of areas.
+    if (excludePercent > 0.0 && _questions.isNotEmpty) {
+      final allCodes = _questions.map((q) => q.answerCode).toSet().toList()
+        ..shuffle(_random);
+      final excludeCount = (allCodes.length * excludePercent).round();
+      _excludedAreaCodes.addAll(allCodes.take(excludeCount));
+      _questions.removeWhere(
+        (q) => _excludedAreaCodes.contains(q.answerCode),
+      );
+    }
+
     _startTime = DateTime.now();
   }
 
