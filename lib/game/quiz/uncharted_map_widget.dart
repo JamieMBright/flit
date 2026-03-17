@@ -98,7 +98,8 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
               transformationController: _transformController,
               minScale: 1.0,
               maxScale: 25.0,
-              boundaryMargin: const EdgeInsets.all(100),
+              constrained: false,
+              boundaryMargin: const EdgeInsets.all(double.infinity),
               child: CustomPaint(
                 size: Size(constraints.maxWidth, constraints.maxHeight),
                 painter: _UnchartedMapPainter(
