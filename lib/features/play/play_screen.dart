@@ -965,9 +965,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         _timer?.cancel();
         _timer = Timer.periodic(const Duration(milliseconds: 16), (_) async {
           if (mounted && _session != null && !_session!.isCompleted) {
-            setState(() {
-              _elapsed = _session!.elapsed;
-            });
+            final newElapsed = _session!.elapsed;
+            // Only rebuild when displayed centisecond changes — avoids
+            // unconditional setState at 60 Hz (matches first timer logic).
+            if (newElapsed.inMilliseconds ~/ 100 !=
+                _elapsed.inMilliseconds ~/ 100) {
+              setState(() {
+                _elapsed = newElapsed;
+              });
+            } else {
+              _elapsed = newElapsed;
+            }
             if (_elapsed.inMilliseconds % 100 < 20) {
               _session!.recordPosition(_game.worldPosition);
             }
@@ -1778,12 +1786,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
             // the game canvas. Centered on the region, zoom fits the region.
             if (_gameReady && _session != null && _game.isFlatMapMode)
               Positioned.fill(
-                child: DescentMapView(
-                  centerLng: widget.region.center.x,
-                  centerLat: widget.region.center.y,
-                  heading: 0, // No rotation for flat map
-                  altitudeTransition: _flatMapZoom,
-                  tileUrl: GameSettings.instance.mapTileUrl,
+                child: RepaintBoundary(
+                  child: DescentMapView(
+                    centerLng: widget.region.center.x,
+                    centerLat: widget.region.center.y,
+                    heading: 0, // No rotation for flat map
+                    altitudeTransition: _flatMapZoom,
+                    tileUrl: GameSettings.instance.mapTileUrl,
+                  ),
                 ),
               )
             // Globe mode — OSM tile map shown during descent transition.
@@ -1794,18 +1804,21 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 _session != null &&
                 (_game.plane.continuousAltitude < 0.6 || _descentMapMounted))
               Positioned.fill(
-                child: Offstage(
-                  offstage: _game.plane.continuousAltitude >= 0.6,
+                child: Visibility(
+                  visible: _game.plane.continuousAltitude < 0.6,
+                  maintainState: true, // Keep alive to preserve tile cache
                   child: Opacity(
                     opacity: (1.0 - _game.plane.continuousAltitude / 0.6)
                         .clamp(0.0, 1.0),
-                    child: DescentMapView(
-                      centerLng: _game.worldPosition.x,
-                      centerLat: _game.worldPosition.y,
-                      heading: _game.cameraHeadingBearing,
-                      altitudeTransition: _game.plane.continuousAltitude,
-                      tileUrl: GameSettings.instance.mapTileUrl,
-                      trackPlane: true,
+                    child: RepaintBoundary(
+                      child: DescentMapView(
+                        centerLng: _game.worldPosition.x,
+                        centerLat: _game.worldPosition.y,
+                        heading: _game.cameraHeadingBearing,
+                        altitudeTransition: _game.plane.continuousAltitude,
+                        tileUrl: GameSettings.instance.mapTileUrl,
+                        trackPlane: true,
+                      ),
                     ),
                   ),
                 ),
