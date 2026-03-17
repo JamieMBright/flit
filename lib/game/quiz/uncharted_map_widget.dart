@@ -210,7 +210,68 @@ class _UnchartedMapPainter extends CustomPainter {
       } else {
         // Unrevealed: just outline.
         canvas.drawPath(path, outlinePaint);
+
+        // Draw dashed circle marker for tiny countries so they're visible.
+        if (_isTinyArea(area, transform, size)) {
+          _drawTinyMarker(canvas, area, transform);
+        }
       }
+    }
+  }
+
+  /// Minimum canvas diameter below which an area is considered "tiny".
+  static const double _tinyThreshold = 18.0;
+
+  /// Radius of the dashed circle marker for tiny areas.
+  static const double _markerRadius = 10.0;
+
+  /// Whether an area's polygon footprint on canvas is too small to see.
+  bool _isTinyArea(RegionalArea area, _GeoTransform transform, Size size) {
+    if (area.points.length < 3) return true;
+    var minX = double.infinity, maxX = -double.infinity;
+    var minY = double.infinity, maxY = -double.infinity;
+    for (final p in area.points) {
+      final cp = transform.toCanvas(p.x, p.y);
+      if (cp.dx < minX) minX = cp.dx;
+      if (cp.dx > maxX) maxX = cp.dx;
+      if (cp.dy < minY) minY = cp.dy;
+      if (cp.dy > maxY) maxY = cp.dy;
+    }
+    final w = (maxX - minX) * zoomScale;
+    final h = (maxY - minY) * zoomScale;
+    return w < _tinyThreshold && h < _tinyThreshold;
+  }
+
+  /// Draw a faint dashed circle for a tiny unrevealed area.
+  void _drawTinyMarker(
+    Canvas canvas,
+    RegionalArea area,
+    _GeoTransform transform,
+  ) {
+    final centroid = _computeCentroid(area, transform);
+    if (centroid == null) return;
+
+    final r = _markerRadius / zoomScale;
+
+    // Faint dashed border ring.
+    final borderPaint = Paint()
+      ..color = const Color(0xFF5A7A9A)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0 / zoomScale;
+    const int dashCount = 16;
+    const double gapFraction = 0.4;
+    const double pi2 = 2 * 3.1415926535;
+    const double dashAngle = pi2 / dashCount * (1.0 - gapFraction);
+    const double totalStep = pi2 / dashCount;
+    for (int i = 0; i < dashCount; i++) {
+      final double startAngle = i * totalStep;
+      final path = Path()
+        ..addArc(
+          Rect.fromCircle(center: centroid, radius: r),
+          startAngle,
+          dashAngle,
+        );
+      canvas.drawPath(path, borderPaint);
     }
   }
 
