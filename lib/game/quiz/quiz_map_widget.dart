@@ -452,13 +452,14 @@ class _UsaMapPainter extends CustomPainter {
       RRect.fromRectAndRadius(rect, const Radius.circular(8)),
       Paint()..color = const Color(0xFF1E3340),
     );
-    // Border
+    // Border — scale inversely with zoom so it stays visible.
     canvas.drawRRect(
       RRect.fromRectAndRadius(rect, const Radius.circular(8)),
       Paint()
         ..color = const Color(0xFF3A5A6A)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
+        ..strokeWidth = 1.5 / zoomScale
+        ..isAntiAlias = true,
     );
     // Label — scale inversely with zoom so it doesn't grow enormous.
     final labelFontSize = (9.0 / zoomScale).clamp(3.0, 12.0);

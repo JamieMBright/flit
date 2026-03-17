@@ -184,10 +184,11 @@ class _RegionMapPainter extends CustomPainter {
     // Draw clean borders (subtle, single pass).
     // Divide strokeWidth by zoom scale so borders stay visually constant.
     final borderPaint = Paint()
-      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6)
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.7)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0 / zoomScale
+      ..strokeWidth = 1.5 / zoomScale
       ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round
       ..isAntiAlias = true;
 
     for (final area in areas) {
