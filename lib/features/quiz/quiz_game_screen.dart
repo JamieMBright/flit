@@ -725,6 +725,41 @@ class _QuizGameScreenState extends State<QuizGameScreen>
               ),
             ),
 
+          // Skip button — moves current question to back of queue.
+          if (_session.canSkip)
+            GestureDetector(
+              onTap: () => setState(() => _session.skipQuestion()),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: FlitColors.textMuted.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: FlitColors.textMuted.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.skip_next,
+                      color: FlitColors.textSecondary,
+                      size: 14,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'Skip',
+                      style: TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           // Correct / Wrong counts
           Row(
             mainAxisSize: MainAxisSize.min,

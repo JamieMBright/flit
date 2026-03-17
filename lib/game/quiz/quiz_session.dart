@@ -225,6 +225,24 @@ class QuizSession {
     return _questions[_currentIndex];
   }
 
+  /// Whether the current question can be skipped (shuffled to back).
+  bool get canSkip =>
+      currentQuestion != null &&
+      !_isFinished &&
+      _currentIndex < _questions.length - 1;
+
+  /// Skip the current question by moving it to the end of the queue.
+  /// Returns true if the skip was performed.
+  bool skipQuestion() {
+    if (!canSkip) return false;
+    final question = _questions.removeAt(_currentIndex);
+    _questions.add(question);
+    // Reset hint state for the new current question.
+    _currentHintLevel = 0;
+    _extraClueTexts = [];
+    return true;
+  }
+
   /// Elapsed time since quiz started, in milliseconds.
   int get elapsedMs {
     if (_startTime == null) return 0;
