@@ -1,11 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/providers/account_provider.dart';
+import '../../data/services/leaderboard_service.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/uncharted_map_widget.dart';
+import '../../game/quiz/uncharted_progress.dart';
 import '../../game/quiz/uncharted_session.dart';
+import '../../game/ui/ink_burst_overlay.dart';
 
 /// Main game screen for the Uncharted mode.
 ///
@@ -246,27 +252,28 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
 
   Widget _buildTopBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       color: FlitColors.backgroundMid,
       child: Row(
         children: [
           // Back button.
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: FlitColors.textPrimary),
+            icon: const Icon(Icons.arrow_back,
+                color: FlitColors.textPrimary, size: 20),
             onPressed: () => Navigator.of(context).pop(),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           // Timer.
           const Icon(Icons.timer_outlined,
-              color: FlitColors.textSecondary, size: 18),
-          const SizedBox(width: 4),
+              color: FlitColors.textSecondary, size: 16),
+          const SizedBox(width: 3),
           Text(
             _session.elapsedFormatted,
             style: const TextStyle(
               color: FlitColors.textPrimary,
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
               fontFamily: 'monospace',
             ),
@@ -300,10 +307,10 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
       animation: _feedbackController,
       builder: (context, _) {
         if (_feedbackText == null || _feedbackOpacity.value <= 0) {
-          return const SizedBox(height: 28);
+          return const SizedBox(height: 20);
         }
         return SizedBox(
-          height: 28,
+          height: 20,
           child: Opacity(
             opacity: _feedbackOpacity.value,
             child: Center(
@@ -324,63 +331,70 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
 
   Widget _buildInputBar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      padding: const EdgeInsets.fromLTRB(12, 2, 12, 6),
       color: FlitColors.backgroundMid,
       child: Row(
         children: [
           // Ping hint button — flashes unrevealed areas on the map.
           IconButton(
-            icon: const Icon(Icons.radar, color: FlitColors.gold),
+            icon: const Icon(Icons.radar, color: FlitColors.gold, size: 20),
             tooltip: 'Ping unrevealed areas',
             onPressed: _session.isComplete ? null : _triggerPing,
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 6),
             constraints: const BoxConstraints(),
           ),
           Expanded(
-            child: TextField(
-              controller: _textController,
-              focusNode: _focusNode,
-              enabled: !_session.isComplete,
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-              autocorrect: false,
-              enableSuggestions: false,
-              autofillHints: null,
-              enableIMEPersonalizedLearning: false,
-              spellCheckConfiguration: const SpellCheckConfiguration.disabled(),
-              style: const TextStyle(
-                color: FlitColors.textPrimary,
-                fontSize: 18,
+            child: SizedBox(
+              height: 38,
+              child: TextField(
+                controller: _textController,
+                focusNode: _focusNode,
+                enabled: !_session.isComplete,
+                autofocus: true,
+                textCapitalization: TextCapitalization.words,
+                autocorrect: false,
+                enableSuggestions: false,
+                autofillHints: const <String>[],
+                enableIMEPersonalizedLearning: false,
+                spellCheckConfiguration:
+                    const SpellCheckConfiguration.disabled(),
+                keyboardType: TextInputType.visiblePassword,
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 15,
+                ),
+                decoration: InputDecoration(
+                  hintText: widget.mode == UnchartedMode.countries
+                      ? 'Type a country name...'
+                      : 'Type a capital city...',
+                  hintStyle: TextStyle(
+                    color: FlitColors.textSecondary.withOpacity(0.5),
+                    fontSize: 14,
+                  ),
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: FlitColors.accent),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        BorderSide(color: FlitColors.accent.withOpacity(0.4)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        const BorderSide(color: FlitColors.accent, width: 2),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFF1A2A3A),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                onChanged: _handleInputChanged,
+                onSubmitted: _handleSubmit,
+                textInputAction: TextInputAction.go,
               ),
-              decoration: InputDecoration(
-                hintText: widget.mode == UnchartedMode.countries
-                    ? 'Type a country name...'
-                    : 'Type a capital city...',
-                hintStyle: TextStyle(
-                  color: FlitColors.textSecondary.withOpacity(0.5),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: FlitColors.accent),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide:
-                      BorderSide(color: FlitColors.accent.withOpacity(0.4)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide:
-                      const BorderSide(color: FlitColors.accent, width: 2),
-                ),
-                filled: true,
-                fillColor: const Color(0xFF1A2A3A),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-              onChanged: _handleInputChanged,
-              onSubmitted: _handleSubmit,
-              textInputAction: TextInputAction.go,
             ),
           ),
         ],
@@ -392,8 +406,9 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
 /// Results screen for Uncharted mode.
 ///
 /// Shows grade, score, stats, and a full breakdown of which areas were
-/// found and which were missed.
-class UnchartedResultsScreen extends StatelessWidget {
+/// found and which were missed. Triggers a fireworks celebration on good
+/// results.
+class UnchartedResultsScreen extends ConsumerStatefulWidget {
   const UnchartedResultsScreen({
     super.key,
     required this.region,
@@ -415,15 +430,25 @@ class UnchartedResultsScreen extends StatelessWidget {
   final bool givenUp;
   final Set<String> revealedCodes;
 
+  @override
+  ConsumerState<UnchartedResultsScreen> createState() =>
+      _UnchartedResultsScreenState();
+}
+
+class _UnchartedResultsScreenState
+    extends ConsumerState<UnchartedResultsScreen> {
+  final GlobalKey<InkBurstOverlayState> _inkBurstKey = GlobalKey();
+  bool _progressSaved = false;
+
   String get _elapsedFormatted {
-    final seconds = (elapsedMs / 1000).floor();
+    final seconds = (widget.elapsedMs / 1000).floor();
     final minutes = seconds ~/ 60;
     final secs = seconds % 60;
     return '$minutes:${secs.toString().padLeft(2, '0')}';
   }
 
   String get _grade {
-    final pct = revealedCount / totalCount;
+    final pct = widget.revealedCount / widget.totalCount;
     if (pct >= 1.0) return 'S';
     if (pct >= 0.9) return 'A';
     if (pct >= 0.75) return 'B';
@@ -432,10 +457,101 @@ class UnchartedResultsScreen extends StatelessWidget {
     return 'F';
   }
 
+  Color get _gradeColor {
+    switch (_grade) {
+      case 'S':
+        return FlitColors.gold;
+      case 'A':
+        return FlitColors.success;
+      case 'B':
+        return FlitColors.accent;
+      case 'C':
+        return FlitColors.textSecondary;
+      case 'D':
+        return FlitColors.error;
+      default:
+        return FlitColors.error;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _saveProgress();
+    _saveScoreToLeaderboard();
+
+    // Fire celebration burst for good results (grade B or better).
+    final pct = widget.revealedCount / widget.totalCount;
+    if (pct >= 0.75 && !widget.givenUp) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final size = MediaQuery.of(context).size;
+        _inkBurstKey.currentState?.trigger(
+          Offset(size.width / 2, size.height * 0.3),
+        );
+        // Fire additional bursts for S-grade (100%).
+        if (pct >= 1.0) {
+          Future<void>.delayed(const Duration(milliseconds: 400), () {
+            if (!mounted) return;
+            _inkBurstKey.currentState?.trigger(
+              Offset(size.width * 0.25, size.height * 0.35),
+            );
+          });
+          Future<void>.delayed(const Duration(milliseconds: 700), () {
+            if (!mounted) return;
+            _inkBurstKey.currentState?.trigger(
+              Offset(size.width * 0.75, size.height * 0.35),
+            );
+          });
+        }
+      });
+    }
+  }
+
+  void _saveProgress() {
+    if (_progressSaved) return;
+    _progressSaved = true;
+
+    final key = '${widget.region.name}_${widget.mode.name}';
+    final isCompleted =
+        !widget.givenUp && widget.revealedCount >= widget.totalCount;
+
+    ref.read(accountProvider.notifier).updateUnchartedProgress(
+          key: key,
+          score: widget.score,
+          timeMs: widget.elapsedMs,
+          revealedCount: widget.revealedCount,
+          totalCount: widget.totalCount,
+          completed: isCompleted,
+        );
+  }
+
+  Future<void> _saveScoreToLeaderboard() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    try {
+      await Supabase.instance.client.from('scores').insert({
+        'user_id': userId,
+        'score': widget.score,
+        'time_ms': widget.elapsedMs,
+        'region': 'uncharted_${widget.region.name}_${widget.mode.name}',
+        'rounds_completed': widget.revealedCount,
+      });
+      LeaderboardService.instance.invalidateCache();
+    } catch (e) {
+      debugPrint('[Uncharted] Failed to save score: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final areas = RegionalData.getAreas(region);
-    final isCapitals = mode == UnchartedMode.capitals;
+    // Read personal best for this region+mode.
+    final key = '${widget.region.name}_${widget.mode.name}';
+    final progress = ref.watch(accountProvider).unchartedProgress[key];
+
+    final areas = RegionalData.getAreas(widget.region);
+    final isCapitals = widget.mode == UnchartedMode.capitals;
 
     // For capitals mode, show capital name + (code); for countries, show name.
     String displayName(RegionalArea a) =>
@@ -448,10 +564,12 @@ class UnchartedResultsScreen extends StatelessWidget {
             .toList()
         : areas;
 
-    final found = eligible.where((a) => revealedCodes.contains(a.code)).toList()
+    final found = eligible
+        .where((a) => widget.revealedCodes.contains(a.code))
+        .toList()
       ..sort((a, b) => displayName(a).compareTo(displayName(b)));
     final missed = eligible
-        .where((a) => !revealedCodes.contains(a.code))
+        .where((a) => !widget.revealedCodes.contains(a.code))
         .toList()
       ..sort((a, b) => displayName(a).compareTo(displayName(b)));
 
@@ -470,182 +588,213 @@ class UnchartedResultsScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      body: Stack(
         children: [
-          // Grade badge + score.
-          Center(
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _gradeColor.withValues(alpha: 0.2),
-                border: Border.all(color: _gradeColor, width: 3),
+          ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            children: [
+              // Grade badge + score.
+              Center(
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _gradeColor.withValues(alpha: 0.2),
+                    border: Border.all(color: _gradeColor, width: 3),
+                  ),
+                  child: Center(
+                    child: Text(
+                      _grade,
+                      style: TextStyle(
+                        color: _gradeColor,
+                        fontSize: 36,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              child: Center(
+              const SizedBox(height: 12),
+              Center(
                 child: Text(
-                  _grade,
-                  style: TextStyle(
-                    color: _gradeColor,
-                    fontSize: 36,
+                  '${widget.region.displayName} — ${widget.mode.displayName}',
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              if (widget.givenUp) ...[
+                const SizedBox(height: 4),
+                const Center(
+                  child: Text(
+                    'Given Up',
+                    style: TextStyle(
+                      color: FlitColors.error,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              Center(
+                child: Text(
+                  '${widget.score}',
+                  style: const TextStyle(
+                    color: FlitColors.gold,
+                    fontSize: 42,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: Text(
-              '${region.displayName} — ${mode.displayName}',
-              style: const TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 14,
-              ),
-            ),
-          ),
-          if (givenUp) ...[
-            const SizedBox(height: 4),
-            const Center(
-              child: Text(
-                'Given Up',
-                style: TextStyle(
-                  color: FlitColors.error,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+              const Center(
+                child: Text(
+                  'POINTS',
+                  style: TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 12,
+                    letterSpacing: 2,
+                  ),
                 ),
               ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          Center(
-            child: Text(
-              '$score',
-              style: const TextStyle(
-                color: FlitColors.gold,
-                fontSize: 42,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          const Center(
-            child: Text(
-              'POINTS',
-              style: TextStyle(
-                color: FlitColors.textSecondary,
-                fontSize: 12,
-                letterSpacing: 2,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-          // Stats row.
-          _StatRow(
-            label: 'Discovered',
-            value: '$revealedCount / $totalCount',
-          ),
-          _StatRow(label: 'Time', value: _elapsedFormatted),
-          const SizedBox(height: 24),
-
-          // Actions.
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () =>
-                    Navigator.of(context).popUntil((r) => r.isFirst),
-                icon: const Icon(Icons.home),
-                label: const Text('Home'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FlitColors.backgroundMid,
-                  foregroundColor: FlitColors.textPrimary,
+              // Stats row.
+              _StatRow(
+                label: 'Discovered',
+                value: '${widget.revealedCount} / ${widget.totalCount}',
+              ),
+              _StatRow(label: 'Time', value: _elapsedFormatted),
+              if (progress != null && progress.hasPlayed) ...[
+                const SizedBox(height: 12),
+                Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                ),
-              ),
-              const SizedBox(width: 16),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute<void>(
-                      builder: (_) => UnchartedGameScreen(
-                        region: region,
-                        mode: mode,
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: FlitColors.backgroundMid,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color: FlitColors.cardBorder.withValues(alpha: 0.5)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _MiniStat(
+                        label: 'BEST',
+                        value: '${progress.bestScore}',
+                        icon: Icons.star,
+                        color: FlitColors.gold,
                       ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.refresh),
-                label: const Text('Play Again'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FlitColors.accent,
-                  foregroundColor: FlitColors.textPrimary,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      Container(
+                          width: 1, height: 28, color: FlitColors.cardBorder),
+                      _MiniStat(
+                        label: 'GRADE',
+                        value: progress.grade,
+                        icon: Icons.military_tech,
+                        color: FlitColors.accent,
+                      ),
+                      Container(
+                          width: 1, height: 28, color: FlitColors.cardBorder),
+                      _MiniStat(
+                        label: 'PLAYS',
+                        value: '${progress.attempts}',
+                        icon: Icons.replay,
+                        color: FlitColors.textSecondary,
+                      ),
+                    ],
+                  ),
                 ),
+              ],
+              const SizedBox(height: 24),
+
+              // Actions.
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () =>
+                        Navigator.of(context).popUntil((r) => r.isFirst),
+                    icon: const Icon(Icons.home),
+                    label: const Text('Home'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.backgroundMid,
+                      foregroundColor: FlitColors.textPrimary,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 14),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute<void>(
+                          builder: (_) => UnchartedGameScreen(
+                            region: widget.region,
+                            mode: widget.mode,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Play Again'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.accent,
+                      foregroundColor: FlitColors.textPrimary,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 14),
+                    ),
+                  ),
+                ],
               ),
+
+              const SizedBox(height: 28),
+
+              // ── Found areas breakdown ──
+              if (found.isNotEmpty) ...[
+                _SectionHeader(
+                  icon: Icons.check_circle,
+                  label: 'Found (${found.length})',
+                  color: FlitColors.success,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: found
+                      .map((a) => _AreaChip(name: displayName(a), found: true))
+                      .toList(),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // ── Missed areas breakdown ──
+              if (missed.isNotEmpty) ...[
+                _SectionHeader(
+                  icon: Icons.cancel,
+                  label: 'Missed (${missed.length})',
+                  color: FlitColors.error,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: missed
+                      .map((a) => _AreaChip(name: displayName(a), found: false))
+                      .toList(),
+                ),
+                const SizedBox(height: 24),
+              ],
             ],
           ),
-
-          const SizedBox(height: 28),
-
-          // ── Found areas breakdown ──
-          if (found.isNotEmpty) ...[
-            _SectionHeader(
-              icon: Icons.check_circle,
-              label: 'Found (${found.length})',
-              color: FlitColors.success,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: found
-                  .map((a) => _AreaChip(name: displayName(a), found: true))
-                  .toList(),
-            ),
-            const SizedBox(height: 20),
-          ],
-
-          // ── Missed areas breakdown ──
-          if (missed.isNotEmpty) ...[
-            _SectionHeader(
-              icon: Icons.cancel,
-              label: 'Missed (${missed.length})',
-              color: FlitColors.error,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: missed
-                  .map((a) => _AreaChip(name: displayName(a), found: false))
-                  .toList(),
-            ),
-            const SizedBox(height: 24),
-          ],
+          // Celebration overlay
+          Positioned.fill(
+            child: InkBurstOverlay(key: _inkBurstKey),
+          ),
         ],
       ),
     );
-  }
-
-  Color get _gradeColor {
-    switch (_grade) {
-      case 'S':
-        return FlitColors.gold;
-      case 'A':
-        return FlitColors.success;
-      case 'B':
-        return FlitColors.accent;
-      case 'C':
-        return FlitColors.textSecondary;
-      case 'D':
-        return FlitColors.error;
-      default:
-        return FlitColors.error;
-    }
   }
 }
 
@@ -708,6 +857,46 @@ class _AreaChip extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  const _MiniStat({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 16),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            color: FlitColors.textMuted,
+            fontSize: 9,
+            letterSpacing: 1,
+          ),
+        ),
+      ],
     );
   }
 }

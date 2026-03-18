@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/game_settings.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/flight_school_level.dart';
+import '../../game/quiz/uncharted_progress.dart';
 import '../../game/tutorial/campaign_mission.dart';
 import '../../game/tutorial/mode_requirements.dart';
 import '../models/avatar_config.dart';
@@ -38,6 +39,7 @@ class AccountState {
     this.freeFlightCoinsToday = 0,
     this.freeFlightCoinDate,
     this.flightSchoolProgress = const {},
+    this.unchartedProgress = const {},
     this.campaignProgress = const {},
   })  : avatar = avatar ?? const AvatarConfig(),
         license = license ?? PilotLicense.random();
@@ -97,6 +99,9 @@ class AccountState {
 
   /// Flight school progress per level ID.
   final Map<String, FlightSchoolProgress> flightSchoolProgress;
+
+  /// Uncharted mode progress keyed by '${region.name}_${mode.name}'.
+  final Map<String, UnchartedProgress> unchartedProgress;
 
   /// Campaign mission progress keyed by mission ID.
   final Map<String, CampaignMissionResult> campaignProgress;
@@ -166,6 +171,7 @@ class AccountState {
     int? freeFlightCoinsToday,
     Object? freeFlightCoinDate = _sentinel,
     Map<String, FlightSchoolProgress>? flightSchoolProgress,
+    Map<String, UnchartedProgress>? unchartedProgress,
     Map<String, CampaignMissionResult>? campaignProgress,
   }) =>
       AccountState(
@@ -192,6 +198,7 @@ class AccountState {
             ? this.freeFlightCoinDate
             : freeFlightCoinDate as String?,
         flightSchoolProgress: flightSchoolProgress ?? this.flightSchoolProgress,
+        unchartedProgress: unchartedProgress ?? this.unchartedProgress,
         campaignProgress: campaignProgress ?? this.campaignProgress,
       );
 }
@@ -432,6 +439,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       freeFlightCoinsToday: snapshot.freeFlightCoinsToday,
       freeFlightCoinDate: snapshot.freeFlightCoinDate,
       flightSchoolProgress: snapshot.toFlightSchoolProgress(),
+      unchartedProgress: snapshot.toUnchartedProgress(),
       campaignProgress: snapshot.toCampaignProgress(),
     );
 
@@ -611,6 +619,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       freeFlightCoinsToday: state.freeFlightCoinsToday,
       freeFlightCoinDate: state.freeFlightCoinDate,
       flightSchoolProgress: state.flightSchoolProgress,
+      unchartedProgress: state.unchartedProgress,
       campaignProgress: state.campaignProgress.map(
         (k, v) => MapEntry(k, v.toJson()),
       ),
@@ -854,6 +863,39 @@ class AccountNotifier extends StateNotifier<AccountState> {
 
     state = state.copyWith(
       flightSchoolProgress: {...state.flightSchoolProgress, levelId: updated},
+    );
+    _syncAccountState();
+  }
+
+  /// Update uncharted mode progress for a given region+mode key.
+  ///
+  /// The [key] should be formatted as '${region.name}_${mode.name}',
+  /// e.g. 'europe_countries'.
+  void updateUnchartedProgress({
+    required String key,
+    required int score,
+    required int timeMs,
+    required int revealedCount,
+    required int totalCount,
+    required bool completed,
+  }) {
+    final current = state.unchartedProgress[key] ?? const UnchartedProgress();
+
+    final updated = current.copyWith(
+      bestScore: score > current.bestScore ? score : null,
+      bestTimeMs: (timeMs > 0 &&
+              (current.bestTimeMs == 0 || timeMs < current.bestTimeMs))
+          ? timeMs
+          : null,
+      bestRevealedCount:
+          revealedCount > current.bestRevealedCount ? revealedCount : null,
+      totalCount: totalCount > 0 ? totalCount : null,
+      completions: completed ? current.completions + 1 : null,
+      attempts: current.attempts + 1,
+    );
+
+    state = state.copyWith(
+      unchartedProgress: {...state.unchartedProgress, key: updated},
     );
     _syncAccountState();
   }

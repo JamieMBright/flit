@@ -314,9 +314,9 @@ class _RegionMapPainter extends CustomPainter {
 
   /// Draw the Blue Marble satellite texture clipped to a polygon path.
   ///
-  /// Maps the equirectangular satellite image (full world: -180..180 lng,
-  /// -90..90 lat) to the region's canvas transform so the texture aligns
-  /// with the geographic coordinates.
+  /// Uses the full world extent (-180..180 lng, -90..90 lat) so that
+  /// polygons extending beyond the region viewport (e.g. Russia in Europe)
+  /// still get fully filled with the satellite texture.
   void _drawSatelliteFill(
     Canvas canvas,
     Path path,
@@ -324,25 +324,23 @@ class _RegionMapPainter extends CustomPainter {
   ) {
     final img = satelliteImage!;
 
-    // Map from geographic bounds to image pixels:
-    // Image pixel x = ((lng + 180) / 360) * imageWidth
-    // Image pixel y = ((90 - lat) / 180) * imageHeight
-    //
-    // We need the source rect in the satellite image that corresponds to
-    // the region's geographic bounds.
-    final srcLeft = ((transform.minLng + 180.0) / 360.0) * img.width;
-    final srcRight = ((transform.maxLng + 180.0) / 360.0) * img.width;
-    final srcTop = ((90.0 - transform.maxLat) / 180.0) * img.height;
-    final srcBottom = ((90.0 - transform.minLat) / 180.0) * img.height;
+    // Full satellite image as source.
+    final srcRect = Rect.fromLTRB(
+      0,
+      0,
+      img.width.toDouble(),
+      img.height.toDouble(),
+    );
 
-    final srcRect = Rect.fromLTRB(srcLeft, srcTop, srcRight, srcBottom);
-
-    // Destination rect is the region's canvas area
-    final dstRect = Rect.fromLTWH(
-      transform.offsetX,
-      transform.offsetY,
-      transform.width,
-      transform.height,
+    // Map the full world to canvas coordinates so the texture fills any
+    // polygon, even those extending beyond the viewport bounds.
+    final topLeft = transform.toCanvas(-180.0, 90.0);
+    final bottomRight = transform.toCanvas(180.0, -90.0);
+    final dstRect = Rect.fromLTRB(
+      topLeft.dx,
+      topLeft.dy,
+      bottomRight.dx,
+      bottomRight.dy,
     );
 
     canvas.save();
@@ -367,17 +365,22 @@ class _RegionMapPainter extends CustomPainter {
     final circlePath = Path()
       ..addOval(Rect.fromCircle(center: center, radius: radius));
 
-    final srcLeft = ((transform.minLng + 180.0) / 360.0) * img.width;
-    final srcRight = ((transform.maxLng + 180.0) / 360.0) * img.width;
-    final srcTop = ((90.0 - transform.maxLat) / 180.0) * img.height;
-    final srcBottom = ((90.0 - transform.minLat) / 180.0) * img.height;
+    // Full satellite image as source.
+    final srcRect = Rect.fromLTRB(
+      0,
+      0,
+      img.width.toDouble(),
+      img.height.toDouble(),
+    );
 
-    final srcRect = Rect.fromLTRB(srcLeft, srcTop, srcRight, srcBottom);
-    final dstRect = Rect.fromLTWH(
-      transform.offsetX,
-      transform.offsetY,
-      transform.width,
-      transform.height,
+    // Map full world to canvas for correct texture alignment.
+    final topLeft = transform.toCanvas(-180.0, 90.0);
+    final bottomRight = transform.toCanvas(180.0, -90.0);
+    final dstRect = Rect.fromLTRB(
+      topLeft.dx,
+      topLeft.dy,
+      bottomRight.dx,
+      bottomRight.dy,
     );
 
     canvas.save();

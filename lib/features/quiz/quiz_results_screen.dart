@@ -9,6 +9,7 @@ import '../../game/map/region.dart';
 import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_session.dart';
+import '../../game/ui/ink_burst_overlay.dart';
 import 'flight_school_screen.dart';
 
 /// Results screen shown after completing a Flight School quiz.
@@ -64,6 +65,7 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
   late AnimationController _animController;
   late Animation<double> _fadeIn;
   late Animation<double> _slideUp;
+  final GlobalKey<InkBurstOverlayState> _inkBurstKey = GlobalKey();
 
   @override
   void initState() {
@@ -79,6 +81,32 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
     _animController.forward();
     _saveFlightSchoolProgress();
     _saveDailyBriefingScore();
+
+    // Fire celebration burst for good results (grade A or S).
+    final grade = widget.summary.grade;
+    if (grade == 'S' || grade == 'A') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final size = MediaQuery.of(context).size;
+        _inkBurstKey.currentState?.trigger(
+          Offset(size.width / 2, size.height * 0.25),
+        );
+        if (grade == 'S') {
+          Future<void>.delayed(const Duration(milliseconds: 400), () {
+            if (!mounted) return;
+            _inkBurstKey.currentState?.trigger(
+              Offset(size.width * 0.25, size.height * 0.3),
+            );
+          });
+          Future<void>.delayed(const Duration(milliseconds: 700), () {
+            if (!mounted) return;
+            _inkBurstKey.currentState?.trigger(
+              Offset(size.width * 0.75, size.height * 0.3),
+            );
+          });
+        }
+      });
+    }
   }
 
   void _saveFlightSchoolProgress() {
@@ -165,101 +193,109 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
       body: SafeArea(
-        child: AnimatedBuilder(
-          animation: _animController,
-          builder: (context, child) {
-            return Opacity(
-              opacity: _fadeIn.value,
-              child: Transform.translate(
-                offset: Offset(0, _slideUp.value),
-                child: child,
-              ),
-            );
-          },
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 24,
+        child: Stack(
+          children: [
+            AnimatedBuilder(
+              animation: _animController,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: _fadeIn.value,
+                  child: Transform.translate(
+                    offset: Offset(0, _slideUp.value),
+                    child: child,
                   ),
-                  child: Column(
-                    children: [
-                      // Grade badge
-                      _buildGradeBadge(summary.grade),
-                      const SizedBox(height: 20),
+                );
+              },
+              child: Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 24,
+                      ),
+                      child: Column(
+                        children: [
+                          // Grade badge
+                          _buildGradeBadge(summary.grade),
+                          const SizedBox(height: 20),
 
-                      // Title
-                      Text(
-                        _gradeTitle(summary.grade),
-                        style: const TextStyle(
-                          color: FlitColors.textPrimary,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${summary.mode.displayName} — ${summary.categories.length == 1 ? summary.categories.first.displayName : 'Multi'}',
-                        style: const TextStyle(
-                          color: FlitColors.textSecondary,
-                          fontSize: 14,
-                        ),
-                      ),
-                      if (widget.opponentName != null) ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: FlitColors.accent.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: FlitColors.accent.withOpacity(0.25),
-                            ),
-                          ),
-                          child: Text(
-                            'vs ${widget.opponentName}',
+                          // Title
+                          Text(
+                            _gradeTitle(summary.grade),
                             style: const TextStyle(
-                              color: FlitColors.accent,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
+                              color: FlitColors.textPrimary,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2,
                             ),
                           ),
-                        ),
-                      ],
-                      const SizedBox(height: 28),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${summary.mode.displayName} — ${summary.categories.length == 1 ? summary.categories.first.displayName : 'Multi'}',
+                            style: const TextStyle(
+                              color: FlitColors.textSecondary,
+                              fontSize: 14,
+                            ),
+                          ),
+                          if (widget.opponentName != null) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: FlitColors.accent.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: FlitColors.accent.withOpacity(0.25),
+                                ),
+                              ),
+                              child: Text(
+                                'vs ${widget.opponentName}',
+                                style: const TextStyle(
+                                  color: FlitColors.accent,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 28),
 
-                      // Score card (big)
-                      _buildScoreCard(summary),
-                      const SizedBox(height: 12),
+                          // Score card (big)
+                          _buildScoreCard(summary),
+                          const SizedBox(height: 12),
 
-                      // Coin reward
-                      if (_coinsEarned > 0) ...[
-                        _buildCoinReward(),
-                        const SizedBox(height: 12),
-                      ],
+                          // Coin reward
+                          if (_coinsEarned > 0) ...[
+                            _buildCoinReward(),
+                            const SizedBox(height: 12),
+                          ],
 
-                      // Stats grid
-                      _buildStatsGrid(summary),
-                      const SizedBox(height: 16),
+                          // Stats grid
+                          _buildStatsGrid(summary),
+                          const SizedBox(height: 16),
 
-                      // Detailed breakdown
-                      _buildBreakdown(summary),
-                      const SizedBox(height: 24),
-                    ],
+                          // Detailed breakdown
+                          _buildBreakdown(summary),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
 
-              // Bottom actions
-              _buildBottomBar(),
-            ],
-          ),
+                  // Bottom actions
+                  _buildBottomBar(),
+                ],
+              ),
+            ),
+            // Celebration overlay
+            Positioned.fill(
+              child: InkBurstOverlay(key: _inkBurstKey),
+            ),
+          ],
         ),
       ),
     );

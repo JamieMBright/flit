@@ -12,6 +12,8 @@ import '../../data/models/pilot_license.dart';
 import '../../data/models/player_report.dart';
 import '../../data/services/leaderboard_service.dart';
 import '../../data/services/report_service.dart';
+import '../../game/clues/clue_types.dart';
+import '../../game/data/country_difficulty.dart';
 import '../avatar/avatar_widget.dart';
 import '../license/license_screen.dart';
 import '../shop/shop_screen.dart';
@@ -49,6 +51,25 @@ Color _emojiToColor(String emoji) {
 
 /// Splits a round-emojis string into individual emoji characters.
 List<String> _splitEmojis(String emojis) => emojis.characters.toList();
+
+/// Compute overall difficulty percentage from round details.
+///
+/// Returns null if round details are missing or empty.
+int? _computeDifficultyPct(List<dynamic>? roundDetails) {
+  if (roundDetails == null || roundDetails.isEmpty) return null;
+  final rounds = <(ClueType, String)>[];
+  for (final rd in roundDetails) {
+    if (rd is! Map<String, dynamic>) continue;
+    final clueStr = rd['clue_type'] as String?;
+    final code = rd['country_code'] as String?;
+    if (clueStr == null || code == null) continue;
+    final clue = ClueType.values.where((c) => c.name == clueStr).firstOrNull;
+    if (clue == null) continue;
+    rounds.add((clue, code));
+  }
+  if (rounds.isEmpty) return null;
+  return dailyDifficultyPercent(rounds);
+}
 
 const List<Color> _perfectGradientColors = [
   Color(0xFFFF0000),
@@ -468,29 +489,46 @@ class _LeaderboardRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          // Tappable emoji result — painted circles avoid iOS rendering
-          // issues with Unicode colored circles.
+          // Tappable emoji result — painted circles + difficulty %.
           GestureDetector(
             onTap: () => _showClueBreakdown(context),
             behavior: HitTestBehavior.opaque,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               child: entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty
-                  ? Row(
+                  ? Column(
                       mainAxisSize: MainAxisSize.min,
-                      children: _splitEmojis(entry.roundEmojis!).map((emoji) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 1.5),
-                          child: Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _emojiToColor(emoji),
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children:
+                              _splitEmojis(entry.roundEmojis!).map((emoji) {
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 1.5),
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _emojiToColor(emoji),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        if (_difficultyPct != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            '$_difficultyPct%',
+                            style: TextStyle(
+                              color: _difficultyColor,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                        );
-                      }).toList(),
+                        ],
+                      ],
                     )
                   : const Icon(
                       Icons.info_outline,
@@ -561,6 +599,17 @@ class _LeaderboardRow extends StatelessWidget {
       ),
       builder: (_) => _ClueBreakdownSheet(entry: entry),
     );
+  }
+
+  int? get _difficultyPct => _computeDifficultyPct(entry.roundDetails);
+
+  Color get _difficultyColor {
+    final pct = _difficultyPct ?? 50;
+    if (pct <= 25) return const Color(0xFF4CAF50);
+    if (pct <= 45) return const Color(0xFF8BC34A);
+    if (pct <= 60) return const Color(0xFFFFD700);
+    if (pct <= 75) return const Color(0xFFFF9800);
+    return const Color(0xFFCC4444);
   }
 
   Color get _rankColor {
