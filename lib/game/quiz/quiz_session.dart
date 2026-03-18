@@ -144,7 +144,8 @@ class QuizSession {
     this.difficulty = QuizDifficulty.medium,
     this.excludePercent = 0.0,
     int? seed,
-  })  : _generator = QuizQuestionGenerator(region: region, seed: seed),
+  })  : _generator = QuizQuestionGenerator(
+            region: region, difficulty: difficulty, seed: seed),
         _random = Random(seed),
         _results = [],
         _answeredCodes = {},

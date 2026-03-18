@@ -218,6 +218,7 @@ class _RegionMapPainter extends CustomPainter {
     if (showLabels) {
       for (final area in areas) {
         if (eliminatedCodes.contains(area.code)) continue;
+        if (_isTinyArea(area, transform, size)) continue;
         _drawAreaLabel(canvas, size, area, transform);
       }
     }
@@ -417,7 +418,8 @@ class _RegionMapPainter extends CustomPainter {
         : const Color(0xFFB0C8D8);
 
     // Scale font inversely with zoom so labels don't get enormous when zoomed.
-    final fontSize = (7.0 / zoomScale).clamp(3.0, 10.0);
+    final fontSize = 7.0 / zoomScale;
+    if (fontSize < 0.5) return; // Too tiny to render at this zoom
 
     final textPainter = TextPainter(
       text: TextSpan(
@@ -623,12 +625,13 @@ class _RegionMapPainter extends CustomPainter {
     // Label — only when difficulty enables labels.
     if (showLabels) {
       final fontSize = 6.0 / zoomScale;
+      if (fontSize < 0.5) return; // Don't render label at extreme zoom
       final tp = TextPainter(
         text: TextSpan(
           text: area.code,
           style: TextStyle(
             color: const Color(0xFFE0F0FF),
-            fontSize: fontSize.clamp(4.0, 8.0),
+            fontSize: fontSize,
             fontWeight: FontWeight.w800,
             letterSpacing: 0.3,
           ),

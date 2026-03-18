@@ -5,7 +5,7 @@ class EuropeClueData {
   const EuropeClueData({
     required this.nickname,
     required this.famousLandmark,
-    required this.famousPerson,
+    required this.famousPeople,
     required this.flag,
     required this.motto,
     required this.footballTeam,
@@ -13,7 +13,7 @@ class EuropeClueData {
 
   final String nickname;
   final String famousLandmark;
-  final String famousPerson;
+  final List<String> famousPeople;
   final String flag;
   final String motto;
   final String footballTeam;
@@ -24,7 +24,7 @@ abstract class EuropeClues {
     'AD': EuropeClueData(
       nickname: 'The Pyrenean Principality',
       famousLandmark: 'Vall del Madriu-Perafita-Claror',
-      famousPerson: 'Boris Skossyreff',
+      famousPeople: ['Boris Skossyreff'],
       flag:
           'Three vertical stripes: blue, yellow, red with coat of arms on yellow',
       motto: 'Virtus Unita Fortior',
@@ -33,7 +33,7 @@ abstract class EuropeClues {
     'AL': EuropeClueData(
       nickname: 'The Land of the Eagles',
       famousLandmark: 'Butrint',
-      famousPerson: 'Mother Teresa',
+      famousPeople: ['Mother Teresa', 'Dua Lipa', 'Rita Ora'],
       flag: 'Red field with black double-headed eagle in centre',
       motto: 'Ti Shqiperi, me jep nder, me jep emrin Shqipetar',
       footballTeam: 'Kuq e Zi',
@@ -41,7 +41,11 @@ abstract class EuropeClues {
     'AT': EuropeClueData(
       nickname: 'The Land of Music',
       famousLandmark: 'Schoenbrunn Palace',
-      famousPerson: 'Wolfgang Amadeus Mozart',
+      famousPeople: [
+        'Wolfgang Amadeus Mozart',
+        'Arnold Schwarzenegger',
+        'Sigmund Freud',
+      ],
       flag: 'Three horizontal stripes: red, white, red',
       motto: '',
       footballTeam: 'Das Team',
@@ -49,7 +53,7 @@ abstract class EuropeClues {
     'BA': EuropeClueData(
       nickname: 'The Heart-Shaped Land',
       famousLandmark: 'Stari Most (Old Bridge of Mostar)',
-      famousPerson: 'Ivo Andric',
+      famousPeople: ['Ivo Andric', 'Edin Dzeko'],
       flag: 'Blue field with yellow triangle and white stars along hypotenuse',
       motto: '',
       footballTeam: 'Zmajevi',
@@ -57,7 +61,11 @@ abstract class EuropeClues {
     'BE': EuropeClueData(
       nickname: 'The Battleground of Europe',
       famousLandmark: 'Grand Place',
-      famousPerson: 'Audrey Hepburn',
+      famousPeople: [
+        'Audrey Hepburn',
+        'Jean-Claude Van Damme',
+        'Tintin (Herge)'
+      ],
       flag: 'Three vertical stripes: black, yellow, red',
       motto: 'Eendracht maakt macht / L\'union fait la force',
       footballTeam: 'De Rode Duivels',
@@ -65,7 +73,7 @@ abstract class EuropeClues {
     'BG': EuropeClueData(
       nickname: 'The Land of Roses',
       famousLandmark: 'Alexander Nevsky Cathedral',
-      famousPerson: 'Hristo Stoichkov',
+      famousPeople: ['Hristo Stoichkov', 'Grigor Dimitrov'],
       flag: 'Three horizontal stripes: white, green, red',
       motto: 'Saединението прави силата (Unity makes strength)',
       footballTeam: 'The Lions',
@@ -73,7 +81,7 @@ abstract class EuropeClues {
     'BY': EuropeClueData(
       nickname: 'White Rus',
       famousLandmark: 'Mir Castle',
-      famousPerson: 'Marc Chagall',
+      famousPeople: ['Marc Chagall', 'Victoria Azarenka'],
       flag:
           'Two horizontal stripes red and green with white and red ornament pattern on hoist',
       motto: '',
@@ -82,7 +90,7 @@ abstract class EuropeClues {
     'CH': EuropeClueData(
       nickname: 'The Playground of Europe',
       famousLandmark: 'Matterhorn',
-      famousPerson: 'Albert Einstein',
+      famousPeople: ['Albert Einstein', 'Roger Federer', 'William Tell'],
       flag: 'Red square field with white cross in centre',
       motto: 'Unus pro omnibus, omnes pro uno (One for all, all for one)',
       footballTeam: 'Nati',
@@ -90,7 +98,7 @@ abstract class EuropeClues {
     'CY': EuropeClueData(
       nickname: 'The Island of Aphrodite',
       famousLandmark: 'Tombs of the Kings',
-      famousPerson: 'Zeno of Citium',
+      famousPeople: ['Zeno of Citium'],
       flag:
           'White field with copper-coloured island silhouette above two olive branches',
       motto: '',
@@ -99,7 +107,7 @@ abstract class EuropeClues {
     'CZ': EuropeClueData(
       nickname: 'The Heart of Europe',
       famousLandmark: 'Prague Castle',
-      famousPerson: 'Franz Kafka',
+      famousPeople: ['Franz Kafka', 'Jaromir Jagr', 'Antonin Dvorak'],
       flag: 'Two horizontal stripes white and red with blue triangle at hoist',
       motto: 'Pravda vitezi (Truth prevails)',
       footballTeam: 'Narodni tym',
@@ -107,7 +115,11 @@ abstract class EuropeClues {
     'DE': EuropeClueData(
       nickname: 'Das Land der Dichter und Denker',
       famousLandmark: 'Brandenburg Gate',
-      famousPerson: 'Albert Einstein',
+      famousPeople: [
+        'Albert Einstein',
+        'Ludwig van Beethoven',
+        'Angela Merkel'
+      ],
       flag: 'Three horizontal stripes: black, red, gold',
       motto: 'Einigkeit und Recht und Freiheit (Unity and Justice and Freedom)',
       footballTeam: 'Die Mannschaft',
@@ -115,7 +127,7 @@ abstract class EuropeClues {
     'DK': EuropeClueData(
       nickname: 'The Land of the Danes',
       famousLandmark: 'The Little Mermaid',
-      famousPerson: 'Hans Christian Andersen',
+      famousPeople: ['Hans Christian Andersen', 'Mads Mikkelsen', 'Niels Bohr'],
       flag: 'Red field with white Scandinavian cross (Dannebrog)',
       motto: '',
       footballTeam: 'Danish Dynamite',
@@ -123,7 +135,7 @@ abstract class EuropeClues {
     'EE': EuropeClueData(
       nickname: 'The Digital Nation',
       famousLandmark: 'Tallinn Old Town',
-      famousPerson: 'Arvo Part',
+      famousPeople: ['Arvo Part', 'Ott Tanak'],
       flag: 'Three horizontal stripes: blue, black, white',
       motto: '',
       footballTeam: 'FC Flora Tallinn',
@@ -131,7 +143,12 @@ abstract class EuropeClues {
     'ES': EuropeClueData(
       nickname: 'The Kingdom of the Sun',
       famousLandmark: 'Sagrada Familia',
-      famousPerson: 'Pablo Picasso',
+      famousPeople: [
+        'Pablo Picasso',
+        'Rafael Nadal',
+        'Antonio Banderas',
+        'Salvador Dali',
+      ],
       flag:
           'Three horizontal stripes: red, yellow (double width), red with coat of arms',
       motto: 'Plus Ultra (Further Beyond)',
@@ -140,7 +157,7 @@ abstract class EuropeClues {
     'FI': EuropeClueData(
       nickname: 'The Land of a Thousand Lakes',
       famousLandmark: 'Suomenlinna Fortress',
-      famousPerson: 'Jean Sibelius',
+      famousPeople: ['Jean Sibelius', 'Kimi Raikkonen', 'Linus Torvalds'],
       flag: 'White field with blue Scandinavian cross',
       motto: '',
       footballTeam: 'Huuhkajat',
@@ -148,7 +165,12 @@ abstract class EuropeClues {
     'FR': EuropeClueData(
       nickname: 'L\'Hexagone',
       famousLandmark: 'Eiffel Tower',
-      famousPerson: 'Napoleon Bonaparte',
+      famousPeople: [
+        'Napoleon Bonaparte',
+        'Zinedine Zidane',
+        'Coco Chanel',
+        'Victor Hugo',
+      ],
       flag: 'Three vertical stripes: blue, white, red',
       motto: 'Liberte, Egalite, Fraternite',
       footballTeam: 'Les Bleus',
@@ -156,7 +178,12 @@ abstract class EuropeClues {
     'GB': EuropeClueData(
       nickname: 'Blighty',
       famousLandmark: 'Big Ben',
-      famousPerson: 'William Shakespeare',
+      famousPeople: [
+        'William Shakespeare',
+        'Queen Elizabeth II',
+        'David Beckham',
+        'Adele',
+      ],
       flag:
           'Blue field with red and white crosses of St George, St Andrew, and St Patrick (Union Jack)',
       motto: 'Dieu et mon droit (God and my right)',
@@ -165,7 +192,7 @@ abstract class EuropeClues {
     'GR': EuropeClueData(
       nickname: 'The Cradle of Western Civilisation',
       famousLandmark: 'Parthenon',
-      famousPerson: 'Aristotle',
+      famousPeople: ['Aristotle', 'Socrates', 'Alexander the Great'],
       flag:
           'Nine horizontal stripes alternating blue and white with white cross on blue canton',
       motto: 'Eleftheria i Thanatos (Freedom or Death)',
@@ -174,7 +201,7 @@ abstract class EuropeClues {
     'HR': EuropeClueData(
       nickname: 'The Land of a Thousand Islands',
       famousLandmark: 'Dubrovnik Old Town',
-      famousPerson: 'Nikola Tesla',
+      famousPeople: ['Nikola Tesla', 'Luka Modric'],
       flag:
           'Three horizontal stripes: red, white, blue with chequered coat of arms',
       motto: '',
@@ -183,7 +210,7 @@ abstract class EuropeClues {
     'HU': EuropeClueData(
       nickname: 'The Land of Thermal Waters',
       famousLandmark: 'Hungarian Parliament Building',
-      famousPerson: 'Franz Liszt',
+      famousPeople: ['Franz Liszt', 'Rubik Erno (inventor of Rubik\'s Cube)'],
       flag: 'Three horizontal stripes: red, white, green',
       motto: '',
       footballTeam: 'Magyarok',
@@ -191,7 +218,7 @@ abstract class EuropeClues {
     'IE': EuropeClueData(
       nickname: 'The Emerald Isle',
       famousLandmark: 'Cliffs of Moher',
-      famousPerson: 'Oscar Wilde',
+      famousPeople: ['Oscar Wilde', 'Conor McGregor', 'Bono'],
       flag: 'Three vertical stripes: green, white, orange',
       motto: '',
       footballTeam: 'Boys in Green',
@@ -199,7 +226,7 @@ abstract class EuropeClues {
     'IS': EuropeClueData(
       nickname: 'The Land of Fire and Ice',
       famousLandmark: 'Hallgrimskirkja',
-      famousPerson: 'Bjork',
+      famousPeople: ['Bjork', 'Hafthor Bjornsson'],
       flag: 'Blue field with red Scandinavian cross outlined in white',
       motto: '',
       footballTeam: 'Strakarnir okkar',
@@ -207,7 +234,12 @@ abstract class EuropeClues {
     'IT': EuropeClueData(
       nickname: 'The Boot',
       famousLandmark: 'Colosseum',
-      famousPerson: 'Leonardo da Vinci',
+      famousPeople: [
+        'Leonardo da Vinci',
+        'Michelangelo',
+        'Marco Polo',
+        'Andrea Bocelli',
+      ],
       flag: 'Three vertical stripes: green, white, red',
       motto: '',
       footballTeam: 'Gli Azzurri',
@@ -215,7 +247,7 @@ abstract class EuropeClues {
     'LI': EuropeClueData(
       nickname: 'The Doubly Landlocked Principality',
       famousLandmark: 'Vaduz Castle',
-      famousPerson: 'Hans-Adam II',
+      famousPeople: ['Hans-Adam II'],
       flag:
           'Two horizontal stripes: blue and red with gold crown on blue stripe',
       motto: 'Fur Gott, Furst und Vaterland (For God, Prince, and Fatherland)',
@@ -224,7 +256,7 @@ abstract class EuropeClues {
     'LT': EuropeClueData(
       nickname: 'The Land of Amber',
       famousLandmark: 'Gediminas Tower',
-      famousPerson: 'Violeta Urmana',
+      famousPeople: ['Violeta Urmana', 'Arvydas Sabonis'],
       flag: 'Three horizontal stripes: yellow, green, red',
       motto:
           'Tautos jega, vienybe teze (The strength of the nation lies in unity)',
@@ -233,7 +265,7 @@ abstract class EuropeClues {
     'LU': EuropeClueData(
       nickname: 'The Grand Duchy',
       famousLandmark: 'Casemates du Bock',
-      famousPerson: 'Robert Schuman',
+      famousPeople: ['Robert Schuman'],
       flag: 'Three horizontal stripes: red, white, light blue',
       motto: 'Mir welle bleiwe wat mir sinn (We want to remain what we are)',
       footballTeam: 'F91 Dudelange',
@@ -241,7 +273,7 @@ abstract class EuropeClues {
     'LV': EuropeClueData(
       nickname: 'The Land of Blue Lakes',
       famousLandmark: 'Riga Old Town',
-      famousPerson: 'Mikhail Eisenstein',
+      famousPeople: ['Mikhail Eisenstein', 'Kristaps Porzingis'],
       flag: 'Dark red field with narrow white horizontal stripe through centre',
       motto: 'Tiesu tiesai (For justice)',
       footballTeam: 'FK RFS',
@@ -249,7 +281,7 @@ abstract class EuropeClues {
     'MC': EuropeClueData(
       nickname: 'The Rock',
       famousLandmark: 'Monte Carlo Casino',
-      famousPerson: 'Grace Kelly',
+      famousPeople: ['Grace Kelly', 'Prince Albert II'],
       flag: 'Two horizontal stripes: red over white',
       motto: 'Deo Juvante (With God\'s Help)',
       footballTeam: 'AS Monaco',
@@ -257,7 +289,7 @@ abstract class EuropeClues {
     'MD': EuropeClueData(
       nickname: 'The Land Between Rivers',
       famousLandmark: 'Orheiul Vechi',
-      famousPerson: 'Eugen Doga',
+      famousPeople: ['Eugen Doga'],
       flag:
           'Three vertical stripes: blue, yellow, red with coat of arms on yellow',
       motto: '',
@@ -266,7 +298,7 @@ abstract class EuropeClues {
     'ME': EuropeClueData(
       nickname: 'The Pearl of the Mediterranean',
       famousLandmark: 'Bay of Kotor',
-      famousPerson: 'Petar II Petrovic-Njegos',
+      famousPeople: ['Petar II Petrovic-Njegos'],
       flag:
           'Red field with gold border and gold double-headed eagle coat of arms',
       motto: '',
@@ -275,7 +307,7 @@ abstract class EuropeClues {
     'MK': EuropeClueData(
       nickname: 'The Land of the Sun',
       famousLandmark: 'Lake Ohrid',
-      famousPerson: 'Mother Teresa',
+      famousPeople: ['Mother Teresa', 'Alexander the Great'],
       flag:
           'Red field with yellow sun and eight broadening rays extending to edges',
       motto: '',
@@ -284,7 +316,7 @@ abstract class EuropeClues {
     'MT': EuropeClueData(
       nickname: 'The George Cross Island',
       famousLandmark: 'Megalithic Temples of Malta',
-      famousPerson: 'Dom Mintoff',
+      famousPeople: ['Dom Mintoff'],
       flag: 'Two vertical halves: white and red with George Cross on white',
       motto: '',
       footballTeam: 'Valletta FC',
@@ -292,7 +324,7 @@ abstract class EuropeClues {
     'NL': EuropeClueData(
       nickname: 'The Low Countries',
       famousLandmark: 'Anne Frank House',
-      famousPerson: 'Vincent van Gogh',
+      famousPeople: ['Vincent van Gogh', 'Rembrandt', 'Max Verstappen'],
       flag: 'Three horizontal stripes: red, white, blue',
       motto: 'Je maintiendrai (I will maintain)',
       footballTeam: 'Oranje',
@@ -300,7 +332,7 @@ abstract class EuropeClues {
     'NO': EuropeClueData(
       nickname: 'The Land of the Midnight Sun',
       famousLandmark: 'Geirangerfjord',
-      famousPerson: 'Edvard Munch',
+      famousPeople: ['Edvard Munch', 'Erling Haaland', 'Roald Amundsen'],
       flag: 'Red field with blue Scandinavian cross outlined in white',
       motto: 'Alt for Norge (Everything for Norway)',
       footballTeam: 'Landslaget',
@@ -308,7 +340,7 @@ abstract class EuropeClues {
     'PL': EuropeClueData(
       nickname: 'The Land of the White Eagle',
       famousLandmark: 'Wawel Castle',
-      famousPerson: 'Marie Curie',
+      famousPeople: ['Marie Curie', 'Frederic Chopin', 'Robert Lewandowski'],
       flag: 'Two horizontal stripes: white over red',
       motto: '',
       footballTeam: 'Bialo-Czerwoni',
@@ -316,7 +348,7 @@ abstract class EuropeClues {
     'PT': EuropeClueData(
       nickname: 'The Land of Explorers',
       famousLandmark: 'Tower of Belem',
-      famousPerson: 'Cristiano Ronaldo',
+      famousPeople: ['Cristiano Ronaldo', 'Vasco da Gama', 'Fernando Pessoa'],
       flag:
           'Two vertical sections green and red with coat of arms on dividing line',
       motto: '',
@@ -325,7 +357,7 @@ abstract class EuropeClues {
     'RO': EuropeClueData(
       nickname: 'The Land of Dracula',
       famousLandmark: 'Bran Castle',
-      famousPerson: 'Nadia Comaneci',
+      famousPeople: ['Nadia Comaneci', 'Gheorghe Hagi'],
       flag: 'Three vertical stripes: blue, yellow, red',
       motto: '',
       footballTeam: 'Tricolorii',
@@ -333,7 +365,7 @@ abstract class EuropeClues {
     'RS': EuropeClueData(
       nickname: 'The Land of Raspberries',
       famousLandmark: 'Belgrade Fortress',
-      famousPerson: 'Nikola Tesla',
+      famousPeople: ['Nikola Tesla', 'Novak Djokovic'],
       flag:
           'Three horizontal stripes: red, blue, white with coat of arms on hoist side',
       motto: '',
@@ -342,7 +374,7 @@ abstract class EuropeClues {
     'RU': EuropeClueData(
       nickname: 'The Motherland',
       famousLandmark: 'Saint Basil\'s Cathedral',
-      famousPerson: 'Leo Tolstoy',
+      famousPeople: ['Leo Tolstoy', 'Fyodor Dostoevsky', 'Yuri Gagarin'],
       flag: 'Three horizontal stripes: white, blue, red',
       motto: '',
       footballTeam: 'Sbornaya',
@@ -350,7 +382,7 @@ abstract class EuropeClues {
     'SE': EuropeClueData(
       nickname: 'The Land of the Vikings',
       famousLandmark: 'Vasa Museum',
-      famousPerson: 'Alfred Nobel',
+      famousPeople: ['Alfred Nobel', 'Zlatan Ibrahimovic', 'ABBA'],
       flag: 'Blue field with yellow Scandinavian cross',
       motto: 'For Sverige i tiden (For Sweden, with the times)',
       footballTeam: 'Blagult',
@@ -358,7 +390,7 @@ abstract class EuropeClues {
     'SI': EuropeClueData(
       nickname: 'The Sunny Side of the Alps',
       famousLandmark: 'Lake Bled',
-      famousPerson: 'Slavoj Zizek',
+      famousPeople: ['Slavoj Zizek', 'Luka Doncic'],
       flag:
           'Three horizontal stripes: white, blue, red with coat of arms on upper hoist',
       motto: '',
@@ -367,7 +399,7 @@ abstract class EuropeClues {
     'SK': EuropeClueData(
       nickname: 'The Tatra Tiger',
       famousLandmark: 'Spis Castle',
-      famousPerson: 'Andy Warhol',
+      famousPeople: ['Andy Warhol', 'Peter Sagan'],
       flag:
           'Three horizontal stripes: white, blue, red with coat of arms on hoist side',
       motto: '',
@@ -376,7 +408,7 @@ abstract class EuropeClues {
     'SM': EuropeClueData(
       nickname: 'The Most Serene Republic',
       famousLandmark: 'Guaita Tower',
-      famousPerson: 'Saint Marinus',
+      famousPeople: ['Saint Marinus'],
       flag:
           'Two horizontal stripes: white over light blue with coat of arms in centre',
       motto: 'Libertas (Liberty)',
@@ -385,7 +417,7 @@ abstract class EuropeClues {
     'TR': EuropeClueData(
       nickname: 'The Bridge Between East and West',
       famousLandmark: 'Hagia Sophia',
-      famousPerson: 'Mustafa Kemal Ataturk',
+      famousPeople: ['Mustafa Kemal Ataturk'],
       flag: 'Red field with white crescent moon and star',
       motto: 'Yurtta sulh, cihanda sulh (Peace at home, peace in the world)',
       footballTeam: 'Ay-Yildizlilar',
@@ -393,7 +425,7 @@ abstract class EuropeClues {
     'UA': EuropeClueData(
       nickname: 'The Breadbasket of Europe',
       famousLandmark: 'Saint Sophia\'s Cathedral, Kyiv',
-      famousPerson: 'Taras Shevchenko',
+      famousPeople: ['Taras Shevchenko', 'Andriy Shevchenko', 'Mila Kunis'],
       flag: 'Two horizontal stripes: blue over yellow',
       motto: '',
       footballTeam: 'Zbirna',
@@ -401,7 +433,7 @@ abstract class EuropeClues {
     'VA': EuropeClueData(
       nickname: 'The Holy See',
       famousLandmark: 'St. Peter\'s Basilica',
-      famousPerson: 'Pope Francis',
+      famousPeople: ['Pope Francis', 'Pope John Paul II'],
       flag:
           'Two vertical halves: yellow and white with papal tiara and keys on white',
       motto: '',
@@ -410,7 +442,7 @@ abstract class EuropeClues {
     'XK': EuropeClueData(
       nickname: 'The Young European Nation',
       famousLandmark: 'Gjakova Bazaar',
-      famousPerson: 'Ibrahim Rugova',
+      famousPeople: ['Ibrahim Rugova', 'Dua Lipa'],
       flag: 'Blue field with gold map of Kosovo and six white stars above',
       motto: '',
       footballTeam: 'Dardanet',

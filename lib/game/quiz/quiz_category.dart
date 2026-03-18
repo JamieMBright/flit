@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import '../data/africa_clues.dart';
+import '../data/country_difficulty.dart';
 import '../data/asia_clues.dart';
 import '../data/canada_clues.dart';
 import '../data/caribbean_clues.dart';
@@ -11,6 +12,7 @@ import '../data/oceania_clues.dart';
 import '../data/uk_clues.dart';
 import '../data/us_state_clues.dart';
 import '../map/region.dart';
+import 'quiz_difficulty.dart';
 
 /// Categories of quiz questions available in Flight School.
 enum QuizCategory {
@@ -253,10 +255,11 @@ const List<QuizCategory> universalCategories = [
 
 /// Generates quiz questions from regional clue data.
 class QuizQuestionGenerator {
-  QuizQuestionGenerator({required this.region, int? seed})
+  QuizQuestionGenerator({required this.region, this.difficulty, int? seed})
       : _random = Random(seed);
 
   final GameRegion region;
+  final QuizDifficulty? difficulty;
   final Random _random;
 
   /// Non-mixed categories available for this region.
@@ -370,9 +373,28 @@ class QuizQuestionGenerator {
     }
   }
 
+  // ── Difficulty filtering ────────────────────────────────────────────────
+
+  /// Whether a clue for [countryCode] is appropriate for the current difficulty.
+  /// On easy mode, skips obscure countries (difficulty > 0.45).
+  /// On hard mode, skips very easy countries (difficulty < 0.20).
+  bool _isAppropriateForDifficulty(String countryCode) {
+    if (difficulty == null) return true;
+    final rating = countryDifficultyRating(countryCode);
+    switch (difficulty!) {
+      case QuizDifficulty.easy:
+        return rating <= 0.45;
+      case QuizDifficulty.medium:
+        return true;
+      case QuizDifficulty.hard:
+        return true;
+    }
+  }
+
   // ── Multi-region category generators ───────────────────────────────────
 
   QuizQuestion? _generateNickname(RegionalArea area) {
+    if (!_isAppropriateForDifficulty(area.code)) return null;
     final value = _getRegionalString(area.code, 'nickname');
     if (value == null) return null;
     return QuizQuestion(
@@ -384,6 +406,7 @@ class QuizQuestionGenerator {
   }
 
   QuizQuestion? _generateLandmark(RegionalArea area) {
+    if (!_isAppropriateForDifficulty(area.code)) return null;
     final value = _getRegionalString(area.code, 'landmark');
     if (value == null) return null;
     return QuizQuestion(
@@ -395,6 +418,7 @@ class QuizQuestionGenerator {
   }
 
   QuizQuestion? _generateSportsTeam(RegionalArea area) {
+    if (!_isAppropriateForDifficulty(area.code)) return null;
     final value = _getRegionalString(area.code, 'sportsTeam');
     if (value == null) return null;
     final prefix = region == GameRegion.ireland
@@ -411,6 +435,7 @@ class QuizQuestionGenerator {
   }
 
   QuizQuestion? _generateCelebrity(RegionalArea area) {
+    if (!_isAppropriateForDifficulty(area.code)) return null;
     final value = _getRegionalString(area.code, 'celebrity');
     if (value == null) return null;
     return QuizQuestion(
@@ -422,6 +447,7 @@ class QuizQuestionGenerator {
   }
 
   QuizQuestion? _generateFlag(RegionalArea area) {
+    if (!_isAppropriateForDifficulty(area.code)) return null;
     final value = _getRegionalString(area.code, 'flag');
     if (value == null) return null;
     return QuizQuestion(
@@ -433,6 +459,7 @@ class QuizQuestionGenerator {
   }
 
   QuizQuestion? _generateMotto(RegionalArea area) {
+    if (!_isAppropriateForDifficulty(area.code)) return null;
     final value = _getRegionalString(area.code, 'motto');
     if (value == null) return null;
     return QuizQuestion(
@@ -589,7 +616,8 @@ class QuizQuestionGenerator {
       case 'landmark':
         return _nonEmpty(d.famousLandmark);
       case 'celebrity':
-        return _nonEmpty(d.famousPerson);
+        if (d.famousPeople.isEmpty) return null;
+        return d.famousPeople[_random.nextInt(d.famousPeople.length)];
       case 'flag':
         return _nonEmpty(d.flag);
       case 'motto':

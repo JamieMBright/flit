@@ -21,7 +21,8 @@ import geopandas as gpd
 from shapely.geometry import Polygon, MultiPolygon
 
 # Minimum number of points for a polygon to be included (filters tiny slivers)
-MIN_POLYGON_POINTS = 4
+# Triangles (3+close=4) and quads (4+close=5) are unrecognizable — require 6+.
+MIN_POLYGON_POINTS = 6
 
 # Simplification tolerance in degrees (~0.05° ≈ 5.5 km).
 # Reduces point count from ~548K to ~63K while keeping borders much sharper
@@ -220,39 +221,44 @@ def extract_polygons(geometry):
     # Adaptive simplification based on country size
     tolerance = _pick_tolerance(geometry)
 
-    def _extract_from(geom):
-        """Extract coordinate rings from a simplified geometry."""
+    def _extract_from(geom, strict=True):
+        """Extract coordinate rings from a simplified geometry.
+
+        When strict=True, only polygons with >= MIN_USEFUL_POINTS are kept.
+        When strict=False (retry pass), polygons with >= MIN_POLYGON_POINTS
+        are accepted as a last resort.
+        """
+        threshold = MIN_USEFUL_POINTS if strict else MIN_POLYGON_POINTS
         result = []
         if isinstance(geom, Polygon):
             coords = list(geom.exterior.coords)
-            if len(coords) >= MIN_USEFUL_POINTS:
+            if len(coords) >= threshold:
                 result.append(coords)
-            elif len(coords) >= MIN_POLYGON_POINTS:
-                # Too few points but not degenerate — retry with finer tolerance
-                result.append(coords)  # keep as fallback, will be replaced below
         elif isinstance(geom, MultiPolygon):
             for poly in geom.geoms:
                 coords = list(poly.exterior.coords)
-                if len(coords) >= MIN_USEFUL_POINTS:
-                    result.append(coords)
-                elif len(coords) >= MIN_POLYGON_POINTS:
+                if len(coords) >= threshold:
                     result.append(coords)
         return result
 
     if tolerance > 0:
         simplified = geometry.simplify(tolerance, preserve_topology=True)
-        polygons = _extract_from(simplified)
+        polygons = _extract_from(simplified, strict=True)
 
-        # Retry with finer tolerance if any polygon has too few points
-        needs_retry = any(len(p) < MIN_USEFUL_POINTS for p in polygons)
-        if needs_retry and tolerance > MICRO_TOLERANCE:
+        # Retry with finer tolerance if we got fewer polygons than expected
+        if tolerance > MICRO_TOLERANCE:
             finer = max(tolerance / 4, MICRO_TOLERANCE)
             simplified2 = geometry.simplify(finer, preserve_topology=True)
-            polygons2 = _extract_from(simplified2)
-            if polygons2:
+            polygons2 = _extract_from(simplified2, strict=True)
+            if len(polygons2) > len(polygons):
                 polygons = polygons2
+
+        # Last resort: if still empty, accept polygons with MIN_POLYGON_POINTS
+        if not polygons:
+            simplified3 = geometry.simplify(MICRO_TOLERANCE, preserve_topology=True)
+            polygons = _extract_from(simplified3, strict=False)
     else:
-        polygons = _extract_from(geometry)
+        polygons = _extract_from(geometry, strict=True)
 
     # Final filter: drop degenerate slivers
     polygons = [p for p in polygons if len(p) >= MIN_POLYGON_POINTS]
