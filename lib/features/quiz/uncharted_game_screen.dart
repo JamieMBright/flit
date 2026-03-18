@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -439,6 +440,7 @@ class _UnchartedResultsScreenState
     extends ConsumerState<UnchartedResultsScreen> {
   final GlobalKey<InkBurstOverlayState> _inkBurstKey = GlobalKey();
   bool _progressSaved = false;
+  Future<UnchartedAllTimeStats?>? _allTimeStatsFuture;
 
   String get _elapsedFormatted {
     final seconds = (widget.elapsedMs / 1000).floor();
@@ -479,6 +481,7 @@ class _UnchartedResultsScreenState
     super.initState();
     _saveProgress();
     _saveScoreToLeaderboard();
+    _loadAllTimeStats();
 
     // Fire celebration burst for good results (grade B or better).
     final pct = widget.revealedCount / widget.totalCount;
@@ -542,6 +545,18 @@ class _UnchartedResultsScreenState
     } catch (e) {
       debugPrint('[Uncharted] Failed to save score: $e');
     }
+  }
+
+  void _loadAllTimeStats() {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    _allTimeStatsFuture =
+        LeaderboardService.instance.fetchUnchartedAllTimeStats(
+      regionKey: 'uncharted_${widget.region.name}_${widget.mode.name}',
+      userId: userId,
+      playerScore: widget.score,
+    );
   }
 
   @override
@@ -707,6 +722,34 @@ class _UnchartedResultsScreenState
                   ),
                 ),
               ],
+              const SizedBox(height: 16),
+
+              // ── All-time community stats ──
+              if (_allTimeStatsFuture != null)
+                FutureBuilder<UnchartedAllTimeStats?>(
+                  future: _allTimeStatsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: FlitColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    final stats = snapshot.data;
+                    if (stats == null) return const SizedBox.shrink();
+                    return _AllTimeStatsCard(stats: stats);
+                  },
+                ),
+
               const SizedBox(height: 24),
 
               // Actions.
@@ -939,6 +982,272 @@ class _StatRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// All-time community stats card with score distribution histogram.
+class _AllTimeStatsCard extends StatelessWidget {
+  const _AllTimeStatsCard({required this.stats});
+
+  final UnchartedAllTimeStats stats;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: FlitColors.backgroundMid,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: FlitColors.cardBorder.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row.
+          const Row(
+            children: [
+              Icon(Icons.public, color: FlitColors.accent, size: 18),
+              SizedBox(width: 8),
+              Text(
+                'ALL-TIME STATS',
+                style: TextStyle(
+                  color: FlitColors.accent,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Rank + percentile headline.
+          Center(
+            child: RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: const TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 15,
+                ),
+                children: [
+                  const TextSpan(text: 'You ranked '),
+                  TextSpan(
+                    text: '#${stats.playerRank}',
+                    style: const TextStyle(
+                      color: FlitColors.gold,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                    ),
+                  ),
+                  TextSpan(
+                    text: ' of ${stats.totalPlayers} player'
+                        '${stats.totalPlayers == 1 ? '' : 's'}',
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (stats.totalPlayers > 1) ...[
+            const SizedBox(height: 4),
+            Center(
+              child: Text(
+                'Top ${(100 - stats.percentile).clamp(1, 100)}%',
+                style: TextStyle(
+                  color: _percentileColor(stats.percentile),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+
+          // Score distribution histogram.
+          const Text(
+            'Score Distribution',
+            style: TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 80,
+            child: _ScoreHistogram(
+              bucketCounts: stats.bucketCounts,
+              playerBucket: stats.playerBucket,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Summary stats row.
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _MiniStat(
+                label: 'AVG',
+                value: '${stats.averageScore}',
+                icon: Icons.analytics,
+                color: FlitColors.textSecondary,
+              ),
+              Container(
+                width: 1,
+                height: 28,
+                color: FlitColors.cardBorder,
+              ),
+              _MiniStat(
+                label: 'MEDIAN',
+                value: '${stats.medianScore}',
+                icon: Icons.align_vertical_center,
+                color: FlitColors.textSecondary,
+              ),
+              Container(
+                width: 1,
+                height: 28,
+                color: FlitColors.cardBorder,
+              ),
+              _MiniStat(
+                label: 'TOP',
+                value: '${stats.topScore}',
+                icon: Icons.emoji_events,
+                color: FlitColors.gold,
+              ),
+              Container(
+                width: 1,
+                height: 28,
+                color: FlitColors.cardBorder,
+              ),
+              _MiniStat(
+                label: 'PLAYS',
+                value: '${stats.totalPlays}',
+                icon: Icons.people,
+                color: FlitColors.textSecondary,
+              ),
+            ],
+          ),
+
+          // Top 5 leaderboard.
+          if (stats.top5.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Text(
+              'Top 5 All-Time',
+              style: TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 6),
+            for (final entry in stats.top5)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 24,
+                      child: Text(
+                        '#${entry.rank}',
+                        style: TextStyle(
+                          color: entry.rank <= 3
+                              ? FlitColors.gold
+                              : FlitColors.textMuted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        entry.playerName,
+                        style: const TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 13,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '${entry.score}',
+                      style: const TextStyle(
+                        color: FlitColors.gold,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color _percentileColor(int percentile) {
+    if (percentile >= 90) return FlitColors.gold;
+    if (percentile >= 70) return FlitColors.success;
+    if (percentile >= 40) return FlitColors.accent;
+    return FlitColors.textSecondary;
+  }
+}
+
+/// Simple bar chart showing score distribution with the player's bucket
+/// highlighted.
+class _ScoreHistogram extends StatelessWidget {
+  const _ScoreHistogram({
+    required this.bucketCounts,
+    required this.playerBucket,
+  });
+
+  final List<int> bucketCounts;
+  final int playerBucket;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxCount = bucketCounts
+        .reduce((a, b) => a > b ? a : b)
+        .clamp(1, double.maxFinite.toInt());
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: List.generate(bucketCounts.length, (i) {
+        final fraction = bucketCounts[i] / maxCount;
+        final isPlayer = i == playerBucket;
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 1.5),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (isPlayer)
+                  const Icon(
+                    Icons.arrow_drop_down,
+                    color: FlitColors.accent,
+                    size: 14,
+                  ),
+                Container(
+                  height: math.max(2.0, fraction * 60),
+                  decoration: BoxDecoration(
+                    color: isPlayer
+                        ? FlitColors.accent
+                        : FlitColors.textSecondary.withValues(alpha: 0.35),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }),
     );
   }
 }

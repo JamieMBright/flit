@@ -194,7 +194,7 @@ class _UnchartedMapPainter extends CustomPainter {
       if (isRevealed) {
         // Reveal satellite imagery clipped to the area polygon.
         if (satelliteImage != null) {
-          _drawSatelliteFill(canvas, path, transform);
+          _drawSatelliteFill(canvas, path, transform, size);
         } else {
           // Fallback if image hasn't loaded yet.
           canvas.drawPath(
@@ -306,36 +306,39 @@ class _UnchartedMapPainter extends CustomPainter {
 
   /// Draw the Blue Marble satellite texture clipped to a polygon path.
   ///
-  /// Uses the full world extent (-180..180 lng, -90..90 lat) so that
-  /// polygons extending beyond the region viewport (e.g. Russia in Europe)
-  /// still get fully filled with the satellite texture.
+  /// Uses viewport-relative texture mapping: only the portion of the
+  /// satellite image that corresponds to the visible viewport is sampled,
+  /// and the polygon path is intersected with the canvas bounds first.
+  /// This prevents rendering artefacts from polygons that extend far
+  /// beyond the viewport (e.g. Russia in Europe) and gives better texture
+  /// resolution than stretching the full world image.
   void _drawSatelliteFill(
     Canvas canvas,
     Path path,
     _GeoTransform transform,
+    Size canvasSize,
   ) {
     final img = satelliteImage!;
 
-    // Full satellite image as source.
-    final srcRect = Rect.fromLTWH(
-      0,
-      0,
-      img.width.toDouble(),
-      img.height.toDouble(),
-    );
+    // Extract only the satellite image region that matches the viewport.
+    final srcLeft = ((transform.minLng + 180.0) / 360.0) * img.width;
+    final srcRight = ((transform.maxLng + 180.0) / 360.0) * img.width;
+    final srcTop = ((90.0 - transform.maxLat) / 180.0) * img.height;
+    final srcBottom = ((90.0 - transform.minLat) / 180.0) * img.height;
+    final srcRect = Rect.fromLTRB(srcLeft, srcTop, srcRight, srcBottom);
 
-    // Map the full-world extent to canvas coordinates so the texture
-    // aligns everywhere, even outside the viewport bounds.
-    final topLeft = transform.toCanvas(-180.0, 90.0);
-    final bottomRight = transform.toCanvas(180.0, -90.0);
-    final dstRect = Rect.fromLTRB(
-      topLeft.dx,
-      topLeft.dy,
-      bottomRight.dx,
-      bottomRight.dy,
+    // Map to the projected canvas area.
+    final dstRect = Rect.fromLTWH(
+      transform.offsetX,
+      transform.offsetY,
+      transform.projectedWidth,
+      transform.projectedHeight,
     );
 
     canvas.save();
+    // Clip to canvas bounds first — prevents rendering issues with
+    // polygon paths that extend thousands of pixels off-screen.
+    canvas.clipRect(Offset.zero & canvasSize);
     canvas.clipPath(path);
     canvas.drawImageRect(
       img,
