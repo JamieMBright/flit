@@ -99,6 +99,12 @@ class AnnouncementService {
     return result as int;
   }
 
+  /// Delete an announcement (admin).
+  Future<void> delete(int id) async {
+    await _client.from('announcements').delete().eq('id', id);
+    invalidateCache();
+  }
+
   void invalidateCache() {
     _cache = null;
     _cacheTime = null;

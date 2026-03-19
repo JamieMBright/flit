@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../map/region.dart';
+import 'border_smoothing.dart';
 
 /// State visual status during a quiz.
 enum StateVisualStatus {
@@ -665,11 +666,16 @@ class _UsaMapPainter extends CustomPainter {
     if (polygons != null && polygons.isNotEmpty) {
       for (final ring in polygons) {
         if (ring.isEmpty) continue;
-        final first = transform.toCanvas(ring.first.x, ring.first.y);
-        path.moveTo(first.dx, first.dy);
-        for (var i = 1; i < ring.length; i++) {
-          final p = transform.toCanvas(ring[i].x, ring[i].y);
-          path.lineTo(p.dx, p.dy);
+        final canvasPoints = <Offset>[];
+        for (final pt in ring) {
+          canvasPoints.add(transform.toCanvas(pt.x, pt.y));
+        }
+        // Apply Chaikin subdivision for smoother borders.
+        final smoothed = chaikinSmooth(canvasPoints, 2);
+        if (smoothed.isEmpty) continue;
+        path.moveTo(smoothed.first.dx, smoothed.first.dy);
+        for (var i = 1; i < smoothed.length; i++) {
+          path.lineTo(smoothed[i].dx, smoothed[i].dy);
         }
         path.close();
       }
@@ -678,12 +684,15 @@ class _UsaMapPainter extends CustomPainter {
 
     // Fallback: single flat list of points.
     if (points.isEmpty) return path;
-    final first = transform.toCanvas(points.first.x, points.first.y);
-    path.moveTo(first.dx, first.dy);
-
-    for (var i = 1; i < points.length; i++) {
-      final p = transform.toCanvas(points[i].x, points[i].y);
-      path.lineTo(p.dx, p.dy);
+    final canvasPoints = <Offset>[];
+    for (final pt in points) {
+      canvasPoints.add(transform.toCanvas(pt.x, pt.y));
+    }
+    final smoothed = chaikinSmooth(canvasPoints, 2);
+    if (smoothed.isEmpty) return path;
+    path.moveTo(smoothed.first.dx, smoothed.first.dy);
+    for (var i = 1; i < smoothed.length; i++) {
+      path.lineTo(smoothed[i].dx, smoothed[i].dy);
     }
 
     path.close();

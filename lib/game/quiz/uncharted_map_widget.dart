@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../map/region.dart';
+import 'border_smoothing.dart';
 
 /// A zoomable, pannable map showing outlines of all areas for a region.
 ///
@@ -186,6 +187,11 @@ class _UnchartedMapPainter extends CustomPainter {
       ..isAntiAlias = true
       ..color = const Color(0xFF2ECC71);
 
+    // First pass: draw all fills, strokes, and markers.
+    // Labels are deferred to a second pass so they aren't clipped by
+    // neighbouring countries' satellite fills.
+    final revealedAreas = <RegionalArea>[];
+
     for (final area in areas) {
       final path = _buildAreaPath(area, transform);
       final isRevealed = revealedCodes.contains(area.code);
@@ -243,7 +249,7 @@ class _UnchartedMapPainter extends CustomPainter {
 
           canvas.drawPath(path, revealedStroke);
         }
-        _drawLabel(canvas, area, transform);
+        revealedAreas.add(area);
       } else {
         // Unrevealed: just outline.
         canvas.drawPath(path, outlinePaint);
@@ -268,6 +274,12 @@ class _UnchartedMapPainter extends CustomPainter {
         }
       }
     }
+
+    // Second pass: draw labels on top of all fills so they're never clipped
+    // by neighbouring countries' satellite texture.
+    for (final area in revealedAreas) {
+      _drawLabel(canvas, area, transform);
+    }
   }
 
   /// Minimum canvas diameter below which an area is considered "tiny".
@@ -277,14 +289,8 @@ class _UnchartedMapPainter extends CustomPainter {
   static const double _markerRadius = 10.0;
 
   /// Area codes that always get an expanded marker (micro-states & islands).
-  static const Set<String> _alwaysTinyCodes = {
-    'MV', 'SG', 'BH', 'MU', 'SC', 'KM', 'ST', 'CV', // island/micro states
-    'MT', 'AD', 'MC', 'LI', 'SM', 'VA', // European micro-states
-    // Pacific / Oceania island nations
-    'FJ', 'FM', 'KI', 'MH', 'NR', 'PW', 'SB', 'TO', 'TV', 'VU', 'WS',
-    // Caribbean island nations
-    'AG', 'BB', 'DM', 'GD', 'KN', 'LC', 'VC', 'TT',
-  };
+  /// Uses the shared set from border_smoothing.dart for consistency.
+  static const Set<String> _alwaysTinyCodes = alwaysTinyCodes;
 
   /// Whether an area's polygon footprint on canvas is too small to see.
   bool _isTinyArea(RegionalArea area, _GeoTransform transform, Size size) {
@@ -470,11 +476,17 @@ class _UnchartedMapPainter extends CustomPainter {
     final rings = area.polygons ?? [area.points];
     for (final ring in rings) {
       if (ring.isEmpty) continue;
-      final first = transform.toCanvas(ring.first.x, ring.first.y);
-      path.moveTo(first.dx, first.dy);
-      for (var i = 1; i < ring.length; i++) {
-        final p = transform.toCanvas(ring[i].x, ring[i].y);
-        path.lineTo(p.dx, p.dy);
+      // Convert geo coordinates to canvas points.
+      final canvasPoints = <Offset>[];
+      for (final pt in ring) {
+        canvasPoints.add(transform.toCanvas(pt.x, pt.y));
+      }
+      // Apply Chaikin subdivision for smoother borders.
+      final smoothed = chaikinSmooth(canvasPoints, 2);
+      if (smoothed.isEmpty) continue;
+      path.moveTo(smoothed.first.dx, smoothed.first.dy);
+      for (var i = 1; i < smoothed.length; i++) {
+        path.lineTo(smoothed[i].dx, smoothed[i].dy);
       }
       path.close();
     }

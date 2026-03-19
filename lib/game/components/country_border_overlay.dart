@@ -85,15 +85,9 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       ..strokeJoin = StrokeJoin.round
       ..isAntiAlias = true;
 
-    // Per-country vertex budget — distributed proportionally to polygon size
-    // so larger landmasses get more detail than tiny islands.
-    // Large countries (Canada, Russia, USA) need higher budgets because their
-    // mainland polygon competes with hundreds of island polygons.
-    const countryBudget = kIsWeb ? 1600 : 3200;
-    const minCountryBudget = 50;
-    // Minimum vertices for the largest polygon in each country — ensures
-    // mainland coastlines always look smooth regardless of island count.
-    const minMainlandBudget = kIsWeb ? 600 : 1200;
+    // Use all available vertices for crisp borders at every zoom level.
+    // The polygon data is already in memory so there's no extra cost.
+    // Visibility culling below prevents off-screen polygons from being drawn.
 
     final playerPos = gameRef.worldPosition;
 
@@ -112,26 +106,10 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       // shows Antarctica clearly without a border overlay.
       if (country.code == 'AQ') continue;
 
-      // Compute total vertices across all polygons for proportional allocation.
-      var totalVerts = 0;
-      for (final polygon in country.polygons) {
-        totalVerts += polygon.length;
-      }
-      final budget = totalVerts < minCountryBudget
-          ? totalVerts
-          : countryBudget.clamp(minCountryBudget, totalVerts);
-
-      // Find the largest polygon (mainland) so we can guarantee it a minimum.
-      var maxPolyLen = 0;
-      for (final polygon in country.polygons) {
-        if (polygon.length > maxPolyLen) maxPolyLen = polygon.length;
-      }
-
       for (final polygon in country.polygons) {
         if (polygon.length < 3) continue;
 
-        // Skip tiny polygons — they appear as small diamonds at globe scale
-        // and waste vertex budget.
+        // Skip tiny polygons — they appear as small diamonds at globe scale.
         if (polygon.length < 6) continue;
 
         // Quick center-of-polygon check for visibility culling.
@@ -142,21 +120,6 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         final dxWrapped = dx > 180 ? 360 - dx : dx;
         if (dxWrapped > visRadius || dy > visRadius) continue;
 
-        // Allocate vertices proportionally to polygon size.
-        // Larger polygons (mainland) get more points than tiny islands.
-        var polyBudget = (budget * polygon.length / totalVerts).ceil().clamp(
-              3,
-              polygon.length,
-            );
-        // Guarantee the largest polygon (mainland) a minimum vertex count
-        // so countries with many islands still get smooth mainland outlines.
-        if (polygon.length == maxPolyLen && polyBudget < minMainlandBudget) {
-          polyBudget = minMainlandBudget.clamp(3, polygon.length);
-        }
-        final stride = polygon.length > polyBudget
-            ? (polygon.length / polyBudget).ceil()
-            : 1;
-
         final path = ui.Path();
         var started = false;
         var anyVisible = false;
@@ -164,7 +127,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
         var lastX = 0.0;
         var lastY = 0.0;
 
-        for (var i = 0; i < polygon.length; i += stride) {
+        for (var i = 0; i < polygon.length; i++) {
           final screenPos = gameRef.worldToScreenGlobe(polygon[i]);
 
           // Occluded (far side of globe)
@@ -250,42 +213,8 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       ..strokeWidth = continuousAlt >= 0.6 ? 2.0 : 2.5
       ..strokeJoin = StrokeJoin.round;
 
-    // Per-country vertex budget for active highlight — higher for crisp look.
-    const activeBudget = kIsWeb ? 2400 : 4800;
-    const minActiveBudget = 50;
-    const minActiveMainland = kIsWeb ? 800 : 1600;
-    var activeTotalVerts = 0;
-    for (final polygon in activeCountry.polygons) {
-      activeTotalVerts += polygon.length;
-    }
-    final aBudget = activeTotalVerts < minActiveBudget
-        ? activeTotalVerts
-        : activeBudget.clamp(minActiveBudget, activeTotalVerts);
-
-    // Find largest polygon for mainland minimum guarantee.
-    var activeMaxPolyLen = 0;
-    for (final polygon in activeCountry.polygons) {
-      if (polygon.length > activeMaxPolyLen) activeMaxPolyLen = polygon.length;
-    }
-
     for (final polygon in activeCountry.polygons) {
       if (polygon.length < 3) continue;
-
-      // Skip very tiny polygons — not useful even for the active highlight.
-      if (polygon.length < 4) continue;
-
-      // Allocate vertices proportionally — larger polygons get more detail.
-      var polyBudget = (aBudget * polygon.length / activeTotalVerts)
-          .ceil()
-          .clamp(3, polygon.length);
-      // Guarantee mainland polygon a minimum so it's always crisp.
-      if (polygon.length == activeMaxPolyLen &&
-          polyBudget < minActiveMainland) {
-        polyBudget = minActiveMainland.clamp(3, polygon.length);
-      }
-      final stride = polygon.length > polyBudget
-          ? (polygon.length / polyBudget).ceil()
-          : 1;
 
       final path = ui.Path();
       var started = false;
@@ -294,7 +223,7 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
       var lastX = 0.0;
       var lastY = 0.0;
 
-      for (var i = 0; i < polygon.length; i += stride) {
+      for (var i = 0; i < polygon.length; i++) {
         final screenPos = gameRef.worldToScreenGlobe(polygon[i]);
 
         if (screenPos.x < -500 || screenPos.y < -500) {

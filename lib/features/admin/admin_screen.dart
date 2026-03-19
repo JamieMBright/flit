@@ -5614,8 +5614,9 @@ class _ReportQueuePlaceholderState extends State<_ReportQueuePlaceholder>
   String _formatDate(DateTime? dt) {
     if (dt == null) return '—';
     final local = dt.toLocal();
-    return '${local.year}-${local.month.toString().padLeft(2, '0')}-'
-        '${local.day.toString().padLeft(2, '0')} '
+    return '${local.day.toString().padLeft(2, '0')}-'
+        '${local.month.toString().padLeft(2, '0')}-'
+        '${local.year} '
         '${local.hour.toString().padLeft(2, '0')}:'
         '${local.minute.toString().padLeft(2, '0')}';
   }
@@ -6046,8 +6047,9 @@ class _ClueReportQueueState extends State<_ClueReportQueue>
   String _formatDate(DateTime? dt) {
     if (dt == null) return '\u2014';
     final local = dt.toLocal();
-    return '${local.year}-${local.month.toString().padLeft(2, '0')}-'
-        '${local.day.toString().padLeft(2, '0')} '
+    return '${local.day.toString().padLeft(2, '0')}-'
+        '${local.month.toString().padLeft(2, '0')}-'
+        '${local.year} '
         '${local.hour.toString().padLeft(2, '0')}:'
         '${local.minute.toString().padLeft(2, '0')}';
   }
@@ -6665,8 +6667,63 @@ class _AnnouncementsPlaceholderState extends State<_AnnouncementsPlaceholder> {
   String _formatDate(DateTime? dt) {
     if (dt == null) return '—';
     final local = dt.toLocal();
-    return '${local.year}-${local.month.toString().padLeft(2, '0')}-'
-        '${local.day.toString().padLeft(2, '0')}';
+    return '${local.day.toString().padLeft(2, '0')}-'
+        '${local.month.toString().padLeft(2, '0')}-'
+        '${local.year}';
+  }
+
+  Future<void> _deleteAnnouncement(Announcement a) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        title: const Text(
+          'Delete Announcement?',
+          style: TextStyle(color: FlitColors.textPrimary),
+        ),
+        content: Text(
+          'Permanently delete "${a.title}"? This cannot be undone.',
+          style: const TextStyle(color: FlitColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: FlitColors.textMuted),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: FlitColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await AnnouncementService.instance.delete(a.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Announcement deleted'),
+          backgroundColor: FlitColors.success,
+        ),
+      );
+      _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete: $e'),
+          backgroundColor: FlitColors.error,
+        ),
+      );
+    }
   }
 
   void _showAnnouncementDialog({Announcement? existing}) {
@@ -7086,6 +7143,17 @@ class _AnnouncementsPlaceholderState extends State<_AnnouncementsPlaceholder> {
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => _deleteAnnouncement(a),
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  color: FlitColors.error,
+                  tooltip: 'Delete',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
                   ),
                 ),
                 Switch(
