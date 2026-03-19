@@ -191,36 +191,65 @@ class _UnchartedMapPainter extends CustomPainter {
       final isRevealed = revealedCodes.contains(area.code);
       final isFlashing = area.code == lastRevealedCode && flashProgress < 1.0;
 
+      final isTiny = _isTinyArea(area, transform, size);
+
       if (isRevealed) {
-        // Reveal satellite imagery clipped to the area polygon.
-        if (satelliteImage != null) {
-          _drawSatelliteFill(canvas, path, transform, size);
+        if (isTiny) {
+          // For tiny areas, reveal satellite fill inside the rounded rect
+          // bounding box so the country is actually visible.
+          final rrect = _tinyAreaRRect(area, transform);
+          if (satelliteImage != null) {
+            _drawSatelliteRRect(canvas, rrect, transform, size);
+          } else {
+            canvas.drawRRect(
+              rrect,
+              Paint()..color = const Color(0xFF1B6B4A),
+            );
+          }
+
+          if (isFlashing) {
+            final flashAlpha = (1.0 - flashProgress).clamp(0.0, 1.0);
+            canvas.drawRRect(
+              rrect,
+              Paint()
+                ..color = const Color(0xFF2ECC71).withValues(alpha: flashAlpha),
+            );
+          }
+
+          // Green dashed border for revealed tiny areas.
+          final rrectPath = Path()..addRRect(rrect);
+          _drawDashedPath(canvas, rrectPath, revealedStroke, 16);
         } else {
-          // Fallback if image hasn't loaded yet.
-          canvas.drawPath(
-            path,
-            Paint()..color = const Color(0xFF1B6B4A),
-          );
-        }
+          // Reveal satellite imagery clipped to the area polygon.
+          if (satelliteImage != null) {
+            _drawSatelliteFill(canvas, path, transform, size);
+          } else {
+            // Fallback if image hasn't loaded yet.
+            canvas.drawPath(
+              path,
+              Paint()..color = const Color(0xFF1B6B4A),
+            );
+          }
 
-        if (isFlashing) {
-          // Flash overlay: bright green fading out to reveal satellite.
-          final flashAlpha = (1.0 - flashProgress).clamp(0.0, 1.0);
-          canvas.drawPath(
-            path,
-            Paint()
-              ..color = const Color(0xFF2ECC71).withValues(alpha: flashAlpha),
-          );
-        }
+          if (isFlashing) {
+            // Flash overlay: bright green fading out to reveal satellite.
+            final flashAlpha = (1.0 - flashProgress).clamp(0.0, 1.0);
+            canvas.drawPath(
+              path,
+              Paint()
+                ..color = const Color(0xFF2ECC71).withValues(alpha: flashAlpha),
+            );
+          }
 
-        canvas.drawPath(path, revealedStroke);
+          canvas.drawPath(path, revealedStroke);
+        }
         _drawLabel(canvas, area, transform);
       } else {
         // Unrevealed: just outline.
         canvas.drawPath(path, outlinePaint);
 
-        // Draw dashed circle marker for tiny countries so they're visible.
-        if (_isTinyArea(area, transform, size)) {
+        // Draw dashed rounded polygon marker for tiny countries.
+        if (isTiny) {
           _drawTinyMarker(canvas, area, transform);
         }
 
@@ -275,37 +304,84 @@ class _UnchartedMapPainter extends CustomPainter {
     return w < _tinyThreshold && h < _tinyThreshold;
   }
 
-  /// Draw a faint dashed circle for a tiny unrevealed area.
+  /// Compute the bounding box of a tiny area's points on canvas, expanded
+  /// to a minimum visible size and returned as a rounded rectangle.
+  RRect _tinyAreaRRect(
+    RegionalArea area,
+    _GeoTransform transform,
+  ) {
+    final points = area.points;
+    if (points.isEmpty) {
+      final centroid = _computeCentroid(area, transform) ?? Offset.zero;
+      final r = _markerRadius / zoomScale;
+      return RRect.fromRectAndRadius(
+        Rect.fromCircle(center: centroid, radius: r),
+        Radius.circular(r),
+      );
+    }
+    var minX = double.infinity, maxX = -double.infinity;
+    var minY = double.infinity, maxY = -double.infinity;
+    for (final p in points) {
+      final cp = transform.toCanvas(p.x, p.y);
+      if (cp.dx < minX) minX = cp.dx;
+      if (cp.dx > maxX) maxX = cp.dx;
+      if (cp.dy < minY) minY = cp.dy;
+      if (cp.dy > maxY) maxY = cp.dy;
+    }
+    final minSize = _markerRadius * 2.0 / zoomScale;
+    final pad = 4.0 / zoomScale;
+    var w = maxX - minX;
+    var h = maxY - minY;
+    final cx = (minX + maxX) / 2;
+    final cy = (minY + maxY) / 2;
+    if (w < minSize) w = minSize;
+    if (h < minSize) h = minSize;
+    w += pad * 2;
+    h += pad * 2;
+    final rect = Rect.fromCenter(center: Offset(cx, cy), width: w, height: h);
+    final radius = Radius.circular((w < h ? w : h) * 0.35);
+    return RRect.fromRectAndRadius(rect, radius);
+  }
+
+  /// Draw a dashed version of a path.
+  void _drawDashedPath(
+    Canvas canvas,
+    Path path,
+    Paint paint,
+    int dashCount,
+  ) {
+    final metrics = path.computeMetrics();
+    for (final metric in metrics) {
+      final totalLen = metric.length;
+      final dashLen = totalLen / dashCount * 0.6;
+      final gapLen = totalLen / dashCount * 0.4;
+      var distance = 0.0;
+      while (distance < totalLen) {
+        final end = distance + dashLen;
+        final segment = metric.extractPath(distance, end.clamp(0, totalLen));
+        canvas.drawPath(segment, paint);
+        distance = end + gapLen;
+      }
+    }
+  }
+
+  /// Draw a faint dashed rounded polygon marker for a tiny unrevealed area.
   void _drawTinyMarker(
     Canvas canvas,
     RegionalArea area,
     _GeoTransform transform,
   ) {
-    final centroid = _computeCentroid(area, transform);
-    if (centroid == null) return;
+    final rrect = _tinyAreaRRect(area, transform);
+    final center = rrect.center;
+    if (center.dx.isNaN || center.dy.isNaN) return;
 
-    final r = _markerRadius / zoomScale;
-
-    // Faint dashed border ring.
+    // Faint dashed border ring as rounded rect.
     final borderPaint = Paint()
       ..color = const Color(0xFF5A7A9A)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0 / zoomScale;
-    const int dashCount = 16;
-    const double gapFraction = 0.4;
-    const double pi2 = 2 * 3.1415926535;
-    const double dashAngle = pi2 / dashCount * (1.0 - gapFraction);
-    const double totalStep = pi2 / dashCount;
-    for (int i = 0; i < dashCount; i++) {
-      final double startAngle = i * totalStep;
-      final path = Path()
-        ..addArc(
-          Rect.fromCircle(center: centroid, radius: r),
-          startAngle,
-          dashAngle,
-        );
-      canvas.drawPath(path, borderPaint);
-    }
+    final rrectPath = Path()..addRRect(rrect);
+    _drawDashedPath(canvas, rrectPath, borderPaint, 16);
   }
 
   /// Draw the Blue Marble satellite texture clipped to a polygon path.
@@ -344,6 +420,42 @@ class _UnchartedMapPainter extends CustomPainter {
     // polygon paths that extend thousands of pixels off-screen.
     canvas.clipRect(Offset.zero & canvasSize);
     canvas.clipPath(path);
+    canvas.drawImageRect(
+      img,
+      srcRect,
+      dstRect,
+      Paint()..filterQuality = FilterQuality.high,
+    );
+    canvas.restore();
+  }
+
+  /// Draw the Blue Marble satellite texture clipped to a rounded rectangle
+  /// for tiny areas.
+  void _drawSatelliteRRect(
+    Canvas canvas,
+    RRect rrect,
+    _GeoTransform transform,
+    Size canvasSize,
+  ) {
+    final img = satelliteImage!;
+    final clipPath = Path()..addRRect(rrect);
+
+    final srcLeft = ((transform.minLng + 180.0) / 360.0) * img.width;
+    final srcRight = ((transform.maxLng + 180.0) / 360.0) * img.width;
+    final srcTop = ((90.0 - transform.maxLat) / 180.0) * img.height;
+    final srcBottom = ((90.0 - transform.minLat) / 180.0) * img.height;
+    final srcRect = Rect.fromLTRB(srcLeft, srcTop, srcRight, srcBottom);
+
+    final dstRect = Rect.fromLTWH(
+      transform.offsetX,
+      transform.offsetY,
+      transform.projectedWidth,
+      transform.projectedHeight,
+    );
+
+    canvas.save();
+    canvas.clipRect(Offset.zero & canvasSize);
+    canvas.clipPath(clipPath);
     canvas.drawImageRect(
       img,
       srcRect,

@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flame/components.dart' hide Matrix4;
@@ -300,28 +299,46 @@ class _UsaMapPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round
       ..isAntiAlias = true;
 
+    // Green border for correctly guessed states.
+    final correctBorderPaint = Paint()
+      ..color = const Color(0xFF2ECC71)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5 / zoomScale
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true;
+
+    Paint borderFor(String code) {
+      final isCorrect = correctCodes.contains(code) ||
+          stateVisuals[code]?.status == StateVisualStatus.correct;
+      return isCorrect ? correctBorderPaint : borderPaint;
+    }
+
     for (final area in areas) {
       if (area.code == 'AK' || area.code == 'HI') continue;
       if (eliminatedCodes.contains(area.code)) continue;
-      final path = _buildStatePath(area.points, _conusTransform(size));
-      canvas.drawPath(path, borderPaint);
+      final path = _buildStatePath(area.points, _conusTransform(size),
+          polygons: area.polygons);
+      canvas.drawPath(path, borderFor(area.code));
     }
 
     // Draw borders for insets
     if (akArea != null && !eliminatedCodes.contains('AK')) {
-      final path = _buildStatePath(akArea.points, _akTransform(size));
-      canvas.drawPath(path, borderPaint);
+      final path = _buildStatePath(akArea.points, _akTransform(size),
+          polygons: akArea.polygons);
+      canvas.drawPath(path, borderFor('AK'));
     }
     if (hiArea != null && !eliminatedCodes.contains('HI')) {
-      final path = _buildStatePath(hiArea.points, _hiTransform(size));
-      canvas.drawPath(path, borderPaint);
+      final path = _buildStatePath(hiArea.points, _hiTransform(size),
+          polygons: hiArea.polygons);
+      canvas.drawPath(path, borderFor('HI'));
     }
     // NE inset borders
     for (final area in areas) {
       if (!_neStateCodes.contains(area.code)) continue;
       if (eliminatedCodes.contains(area.code)) continue;
-      final path = _buildStatePath(area.points, neTransform);
-      canvas.drawPath(path, borderPaint);
+      final path =
+          _buildStatePath(area.points, neTransform, polygons: area.polygons);
+      canvas.drawPath(path, borderFor(area.code));
     }
 
     // Draw state labels for larger states (only when enabled)
@@ -357,7 +374,7 @@ class _UsaMapPainter extends CustomPainter {
     const latSpan = _conusMaxLat - _conusMinLat; // 26 degrees
     // cos(37°) ≈ 0.799
     const cosLat = 0.799;
-    final geoAspect = (lngSpan * cosLat) / latSpan;
+    const geoAspect = (lngSpan * cosLat) / latSpan;
     final canvasAspect = drawW / mainH;
 
     double usedW, usedH;
@@ -497,7 +514,8 @@ class _UsaMapPainter extends CustomPainter {
     // Hidden (eliminated) states
     if (eliminatedCodes.contains(area.code)) return;
 
-    final path = _buildStatePath(area.points, transform);
+    final path =
+        _buildStatePath(area.points, transform, polygons: area.polygons);
 
     // Excluded states: draw very dim, non-interactive.
     if (excludedCodes.contains(area.code)) {
@@ -634,10 +652,32 @@ class _UsaMapPainter extends CustomPainter {
     }
   }
 
-  Path _buildStatePath(List<Vector2> points, _GeoTransform transform) {
+  Path _buildStatePath(
+    List<Vector2> points,
+    _GeoTransform transform, {
+    List<List<Vector2>>? polygons,
+  }) {
     final path = Path();
-    if (points.isEmpty) return path;
 
+    // When separate polygon rings are available, draw each as its own
+    // sub-path so disjoint polygons (islands, exclaves) don't produce
+    // stretching artefacts.
+    if (polygons != null && polygons.isNotEmpty) {
+      for (final ring in polygons) {
+        if (ring.isEmpty) continue;
+        final first = transform.toCanvas(ring.first.x, ring.first.y);
+        path.moveTo(first.dx, first.dy);
+        for (var i = 1; i < ring.length; i++) {
+          final p = transform.toCanvas(ring[i].x, ring[i].y);
+          path.lineTo(p.dx, p.dy);
+        }
+        path.close();
+      }
+      return path;
+    }
+
+    // Fallback: single flat list of points.
+    if (points.isEmpty) return path;
     final first = transform.toCanvas(points.first.x, points.first.y);
     path.moveTo(first.dx, first.dy);
 

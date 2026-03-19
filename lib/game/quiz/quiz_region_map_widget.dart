@@ -199,10 +199,21 @@ class _RegionMapPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..isAntiAlias = true;
 
+    // Green border for correctly guessed areas.
+    final correctBorderPaint = Paint()
+      ..color = const Color(0xFF2ECC71)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0 / zoomScale
+      ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round
+      ..isAntiAlias = true;
+
     for (final area in areas) {
       if (eliminatedCodes.contains(area.code)) continue;
       final path = _buildPath(area.points, transform, polygons: area.polygons);
-      canvas.drawPath(path, borderPaint);
+      final isCorrect = correctCodes.contains(area.code) ||
+          stateVisuals[area.code]?.status == StateVisualStatus.correct;
+      canvas.drawPath(path, isCorrect ? correctBorderPaint : borderPaint);
     }
 
     // Draw expanded markers for tiny areas (below minimum canvas size).
@@ -349,43 +360,6 @@ class _RegionMapPainter extends CustomPainter {
     // polygon paths that extend thousands of pixels off-screen.
     canvas.clipRect(Offset.zero & canvasSize);
     canvas.clipPath(path);
-    canvas.drawImageRect(
-      img,
-      srcRect,
-      dstRect,
-      Paint()..filterQuality = FilterQuality.high,
-    );
-    canvas.restore();
-  }
-
-  /// Draw the Blue Marble satellite texture clipped to a circle for tiny areas.
-  void _drawSatelliteCircle(
-    Canvas canvas,
-    Offset center,
-    double radius,
-    _GeoTransform transform,
-  ) {
-    final img = satelliteImage!;
-    final circlePath = Path()
-      ..addOval(Rect.fromCircle(center: center, radius: radius));
-
-    // Extract only the satellite image region that matches the viewport.
-    final srcLeft = ((transform.minLng + 180.0) / 360.0) * img.width;
-    final srcRight = ((transform.maxLng + 180.0) / 360.0) * img.width;
-    final srcTop = ((90.0 - transform.maxLat) / 180.0) * img.height;
-    final srcBottom = ((90.0 - transform.minLat) / 180.0) * img.height;
-    final srcRect = Rect.fromLTRB(srcLeft, srcTop, srcRight, srcBottom);
-
-    // Map to the projected canvas area.
-    final dstRect = Rect.fromLTWH(
-      transform.offsetX,
-      transform.offsetY,
-      transform.width,
-      transform.height,
-    );
-
-    canvas.save();
-    canvas.clipPath(circlePath);
     canvas.drawImageRect(
       img,
       srcRect,
@@ -584,6 +558,47 @@ class _RegionMapPainter extends CustomPainter {
     return w < _tinyThreshold && h < _tinyThreshold;
   }
 
+  /// Compute the bounding box of a tiny area's points on canvas, expanded
+  /// to a minimum visible size and returned as a rounded rectangle.
+  RRect _tinyAreaRRect(
+    RegionalArea area,
+    _GeoTransform transform,
+  ) {
+    final points = area.points;
+    if (points.isEmpty) {
+      final centroid = _centroid(points);
+      final pos = transform.toCanvas(centroid.x, centroid.y);
+      final r = _markerRadius / zoomScale;
+      return RRect.fromRectAndRadius(
+        Rect.fromCircle(center: pos, radius: r),
+        Radius.circular(r),
+      );
+    }
+    var minX = double.infinity, maxX = -double.infinity;
+    var minY = double.infinity, maxY = -double.infinity;
+    for (final p in points) {
+      final cp = transform.toCanvas(p.x, p.y);
+      if (cp.dx < minX) minX = cp.dx;
+      if (cp.dx > maxX) maxX = cp.dx;
+      if (cp.dy < minY) minY = cp.dy;
+      if (cp.dy > maxY) maxY = cp.dy;
+    }
+    // Ensure minimum size and add padding.
+    final minSize = _markerRadius * 2.0 / zoomScale;
+    final pad = 4.0 / zoomScale;
+    var w = maxX - minX;
+    var h = maxY - minY;
+    final cx = (minX + maxX) / 2;
+    final cy = (minY + maxY) / 2;
+    if (w < minSize) w = minSize;
+    if (h < minSize) h = minSize;
+    w += pad * 2;
+    h += pad * 2;
+    final rect = Rect.fromCenter(center: Offset(cx, cy), width: w, height: h);
+    final radius = Radius.circular((w < h ? w : h) * 0.35);
+    return RRect.fromRectAndRadius(rect, radius);
+  }
+
   /// Draw a visible labeled marker for a tiny area (microstate / small island).
   void _drawTinyMarker(
     Canvas canvas,
@@ -591,19 +606,21 @@ class _RegionMapPainter extends CustomPainter {
     RegionalArea area,
     _GeoTransform transform,
   ) {
-    final centroid = _centroid(area.points);
-    final pos = transform.toCanvas(centroid.x, centroid.y);
-    if (pos.dx < 0 || pos.dx > size.width || pos.dy < 0 || pos.dy > size.height)
+    final rrect = _tinyAreaRRect(area, transform);
+    final center = rrect.center;
+    if (center.dx < 0 ||
+        center.dx > size.width ||
+        center.dy < 0 ||
+        center.dy > size.height) {
       return;
+    }
 
     final visual = stateVisuals[area.code];
     final status = visual?.status ?? StateVisualStatus.idle;
     final isHighlighted = highlightCode == area.code;
     final isCorrectlyGuessed = correctCodes.contains(area.code);
 
-    final r = _markerRadius / zoomScale;
-
-    // Background circle — transparent for idle, filled for active states.
+    // Background fill — transparent for idle, filled for active states.
     final bool hasActiveFill = isHighlighted ||
         isCorrectlyGuessed ||
         status == StateVisualStatus.correct ||
@@ -612,8 +629,8 @@ class _RegionMapPainter extends CustomPainter {
     if (hasActiveFill) {
       if ((isCorrectlyGuessed || status == StateVisualStatus.correct) &&
           satelliteImage != null) {
-        // Clip Blue Marble satellite texture to the circle.
-        _drawSatelliteCircle(canvas, pos, r, transform);
+        // Clip Blue Marble satellite texture to the rounded polygon.
+        _drawSatelliteRRect(canvas, rrect, transform);
       } else {
         Color fillColor;
         if (isHighlighted) {
@@ -622,30 +639,19 @@ class _RegionMapPainter extends CustomPainter {
         } else {
           fillColor = const Color(0xFFAA3333);
         }
-        canvas.drawCircle(pos, r, Paint()..color = fillColor);
+        canvas.drawRRect(rrect, Paint()..color = fillColor);
       }
     }
 
-    // Dashed border ring.
+    // Dashed border ring as a rounded rectangle.
+    final isCorrect = isCorrectlyGuessed || status == StateVisualStatus.correct;
     final borderPaint = Paint()
-      ..color = const Color(0xFFFFFFFF)
+      ..color = isCorrect ? const Color(0xFF2ECC71) : const Color(0xFFFFFFFF)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2 / zoomScale;
-    const int dashCount = 16;
-    const double gapFraction = 0.4;
-    const double dashAngle =
-        (2 * 3.1415926535) / dashCount * (1.0 - gapFraction);
-    const double totalStep = (2 * 3.1415926535) / dashCount;
-    for (int i = 0; i < dashCount; i++) {
-      final double startAngle = i * totalStep;
-      final path = Path()
-        ..addArc(
-          Rect.fromCircle(center: pos, radius: r),
-          startAngle,
-          dashAngle,
-        );
-      canvas.drawPath(path, borderPaint);
-    }
+      ..strokeWidth = (isCorrect ? 2.0 : 1.2) / zoomScale;
+    // Draw dashed rounded rect by using a path with dash effect.
+    final rrectPath = Path()..addRRect(rrect);
+    _drawDashedPath(canvas, rrectPath, borderPaint, 16);
 
     // Label — only when difficulty enables labels.
     if (showLabels) {
@@ -663,26 +669,82 @@ class _RegionMapPainter extends CustomPainter {
         ),
         textDirection: TextDirection.ltr,
       )..layout();
-      tp.paint(canvas, Offset(pos.dx - tp.width / 2, pos.dy - tp.height / 2));
+      tp.paint(
+        canvas,
+        Offset(center.dx - tp.width / 2, center.dy - tp.height / 2),
+      );
     }
+  }
+
+  /// Draw a dashed version of a path.
+  void _drawDashedPath(
+    Canvas canvas,
+    Path path,
+    Paint paint,
+    int dashCount,
+  ) {
+    final metrics = path.computeMetrics();
+    for (final metric in metrics) {
+      final totalLen = metric.length;
+      final dashLen = totalLen / dashCount * 0.6;
+      final gapLen = totalLen / dashCount * 0.4;
+      var distance = 0.0;
+      while (distance < totalLen) {
+        final end = distance + dashLen;
+        final segment = metric.extractPath(distance, end.clamp(0, totalLen));
+        canvas.drawPath(segment, paint);
+        distance = end + gapLen;
+      }
+    }
+  }
+
+  /// Draw the Blue Marble satellite texture clipped to a rounded rectangle
+  /// for tiny areas.
+  void _drawSatelliteRRect(
+    Canvas canvas,
+    RRect rrect,
+    _GeoTransform transform,
+  ) {
+    final img = satelliteImage!;
+    final clipPath = Path()..addRRect(rrect);
+
+    final srcLeft = ((transform.minLng + 180.0) / 360.0) * img.width;
+    final srcRight = ((transform.maxLng + 180.0) / 360.0) * img.width;
+    final srcTop = ((90.0 - transform.maxLat) / 180.0) * img.height;
+    final srcBottom = ((90.0 - transform.minLat) / 180.0) * img.height;
+    final srcRect = Rect.fromLTRB(srcLeft, srcTop, srcRight, srcBottom);
+
+    final dstRect = Rect.fromLTWH(
+      transform.offsetX,
+      transform.offsetY,
+      transform.width,
+      transform.height,
+    );
+
+    canvas.save();
+    canvas.clipPath(clipPath);
+    canvas.drawImageRect(
+      img,
+      srcRect,
+      dstRect,
+      Paint()..filterQuality = FilterQuality.high,
+    );
+    canvas.restore();
   }
 
   String? hitTestArea(Offset position, Size size) {
     final areas = RegionalData.getAreas(region);
     final transform = _regionTransform(size);
 
-    // First pass: check tiny area markers (expanded circular hit targets).
+    // First pass: check tiny area markers (expanded rounded rect hit targets).
     // These take priority because they're drawn on top.
     for (final area in areas) {
       if (eliminatedCodes.contains(area.code)) continue;
       if (_isTinyArea(area, transform, size)) {
-        final centroid = _centroid(area.points);
-        final pos = transform.toCanvas(centroid.x, centroid.y);
-        final dx = position.dx - pos.dx;
-        final dy = position.dy - pos.dy;
-        // Use a generous tap radius (larger than the visual marker)
-        final tapRadius = _markerRadius * 1.5 / zoomScale;
-        if (dx * dx + dy * dy <= tapRadius * tapRadius) {
+        final rrect = _tinyAreaRRect(area, transform);
+        // Inflate the hit target slightly for easier tapping.
+        final inflated = rrect.inflate(4.0 / zoomScale);
+        if (inflated.contains(position)) {
           return area.code;
         }
       }
