@@ -647,15 +647,20 @@ class _UnchartedMapPainter extends CustomPainter {
     final fontSize = (10.0 / zoomScale).clamp(3.0, 14.0);
 
     if (capitalsMode && area.capital != null) {
-      // Capitals mode: red dot + "CapitalName (CC)"
+      // Capitals mode: red dot at actual capital city coordinates.
+      // Look up real lat/lon from CityData; fall back to polygon centroid.
+      final capitalCity = CountryData.getCapital(area.code);
+      final dotPos = capitalCity != null
+          ? transform.toCanvas(capitalCity.location.x, capitalCity.location.y)
+          : centroid;
       final dotRadius = (3.0 / zoomScale).clamp(1.0, 5.0);
       canvas.drawCircle(
-        centroid,
+        dotPos,
         dotRadius,
         Paint()..color = const Color(0xFFE74C3C),
       );
       canvas.drawCircle(
-        centroid,
+        dotPos,
         dotRadius,
         Paint()
           ..color = const Color(0xFFFFFFFF)
@@ -682,8 +687,8 @@ class _UnchartedMapPainter extends CustomPainter {
 
       // Offset text to the right of the dot.
       final textOffset = Offset(
-        centroid.dx + dotRadius + 3.0 / zoomScale,
-        centroid.dy - textPainter.height / 2,
+        dotPos.dx + dotRadius + 3.0 / zoomScale,
+        dotPos.dy - textPainter.height / 2,
       );
       textPainter.paint(canvas, textOffset);
     } else {

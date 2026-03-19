@@ -61,7 +61,6 @@ const Set<String> alwaysTinyCodes = {
   'MC', // Monaco (2.0 km²)
   'SM', // San Marino (61 km²)
   'VA', // Vatican City (0.44 km²)
-  'LI', // Liechtenstein (160 km²)
 
   // City-states
   'SG', // Singapore (733 km²)
