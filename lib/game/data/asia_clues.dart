@@ -163,56 +163,56 @@ abstract class AsiaClues {
       famousLandmark: 'Gyeongbokgung Palace',
       famousPerson: 'King Sejong the Great',
       flag:
-          'White field with red and blue taegeuk symbol in center and four black trigrams in corners',
+          'The white background represents peace and purity; the central Taeguk (yin-yang) symbolises the balance of cosmic forces; the four black trigrams from the I Ching represent heaven, earth, water, and fire — the design reflects Korean philosophical and cosmological traditions',
     ),
     'KW': AsiaClueData(
       nickname: 'The Pearl of the Gulf',
       famousLandmark: 'Kuwait Towers',
       famousPerson: 'Sheikh Abdullah Al-Salem Al-Sabah',
       flag:
-          'Horizontal green, white, and red stripes with black trapezoid at hoist',
+          'The green represents fertile land, the white symbolises peace, the red represents the blood of enemies, and the black trapezoid represents the defeat of enemies — colours drawn from a verse by the Iraqi poet Safie Al-Deen Al-Hilli about Arab virtues',
     ),
     'KZ': AsiaClueData(
       nickname: 'The Land of the Great Steppe',
       famousLandmark: 'Bayterek Tower',
       famousPerson: 'Al-Farabi',
       flag:
-          'Sky blue field with golden sun and soaring eagle in center and national ornament at hoist',
+          'The sky blue represents the Turkic peoples and the endless sky, the golden sun with 32 rays represents abundance and life, the soaring steppe eagle symbolises freedom, and the ornamental pattern along the hoist is a traditional Kazakh "koshkar-muiz" (ram\'s horn) design',
     ),
     'LA': AsiaClueData(
       nickname: 'The Land of a Million Elephants',
       famousLandmark: 'Luang Prabang',
       famousPerson: 'Kaysone Phomvihane',
       flag:
-          'Blue stripe between two red stripes with white circle in center of blue stripe',
+          'The red stripes represent the blood shed in the struggle for freedom, the blue symbolises prosperity, and the white disc represents the full moon over the Mekong River — also symbolising the promise of a bright future under the new regime',
     ),
     'LB': AsiaClueData(
       nickname: 'The Paris of the Middle East',
       famousLandmark: 'Baalbek Temples',
       famousPerson: 'Khalil Gibran',
       flag:
-          'Horizontal red, white, and red stripes with green cedar tree on white center stripe',
+          'The red stripes represent the blood shed for liberation, the white represents peace and snow of the mountains, and the green cedar tree is the symbol of Lebanon — an ancient emblem representing holiness, eternity, and peace, referenced throughout the Bible',
     ),
     'LK': AsiaClueData(
       nickname: 'The Pearl of the Indian Ocean',
       famousLandmark: 'Sigiriya Rock Fortress',
       famousPerson: 'Arthur C. Clarke',
       flag:
-          'Dark red panel with gold lion holding sword, green and orange vertical stripes at hoist, gold border',
+          'The golden lion holding a sword is the ancient symbol of the Sinhalese people and represents bravery; the green and orange stripes represent the Tamil and Muslim minorities; the four bo-tree leaves in the corners symbolise Buddhist concepts of loving-kindness, compassion, equanimity, and happiness',
     ),
     'MM': AsiaClueData(
       nickname: 'The Golden Land',
       famousLandmark: 'Shwedagon Pagoda',
       famousPerson: 'Aung San',
       flag:
-          'Horizontal yellow, green, and red stripes with large white five-pointed star in center',
+          'The yellow represents solidarity, the green symbolises peace, tranquility, and lush vegetation, the red represents courage and decisiveness, and the large white star represents the significance of the union of the country',
     ),
     'MN': AsiaClueData(
       nickname: 'The Land of Eternal Blue Sky',
       famousLandmark: 'Genghis Khan Equestrian Statue',
       famousPerson: 'Genghis Khan',
       flag:
-          'Vertical red, blue, and red stripes with yellow Soyombo symbol on hoist-side red stripe',
+          'The red symbolises progress and prosperity, the blue represents the eternal blue sky (a sacred concept in Mongol culture), and the golden Soyombo symbol contains sun, moon, fire, and yin-yang elements representing the Mongol people\'s eternal existence',
     ),
     'MV': AsiaClueData(
       nickname: 'The Sunny Side of Life',
@@ -225,35 +225,35 @@ abstract class AsiaClues {
       famousLandmark: 'Petronas Twin Towers',
       famousPerson: 'Tunku Abdul Rahman',
       flag:
-          'Fourteen alternating red and white horizontal stripes with blue canton bearing yellow crescent and star',
+          'The 14 red and white stripes represent the 14 member states, the blue canton symbolises unity, the crescent represents Islam, and the 14-pointed gold star represents the unity of the states — the design was inspired by the American flag due to shared federalist ideals',
     ),
     'NP': AsiaClueData(
       nickname: 'The Roof of the World',
       famousLandmark: 'Mount Everest',
       famousPerson: 'Tenzing Norgay',
       flag:
-          'Two stacked crimson red triangles with blue borders bearing white moon and sun symbols',
+          'The world\'s only non-rectangular national flag; the two stacked triangles represent the Himalaya Mountains and the two major religions (Hinduism and Buddhism); the moon symbolises the calm demeanour of Nepalis and the sun represents fierce resolve',
     ),
     'OM': AsiaClueData(
       nickname: 'The Jewel of Arabia',
       famousLandmark: 'Sultan Qaboos Grand Mosque',
       famousPerson: 'Sultan Qaboos bin Said',
       flag:
-          'Horizontal white, red, and green stripes with vertical red stripe at hoist and national emblem at upper hoist',
+          'The white represents peace and the Imam, the red is the traditional colour of the Omani people, the green represents the Green Mountains (Al Hajar) and fertility; the national emblem (khanjar dagger and crossed swords) symbolises the historical Omani defense',
     ),
     'PH': AsiaClueData(
       nickname: 'The Pearl of the Orient Seas',
       famousLandmark: 'Chocolate Hills',
       famousPerson: 'Jose Rizal',
       flag:
-          'Horizontal blue and red stripes with white triangle at hoist bearing golden sun and three stars',
+          'The blue stands for peace, truth, and justice; the red represents patriotism and valour; the white triangle symbolises equality and fraternity; the sun represents independence with eight rays for the first eight revolting provinces; and three stars represent Luzon, Visayas, and Mindanao',
     ),
     'PK': AsiaClueData(
       nickname: 'The Land of the Pure',
       famousLandmark: 'Badshahi Mosque',
       famousPerson: 'Muhammad Ali Jinnah',
       flag:
-          'Dark green field with white vertical stripe at hoist and white crescent and star on green',
+          'The green represents the Muslim majority, the white stripe represents religious minorities, the crescent symbolises progress, and the five-pointed star represents light and knowledge — designed to represent all citizens of Pakistan',
     ),
     'PS': AsiaClueData(
       nickname: 'The Holy Land',
@@ -267,7 +267,7 @@ abstract class AsiaClues {
       famousLandmark: 'The Pearl-Qatar',
       famousPerson: 'Sheikh Tamim bin Hamad Al Thani',
       flag:
-          'White field at hoist and maroon field at fly separated by serrated line of nine points',
+          'The maroon colour (originally red, darkened by the desert sun) is unique among national flags and represents the blood shed in Qatar\'s wars; the white represents peace; the nine-pointed serrated line records Qatar as the ninth member of the "reconciled Emirates" after the 1916 treaty',
     ),
     'SA': AsiaClueData(
       nickname: 'The Land of the Two Holy Mosques',

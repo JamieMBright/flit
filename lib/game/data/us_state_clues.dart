@@ -310,7 +310,8 @@ abstract class UsStateClues {
       ],
     ),
     'KS': StateClueData(
-      flag: 'Dark blue field with state seal and sunflower',
+      flag:
+          'The sunflower crowning Kansas\'s seal, adopted in 1927, is the state flower and emblematic of the vast prairie landscape; the seal itself depicts the frontier struggle of the 1860s — a rising sun over wheat fields, a settler\'s log cabin, a steam riverboat, a westward wagon train, and bison hunted by Native Americans — all beneath the state motto "Ad Astra per Aspera" (To the Stars Through Difficulties)',
       sportsTeams: [
         'Kansas City Chiefs (NFL)',
         'Kansas Jayhawks (NCAA Basketball)',
@@ -330,7 +331,8 @@ abstract class UsStateClues {
       ],
     ),
     'KY': StateClueData(
-      flag: 'Navy blue field with state seal featuring two men shaking hands',
+      flag:
+          'The handshake on Kentucky\'s seal symbolizes the state\'s motto "United We Stand, Divided We Fall" — a reference to Kentucky\'s agonizing border-state position in the Civil War, when citizens fought on both sides; the figures of a frontiersman and statesman shaking hands represent the union of frontier spirit and civic governance that defined early Kentucky statehood in 1792',
       sportsTeams: [
         'Kentucky Wildcats (NCAA Basketball)',
         'Louisville Cardinals (NCAA Basketball)',
@@ -350,7 +352,8 @@ abstract class UsStateClues {
       ],
     ),
     'LA': StateClueData(
-      flag: 'Blue field with white pelican feeding three chicks in a nest',
+      flag:
+          'The "pelican in her piety" — a mother pelican piercing her own breast to feed her young with blood — is an ancient Christian symbol of self-sacrifice, adopted as Louisiana\'s emblem in 1812 at statehood; the brown pelican reflects Louisiana\'s Gulf Coast identity, and the motto "Union, Justice, and Confidence" encircles the nest on a white banner, representing the ideals of the newly admitted state',
       sportsTeams: [
         'New Orleans Saints (NFL)',
         'New Orleans Pelicans (NBA)',
@@ -371,7 +374,7 @@ abstract class UsStateClues {
     ),
     'ME': StateClueData(
       flag:
-          'Blue field with state coat of arms featuring a moose, pine tree, and North Star',
+          'Maine\'s coat of arms, granted in 1820 at statehood, features a moose resting beneath a towering white pine — the pine tree was so vital to the colonial shipbuilding industry that the British Crown reserved large pines for the Royal Navy, a source of colonial resentment; the North Star and motto "Dirigo" (I Lead) reflect Maine\'s self-image as a guiding northern frontier state',
       sportsTeams: [
         'Maine Celtics (NBA G League)',
         'Maine Mariners (ECHL Hockey)',
@@ -392,7 +395,7 @@ abstract class UsStateClues {
     ),
     'MD': StateClueData(
       flag:
-          'Quartered design with Calvert family colors (gold and black) and Crossland family colors (red and white)',
+          'Maryland\'s heraldic flag — among the oldest and most distinctive in the U.S. — quarters the gold-and-black arms of the Calvert family (founders of the Maryland colony in 1634) with the red-and-white cross-bottony of the Crossland family (mother\'s side of Lord Baltimore); during the Civil War, Confederate Marylanders wore Crossland colors as a symbol of secession, and the reunited design after the war became a symbol of reconciliation',
       sportsTeams: [
         'Baltimore Ravens (NFL)',
         'Baltimore Orioles (MLB)',
@@ -413,7 +416,7 @@ abstract class UsStateClues {
     ),
     'MA': StateClueData(
       flag:
-          'White field with state coat of arms featuring a Native American holding a bow and arrow',
+          'The Algonquian figure on Massachusetts\'s seal holds a bow and arrow pointed downward — a symbol of peace — while a sword arm emerges from clouds above, reflecting the colony\'s Puritan ideal of peaceful coexistence backed by force; the star near the figure\'s head marks Massachusetts as a founding state; the Latin motto translates as seeking peace through liberty, reflecting Boston\'s role as the cradle of the American Revolution',
       sportsTeams: [
         'New England Patriots (NFL)',
         'Boston Celtics (NBA)',
@@ -435,7 +438,7 @@ abstract class UsStateClues {
     ),
     'MI': StateClueData(
       flag:
-          'Blue field with state coat of arms featuring an elk, moose, and eagle',
+          'Michigan\'s coat of arms, adopted at statehood in 1835, features a bald eagle symbolizing federal authority above the state shield, supported by an elk and moose representing Michigan\'s wilderness; the shield depicts a man on a peninsula sunrise with the Latin motto "Si Quaeris Peninsulam Amoenam Circumspice" (If You Seek a Pleasant Peninsula, Look About You) — a nod to Michigan\'s unique Great Lakes geography',
       sportsTeams: [
         'Detroit Lions (NFL)',
         'Detroit Pistons (NBA)',
@@ -453,7 +456,7 @@ abstract class UsStateClues {
     ),
     'MN': StateClueData(
       flag:
-          'Blue field with state seal featuring a Native American on horseback, a farmer plowing, and the state motto',
+          'Minnesota\'s 2024 redesigned flag — replacing a controversial 1893 seal — features a circular design on a dark blue field with a six-pointed star representing the North Star and the state motto "L\'Étoile du Nord"; the loon and meadow imagery reflect Minnesota\'s northern lakes character, replacing imagery critics said depicted Native displacement; the redesign was part of a broader reckoning with Minnesota\'s Indigenous history',
       sportsTeams: [
         'Minnesota Vikings (NFL)',
         'Minnesota Timberwolves (NBA)',
@@ -473,7 +476,8 @@ abstract class UsStateClues {
       ],
     ),
     'MS': StateClueData(
-      flag: 'Red, white, and blue stripes with magnolia flower and stars',
+      flag:
+          'Adopted in 2020 after voters retired the previous flag bearing the Confederate battle emblem — the last U.S. state flag to do so — Mississippi\'s new design centers a magnolia blossom representing the state flower and Southern hospitality; 20 gold stars honor Mississippi as the 20th state, one large star above honors Native peoples, and the colors echo the American flag to emphasize Mississippi\'s renewed commitment to unity',
       sportsTeams: [
         'Ole Miss Rebels (NCAA Football)',
         'Mississippi State Bulldogs (NCAA Football)',

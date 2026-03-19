@@ -161,7 +161,8 @@ abstract class UkClues {
       famousLandmark: 'Arundel Castle',
       footballTeam: 'Crawley Town',
       nickname: 'The South Downs',
-      flag: 'Six gold martlets on blue field with gold crown',
+      flag:
+          'West Sussex shares the six golden martlets of the ancient Kingdom of Sussex with its eastern neighbour, a common Saxon heritage predating the modern administrative split. The crown distinguishes West Sussex and honours Arundel Castle, ancestral seat of the Dukes of Norfolk — the highest-ranking dukedom in England and the foremost Catholic noble family.',
     ),
     'IOW': UkCountyClueData(
       country: 'England',
@@ -169,7 +170,8 @@ abstract class UkClues {
       famousLandmark: 'Osborne House',
       footballTeam: 'Newport IOW FC',
       nickname: 'The Island',
-      flag: 'Blue and white halved field with the isle outlined in gold',
+      flag:
+          'The Isle of Wight\'s flag reflects its ancient status as a semi-independent entity. The island was for centuries the seat of the Lords of the Isle — a title held by Norman lords and later English nobility — giving it a distinct identity apart from the mainland. The gold outline of the island itself is a rare heraldic device emphasising its island nature.',
     ),
 
     // =========================================================================
@@ -181,7 +183,8 @@ abstract class UkClues {
       famousLandmark: 'Norwich Cathedral',
       footballTeam: 'Norwich City',
       nickname: 'The Broads',
-      flag: 'White and black horizontal bicolour',
+      flag:
+          'Norfolk\'s black and white bicolour derives from the arms of the de Ufford family and later the Mowbray Dukes of Norfolk, whose heraldic colours of sable (black) and argent (white/silver) became associated with the county. These colours also echo the distinctive black-and-white flint-knapped buildings that characterise Norfolk\'s vernacular architecture.',
     ),
     'SUF': UkCountyClueData(
       country: 'England',
@@ -189,7 +192,8 @@ abstract class UkClues {
       famousLandmark: 'Framlingham Castle',
       footballTeam: 'Ipswich Town',
       nickname: 'Silly Suffolk',
-      flag: 'Gold crown and blue wavy lines on white and gold field',
+      flag:
+          'Suffolk\'s flag draws on the arms of the ancient Anglo-Saxon Kingdom of the East Angles, of which Suffolk was the southern half (South Folk). The crown references the saintly East Anglian king Edmund the Martyr, killed by Vikings in 869 and venerated as a king-saint, whose royal emblem long represented the region.',
     ),
     'CAM': UkCountyClueData(
       country: 'England',
@@ -197,7 +201,8 @@ abstract class UkClues {
       famousLandmark: 'King\'s College Chapel',
       footballTeam: 'Cambridge United',
       nickname: 'The Fens',
-      flag: 'Three gold crowns on blue field with wavy blue lines',
+      flag:
+          'The three golden crowns on blue are the arms of the East Anglian kingdom, representing the three legendary kings who once ruled the region. They are also associated with the Three Kings of Cologne, whose relics were venerated at Ely Cathedral — a centre of medieval pilgrimage in the Fens at the heart of Cambridgeshire.',
     ),
     'LIN': UkCountyClueData(
       country: 'England',
@@ -206,7 +211,7 @@ abstract class UkClues {
       footballTeam: 'Lincoln City',
       nickname: 'The Yellow Bellies',
       flag:
-          'Red cross on green and white quartered field with gold fleur-de-lis',
+          'Lincolnshire\'s flag combines the green of its famous limestone wolds and rich agricultural fenland with the fleur-de-lis taken from the arms of the City of Lincoln — a symbol linked to the French connection of the Norman cathedral builders. Lincoln was one of the largest cities in medieval England, and its arms reflect centuries of trade with France.',
     ),
     'BED': UkCountyClueData(
       country: 'England',
@@ -214,7 +219,8 @@ abstract class UkClues {
       famousLandmark: 'Woburn Abbey',
       footballTeam: 'Luton Town',
       nickname: 'The Bedfordshire Clanger County',
-      flag: 'Gold field with three white shells on red bend',
+      flag:
+          'Bedfordshire\'s flag bears the arms of the Beauchamp family — Earls of Bedford — who held the county in the medieval period. The three silver escallop shells on a red bend (diagonal stripe) are classic Beauchamp heraldry; the scallop shell in medieval heraldry signified a pilgrim or crusader, reflecting the family\'s religious and martial prestige.',
     ),
 
     // =========================================================================
@@ -226,7 +232,8 @@ abstract class UkClues {
       famousLandmark: 'Clifton Suspension Bridge',
       footballTeam: 'Bristol City / Bristol Rovers',
       nickname: 'City of Bridges',
-      flag: 'White field with the coat of arms featuring a ship and castle',
+      flag:
+          'Bristol\'s ship-and-castle arms originate in the city\'s medieval status as England\'s second-greatest port. The castle represents the Norman Clifton fortress built to control the Avon Gorge, while the ship embodies the Atlantic trade that made Bristol wealthy — including, controversially, its role as a central hub of the transatlantic slave trade.',
     ),
     'DEV': UkCountyClueData(
       country: 'England',
@@ -234,7 +241,8 @@ abstract class UkClues {
       famousLandmark: 'Exeter Cathedral',
       footballTeam: 'Plymouth Argyle, Exeter City',
       nickname: 'Glorious Devon',
-      flag: 'Green and black horizontal bicolour',
+      flag:
+          'Devon\'s green and black bicolour references the county\'s landscape contrasts: the lush green of its rolling farmland and the dark moorland of Dartmoor and Exmoor. The colours also appear in the arms of many Devon gentry families. Devon was the county of Sir Francis Drake and Sir Walter Raleigh — Elizabethan sea-dogs who shaped England\'s maritime empire.',
     ),
     'COR': UkCountyClueData(
       country: 'England',
@@ -242,7 +250,8 @@ abstract class UkClues {
       famousLandmark: 'St Michael\'s Mount',
       footballTeam: 'Truro City',
       nickname: 'The Duchy',
-      flag: 'White cross on black field (St Piran\'s Cross)',
+      flag:
+          'St Piran\'s Cross — white on black — is the flag of Cornwall and its patron saint, a 5th-century Irish monk who reputedly discovered tin smelting when his black hearthstone glowed white-hot. The colours represent tin (white/silver) emerging from the black ore, celebrating the industry that defined Cornwall\'s Celtic identity for two millennia.',
     ),
     'SOM': UkCountyClueData(
       country: 'England',
