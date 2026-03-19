@@ -489,7 +489,8 @@ abstract class UkClues {
       famousLandmark: 'Edinburgh Castle',
       footballTeam: 'Hibernian, Hearts',
       nickname: 'Auld Reekie',
-      flag: 'White field with red castle from city arms',
+      flag:
+          'Edinburgh\'s arms feature the castle, representing the volcanic crag fortress that has been occupied for over 3,000 years. The castle has been the seat of Scottish kings, a state prison and treasury housing the Honours of Scotland — the oldest crown jewels in the British Isles. Edinburgh became the capital of Scotland in the 15th century, cementing its identity as a seat of law, Church and government.',
     ),
     'FIF': UkCountyClueData(
       country: 'Scotland',
@@ -498,7 +499,7 @@ abstract class UkClues {
       footballTeam: 'Dunfermline Athletic',
       nickname: 'The Kingdom of Fife',
       flag:
-          'Red rampant lion on gold field with blue and white chequered border',
+          'The Kingdom of Fife — as it has been known since at least the 12th century — carries the red lion rampant on gold, derived from the arms of the ancient MacDuff Earls of Fife. The MacDuffs held one of the seven earldoms of Scotland and had the sacred privilege of crowning the Scottish King at Scone. The chequered border echoes the tressure found on the Royal Standard of Scotland.',
     ),
     'HLD': UkCountyClueData(
       country: 'Scotland',
@@ -506,7 +507,8 @@ abstract class UkClues {
       famousLandmark: 'Loch Ness',
       footballTeam: 'Inverness Caledonian Thistle',
       nickname: 'The Highlands',
-      flag: 'White saltire on blue field (St Andrew\'s Cross)',
+      flag:
+          'The Highlands uses the Saltire — the national flag of Scotland — the white diagonal cross on blue that represents St Andrew, Scotland\'s patron saint, who was martyred on a diagonal (X-shaped) cross at Patras in Greece. Legend holds that St Andrew\'s relics were brought to Scotland in the 4th century by a monk called Rule, and the sight of a white cross against a blue sky before battle confirmed the symbol as Scotland\'s own.',
     ),
     'ABD': UkCountyClueData(
       country: 'Scotland',
@@ -514,7 +516,8 @@ abstract class UkClues {
       famousLandmark: 'Balmoral Castle',
       footballTeam: 'Aberdeen FC',
       nickname: 'The Granite City',
-      flag: 'Azure field with three silver towers from county arms',
+      flag:
+          'Aberdeenshire\'s three silver towers on blue derive from the ancient arms of the region, representing the great castles that once controlled the Grampian routes. The county was home to more castles per square mile than almost anywhere in Europe, reflecting its importance as a buffer zone between the Lowland kingdoms and the Highland clans. Balmoral, the royal residence chosen by Queen Victoria, lies here.',
     ),
     'ABE': UkCountyClueData(
       country: 'Scotland',
@@ -522,7 +525,8 @@ abstract class UkClues {
       famousLandmark: 'Marischal College',
       footballTeam: 'Aberdeen FC',
       nickname: 'The Silver City',
-      flag: 'Red field with three silver towers and leopards from city arms',
+      flag:
+          'Aberdeen city\'s arms reflect its medieval importance as a royal burgh and trading hub. The three silver towers represent the city\'s fortifications and its status as a place of strength at the mouth of the River Dee. The leopards (derived from Scottish royal heraldry) acknowledge Aberdeen\'s close ties to the Scottish Crown, which granted the city its first royal charter.',
     ),
     'AYR': UkCountyClueData(
       country: 'Scotland',
@@ -530,7 +534,8 @@ abstract class UkClues {
       famousLandmark: 'Burns Cottage',
       footballTeam: 'Ayr United, Kilmarnock',
       nickname: 'Burns Country',
-      flag: 'Blue saltire with red heart on white field',
+      flag:
+          'The heart on Ayrshire\'s flag is the Bleeding Heart of Douglas — emblem of the powerful Black Douglas family, who were the dominant lords of this region in the 14th and 15th centuries. The Good Sir James Douglas carried the embalmed heart of Robert the Bruce on crusade in 1330, and the heart symbol has defined Douglas heraldry ever since, passing into the wider identity of Ayrshire.',
     ),
     'DGY': UkCountyClueData(
       country: 'Scotland',

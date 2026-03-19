@@ -940,7 +940,7 @@ abstract class UsStateClues {
     ),
     'VA': StateClueData(
       flag:
-          'Blue field with state seal featuring Virtus standing over fallen tyranny',
+          'Virginia\'s seal, adopted in 1776 during the Revolution, depicts Virtus — the Roman goddess of virtue — as a warrior woman in a pose of triumph, standing with spear and sword over a defeated, crown-wearing tyrant; the fallen figure represents British tyranny, and the motto "Sic Semper Tyrannis" (Thus Always to Tyrants) was a declaration of revolutionary intent; notably, John Wilkes Booth reportedly shouted this motto after assassinating Lincoln in 1865',
       sportsTeams: [
         'Washington Commanders (NFL)',
         'Virginia Cavaliers (NCAA Basketball)',
@@ -960,7 +960,8 @@ abstract class UsStateClues {
       ],
     ),
     'WA': StateClueData(
-      flag: 'Green field with state seal featuring George Washington',
+      flag:
+          'Washington is the only U.S. state named after a president, and its flag uniquely features a portrait of George Washington on a dark green field — adopted in 1923; the green background symbolizes the state\'s lush evergreen forests; the seal was designed using a portrait of Washington by Gilbert Stuart, the same artist whose 1796 portrait appears on the one-dollar bill, reinforcing Washington\'s legacy as the "Evergreen State"',
       sportsTeams: [
         'Seattle Seahawks (NFL)',
         'Seattle Mariners (MLB)',
@@ -981,7 +982,7 @@ abstract class UsStateClues {
     ),
     'WV': StateClueData(
       flag:
-          'White field bordered in blue with state coat of arms featuring a farmer and miner',
+          'West Virginia\'s flag features the coat of arms adopted at statehood in 1863, when western Virginia counties broke away from Virginia to remain in the Union during the Civil War; the farmer and miner on the shield represent the state\'s agricultural and coal/mineral industries; the crossed rifles symbolize the willingness of West Virginians to defend the Union, and the motto "Montani Semper Liberi" (Mountaineers Are Always Free) proclaims the independence that justified the split from Virginia',
       sportsTeams: [
         'West Virginia Mountaineers (NCAA Football)',
         'West Virginia Power (Minor League Baseball)',
@@ -1002,7 +1003,7 @@ abstract class UsStateClues {
     ),
     'WI': StateClueData(
       flag:
-          'Blue field with state coat of arms featuring a badger, sailor, and miner',
+          'Wisconsin\'s coat of arms, placed on the flag in 1913, features a sailor and a miner supporting a shield divided into four panels representing the state\'s industries: a plow (agriculture), a pick and shovel (mining), an arm holding a hammer (manufacturing), and an anchor (commerce); the badger atop the shield gave Wisconsin its nickname — early lead miners were called "badgers" for burrowing into hillsides to live during winter; the 1848 date marks statehood',
       sportsTeams: [
         'Green Bay Packers (NFL)',
         'Milwaukee Bucks (NBA)',
@@ -1022,7 +1023,8 @@ abstract class UsStateClues {
       ],
     ),
     'WY': StateClueData(
-      flag: 'Blue field with white bison bearing state seal',
+      flag:
+          'Wyoming\'s flag, adopted in 1917, places the state seal on a bison — the American buffalo that once roamed Wyoming\'s plains in millions and remains a symbol of the West\'s wild heritage; the bison\'s branded seal echoes Wyoming\'s cattle ranching culture; blue represents the sky and mountains, white represents purity, and red the Native American peoples and the blood of pioneers; Wyoming was the first U.S. territory to grant women the right to vote, in 1869',
       sportsTeams: [
         'Wyoming Cowboys (NCAA Football)',
         'Wyoming Cowgirls (NCAA Basketball)',
