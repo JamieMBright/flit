@@ -457,6 +457,9 @@ class _RegionMapPainter extends CustomPainter {
     if (polygons != null && polygons.isNotEmpty) {
       for (final ring in polygons) {
         if (ring.isEmpty) continue;
+        // Skip rings that individually cross the antimeridian — they would
+        // draw a line across the entire map on an equirectangular projection.
+        if (_crossesAntimeridian(ring)) continue;
         final canvasPoints = <Offset>[];
         for (final pt in ring) {
           canvasPoints.add(transform.toCanvas(pt.x, pt.y));
@@ -518,9 +521,34 @@ class _RegionMapPainter extends CustomPainter {
     // Force-tiny for known micro-states regardless of zoom.
     if (_alwaysTinyCodes.contains(area.code)) return true;
     if (area.points.length < 3) return true;
-    // Antimeridian-crossing countries have a huge bounding box but tiny
-    // individual islands — force tiny treatment.
-    if (_crossesAntimeridian(area.points)) return true;
+
+    // For antimeridian-crossing countries, compute the bounding box from
+    // only the polygon rings that don't individually cross the antimeridian.
+    // This avoids a map-spanning bbox while still rendering the bulk of the
+    // country (mainland Russia, mainland USA, etc.) at full size.
+    if (_crossesAntimeridian(area.points)) {
+      final rings = area.polygons;
+      if (rings == null || rings.isEmpty) return true;
+      var minX = double.infinity, maxX = -double.infinity;
+      var minY = double.infinity, maxY = -double.infinity;
+      var hasValidRing = false;
+      for (final ring in rings) {
+        if (ring.isEmpty || _crossesAntimeridian(ring)) continue;
+        hasValidRing = true;
+        for (final p in ring) {
+          final cp = transform.toCanvas(p.x, p.y);
+          if (cp.dx < minX) minX = cp.dx;
+          if (cp.dx > maxX) maxX = cp.dx;
+          if (cp.dy < minY) minY = cp.dy;
+          if (cp.dy > maxY) maxY = cp.dy;
+        }
+      }
+      if (!hasValidRing) return true;
+      final w = (maxX - minX) * zoomScale;
+      final h = (maxY - minY) * zoomScale;
+      return w < _tinyThreshold && h < _tinyThreshold;
+    }
+
     var minX = double.infinity, maxX = -double.infinity;
     var minY = double.infinity, maxY = -double.infinity;
     for (final p in area.points) {
