@@ -418,17 +418,21 @@ class _RegionMapPainter extends CustomPainter {
         : const Color(0xFFB0C8D8);
 
     // Scale font inversely with zoom so labels don't get enormous when zoomed.
+    // Show full name when zoomed in enough, otherwise fall back to code.
     final fontSize = 7.0 / zoomScale;
     if (fontSize < 0.5) return; // Too tiny to render at this zoom
 
+    // Use full country name — more helpful than 2-letter ISO codes.
+    final labelText = area.name;
+
     final textPainter = TextPainter(
       text: TextSpan(
-        text: area.code,
+        text: labelText,
         style: TextStyle(
           color: textColor,
           fontSize: fontSize,
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
+          letterSpacing: 0.3,
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -649,7 +653,7 @@ class _RegionMapPainter extends CustomPainter {
       if (fontSize < 0.5) return; // Don't render label at extreme zoom
       final tp = TextPainter(
         text: TextSpan(
-          text: area.code,
+          text: area.name,
           style: TextStyle(
             color: const Color(0xFFE0F0FF),
             fontSize: fontSize,

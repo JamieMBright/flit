@@ -75,6 +75,9 @@ class _QuizGameScreenState extends State<QuizGameScreen>
   late Map<String, StateVisual> _stateVisuals;
   Timer? _timer;
 
+  /// User-toggleable label visibility. Defaults to the difficulty setting.
+  late bool _showLabels;
+
   // Animation state
   String? _lastWrongCode;
   String? _highlightCode;
@@ -118,6 +121,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
       duration: const Duration(milliseconds: 400),
     );
 
+    _showLabels = widget.difficulty.showLabels;
     _initSession();
   }
 
@@ -366,7 +370,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                                 stateVisuals: _stateVisuals,
                                 onStateTapped: _handleStateTapped,
                                 highlightCode: _highlightCode,
-                                showLabels: _session.showLabels,
+                                showLabels: _showLabels,
                                 eliminatedCodes: _session.eliminatedCodes,
                                 correctCodes: _session.correctCodes,
                                 excludedCodes: _session.excludedAreaCodes,
@@ -376,7 +380,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                                 stateVisuals: _stateVisuals,
                                 onStateTapped: _handleStateTapped,
                                 highlightCode: _highlightCode,
-                                showLabels: _session.showLabels,
+                                showLabels: _showLabels,
                                 eliminatedCodes: _session.eliminatedCodes,
                                 correctCodes: _session.correctCodes,
                                 excludedCodes: _session.excludedAreaCodes,
@@ -394,6 +398,49 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                           right: 16,
                           child: _buildStrikesIndicator(),
                         ),
+
+                      // Label toggle button
+                      Positioned(
+                        bottom: 8,
+                        left: 8,
+                        child: GestureDetector(
+                          onTap: () =>
+                              setState(() => _showLabels = !_showLabels),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: FlitColors.backgroundMid
+                                  .withValues(alpha: 0.85),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: FlitColors.cardBorder,
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _showLabels ? Icons.label : Icons.label_off,
+                                  color: FlitColors.textSecondary,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _showLabels ? 'Names' : 'Names',
+                                  style: const TextStyle(
+                                    color: FlitColors.textSecondary,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),

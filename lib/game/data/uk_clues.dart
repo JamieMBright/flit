@@ -856,7 +856,8 @@ abstract class UkClues {
       famousLandmark: 'Wrexham Parish Church',
       footballTeam: 'Wrexham AFC',
       nickname: 'The Gateway to Wales',
-      flag: 'Green field with gold cross and red Powys lion',
+      flag:
+          'Wrexham\'s cross and lion combine the traditions of the Welsh Marches with the heraldry of the ancient Kingdom of Powys. The town grew around its parish church — St Giles, one of the finest in Wales — and developed as a coal and steel centre. The lion echoes the Powys royal arms, asserting Welsh identity in a borderland that was historically more English in population and culture.',
     ),
     'CMN': UkCountyClueData(
       country: 'Wales',
@@ -864,7 +865,8 @@ abstract class UkClues {
       famousLandmark: 'National Botanic Garden of Wales',
       footballTeam: 'Carmarthen Town',
       nickname: 'The Garden of Wales',
-      flag: 'Blue and gold quartered field with gold lions and towers',
+      flag:
+          'Carmarthenshire\'s quartered blue and gold field with lions and towers derives from the arms of the ancient Welsh kingdom of Deheubarth and the later Norman lords of Carmarthen. Carmarthen itself claims to be the oldest town in Wales, with Roman origins, and is traditionally associated with the wizard Merlin — legend holds the town will flood when a certain oak tree falls.',
     ),
     'CRG': UkCountyClueData(
       country: 'Wales',
@@ -872,7 +874,8 @@ abstract class UkClues {
       famousLandmark: 'Devil\'s Bridge',
       footballTeam: 'Aberystwyth Town',
       nickname: 'The Celtic Heartland',
-      flag: 'Gold field with blue dolphins and red lion from Ceredigion arms',
+      flag:
+          'Ceredigion\'s dolphins and lion are drawn from the county\'s arms reflecting its coastal identity on Cardigan Bay — home to one of the most important populations of bottlenose dolphins in Britain. The red lion derives from the arms of the Kingdom of Deheubarth, whose heartland was here. The county is considered one of the most Welsh of all Welsh counties in language and culture, with over half the population speaking Welsh.',
     ),
     'AGY': UkCountyClueData(
       country: 'Wales',
@@ -880,7 +883,8 @@ abstract class UkClues {
       famousLandmark: 'Beaumaris Castle',
       footballTeam: 'Holyhead Hotspur',
       nickname: 'Mother of Wales',
-      flag: 'Green and white field with gold coronet and red lions',
+      flag:
+          'Anglesey\'s coronet and lions reflect its title as "Mam Cymru" — Mother of Wales — the fertile island that fed mainland Wales through centuries of conflict. The coronet acknowledges the island\'s royal connections as the final stronghold of the Princes of Gwynedd; the Romans called it Mona and targeted it to destroy the druidic religion that centred on its sacred groves, massacring the druids there in 60 AD.',
     ),
     'BGE': UkCountyClueData(
       country: 'Wales',
@@ -888,7 +892,8 @@ abstract class UkClues {
       famousLandmark: 'Porthcawl Lighthouse',
       footballTeam: 'Bridgend Town',
       nickname: 'Gateway to the Valleys',
-      flag: 'Blue field with a gold castle and bridge',
+      flag:
+          'Bridgend\'s castle and bridge are literal representations of the town\'s name — Pen-y-bont ar Ogwr in Welsh, meaning "the head of the bridge on the Ogmore." The castle refers to Newcastle, the Norman fortification built to control the river crossing. The blue field derives from the heraldic tradition of the county borough, representing the rivers that flow through this industrial and agricultural borderland between the coalfield valleys and the Glamorgan coast.',
     ),
     'BGW': UkCountyClueData(
       country: 'Wales',
@@ -896,7 +901,8 @@ abstract class UkClues {
       famousLandmark: 'Big Pit National Coal Museum',
       footballTeam: 'Ebbw Vale',
       nickname: 'Valleys Gateway',
-      flag: 'Green and white with a mining symbol',
+      flag:
+          'Blaenau Gwent\'s green and white colours represent the landscape of the South Wales valleys before and after industrialisation. The mining symbol honours the iron and coal industries that once defined this region — Ebbw Vale was home to one of the largest steelworks in Britain. The county is named after Aneurin Bevan\'s parliamentary constituency; Bevan, born in Tredegar nearby, created the NHS in 1948 — one of the most significant social achievements of the 20th century.',
     ),
     'CWY': UkCountyClueData(
       country: 'Wales',
@@ -904,7 +910,8 @@ abstract class UkClues {
       famousLandmark: 'Conwy Castle',
       footballTeam: 'Conwy Borough',
       nickname: 'Land of Castles',
-      flag: 'Gold field with a red eagle',
+      flag:
+          'Conwy\'s red eagle on gold derives from the arms of the ancient Welsh princes and the powerful de Lacey family who held the region after the Norman conquest. Conwy Castle, built by Edward I between 1283 and 1289, is one of the finest examples of medieval military architecture in Europe. The county takes its name from the River Conwy, the ancient boundary between the kingdoms of Gwynedd and Gwynedd\'s eastern neighbours.',
     ),
     'DEN': UkCountyClueData(
       country: 'Wales',
@@ -912,7 +919,8 @@ abstract class UkClues {
       famousLandmark: 'Denbigh Castle',
       footballTeam: 'Rhyl',
       nickname: 'Heart of the Vale',
-      flag: 'Red and gold stripes with a black lion',
+      flag:
+          'Denbighshire\'s red and gold stripes with a black lion derive from the arms of the ancient Lordship of Denbigh, granted to Henry de Lacy, Earl of Lincoln, after Edward I\'s conquest of Wales in 1282. The black lion was a de Lacy heraldic charge. This borderland county was historically a contested zone between English lordships and the residual power of the Welsh gentry who clung to their language and traditions.',
     ),
     'MON': UkCountyClueData(
       country: 'Wales',
@@ -920,7 +928,8 @@ abstract class UkClues {
       famousLandmark: 'Tintern Abbey',
       footballTeam: 'Monmouth Town',
       nickname: 'Gateway to Wales',
-      flag: 'Gold field with three chevrons',
+      flag:
+          'Monmouthshire\'s three chevrons on gold derive from the arms of the Clare family — Earls of Gloucester and Hertford — who controlled the county from their headquarters at Chepstow Castle after the Norman conquest. The chevron (roof-like shape) is one of the most ancient heraldic charges. Monmouthshire\'s ambiguous status between England and Wales — it was legally treated as English from Henry VIII until 1974 — is embodied in its Norman-English heraldry sitting on the Welsh border.',
     ),
     'MTY': UkCountyClueData(
       country: 'Wales',
@@ -928,7 +937,8 @@ abstract class UkClues {
       famousLandmark: 'Cyfarthfa Castle',
       footballTeam: 'Merthyr Town',
       nickname: 'Iron Capital of the World',
-      flag: 'Red field with a gold crown',
+      flag:
+          'Merthyr Tydfil\'s crown on red acknowledges the town\'s extraordinary industrial importance — Merthyr was the largest iron-producing centre in the world in the early 19th century, making it briefly the most important industrial town on earth. The crown is a symbol of this civic pride and the Welsh royal heritage associated with the name Tydfil, a 5th-century Celtic saint who was martyred here and around whom the settlement grew.',
     ),
     'NPT': UkCountyClueData(
       country: 'Wales',
@@ -936,7 +946,8 @@ abstract class UkClues {
       famousLandmark: 'Gnoll Estate Country Park',
       footballTeam: 'Port Talbot Town',
       nickname: 'Steel Town',
-      flag: 'Blue and gold with industrial symbols',
+      flag:
+          'Neath Port Talbot\'s blue and gold colours derive from the heraldic traditions of the borough of Neath (Castell-nedd) and reference the industrial heritage of the Swansea Bay hinterland. The area was the global centre of copper smelting in the 18th and 19th centuries, and later steel. The industrial symbols honour a community shaped by metal working from the Roman occupation — when Neath had a Roman fort — to the age of heavy industry.',
     ),
     'TOF': UkCountyClueData(
       country: 'Wales',
@@ -944,7 +955,8 @@ abstract class UkClues {
       famousLandmark: 'Blaenavon Ironworks',
       footballTeam: 'Cwmbran Celtic',
       nickname: 'Land of the Torrent',
-      flag: 'Green with a gold torch',
+      flag:
+          'Torfaen\'s torch on green represents enlightenment and the industrial knowledge that transformed this valley — Blaenavon, within Torfaen, was a UNESCO World Heritage Site for its remarkably preserved ironworks and mining landscape. The green reflects the natural environment of the Afon Lwyd valley reclaimed after the industrial era. The name Torfaen means "stone gap" in Welsh, referencing the dramatic valley geology.',
     ),
     'VGL': UkCountyClueData(
       country: 'Wales',
@@ -952,7 +964,8 @@ abstract class UkClues {
       famousLandmark: 'Dunraven Bay',
       footballTeam: 'Barry Town United',
       nickname: 'Garden of Wales',
-      flag: 'Green and gold with a rose',
+      flag:
+          'Vale of Glamorgan\'s green and gold with a rose reflects the county\'s identity as the fertile "Garden of Glamorgan" — the most productive agricultural land in Wales, contrasting sharply with the coal valleys to its north. The rose is a symbol of the pastoral beauty and gentle landscape of the Vale, while the gold references the rich farmland that has been continuously cultivated since prehistoric times.',
     ),
 
     // =========================================================================
@@ -965,7 +978,7 @@ abstract class UkClues {
       footballTeam: 'Glentoran, Cliftonville, Linfield',
       nickname: 'The Glens',
       flag:
-          'Red field with white castle and gold chief with red hand of Ulster',
+          'County Antrim\'s flag features the Red Hand of Ulster — one of Ireland\'s most ancient heraldic symbols, associated with the O\'Neill dynasty and the ancient kingdom of Ulster. Legend holds the hand was severed by a king who threw it ashore to win a boat race. The castle derives from the arms of the O\'Neill lords who controlled northeast Ireland, and references the fortifications built to defend this coastline against Viking and Scottish raids.',
     ),
     'ARM': UkCountyClueData(
       country: 'Northern Ireland',
@@ -973,7 +986,8 @@ abstract class UkClues {
       famousLandmark: 'Armagh Cathedral',
       footballTeam: 'Armagh City FC',
       nickname: 'The Orchard County',
-      flag: 'Blue field with red hand of Ulster on gold shield',
+      flag:
+          'Armagh\'s flag bears the Red Hand of Ulster on a gold shield — the emblem of the ancient Kingdom of Ulster and its ruling O\'Neill dynasty. Armagh is considered the ecclesiastical capital of Ireland: St Patrick founded his church here in 445 AD, and both the Roman Catholic and Church of Ireland primates have their cathedrals in this small city, making it Ireland\'s most sacred ground.',
     ),
     'DOW': UkCountyClueData(
       country: 'Northern Ireland',
@@ -981,7 +995,8 @@ abstract class UkClues {
       famousLandmark: 'Mourne Mountains',
       footballTeam: 'Glenavon FC',
       nickname: 'The Mournes',
-      flag: 'Green field with silver ship and gold fish from county arms',
+      flag:
+          'County Down\'s ship and fish reflect its maritime identity along the Irish Sea coast and Strangford Lough. The ship references Down\'s importance as a landing point from Scotland and Britain, while the fish represent the rich waters of Strangford Lough — one of Ireland\'s most important marine habitats. St Patrick is traditionally held to have landed in County Down and to be buried at Downpatrick Cathedral.',
     ),
     'FER': UkCountyClueData(
       country: 'Northern Ireland',
@@ -990,7 +1005,7 @@ abstract class UkClues {
       footballTeam: 'Enniskillen Town',
       nickname: 'The Lakeland County',
       flag:
-          'Blue field with red hand of Ulster and silver cross from county arms',
+          'Fermanagh\'s flag combines the Red Hand of Ulster — symbol of the ancient O\'Neill and Ulster kingdoms — with a silver cross acknowledging the county\'s deep Christian heritage. Fermanagh\'s lake-studded landscape (the "Lakeland County") was home to important early Christian monasteries, most notably on the island of Devenish in Lough Erne, where a perfectly preserved 12th-century round tower still stands.',
     ),
     'LDY': UkCountyClueData(
       country: 'Northern Ireland',
@@ -998,7 +1013,8 @@ abstract class UkClues {
       famousLandmark: 'Derry City Walls',
       footballTeam: 'Derry City FC',
       nickname: 'The Maiden City',
-      flag: 'White field with red cross and gold castle with skeleton in tower',
+      flag:
+          'Derry\'s flag features a castle with a skeleton in the tower — a uniquely macabre heraldic device based on the city\'s coat of arms. The skeleton represents a figure from the city\'s founding legend associated with the O\'Cahans, who possessed the land before the Plantation of Ulster. The red cross on white connects to the English St George\'s Cross, acknowledging the Plantation settlers who built the city\'s famous walls in 1613–1619.',
     ),
     'TYR': UkCountyClueData(
       country: 'Northern Ireland',
@@ -1007,7 +1023,7 @@ abstract class UkClues {
       footballTeam: 'Dungannon Swifts',
       nickname: 'O\'Neill Country',
       flag:
-          'Gold field with red hand of Ulster and red cross from O\'Neill arms',
+          'Tyrone — O\'Neill Country — carries the Red Hand of Ulster on gold, directly from the arms of the O\'Neill dynasty, the most powerful Gaelic Irish family in Ulster. The O\'Neills were High Kings of Ulster for centuries and the leading figures in the Nine Years\' War (1593–1603) — the last great Gaelic Irish resistance to English conquest. Hugh O\'Neill, the Great O\'Neill, almost drove the English from Ireland before his defeat at Kinsale in 1601.',
     ),
   };
 }
