@@ -672,7 +672,7 @@ class _RegionMapPainter extends CustomPainter {
           ? const Color(0xFF2ECC71)
           : hasActiveFill
               ? const Color(0xFFFFFFFF)
-              : const Color(0xFF5A7A9A)
+              : const Color(0xFF3D5570)
       ..style = PaintingStyle.stroke
       ..strokeWidth =
           (isCorrect ? 2.0 : (hasActiveFill ? 1.0 : 0.6)) / zoomScale;
