@@ -191,14 +191,14 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Colonia del Sacramento',
       famousPerson: 'Jose Gervasio Artigas',
       flag:
-          'Nine alternating white and blue horizontal stripes with white canton bearing golden Sun of May',
+          'The nine stripes represent the original departments of 1830; the Sun of May commemorates the May Revolution of 1810 and links Uruguay to its Argentine neighbour, both children of the Viceroyalty of the Río de la Plata.',
     ),
     'VE': LatinAmericaClueData(
       nickname: 'The Land of Grace',
       famousLandmark: 'Angel Falls',
       famousPerson: 'Simon Bolivar',
       flag:
-          'Horizontal yellow, blue, and red stripes with arc of eight white stars on blue stripe',
+          'The seven original stars matched Venezuela\'s provinces at independence in 1811; an eighth was added by Chávez in 2006 to honour Simón Bolívar\'s dream of including Guayana as a founding province.',
     ),
   };
 }
