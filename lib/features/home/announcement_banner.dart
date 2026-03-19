@@ -63,9 +63,15 @@ class _AnnouncementBannerState extends State<AnnouncementBanner> {
     try {
       final all = await AnnouncementService.instance.fetchActive();
 
-      // Filter out any that the user has already dismissed.
+      // Filter out dismissed, inactive, and expired announcements.
+      // RLS should handle time filtering server-side, but we also
+      // check client-side as a safety net.
+      final now = DateTime.now().toUtc();
       final visible = <Announcement>[];
       for (final a in all) {
+        if (!a.isActive) continue;
+        if (a.expiresAt != null && a.expiresAt!.isBefore(now)) continue;
+        if (a.startsAt != null && a.startsAt!.isAfter(now)) continue;
         final dismissed = await AnnouncementService.instance.isDismissed(a.id);
         if (!dismissed) {
           visible.add(a);

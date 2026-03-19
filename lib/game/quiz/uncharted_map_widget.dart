@@ -186,6 +186,11 @@ class _UnchartedMapPainter extends CustomPainter {
       ..isAntiAlias = true
       ..color = const Color(0xFF2ECC71);
 
+    // First pass: draw all fills, strokes, and markers.
+    // Labels are deferred to a second pass so they aren't clipped by
+    // neighbouring countries' satellite fills.
+    final revealedAreas = <RegionalArea>[];
+
     for (final area in areas) {
       final path = _buildAreaPath(area, transform);
       final isRevealed = revealedCodes.contains(area.code);
@@ -243,7 +248,7 @@ class _UnchartedMapPainter extends CustomPainter {
 
           canvas.drawPath(path, revealedStroke);
         }
-        _drawLabel(canvas, area, transform);
+        revealedAreas.add(area);
       } else {
         // Unrevealed: just outline.
         canvas.drawPath(path, outlinePaint);
@@ -268,6 +273,12 @@ class _UnchartedMapPainter extends CustomPainter {
         }
       }
     }
+
+    // Second pass: draw labels on top of all fills so they're never clipped
+    // by neighbouring countries' satellite texture.
+    for (final area in revealedAreas) {
+      _drawLabel(canvas, area, transform);
+    }
   }
 
   /// Minimum canvas diameter below which an area is considered "tiny".
@@ -280,6 +291,8 @@ class _UnchartedMapPainter extends CustomPainter {
   static const Set<String> _alwaysTinyCodes = {
     'MV', 'SG', 'BH', 'MU', 'SC', 'KM', 'ST', 'CV', // island/micro states
     'MT', 'AD', 'MC', 'LI', 'SM', 'VA', // European micro-states
+    'JE', 'GG', 'IM', 'GI',
+    'LU', // Jersey, Guernsey, Isle of Man, Gibraltar, Luxembourg
     // Pacific / Oceania island nations
     'FJ', 'FM', 'KI', 'MH', 'NR', 'PW', 'SB', 'TO', 'TV', 'VU', 'WS',
     // Caribbean island nations
@@ -470,15 +483,46 @@ class _UnchartedMapPainter extends CustomPainter {
     final rings = area.polygons ?? [area.points];
     for (final ring in rings) {
       if (ring.isEmpty) continue;
-      final first = transform.toCanvas(ring.first.x, ring.first.y);
-      path.moveTo(first.dx, first.dy);
-      for (var i = 1; i < ring.length; i++) {
-        final p = transform.toCanvas(ring[i].x, ring[i].y);
-        path.lineTo(p.dx, p.dy);
+      // Convert geo coordinates to canvas points.
+      final canvasPoints = <Offset>[];
+      for (final pt in ring) {
+        canvasPoints.add(transform.toCanvas(pt.x, pt.y));
+      }
+      // Apply Chaikin subdivision for smoother borders.
+      final smoothed = _chaikinSmooth(canvasPoints, 2);
+      if (smoothed.isEmpty) continue;
+      path.moveTo(smoothed.first.dx, smoothed.first.dy);
+      for (var i = 1; i < smoothed.length; i++) {
+        path.lineTo(smoothed[i].dx, smoothed[i].dy);
       }
       path.close();
     }
     return path;
+  }
+
+  /// Chaikin's corner-cutting algorithm for polygon smoothing.
+  /// Each iteration replaces sharp corners with smoother curves.
+  static List<Offset> _chaikinSmooth(List<Offset> points, int iterations) {
+    if (points.length < 3) return points;
+    var current = points;
+    for (var iter = 0; iter < iterations; iter++) {
+      final next = <Offset>[];
+      for (var i = 0; i < current.length; i++) {
+        final p0 = current[i];
+        final p1 = current[(i + 1) % current.length];
+        // 25% and 75% interpolation points.
+        next.add(Offset(
+          p0.dx * 0.75 + p1.dx * 0.25,
+          p0.dy * 0.75 + p1.dy * 0.25,
+        ));
+        next.add(Offset(
+          p0.dx * 0.25 + p1.dx * 0.75,
+          p0.dy * 0.25 + p1.dy * 0.75,
+        ));
+      }
+      current = next;
+    }
+    return current;
   }
 
   void _drawLabel(Canvas canvas, RegionalArea area, _GeoTransform transform) {

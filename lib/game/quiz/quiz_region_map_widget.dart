@@ -516,6 +516,11 @@ class _RegionMapPainter extends CustomPainter {
     'LI', // Liechtenstein
     'SM', // San Marino
     'VA', // Vatican City
+    'JE', // Jersey
+    'GG', // Guernsey
+    'IM', // Isle of Man
+    'GI', // Gibraltar
+    'LU', // Luxembourg
     // Pacific / Oceania island nations
     'FJ', // Fiji
     'FM', // Micronesia
