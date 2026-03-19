@@ -8,9 +8,11 @@ library;
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flame/components.dart' show Vector2;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../map/country_data.dart';
 import '../map/region.dart';
 import 'border_smoothing.dart';
 
@@ -52,15 +54,32 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
   late List<RegionalArea> _areas;
   ui.Image? _satelliteImage;
 
+  /// Cached smoothed paths keyed by area code.
+  /// Rebuilt only when canvas size or region changes.
+  Map<String, Path> _pathCache = {};
+  _GeoTransform? _cachedTransform;
+  Size? _cachedSize;
+
   @override
   void initState() {
     super.initState();
-    _areas = RegionalData.getAreas(widget.region);
+    _areas = _getFilteredAreas(widget.region);
     _flashController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
     _loadSatelliteImage();
+  }
+
+  /// Get areas for the region, filtering out excluded territories for world.
+  static List<RegionalArea> _getFilteredAreas(GameRegion region) {
+    final areas = RegionalData.getAreas(region);
+    if (region == GameRegion.world) {
+      return areas
+          .where((a) => !CountryData.excludedTerritories.contains(a.code))
+          .toList();
+    }
+    return areas;
   }
 
   Future<void> _loadSatelliteImage() async {
@@ -80,7 +99,9 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
       _flashController.forward(from: 0);
     }
     if (widget.region != oldWidget.region) {
-      _areas = RegionalData.getAreas(widget.region);
+      _areas = _getFilteredAreas(widget.region);
+      _pathCache.clear();
+      _cachedSize = null;
     }
   }
 
@@ -92,10 +113,38 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
     super.dispose();
   }
 
+  /// Build and cache paths for all areas. Only recomputes when size changes.
+  void _ensurePathCache(Size size) {
+    if (_cachedSize == size && _pathCache.isNotEmpty) return;
+    _cachedSize = size;
+
+    final bounds = widget.region.bounds;
+    final transform = _GeoTransform.fromBounds(
+      minLng: bounds[0],
+      maxLng: bounds[2],
+      minLat: bounds[1],
+      maxLat: bounds[3],
+      canvasWidth: size.width,
+      canvasHeight: size.height,
+    );
+    _cachedTransform = transform;
+
+    final newCache = <String, Path>{};
+    for (final area in _areas) {
+      newCache[area.code] = _buildAreaPath(area, transform);
+    }
+    _pathCache = newCache;
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final size = Size(constraints.maxWidth, constraints.maxHeight);
+        // Build path cache outside the animation loop — only rebuilds on
+        // layout size changes, not every animation frame.
+        _ensurePathCache(size);
+
         return AnimatedBuilder(
           animation: _flashController,
           builder: (context, _) {
@@ -106,7 +155,7 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
               constrained: false,
               boundaryMargin: const EdgeInsets.all(double.infinity),
               child: CustomPaint(
-                size: Size(constraints.maxWidth, constraints.maxHeight),
+                size: size,
                 painter: _UnchartedMapPainter(
                   areas: _areas,
                   region: widget.region,
@@ -117,6 +166,8 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
                   satelliteImage: _satelliteImage,
                   capitalsMode: widget.capitalsMode,
                   pingProgress: widget.pingProgress,
+                  pathCache: _pathCache,
+                  cachedTransform: _cachedTransform,
                 ),
               ),
             );
@@ -129,6 +180,29 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
   double get _currentZoomScale {
     final matrix = _transformController.value;
     return matrix.getMaxScaleOnAxis();
+  }
+
+  /// Build a smoothed path for an area's polygons.
+  static Path _buildAreaPath(RegionalArea area, _GeoTransform transform) {
+    final path = Path();
+    final rings = area.polygons ?? [area.points];
+    for (final ring in rings) {
+      if (ring.isEmpty) continue;
+      // Convert geo coordinates to canvas points.
+      final canvasPoints = <Offset>[];
+      for (final pt in ring) {
+        canvasPoints.add(transform.toCanvas(pt.x, pt.y));
+      }
+      // Apply Chaikin subdivision for smoother borders.
+      final smoothed = chaikinSmooth(canvasPoints, 2);
+      if (smoothed.isEmpty) continue;
+      path.moveTo(smoothed.first.dx, smoothed.first.dy);
+      for (var i = 1; i < smoothed.length; i++) {
+        path.lineTo(smoothed[i].dx, smoothed[i].dy);
+      }
+      path.close();
+    }
+    return path;
   }
 }
 
@@ -143,6 +217,8 @@ class _UnchartedMapPainter extends CustomPainter {
     this.satelliteImage,
     this.capitalsMode = false,
     this.pingProgress = 0.0,
+    required this.pathCache,
+    this.cachedTransform,
   });
 
   final List<RegionalArea> areas;
@@ -154,6 +230,8 @@ class _UnchartedMapPainter extends CustomPainter {
   final ui.Image? satelliteImage;
   final bool capitalsMode;
   final double pingProgress;
+  final Map<String, Path> pathCache;
+  final _GeoTransform? cachedTransform;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -163,15 +241,15 @@ class _UnchartedMapPainter extends CustomPainter {
       Paint()..color = const Color(0xFF0D1B2A),
     );
 
-    final bounds = region.bounds;
-    final transform = _GeoTransform.fromBounds(
-      minLng: bounds[0],
-      maxLng: bounds[2],
-      minLat: bounds[1],
-      maxLat: bounds[3],
-      canvasWidth: size.width,
-      canvasHeight: size.height,
-    );
+    final transform = cachedTransform ??
+        _GeoTransform.fromBounds(
+          minLng: region.bounds[0],
+          maxLng: region.bounds[2],
+          minLat: region.bounds[1],
+          maxLat: region.bounds[3],
+          canvasWidth: size.width,
+          canvasHeight: size.height,
+        );
 
     final outlinePaint = Paint()
       ..style = PaintingStyle.stroke
@@ -187,39 +265,51 @@ class _UnchartedMapPainter extends CustomPainter {
       ..isAntiAlias = true
       ..color = const Color(0xFF2ECC71);
 
+    // Compute pulse alpha once (shared by all unrevealed areas).
+    final bool hasPing = pingProgress > 0.0 && pingProgress < 1.0;
+    final double pingAlpha = hasPing
+        ? (pingProgress < 0.5 ? pingProgress * 2.0 : (1.0 - pingProgress) * 2.0)
+            .clamp(0.0, 1.0)
+        : 0.0;
+
     // First pass: draw all fills, strokes, and markers.
     // Labels are deferred to a second pass so they aren't clipped by
     // neighbouring countries' satellite fills.
     final revealedAreas = <RegionalArea>[];
 
     for (final area in areas) {
-      final path = _buildAreaPath(area, transform);
+      final path = pathCache[area.code];
+      if (path == null) continue;
+
       final isRevealed = revealedCodes.contains(area.code);
       final isFlashing = area.code == lastRevealedCode && flashProgress < 1.0;
 
-      final isTiny = _isTinyArea(area, transform, size);
+      final isTiny = _isTinyArea(area, transform);
 
       if (isRevealed) {
         if (isTiny) {
           // For tiny areas, reveal satellite fill inside the rounded rect
           // bounding box so the country is actually visible.
           final rrect = _tinyAreaRRect(area, transform);
-          if (satelliteImage != null) {
-            _drawSatelliteRRect(canvas, rrect, transform, size);
-          } else {
-            canvas.drawRRect(
-              rrect,
-              Paint()..color = const Color(0xFF1B6B4A),
-            );
-          }
 
           if (isFlashing) {
-            final flashAlpha = (1.0 - flashProgress).clamp(0.0, 1.0);
-            canvas.drawRRect(
-              rrect,
-              Paint()
-                ..color = const Color(0xFF2ECC71).withValues(alpha: flashAlpha),
-            );
+            // Gradual reveal: fade satellite in over the flash duration.
+            final revealAlpha =
+                Curves.easeOut.transform(flashProgress).clamp(0.0, 1.0);
+            if (satelliteImage != null && revealAlpha > 0.01) {
+              _drawSatelliteRRect(canvas, rrect, transform, size,
+                  opacity: revealAlpha);
+            }
+          } else {
+            // Fully revealed.
+            if (satelliteImage != null) {
+              _drawSatelliteRRect(canvas, rrect, transform, size);
+            } else {
+              canvas.drawRRect(
+                rrect,
+                Paint()..color = const Color(0xFF1B6B4A),
+              );
+            }
           }
 
           // Green dashed border for revealed tiny areas.
@@ -227,27 +317,35 @@ class _UnchartedMapPainter extends CustomPainter {
           _drawDashedPath(canvas, rrectPath, revealedStroke, 16);
         } else {
           // Reveal satellite imagery clipped to the area polygon.
-          if (satelliteImage != null) {
-            _drawSatelliteFill(canvas, path, transform, size);
-          } else {
-            // Fallback if image hasn't loaded yet.
-            canvas.drawPath(
-              path,
-              Paint()..color = const Color(0xFF1B6B4A),
-            );
-          }
-
           if (isFlashing) {
-            // Flash overlay: bright green fading out to reveal satellite.
-            final flashAlpha = (1.0 - flashProgress).clamp(0.0, 1.0);
+            // Gradual reveal: fade satellite in over the flash duration.
+            final revealAlpha =
+                Curves.easeOut.transform(flashProgress).clamp(0.0, 1.0);
+            if (satelliteImage != null && revealAlpha > 0.01) {
+              _drawSatelliteFill(canvas, path, transform, size,
+                  opacity: revealAlpha);
+            }
+            // Draw the outline during reveal too.
             canvas.drawPath(
-              path,
-              Paint()
-                ..color = const Color(0xFF2ECC71).withValues(alpha: flashAlpha),
-            );
+                path,
+                Paint()
+                  ..style = PaintingStyle.stroke
+                  ..strokeWidth = 1.5 / zoomScale
+                  ..strokeJoin = StrokeJoin.round
+                  ..isAntiAlias = true
+                  ..color = Color.fromRGBO(46, 204, 113, revealAlpha));
+          } else {
+            if (satelliteImage != null) {
+              _drawSatelliteFill(canvas, path, transform, size);
+            } else {
+              // Fallback if image hasn't loaded yet.
+              canvas.drawPath(
+                path,
+                Paint()..color = const Color(0xFF1B6B4A),
+              );
+            }
+            canvas.drawPath(path, revealedStroke);
           }
-
-          canvas.drawPath(path, revealedStroke);
         }
         revealedAreas.add(area);
       } else {
@@ -256,21 +354,17 @@ class _UnchartedMapPainter extends CustomPainter {
 
         // Draw dashed rounded polygon marker for tiny countries.
         if (isTiny) {
-          _drawTinyMarker(canvas, area, transform);
+          _drawTinyMarker(canvas, area, transform, pingAlpha);
         }
 
         // Ping flash: briefly highlight unrevealed areas.
-        if (pingProgress > 0.0 && pingProgress < 1.0) {
-          // Pulse alpha: rise then fall.
-          final alpha = (pingProgress < 0.5
-                  ? pingProgress * 2.0
-                  : (1.0 - pingProgress) * 2.0)
-              .clamp(0.0, 1.0);
-          canvas.drawPath(
-            path,
-            Paint()
-              ..color = const Color(0xFFE8A55A).withValues(alpha: alpha * 0.35),
-          );
+        if (hasPing) {
+          if (!isTiny) {
+            canvas.drawPath(
+              path,
+              Paint()..color = Color.fromRGBO(232, 165, 90, pingAlpha * 0.35),
+            );
+          }
         }
       }
     }
@@ -293,9 +387,11 @@ class _UnchartedMapPainter extends CustomPainter {
   static const Set<String> _alwaysTinyCodes = alwaysTinyCodes;
 
   /// Whether an area's polygon footprint on canvas is too small to see.
-  bool _isTinyArea(RegionalArea area, _GeoTransform transform, Size size) {
+  bool _isTinyArea(RegionalArea area, _GeoTransform transform) {
     if (_alwaysTinyCodes.contains(area.code)) return true;
     if (area.points.length < 3) return true;
+    // Detect antimeridian-crossing: if longitude span > 180°, force tiny.
+    if (_crossesAntimeridian(area.points)) return true;
     var minX = double.infinity, maxX = -double.infinity;
     var minY = double.infinity, maxY = -double.infinity;
     for (final p in area.points) {
@@ -310,8 +406,23 @@ class _UnchartedMapPainter extends CustomPainter {
     return w < _tinyThreshold && h < _tinyThreshold;
   }
 
+  /// Detect if a set of points crosses the antimeridian (±180° longitude).
+  static bool _crossesAntimeridian(List<Vector2> points) {
+    if (points.isEmpty) return false;
+    var minLng = double.infinity, maxLng = -double.infinity;
+    for (final p in points) {
+      if (p.x < minLng) minLng = p.x;
+      if (p.x > maxLng) maxLng = p.x;
+    }
+    return (maxLng - minLng) > 180.0;
+  }
+
   /// Compute the bounding box of a tiny area's points on canvas, expanded
   /// to a minimum visible size and returned as a rounded rectangle.
+  ///
+  /// For antimeridian-crossing countries (points span > 180° longitude),
+  /// uses the centroid of the largest polygon ring to avoid map-spanning
+  /// markers.
   RRect _tinyAreaRRect(
     RegionalArea area,
     _GeoTransform transform,
@@ -325,6 +436,19 @@ class _UnchartedMapPainter extends CustomPainter {
         Radius.circular(r),
       );
     }
+
+    // For antimeridian-crossing countries, use the largest polygon ring
+    // to compute a sensible marker position.
+    if (_crossesAntimeridian(points)) {
+      final centroid =
+          _computeCentroidLargestRing(area, transform) ?? Offset.zero;
+      final r = _markerRadius / zoomScale;
+      return RRect.fromRectAndRadius(
+        Rect.fromCircle(center: centroid, radius: r),
+        Radius.circular(r),
+      );
+    }
+
     var minX = double.infinity, maxX = -double.infinity;
     var minY = double.infinity, maxY = -double.infinity;
     for (final p in points) {
@@ -372,20 +496,32 @@ class _UnchartedMapPainter extends CustomPainter {
   }
 
   /// Draw a faint dashed rounded polygon marker for a tiny unrevealed area.
+  ///
+  /// When [pingAlpha] > 0, the marker pulses with the same ping animation
+  /// as regular country fills.
   void _drawTinyMarker(
     Canvas canvas,
     RegionalArea area,
     _GeoTransform transform,
+    double pingAlpha,
   ) {
     final rrect = _tinyAreaRRect(area, transform);
     final center = rrect.center;
     if (center.dx.isNaN || center.dy.isNaN) return;
 
-    // Faint dashed border ring as rounded rect.
+    // Ping pulse fill for tiny markers (matches regular country ping).
+    if (pingAlpha > 0.0) {
+      canvas.drawRRect(
+        rrect,
+        Paint()..color = Color.fromRGBO(232, 165, 90, pingAlpha * 0.35),
+      );
+    }
+
+    // Faint dashed border ring as rounded rect — thin and subtle.
     final borderPaint = Paint()
-      ..color = const Color(0xFF5A7A9A)
+      ..color = const Color(0xFF3D5570)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0 / zoomScale;
+      ..strokeWidth = 0.6 / zoomScale;
     final rrectPath = Path()..addRRect(rrect);
     _drawDashedPath(canvas, rrectPath, borderPaint, 16);
   }
@@ -395,15 +531,13 @@ class _UnchartedMapPainter extends CustomPainter {
   /// Uses viewport-relative texture mapping: only the portion of the
   /// satellite image that corresponds to the visible viewport is sampled,
   /// and the polygon path is intersected with the canvas bounds first.
-  /// This prevents rendering artefacts from polygons that extend far
-  /// beyond the viewport (e.g. Russia in Europe) and gives better texture
-  /// resolution than stretching the full world image.
   void _drawSatelliteFill(
     Canvas canvas,
     Path path,
     _GeoTransform transform,
-    Size canvasSize,
-  ) {
+    Size canvasSize, {
+    double opacity = 1.0,
+  }) {
     final img = satelliteImage!;
 
     // Extract only the satellite image region that matches the viewport.
@@ -430,7 +564,9 @@ class _UnchartedMapPainter extends CustomPainter {
       img,
       srcRect,
       dstRect,
-      Paint()..filterQuality = FilterQuality.high,
+      Paint()
+        ..filterQuality = FilterQuality.high
+        ..color = Color.fromRGBO(255, 255, 255, opacity),
     );
     canvas.restore();
   }
@@ -441,8 +577,9 @@ class _UnchartedMapPainter extends CustomPainter {
     Canvas canvas,
     RRect rrect,
     _GeoTransform transform,
-    Size canvasSize,
-  ) {
+    Size canvasSize, {
+    double opacity = 1.0,
+  }) {
     final img = satelliteImage!;
     final clipPath = Path()..addRRect(rrect);
 
@@ -466,31 +603,11 @@ class _UnchartedMapPainter extends CustomPainter {
       img,
       srcRect,
       dstRect,
-      Paint()..filterQuality = FilterQuality.high,
+      Paint()
+        ..filterQuality = FilterQuality.high
+        ..color = Color.fromRGBO(255, 255, 255, opacity),
     );
     canvas.restore();
-  }
-
-  Path _buildAreaPath(RegionalArea area, _GeoTransform transform) {
-    final path = Path();
-    final rings = area.polygons ?? [area.points];
-    for (final ring in rings) {
-      if (ring.isEmpty) continue;
-      // Convert geo coordinates to canvas points.
-      final canvasPoints = <Offset>[];
-      for (final pt in ring) {
-        canvasPoints.add(transform.toCanvas(pt.x, pt.y));
-      }
-      // Apply Chaikin subdivision for smoother borders.
-      final smoothed = chaikinSmooth(canvasPoints, 2);
-      if (smoothed.isEmpty) continue;
-      path.moveTo(smoothed.first.dx, smoothed.first.dy);
-      for (var i = 1; i < smoothed.length; i++) {
-        path.lineTo(smoothed[i].dx, smoothed[i].dy);
-      }
-      path.close();
-    }
-    return path;
   }
 
   void _drawLabel(Canvas canvas, RegionalArea area, _GeoTransform transform) {
@@ -565,9 +682,16 @@ class _UnchartedMapPainter extends CustomPainter {
     }
   }
 
+  /// Compute centroid from all points (fine for most countries).
   Offset? _computeCentroid(RegionalArea area, _GeoTransform transform) {
     final points = area.points;
     if (points.isEmpty) return null;
+
+    // For antimeridian-crossing countries, use the largest ring.
+    if (_crossesAntimeridian(points)) {
+      return _computeCentroidLargestRing(area, transform);
+    }
+
     var cx = 0.0;
     var cy = 0.0;
     for (final p in points) {
@@ -576,6 +700,28 @@ class _UnchartedMapPainter extends CustomPainter {
       cy += canvasP.dy;
     }
     return Offset(cx / points.length, cy / points.length);
+  }
+
+  /// Compute centroid from only the largest polygon ring.
+  /// Used for countries that span the antimeridian.
+  Offset? _computeCentroidLargestRing(
+      RegionalArea area, _GeoTransform transform) {
+    final rings = area.polygons;
+    if (rings == null || rings.isEmpty) return null;
+    // Find the ring with the most vertices (main landmass).
+    var largest = rings[0];
+    for (final ring in rings) {
+      if (ring.length > largest.length) largest = ring;
+    }
+    if (largest.isEmpty) return null;
+    var cx = 0.0;
+    var cy = 0.0;
+    for (final p in largest) {
+      final canvasP = transform.toCanvas(p.x, p.y);
+      cx += canvasP.dx;
+      cy += canvasP.dy;
+    }
+    return Offset(cx / largest.length, cy / largest.length);
   }
 
   @override
