@@ -165,6 +165,20 @@ class UnchartedSession {
     _givenUp = true;
   }
 
+  /// Reveal all remaining areas (for post-game exploration).
+  void revealAll() {
+    final areas = RegionalData.getAreas(region);
+    for (final area in areas) {
+      if (mode == UnchartedMode.capitals) {
+        if (area.capital != null && area.capital!.isNotEmpty) {
+          _revealedCodes.add(area.code);
+        }
+      } else {
+        _revealedCodes.add(area.code);
+      }
+    }
+  }
+
   /// Final score.
   ///
   /// Formula:

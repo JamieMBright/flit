@@ -14,6 +14,11 @@
 - Shared rendering code (map renderers, polygon drawing, border styling) should be fixed at the shared layer, not patched per-mode.
 - If a fix genuinely only applies to one mode, document why in a code comment.
 
+### Re-read User Prompts Before Committing
+- **Always re-read the user's original prompt** before considering work done — users often include multiple bugs, requests, or issues in a single message.
+- Check off each item explicitly. Do not commit or push until every item in the prompt has been addressed.
+- If an item is unclear, ask for clarification rather than skipping it.
+
 ### Context Management
 - Keep context lean. Spawn agents for discrete tasks.
 - Always defer to AGENTS.md when handling multiple tasks.

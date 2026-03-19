@@ -85,6 +85,9 @@ class _QuizGameScreenState extends State<QuizGameScreen>
   bool _showPointsPopup = false;
   late AnimationController _pointsAnimController;
   late AnimationController _shakeController;
+
+  /// When true, all areas are revealed and the user can explore the map.
+  bool _exploringMap = false;
   final GlobalKey<InkBurstOverlayState> _inkBurstKey =
       GlobalKey<InkBurstOverlayState>();
 
@@ -226,7 +229,22 @@ class _QuizGameScreenState extends State<QuizGameScreen>
 
     if (_session.isFinished) {
       _timer?.cancel();
-      Future.delayed(const Duration(milliseconds: 600), _navigateToResults);
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (!mounted) return;
+        // Mark all areas as completed and enter explore mode.
+        final areas = RegionalData.getAreas(widget.region);
+        setState(() {
+          for (final area in areas) {
+            if (!_stateVisuals.containsKey(area.code)) continue;
+            if (_stateVisuals[area.code]!.status != StateVisualStatus.correct &&
+                _stateVisuals[area.code]!.status !=
+                    StateVisualStatus.completed) {
+              _stateVisuals[area.code]!.status = StateVisualStatus.completed;
+            }
+          }
+          _exploringMap = true;
+        });
+      });
     }
   }
 
@@ -301,7 +319,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
   }
 
   void _confirmQuit() {
-    showDialog<bool>(
+    showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: FlitColors.cardBackground,
@@ -309,24 +327,27 @@ class _QuizGameScreenState extends State<QuizGameScreen>
           'Quit Quiz?',
           style: TextStyle(color: FlitColors.textPrimary),
         ),
-        content: const Text(
-          'Your progress will be lost.',
-          style: TextStyle(color: FlitColors.textSecondary),
+        content: Text(
+          '${_session.correctCount} of ${_session.totalQuestions} correct so far.',
+          style: const TextStyle(color: FlitColors.textSecondary),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
+            onPressed: () => Navigator.of(ctx).pop('cancel'),
             child: const Text(
               'CANCEL',
               style: TextStyle(color: FlitColors.textSecondary),
             ),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop(true);
-              _session.finish();
-              _navigateToResults();
-            },
+            onPressed: () => Navigator.of(ctx).pop('reveal'),
+            child: const Text(
+              'REVEAL ALL',
+              style: TextStyle(color: FlitColors.gold),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop('quit'),
             child: const Text(
               'QUIT',
               style: TextStyle(color: FlitColors.error),
@@ -334,7 +355,24 @@ class _QuizGameScreenState extends State<QuizGameScreen>
           ),
         ],
       ),
-    );
+    ).then((choice) {
+      if (choice == 'quit') {
+        _session.finish();
+        _navigateToResults();
+      } else if (choice == 'reveal') {
+        _session.finish();
+        _timer?.cancel();
+        // Mark all areas as correct (revealed) for map display.
+        final areas = RegionalData.getAreas(widget.region);
+        setState(() {
+          for (final area in areas) {
+            if (!_stateVisuals.containsKey(area.code)) continue;
+            _stateVisuals[area.code]!.status = StateVisualStatus.completed;
+          }
+          _exploringMap = true;
+        });
+      }
+    });
   }
 
   @override
@@ -349,14 +387,14 @@ class _QuizGameScreenState extends State<QuizGameScreen>
           SafeArea(
             child: Column(
               children: [
-                // Top bar: back button, mode label, timer
-                _buildTopBar(remaining),
+                // Top bar: back button, mode label, timer (or explore bar)
+                _exploringMap ? _buildExploreTopBar() : _buildTopBar(remaining),
 
-                // Clue card (with extra hint clues)
-                _buildClueCard(question),
+                // Clue card (hidden in explore mode)
+                if (!_exploringMap) _buildClueCard(question),
 
-                // Score and streak bar
-                _buildScoreBar(),
+                // Score and streak bar (hidden in explore mode)
+                if (!_exploringMap) _buildScoreBar(),
 
                 // Map (takes remaining space)
                 Expanded(
@@ -368,31 +406,47 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                         child: widget.region == GameRegion.usStates
                             ? QuizMapWidget(
                                 stateVisuals: _stateVisuals,
-                                onStateTapped: _handleStateTapped,
+                                onStateTapped:
+                                    _exploringMap ? (_) {} : _handleStateTapped,
                                 highlightCode: _highlightCode,
-                                showLabels: _showLabels,
-                                eliminatedCodes: _session.eliminatedCodes,
-                                correctCodes: _session.correctCodes,
-                                excludedCodes: _session.excludedAreaCodes,
+                                showLabels: _exploringMap || _showLabels,
+                                eliminatedCodes: _exploringMap
+                                    ? const {}
+                                    : _session.eliminatedCodes,
+                                correctCodes: _exploringMap
+                                    ? _stateVisuals.keys.toSet()
+                                    : _session.correctCodes,
+                                excludedCodes: _exploringMap
+                                    ? const {}
+                                    : _session.excludedAreaCodes,
                               )
                             : QuizRegionMapWidget(
                                 region: widget.region,
                                 stateVisuals: _stateVisuals,
-                                onStateTapped: _handleStateTapped,
+                                onStateTapped:
+                                    _exploringMap ? (_) {} : _handleStateTapped,
                                 highlightCode: _highlightCode,
-                                showLabels: _showLabels,
-                                eliminatedCodes: _session.eliminatedCodes,
-                                correctCodes: _session.correctCodes,
-                                excludedCodes: _session.excludedAreaCodes,
+                                showLabels: _exploringMap || _showLabels,
+                                eliminatedCodes: _exploringMap
+                                    ? const {}
+                                    : _session.eliminatedCodes,
+                                correctCodes: _exploringMap
+                                    ? _stateVisuals.keys.toSet()
+                                    : _session.correctCodes,
+                                excludedCodes: _exploringMap
+                                    ? const {}
+                                    : _session.excludedAreaCodes,
                               ),
                       ),
 
-                      // Points popup animation
-                      if (_showPointsPopup && _lastPoints != null)
+                      // Points popup animation (hidden in explore mode)
+                      if (!_exploringMap &&
+                          _showPointsPopup &&
+                          _lastPoints != null)
                         _buildPointsPopup(),
 
                       // Wrong answer indicator (strikes for rapid fire)
-                      if (widget.mode == QuizMode.rapidFire)
+                      if (!_exploringMap && widget.mode == QuizMode.rapidFire)
                         Positioned(
                           bottom: 16,
                           right: 16,
@@ -445,8 +499,9 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                   ),
                 ),
 
-                // Progress bar (for allStates mode)
-                if (widget.mode == QuizMode.allStates) _buildProgressBar(),
+                // Progress bar (for allStates mode, hidden in explore mode)
+                if (!_exploringMap && widget.mode == QuizMode.allStates)
+                  _buildProgressBar(),
               ],
             ),
           ),
@@ -525,6 +580,60 @@ class _QuizGameScreenState extends State<QuizGameScreen>
 
           // Timer
           _buildTimer(remainingMs),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExploreTopBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: const BoxDecoration(
+        color: FlitColors.backgroundMid,
+        border: Border(
+          bottom: BorderSide(color: FlitColors.cardBorder, width: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              color: FlitColors.textSecondary,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Icon(Icons.explore, color: FlitColors.gold, size: 18),
+          const SizedBox(width: 6),
+          const Text(
+            'Explore Map',
+            style: TextStyle(
+              color: FlitColors.gold,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: _navigateToResults,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: FlitColors.accent.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                'See Results',
+                style: TextStyle(
+                  color: FlitColors.accent,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
