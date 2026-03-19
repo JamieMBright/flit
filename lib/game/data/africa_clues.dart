@@ -380,28 +380,28 @@ abstract class AfricaClues {
       famousLandmark: 'Bwindi Impenetrable Forest',
       famousPerson: 'Idi Amin',
       flag:
-          'Six horizontal stripes of black, yellow, and red repeated with white circle and grey crowned crane in center',
+          'The six horizontal stripes alternate black (African people), yellow (sunshine), and red (brotherhood); the central white disc bears the grey crowned crane, Uganda\'s national bird, which was also used as a military badge during British colonial rule',
     ),
     'ZA': AfricaClueData(
       nickname: 'The Rainbow Nation',
       famousLandmark: 'Table Mountain',
       famousPerson: 'Nelson Mandela',
       flag:
-          'Horizontal red and blue halves with green Y-shape bordered in white and gold from hoist, black triangle at hoist',
+          'Adopted in 1994 at the end of apartheid, the Y-shape represents the convergence of diverse elements in South African society; the six colours (black, gold, green, red, white, blue) encompass the colours of all major political parties and historical flags',
     ),
     'ZM': AfricaClueData(
       nickname: 'The Real Africa',
       famousLandmark: 'Victoria Falls',
       famousPerson: 'Kenneth Kaunda',
       flag:
-          'Green field with orange eagle and vertical red, black, and orange stripes at lower fly',
+          'The green field represents natural resources, the orange stands for mineral wealth (copper), the black represents the people, the red symbolises the freedom struggle, and the soaring orange eagle represents the ability to rise above the nation\'s problems',
     ),
     'ZW': AfricaClueData(
       nickname: 'The Jewel of Africa',
       famousLandmark: 'Great Zimbabwe Ruins',
       famousPerson: 'Robert Mugabe',
       flag:
-          'Seven horizontal stripes of green, yellow, red, black, red, yellow, green with white triangle and red star and bird at hoist',
+          'The seven stripes represent the seven signatories and the nation\'s ethnic diversity; the red star symbolises the socialist ideals of the liberation struggle, the Zimbabwe Bird in the white triangle is from the ancient city of Great Zimbabwe — a powerful symbol of national heritage',
     ),
   };
 }

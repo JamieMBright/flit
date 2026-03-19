@@ -274,7 +274,7 @@ abstract class AsiaClues {
       famousLandmark: 'Masjid al-Haram (Grand Mosque of Mecca)',
       famousPerson: 'King Abdulaziz ibn Saud',
       flag:
-          'Green field with white Arabic inscription and white sword below it',
+          'The green represents Islam, the Arabic inscription is the Shahada ("There is no god but Allah, Muhammad is the messenger of Allah"), and the sword symbolises the House of Saud\'s military strength — this is the only national flag that cannot be flown at half-mast due to its sacred inscription',
     ),
     'SG': AsiaClueData(
       nickname: 'The Lion City',
@@ -288,61 +288,63 @@ abstract class AsiaClues {
       famousLandmark: 'Ancient City of Damascus',
       famousPerson: 'Queen Zenobia',
       flag:
-          'Horizontal red, white, and black stripes with two green five-pointed stars on white stripe',
+          'The red-white-black horizontal tricolour uses Pan-Arab colours representing the Hashemite dynasty, the Umayyad dynasty, and the Abbasid dynasty; the two green stars originally represented Egypt and Syria in the United Arab Republic',
     ),
     'TH': AsiaClueData(
       nickname: 'The Land of Smiles',
       famousLandmark: 'Grand Palace',
       famousPerson: 'King Bhumibol Adulyadej',
       flag:
-          'Five horizontal stripes of red, white, blue, white, and red with wider blue center stripe',
+          'The red represents the nation and the blood of life, the white symbolises the purity of Buddhism, and the blue represents the monarchy — the "Trairanga" (tricolour) was adopted in 1917 and the blue was said to honour the Allies of World War I',
     ),
     'TJ': AsiaClueData(
       nickname: 'The Roof of the World',
       famousLandmark: 'Ismoil Somoni Peak',
       famousPerson: 'Ismoil Somoni',
       flag:
-          'Horizontal red, white, and green stripes with golden crown and seven stars on white stripe',
+          'The red represents the sun and victory, the white symbolises purity and cotton (a major crop), the green represents agriculture and spring; the golden crown and seven stars above it represent the Tajik people — "Tajik" is said to derive from the word for "crown"',
     ),
     'TL': AsiaClueData(
       nickname: 'The Land of the Rising Sun of Southeast Asia',
       famousLandmark: 'Cristo Rei of Dili',
       famousPerson: 'Xanana Gusmao',
       flag:
-          'Red field with black and yellow triangles at hoist and white star on black triangle',
+          'The red represents the struggle for national liberation, the black symbolises the obscurantism that needs to be overcome, the yellow triangle represents the traces of colonialism; the white star is the guiding light for peace',
     ),
     'TM': AsiaClueData(
       nickname: 'The Land of the White Horse',
       famousLandmark: 'Darvaza Gas Crater',
       famousPerson: 'Saparmurat Niyazov',
       flag:
-          'Green field with vertical carpet pattern stripe at hoist in red and white, white crescent and five stars',
+          'The green field represents Islam, the crescent and five stars symbolise the five provinces; the unique carpet gul stripe along the hoist displays five traditional Turkmen carpet designs representing the five major tribes — the only national flag featuring carpet patterns',
     ),
     'TW': AsiaClueData(
       nickname: 'The Beautiful Island',
       famousLandmark: 'Taipei 101',
       famousPerson: 'Sun Yat-sen',
       flag:
-          'Red field with blue canton bearing white twelve-rayed sun at upper hoist',
+          'The blue canton with white Sun represents the Kuomintang party and the twelve hours of the day (symbolising continuous progress); the red field represents the blood of revolutionaries who overthrew the Qing dynasty — the flag was originally designed by Lu Haodong for Sun Yat-sen\'s revolutionary movement',
     ),
     'UZ': AsiaClueData(
       nickname: 'The Land of the Blue Domes',
       famousLandmark: 'Registan Square',
       famousPerson: 'Amir Timur (Tamerlane)',
       flag:
-          'Horizontal blue, white, and green stripes separated by thin red borders with white crescent and stars on blue',
+          'The blue represents water and the sky (echoing Tamerlane\'s banner), the white symbolises peace, the green represents nature and Islam; the crescent represents the new nation reborn, and the twelve stars represent the months and the twelve regions',
     ),
     'VN': AsiaClueData(
       nickname: 'The Land of the Ascending Dragon',
       famousLandmark: 'Ha Long Bay',
       famousPerson: 'Ho Chi Minh',
-      flag: 'Red field with large yellow five-pointed star in center',
+      flag:
+          'The red background represents the revolution and the blood of martyrs, and the five-pointed gold star represents the five classes of Vietnamese society — workers, peasants, soldiers, intellectuals, and business people — united under communism',
     ),
     'YE': AsiaClueData(
       nickname: 'The Land of Sheba',
       famousLandmark: 'Old Walled City of Shibam',
       famousPerson: 'Queen of Sheba',
-      flag: 'Horizontal red, white, and black stripes',
+      flag:
+          'The red-white-black horizontal tricolour uses Pan-Arab colours; the red represents the blood of martyrs and unity, the white symbolises hope for the future, and the black represents the dark past that has been overcome',
     ),
   };
 }

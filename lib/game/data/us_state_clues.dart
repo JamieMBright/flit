@@ -498,7 +498,7 @@ abstract class UsStateClues {
     ),
     'MO': StateClueData(
       flag:
-          'Three horizontal stripes of red, white, and blue with state seal featuring two grizzly bears',
+          'Missouri\'s tricolor mirrors the French tricolore to honor the Louisiana Territory\'s French heritage before the 1803 Purchase; the two grizzly bears supporting the shield represent strength and the state\'s frontier character, while the crescent moon and grizzly on the shield itself recall Missouri\'s origin as part of the wilderness beyond the Mississippi; the 24 stars mark Missouri as the 24th state, admitted in 1821',
       sportsTeams: [
         'Kansas City Chiefs (NFL)',
         'St. Louis Cardinals (MLB)',
@@ -520,7 +520,7 @@ abstract class UsStateClues {
     ),
     'MT': StateClueData(
       flag:
-          'Blue field with state seal featuring mountains, the Great Falls of the Missouri River, and mining tools',
+          'Montana\'s seal, adopted at statehood in 1889 and carried on the flag, depicts the Great Falls of the Missouri River flanked by mountains and ponderosa pine — the landscape that define the Treasure State; the plow, pick, and shovel symbolize agriculture and mining, the twin industries of Montana\'s economy; the Spanish motto "Oro y Plata" (Gold and Silver) reflects the precious metal mining that drove settlement',
       sportsTeams: [
         'Montana Grizzlies (NCAA Football)',
         'Montana State Bobcats (NCAA Football)',
@@ -541,7 +541,7 @@ abstract class UsStateClues {
     ),
     'NE': StateClueData(
       flag:
-          'Blue field with state seal featuring a steamboat, train, and blacksmith',
+          'Nebraska\'s seal, adopted in 1867 at statehood and placed on the flag in 1925, depicts a steamboat on the Missouri River, a settler\'s cabin with wheat sheaves, and a blacksmith — narrating the transformation from frontier wilderness to agricultural and industrial state; the train heading toward the Rocky Mountains symbolizes the transcontinental railroad\'s completion in 1869, a defining event in Nebraska\'s growth',
       sportsTeams: [
         'Nebraska Cornhuskers (NCAA Football)',
         'Creighton Bluejays (NCAA Basketball)',
@@ -562,7 +562,7 @@ abstract class UsStateClues {
     ),
     'NV': StateClueData(
       flag:
-          'Blue field with silver star and sagebrush sprays, reading "Battle Born"',
+          'The motto "Battle Born" at the top commemorates Nevada\'s admission to the Union on October 31, 1864 — rushed into statehood during the Civil War to provide electoral votes for Lincoln\'s re-election; the silver star honors Nevada\'s silver mining boom that powered the economy, the sagebrush wreath symbolizes the state\'s high desert landscape, and the state name banner completes the striking design adopted in 1929',
       sportsTeams: [
         'Las Vegas Raiders (NFL)',
         'Vegas Golden Knights (NHL)',
@@ -582,7 +582,8 @@ abstract class UsStateClues {
       ],
     ),
     'NH': StateClueData(
-      flag: 'Blue field with state seal featuring the frigate Raleigh',
+      flag:
+          'The warship on New Hampshire\'s seal is the USS Raleigh, one of the first 13 ships built for the Continental Navy in 1776 — constructed at Portsmouth, NH; this Revolutionary War vessel anchors New Hampshire\'s identity as a cradle of naval power and independence; the granite outcrop around the seal reflects the state\'s geological character as the Granite State',
       sportsTeams: [
         'New Hampshire Fisher Cats (Minor League Baseball)',
         'New Hampshire Wildcats (NCAA Hockey)',
@@ -603,7 +604,7 @@ abstract class UsStateClues {
     ),
     'NJ': StateClueData(
       flag:
-          'Buff-colored field with state coat of arms featuring three plows and two goddesses',
+          'New Jersey\'s buff-and-blue colors honor the uniform of the New Jersey Continental Line in the Revolutionary War — a uniform color scheme personally approved by George Washington; the three plows on the shield represent the state\'s agricultural heritage, while Liberty (with a pole and cap) and Ceres (goddess of grain) as supporters evoke the ideals of freedom and abundance that characterized the colonial Garden State',
       sportsTeams: [
         'New York Giants (NFL)',
         'New York Jets (NFL)',
@@ -623,7 +624,8 @@ abstract class UsStateClues {
       ],
     ),
     'NM': StateClueData(
-      flag: 'Yellow field with red Zia sun symbol',
+      flag:
+          'The Zia sun symbol on New Mexico\'s flag is sacred to the Zia Pueblo people, representing the four cardinal directions, four seasons, four periods of day, and four stages of life — its four groups of four rays radiate from a central circle; adopted in 1925, the red-on-gold colors echo the Spanish royal standard, honoring New Mexico\'s 300-year history as a Spanish colony; the design is considered one of the most distinctive and meaningful state flags in the nation',
       sportsTeams: [
         'New Mexico Lobos (NCAA Football)',
         'New Mexico State Aggies (NCAA Basketball)',
@@ -644,7 +646,7 @@ abstract class UsStateClues {
     ),
     'NY': StateClueData(
       flag:
-          'Blue field with state coat of arms featuring Liberty and Justice flanking a shield',
+          'New York\'s coat of arms, dating to 1777, depicts Liberty — her crown discarded as a rejection of monarchy — and Justice blindfolded, flanking a shield bearing a rising sun over the Hudson River highlands; an American eagle perches atop a globe showing the Atlantic, symbolizing New York\'s role in global commerce; the motto "Excelsior" (Ever Upward) reflects the state\'s relentless ambition as the gateway to America',
       sportsTeams: [
         'New York Giants (NFL)',
         'New York Knicks (NBA)',
@@ -665,7 +667,7 @@ abstract class UsStateClues {
     ),
     'NC': StateClueData(
       flag:
-          'Blue field with white star, red and white stripes, and dates May 20, 1775 and April 12, 1776',
+          'North Carolina\'s flag bears two key dates: May 20, 1775 (the disputed Mecklenburg Declaration of Independence, when Charlotte citizens allegedly declared independence from Britain) and April 12, 1776 (the Halifax Resolves, the first official colonial action authorizing independence); the NC monogram and lone star reflect state pride, and the red and blue stripes recall the national colors, adopted in the current form in 1885',
       sportsTeams: [
         'Carolina Panthers (NFL)',
         'Charlotte Hornets (NBA)',
@@ -686,7 +688,7 @@ abstract class UsStateClues {
     ),
     'ND': StateClueData(
       flag:
-          'Blue field with bald eagle holding an olive branch and arrows, with a fan of 13 stars',
+          'North Dakota\'s flag closely resembles the U.S. coat of arms and was adapted from the regimental banner of the First North Dakota Infantry during the 1898 Spanish-American War; the bald eagle holds an olive branch (peace) and arrows (war) while 13 stars represent the original colonies; the shield on the eagle\'s breast echoes national loyalty, reflecting North Dakota\'s strong patriotic identity when it became a state in 1889',
       sportsTeams: [
         'North Dakota Fighting Hawks (NCAA Hockey)',
         'North Dakota State Bison (NCAA Football)',

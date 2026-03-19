@@ -259,7 +259,8 @@ abstract class UkClues {
       famousLandmark: 'Glastonbury Tor',
       footballTeam: 'Bristol City',
       nickname: 'The Cider County',
-      flag: 'Red dragon on gold field',
+      flag:
+          'Somerset\'s red dragon on gold derives from the arms of the ancient Kingdom of Wessex and its association with Arthurian legend — Glastonbury is traditionally identified as Avalon, the resting place of King Arthur. The dragon was the battle standard of Uther Pendragon and the Celtic warlords who resisted Saxon invasion from this heartland.',
     ),
     'DOR': UkCountyClueData(
       country: 'England',
@@ -267,7 +268,8 @@ abstract class UkClues {
       famousLandmark: 'Durdle Door',
       footballTeam: 'Bournemouth AFC',
       nickname: 'Hardy Country',
-      flag: 'White Dorset Cross on red and gold quartered field',
+      flag:
+          'Dorset\'s quartered red and gold field echoes the arms of the Bishops of Salisbury, who had jurisdiction over much of the county in the medieval period. The cross connects to the ecclesiastical history of the region, while the colours reflect the county\'s ancient manorial heritage. Dorset was home to many powerful Norman families after 1066.',
     ),
     'GLO': UkCountyClueData(
       country: 'England',
@@ -275,7 +277,8 @@ abstract class UkClues {
       famousLandmark: 'Gloucester Cathedral',
       footballTeam: 'Cheltenham Town, Forest Green Rovers',
       nickname: 'The Cotswolds County',
-      flag: 'Green and gold horizontal stripes with chevron pattern',
+      flag:
+          'Gloucestershire\'s green and gold reflect the fertile Severn Vale and the wealth of the medieval wool trade that built the county\'s magnificent churches and manor houses. The chevron pattern is drawn from the arms of Clare, Earls of Gloucester — one of the most powerful Anglo-Norman dynasties, whose red chevrons on gold became inseparable from the county\'s identity.',
     ),
     'WIL': UkCountyClueData(
       country: 'England',
@@ -283,7 +286,8 @@ abstract class UkClues {
       famousLandmark: 'Stonehenge',
       footballTeam: 'Swindon Town',
       nickname: 'The Moonraker County',
-      flag: 'Green field with white Great Bustard bird',
+      flag:
+          'The Great Bustard on Wiltshire\'s flag celebrates the bird that once roamed Salisbury Plain in great numbers before being hunted to extinction in Britain by the 1840s. The bustard has been the county\'s symbol since at least the 18th century, appearing in Wiltshire regimental badges and arms — a reminder of the ancient chalk downland that defines the county.',
     ),
 
     // =========================================================================
@@ -295,7 +299,8 @@ abstract class UkClues {
       famousLandmark: 'Radcliffe Camera',
       footballTeam: 'Oxford United',
       nickname: 'The City of Dreaming Spires',
-      flag: 'Blue field with red ox crossing gold ford',
+      flag:
+          'Oxford\'s arms feature a classic example of canting heraldry: a gold ford (river crossing) with an ox, literally spelling out "Ox-ford." This punning tradition in heraldry dates to the Norman period. The city\'s university — founded in the 12th century and among the oldest in the English-speaking world — made the ox-ford crossing one of the most intellectually significant in history.',
     ),
     'WAR': UkCountyClueData(
       country: 'England',
@@ -304,7 +309,7 @@ abstract class UkClues {
       footballTeam: 'Coventry City',
       nickname: 'The Heart of England',
       flag:
-          'Gold field with red and white chequered fess and bear and ragged staff',
+          'Warwickshire\'s bear and ragged staff is one of England\'s most celebrated heraldic badges, belonging to the Earls of Warwick — among the most powerful magnates in medieval England. The chequered fess (horizontal band) derives from the arms of the de Newburgh Earls of Warwick. The badge became so famous it entered common parlance as a synonym for the county itself.',
     ),
     'NTH': UkCountyClueData(
       country: 'England',
@@ -312,7 +317,8 @@ abstract class UkClues {
       famousLandmark: 'Silverstone Circuit',
       footballTeam: 'Northampton Town',
       nickname: 'The Rose of the Shires',
-      flag: 'Crimson field with gold rose',
+      flag:
+          'The red rose of Northamptonshire is distinct from the red rose of Lancaster — it is an older heraldic charge associated with the county\'s Norman lords. Northamptonshire sits at the geographic heart of England and was a royal county, with numerous hunting lodges and manor houses; the rose reflects its long association with courtly culture and nobility.',
     ),
     'LEI': UkCountyClueData(
       country: 'England',
@@ -320,7 +326,8 @@ abstract class UkClues {
       famousLandmark: 'Leicester Cathedral',
       footballTeam: 'Leicester City',
       nickname: 'The Foxes',
-      flag: 'Gold fox on red field with white cinquefoil',
+      flag:
+          'Leicestershire\'s fox has been the county\'s symbol since at least the 19th century, celebrating its world-famous foxhunting tradition — the Quorn, Belvoir and Pytchley hunts made the Leicestershire countryside the spiritual home of the sport. The cinquefoil (five-petalled flower) comes from the arms of the de Quincy Earls of Winchester, who held great Leicestershire estates.',
     ),
     'NOT': UkCountyClueData(
       country: 'England',
@@ -329,7 +336,7 @@ abstract class UkClues {
       footballTeam: 'Nottingham Forest, Notts County',
       nickname: 'Robin Hood Country',
       flag:
-          'Green field with white cross of St Andrew and Robin Hood silhouette',
+          'Nottinghamshire\'s green reflects the ancient forest of Sherwood, the royal hunting forest that covered a third of the county in the medieval period and gave rise to the legend of Robin Hood. The outlaw\'s silhouette on the flag is a modern addition that celebrates the county\'s most famous mythological figure, whose story of fighting Norman oppression resonates across centuries.',
     ),
     'DER': UkCountyClueData(
       country: 'England',
@@ -337,7 +344,8 @@ abstract class UkClues {
       famousLandmark: 'Chatsworth House',
       footballTeam: 'Derby County',
       nickname: 'The Peak',
-      flag: 'Green field with gold Tudor rose and blue cross',
+      flag:
+          'Derbyshire\'s flag combines the Tudor rose — recalling the county\'s prominence during the Tudor era, when the Derbyshire lead mines enriched the Crown — with the blue cross derived from the arms of Robert de Ferrers, the powerful Norman Earl of Derby. The green represents the Peak District moorland, England\'s first national park.',
     ),
     'STS': UkCountyClueData(
       country: 'England',
@@ -345,7 +353,8 @@ abstract class UkClues {
       famousLandmark: 'Alton Towers',
       footballTeam: 'Stoke City',
       nickname: 'The Potteries',
-      flag: 'Gold field with red Staffordshire knot',
+      flag:
+          'The Staffordshire Knot is one of England\'s most distinctive heraldic badges, a three-looped knot of uncertain but ancient origin. It is first recorded in the 14th century and was used by the Stafford Dukes of Buckingham, who took their title and arms from the county. The knot became so embedded in county identity that it appears on civic heraldry, regimental badges and pub signs across Staffordshire.',
     ),
     'BKM': UkCountyClueData(
       country: 'England',
@@ -353,7 +362,8 @@ abstract class UkClues {
       famousLandmark: 'Bletchley Park',
       footballTeam: 'Wycombe Wanderers',
       nickname: 'The Home of the Chilterns',
-      flag: 'White field with red chained swan (Buckinghamshire swan badge)',
+      flag:
+          'The chained swan is the badge of the Bohun family, Earls of Hereford and Essex, who held great estates across Buckinghamshire. Through inheritance it passed to Henry IV and became a royal badge of the House of Lancaster. The swan — noble, white and restrained — perfectly captured the medieval ideal of controlled power; it became inseparable from Buckinghamshire\'s identity.',
     ),
     'HEF': UkCountyClueData(
       country: 'England',
@@ -361,7 +371,8 @@ abstract class UkClues {
       famousLandmark: 'Hereford Cathedral',
       footballTeam: 'Hereford FC',
       nickname: 'The Marches',
-      flag: 'Blue field with white Hereford bull and three gold lions',
+      flag:
+          'Herefordshire\'s flag celebrates the famous Hereford breed of cattle, whose red-and-white colouring has been selectively developed in the county since the 18th century and exported worldwide. The three gold lions derive from the arms of the de Lacy lords of Hereford — Norman barons who built Hereford Castle and controlled the Welsh Marches for the Crown.',
     ),
     'WOR': UkCountyClueData(
       country: 'England',
@@ -369,7 +380,8 @@ abstract class UkClues {
       famousLandmark: 'Worcester Cathedral',
       footballTeam: 'Worcester City',
       nickname: 'The Faithful City County',
-      flag: 'White field with blue wavy lines and gold pear tree',
+      flag:
+          'The pear tree on Worcestershire\'s flag is a reference to the famous Worcestershire pear — the county has been renowned for its perry (pear cider) and dessert pears since at least the 17th century. The wavy lines represent the River Severn, which bisects the county. The combination reflects a uniquely agrarian identity, rich orchards and the gentle landscape celebrated by Edward Elgar in his music.',
     ),
     'RUT': UkCountyClueData(
       country: 'England',

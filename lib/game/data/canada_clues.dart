@@ -3,7 +3,7 @@ abstract class CanadaClues {
   static const Map<String, ProvinceClueData> data = {
     'ON': ProvinceClueData(
       flag:
-          'Red ensign with Ontario shield featuring red cross and maple leaves',
+          'The Ontario flag is a Red Ensign bearing the provincial shield, which features St George\'s Cross (the red cross of England) honouring Upper Canada\'s British colonial roots, and three golden maple leaves representing the province\'s three founding regions; the Red Ensign itself was the flag of Canada until 1965, retained by Ontario as a deliberate expression of loyalty to the Crown and British heritage',
       sportsTeams: [
         'Toronto Maple Leafs (NHL)',
         'Toronto Raptors (NBA)',
@@ -15,7 +15,8 @@ abstract class CanadaClues {
       famousLandmark: 'CN Tower',
     ),
     'QC': ProvinceClueData(
-      flag: 'Blue field with white cross and four fleurs-de-lis (Fleurdelise)',
+      flag:
+          'The Fleurdelisé derives from the ancient royal banner of France, honouring Quebec\'s founding as New France in 1608; the four fleurs-de-lis are symbols of French royalty and the Catholic faith brought by early settlers, while the white cross dividing the field reflects the Cross of Saint George adapted in the French tradition — adopted in 1948 as a defiant assertion of French-Canadian identity',
       sportsTeams: ['Montreal Canadiens (NHL)', 'CF Montreal (MLS)'],
       premier: 'Francois Legault',
       nickname: 'La Belle Province',
@@ -23,7 +24,8 @@ abstract class CanadaClues {
       famousLandmark: 'Chateau Frontenac',
     ),
     'BC': ProvinceClueData(
-      flag: 'Union Jack above setting sun over blue and white wavy stripes',
+      flag:
+          'The Union Jack in the upper canton honours BC\'s entry into Confederation in 1871 under the promise of a transcontinental railway; the golden half-sun setting over blue and white waves below represents the Pacific Ocean and BC\'s position as Canada\'s western gateway — the motto Splendor sine occasu (Splendour without diminishment) refers to this perpetual sunset, symbolising a province whose glory never fades',
       sportsTeams: [
         'Vancouver Canucks (NHL)',
         'Vancouver Whitecaps (MLS)',
@@ -36,7 +38,7 @@ abstract class CanadaClues {
     ),
     'AB': ProvinceClueData(
       flag:
-          'Blue field with Alberta shield featuring mountains, prairie, and wheat',
+          'Alberta\'s flag bears the provincial shield on a blue background, with the shield depicting St George\'s Cross at the top honouring British colonial heritage, the Rocky Mountains in the middle representing the dramatic western peaks that define the province, and rolling prairie with wheat below symbolising the agricultural wealth that drew settlers after 1905; the blue field evokes the vast Alberta sky celebrated by the province\'s motto Fortis et Liber (Strong and Free)',
       sportsTeams: [
         'Calgary Flames (NHL)',
         'Edmonton Oilers (NHL)',
@@ -48,7 +50,8 @@ abstract class CanadaClues {
       famousLandmark: 'Banff National Park',
     ),
     'MB': ProvinceClueData(
-      flag: 'Red ensign with Manitoba shield featuring bison',
+      flag:
+          'Manitoba\'s Red Ensign bears the provincial shield showing St George\'s Cross above a golden bison standing on green ground; the bison honours the Plains Cree, Assiniboine, and Métis peoples whose way of life was built around the vast buffalo herds before European settlement, and it was chosen when Manitoba joined Confederation in 1870 partly to recognise Louis Riel\'s Métis provisional government that negotiated the province\'s creation',
       sportsTeams: ['Winnipeg Jets (NHL)', 'Winnipeg Blue Bombers (CFL)'],
       premier: 'Wab Kinew',
       nickname: 'Land of 100,000 Lakes',
@@ -57,7 +60,7 @@ abstract class CanadaClues {
     ),
     'SK': ProvinceClueData(
       flag:
-          'Green and gold horizontal halves with Saskatchewan shield and western red lily',
+          'Saskatchewan\'s flag is divided horizontally into green (upper) and gold (lower) — green representing the northern forest and agricultural land, gold celebrating the wheat fields and mineral wealth of the southern plains; the provincial shield on the left bears St George\'s Cross and three gold sheaves of wheat, while the western red lily on the right is the provincial flower chosen to honour the Indigenous peoples and early settlers who cultivated this grassland province',
       sportsTeams: ['Saskatchewan Roughriders (CFL)'],
       premier: 'Scott Moe',
       nickname: 'Land of the Living Skies',
@@ -65,7 +68,8 @@ abstract class CanadaClues {
       famousLandmark: 'Royal Saskatchewan Museum',
     ),
     'NS': ProvinceClueData(
-      flag: 'Blue background with white saltire and Royal Arms of Scotland',
+      flag:
+          'Nova Scotia\'s flag is the oldest provincial flag in Canada, granted by King Charles I in 1625 — predating the province\'s formal British control; it bears the Royal Arms of Scotland (a gold lion on red) at the centre of a blue-and-white saltire (the Cross of Saint Andrew), directly inverting the Scottish flag\'s colours to create a distinctly Nova Scotian identity that honours the wave of Scottish Highland settlers who gave the province its Latin name meaning New Scotland',
       sportsTeams: ['Halifax Mooseheads (QMJHL)'],
       premier: 'Tim Houston',
       nickname: "Canada's Ocean Playground",
@@ -73,7 +77,8 @@ abstract class CanadaClues {
       famousLandmark: 'Peggy\'s Cove Lighthouse',
     ),
     'NB': ProvinceClueData(
-      flag: 'Gold lion above gold galley on red and gold field',
+      flag:
+          'New Brunswick\'s flag bears the arms granted in 1868, showing a golden lion passant on red in the upper section — the lion of Brunswick from the German duchy whose Loyalist settlers flooded the province after the American Revolution — and a golden galley on blue waves below, honouring the shipbuilding industry that made Saint John one of the world\'s great wooden shipbuilding ports in the 19th century',
       sportsTeams: ['Moncton Wildcats (QMJHL)'],
       premier: 'Blaine Higgs',
       nickname: 'The Picture Province',

@@ -319,7 +319,8 @@ abstract class IrelandClues {
       famousLandmark: 'Mourne Mountains',
       gaaTeam: 'The Mourne County (Red & Black)',
       nickname: 'The Mourne County',
-      flag: 'Red and black vertical stripes',
+      flag:
+          'Red and black derive from the arms of the Magennis clan, the Gaelic lords of Iveagh who ruled Down for centuries; red signified martial courage while black was associated with the solemn responsibilities of lordship — fitting for a clan that defended the drumlin country of Down against successive waves of colonisation during the Ulster Plantation era',
     ),
     'FRM': CountyClueData(
       province: 'Ulster',
@@ -328,7 +329,8 @@ abstract class IrelandClues {
       famousLandmark: 'Marble Arch Caves',
       gaaTeam: 'The Erne County (Green & White)',
       nickname: 'The Lakeland County',
-      flag: 'Green and white vertical stripes',
+      flag:
+          'Green and white honour the Maguire clan, the Gaelic lords of Fermanagh who ruled the Erne lakeland with great independence; the Maguires were celebrated as patrons of Gaelic learning and art, and their clan colours reflect the lush green of the island-dotted lough country and the purity associated with the monastic traditions of the region',
     ),
     'LDY': CountyClueData(
       province: 'Ulster',
@@ -337,7 +339,8 @@ abstract class IrelandClues {
       famousLandmark: 'Derry City Walls',
       gaaTeam: 'The Oak Leaf County (Red & White)',
       nickname: 'The Maiden City',
-      flag: 'Red and white vertical stripes',
+      flag:
+          'Red and white recall the Oak Leaf of the O\'Cahan and O\'Neill clans, with the oak being the sacred tree of the Gaelic Doire (Derry), meaning oak grove; red symbolises the defiance of the city\'s famous 105-day siege of 1689, when the Protestant citizens held out against James II\'s Jacobite army — the Maiden City never having been taken',
     ),
     'TYR': CountyClueData(
       province: 'Ulster',
@@ -346,7 +349,8 @@ abstract class IrelandClues {
       famousLandmark: 'Ulster American Folk Park',
       gaaTeam: 'The Red Hand County (White & Red)',
       nickname: 'The Red Hand County',
-      flag: 'White and red vertical stripes',
+      flag:
+          'White and red centre on the Red Hand of Ulster, the ancient symbol of the O\'Neill dynasty who ruled Tír Eoghain (Tyrone) as kings of Ulster; legend holds that the first man to touch the shore of Ulster would win it, and a warrior cut off his own hand and threw it to claim the prize — the red hand endures as Ulster\'s most potent heraldic emblem',
     ),
   };
 }
