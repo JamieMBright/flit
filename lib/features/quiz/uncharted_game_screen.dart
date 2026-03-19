@@ -45,6 +45,10 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
   String? _lastRevealedCode;
   String? _feedbackText;
 
+  /// When true, all areas are revealed and the user can explore the map
+  /// before going to results.
+  bool _exploringMap = false;
+
   late AnimationController _feedbackController;
   late Animation<double> _feedbackOpacity;
 
@@ -139,9 +143,12 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
 
     if (_session.isComplete) {
       _timer?.cancel();
-      // Short delay to show the last reveal, then navigate to results.
+      _inactivityTimer?.cancel();
+      // Short delay to show the last reveal, then enter explore mode.
       Future<void>.delayed(const Duration(milliseconds: 1200), () {
-        if (mounted) _showResults();
+        if (mounted) {
+          setState(() => _exploringMap = true);
+        }
       });
     }
 
@@ -150,7 +157,7 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
   }
 
   void _giveUp() {
-    showDialog<bool>(
+    showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: FlitColors.backgroundMid,
@@ -160,27 +167,40 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
         ),
         content: Text(
           'You\'ve found ${_session.revealedCount} of ${_session.totalCount}. '
-          'Give up and see results?',
+          'What would you like to do?',
           style: const TextStyle(color: FlitColors.textSecondary),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => Navigator.pop(ctx, 'keep'),
             child: const Text('Keep Going',
                 style: TextStyle(color: FlitColors.accent)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => Navigator.pop(ctx, 'reveal'),
+            child: const Text('Reveal All',
+                style: TextStyle(color: FlitColors.gold)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'quit'),
             child: const Text('Give Up',
                 style: TextStyle(color: FlitColors.error)),
           ),
         ],
       ),
-    ).then((confirmed) {
-      if (confirmed == true) {
+    ).then((choice) {
+      if (choice == 'quit') {
         _session.giveUp();
         _timer?.cancel();
         _showResults();
+      } else if (choice == 'reveal') {
+        _session.giveUp();
+        _session.revealAll();
+        _timer?.cancel();
+        _inactivityTimer?.cancel();
+        setState(() {
+          _exploringMap = true;
+        });
       }
     });
   }
@@ -230,21 +250,22 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
               top: 0,
               left: 0,
               right: 0,
-              child: _buildTopBar(),
+              child: _exploringMap ? _buildExploreTopBar() : _buildTopBar(),
             ),
-            // Feedback + input bar at the bottom.
-            Positioned(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-              left: 0,
-              right: 0,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildFeedback(),
-                  _buildInputBar(),
-                ],
+            // Feedback + input bar at the bottom (hidden in explore mode).
+            if (!_exploringMap)
+              Positioned(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 0,
+                right: 0,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildFeedback(),
+                    _buildInputBar(),
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -296,6 +317,45 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
             child: const Text(
               'Give Up',
               style: TextStyle(color: FlitColors.error, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExploreTopBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      color: FlitColors.backgroundMid,
+      child: Row(
+        children: [
+          // Back button.
+          IconButton(
+            icon: const Icon(Icons.arrow_back,
+                color: FlitColors.textPrimary, size: 20),
+            onPressed: () => Navigator.of(context).pop(),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+          const SizedBox(width: 12),
+          const Icon(Icons.explore, color: FlitColors.gold, size: 16),
+          const SizedBox(width: 6),
+          const Text(
+            'Explore Map',
+            style: TextStyle(
+              color: FlitColors.gold,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const Spacer(),
+          // See Results button.
+          TextButton(
+            onPressed: _showResults,
+            child: const Text(
+              'See Results',
+              style: TextStyle(color: FlitColors.accent, fontSize: 13),
             ),
           ),
         ],
