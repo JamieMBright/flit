@@ -543,7 +543,8 @@ abstract class UkClues {
       famousLandmark: 'Sweetheart Abbey',
       footballTeam: 'Queen of the South',
       nickname: 'The Galloway Hills',
-      flag: 'Blue field with white lion rampant from Galloway arms',
+      flag:
+          'The white lion rampant of Galloway represents the ancient Lords of Galloway, a semi-independent Celtic lordship that resisted both Scottish and English overlordship for centuries. Galloway\'s white lion on blue is one of the most ancient heraldic symbols in Scotland, pre-dating many royal arms and embodying the region\'s fiercely independent Celtic and Gaelic heritage.',
     ),
     // STI renamed to STG (Stirling)
     'STG': UkCountyClueData(
@@ -552,7 +553,8 @@ abstract class UkClues {
       famousLandmark: 'Stirling Castle',
       footballTeam: 'Stirling Albion',
       nickname: 'The Gateway to the Highlands',
-      flag: 'Gold field with red wolf from burgh arms',
+      flag:
+          'Stirling\'s wolf on gold derives from the burgh\'s ancient arms, symbolising the ferocity needed to hold this strategic fortress — "the key to Scotland." Whoever held Stirling controlled movement between the Highlands and Lowlands. Stirling Castle was the birthplace of James II and Mary Queen of Scots, and the town witnessed two of Scotland\'s most decisive battles: Stirling Bridge (1297) and Bannockburn (1314).',
     ),
     'ANS': UkCountyClueData(
       country: 'Scotland',
@@ -560,7 +562,8 @@ abstract class UkClues {
       famousLandmark: 'Glamis Castle',
       footballTeam: 'Arbroath FC, Forfar Athletic',
       nickname: 'The Land o\' the Angus Glens',
-      flag: 'Red field with white lion passant from Angus arms',
+      flag:
+          'The white lion passant (walking) of Angus derives from the arms of the ancient earldom, one of the seven great earldoms of Scotland. Glamis Castle, within Angus, was the childhood home of Queen Elizabeth The Queen Mother and the legendary setting of Macbeth. The lion passant distinguishes Angus\'s arms from the rampant lion of Scotland, reflecting the earldom\'s subordinate but prestigious status.',
     ),
     'ARG': UkCountyClueData(
       country: 'Scotland',
@@ -568,7 +571,8 @@ abstract class UkClues {
       famousLandmark: 'Inveraray Castle',
       footballTeam: 'Oban Saints',
       nickname: 'The Gateway to the Isles',
-      flag: 'Blue and green field with lymphad ship from Campbell arms',
+      flag:
+          'The lymphad (a single-masted Highland galley) is the heraldic emblem of Clan Campbell, Dukes of Argyll — one of the most powerful families in Scottish history. Their control of Argyll\'s sea-lanes and island chains gave them dominance over western Scotland for centuries. The galley itself symbolises the Gaelic-Norse seafaring culture that shaped the Hebridean and west coast identity for a thousand years.',
     ),
     'CLK': UkCountyClueData(
       country: 'Scotland',
@@ -576,7 +580,8 @@ abstract class UkClues {
       famousLandmark: 'Alloa Tower',
       footballTeam: 'Alloa Athletic',
       nickname: 'The Wee County',
-      flag: 'Gold field with black saltire and oak tree from county arms',
+      flag:
+          'Clackmannanshire\'s oak tree on gold derives from an ancient legend: the stone and mannan (a Pictish word possibly meaning "rock" or relating to a local deity) gave the county its name, and the oak has been its symbol since heraldic records begin. The black saltire reflects the county\'s identity within the Scottish kingdom. As Scotland\'s smallest county it punches above its weight in historical associations with the Wars of Independence.',
     ),
     'DND': UkCountyClueData(
       country: 'Scotland',
@@ -584,7 +589,8 @@ abstract class UkClues {
       famousLandmark: 'RRS Discovery',
       footballTeam: 'Dundee FC, Dundee United',
       nickname: 'The City of Discovery',
-      flag: 'Blue field with white pot of lilies from city arms',
+      flag:
+          'Dundee\'s pot of lilies is a symbol of the Virgin Mary, reflecting the medieval city\'s dedication to Our Lady — Dundee\'s founding charter was associated with the Church. The city became famous for its three Js: jute, jam and journalism, making it a vital Victorian industrial port. The RRS Discovery, the ship that carried Scott to the Antarctic, was built and launched here.',
     ),
     'EDU': UkCountyClueData(
       country: 'Scotland',
@@ -593,7 +599,7 @@ abstract class UkClues {
       footballTeam: 'Kirkintilloch Rob Roy',
       nickname: 'The Bears Den',
       flag:
-          'Green field with white and blue wavy band and bear from council arms',
+          'East Dunbartonshire\'s bear derives from the heraldry of the ancient earldom of Lennox, whose lords held this territory for centuries before the Reformation. The bear was a symbol of strength and protection; the wavy band represents the River Kelvin flowing through the area. The Lennox earldom was one of Scotland\'s most prestigious titles, and its arms shaped the heraldry of communities throughout the Clyde valley.',
     ),
     'EIL': UkCountyClueData(
       country: 'Scotland',
@@ -601,7 +607,8 @@ abstract class UkClues {
       famousLandmark: 'Callanish Standing Stones',
       footballTeam: 'Stornoway United',
       nickname: 'The Western Isles',
-      flag: 'Blue field with Norse longship and herring from island arms',
+      flag:
+          'Na h-Eileanan Siar\'s flag combines the Norse longship — reflecting the Viking kingdom of the Isles (Suðreyjar) that controlled the Hebrides from the 9th to 13th centuries — with the herring, the silver harvest that sustained island communities for generations. The Western Isles were finally ceded by Norway to Scotland only in 1266, and Norse language and place names still echo across the islands.',
     ),
     'ELN': UkCountyClueData(
       country: 'Scotland',
