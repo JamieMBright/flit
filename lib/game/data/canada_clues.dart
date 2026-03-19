@@ -86,7 +86,8 @@ abstract class CanadaClues {
       famousLandmark: 'Bay of Fundy',
     ),
     'NL': ProvinceClueData(
-      flag: 'Geometric design of blue, red, gold and white triangles',
+      flag:
+          'Newfoundland and Labrador\'s flag was designed by artist Christopher Pratt and adopted in 1980, replacing the Union Jack to assert a distinct identity 31 years after joining Canada; the geometric design in blue, red, gold, and white evokes the Union Jack\'s structure symbolically, with the blue representing the sea that defines the province, the red arrow pointing toward the future, the gold recognising the province\'s natural resources, and the white trident-like form honouring the fishing industry and the hardy people of The Rock',
       sportsTeams: ['St. John\'s Edge (NBLC)'],
       premier: 'Andrew Furey',
       nickname: 'The Rock',
@@ -95,7 +96,7 @@ abstract class CanadaClues {
     ),
     'PE': ProvinceClueData(
       flag:
-          'Provincial shield with large oak and three saplings, English lion above',
+          'Prince Edward Island\'s flag bears the provincial arms granted in 1905, showing a large oak tree sheltering three smaller oak saplings on a grassy field — the large oak represents Britain and the three saplings its three counties (Prince, Queens, and Kings); a golden lion on red in the upper section honours England, while the motto Parva Sub Ingenti (The small under the protection of the great) captures the island\'s relationship with the Canadian Confederation it helped found in 1864',
       sportsTeams: ['Charlottetown Islanders (QMJHL)'],
       premier: 'Dennis King',
       nickname: 'Birthplace of Confederation',
@@ -103,7 +104,8 @@ abstract class CanadaClues {
       famousLandmark: 'Green Gables Heritage Place',
     ),
     'NT': ProvinceClueData(
-      flag: 'Blue panels with white centre bearing the territorial shield',
+      flag:
+          'The Northwest Territories flag has blue panels flanking a white centre, with the territorial shield at the heart; the blue represents the lakes and rivers that dominate the territory — including Great Slave Lake and the Mackenzie River — while the shield depicts a diagonal line of wavy blue on white representing these waterways, green below for the forests of the Mackenzie Valley, red above for the tundra of the barrens, and a gold bilaterally-symmetrical fox head honouring the fur trade that first drew European explorers into these vast lands',
       sportsTeams: <String>[],
       premier: 'R.J. Simpson',
       nickname: 'The Land of the Midnight Sun',
@@ -112,7 +114,7 @@ abstract class CanadaClues {
     ),
     'YT': ProvinceClueData(
       flag:
-          'Green, white and blue vertical stripes with territorial coat of arms',
+          'Yukon\'s tricolour flag has green for the spruce forests, white for the snows and the Klondike Gold Rush stampede that transformed the territory in 1898, and blue for the rivers and lakes; at the centre sits the territorial coat of arms featuring a malamute dog on a red background above golden wavy lines for the Yukon River, with two vair roundels representing the fur trade history and a red Cross of Saint George honouring the North-West Mounted Police who kept order during the gold rush era',
       sportsTeams: <String>[],
       premier: 'Ranj Pillai',
       nickname: 'Canada\'s True North',
@@ -120,7 +122,8 @@ abstract class CanadaClues {
       famousLandmark: 'Kluane National Park',
     ),
     'NU': ProvinceClueData(
-      flag: 'Gold and white field with red inuksuk and blue star',
+      flag:
+          'Nunavut\'s flag was adopted in 1999 when the territory was created, designed entirely to reflect Inuit identity; the red inuksuk at the centre is an ancient stone landmark built by Inuit across the Arctic to guide travellers and hunters — a symbol of community, direction, and the human presence in the landscape; the blue star above it is Niqirtsuituq, the North Star used for navigation, while gold and white represent the riches of the land and the Arctic light',
       sportsTeams: <String>[],
       premier: 'P.J. Akeeagok',
       nickname: 'Our Land',

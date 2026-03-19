@@ -389,7 +389,8 @@ abstract class UkClues {
       famousLandmark: 'Rutland Water',
       footballTeam: 'Oakham United',
       nickname: 'England\'s Smallest County',
-      flag: 'Gold horseshoe on white field with green border',
+      flag:
+          'The horseshoe is the ancient symbol of Rutland, England\'s smallest historic county. Local tradition holds it represents the county\'s importance as a centre of horse-breeding and royal hunting; it appears in civic arms for centuries. Rutland famously resisted abolition in the 1974 local government reorganisation and was restored as an independent county in 1997 — the horseshoe a fitting symbol of stubborn good fortune.',
     ),
     'SHR': UkCountyClueData(
       country: 'England',
@@ -397,7 +398,8 @@ abstract class UkClues {
       famousLandmark: 'Ironbridge Gorge',
       footballTeam: 'Shrewsbury Town',
       nickname: 'Salop',
-      flag: 'Blue and gold field with three white leopard faces',
+      flag:
+          'Shropshire\'s three white leopard faces (or lion faces passant) on blue and gold derive from the arms of the de Belmeis and later Fitz Alan lords who held the county. The Fitz Alans, Earls of Arundel, were among the most powerful Marcher lords guarding the Welsh border; their heraldry merged with local tradition to produce Shropshire\'s distinctive blue-and-gold identity.',
     ),
 
     // =========================================================================
@@ -409,7 +411,8 @@ abstract class UkClues {
       famousLandmark: 'Blackpool Tower',
       footballTeam: 'Blackburn Rovers, Preston North End',
       nickname: 'The Red Rose County',
-      flag: 'Red rose on gold field',
+      flag:
+          'The red rose of Lancashire is the emblem of the House of Lancaster, the royal dynasty that produced Henry IV, V and VI. After the Wars of the Roses, the red rose became firmly associated with Lancashire\'s fierce county pride. The gold field derives from the arms of the Duchy of Lancaster, which remains a personal possession of the Crown to this day.',
     ),
     // CHS renamed to CHE (Cheshire)
     'CHE': UkCountyClueData(
@@ -418,7 +421,8 @@ abstract class UkClues {
       famousLandmark: 'Chester Cathedral',
       footballTeam: 'Chester FC',
       nickname: 'The County Palatine',
-      flag: 'Blue field with three gold wheatsheaves and gold sword',
+      flag:
+          'The three golden wheatsheaves of Cheshire derive from the arms of the ancient Earldom of Chester, one of England\'s most powerful palatine earldoms. The sword represents the county\'s status as a County Palatine — a jurisdiction where the Earl exercised powers equivalent to the King, including his own courts, mint and army. The earldom was merged with the Crown in 1254.',
     ),
     'DUR': UkCountyClueData(
       country: 'England',
@@ -426,7 +430,8 @@ abstract class UkClues {
       famousLandmark: 'Durham Cathedral',
       footballTeam: 'Darlington FC',
       nickname: 'Land of the Prince Bishops',
-      flag: 'Blue field with gold cross between gold lions',
+      flag:
+          'Durham\'s flag honours the Prince Bishops of Durham, who wielded royal power within the county palatine from the Norman Conquest until 1836. The gold cross on blue derives from the arms of the Bishopric — the lions represent the power vested in the bishops by the Crown to defend the northern frontier against Scottish invasion. Durham Cathedral, built to house St Cuthbert\'s relics, was the seat of this unique ecclesiastical state.',
     ),
     // CUM renamed to CMA (Cumbria)
     'CMA': UkCountyClueData(
@@ -435,7 +440,8 @@ abstract class UkClues {
       famousLandmark: 'Hadrian\'s Wall',
       footballTeam: 'Carlisle United',
       nickname: 'The Lake District',
-      flag: 'Green and blue field with gold and red bars and gold fleece',
+      flag:
+          'Cumbria\'s flag combines elements from its constituent historic counties — Cumberland and Westmorland — which merged in 1974. The gold fleece reflects the county\'s ancient wool trade from Herdwick sheep, bred on the fells since Viking settlement. The colours of green, blue and gold represent the lake, fell and pastoral landscape that Wordsworth immortalised as the English sublime.',
     ),
     'NBL': UkCountyClueData(
       country: 'England',
@@ -443,7 +449,8 @@ abstract class UkClues {
       famousLandmark: 'Lindisfarne Castle',
       footballTeam: 'Newcastle United',
       nickname: 'The Far North',
-      flag: 'Red and gold quartered field with blue and white chequered canton',
+      flag:
+          'Northumberland\'s arms draw on the ancient heraldry of the Earldom of Northumberland, one of the most turbulent titles in English history. The red and gold quartering echoes the Percy family arms — Earls of Northumberland since the 14th century — whose power rivalled the Crown and whose rebellion against Henry IV inspired Shakespeare\'s Henry IV plays. The blue and white chequered canton derives from the ancient Kingdom of Northumbria.',
     ),
     'NYK': UkCountyClueData(
       country: 'England',
@@ -451,7 +458,8 @@ abstract class UkClues {
       famousLandmark: 'Whitby Abbey',
       footballTeam: 'Harrogate Town, York City',
       nickname: 'God\'s Own County',
-      flag: 'White rose of York on blue field',
+      flag:
+          'North Yorkshire carries the white rose of the House of York on blue — the same emblem shared across all Yorkshire ridings. As England\'s largest county, North Yorkshire encompasses the great medieval landscapes of the Yorkshire Dales and North York Moors, and the historic city of York itself, the former Roman capital of Britannia and seat of the Archbishop whose power historically rivalled Canterbury.',
     ),
     'ERY': UkCountyClueData(
       country: 'England',
@@ -459,7 +467,8 @@ abstract class UkClues {
       famousLandmark: 'The Humber Bridge',
       footballTeam: 'Hull City',
       nickname: 'The Wolds',
-      flag: 'Blue field with white Yorkshire rose on red and white wavy band',
+      flag:
+          'The East Riding of Yorkshire carries the white rose of York, shared across all three Yorkshire ridings as a mark of common identity. The wavy band represents the Humber estuary — one of Britain\'s great river mouths — which made Kingston upon Hull a prosperous medieval port and the gateway through which Scandinavian culture and trade flowed into England.',
     ),
 
     // =========================================================================
@@ -471,7 +480,8 @@ abstract class UkClues {
       famousLandmark: 'Kelvingrove Art Gallery',
       footballTeam: 'Celtic, Rangers',
       nickname: 'The Dear Green Place',
-      flag: 'White field with tree, bird, bell and fish from city arms',
+      flag:
+          'Glasgow\'s arms feature four symbols from the legend of St Mungo, the city\'s 6th-century patron saint: the tree he lit by breathing on a branch, the bird (robin) he restored to life, the bell he brought from Rome, and the fish with a ring in its mouth — recalling a queen\'s lost ring found inside a salmon. The rhyme "Here is the bird that never flew…" encodes all four symbols in Glasgow\'s civic identity.',
     ),
     'EDH': UkCountyClueData(
       country: 'Scotland',

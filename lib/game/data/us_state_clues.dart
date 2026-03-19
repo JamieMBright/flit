@@ -709,7 +709,7 @@ abstract class UsStateClues {
     ),
     'OH': StateClueData(
       flag:
-          'Burgee-shaped flag with red and white stripes and blue triangle containing white circle and red center',
+          'Ohio boasts the only non-rectangular U.S. state flag — a burgee (swallowtail pennant) designed in 1902 by architect John Eisemann; the blue triangle represents Ohio\'s hills and valleys, the stripes symbolize roads and waterways; the white circle with red center represents the buckeye nut (Ohio\'s emblem) and echoes the "O" of Ohio, while 17 stars acknowledge Ohio as the 17th state admitted in 1803',
       sportsTeams: [
         'Cleveland Browns (NFL)',
         'Cleveland Cavaliers (NBA)',
@@ -730,7 +730,7 @@ abstract class UsStateClues {
     ),
     'OK': StateClueData(
       flag:
-          'Sky blue field with Osage Nation war shield, peace pipe, and olive branch',
+          'Oklahoma\'s flag, adopted in 1925, is a tribute to the state\'s deep Native American heritage — Oklahoma means "red people" in Choctaw; the sky blue background honors the Choctaw Nation, while the Osage war shield decorated with eagle feathers represents the warrior spirit; the peace pipe and olive branch crossing the shield symbolize the hoped-for peace between Native peoples and settlers after the tumultuous land runs of 1889',
       sportsTeams: [
         'Oklahoma City Thunder (NBA)',
         'Oklahoma Sooners (NCAA Football)',
@@ -751,7 +751,7 @@ abstract class UsStateClues {
     ),
     'OR': StateClueData(
       flag:
-          'Navy blue field with state seal featuring mountains, forest, and covered wagon (reverse shows beaver)',
+          'Oregon is the only U.S. state with a two-sided flag — the reverse bears a beaver, the state animal, symbolizing industriousness and the vital fur trade that opened the Oregon Territory; the obverse seal depicts a covered wagon crossing the plains, a British warship fleeing an American ship (celebrating the 1846 Oregon Treaty ending joint British-U.S. occupation), and the motto "She Flies With Her Own Wings" — Oregon\'s declaration of self-reliance at statehood in 1859',
       sportsTeams: [
         'Portland Trail Blazers (NBA)',
         'Oregon Ducks (NCAA Football)',
@@ -772,7 +772,7 @@ abstract class UsStateClues {
     ),
     'PA': StateClueData(
       flag:
-          'Blue field with state coat of arms featuring a ship, plow, and wheat sheaves',
+          'Pennsylvania\'s coat of arms, granted in 1778 during the Revolutionary War, reflects the state\'s economic foundations: an eagle above the shield symbolizes strength, a ship represents commerce on the Delaware River, a plow honors agriculture, and three wheat sheaves recall Penn\'s granary role; two horses as supporters embody Pennsylvania\'s strength, and the bald eagle atop proclaims national pride; the Commonwealth was the second state to ratify the Constitution in 1787',
       sportsTeams: [
         'Philadelphia Eagles (NFL)',
         'Pittsburgh Steelers (NFL)',
@@ -793,7 +793,7 @@ abstract class UsStateClues {
     ),
     'RI': StateClueData(
       flag:
-          'White field with gold anchor surrounded by 13 gold stars and blue ribbon reading "HOPE"',
+          'Rhode Island\'s anchor symbol, in use since 1647, represents the state\'s maritime identity as a seafaring colony founded on Narragansett Bay; the 13 gold stars honor the original colonies and Rhode Island\'s role as the last to ratify the Constitution in 1790, having held out for stronger civil liberties protections; the single word "HOPE" reflects the Puritan virtue that guided Roger Williams\'s founding of Providence in 1636 as a haven for religious freedom',
       sportsTeams: [
         'Providence Bruins (AHL Hockey)',
         'Providence College Friars (NCAA Hockey)',
@@ -813,7 +813,8 @@ abstract class UsStateClues {
       ],
     ),
     'SC': StateClueData(
-      flag: 'Blue field with white palmetto tree and crescent moon',
+      flag:
+          'The sabal palmetto tree on South Carolina\'s flag honors the Battle of Sullivan\'s Island (June 28, 1776), where a fort built of spongy palmetto logs absorbed British cannon fire, enabling a decisive American victory; the crescent is derived from the silver gorget (throat armor) worn by the colonial troops, not an Islamic symbol; the indigo-blue background reflects South Carolina\'s indigo dye industry that made the colony wealthy before cotton',
       sportsTeams: [
         'Carolina Panthers (NFL)',
         'South Carolina Gamecocks (NCAA Football)',
@@ -834,7 +835,7 @@ abstract class UsStateClues {
     ),
     'SD': StateClueData(
       flag:
-          'Sky blue field with state seal featuring mountains, river, and sun',
+          'South Dakota\'s seal, placed on the state flag in 1909, encircles "The Mount Rushmore State" name and depicts a farmer plowing, a steamboat on the Missouri River, a smelting furnace, and cattle grazing against mountain scenery — representing the four economic pillars of agriculture, river commerce, mining, and ranching that built the territory; the sunburst design around the seal reflects the motto "Under God the People Rule"',
       sportsTeams: [
         'South Dakota State Jackrabbits (NCAA Football)',
         'South Dakota Coyotes (NCAA Basketball)',
@@ -854,7 +855,8 @@ abstract class UsStateClues {
       ],
     ),
     'TN': StateClueData(
-      flag: 'Red field with blue stripe and three white stars in blue circle',
+      flag:
+          'Designed in 1905, Tennessee\'s flag features three stars representing the state\'s three distinct geographical regions: East Tennessee (Appalachian highlands), Middle Tennessee (central basin), and West Tennessee (coastal plain lowlands); the blue circle binding the stars symbolizes the unity of these regions, and the narrow blue stripe at the fly edge distinguishes the flag at a distance; the red field evokes Tennessee\'s passionate Volunteer spirit',
       sportsTeams: [
         'Tennessee Titans (NFL)',
         'Memphis Grizzlies (NBA)',
@@ -875,7 +877,7 @@ abstract class UsStateClues {
     ),
     'TX': StateClueData(
       flag:
-          'Vertical blue stripe with white star, horizontal white and red stripes',
+          'The Lone Star flag, adopted by the Republic of Texas in 1839 and retained at U.S. statehood in 1845, embodies Texas\'s unique identity as one of only two U.S. states to have previously been an independent nation; the lone star symbolizes Texas\'s struggle for independence from Mexico and pride in standing alone; blue represents loyalty, white represents purity, and red represents bravery — virtues that defined the Texas Revolution of 1836',
       sportsTeams: [
         'Dallas Cowboys (NFL)',
         'Houston Texans (NFL)',
@@ -896,7 +898,7 @@ abstract class UsStateClues {
     ),
     'UT': StateClueData(
       flag:
-          'Blue field with state seal featuring a beehive, sego lilies, and American flags',
+          'Utah\'s beehive symbol derives from the Deseret — the LDS Church\'s word for honeybee — and has represented Utah since the Mormon pioneers arrived in 1847, embodying the industrious, cooperative spirit of the settlers; the sego lily honors the plant that saved early settlers from starvation, while the American flags flanking the shield affirm Utah\'s U.S. patriotism after decades of tension over statehood, finally granted in 1896',
       sportsTeams: [
         'Utah Jazz (NBA)',
         'Real Salt Lake (MLS Soccer)',
@@ -917,7 +919,7 @@ abstract class UsStateClues {
     ),
     'VT': StateClueData(
       flag:
-          'Blue field with state coat of arms featuring pine tree, cow, and wheat sheaves',
+          'Vermont\'s coat of arms, adopted at independence in 1777 — Vermont was an independent republic for 14 years before joining the Union in 1791 — features a pine tree representing the Green Mountains, a cow honoring dairy farming, and wheat sheaves symbolizing agriculture; the deer atop the shield represents Vermont\'s abundant wildlife; the motto "Freedom and Unity" reflects Vermont\'s proud history as the first state to ban slavery in its 1777 constitution',
       sportsTeams: [
         'Vermont Lake Monsters (Minor League Baseball)',
         'Vermont Catamounts (NCAA Hockey)',
