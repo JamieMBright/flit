@@ -584,14 +584,15 @@ class _UsaMapPainter extends CustomPainter {
     // Scale font inversely with zoom so labels don't get enormous when zoomed.
     final fontSize = (8.0 / zoomScale).clamp(3.0, 10.0);
 
+    // Show full state/area name instead of 2-letter code.
     final textPainter = TextPainter(
       text: TextSpan(
-        text: area.code,
+        text: area.name,
         style: TextStyle(
           color: textColor,
           fontSize: fontSize,
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
+          letterSpacing: 0.3,
         ),
       ),
       textDirection: TextDirection.ltr,

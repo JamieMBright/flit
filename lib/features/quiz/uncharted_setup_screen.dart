@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/providers/account_provider.dart';
 import '../../game/map/region.dart';
+import '../../game/quiz/uncharted_progress.dart';
 import '../../game/quiz/uncharted_session.dart';
 import '../guide/gameplay_guide_screen.dart';
 import 'uncharted_game_screen.dart';
@@ -10,14 +13,15 @@ import 'uncharted_game_screen.dart';
 ///
 /// Lets the player pick a region and choose between Countries or Capitals
 /// mode before starting the game.
-class UnchartedSetupScreen extends StatefulWidget {
+class UnchartedSetupScreen extends ConsumerStatefulWidget {
   const UnchartedSetupScreen({super.key});
 
   @override
-  State<UnchartedSetupScreen> createState() => _UnchartedSetupScreenState();
+  ConsumerState<UnchartedSetupScreen> createState() =>
+      _UnchartedSetupScreenState();
 }
 
-class _UnchartedSetupScreenState extends State<UnchartedSetupScreen> {
+class _UnchartedSetupScreenState extends ConsumerState<UnchartedSetupScreen> {
   GameRegion _selectedRegion = GameRegion.world;
   UnchartedMode _selectedMode = UnchartedMode.countries;
 
@@ -149,11 +153,15 @@ class _UnchartedSetupScreenState extends State<UnchartedSetupScreen> {
                   final region = _regions[index];
                   final areaCount = RegionalData.getAreas(region).length;
                   final isSelected = region == _selectedRegion;
+                  final key = '${region.name}_${_selectedMode.name}';
+                  final progress =
+                      ref.watch(accountProvider).unchartedProgress[key];
                   return _RegionCard(
                     region: region,
                     areaCount: areaCount,
                     icon: _regionIcons[region] ?? Icons.public,
                     selected: isSelected,
+                    progress: progress,
                     onTap: () => setState(() => _selectedRegion = region),
                   );
                 },
@@ -270,6 +278,7 @@ class _RegionCard extends StatelessWidget {
     required this.icon,
     required this.selected,
     required this.onTap,
+    this.progress,
   });
 
   final GameRegion region;
@@ -277,9 +286,11 @@ class _RegionCard extends StatelessWidget {
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
+  final UnchartedProgress? progress;
 
   @override
   Widget build(BuildContext context) {
+    final hasPlayed = progress != null && progress!.hasPlayed;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
@@ -326,6 +337,46 @@ class _RegionCard extends StatelessWidget {
                         fontSize: 12,
                       ),
                     ),
+                    if (hasPlayed)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.star,
+                                color: FlitColors.gold, size: 13),
+                            const SizedBox(width: 3),
+                            Text(
+                              '${progress!.bestScore}',
+                              style: const TextStyle(
+                                color: FlitColors.gold,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.timer,
+                                color: FlitColors.accent, size: 13),
+                            const SizedBox(width: 3),
+                            Text(
+                              progress!.bestTimeFormatted,
+                              style: const TextStyle(
+                                color: FlitColors.accent,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              progress!.grade,
+                              style: TextStyle(
+                                color: _gradeColor(progress!.grade),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -340,5 +391,20 @@ class _RegionCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static Color _gradeColor(String grade) {
+    switch (grade) {
+      case 'S':
+        return FlitColors.gold;
+      case 'A':
+        return FlitColors.success;
+      case 'B':
+        return FlitColors.accent;
+      case 'C':
+        return FlitColors.textSecondary;
+      default:
+        return FlitColors.error;
+    }
   }
 }

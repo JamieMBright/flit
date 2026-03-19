@@ -194,7 +194,7 @@ class _UnchartedMapPainter extends CustomPainter {
       if (isRevealed) {
         // Reveal satellite imagery clipped to the area polygon.
         if (satelliteImage != null) {
-          _drawSatelliteFill(canvas, path, transform);
+          _drawSatelliteFill(canvas, path, transform, size);
         } else {
           // Fallback if image hasn't loaded yet.
           canvas.drawPath(
@@ -247,10 +247,14 @@ class _UnchartedMapPainter extends CustomPainter {
   /// Radius of the dashed circle marker for tiny areas.
   static const double _markerRadius = 10.0;
 
-  /// Area codes that always get an expanded marker (micro-states).
+  /// Area codes that always get an expanded marker (micro-states & islands).
   static const Set<String> _alwaysTinyCodes = {
     'MV', 'SG', 'BH', 'MU', 'SC', 'KM', 'ST', 'CV', // island/micro states
     'MT', 'AD', 'MC', 'LI', 'SM', 'VA', // European micro-states
+    // Pacific / Oceania island nations
+    'FJ', 'FM', 'KI', 'MH', 'NR', 'PW', 'SB', 'TO', 'TV', 'VU', 'WS',
+    // Caribbean island nations
+    'AG', 'BB', 'DM', 'GD', 'KN', 'LC', 'VC', 'TT',
   };
 
   /// Whether an area's polygon footprint on canvas is too small to see.
@@ -306,25 +310,28 @@ class _UnchartedMapPainter extends CustomPainter {
 
   /// Draw the Blue Marble satellite texture clipped to a polygon path.
   ///
-  /// Maps the equirectangular satellite image (full world: -180..180 lng,
-  /// -90..90 lat) to the region's canvas transform so the texture aligns
-  /// with the geographic coordinates.
+  /// Uses viewport-relative texture mapping: only the portion of the
+  /// satellite image that corresponds to the visible viewport is sampled,
+  /// and the polygon path is intersected with the canvas bounds first.
+  /// This prevents rendering artefacts from polygons that extend far
+  /// beyond the viewport (e.g. Russia in Europe) and gives better texture
+  /// resolution than stretching the full world image.
   void _drawSatelliteFill(
     Canvas canvas,
     Path path,
     _GeoTransform transform,
+    Size canvasSize,
   ) {
     final img = satelliteImage!;
 
-    // Map from geographic bounds to image pixels.
+    // Extract only the satellite image region that matches the viewport.
     final srcLeft = ((transform.minLng + 180.0) / 360.0) * img.width;
     final srcRight = ((transform.maxLng + 180.0) / 360.0) * img.width;
     final srcTop = ((90.0 - transform.maxLat) / 180.0) * img.height;
     final srcBottom = ((90.0 - transform.minLat) / 180.0) * img.height;
-
     final srcRect = Rect.fromLTRB(srcLeft, srcTop, srcRight, srcBottom);
 
-    // Destination rect is the region's projected canvas area.
+    // Map to the projected canvas area.
     final dstRect = Rect.fromLTWH(
       transform.offsetX,
       transform.offsetY,
@@ -333,6 +340,9 @@ class _UnchartedMapPainter extends CustomPainter {
     );
 
     canvas.save();
+    // Clip to canvas bounds first — prevents rendering issues with
+    // polygon paths that extend thousands of pixels off-screen.
+    canvas.clipRect(Offset.zero & canvasSize);
     canvas.clipPath(path);
     canvas.drawImageRect(
       img,

@@ -23,97 +23,98 @@ abstract class OceaniaClues {
       famousLandmark: 'Sydney Opera House',
       famousPerson: 'Steve Irwin',
       flag:
-          'Blue field with Union Jack at upper hoist, large white Commonwealth Star below, and five white stars of Southern Cross at fly',
+          'The Union Jack honours British colonial heritage, the Commonwealth Star beneath it has seven points for the six states and territories, and the Southern Cross constellation affirms Australia\'s location in the southern hemisphere',
     ),
     'FJ': OceaniaClueData(
       nickname: 'The Soft Coral Capital of the World',
       famousLandmark: 'Garden of the Sleeping Giant',
       famousPerson: 'Ratu Sir Lala Sukuna',
       flag:
-          'Light blue field with Union Jack at upper hoist and coat of arms shield at fly',
+          'The light blue represents the Pacific Ocean surrounding the islands, the Union Jack reflects Fiji\'s history as a British colony, and the shield bears sugarcane, coconut palm, bananas, and a dove of peace — resources vital to the nation',
     ),
     'FM': OceaniaClueData(
       nickname: 'The Land of the Small Islands',
       famousLandmark: 'Nan Madol',
       famousPerson: 'Tosiwo Nakayama',
       flag:
-          'Blue field with four white five-pointed stars arranged in diamond pattern in center',
+          'The blue represents the Pacific Ocean, and the four stars symbolise the four federated states — Yap, Chuuk, Pohnpei, and Kosrae — united as one nation',
     ),
     'KI': OceaniaClueData(
       nickname: 'The Land of the Rising Sun in the Pacific',
       famousLandmark: 'Phoenix Islands Protected Area',
       famousPerson: 'Ieremia Tabai',
       flag:
-          'Red upper half with gold frigatebird over gold rising sun, blue and white wavy lower half',
+          'The gold frigatebird flying over a rising sun represents freedom and the nation straddling the equator where the sun rises first, while the blue and white waves symbolise the Pacific Ocean that defines island life',
     ),
     'MH': OceaniaClueData(
       nickname: 'The Atoll Nation',
       famousLandmark: 'Bikini Atoll',
       famousPerson: 'Amata Kabua',
       flag:
-          'Blue field with two diagonal stripes of orange and white widening toward fly and white star at upper hoist',
+          'The blue field represents the Pacific Ocean, the orange stripe symbolises courage and the Ralik chain, the white stripe represents peace and the Ratak chain, and the 24-pointed star honours the 24 municipalities, with four elongated rays for Majuro, Jaluit, Wotje, and Ebeye',
     ),
     'NR': OceaniaClueData(
       nickname: 'The Pleasant Island',
       famousLandmark: 'Buada Lagoon',
       famousPerson: 'Hammer DeRoburt',
       flag:
-          'Blue field with yellow horizontal stripe across center and white twelve-pointed star below stripe at hoist',
+          'The blue represents the Pacific Ocean, the gold stripe symbolises the equator on which Nauru sits, and the twelve-pointed star below represents the island\'s twelve original tribes, placed in the southern hemisphere beneath the equator line',
     ),
     'NZ': OceaniaClueData(
       nickname: 'The Land of the Long White Cloud',
       famousLandmark: 'Milford Sound',
       famousPerson: 'Sir Edmund Hillary',
       flag:
-          'Blue field with Union Jack at upper hoist and four red stars with white borders representing Southern Cross',
+          'The Union Jack honours New Zealand\'s ties to Britain, while the four red stars outlined in white depict the Southern Cross constellation — a navigational guide used by Polynesian and European explorers alike',
     ),
     'PG': OceaniaClueData(
       nickname: 'The Land of the Unexpected',
       famousLandmark: 'Kokoda Track',
       famousPerson: 'Michael Somare',
       flag:
-          'Diagonally divided red and black halves with yellow bird of paradise on red and white Southern Cross on black',
+          'The diagonal design was created by a 15-year-old student Susan Karike; the red panel bears a gold Raggiana bird-of-paradise (the national bird), while the black panel displays the Southern Cross, linking Papua New Guinea to its Pacific neighbours',
     ),
     'PW': OceaniaClueData(
       nickname: 'The Pristine Paradise of the Pacific',
       famousLandmark: 'Jellyfish Lake',
       famousPerson: 'Haruo Remeliik',
       flag:
-          'Light blue field with yellow full moon slightly offset from center toward hoist',
+          'The light blue represents the ocean surrounding the islands, and the off-centre golden disc symbolises the full moon — considered the most auspicious time for traditional activities like fishing, planting, and harvesting',
     ),
     'SB': OceaniaClueData(
       nickname: 'The Happy Isles',
       famousLandmark: 'Guadalcanal',
       famousPerson: 'Peter Kenilorea',
       flag:
-          'Blue and green halves divided by yellow diagonal stripe with five white stars at upper hoist',
+          'The blue represents the surrounding Pacific, the green symbolises the fertile land and forests, the yellow diagonal stripe represents sunshine, and the five white stars honour the five main island groups of the Solomons',
     ),
     'TO': OceaniaClueData(
       nickname: 'The Friendly Islands',
       famousLandmark: 'Ha\'amonga \'a Maui Trilithon',
       famousPerson: 'King George Tupou I',
-      flag: 'Red field with white canton bearing red cross',
+      flag:
+          'The red field represents the blood of Christ, reflecting the nation\'s deep Christian faith, while the white canton with a bold red cross directly symbolises Christianity — Tonga being one of the Pacific\'s most devoutly Christian nations',
     ),
     'TV': OceaniaClueData(
       nickname: 'The Eight Standing Together',
       famousLandmark: 'Funafuti Conservation Area',
       famousPerson: 'Toaripi Lauti',
       flag:
-          'Light blue field with Union Jack at upper hoist and nine yellow stars arranged in map pattern',
+          'The light blue represents the Pacific Ocean, the Union Jack reflects British colonial ties, and the nine yellow stars are arranged in the geographic pattern of Tuvalu\'s nine islands — the country\'s name means "eight standing together" plus the later addition of Niulakita',
     ),
     'VU': OceaniaClueData(
       nickname: 'The Land of Eternal Happiness',
       famousLandmark: 'Mount Yasur Active Volcano',
       famousPerson: 'Walter Lini',
       flag:
-          'Red and green halves separated by black triangle at hoist, yellow Y-shape, and yellow boar tusk emblem',
+          'The red symbolises the blood of the people and the boar\'s tusk (a traditional symbol of prosperity), the green represents the richness of the islands, the black triangle honours the Melanesian people, and the golden Y-shape depicts the archipelago\'s island chain layout',
     ),
     'WS': OceaniaClueData(
       nickname: 'The Cradle of Polynesia',
       famousLandmark: 'To Sua Ocean Trench',
       famousPerson: 'Robert Louis Stevenson',
       flag:
-          'Red field with blue canton bearing five white stars of the Southern Cross',
+          'The red represents courage, the blue canton symbolises freedom, and the five white stars of the Southern Cross reflect Samoa\'s position in the southern Pacific — the flag\'s simplicity echoes the nation\'s motto "Fa\'avae i le Atua Samoa" (Samoa is founded on God)',
     ),
   };
 }

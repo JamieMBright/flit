@@ -76,9 +76,24 @@ class DailyBriefing {
     // 1. Pick a level from all available flight school levels.
     final level = flightSchoolLevels[rng.nextInt(flightSchoolLevels.length)];
 
-    // 2. Pick a difficulty.
-    final difficulty =
-        QuizDifficulty.values[rng.nextInt(QuizDifficulty.values.length)];
+    // 2. Pick a difficulty, biased by the level's tier.
+    //
+    // Higher-tier levels (requiredLevel >= 13) shouldn't appear as "Easy" —
+    // it's nonsensical to label a Marshall Islands quiz as easy. We restrict
+    // the eligible difficulty pool based on the level's required player level.
+    final List<QuizDifficulty> difficultyPool;
+    if (level.requiredLevel >= 17) {
+      // Expert levels (Oceania, Caribbean, etc.) — medium or hard only.
+      difficultyPool = [QuizDifficulty.medium, QuizDifficulty.hard];
+    } else if (level.requiredLevel >= 9) {
+      // Mid-tier levels (Asia, Latin America, UK, Ireland) — all allowed but
+      // weighted away from easy by excluding it from the pool.
+      difficultyPool = [QuizDifficulty.medium, QuizDifficulty.hard];
+    } else {
+      // Starter levels (Europe, US, Africa) — any difficulty.
+      difficultyPool = QuizDifficulty.values;
+    }
+    final difficulty = difficultyPool[rng.nextInt(difficultyPool.length)];
 
     // 3. Pick a category valid for this level (respecting difficulty filter).
     final filteredCategories = difficulty.filterCategories(

@@ -50,6 +50,7 @@ class LeaderboardService {
     _historyCache.invalidate();
     _rankCache.invalidate();
     _bestScoresCache.invalidate();
+    _unchartedStatsCache.invalidate();
   }
 
   // ---------------------------------------------------------------------------
@@ -856,4 +857,161 @@ class LeaderboardService {
       );
     });
   }
+
+  // ---------------------------------------------------------------------------
+  // Uncharted all-time stats
+  // ---------------------------------------------------------------------------
+
+  final _unchartedStatsCache = TtlCache<UnchartedAllTimeStats>(
+    const Duration(seconds: 60),
+  );
+
+  /// Fetch all-time stats for an uncharted region + mode combination.
+  ///
+  /// Returns score distribution data, player's rank, top scores, and totals.
+  /// The [regionKey] should be in the format `uncharted_{region}_{mode}`,
+  /// e.g. `uncharted_europe_countries`.
+  Future<UnchartedAllTimeStats?> fetchUnchartedAllTimeStats({
+    required String regionKey,
+    required String userId,
+    required int playerScore,
+  }) async {
+    final cacheKey = 'uncharted_stats_${regionKey}_$userId';
+    final cached = _unchartedStatsCache.get(cacheKey);
+    if (cached != null) return cached;
+
+    try {
+      // Step 1: Fetch all scores for this uncharted region to build
+      // distribution data. Limit to 5000 to stay performant.
+      final allScores = await _client
+          .from('scores')
+          .select('score, time_ms, rounds_completed, user_id, created_at')
+          .eq('region', regionKey)
+          .order('score', ascending: false)
+          .limit(5000);
+
+      if (allScores.isEmpty) return null;
+
+      // Step 2: Build score distribution (histogram buckets).
+      final scores = allScores.map((r) => r['score'] as int? ?? 0).toList();
+      final totalPlays = scores.length;
+
+      // Unique players.
+      final uniquePlayerIds =
+          allScores.map((r) => r['user_id'] as String).toSet();
+      final totalPlayers = uniquePlayerIds.length;
+
+      // Compute player's rank (number of distinct users with better scores).
+      int playerRank = 1;
+      final usersAbove = <String>{};
+      for (final row in allScores) {
+        final score = row['score'] as int? ?? 0;
+        final uid = row['user_id'] as String;
+        if (score > playerScore && uid != userId) {
+          usersAbove.add(uid);
+        }
+      }
+      playerRank = usersAbove.length + 1;
+
+      // Score distribution: divide into 10 buckets.
+      final maxScore = scores.reduce((a, b) => a > b ? a : b);
+      final minScore = scores.reduce((a, b) => a < b ? a : b);
+      final bucketSize =
+          maxScore > minScore ? ((maxScore - minScore) / 10).ceil() : 100;
+      final buckets = List<int>.filled(10, 0);
+      int playerBucket = -1;
+      for (final s in scores) {
+        final idx = bucketSize > 0
+            ? ((s - minScore) / bucketSize).floor().clamp(0, 9)
+            : 0;
+        buckets[idx]++;
+      }
+      playerBucket = bucketSize > 0
+          ? ((playerScore - minScore) / bucketSize).floor().clamp(0, 9)
+          : 0;
+
+      // Bucket labels.
+      final bucketLabels = List<String>.generate(10, (i) {
+        final lo = minScore + i * bucketSize;
+        final hi = lo + bucketSize - 1;
+        return '$lo-$hi';
+      });
+
+      // Top 5 scores with profiles.
+      final top5Rows =
+          allScores.length > 5 ? allScores.sublist(0, 5) : allScores.toList();
+      final top5UserIds =
+          top5Rows.map((r) => r['user_id'] as String).toSet().toList();
+      final profiles = await _fetchProfiles(top5UserIds);
+      final top5 = _mapToLeaderboardEntries(top5Rows, profiles);
+
+      // Median and average.
+      scores.sort();
+      final median = scores[scores.length ~/ 2];
+      final average =
+          (scores.fold<int>(0, (a, b) => a + b) / totalPlays).round();
+
+      // Percentile (what % of players scored below this player).
+      final percentile = totalPlayers > 1
+          ? (((totalPlayers - playerRank) / (totalPlayers - 1)) * 100).round()
+          : 100;
+
+      final result = UnchartedAllTimeStats(
+        totalPlays: totalPlays,
+        totalPlayers: totalPlayers,
+        playerRank: playerRank,
+        percentile: percentile,
+        averageScore: average,
+        medianScore: median,
+        topScore: maxScore,
+        bucketCounts: buckets,
+        bucketLabels: bucketLabels,
+        playerBucket: playerBucket,
+        top5: top5,
+      );
+
+      _unchartedStatsCache.set(cacheKey, result);
+      return result;
+    } catch (e) {
+      debugPrint('[LeaderboardService] fetchUnchartedAllTimeStats failed: $e');
+      return null;
+    }
+  }
+}
+
+/// All-time stats for a specific uncharted region + mode.
+class UnchartedAllTimeStats {
+  const UnchartedAllTimeStats({
+    required this.totalPlays,
+    required this.totalPlayers,
+    required this.playerRank,
+    required this.percentile,
+    required this.averageScore,
+    required this.medianScore,
+    required this.topScore,
+    required this.bucketCounts,
+    required this.bucketLabels,
+    required this.playerBucket,
+    required this.top5,
+  });
+
+  final int totalPlays;
+  final int totalPlayers;
+  final int playerRank;
+
+  /// Percentile (0–100): what % of players scored below you.
+  final int percentile;
+  final int averageScore;
+  final int medianScore;
+  final int topScore;
+
+  /// Histogram: 10 score buckets, each with a count of plays in that range.
+  final List<int> bucketCounts;
+  final List<String> bucketLabels;
+
+  /// Which bucket the current player's score falls into (0–9).
+  final int playerBucket;
+
+  /// Top 5 all-time scores with usernames.
+  final List<LeaderboardEntry> top5;
 }

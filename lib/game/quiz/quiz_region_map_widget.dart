@@ -218,6 +218,7 @@ class _RegionMapPainter extends CustomPainter {
     if (showLabels) {
       for (final area in areas) {
         if (eliminatedCodes.contains(area.code)) continue;
+        if (_isTinyArea(area, transform, size)) continue;
         _drawAreaLabel(canvas, size, area, transform);
       }
     }
@@ -304,7 +305,7 @@ class _RegionMapPainter extends CustomPainter {
     // Reveal satellite imagery for correctly guessed countries
     if ((isCorrectlyGuessed || status == StateVisualStatus.correct) &&
         satelliteImage != null) {
-      _drawSatelliteFill(canvas, path, transform);
+      _drawSatelliteFill(canvas, path, transform, size);
     } else {
       final fillColor =
           _getFillColor(status, isHighlighted, isCorrectlyGuessed);
@@ -314,30 +315,28 @@ class _RegionMapPainter extends CustomPainter {
 
   /// Draw the Blue Marble satellite texture clipped to a polygon path.
   ///
-  /// Maps the equirectangular satellite image (full world: -180..180 lng,
-  /// -90..90 lat) to the region's canvas transform so the texture aligns
-  /// with the geographic coordinates.
+  /// Uses viewport-relative texture mapping: only the portion of the
+  /// satellite image that corresponds to the visible viewport is sampled,
+  /// and the polygon path is intersected with the canvas bounds first.
+  /// This prevents rendering artefacts from polygons that extend far
+  /// beyond the viewport (e.g. Russia in Europe) and gives better texture
+  /// resolution than stretching the full world image.
   void _drawSatelliteFill(
     Canvas canvas,
     Path path,
     _GeoTransform transform,
+    Size canvasSize,
   ) {
     final img = satelliteImage!;
 
-    // Map from geographic bounds to image pixels:
-    // Image pixel x = ((lng + 180) / 360) * imageWidth
-    // Image pixel y = ((90 - lat) / 180) * imageHeight
-    //
-    // We need the source rect in the satellite image that corresponds to
-    // the region's geographic bounds.
+    // Extract only the satellite image region that matches the viewport.
     final srcLeft = ((transform.minLng + 180.0) / 360.0) * img.width;
     final srcRight = ((transform.maxLng + 180.0) / 360.0) * img.width;
     final srcTop = ((90.0 - transform.maxLat) / 180.0) * img.height;
     final srcBottom = ((90.0 - transform.minLat) / 180.0) * img.height;
-
     final srcRect = Rect.fromLTRB(srcLeft, srcTop, srcRight, srcBottom);
 
-    // Destination rect is the region's canvas area
+    // Map to the projected canvas area.
     final dstRect = Rect.fromLTWH(
       transform.offsetX,
       transform.offsetY,
@@ -346,6 +345,9 @@ class _RegionMapPainter extends CustomPainter {
     );
 
     canvas.save();
+    // Clip to canvas bounds first — prevents rendering issues with
+    // polygon paths that extend thousands of pixels off-screen.
+    canvas.clipRect(Offset.zero & canvasSize);
     canvas.clipPath(path);
     canvas.drawImageRect(
       img,
@@ -367,12 +369,14 @@ class _RegionMapPainter extends CustomPainter {
     final circlePath = Path()
       ..addOval(Rect.fromCircle(center: center, radius: radius));
 
+    // Extract only the satellite image region that matches the viewport.
     final srcLeft = ((transform.minLng + 180.0) / 360.0) * img.width;
     final srcRight = ((transform.maxLng + 180.0) / 360.0) * img.width;
     final srcTop = ((90.0 - transform.maxLat) / 180.0) * img.height;
     final srcBottom = ((90.0 - transform.minLat) / 180.0) * img.height;
-
     final srcRect = Rect.fromLTRB(srcLeft, srcTop, srcRight, srcBottom);
+
+    // Map to the projected canvas area.
     final dstRect = Rect.fromLTWH(
       transform.offsetX,
       transform.offsetY,
@@ -414,16 +418,21 @@ class _RegionMapPainter extends CustomPainter {
         : const Color(0xFFB0C8D8);
 
     // Scale font inversely with zoom so labels don't get enormous when zoomed.
-    final fontSize = (7.0 / zoomScale).clamp(3.0, 10.0);
+    // Show full name when zoomed in enough, otherwise fall back to code.
+    final fontSize = 7.0 / zoomScale;
+    if (fontSize < 0.5) return; // Too tiny to render at this zoom
+
+    // Use full country name — more helpful than 2-letter ISO codes.
+    final labelText = area.name;
 
     final textPainter = TextPainter(
       text: TextSpan(
-        text: area.code,
+        text: labelText,
         style: TextStyle(
           color: textColor,
           fontSize: fontSize,
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
+          letterSpacing: 0.3,
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -533,6 +542,27 @@ class _RegionMapPainter extends CustomPainter {
     'LI', // Liechtenstein
     'SM', // San Marino
     'VA', // Vatican City
+    // Pacific / Oceania island nations
+    'FJ', // Fiji
+    'FM', // Micronesia
+    'KI', // Kiribati
+    'MH', // Marshall Islands
+    'NR', // Nauru
+    'PW', // Palau
+    'SB', // Solomon Islands
+    'TO', // Tonga
+    'TV', // Tuvalu
+    'VU', // Vanuatu
+    'WS', // Samoa
+    // Caribbean island nations
+    'AG', // Antigua and Barbuda
+    'BB', // Barbados
+    'DM', // Dominica
+    'GD', // Grenada
+    'KN', // Saint Kitts and Nevis
+    'LC', // Saint Lucia
+    'VC', // Saint Vincent and the Grenadines
+    'TT', // Trinidad and Tobago
   };
 
   /// Whether an area's polygon footprint on canvas is too small to tap.
@@ -620,12 +650,13 @@ class _RegionMapPainter extends CustomPainter {
     // Label — only when difficulty enables labels.
     if (showLabels) {
       final fontSize = 6.0 / zoomScale;
+      if (fontSize < 0.5) return; // Don't render label at extreme zoom
       final tp = TextPainter(
         text: TextSpan(
-          text: area.code,
+          text: area.name,
           style: TextStyle(
             color: const Color(0xFFE0F0FF),
-            fontSize: fontSize.clamp(4.0, 8.0),
+            fontSize: fontSize,
             fontWeight: FontWeight.w800,
             letterSpacing: 0.3,
           ),

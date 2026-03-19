@@ -23,97 +23,98 @@ abstract class AfricaClues {
       famousLandmark: 'Kalandula Falls',
       famousPerson: 'Agostinho Neto',
       flag:
-          'Horizontal red and black stripes with yellow machete, gear, and star emblem',
+          'The red honours the blood shed during the independence struggle, the black represents Africa, and the gold machete and gear symbolise agricultural workers and industrial production — the half cogwheel and star echo socialist ideals from the independence movement',
     ),
     'BF': AfricaClueData(
       nickname: 'Land of Upright People',
       famousLandmark: 'Ruins of Loropeni',
       famousPerson: 'Thomas Sankara',
       flag:
-          'Horizontal red and green stripes with yellow five-pointed star in center',
+          'The red represents the revolution that brought Thomas Sankara to power, the green symbolises agricultural abundance, and the central gold star represents the guiding light of the revolution — Pan-African colours uniting the nation',
     ),
     'BI': AfricaClueData(
       nickname: 'The Heart of Africa',
       famousLandmark: 'Source of the Nile',
       famousPerson: 'Louis Rwagasore',
       flag:
-          'White diagonal cross dividing red and green triangles with three red and green stars in center circle',
+          'The white saltire (diagonal cross) represents peace, the red recalls the independence struggle, the green symbolises hope, and the three red six-pointed stars in the centre represent the three ethnic groups — Hutu, Tutsi, and Twa — and the national motto of unity, work, and progress',
     ),
     'BJ': AfricaClueData(
       nickname: 'The Birthplace of Voodoo',
       famousLandmark: 'Royal Palaces of Abomey',
       famousPerson: 'Angelique Kidjo',
       flag:
-          'Green vertical stripe at hoist with horizontal yellow and red stripes',
+          'The green vertical stripe represents hope and revival, the yellow horizontal band symbolises the savanna in the north, and the red represents the courage of ancestors — Pan-African colours inspired by the Ethiopian flag',
     ),
     'BW': AfricaClueData(
       nickname: 'The Gem of Africa',
       famousLandmark: 'Okavango Delta',
       famousPerson: 'Seretse Khama',
       flag:
-          'Light blue field with horizontal black stripe bordered by white stripes in center',
+          'The light blue represents water and rain (Botswana means "land of the rains"), reflecting the nation\'s dependence on rainfall; the central black-and-white stripes symbolise racial harmony and the zebra, the national animal',
     ),
     'CD': AfricaClueData(
       nickname: 'The Congo',
       famousLandmark: 'Virunga National Park',
       famousPerson: 'Patrice Lumumba',
       flag:
-          'Sky blue field with diagonal red stripe bordered in yellow and yellow star in upper left',
+          'The sky-blue field represents peace, the red diagonal stripe bordered in yellow symbolises the country\'s martyrs, and the yellow star in the corner represents the radiant future — drawing on symbols from the independence era',
     ),
     'CF': AfricaClueData(
       nickname: 'The Heart of Central Africa',
       famousLandmark: 'Dzanga-Sangha Reserve',
       famousPerson: 'Barthelemy Boganda',
       flag:
-          'Four horizontal stripes of blue, white, green, yellow with vertical red stripe and yellow star',
+          'The four horizontal stripes — blue, white, green, and yellow — represent the sky, peace, forests, and savanna; the red vertical stripe symbolises the blood of the people; the yellow star in the blue canton represents independence and unity',
     ),
     'CG': AfricaClueData(
       nickname: 'The Land of the Emerald Forest',
       famousLandmark: 'Odzala-Kokoua National Park',
       famousPerson: 'Denis Sassou Nguesso',
       flag:
-          'Green and red triangles divided by diagonal yellow stripe from lower hoist to upper fly',
+          'The green-yellow-red diagonal design uses Pan-African colours; green symbolises agriculture and forests, yellow represents friendship and the nobility of the Congolese people, and red honours those who struggled for independence',
     ),
     'CI': AfricaClueData(
       nickname: 'Land of the Elephants',
       famousLandmark: 'Basilica of Our Lady of Peace',
       famousPerson: 'Didier Drogba',
-      flag: 'Vertical stripes of orange, white, and green from hoist to fly',
+      flag:
+          'The orange represents the savanna of the north, the white symbolises peace and unity, and the green represents the coastal forests of the south — modelled after the French Tricolore but with colours of the Ivorian landscape',
     ),
     'CM': AfricaClueData(
       nickname: 'Africa in Miniature',
       famousLandmark: 'Mount Cameroon',
       famousPerson: 'Samuel Eto\'o',
       flag:
-          'Vertical stripes of green, red, and yellow with yellow star on red center stripe',
+          'The green-red-yellow vertical tricolour uses Pan-African colours; green represents the southern forests, red symbolises unity, and yellow represents the northern savanna; the central star is the "star of unity" for the Francophone and Anglophone regions',
     ),
     'CV': AfricaClueData(
       nickname: 'The Islands of Cape Verde',
       famousLandmark: 'Pico do Fogo Volcano',
       famousPerson: 'Cesaria Evora',
       flag:
-          'Blue field with horizontal red and white stripes and ten yellow stars in circle',
+          'The blue field represents the Atlantic Ocean and sky, the red and white stripes symbolise the road to nationhood, and the ten yellow stars arranged in a circle represent the ten main islands of the archipelago',
     ),
     'DJ': AfricaClueData(
       nickname: 'The Gateway to the Red Sea',
       famousLandmark: 'Lake Assal',
       famousPerson: 'Hassan Gouled Aptidon',
       flag:
-          'Light blue and green horizontal halves with white triangle at hoist bearing red star',
+          'The light blue represents the Issa Somali people and the sky, the green represents the Afar people and the earth, the white triangle symbolises peace, and the red star represents unity and the blood shed for independence',
     ),
     'DZ': AfricaClueData(
       nickname: 'The Land of Cherries and Dates',
       famousLandmark: 'Casbah of Algiers',
       famousPerson: 'Albert Camus',
       flag:
-          'Vertical green and white halves with red crescent and star in center',
+          'The green represents Islam and paradise, the white symbolises purity and peace, the red crescent and star are traditional symbols of Islam — adopted after independence from France in 1962 to reflect Algerian identity',
     ),
     'EG': AfricaClueData(
       nickname: 'The Land of the Pharaohs',
       famousLandmark: 'Great Pyramids of Giza',
       famousPerson: 'Cleopatra',
       flag:
-          'Horizontal red, white, and black stripes with golden eagle emblem on white stripe',
+          'The red-white-black horizontal tricolour uses Pan-Arab colours; red represents the period before the 1952 revolution, white symbolises the bloodless revolution, black recalls the end of British oppression, and the golden Eagle of Saladin is a symbol of Arab unity and strength',
     ),
     'EH': AfricaClueData(
       nickname: 'The Last Colony in Africa',
@@ -127,271 +128,280 @@ abstract class AfricaClues {
       famousLandmark: 'Dahlak Archipelago',
       famousPerson: 'Isaias Afwerki',
       flag:
-          'Red triangle at hoist with green and blue triangles and yellow olive wreath emblem',
+          'The red triangle represents the blood shed for independence, the blue symbolises the Red Sea coast, the green represents agriculture and fertility, and the golden olive wreath (from the 1952 flag) symbolises peace and the 30-year armed struggle',
     ),
     'ET': AfricaClueData(
       nickname: 'The Roof of Africa',
       famousLandmark: 'Rock-Hewn Churches of Lalibela',
       famousPerson: 'Haile Selassie',
       flag:
-          'Horizontal green, yellow, and red stripes with blue circle and yellow star emblem in center',
+          'The green-yellow-red horizontal tricolour is the oldest tricolour in Africa and inspired the Pan-African colour palette; green represents fertile land, yellow stands for peace and hope, red symbolises strength and sacrifice, and the blue disc with golden pentagram represents unity and diversity',
     ),
     'GA': AfricaClueData(
       nickname: 'The Land of the Surfing Hippos',
       famousLandmark: 'Lope National Park',
       famousPerson: 'Omar Bongo',
-      flag: 'Horizontal green, yellow, and blue stripes of equal width',
+      flag:
+          'The green represents the equatorial forests, the yellow symbolises the equator (which passes directly through Gabon), and the blue represents the Atlantic coastline — three colours capturing Gabon\'s geographic identity',
     ),
     'GH': AfricaClueData(
       nickname: 'The Gateway to West Africa',
       famousLandmark: 'Cape Coast Castle',
       famousPerson: 'Kwame Nkrumah',
       flag:
-          'Horizontal red, gold, and green stripes with black five-pointed star on gold stripe',
+          'The red-gold-green horizontal tricolour with a black star was designed by Theodosia Okoh; the red represents those who died for independence, the gold symbolises mineral wealth, the green represents forests, and the black star is the lodestar of African freedom — inspiring other Pan-African flags',
     ),
     'GM': AfricaClueData(
       nickname: 'The Smiling Coast of Africa',
       famousLandmark: 'Kunta Kinteh Island',
       famousPerson: 'Dawda Jawara',
       flag:
-          'Horizontal red, blue, and green stripes separated by thin white borders',
+          'The red represents the sun and savanna, the blue symbolises the River Gambia (the country\'s defining geographic feature), the green represents the forested areas, and the white stripes represent unity and peace',
     ),
     'GN': AfricaClueData(
       nickname: 'The Water Tower of West Africa',
       famousLandmark: 'Mount Nimba',
       famousPerson: 'Ahmed Sekou Toure',
-      flag: 'Vertical red, yellow, and green stripes from hoist to fly',
+      flag:
+          'The red-yellow-green vertical tricolour mirrors the Pan-African colours in reverse; red represents the blood of martyrs, yellow symbolises the sun and mineral riches, and green represents the lush vegetation — adopted at independence from France in 1958',
     ),
     'GQ': AfricaClueData(
       nickname: 'The Land of Fernando Po',
       famousLandmark: 'Pico Basilé',
       famousPerson: 'Teodoro Obiang Nguema Mbasogo',
       flag:
-          'Horizontal green, white, and red stripes with blue triangle at hoist and coat of arms on white',
+          'The green represents natural resources, the white symbolises peace, the red honours those who fought for independence, the blue triangle represents the sea connecting the mainland and islands, and the silk-cotton tree on the coat of arms is a symbol of endurance',
     ),
     'GW': AfricaClueData(
       nickname: 'The Rivers Land',
       famousLandmark: 'Bijagos Archipelago',
       famousPerson: 'Amilcar Cabral',
       flag:
-          'Vertical red stripe at hoist with black star, horizontal yellow and green stripes',
+          'The red vertical stripe symbolises the blood shed during the independence struggle, the yellow represents the African sun, the green represents hope, and the black star draws from the Pan-African tradition established by Ghana — adopted at independence from Portugal in 1973',
     ),
     'KE': AfricaClueData(
       nickname: 'The Safari Capital of the World',
       famousLandmark: 'Maasai Mara National Reserve',
       famousPerson: 'Wangari Maathai',
       flag:
-          'Horizontal black, red, and green stripes separated by white edges with Maasai shield and spears in center',
+          'The black represents the Kenyan people, the red symbolises the blood shed for independence, the green represents the natural landscape, and the Maasai shield and crossed spears at the centre signify the defence of freedom — white stripes represent peace',
     ),
     'KM': AfricaClueData(
       nickname: 'The Perfume Islands',
       famousLandmark: 'Mount Karthala',
       famousPerson: 'Ahmed Abdallah Abderemane',
       flag:
-          'Green triangle at hoist with four horizontal stripes of yellow, white, red, blue and white crescent and stars',
+          'The green field represents Islam, the crescent and four stars symbolise the four islands (Grande Comore, Mohéli, Anjouan, and Mayotte — still claimed), and the four horizontal stripes represent each island: yellow, white, red, and blue',
     ),
     'LR': AfricaClueData(
       nickname: 'The Land of the Free',
       famousLandmark: 'Sapo National Park',
       famousPerson: 'Ellen Johnson Sirleaf',
       flag:
-          'Eleven alternating red and white horizontal stripes with blue square and white star at upper hoist',
+          'Modelled closely on the American flag reflecting the country\'s founding by freed American slaves; the eleven red and white stripes represent the signatories of the Liberian Declaration of Independence, and the lone white star symbolises the first independent republic in Africa',
     ),
     'LS': AfricaClueData(
       nickname: 'The Kingdom in the Sky',
       famousLandmark: 'Maletsunyane Falls',
       famousPerson: 'Moshoeshoe I',
       flag:
-          'Horizontal blue, white, and green stripes with black Basotho hat emblem on white stripe',
+          'The blue represents sky and rain, the white symbolises peace, the green represents prosperity, and the black Basotho hat (mokorotlo) in the centre is a traditional symbol of Lesotho\'s national identity and heritage',
     ),
     'LY': AfricaClueData(
       nickname: 'The Mediterranean Gateway to Africa',
       famousLandmark: 'Leptis Magna',
       famousPerson: 'Omar Mukhtar',
       flag:
-          'Horizontal red, black, and green stripes with white crescent and star on black stripe',
+          'The red-black-green horizontal tricolour with white crescent and star restores the flag of the Kingdom of Libya used before Gaddafi\'s rule; red represents the blood of martyrs, black represents Fezzan, and green represents Tripolitania',
     ),
     'MA': AfricaClueData(
       nickname: 'The Gateway to Africa',
       famousLandmark: 'Hassan II Mosque',
       famousPerson: 'Ibn Battuta',
-      flag: 'Red field with green five-pointed star outlined in center',
+      flag:
+          'The red field dates back to the Alaouite dynasty and represents the descendants of the Prophet Muhammad; the green pentacle (five-pointed star) was added in 1915 as the Seal of Solomon, a traditional symbol of life, health, and wisdom in Islamic culture',
     ),
     'MG': AfricaClueData(
       nickname: 'The Great Red Island',
       famousLandmark: 'Avenue of the Baobabs',
       famousPerson: 'Philibert Tsiranana',
       flag:
-          'White vertical stripe at hoist with horizontal red and green stripes',
+          'The white vertical stripe represents purity and the Merina people (the island\'s largest ethnic group), the red horizontal band symbolises sovereignty and the Merina kingdom, and the green represents the coastal peoples (côtiers) and hope',
     ),
     'ML': AfricaClueData(
       nickname: 'The Land of Gold',
       famousLandmark: 'Great Mosque of Djenne',
       famousPerson: 'Mansa Musa',
-      flag: 'Vertical green, gold, and red stripes from hoist to fly',
+      flag:
+          'The green-yellow-red vertical tricolour uses Pan-African colours inspired by the Ethiopian flag; green represents nature, yellow symbolises purity and mineral wealth, and red represents the blood shed for independence from France',
     ),
     'MR': AfricaClueData(
       nickname: 'The Land of a Million Poets',
       famousLandmark: 'Richat Structure (Eye of the Sahara)',
       famousPerson: 'Mokhtar Ould Daddah',
       flag:
-          'Green field with gold crescent and star and red stripes at top and bottom',
+          'The green field represents Islam, the gold crescent and star are traditional Islamic symbols, and the red stripes at top and bottom (added in 2017) honour the blood of defenders of the nation — previously the flag was entirely green and gold',
     ),
     'MU': AfricaClueData(
       nickname: 'The Star and Key of the Indian Ocean',
       famousLandmark: 'Le Morne Brabant',
       famousPerson: 'Seewoosagur Ramgoolam',
-      flag: 'Four horizontal stripes of red, blue, yellow, and green',
+      flag:
+          'The four horizontal stripes represent: red for the struggle for independence, blue for the Indian Ocean, yellow for the golden sunshine, and green for the lush vegetation — designed to reflect the island nation\'s natural beauty and independence spirit',
     ),
     'MW': AfricaClueData(
       nickname: 'The Warm Heart of Africa',
       famousLandmark: 'Lake Malawi',
       famousPerson: 'Hastings Kamuzu Banda',
       flag:
-          'Horizontal black, red, and green stripes with red rising sun on black stripe',
+          'The black represents the African people, the red symbolises the blood of the independence struggle, the green represents the natural environment, and the rising sun emblem represents the dawn of hope and freedom for Africa',
     ),
     'MZ': AfricaClueData(
       nickname: 'The Land of the Good People',
       famousLandmark: 'Bazaruto Archipelago',
       famousPerson: 'Samora Machel',
       flag:
-          'Green, black, and yellow horizontal stripes with red triangle at hoist bearing star, book, and rifle',
+          'The green represents agriculture, the black symbolises Africa, the yellow represents mineral wealth, the white represents peace, and the red represents the struggle for independence; the AK-47 and hoe on the emblem symbolise defence and agriculture',
     ),
     'NA': AfricaClueData(
       nickname: 'The Land of the Brave',
       famousLandmark: 'Sossusvlei Sand Dunes',
       famousPerson: 'Sam Nujoma',
       flag:
-          'Diagonal blue and green halves separated by red-bordered white stripe with yellow sun at upper hoist',
+          'The blue represents the Atlantic Ocean and sky, the red diagonal stripe symbolises the people\'s heroism, the green represents vegetation and agriculture, the gold sun symbolises life and energy, and the white borders represent peace and unity',
     ),
     'NE': AfricaClueData(
       nickname: 'The Frying Pan of the World',
       famousLandmark: 'Agadez Mosque',
       famousPerson: 'Hamani Diori',
       flag:
-          'Horizontal orange, white, and green stripes with orange circle on white center stripe',
+          'The orange represents the Sahara desert in the north, the white symbolises purity and the Niger River, the green represents the fertile southern regions, and the central orange circle represents the sun — colours reflecting Niger\'s landscape from desert to green',
     ),
     'NG': AfricaClueData(
       nickname: 'The Giant of Africa',
       famousLandmark: 'Zuma Rock',
       famousPerson: 'Wole Soyinka',
-      flag: 'Vertical green, white, and green stripes',
+      flag:
+          'The green-white-green vertical tricolour was designed by Michael Taiwo Akinkunmi as a student in 1959; the green represents Nigeria\'s agricultural wealth and lush vegetation, and the white symbolises peace and unity',
     ),
     'RW': AfricaClueData(
       nickname: 'The Land of a Thousand Hills',
       famousLandmark: 'Volcanoes National Park',
       famousPerson: 'Paul Kagame',
       flag:
-          'Blue, yellow, and green horizontal stripes with yellow sun emblem in upper right',
+          'The blue represents happiness and peace, the yellow symbolises economic development, the green represents hope and prosperity, and the golden sun with its rays represents enlightenment — the new design adopted in 2001 moved away from colours associated with the 1994 genocide',
     ),
     'SC': AfricaClueData(
       nickname: 'The Islands of the Indian Ocean',
       famousLandmark: 'Vallee de Mai',
       famousPerson: 'France-Albert Rene',
       flag:
-          'Five oblique bands radiating from lower hoist in blue, yellow, red, white, and green',
+          'The unique five-colour radiating design represents a dynamic new nation moving into the future; blue stands for the sky and sea, yellow for the sun, red for the people and their determination, white for justice, and green for the land and natural environment',
     ),
     'SD': AfricaClueData(
       nickname: 'The Land of the Nubians',
       famousLandmark: 'Meroe Pyramids',
       famousPerson: 'Mahdi Muhammad Ahmad',
       flag:
-          'Horizontal red, white, and black stripes with green triangle at hoist',
+          'The red-white-black horizontal tricolour uses Pan-Arab colours; the red represents struggle and sacrifice, white represents peace and optimism, black represents Sudan\'s identity (Sudan means "land of the blacks" in Arabic), and the green triangle represents Islam and agricultural prosperity',
     ),
     'SL': AfricaClueData(
       nickname: 'The Lion Mountain',
       famousLandmark: 'Tacugama Chimpanzee Sanctuary',
       famousPerson: 'Ahmad Tejan Kabbah',
-      flag: 'Horizontal green, white, and blue stripes',
+      flag:
+          'The green represents natural resources and agriculture, the white symbolises unity and justice, and the blue represents the natural harbour of Freetown and the hope for peace — Freetown was founded as a settlement for freed slaves',
     ),
     'SN': AfricaClueData(
       nickname: 'The Gateway to Africa',
       famousLandmark: 'Goree Island',
       famousPerson: 'Leopold Sedar Senghor',
       flag:
-          'Vertical green, yellow, and red stripes with green star on yellow stripe',
+          'The green-yellow-red vertical tricolour uses Pan-African colours; green represents Islam and hope, yellow symbolises natural wealth and progress, red represents the sacrifice for independence, and the central green star is the Star of African freedom',
     ),
     'SO': AfricaClueData(
       nickname: 'The Land of Poets',
       famousLandmark: 'Laas Geel Cave Paintings',
       famousPerson: 'Iman Abdulmajid',
-      flag: 'Light blue field with white five-pointed star in center',
+      flag:
+          'The light blue field was originally chosen to match the United Nations flag, honouring the UN\'s role in Somali independence; the white five-pointed star represents the five regions where ethnic Somalis historically lived — Italian Somaliland, British Somaliland, French Somaliland, Ogaden, and the NFD',
     ),
     'SS': AfricaClueData(
       nickname: 'The Land of the Sudd',
       famousLandmark: 'Sudd Wetland',
       famousPerson: 'John Garang de Mabior',
       flag:
-          'Horizontal black, red, and green stripes separated by white edges with blue triangle and yellow star at hoist',
+          'The black represents the South Sudanese people, the red symbolises blood shed for freedom, the green represents the land, the white symbolises peace, the blue represents the Nile River, and the golden star represents the Star of Bethlehem guiding unity',
     ),
     'ST': AfricaClueData(
       nickname: 'The Chocolate Islands',
       famousLandmark: 'Pico de Sao Tome',
       famousPerson: 'Manuel Pinto da Costa',
       flag:
-          'Horizontal green, yellow, and green stripes with red triangle at hoist and two black stars on yellow',
+          'The green represents lush tropical vegetation, the yellow symbolises cocoa (the main crop) and the equatorial sun, the red represents the independence struggle, the two black stars represent the two islands (São Tomé and Príncipe), and the black triangle honours African heritage',
     ),
     'SZ': AfricaClueData(
       nickname: 'The Switzerland of Africa',
       famousLandmark: 'Sibebe Rock',
       famousPerson: 'King Sobhuza II',
       flag:
-          'Horizontal blue, yellow, and red stripes with black and white Nguni shield and spears on center red stripe',
+          'The blue represents peace, the yellow symbolises mineral resources, and the red stands for past battles; the central Nguni shield and spears reflect Swazi warrior traditions and the king\'s commitment to defending the nation',
     ),
     'TD': AfricaClueData(
       nickname: 'The Babel Tower of the World',
       famousLandmark: 'Zakouma National Park',
       famousPerson: 'Idriss Deby',
-      flag: 'Vertical blue, yellow, and red stripes',
+      flag:
+          'The blue represents the sky and hope, the yellow symbolises the sun and the Saharan north, and the red stands for progress and the blood of martyrs — nearly identical to Romania\'s flag by coincidence, as the colours were chosen independently',
     ),
     'TG': AfricaClueData(
       nickname: 'The Slave Coast',
       famousLandmark: 'Koutammakou Landscape',
       famousPerson: 'Gnassingbe Eyadema',
       flag:
-          'Five horizontal green and yellow stripes with red square and white star at upper hoist',
+          'The five alternating green and yellow stripes represent the five regions of Togo; the red canton symbolises the blood shed by martyrs for independence, and the white star represents hope and purity — Pan-African colours inspired by Ethiopia',
     ),
     'TN': AfricaClueData(
       nickname: 'The Green Country',
       famousLandmark: 'Amphitheatre of El Jem',
       famousPerson: 'Habib Bourguiba',
       flag:
-          'Red field with white circle in center containing red crescent and star',
+          'The red field dates to the Ottoman era, and the white disc bearing a red crescent and star is a traditional symbol of Islam; the design was adopted in 1827 under the Husainid dynasty, making it one of the oldest still in use in the region',
     ),
     'TZ': AfricaClueData(
       nickname: 'The Land of Kilimanjaro',
       famousLandmark: 'Mount Kilimanjaro',
       famousPerson: 'Julius Nyerere',
       flag:
-          'Green and blue triangles separated by diagonal black stripe bordered in yellow',
+          'The green represents the natural vegetation, the blue represents the Indian Ocean and lakes, the black diagonal stripe represents the Swahili people, and the gold borders represent mineral wealth — the design merges elements from the former flags of Tanganyika and Zanzibar',
     ),
     'UG': AfricaClueData(
       nickname: 'The Pearl of Africa',
       famousLandmark: 'Bwindi Impenetrable Forest',
       famousPerson: 'Idi Amin',
       flag:
-          'Six horizontal stripes of black, yellow, and red repeated with white circle and grey crowned crane in center',
+          'The six horizontal stripes alternate black (African people), yellow (sunshine), and red (brotherhood); the central white disc bears the grey crowned crane, Uganda\'s national bird, which was also used as a military badge during British colonial rule',
     ),
     'ZA': AfricaClueData(
       nickname: 'The Rainbow Nation',
       famousLandmark: 'Table Mountain',
       famousPerson: 'Nelson Mandela',
       flag:
-          'Horizontal red and blue halves with green Y-shape bordered in white and gold from hoist, black triangle at hoist',
+          'Adopted in 1994 at the end of apartheid, the Y-shape represents the convergence of diverse elements in South African society; the six colours (black, gold, green, red, white, blue) encompass the colours of all major political parties and historical flags',
     ),
     'ZM': AfricaClueData(
       nickname: 'The Real Africa',
       famousLandmark: 'Victoria Falls',
       famousPerson: 'Kenneth Kaunda',
       flag:
-          'Green field with orange eagle and vertical red, black, and orange stripes at lower fly',
+          'The green field represents natural resources, the orange stands for mineral wealth (copper), the black represents the people, the red symbolises the freedom struggle, and the soaring orange eagle represents the ability to rise above the nation\'s problems',
     ),
     'ZW': AfricaClueData(
       nickname: 'The Jewel of Africa',
       famousLandmark: 'Great Zimbabwe Ruins',
       famousPerson: 'Robert Mugabe',
       flag:
-          'Seven horizontal stripes of green, yellow, red, black, red, yellow, green with white triangle and red star and bird at hoist',
+          'The seven stripes represent the seven signatories and the nation\'s ethnic diversity; the red star symbolises the socialist ideals of the liberation struggle, the Zimbabwe Bird in the white triangle is from the ancient city of Great Zimbabwe — a powerful symbol of national heritage',
     ),
   };
 }
