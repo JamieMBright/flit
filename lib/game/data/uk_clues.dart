@@ -616,7 +616,8 @@ abstract class UkClues {
       famousLandmark: 'Tantallon Castle',
       footballTeam: 'Dunbar United',
       nickname: 'Scotland\'s Golf Coast',
-      flag: 'Red field with white goat from county arms',
+      flag:
+          'East Lothian\'s white goat derives from the county\'s ancient arms, representing the hardy livestock that have grazed these fertile coastal farmlands since antiquity. The county was historically one of the most productive in Scotland — the breadbasket of Edinburgh. Haddington, the county town, was a royal burgh and birthplace of John Knox, founder of the Scottish Reformation.',
     ),
     'ERW': UkCountyClueData(
       country: 'Scotland',
@@ -624,7 +625,8 @@ abstract class UkClues {
       famousLandmark: 'Rouken Glen Park',
       footballTeam: 'Arthurlie FC',
       nickname: 'The Ren',
-      flag: 'Green field with white chevron and thistle from council arms',
+      flag:
+          'East Renfrewshire\'s thistle — the national emblem of Scotland — represents the county\'s Scottish identity, while the chevron derives from older Renfrewshire heraldry associated with the Stewart family. Walter FitzAlan, ancestor of the Royal House of Stewart, held estates in Renfrewshire, making this ground the ancestral home of the dynasty that would rule Scotland for three centuries.',
     ),
     'FAL': UkCountyClueData(
       country: 'Scotland',
@@ -632,7 +634,8 @@ abstract class UkClues {
       famousLandmark: 'The Kelpies',
       footballTeam: 'Falkirk FC',
       nickname: 'The Bairns\' Town',
-      flag: 'Blue field with silver stag and Forth bridge from council arms',
+      flag:
+          'Falkirk\'s stag represents the ancient burgh\'s arms, symbolising the great Caledonian Forest and the hunting grounds of Scottish kings in this central belt region. The Forth bridge references the county\'s role as the crossing point between the Lowlands and the North. Falkirk itself was the site of two significant battles — in 1298 (Wallace\'s defeat by Edward I) and 1746 (the last Jacobite victory on Scottish soil).',
     ),
     'INV': UkCountyClueData(
       country: 'Scotland',
@@ -641,7 +644,7 @@ abstract class UkClues {
       footballTeam: 'Greenock Morton',
       nickname: 'The Tail of the Bank',
       flag:
-          'Blue field with silver herring and sailing ship from Inverclyde arms',
+          'Inverclyde\'s herring and sailing ship reflect Greenock\'s history as one of Scotland\'s most important maritime ports. The silver herring represents the fishing trade that sustained the town before the industrial era, while the sailing ship recalls the sugar and rum trade with the Caribbean — and the town\'s role as a departure point for generations of Scottish emigrants seeking new lives abroad.',
     ),
     'MLN': UkCountyClueData(
       country: 'Scotland',
@@ -649,7 +652,8 @@ abstract class UkClues {
       famousLandmark: 'Rosslyn Chapel',
       footballTeam: 'Bonnyrigg Rose Athletic',
       nickname: 'The Heart of Midlothian',
-      flag: 'Blue field with white castle and gold stars from Midlothian arms',
+      flag:
+          'Midlothian\'s castle and stars derive from the arms associated with Edinburgh\'s hinterland — the county that surrounds the capital. The castle references Edinburgh Castle itself, which defined the region\'s destiny. The name "Heart of Midlothian" — immortalised by Sir Walter Scott — refers to the old Edinburgh Tolbooth prison that once stood at the heart of the county\'s civic life.',
     ),
     'MRY': UkCountyClueData(
       country: 'Scotland',
@@ -657,7 +661,8 @@ abstract class UkClues {
       famousLandmark: 'Elgin Cathedral',
       footballTeam: 'Elgin City',
       nickname: 'The Malt Whisky Country',
-      flag: 'Blue field with gold stars and silver castle from Moray arms',
+      flag:
+          'Moray\'s castle and stars reflect the ancient Mormaerdom of Moray — one of the most powerful Celtic provinces of early Scotland — whose lords periodically challenged the kings of Scots for supremacy. The star symbols echo the Pictish stone carvings found throughout the region. The area is now most famous as the whisky-producing heartland of Scotland, home to the greatest concentration of malt whisky distilleries in the world.',
     ),
     'NAY': UkCountyClueData(
       country: 'Scotland',
@@ -665,7 +670,8 @@ abstract class UkClues {
       famousLandmark: 'Brodick Castle',
       footballTeam: 'Kilwinning Rangers',
       nickname: 'The Ayrshire Coast',
-      flag: 'Blue field with silver saltire and red heart',
+      flag:
+          'North Ayrshire\'s saltire and heart combine two heraldic traditions: the saltire from the arms of the old County of Ayr, connecting to St Andrew\'s cross, and the heart from the Douglas family, who dominated this coastline. The Isle of Arran, within the county, was a prehistoric and Viking stronghold, and Brodick Castle was long a seat of the Dukes of Hamilton — the premier Scottish peerage.',
     ),
     'NLK': UkCountyClueData(
       country: 'Scotland',
@@ -673,7 +679,8 @@ abstract class UkClues {
       famousLandmark: 'Summerlee Museum of Scottish Industrial Life',
       footballTeam: 'Motherwell FC, Airdrieonians',
       nickname: 'The Lanarkshire Heartland',
-      flag: 'Red field with double-headed eagle from Hamilton arms',
+      flag:
+          'The double-headed eagle of North Lanarkshire derives from the arms of the Hamilton family, Dukes of Hamilton — the premier Scottish peerage and at one point possible heirs to the Scottish throne. The double-headed eagle was one of the most powerful symbols in European heraldry, borrowed from the Holy Roman Empire, and its use by the Hamiltons reflects their extraordinary status in Scottish society.',
     ),
     'ORK': UkCountyClueData(
       country: 'Scotland',
@@ -681,7 +688,8 @@ abstract class UkClues {
       famousLandmark: 'Skara Brae',
       footballTeam: 'Orkney FC',
       nickname: 'The Northern Isles',
-      flag: 'Red and yellow Nordic cross on blue field',
+      flag:
+          'Orkney\'s Nordic cross in red and gold on blue directly references its Norse heritage — the islands were part of the Kingdom of Norway until pledged to Scotland in 1468 as dowry for Margaret of Denmark, and never redeemed. The Norn language, a Norse dialect, was spoken here until the 18th century. The cross design follows Scandinavian flag tradition, connecting Orkney to its Norse identity more emphatically than any other Scottish council.',
     ),
     'PKN': UkCountyClueData(
       country: 'Scotland',
@@ -689,7 +697,8 @@ abstract class UkClues {
       famousLandmark: 'Scone Palace',
       footballTeam: 'St Johnstone',
       nickname: 'The Big County',
-      flag: 'Gold field with red eagle from Perth arms',
+      flag:
+          'Perth\'s red eagle on gold derives from the arms of the ancient earldom of Strathearn, whose lords were among the most powerful in medieval Scotland. Scone, just north of Perth, was the coronation site of Scottish kings for centuries — the Stone of Destiny (Stone of Scone) was kept here until Edward I removed it to Westminster in 1296. Perth served as the effective capital of Scotland for much of the medieval period.',
     ),
     'RFW': UkCountyClueData(
       country: 'Scotland',
@@ -697,7 +706,8 @@ abstract class UkClues {
       famousLandmark: 'Paisley Abbey',
       footballTeam: 'St Mirren',
       nickname: 'The Buddies\' Land',
-      flag: 'Blue field with chequered silver band and mitre from Paisley arms',
+      flag:
+          'Renfrewshire\'s flag features the mitre of Paisley Abbey — one of Scotland\'s most important medieval monasteries, founded in 1163 by Walter FitzAlan, ancestor of the Royal House of Stewart. The chequered band derives from the Stewart heraldry, acknowledging that this county was the ancestral cradle of the dynasty that went on to rule Scotland, and later through James VI, all of Britain.',
     ),
     'SAY': UkCountyClueData(
       country: 'Scotland',
@@ -705,7 +715,8 @@ abstract class UkClues {
       famousLandmark: 'Culzean Castle',
       footballTeam: 'Ayr United',
       nickname: 'The Burns Coast',
-      flag: 'Blue field with silver saltire and castle from Ayr arms',
+      flag:
+          'South Ayrshire\'s saltire and castle draw on the arms of the burgh of Ayr — one of Scotland\'s most important medieval trading ports, granted its royal charter in 1205. The saltire connects the county to the national symbol of St Andrew, while the castle represents Ayr\'s royal fortification. The county contains Culzean Castle, gifted to General Eisenhower by the Scottish people after World War II.',
     ),
     'SCB': UkCountyClueData(
       country: 'Scotland',
@@ -713,7 +724,8 @@ abstract class UkClues {
       famousLandmark: 'Abbotsford House',
       footballTeam: 'Gala Fairydean Rovers',
       nickname: 'Scott\'s Country',
-      flag: 'Green field with gold saltire and silver tower from Borders arms',
+      flag:
+          'The Scottish Borders\' flag reflects the region\'s contested history as a battleground between Scotland and England for centuries. The tower represents the characteristic peel towers built throughout the Borders as refuges against the raids of Border Reivers — the lawless clans who terrorised both sides of the frontier from the 13th to 17th centuries. The gold saltire acknowledges the region\'s Scottish identity.',
     ),
     'SLK': UkCountyClueData(
       country: 'Scotland',
@@ -721,7 +733,8 @@ abstract class UkClues {
       famousLandmark: 'New Lanark',
       footballTeam: 'Hamilton Academical',
       nickname: 'The Clyde Valley',
-      flag: 'Red field with double-headed eagle and Hamilton cinquefoils',
+      flag:
+          'South Lanarkshire\'s double-headed eagle and cinquefoils combine two great heraldic traditions of the region. The eagle comes from the arms of the Hamilton family — Dukes of Hamilton and once heirs presumptive to the Scottish throne — while the cinquefoils (five-petalled flowers) represent the Fraser family, another powerful Lanarkshire dynasty. New Lanark, within the county, was Robert Owen\'s pioneering model community and a founding site of the cooperative movement.',
     ),
     'WDU': UkCountyClueData(
       country: 'Scotland',
@@ -729,7 +742,8 @@ abstract class UkClues {
       famousLandmark: 'Dumbarton Castle',
       footballTeam: 'Dumbarton FC',
       nickname: 'The Rock',
-      flag: 'Blue field with white elephant and castle from Dumbarton arms',
+      flag:
+          'West Dunbartonshire\'s elephant and castle is a surprising heraldic device for a Scottish county, but derives from the arms of Dumbarton burgh. The elephant represents exotic strength and rarity, a symbol often used in heraldry to indicate the exotic trade connections of a port town. Dumbarton Rock — one of the oldest continuously occupied strongholds in Britain — was the capital of the ancient Kingdom of Strathclyde.',
     ),
     'WLN': UkCountyClueData(
       country: 'Scotland',
@@ -737,7 +751,8 @@ abstract class UkClues {
       famousLandmark: 'Linlithgow Palace',
       footballTeam: 'Livingston FC',
       nickname: 'The Shale Oil County',
-      flag: 'Blue field with black dog on gold ground from Linlithgow arms',
+      flag:
+          'West Lothian\'s black dog on gold derives from the arms of Linlithgow burgh, where the dog (a greyhound or similar) was associated with royal hunting and the adjacent royal palace. Linlithgow Palace was the birthplace of Mary Queen of Scots in 1542 and a favourite residence of the Scottish kings. The region was also the centre of Scotland\'s 19th-century shale oil industry, pioneered by James Young.',
     ),
     'ZET': UkCountyClueData(
       country: 'Scotland',
@@ -745,7 +760,8 @@ abstract class UkClues {
       famousLandmark: 'Jarlshof',
       footballTeam: 'Shetland FC',
       nickname: 'The Old Rock',
-      flag: 'White Nordic cross on blue field',
+      flag:
+          'Shetland\'s white Nordic cross on blue directly proclaims its Norse identity — the islands were part of the Kingdom of Norway until 1468, when they were pledged to Scotland as security for a dowry that was never paid. The Norn language survived here longer than anywhere else in Britain. More than any Scottish council area, Shetland looks to Scandinavia rather than the Scottish mainland for its cultural identity.',
     ),
 
     // =========================================================================
@@ -757,7 +773,8 @@ abstract class UkClues {
       famousLandmark: 'Cardiff Castle',
       footballTeam: 'Cardiff City',
       nickname: 'The Capital',
-      flag: 'Red dragon on white and green field (Y Ddraig Goch)',
+      flag:
+          'Cardiff\'s flag carries Y Ddraig Goch — the Red Dragon of Wales — one of the oldest national symbols in Europe. The red dragon appears in the Historia Brittonum (9th century) as the emblem of the Britons battling the white dragon of the Saxons. Henry VII, of Welsh Tudor descent, used the dragon at the Battle of Bosworth in 1485, cementing its status as the symbol of Wales and Welsh nationhood.',
     ),
     'SWA': UkCountyClueData(
       country: 'Wales',
@@ -765,7 +782,8 @@ abstract class UkClues {
       famousLandmark: 'Swansea Bay',
       footballTeam: 'Swansea City',
       nickname: 'The Copperopolis',
-      flag: 'White castle with black swan on red and gold field',
+      flag:
+          'Swansea\'s flag combines the castle from its Norman fortification — one of the first Norman castles in Wales — with the black swan that gives the city its English name (derived from "Sweyn\'s ey," a Norse-origin name). The red and gold colours derive from the arms of the ancient Welsh kingdom of Deheubarth, whose princes ruled southwest Wales before the Norman conquest.',
     ),
     'GWN': UkCountyClueData(
       country: 'Wales',
@@ -773,7 +791,8 @@ abstract class UkClues {
       famousLandmark: 'Snowdon (Yr Wyddfa)',
       footballTeam: 'Bangor City',
       nickname: 'Land of Castles',
-      flag: 'Green field with gold eagles and lions from Gwynedd arms',
+      flag:
+          'Gwynedd\'s eagles derive from the arms of the Princes of Gwynedd — the most powerful Welsh dynasty, who resisted English domination longest. The eagle was associated with Llywelyn ap Gruffudd, "The Last Prince," who was killed in 1282, ending the independent Principality of Wales. The lions come from the arms of Owain Gwynedd, who united Wales in the 12th century.',
     ),
     'PEM': UkCountyClueData(
       country: 'Wales',
@@ -781,7 +800,8 @@ abstract class UkClues {
       famousLandmark: 'Pembroke Castle',
       footballTeam: 'Haverfordwest County',
       nickname: 'Little England Beyond Wales',
-      flag: 'Blue field with gold lions from Deheubarth arms',
+      flag:
+          'Pembrokeshire\'s gold lions on blue derive from the arms of the ancient Kingdom of Deheubarth, the most powerful Welsh kingdom of southwest Wales. Pembroke Castle itself was the birthplace of Henry VII, founder of the Tudor dynasty. The county is nicknamed "Little England Beyond Wales" because Norman and Flemish settlers colonised it so thoroughly in the 12th century that its language and culture remained English long after the surrounding areas returned to Welsh.',
     ),
     // PWS renamed to POW (Powys)
     'POW': UkCountyClueData(
@@ -790,7 +810,8 @@ abstract class UkClues {
       famousLandmark: 'Powis Castle',
       footballTeam: 'Newtown AFC',
       nickname: 'The Green Desert of Wales',
-      flag: 'Red field with gold lion rampant from Powys Fadog arms',
+      flag:
+          'Powys\'s gold lion rampant on red derives from the arms of the ancient Kingdom of Powys Fadog, the northern division of the historic Welsh kingdom of Powys. Powys was one of the oldest Welsh kingdoms, tracing its lineage to the sub-Roman princes who ruled central Wales after the Roman withdrawal. The county\'s remoteness and sparse population — the "Green Desert" — allowed its Celtic Welsh culture and language to survive intact.',
     ),
     // CRD renamed to CAY (Caerphilly)
     'CAY': UkCountyClueData(
@@ -799,7 +820,8 @@ abstract class UkClues {
       famousLandmark: 'Caerphilly Castle',
       footballTeam: 'Cardiff Metropolitan',
       nickname: 'The Valleys',
-      flag: 'Green field with red dragon and red chevron',
+      flag:
+          'Caerphilly\'s flag combines the Welsh red dragon — the ancient symbol of the Britons — with a red chevron referencing the Norman castle at Caerphilly, one of the largest castles in Britain, built by Gilbert de Clare in 1268 specifically to contain the growing power of Llywelyn ap Gruffudd, the last native Prince of Wales. The tension between these symbols captures the contested Welsh-Norman history of the valleys.',
     ),
     'NWP': UkCountyClueData(
       country: 'Wales',
@@ -807,7 +829,8 @@ abstract class UkClues {
       famousLandmark: 'Newport Transporter Bridge',
       footballTeam: 'Newport County',
       nickname: 'The Gateway to Wales',
-      flag: 'Gold field with red chevron and three silver towers',
+      flag:
+          'Newport\'s chevron and three towers derive from the town\'s Norman castle and its role as a major crossing point of the River Usk. The chevron references the Clare family arms — Earls of Gloucester who controlled this strategic borderland after the Norman Conquest. Newport became a major coal and iron export port in the 19th century, and was the scene of the Chartist Uprising of 1839 — the last armed rebellion on British soil.',
     ),
     'RCT': UkCountyClueData(
       country: 'Wales',
@@ -815,7 +838,8 @@ abstract class UkClues {
       famousLandmark: 'Rhondda Heritage Park',
       footballTeam: 'Pontypridd Town',
       nickname: 'The Rhondda Valleys',
-      flag: 'Black and gold field with red dragon and mining symbols',
+      flag:
+          'Rhondda Cynon Taf\'s black and gold colours represent coal and gold — the valley\'s defining resources. Black reflects the coal seams that made the Rhondda one of the most productive coalfields in the world, while gold represents the wealth and aspiration of its communities. The Welsh dragon asserts the region\'s cultural identity, preserved through choirs, chapels and the Welsh language even as coal defined its economic destiny.',
     ),
     'FLN': UkCountyClueData(
       country: 'Wales',
@@ -823,7 +847,8 @@ abstract class UkClues {
       famousLandmark: 'Flint Castle',
       footballTeam: 'Connah\'s Quay Nomads',
       nickname: 'The Borderlands',
-      flag: 'Gold field with red lion rampant and silver castle',
+      flag:
+          'Flintshire\'s lion rampant and castle reflect the county\'s position as a March (border) county, fought over by Welsh princes and English kings for centuries. Flint Castle was the first of Edward I\'s iron ring of castles built to subjugate Wales, constructed in 1277. It was here, in 1399, that Richard II surrendered to Henry Bolingbroke — an event that changed the English succession and inspired Shakespeare.',
     ),
     'WRX': UkCountyClueData(
       country: 'Wales',
