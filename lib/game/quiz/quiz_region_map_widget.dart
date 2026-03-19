@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../map/region.dart';
+import 'border_smoothing.dart';
 import 'quiz_map_widget.dart';
 
 /// Generic region map widget for Flight School quiz mode on non-US regions.
@@ -456,11 +457,16 @@ class _RegionMapPainter extends CustomPainter {
     if (polygons != null && polygons.isNotEmpty) {
       for (final ring in polygons) {
         if (ring.isEmpty) continue;
-        final first = transform.toCanvas(ring.first.x, ring.first.y);
-        path.moveTo(first.dx, first.dy);
-        for (var i = 1; i < ring.length; i++) {
-          final p = transform.toCanvas(ring[i].x, ring[i].y);
-          path.lineTo(p.dx, p.dy);
+        final canvasPoints = <Offset>[];
+        for (final pt in ring) {
+          canvasPoints.add(transform.toCanvas(pt.x, pt.y));
+        }
+        // Apply Chaikin subdivision for smoother borders.
+        final smoothed = chaikinSmooth(canvasPoints, 2);
+        if (smoothed.isEmpty) continue;
+        path.moveTo(smoothed.first.dx, smoothed.first.dy);
+        for (var i = 1; i < smoothed.length; i++) {
+          path.lineTo(smoothed[i].dx, smoothed[i].dy);
         }
         path.close();
       }
@@ -469,12 +475,15 @@ class _RegionMapPainter extends CustomPainter {
 
     // Fallback: single flat list of points.
     if (points.isEmpty) return path;
-    final first = transform.toCanvas(points.first.x, points.first.y);
-    path.moveTo(first.dx, first.dy);
-
-    for (var i = 1; i < points.length; i++) {
-      final p = transform.toCanvas(points[i].x, points[i].y);
-      path.lineTo(p.dx, p.dy);
+    final canvasPoints = <Offset>[];
+    for (final pt in points) {
+      canvasPoints.add(transform.toCanvas(pt.x, pt.y));
+    }
+    final smoothed = chaikinSmooth(canvasPoints, 2);
+    if (smoothed.isEmpty) return path;
+    path.moveTo(smoothed.first.dx, smoothed.first.dy);
+    for (var i = 1; i < smoothed.length; i++) {
+      path.lineTo(smoothed[i].dx, smoothed[i].dy);
     }
 
     path.close();
@@ -501,48 +510,8 @@ class _RegionMapPainter extends CustomPainter {
 
   /// Area codes that always get an expanded hit target and marker,
   /// regardless of polygon size (island micro-states, city-states, etc.).
-  static const Set<String> _alwaysTinyCodes = {
-    'MV', // Maldives
-    'SG', // Singapore
-    'BH', // Bahrain
-    'MU', // Mauritius
-    'SC', // Seychelles
-    'KM', // Comoros
-    'ST', // São Tomé and Príncipe
-    'CV', // Cape Verde
-    'MT', // Malta
-    'AD', // Andorra
-    'MC', // Monaco
-    'LI', // Liechtenstein
-    'SM', // San Marino
-    'VA', // Vatican City
-    'JE', // Jersey
-    'GG', // Guernsey
-    'IM', // Isle of Man
-    'GI', // Gibraltar
-    'LU', // Luxembourg
-    // Pacific / Oceania island nations
-    'FJ', // Fiji
-    'FM', // Micronesia
-    'KI', // Kiribati
-    'MH', // Marshall Islands
-    'NR', // Nauru
-    'PW', // Palau
-    'SB', // Solomon Islands
-    'TO', // Tonga
-    'TV', // Tuvalu
-    'VU', // Vanuatu
-    'WS', // Samoa
-    // Caribbean island nations
-    'AG', // Antigua and Barbuda
-    'BB', // Barbados
-    'DM', // Dominica
-    'GD', // Grenada
-    'KN', // Saint Kitts and Nevis
-    'LC', // Saint Lucia
-    'VC', // Saint Vincent and the Grenadines
-    'TT', // Trinidad and Tobago
-  };
+  /// Uses the shared set from border_smoothing.dart for consistency.
+  static const Set<String> _alwaysTinyCodes = alwaysTinyCodes;
 
   /// Whether an area's polygon footprint on canvas is too small to tap.
   bool _isTinyArea(RegionalArea area, _GeoTransform transform, Size size) {

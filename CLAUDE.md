@@ -8,6 +8,12 @@
 - All changes must pass all test suites before considering work done.
 - **Apply fixes to ALL items, not a subset** — When a fix applies to multiple countries, clues, data entries, etc., apply it to every relevant instance. Don't cherry-pick 20 out of 85. If the scope is large, use parallel background agents to divide the work.
 
+### Apply Fixes Generically Across All Game Modes
+- **Never apply a fix to only one game mode** — When a rendering improvement, data fix, or gameplay enhancement applies to multiple game modes, apply it to ALL relevant modes. Game modes share common infrastructure (e.g., Uncharted and Flight School share the same map renderer basis). A border smoothing fix, a missing-country fix, or a visual improvement must propagate everywhere it's relevant.
+- Before committing a mode-specific change, ask: "Does this apply to other modes too?" If yes, apply it universally.
+- Shared rendering code (map renderers, polygon drawing, border styling) should be fixed at the shared layer, not patched per-mode.
+- If a fix genuinely only applies to one mode, document why in a code comment.
+
 ### Context Management
 - Keep context lean. Spawn agents for discrete tasks.
 - Always defer to AGENTS.md when handling multiple tasks.

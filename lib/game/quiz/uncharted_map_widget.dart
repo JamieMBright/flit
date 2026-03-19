@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../map/region.dart';
+import 'border_smoothing.dart';
 
 /// A zoomable, pannable map showing outlines of all areas for a region.
 ///
@@ -288,16 +289,8 @@ class _UnchartedMapPainter extends CustomPainter {
   static const double _markerRadius = 10.0;
 
   /// Area codes that always get an expanded marker (micro-states & islands).
-  static const Set<String> _alwaysTinyCodes = {
-    'MV', 'SG', 'BH', 'MU', 'SC', 'KM', 'ST', 'CV', // island/micro states
-    'MT', 'AD', 'MC', 'LI', 'SM', 'VA', // European micro-states
-    'JE', 'GG', 'IM', 'GI',
-    'LU', // Jersey, Guernsey, Isle of Man, Gibraltar, Luxembourg
-    // Pacific / Oceania island nations
-    'FJ', 'FM', 'KI', 'MH', 'NR', 'PW', 'SB', 'TO', 'TV', 'VU', 'WS',
-    // Caribbean island nations
-    'AG', 'BB', 'DM', 'GD', 'KN', 'LC', 'VC', 'TT',
-  };
+  /// Uses the shared set from border_smoothing.dart for consistency.
+  static const Set<String> _alwaysTinyCodes = alwaysTinyCodes;
 
   /// Whether an area's polygon footprint on canvas is too small to see.
   bool _isTinyArea(RegionalArea area, _GeoTransform transform, Size size) {
@@ -489,7 +482,7 @@ class _UnchartedMapPainter extends CustomPainter {
         canvasPoints.add(transform.toCanvas(pt.x, pt.y));
       }
       // Apply Chaikin subdivision for smoother borders.
-      final smoothed = _chaikinSmooth(canvasPoints, 2);
+      final smoothed = chaikinSmooth(canvasPoints, 2);
       if (smoothed.isEmpty) continue;
       path.moveTo(smoothed.first.dx, smoothed.first.dy);
       for (var i = 1; i < smoothed.length; i++) {
@@ -498,31 +491,6 @@ class _UnchartedMapPainter extends CustomPainter {
       path.close();
     }
     return path;
-  }
-
-  /// Chaikin's corner-cutting algorithm for polygon smoothing.
-  /// Each iteration replaces sharp corners with smoother curves.
-  static List<Offset> _chaikinSmooth(List<Offset> points, int iterations) {
-    if (points.length < 3) return points;
-    var current = points;
-    for (var iter = 0; iter < iterations; iter++) {
-      final next = <Offset>[];
-      for (var i = 0; i < current.length; i++) {
-        final p0 = current[i];
-        final p1 = current[(i + 1) % current.length];
-        // 25% and 75% interpolation points.
-        next.add(Offset(
-          p0.dx * 0.75 + p1.dx * 0.25,
-          p0.dy * 0.75 + p1.dy * 0.25,
-        ));
-        next.add(Offset(
-          p0.dx * 0.25 + p1.dx * 0.75,
-          p0.dy * 0.25 + p1.dy * 0.75,
-        ));
-      }
-      current = next;
-    }
-    return current;
   }
 
   void _drawLabel(Canvas canvas, RegionalArea area, _GeoTransform transform) {
