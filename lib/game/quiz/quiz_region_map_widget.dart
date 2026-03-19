@@ -518,6 +518,9 @@ class _RegionMapPainter extends CustomPainter {
     // Force-tiny for known micro-states regardless of zoom.
     if (_alwaysTinyCodes.contains(area.code)) return true;
     if (area.points.length < 3) return true;
+    // Antimeridian-crossing countries have a huge bounding box but tiny
+    // individual islands — force tiny treatment.
+    if (_crossesAntimeridian(area.points)) return true;
     var minX = double.infinity, maxX = -double.infinity;
     var minY = double.infinity, maxY = -double.infinity;
     for (final p in area.points) {
@@ -530,6 +533,17 @@ class _RegionMapPainter extends CustomPainter {
     final w = (maxX - minX) * zoomScale;
     final h = (maxY - minY) * zoomScale;
     return w < _tinyThreshold && h < _tinyThreshold;
+  }
+
+  /// Detect if a set of points crosses the antimeridian (±180° longitude).
+  static bool _crossesAntimeridian(List<Vector2> points) {
+    if (points.isEmpty) return false;
+    var minLng = double.infinity, maxLng = -double.infinity;
+    for (final p in points) {
+      if (p.x < minLng) minLng = p.x;
+      if (p.x > maxLng) maxLng = p.x;
+    }
+    return (maxLng - minLng) > 180.0;
   }
 
   /// Compute the bounding box of a tiny area's points on canvas, expanded
@@ -548,6 +562,18 @@ class _RegionMapPainter extends CustomPainter {
         Radius.circular(r),
       );
     }
+
+    // For antimeridian-crossing countries, use the largest polygon ring
+    // centroid to avoid map-spanning markers.
+    if (_crossesAntimeridian(points)) {
+      final centroid = _centroidLargestRing(area, transform);
+      final r = _markerRadius / zoomScale;
+      return RRect.fromRectAndRadius(
+        Rect.fromCircle(center: centroid, radius: r),
+        Radius.circular(r),
+      );
+    }
+
     var minX = double.infinity, maxX = -double.infinity;
     var minY = double.infinity, maxY = -double.infinity;
     for (final p in points) {
@@ -571,6 +597,28 @@ class _RegionMapPainter extends CustomPainter {
     final rect = Rect.fromCenter(center: Offset(cx, cy), width: w, height: h);
     final radius = Radius.circular((w < h ? w : h) * 0.35);
     return RRect.fromRectAndRadius(rect, radius);
+  }
+
+  /// Compute canvas-space centroid from the largest polygon ring.
+  Offset _centroidLargestRing(RegionalArea area, _GeoTransform transform) {
+    final rings = area.polygons;
+    if (rings == null || rings.isEmpty) {
+      final c = _centroid(area.points);
+      return transform.toCanvas(c.x, c.y);
+    }
+    var largest = rings[0];
+    for (final ring in rings) {
+      if (ring.length > largest.length) largest = ring;
+    }
+    if (largest.isEmpty) return Offset.zero;
+    var cx = 0.0;
+    var cy = 0.0;
+    for (final p in largest) {
+      final cp = transform.toCanvas(p.x, p.y);
+      cx += cp.dx;
+      cy += cp.dy;
+    }
+    return Offset(cx / largest.length, cy / largest.length);
   }
 
   /// Draw a visible labeled marker for a tiny area (microstate / small island).
@@ -620,9 +668,14 @@ class _RegionMapPainter extends CustomPainter {
     // Dashed border ring as a rounded rectangle.
     final isCorrect = isCorrectlyGuessed || status == StateVisualStatus.correct;
     final borderPaint = Paint()
-      ..color = isCorrect ? const Color(0xFF2ECC71) : const Color(0xFFFFFFFF)
+      ..color = isCorrect
+          ? const Color(0xFF2ECC71)
+          : hasActiveFill
+              ? const Color(0xFFFFFFFF)
+              : const Color(0xFF5A7A9A)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = (isCorrect ? 2.0 : 1.2) / zoomScale;
+      ..strokeWidth =
+          (isCorrect ? 2.0 : (hasActiveFill ? 1.0 : 0.6)) / zoomScale;
     // Draw dashed rounded rect by using a path with dash effect.
     final rrectPath = Path()..addRRect(rrect);
     _drawDashedPath(canvas, rrectPath, borderPaint, 16);

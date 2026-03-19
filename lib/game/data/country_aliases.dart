@@ -187,7 +187,7 @@ const Map<String, List<String>> countryAliases = {
 
   'namibia': ['namibea', 'republic of namibia'],
 
-  'south africa': ['s africa', 'sa', 'rsa', 'republic of south africa'],
+  'south africa': ['s africa', 'rsa', 'republic of south africa'],
 
   // ════════════════════════════════════════════════════════════════
   // ASIA
@@ -599,7 +599,6 @@ const Map<String, List<String>> countryAliases = {
 
   'dominican rep': [
     'dominican republic',
-    'dr',
     'dominicana',
     'dominicna republic',
   ],
