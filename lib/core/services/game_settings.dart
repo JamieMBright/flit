@@ -53,11 +53,24 @@ enum GameDifficulty {
   String get description {
     switch (this) {
       case GameDifficulty.easy:
-        return 'Iconic nations, smooth navigation';
+        return 'Iconic nations, country names shown';
       case GameDifficulty.normal:
-        return 'The full atlas — all nations in play';
+        return 'The full atlas — no country names';
       case GameDifficulty.hard:
-        return 'Obscure territories, expert pilots only';
+        return 'Obscure territories, no country names';
+    }
+  }
+
+  /// Whether the country name bar is shown in the HUD when flying over a
+  /// country. Only easy mode reveals country names — harder modes hide them
+  /// so the player must rely on geography alone.
+  bool get showCountryName {
+    switch (this) {
+      case GameDifficulty.easy:
+        return true;
+      case GameDifficulty.normal:
+      case GameDifficulty.hard:
+        return false;
     }
   }
 }

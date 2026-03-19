@@ -1930,7 +1930,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 onHint: _hintTier < 4 ? _useHint : null,
                 hintTier: _hintTier,
                 revealedCountry: _revealedCountry,
-                countryName: _game.currentCountryName,
+                countryName: GameSettings.instance.difficulty.showCountryName
+                    ? _game.currentCountryName
+                    : null,
                 heading: _game.heading,
                 countryFlashProgress: _game.countryFlashProgress,
                 currentRound: _isMultiRound ? _currentRound : null,
