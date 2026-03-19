@@ -538,6 +538,27 @@ class _RegionMapPainter extends CustomPainter {
     'LI', // Liechtenstein
     'SM', // San Marino
     'VA', // Vatican City
+    // Pacific / Oceania island nations
+    'FJ', // Fiji
+    'FM', // Micronesia
+    'KI', // Kiribati
+    'MH', // Marshall Islands
+    'NR', // Nauru
+    'PW', // Palau
+    'SB', // Solomon Islands
+    'TO', // Tonga
+    'TV', // Tuvalu
+    'VU', // Vanuatu
+    'WS', // Samoa
+    // Caribbean island nations
+    'AG', // Antigua and Barbuda
+    'BB', // Barbados
+    'DM', // Dominica
+    'GD', // Grenada
+    'KN', // Saint Kitts and Nevis
+    'LC', // Saint Lucia
+    'VC', // Saint Vincent and the Grenadines
+    'TT', // Trinidad and Tobago
   };
 
   /// Whether an area's polygon footprint on canvas is too small to tap.

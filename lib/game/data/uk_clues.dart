@@ -30,7 +30,8 @@ abstract class UkClues {
       famousLandmark: 'Tower Bridge',
       footballTeam: 'Arsenal, Chelsea, Tottenham',
       nickname: 'The Big Smoke',
-      flag: 'Red cross on white field with red sword in upper hoist canton',
+      flag:
+          'The flag of the City of London bears the cross of St George, patron saint of England, with the sword of St Paul in the upper hoist — a tribute to the city\'s patron saint and the apostle martyred by beheading, whose symbol has appeared on London\'s arms since the medieval period.',
     ),
     'WMD': UkCountyClueData(
       country: 'England',
@@ -38,7 +39,8 @@ abstract class UkClues {
       famousLandmark: 'Birmingham Cathedral',
       footballTeam: 'Aston Villa, Birmingham City',
       nickname: 'The Black Country',
-      flag: 'Black field with gold diagonal cross and industrial motifs',
+      flag:
+          'The black and gold colours of the West Midlands flag reflect the identity of the Black Country — a region named for its coal-black skies during the Industrial Revolution. The diagonal cross echoes the heraldic traditions of the Mercian kingdom that once ruled this heartland of England.',
     ),
     'GTM': UkCountyClueData(
       country: 'England',
@@ -47,7 +49,7 @@ abstract class UkClues {
       footballTeam: 'Manchester United, Manchester City',
       nickname: 'Cottonopolis',
       flag:
-          'Red field with gold ship and seven-pointed star with three gold stripes',
+          'Greater Manchester\'s flag draws on the arms of Manchester city, where the gold ship symbolises the Manchester Ship Canal — once the lifeline of the cotton trade that made the city the world\'s first industrial metropolis. The three gold stripes represent the rivers Irwell, Medlock and Irk that shaped the city\'s growth.',
     ),
     'WYK': UkCountyClueData(
       country: 'England',
@@ -55,7 +57,8 @@ abstract class UkClues {
       famousLandmark: 'Leeds Town Hall',
       footballTeam: 'Leeds United',
       nickname: 'God\'s Own County',
-      flag: 'White rose of York on blue field',
+      flag:
+          'The white rose on blue is the emblem of the House of York, one of the two rival dynasties of the Wars of the Roses. The white rose has symbolised Yorkshire since at least the 15th century and represents the county\'s fierce pride in its identity — the most populous county in England.',
     ),
     'MER': UkCountyClueData(
       country: 'England',
@@ -63,7 +66,8 @@ abstract class UkClues {
       famousLandmark: 'Royal Liver Building',
       footballTeam: 'Liverpool FC, Everton',
       nickname: 'The Pool of Life',
-      flag: 'Yellow field with blue wavy band and Liver Bird',
+      flag:
+          'The Liver Bird — a mythical cormorant-like creature — has been the symbol of Liverpool since the city\'s first seal in the 13th century. Legend holds the birds guard the city; if they fly away, the city will cease to exist. The wavy band represents the River Mersey, the tidal highway that made Liverpool a great trading port.',
     ),
     'SYK': UkCountyClueData(
       country: 'England',
@@ -71,7 +75,8 @@ abstract class UkClues {
       famousLandmark: 'Sheffield Cathedral',
       footballTeam: 'Sheffield United, Sheffield Wednesday',
       nickname: 'Steel City',
-      flag: 'White rose of York on blue and green divided field',
+      flag:
+          'South Yorkshire\'s flag combines the white rose of the House of York with the green of the county\'s rural landscape — acknowledging that even this industrial heartland, home to the steel and cutlery trades, is rooted in the broader Yorkshire identity forged over centuries of shared history.',
     ),
     'TWR': UkCountyClueData(
       country: 'England',
@@ -79,7 +84,8 @@ abstract class UkClues {
       famousLandmark: 'Angel of the North',
       footballTeam: 'Newcastle United, Sunderland AFC',
       nickname: 'The Geordies',
-      flag: 'Blue and gold quartered field with castle and lion',
+      flag:
+          'Tyne and Wear\'s arms draw on the heraldry of Newcastle and Sunderland. The castle references Newcastle\'s Norman fortification — the "new castle" built by Robert Curthose, son of William the Conqueror, in 1080. The lion echoes the arms of the powerful Percy family, Earls of Northumberland, who dominated the region for centuries.',
     ),
 
     // =========================================================================
@@ -91,7 +97,8 @@ abstract class UkClues {
       famousLandmark: 'Canterbury Cathedral',
       footballTeam: 'Gillingham FC',
       nickname: 'The Garden of England',
-      flag: 'Red rampant horse on white field',
+      flag:
+          'The white horse of Kent (the Invicta horse) is one of England\'s oldest county symbols, appearing in arms since at least the 14th century. It likely derives from the Saxon kingdom of Kent, whose legendary founders Hengist and Horsa bore horse names, and whose battle standard was said to carry this symbol when they first conquered the land.',
     ),
     'ESS': UkCountyClueData(
       country: 'England',
@@ -99,7 +106,8 @@ abstract class UkClues {
       famousLandmark: 'Colchester Castle',
       footballTeam: 'Colchester United',
       nickname: 'The Saxon Shore',
-      flag: 'Three Saxon seaxes on red field',
+      flag:
+          'Essex takes its name from the East Saxons, and its three seaxes (curved Saxon swords) are among the oldest heraldic emblems in England. The seax was the signature weapon of the Saxon people; these blades represent the three divisions of the ancient kingdom of Essex — a symbol carried since the medieval roll of arms.',
     ),
     'HAM': UkCountyClueData(
       country: 'England',
@@ -107,7 +115,8 @@ abstract class UkClues {
       famousLandmark: 'Winchester Cathedral',
       footballTeam: 'Southampton FC, Portsmouth FC',
       nickname: 'Hants',
-      flag: 'Gold crown and red Tudor rose on white and blue field',
+      flag:
+          'Hampshire\'s flag features the Tudor rose, the dynastic emblem created by Henry VII to unite the white rose of York and red rose of Lancaster after the Wars of the Roses. Winchester, Hampshire\'s county town, was the ancient capital of England and seat of the Anglo-Saxon kings — hence the regal crown acknowledging its historic primacy.',
     ),
     'SRY': UkCountyClueData(
       country: 'England',
@@ -115,7 +124,8 @@ abstract class UkClues {
       famousLandmark: 'Hampton Court Palace',
       footballTeam: 'Crystal Palace',
       nickname: 'The Home Counties',
-      flag: 'Orange-gold chequered field derived from the Warren family arms',
+      flag:
+          'Surrey\'s gold and red chequered arms derive directly from the heraldry of the de Warenne family, Earls of Surrey — powerful Norman lords who held the county from the Conquest. The chequy pattern was their dynastic emblem, and by inheritance it became the county\'s enduring symbol after the earldom passed to the Crown.',
     ),
     'HRT': UkCountyClueData(
       country: 'England',
@@ -123,7 +133,8 @@ abstract class UkClues {
       famousLandmark: 'St Albans Cathedral',
       footballTeam: 'Watford FC',
       nickname: 'Herts',
-      flag: 'Blue field with gold hart (deer) emblem',
+      flag:
+          'Hertfordshire\'s symbol is the hart (a male deer), a visual pun on the county\'s name — a form of canting heraldry, where the charge sounds like the name it represents. The county was named for Hertford ("hart ford"), the river crossing used by deer. The stag has appeared in the county arms since at least the 16th century.',
     ),
     // SUS renamed to SSX (East Sussex)
     'SSX': UkCountyClueData(
@@ -132,7 +143,8 @@ abstract class UkClues {
       famousLandmark: 'Brighton Pier',
       footballTeam: 'Brighton & Hove Albion',
       nickname: 'The Downs',
-      flag: 'Six gold martlets on blue field',
+      flag:
+          'The six golden martlets (a legless heraldic bird derived from the swift) on blue are the ancient arms of the Kingdom of Sussex, one of the original Anglo-Saxon heptarchy kingdoms. The martlet appears on the coats of arms of many Sussex families and towns, symbolising the county\'s Saxon heritage and its identity as a distinct historic nation.',
     ),
     'BRK': UkCountyClueData(
       country: 'England',
@@ -140,7 +152,8 @@ abstract class UkClues {
       famousLandmark: 'Windsor Castle',
       footballTeam: 'Reading FC',
       nickname: 'Royal County',
-      flag: 'Blue stag on white field with oak tree',
+      flag:
+          'Berkshire\'s flag features the white stag, a symbol associated with the royal forests of the county and Windsor Great Park, where kings hunted for centuries. The oak alludes to these ancient royal hunting grounds. Windsor Castle, the oldest occupied castle in the world, has stood here since William the Conqueror and given the county its "Royal" designation.',
     ),
     'WSX': UkCountyClueData(
       country: 'England',

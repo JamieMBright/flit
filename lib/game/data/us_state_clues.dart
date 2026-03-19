@@ -2,7 +2,8 @@
 abstract class UsStateClues {
   static const Map<String, StateClueData> data = {
     'AL': StateClueData(
-      flag: 'White field with red St. Andrew\'s cross (saltire)',
+      flag:
+          'The crimson saltire recalls Alabama\'s Confederate heritage and Scottish-Irish roots; adopted in 1895, its St. Andrew\'s cross design deliberately echoes the Confederate battle flag, placed on white to honor both Southern identity and the state\'s founding settlers',
       sportsTeams: [
         'Alabama Crimson Tide (NCAA Football)',
         'Auburn Tigers (NCAA Football)',
@@ -19,7 +20,7 @@ abstract class UsStateClues {
     ),
     'AK': StateClueData(
       flag:
-          'Blue field with eight gold stars forming the Big Dipper and North Star',
+          'Designed in 1927 by 13-year-old Benny Benson, the gold stars of Ursa Major and Polaris on deep blue symbolize Alaska\'s northern wilderness and its guiding star — Polaris represents the state\'s future as the northernmost point of the nation',
       sportsTeams: [
         'Alaska Aces (ECHL Hockey)',
         'Alaska Anchorage Seawolves (NCAA Hockey)',
@@ -39,7 +40,8 @@ abstract class UsStateClues {
       ],
     ),
     'AZ': StateClueData(
-      flag: 'Copper star with red and yellow rays on blue field',
+      flag:
+          'Adopted in 1917, the 13 red and gold rays represent the Spanish and Mexican heritage of Arizona plus the original colonies; the copper star honors Arizona\'s status as the nation\'s largest copper producer, and blue and gold recall the Union Army\'s colors from the Civil War era',
       sportsTeams: [
         'Arizona Cardinals (NFL)',
         'Phoenix Suns (NBA)',
@@ -60,7 +62,7 @@ abstract class UsStateClues {
     ),
     'AR': StateClueData(
       flag:
-          'Red field with white diamond bordered in blue, containing 25 white stars and the word ARKANSAS',
+          'Adopted in 1913, the diamond shape honors Arkansas as the only diamond-producing state in the US; the 25 stars represent Arkansas as the 25th state admitted to the Union, and the blue border with three upper stars and one lower star reflects its Confederate history and the United States, France, and Spain — nations that previously held sovereignty over the territory',
       sportsTeams: [
         'Arkansas Razorbacks (NCAA Football)',
         'Arkansas Razorbacks (NCAA Basketball)',
@@ -77,7 +79,7 @@ abstract class UsStateClues {
     ),
     'CA': StateClueData(
       flag:
-          'White field with a grizzly bear and red stripe, reading California Republic',
+          'Inspired by the Bear Flag Revolt of June 1846, when American settlers overthrew Mexican rule and briefly declared the California Republic; the grizzly bear symbolizes strength and independence, the lone star echoes the Texas Republic flag that inspired the rebels, and the red stripe and "California Republic" text commemorate the 25-day republic before U.S. annexation',
       sportsTeams: [
         'Los Angeles Lakers (NBA)',
         'San Francisco 49ers (NFL)',
@@ -98,7 +100,7 @@ abstract class UsStateClues {
     ),
     'CO': StateClueData(
       flag:
-          'Three horizontal stripes of blue, white, and blue with a red letter C containing a golden disk',
+          'Adopted in 1911 and redesigned in 1964, the blue stripes represent Colorado\'s clear skies and mountain streams, the white stripe its snow-capped peaks; the red letter C honors the Colorado River (from the Spanish "rojo" meaning red) and the gold disk within symbolizes the abundant sunshine and mineral wealth that drew settlers during the gold rush era',
       sportsTeams: [
         'Denver Broncos (NFL)',
         'Denver Nuggets (NBA)',
@@ -119,7 +121,7 @@ abstract class UsStateClues {
     ),
     'CT': StateClueData(
       flag:
-          'Azure blue field with state coat of arms featuring three grapevines',
+          'The three grapevines on Connecticut\'s coat of arms, adopted in 1647 and carried on the flag, represent the three original settlements of Windsor, Hartford, and Wethersfield transplanted from England; the motto "Qui Transtulit Sustinet" (He Who Transplanted Still Sustains) reflects the Puritan faith that God guided the founding colonists to their new home',
       sportsTeams: [
         'UConn Huskies (NCAA Basketball)',
         'Hartford Wolf Pack (AHL Hockey)',
@@ -140,7 +142,7 @@ abstract class UsStateClues {
     ),
     'DE': StateClueData(
       flag:
-          'Colonial blue field with buff-colored diamond containing the state coat of arms',
+          'The colonial blue and buff colors honor the uniform of the Delaware Regiment in the Revolutionary War, renowned for their bravery at the Battle of Long Island in 1776; the buff diamond frames the state coat of arms, and the date December 7, 1787 commemorates Delaware\'s historic ratification of the U.S. Constitution as the very first state',
       sportsTeams: [
         'Delaware Blue Coats (NBA G League)',
         'Delaware Fightin\' Blue Hens (NCAA Football)',
@@ -161,7 +163,7 @@ abstract class UsStateClues {
     ),
     'FL': StateClueData(
       flag:
-          'White field with red saltire and state seal featuring a Native American woman, sun, and steamboat',
+          'The red diagonal cross was added in 1900 to distinguish the flag from a plain white one at sea; Florida\'s seal at center depicts the Seminole woman honoring the indigenous people who resisted forced removal during the 19th-century wars, the rising sun symbolizes Florida\'s role as the Sunshine State, and the sabal palm and steamboat represent the state\'s natural beauty and commerce',
       sportsTeams: [
         'Miami Dolphins (NFL)',
         'Miami Heat (NBA)',
@@ -182,7 +184,7 @@ abstract class UsStateClues {
     ),
     'GA': StateClueData(
       flag:
-          'Three horizontal stripes with state coat of arms, featuring three pillars representing the legislative, executive, and judicial branches',
+          'Adopted in 2003 after decades of controversy over the previous flag\'s Confederate battle emblem, Georgia\'s current design incorporates the Stars and Bars of the first Confederate national flag, framing the state seal with its three pillars for the legislative, executive, and judicial branches — the arch above them guarded by a militiaman symbolizes constitutional government defended by the people',
       sportsTeams: [
         'Atlanta Falcons (NFL)',
         'Atlanta Hawks (NBA)',
@@ -203,7 +205,7 @@ abstract class UsStateClues {
     ),
     'HI': StateClueData(
       flag:
-          'Eight horizontal stripes with Union Jack in canton, representing the eight main islands',
+          'Hawaii\'s unique flag blends British and American symbolism: the Union Jack in the canton honors King Kamehameha I\'s close alliance with Britain and the British ship Discovery that visited in 1778; the eight alternating white, red, and blue stripes represent the eight main Hawaiian islands, and the flag\'s design dates to approximately 1816 during the Kingdom of Hawaii era',
       sportsTeams: [
         'Hawaii Rainbow Warriors (NCAA Football)',
         'Hawaii Rainbow Warriors (NCAA Basketball)',
@@ -224,7 +226,8 @@ abstract class UsStateClues {
       ],
     ),
     'ID': StateClueData(
-      flag: 'Blue field with state seal featuring a miner, woman, and elk head',
+      flag:
+          'Idaho\'s seal, adopted in 1891, is the only U.S. state seal designed by a woman — Emma Edwards Green; the female figure of Justice and Liberty stands alongside a miner representing the state\'s silver and gold mining heritage, while the elk head above honors Idaho\'s abundant wildlife, and the shield bears images of the Snake River canyon and mountain scenery central to Idaho\'s identity',
       sportsTeams: [
         'Boise State Broncos (NCAA Football)',
         'Idaho Steelheads (ECHL Hockey)',
@@ -245,7 +248,7 @@ abstract class UsStateClues {
     ),
     'IL': StateClueData(
       flag:
-          'White field with state seal featuring a bald eagle holding a shield',
+          'The bald eagle on Illinois\'s seal clutches a shield bearing the U.S. flag, symbolizing Illinois\'s fierce loyalty to the Union during the Civil War; the eagle holds a banner reading "State Sovereignty, National Union" — a phrase reflecting the tension between states\' rights and federal authority that defined Illinois politics; the redesigned 1868 seal added the date 1818, marking statehood',
       sportsTeams: [
         'Chicago Bears (NFL)',
         'Chicago Bulls (NBA)',
@@ -265,7 +268,8 @@ abstract class UsStateClues {
       ],
     ),
     'IN': StateClueData(
-      flag: 'Blue field with gold torch surrounded by 19 stars',
+      flag:
+          'Designed in 1917 for Indiana\'s centennial celebrations, the gold torch at center symbolizes enlightenment and liberty; the outer ring of 13 stars represents the original colonies, the inner ring of five stars honors the next five states admitted, and the large star above the torch marks Indiana as the 19th state to join the Union in 1816',
       sportsTeams: [
         'Indianapolis Colts (NFL)',
         'Indiana Pacers (NBA)',
@@ -286,7 +290,7 @@ abstract class UsStateClues {
     ),
     'IA': StateClueData(
       flag:
-          'Three vertical stripes of blue, white, and red with an eagle holding a blue ribbon reading "Our Liberties We Prize and Our Rights We Will Maintain"',
+          'Adopted in 1921, Iowa\'s tricolor of blue, white, and red directly honors France — reflecting Iowa\'s history as part of French Louisiana Territory before the 1803 Louisiana Purchase; the bald eagle at center carries the state motto on a streamer, and the colors also echo the American and French revolutionary ideals of liberty that shaped Iowa\'s territorial politics',
       sportsTeams: [
         'Iowa Hawkeyes (NCAA Football)',
         'Iowa State Cyclones (NCAA Football)',

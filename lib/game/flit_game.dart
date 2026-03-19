@@ -771,6 +771,20 @@ class FlitGame extends FlameGame
   /// Computed once on first use to avoid per-frame allocations.
   static List<Rect>? _countryBounds;
 
+  /// Island / micro-state codes that need expanded bounding boxes for
+  /// fly-over detection. Their polygons are too small to reliably hit at
+  /// the 0.1 s check interval, so we pad the bounding box by ±1° lat/lng.
+  static const Set<String> _tinyIslandCodes = {
+    // Indian Ocean / Africa
+    'MV', 'SC', 'KM', 'MU', 'ST', 'CV',
+    // Pacific / Oceania
+    'FJ', 'FM', 'KI', 'MH', 'NR', 'PW', 'SB', 'TO', 'TV', 'VU', 'WS',
+    // Caribbean
+    'AG', 'BB', 'DM', 'GD', 'KN', 'LC', 'VC', 'TT',
+    // Other small states
+    'SG', 'BH', 'MT', 'BN',
+  };
+
   /// Detect which country the plane is currently over.
   /// Uses bounding-box pre-filtering and point-in-polygon testing.
   void _updateCountryDetection(double dt) {
@@ -782,6 +796,8 @@ class FlitGame extends FlameGame
     final countries = CountryData.countries;
 
     // Lazy-init bounding boxes (once, first frame that needs them).
+    // Tiny island nations get a ±1° padding so the plane can detect
+    // fly-overs even at speed.
     _countryBounds ??= List<Rect>.generate(countries.length, (i) {
       var minLng = double.infinity;
       var minLat = double.infinity;
@@ -794,6 +810,15 @@ class FlitGame extends FlameGame
           if (v.y < minLat) minLat = v.y;
           if (v.y > maxLat) maxLat = v.y;
         }
+      }
+      // Pad bounding boxes for tiny islands so fly-over detection
+      // isn't missed at the 0.1 s interval.
+      if (_tinyIslandCodes.contains(countries[i].code)) {
+        const pad = 1.0; // degrees
+        minLng -= pad;
+        minLat -= pad;
+        maxLng += pad;
+        maxLat += pad;
       }
       return Rect.fromLTRB(minLng, minLat, maxLng, maxLat);
     });
@@ -825,24 +850,46 @@ class FlitGame extends FlameGame
       }
 
       final country = countries[ci];
+      var hit = false;
       for (final polygon in country.polygons) {
         // Use Vector2 overload directly — no Offset allocation.
         if (_hitTest.isPointInPolygonVec2(lat, lng, polygon)) {
-          if (_cachedCountryName != country.name) {
-            _previousCountryName = _cachedCountryName;
-            _cachedCountryName = country.name;
-            _countryFlashTimer = _countryFlashDuration;
-            _log.info(
-              'game',
-              'Entered country',
-              data: {
-                'from': _previousCountryName ?? 'ocean',
-                'to': country.name,
-              },
-            );
-          }
-          return;
+          hit = true;
+          break;
         }
+      }
+
+      // For tiny island nations, fall back to centroid proximity (0.5°)
+      // when point-in-polygon misses — their polygons are often too small
+      // for reliable detection while flying.
+      if (!hit && _tinyIslandCodes.contains(country.code)) {
+        final b = _countryBounds![ci];
+        // Use bounding-box center as centroid approximation.
+        final cLng = (b.left + b.right) / 2;
+        final cLat = (b.top + b.bottom) / 2;
+        final dLng = lng - cLng;
+        final dLat = lat - cLat;
+        if (dLng * dLng + dLat * dLat < 0.25) {
+          // Within ~0.5° (~55 km) of centroid.
+          hit = true;
+        }
+      }
+
+      if (hit) {
+        if (_cachedCountryName != country.name) {
+          _previousCountryName = _cachedCountryName;
+          _cachedCountryName = country.name;
+          _countryFlashTimer = _countryFlashDuration;
+          _log.info(
+            'game',
+            'Entered country',
+            data: {
+              'from': _previousCountryName ?? 'ocean',
+              'to': country.name,
+            },
+          );
+        }
+        return;
       }
     }
 

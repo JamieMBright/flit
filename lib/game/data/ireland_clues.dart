@@ -31,7 +31,8 @@ abstract class IrelandClues {
       famousLandmark: 'GPO on O\'Connell Street',
       gaaTeam: 'The Dubs (Sky Blue)',
       nickname: 'The Pale',
-      flag: 'Sky blue with navy blue',
+      flag:
+          'Sky blue represents the ancient Gaelic kingdom of Leinster and the Virgin Mary, patron of Ireland; the navy echoes the heraldic colours of the Pale, the historic English-controlled region centred on Dublin since the Norman conquest',
     ),
     'WW': CountyClueData(
       province: 'Leinster',
@@ -40,7 +41,8 @@ abstract class IrelandClues {
       famousLandmark: 'Glendalough Monastic Site',
       gaaTeam: 'The Garden County (Blue & Gold)',
       nickname: 'The Garden of Ireland',
-      flag: 'Blue and gold vertical stripes',
+      flag:
+          'Blue and gold derive from the heraldic arms of the O\'Byrne and O\'Toole clans, the dominant Gaelic chieftains of Wicklow who fiercely resisted Norman and later English expansion into their mountain strongholds',
     ),
     'WX': CountyClueData(
       province: 'Leinster',
@@ -49,7 +51,8 @@ abstract class IrelandClues {
       famousLandmark: 'Hook Lighthouse',
       gaaTeam: 'The Model County (Purple & Gold)',
       nickname: 'The Model County',
-      flag: 'Purple and gold vertical stripes',
+      flag:
+          'Purple and gold reflect the arms of the Roche family, Anglo-Norman lords of Wexford since the 12th century; purple was a colour of high nobility and ecclesiastical authority, honouring Wexford\'s long role as a centre of Norman church influence in Leinster',
     ),
     'KK': CountyClueData(
       province: 'Leinster',
@@ -58,7 +61,8 @@ abstract class IrelandClues {
       famousLandmark: 'Kilkenny Castle',
       gaaTeam: 'The Cats (Black & Amber)',
       nickname: 'The Marble City',
-      flag: 'Black and amber vertical stripes',
+      flag:
+          'Black and amber trace to the heraldic arms of the Butler dynasty, the Anglo-Norman Earls of Ormond who dominated Kilkenny from the 14th century; their castle still stands in the city and the colours became inseparable from Kilkenny\'s identity',
     ),
     'CW': CountyClueData(
       province: 'Leinster',
@@ -67,7 +71,8 @@ abstract class IrelandClues {
       famousLandmark: 'Brownshill Dolmen',
       gaaTeam: 'The Scallion Eaters (Green, Red & Yellow)',
       nickname: 'The Dolmen County',
-      flag: 'Green, red, and yellow vertical stripes',
+      flag:
+          'Green, red, and yellow represent the three baronies of Carlow: Carlow, Rathvilly, and St Mullins; the colours also echo the arms of the MacMurrough Kavanagh dynasty, the powerful Gaelic kings of Leinster who held these lands before the Norman arrival',
     ),
     'KE': CountyClueData(
       province: 'Leinster',
@@ -76,7 +81,8 @@ abstract class IrelandClues {
       famousLandmark: 'The Curragh Racecourse',
       gaaTeam: 'The Lilywhites (White)',
       nickname: 'The Thoroughbred County',
-      flag: 'All white',
+      flag:
+          'The all-white flag gave Kildare GAA their nickname The Lilywhites; white in Irish heraldry signifies purity and spiritual devotion, befitting a county whose identity is rooted in the monastic tradition of Saint Brigid, who founded her famous abbey at Kildare in the 5th century',
     ),
     'MH': CountyClueData(
       province: 'Leinster',
@@ -85,7 +91,8 @@ abstract class IrelandClues {
       famousLandmark: 'Newgrange',
       gaaTeam: 'The Royals (Green & Gold)',
       nickname: 'The Royal County',
-      flag: 'Green and gold vertical stripes',
+      flag:
+          'Green and gold reflect the ancient royal heritage of Meath, seat of the High Kings of Ireland at the Hill of Tara; gold symbolises the sovereignty of the Ard Rí, while green stands for the sacred landscape of the Boyne Valley, cradle of Irish civilisation',
     ),
     'WH': CountyClueData(
       province: 'Leinster',
@@ -94,7 +101,8 @@ abstract class IrelandClues {
       famousLandmark: 'Athlone Castle',
       gaaTeam: 'The Lake County (Maroon & White)',
       nickname: 'The Lake County',
-      flag: 'Maroon and white vertical stripes',
+      flag:
+          'Maroon and white are drawn from the heraldic arms of the O\'Melaghlin (Malachy) dynasty, the ancient kings of Meath who once ruled Westmeath; maroon signified royal authority in Gaelic tradition, and the colours have endured as symbols of the lakeland county\'s Gaelic heritage',
     ),
     'LS': CountyClueData(
       province: 'Leinster',
@@ -103,7 +111,8 @@ abstract class IrelandClues {
       famousLandmark: 'Rock of Dunamase',
       gaaTeam: 'The O\'Moore County (Blue & White)',
       nickname: 'The O\'Moore County',
-      flag: 'Blue and white vertical stripes',
+      flag:
+          'Blue and white honour the O\'Moore clan, the Gaelic lords of Laois who led fierce resistance against the Plantation of Leix in the 16th century; their defiance gave the county its enduring name The O\'Moore County, and the heraldic blue and white recall their sept\'s colours',
     ),
     'OY': CountyClueData(
       province: 'Leinster',
@@ -112,7 +121,8 @@ abstract class IrelandClues {
       famousLandmark: 'Clonmacnoise',
       gaaTeam: 'The Faithful County (Green, White & Gold)',
       nickname: 'The Faithful County',
-      flag: 'Green, white, and gold vertical stripes',
+      flag:
+          'Green, white, and gold reflect the colours of the O\'Connor clan, hereditary kings of Offaly; the combination echoes the broader Gaelic nationalist palette and honours the county\'s deep roots as a centre of early Christian monasticism at Clonmacnoise',
     ),
     'LD': CountyClueData(
       province: 'Leinster',
@@ -121,7 +131,8 @@ abstract class IrelandClues {
       famousLandmark: 'Corlea Trackway',
       gaaTeam: 'The Slashers (Blue & Gold)',
       nickname: 'The Midlands',
-      flag: 'Blue and gold vertical stripes',
+      flag:
+          'Blue and gold derive from the arms of the O\'Farrell dynasty, the Gaelic lords who ruled Longford as part of the ancient kingdom of Annaly; gold represented their regal status while blue echoed the waterways of the Shannon that defined their territory',
     ),
     'LH': CountyClueData(
       province: 'Leinster',
@@ -130,7 +141,8 @@ abstract class IrelandClues {
       famousLandmark: 'Proleek Dolmen',
       gaaTeam: 'The Wee County (Red)',
       nickname: 'The Wee County',
-      flag: 'Red and white',
+      flag:
+          'Red and white reflect the heraldic arms of the de Verdun and later Bellew families, the Norman lords of Louth; red also symbolises the county\'s martial history as the smallest county in Ireland yet one of the most fiercely contested border territories between the Gaelic north and the English Pale',
     ),
 
     // MUNSTER
@@ -141,7 +153,8 @@ abstract class IrelandClues {
       famousLandmark: 'Blarney Castle',
       gaaTeam: 'The Rebels (Red & White)',
       nickname: 'The Rebel County',
-      flag: 'Red and white vertical stripes',
+      flag:
+          'Red and white recall the arms of the MacCarthy Mór dynasty, the Gaelic kings of Munster who dominated Cork for centuries; their rebellion against English rule earned Cork the title The Rebel County, and the red stands for the blood of resistance that defines the county\'s fiercely independent character',
     ),
     'KY': CountyClueData(
       province: 'Munster',
@@ -150,7 +163,8 @@ abstract class IrelandClues {
       famousLandmark: 'Gap of Dunloe',
       gaaTeam: 'The Kingdom (Green & Gold)',
       nickname: 'The Kingdom',
-      flag: 'Green and gold vertical stripes',
+      flag:
+          'Green and gold are the ancient colours of the Kingdom of Kerry, a proud title the county still carries; green honours the lush landscape of the southwest and the Gaelic heritage of the O\'Sullivan and Fitzgerald clans, while gold evokes the sunsets over the Atlantic that define this rugged peninsula',
     ),
     'L': CountyClueData(
       province: 'Munster',
@@ -159,7 +173,8 @@ abstract class IrelandClues {
       famousLandmark: 'King John\'s Castle',
       gaaTeam: 'The Treaty County (Green & White)',
       nickname: 'The Treaty City',
-      flag: 'Green and white vertical stripes',
+      flag:
+          'Green and white reflect the Treaty of Limerick of 1691, the peace agreement that ended the Williamite War in Ireland; the colours honour both the Gaelic O\'Brien heritage of the region and the hope for reconciliation embedded in that historic treaty, giving Limerick its enduring nickname The Treaty City',
     ),
     'CE': CountyClueData(
       province: 'Munster',
@@ -168,7 +183,8 @@ abstract class IrelandClues {
       famousLandmark: 'Cliffs of Moher',
       gaaTeam: 'The Banner County (Saffron & Blue)',
       nickname: 'The Banner County',
-      flag: 'Saffron and blue vertical stripes',
+      flag:
+          'Saffron was the traditional colour of Gaelic Irish dress and symbolises the ancient Celtic culture of the O\'Brien kings who ruled Clare as part of Thomond; blue honours the county\'s connection to the sea and the Clare coastline, while saffron together with blue evokes the county\'s dual identity of Gaelic nobility and Atlantic wildness',
     ),
     'T': CountyClueData(
       province: 'Munster',

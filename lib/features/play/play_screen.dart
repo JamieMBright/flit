@@ -429,6 +429,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         //  2. If only one type was enabled (or none remain), expand to
         //     ALL clue types and apply license preference boost.
         final previousType = _currentClue?.type;
+        final previousData = _currentClue?.displayData.toString();
         final enabled = widget.enabledClueTypes;
 
         // Determine remaining types from the session's pool.
@@ -445,19 +446,22 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         // license preference (but exclude the current type via retries).
         final hintAllowed = remainingTypes; // null = all types
         Clue? newClue;
-        for (var i = 0; i < 5; i++) {
+        for (var i = 0; i < 10; i++) {
           final candidate = Clue.random(
             _session!.targetCountry.code,
             preferredClueType: widget.preferredClueType,
             clueChance: widget.clueChance,
             allowedTypes: hintAllowed,
           );
-          if (candidate.type != previousType || i == 4) {
+          // Accept candidate only if it has a different type AND different
+          // content — avoids showing the same capital/clue text again.
+          if (candidate.type != previousType &&
+              candidate.displayData.toString() != previousData) {
             newClue = candidate;
             break;
           }
         }
-        if (newClue != null && newClue.type != previousType) {
+        if (newClue != null) {
           _currentClue = newClue;
           _log.info(
             'hint',

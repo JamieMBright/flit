@@ -247,10 +247,14 @@ class _UnchartedMapPainter extends CustomPainter {
   /// Radius of the dashed circle marker for tiny areas.
   static const double _markerRadius = 10.0;
 
-  /// Area codes that always get an expanded marker (micro-states).
+  /// Area codes that always get an expanded marker (micro-states & islands).
   static const Set<String> _alwaysTinyCodes = {
     'MV', 'SG', 'BH', 'MU', 'SC', 'KM', 'ST', 'CV', // island/micro states
     'MT', 'AD', 'MC', 'LI', 'SM', 'VA', // European micro-states
+    // Pacific / Oceania island nations
+    'FJ', 'FM', 'KI', 'MH', 'NR', 'PW', 'SB', 'TO', 'TV', 'VU', 'WS',
+    // Caribbean island nations
+    'AG', 'BB', 'DM', 'GD', 'KN', 'LC', 'VC', 'TT',
   };
 
   /// Whether an area's polygon footprint on canvas is too small to see.

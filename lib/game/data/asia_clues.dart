@@ -23,7 +23,7 @@ abstract class AsiaClues {
       famousLandmark: 'Burj Khalifa',
       famousPerson: 'Sheikh Zayed bin Sultan Al Nahyan',
       flag:
-          'Horizontal green, white, and black stripes with vertical red stripe at hoist',
+          'The red represents courage, the green symbolises fertility, the white represents peace, and the black represents the defeat of enemies — the Pan-Arab colours also reflect unity among the seven emirates and the broader Arab world',
     ),
     'AF': AsiaClueData(
       nickname: 'The Graveyard of Empires',
@@ -36,20 +36,22 @@ abstract class AsiaClues {
       nickname: 'The Land of Noah',
       famousLandmark: 'Geghard Monastery',
       famousPerson: 'Charles Aznavour',
-      flag: 'Horizontal red, blue, and orange stripes',
+      flag:
+          'The red symbolises the Armenian Highland, the struggle for survival, and Christian faith; the blue represents the will to live under peaceful skies; the orange represents the creative nature and hard-working character of the Armenian people',
     ),
     'AZ': AsiaClueData(
       nickname: 'The Land of Fire',
       famousLandmark: 'Flame Towers',
       famousPerson: 'Heydar Aliyev',
       flag:
-          'Horizontal blue, red, and green stripes with white crescent and eight-pointed star on red stripe',
+          'The blue represents Turkic heritage, the red symbolises modernisation and progress, the green represents Islam; the crescent and eight-pointed star reflect the Turkic world — the eight points represent the eight Turkic peoples',
     ),
     'BD': AsiaClueData(
       nickname: 'The Land of Rivers',
       famousLandmark: 'Sundarbans Mangrove Forest',
       famousPerson: 'Sheikh Mujibur Rahman',
-      flag: 'Dark green field with red circle offset slightly toward hoist',
+      flag:
+          'The dark green represents the lush vegetation of Bangladesh, and the red disc symbolises the rising sun and the blood shed in the 1971 Liberation War — the disc is offset toward the hoist so it appears centred when the flag flies',
     ),
     'BH': AsiaClueData(
       nickname: 'The Pearl of the Gulf',
@@ -63,96 +65,98 @@ abstract class AsiaClues {
       famousLandmark: 'Omar Ali Saifuddien Mosque',
       famousPerson: 'Sultan Hassanal Bolkiah',
       flag:
-          'Yellow field with white and black diagonal stripes and red national crest in center',
+          'The yellow field represents the Sultan, the white and black diagonal stripes symbolise the chief ministers, and the national crest bears the crescent of Islam with the motto "Always in service with God\'s guidance" — reflecting Brunei\'s Islamic monarchy',
     ),
     'BT': AsiaClueData(
       nickname: 'The Land of the Thunder Dragon',
       famousLandmark: 'Tiger\'s Nest Monastery',
       famousPerson: 'Jigme Singye Wangchuck',
       flag:
-          'Diagonally divided yellow and orange halves with white dragon in center',
+          'The dragon (Druk, the Thunder Dragon) gives Bhutan its native name "Druk Yul"; the orange represents the Buddhist spiritual tradition, the saffron-yellow represents the secular authority of the king, and the jewels in the dragon\'s claws symbolise national wealth',
     ),
     'CN': AsiaClueData(
       nickname: 'The Middle Kingdom',
       famousLandmark: 'Great Wall of China',
       famousPerson: 'Confucius',
       flag:
-          'Red field with five yellow stars at upper hoist, one large and four small',
+          'The red symbolises the Communist revolution, the large gold star represents the Communist Party of China, and the four smaller stars represent the four social classes — workers, peasants, petty bourgeoisie, and national bourgeoisie — united under the Party',
     ),
     'GE': AsiaClueData(
       nickname: 'The Balcony of Europe',
       famousLandmark: 'Jvari Monastery',
       famousPerson: 'Joseph Stalin',
       flag:
-          'White field with large red cross and four red crosses in each quadrant',
+          'The white field represents purity and innocence, and the five red crosses (one large St. George\'s cross and four smaller Bolnisi crosses) are ancient Georgian Christian symbols — the design recalls medieval Georgian kingdom banners',
     ),
     'ID': AsiaClueData(
       nickname: 'The Emerald of the Equator',
       famousLandmark: 'Borobudur Temple',
       famousPerson: 'Sukarno',
-      flag: 'Horizontal red and white halves',
+      flag:
+          'The red and white bicolour derives from the 13th-century Majapahit Empire; red symbolises courage and white represents purity — the simplicity reflects the national motto "Unity in Diversity"',
     ),
     'IL': AsiaClueData(
       nickname: 'The Holy Land',
       famousLandmark: 'Western Wall',
       famousPerson: 'David Ben-Gurion',
       flag:
-          'White field with blue horizontal stripes near top and bottom and blue Star of David in center',
+          'The blue and white represent the traditional Jewish prayer shawl (tallit), and the blue Star of David (Magen David) has been a symbol of Jewish identity since the Middle Ages — the flag was designed by the Zionist movement in 1891',
     ),
     'IN': AsiaClueData(
       nickname: 'The Land of Spices',
       famousLandmark: 'Taj Mahal',
       famousPerson: 'Mahatma Gandhi',
       flag:
-          'Horizontal saffron, white, and green stripes with blue Ashoka Chakra wheel on white stripe',
+          'The saffron represents courage and sacrifice, the white represents truth and peace, the green represents faith and fertility; the Ashoka Chakra (24-spoke wheel) in the centre symbolises dharma (righteousness) and was adopted from the Lion Capital of Ashoka',
     ),
     'IQ': AsiaClueData(
       nickname: 'The Cradle of Civilization',
       famousLandmark: 'Ziggurat of Ur',
       famousPerson: 'Hammurabi',
       flag:
-          'Horizontal red, white, and black stripes with green Takbir script on white stripe',
+          'The red-white-black horizontal tricolour uses Pan-Arab colours; the Takbir ("Allahu Akbar" — God is Greatest) in green Kufic script was added to the white stripe — the current script version was adopted in 2008 to replace Saddam-era handwriting',
     ),
     'IR': AsiaClueData(
       nickname: 'The Land of the Aryans',
       famousLandmark: 'Persepolis',
       famousPerson: 'Cyrus the Great',
       flag:
-          'Horizontal green, white, and red stripes with red emblem in center and Takbir script along stripe edges',
+          'The green represents Islam, the white symbolises peace, the red represents courage; the stylised word "Allah" is repeated 22 times along the stripe borders (commemorating the revolution on 22 Bahman), and the central emblem represents "La ilaha illallah" (There is no God but Allah)',
     ),
     'JO': AsiaClueData(
       nickname: 'The Hashemite Kingdom',
       famousLandmark: 'Petra',
       famousPerson: 'King Hussein',
       flag:
-          'Horizontal black, white, and green stripes with red triangle at hoist bearing white seven-pointed star',
+          'The black, white, and green horizontal stripes represent the Abbasid, Umayyad, and Fatimid dynasties; the red triangle represents the Hashemite dynasty and the Arab Revolt of 1916, and the seven-pointed star symbolises the seven verses of the opening sura of the Quran',
     ),
     'JP': AsiaClueData(
       nickname: 'The Land of the Rising Sun',
       famousLandmark: 'Mount Fuji',
       famousPerson: 'Emperor Meiji',
-      flag: 'White field with red circle in center',
+      flag:
+          'The white field represents honesty and purity, and the red circle (Hinomaru) symbolises the sun — Japan is known as "Nippon" (origin of the sun), and the design has been used for centuries by feudal lords and imperial courts',
     ),
     'KG': AsiaClueData(
       nickname: 'The Switzerland of Central Asia',
       famousLandmark: 'Issyk-Kul Lake',
       famousPerson: 'Chingiz Aitmatov',
       flag:
-          'Red field with yellow sun containing forty rays and a tunduk symbol in center',
+          'The red field represents the banner of the legendary hero Manas, the golden sun with 40 rays represents the 40 Kyrgyz tribes united by Manas, and the symbol inside the sun depicts the tunduk — the crown of a traditional Kyrgyz yurt, symbolising family and the universe',
     ),
     'KH': AsiaClueData(
       nickname: 'The Kingdom of Wonder',
       famousLandmark: 'Angkor Wat',
       famousPerson: 'Norodom Sihanouk',
       flag:
-          'Blue and red horizontal stripes with white depiction of Angkor Wat in center',
+          'The blue stripes represent royalty, the red symbolises the nation and its people, and the white Angkor Wat temple in the centre is a source of immense national pride — Cambodia is the only country in the world to feature a building on its flag',
     ),
     'KP': AsiaClueData(
       nickname: 'The Hermit Kingdom',
       famousLandmark: 'Kumsusan Palace of the Sun',
       famousPerson: 'Kim Il-sung',
       flag:
-          'Blue, red, and white horizontal stripes with white circle and red star at hoist side',
+          'The red field represents revolutionary traditions and patriotism, the blue stripes symbolise sovereignty and peace, the white stripes represent purity, and the red star on the white disc represents the ideals of communism',
     ),
     'KR': AsiaClueData(
       nickname: 'The Land of the Morning Calm',
