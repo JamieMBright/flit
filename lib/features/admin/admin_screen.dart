@@ -6131,7 +6131,7 @@ class _ReportQueuePlaceholderState extends State<_ReportQueuePlaceholder>
             try {
               await ReportService.instance.resolveReport(
                 reportId: report.id,
-                status: 'resolved',
+                status: 'actioned',
                 actionTaken: action,
               );
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
@@ -6293,7 +6293,7 @@ class _ReportQueuePlaceholderState extends State<_ReportQueuePlaceholder>
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: report.status == 'resolved'
+                    color: report.status == 'actioned'
                         ? FlitColors.success.withOpacity(0.15)
                         : FlitColors.textMuted.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(6),
@@ -6301,7 +6301,7 @@ class _ReportQueuePlaceholderState extends State<_ReportQueuePlaceholder>
                   child: Text(
                     report.status.toUpperCase(),
                     style: TextStyle(
-                      color: report.status == 'resolved'
+                      color: report.status == 'actioned'
                           ? FlitColors.success
                           : FlitColors.textMuted,
                       fontSize: 10,

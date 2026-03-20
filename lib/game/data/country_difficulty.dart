@@ -12,6 +12,9 @@
 /// provides compiled-in defaults so seeded challenges stay deterministic even
 /// when offline.
 
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../clues/clue_types.dart';
 
 // ─── Clue-type difficulty weights ──────────────────────────────────────────
@@ -151,6 +154,38 @@ void clearCountryDifficultyOverrides() {
   _adminOverrides.clear();
 }
 
+/// Load admin difficulty overrides from Supabase `remote_config` table.
+///
+/// Call after [Supabase.initialize]. If the row doesn't exist or the network
+/// is unavailable, silently falls back to compiled-in defaults.
+Future<void> loadDifficultyOverridesFromRemote() async {
+  try {
+    final row = await Supabase.instance.client
+        .from('remote_config')
+        .select('value')
+        .eq('key', 'difficulty_config')
+        .maybeSingle();
+    if (row == null) return;
+    final value = row['value'] as Map<String, dynamic>?;
+    if (value == null) return;
+    final raw = value['country_overrides'] as Map<String, dynamic>?;
+    if (raw == null || raw.isEmpty) return;
+    final overrides = <String, double>{};
+    for (final entry in raw.entries) {
+      final v = entry.value;
+      if (v is num) overrides[entry.key] = v.toDouble();
+    }
+    if (overrides.isNotEmpty) {
+      setCountryDifficultyOverrides(overrides);
+      debugPrint(
+        'Loaded ${overrides.length} country difficulty overrides from remote',
+      );
+    }
+  } catch (e) {
+    debugPrint('Failed to load difficulty overrides: $e');
+  }
+}
+
 /// The effective difficulty for every known country (overrides + defaults).
 Map<String, double> get effectiveCountryDifficulty {
   return {..._defaultCountryDifficulty, ..._adminOverrides};
@@ -208,9 +243,9 @@ const Map<String, double> _defaultCountryDifficulty = {
   'AR': 0.17, // Argentina — long southern cone
   'SA': 0.17, // Saudi Arabia — large Arabian peninsula
   'TR': 0.18, // Turkey — Europe-Asia bridge
-  'ID': 0.18, // Indonesia — world's largest archipelago
+  'ID': 0.18, // Indonesia — worlds largest archipelago
   'TH': 0.19, // Thailand — elephant-head shape
-  'NG': 0.20, // Nigeria — Africa's most populous
+  'NG': 0.20, // Nigeria — Africa most populous
   'SE': 0.20, // Sweden — Scandinavian peninsula
   'NO': 0.21, // Norway — fjord coast
   'PL': 0.22, // Poland — central Europe
@@ -224,7 +259,7 @@ const Map<String, double> _defaultCountryDifficulty = {
   'UA': 0.26, // Ukraine — large European nation
   'CL': 0.26, // Chile — ultra-long thin strip
   'VE': 0.27, // Venezuela — northern South America
-  'CU': 0.27, // Cuba — Caribbean's largest island
+  'CU': 0.27, // Cuba — Caribbean largest island
   'IE': 0.28, // Ireland — island, culturally prominent
   'IL': 0.28, // Israel — small but very well-known
   'FI': 0.28, // Finland — distinctive Scandinavian shape

@@ -449,20 +449,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 const SizedBox(height: 10),
               ],
               _GameModeCard(
-                title: 'Daily Briefing',
-                subtitle: 'Daily quiz challenge — same for all pilots',
-                icon: Icons.assignment_rounded,
-                isHighlighted: true,
-                isRedHighlighted: true,
-                isLocked: _isLocked('daily_briefing'),
-                unlockHint: _lockHint('daily_briefing'),
-                onTap: () => _closeSheetAndNavigate(
-                  ctx,
-                  const DailyBriefingScreen(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              _GameModeCard(
                 title: 'Free Flight',
                 subtitle: 'Explore the world at your own pace',
                 icon: Icons.flight_takeoff,
@@ -506,12 +492,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
               const SizedBox(height: 20),
 
-              // ── GROUND SCHOOL — quiz & study modes ──
+              // ── BRIEFING ROOM — quiz & study modes ──
               const _SectionLabel(
                 icon: Icons.menu_book_rounded,
-                label: 'GROUND SCHOOL',
+                label: 'BRIEFING ROOM',
               ),
               const SizedBox(height: 12),
+              _GameModeCard(
+                title: 'Daily Briefing',
+                subtitle: 'Daily quiz challenge — same for all pilots',
+                icon: Icons.assignment_rounded,
+                isHighlighted: true,
+                isRedHighlighted: true,
+                isLocked: _isLocked('daily_briefing'),
+                unlockHint: _lockHint('daily_briefing'),
+                onTap: () => _closeSheetAndNavigate(
+                  ctx,
+                  const DailyBriefingScreen(),
+                ),
+              ),
+              const SizedBox(height: 10),
               _GameModeCard(
                 title: 'Flight School',
                 subtitle: 'Quiz yourself on states, capitals & more',
