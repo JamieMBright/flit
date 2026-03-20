@@ -28,6 +28,7 @@ class UnchartedMapWidget extends StatefulWidget {
     this.lastRevealedCode,
     this.capitalsMode = false,
     this.pingProgress = 0.0,
+    this.showUnrevealedLabels = false,
   });
 
   final GameRegion region;
@@ -41,6 +42,9 @@ class UnchartedMapWidget extends StatefulWidget {
 
   /// 0.0 = no ping, 0.0-1.0 = ping animation progress for unrevealed areas.
   final double pingProgress;
+
+  /// When true, show faint name labels on unrevealed areas (easy mode).
+  final bool showUnrevealedLabels;
 
   @override
   State<UnchartedMapWidget> createState() => _UnchartedMapWidgetState();
@@ -163,6 +167,7 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
                   pingProgress: widget.pingProgress,
                   pathCache: _pathCache,
                   cachedTransform: _cachedTransform,
+                  showUnrevealedLabels: widget.showUnrevealedLabels,
                 ),
               ),
             );
@@ -217,6 +222,7 @@ class _UnchartedMapPainter extends CustomPainter {
     this.pingProgress = 0.0,
     required this.pathCache,
     this.cachedTransform,
+    this.showUnrevealedLabels = false,
   });
 
   final List<RegionalArea> areas;
@@ -230,6 +236,7 @@ class _UnchartedMapPainter extends CustomPainter {
   final double pingProgress;
   final Map<String, Path> pathCache;
   final _GeoTransform? cachedTransform;
+  final bool showUnrevealedLabels;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -396,6 +403,14 @@ class _UnchartedMapPainter extends CustomPainter {
     // ── Pass 3: Labels ──
     for (final area in revealedAreas) {
       _drawLabel(canvas, area, transform);
+    }
+
+    // Unrevealed labels (easy mode) — faint, smaller text.
+    if (showUnrevealedLabels) {
+      for (final area in areas) {
+        if (revealedCodes.contains(area.code)) continue;
+        _drawUnrevealedLabel(canvas, area, transform);
+      }
     }
   }
 
@@ -756,6 +771,35 @@ class _UnchartedMapPainter extends CustomPainter {
     }
   }
 
+  /// Draw a faint label for an unrevealed area (easy/labels mode).
+  void _drawUnrevealedLabel(
+      Canvas canvas, RegionalArea area, _GeoTransform transform) {
+    final centroid = _computeCentroid(area, transform);
+    if (centroid == null) return;
+
+    final fontSize = (8.0 / zoomScale).clamp(2.5, 11.0);
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: area.name,
+        style: TextStyle(
+          color: const Color(0x80AABBCC),
+          fontSize: fontSize,
+          fontWeight: FontWeight.w500,
+          shadows: const [
+            Shadow(color: Color(0xFF000000), blurRadius: 1),
+          ],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    )..layout();
+
+    textPainter.paint(
+      canvas,
+      centroid - Offset(textPainter.width / 2, textPainter.height / 2),
+    );
+  }
+
   /// Compute centroid from all points (fine for most countries).
   Offset? _computeCentroid(RegionalArea area, _GeoTransform transform) {
     final points = area.points;
@@ -805,7 +849,8 @@ class _UnchartedMapPainter extends CustomPainter {
         flashProgress != oldDelegate.flashProgress ||
         zoomScale != oldDelegate.zoomScale ||
         satelliteImage != oldDelegate.satelliteImage ||
-        pingProgress != oldDelegate.pingProgress;
+        pingProgress != oldDelegate.pingProgress ||
+        showUnrevealedLabels != oldDelegate.showUnrevealedLabels;
   }
 }
 

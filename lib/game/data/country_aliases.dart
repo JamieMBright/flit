@@ -836,6 +836,16 @@ const Map<String, List<String>> countryAliases = {
 
   'gibraltar': ['rock of gibraltar', 'the rock'],
 
+  'åland': ['aland', 'aland islands', 'ahvenanmaa'],
+
+  'northern cyprus': ['north cyprus', 'trnc', 'kktc'],
+
+  'saint helena': [
+    'st helena',
+    'st. helena',
+    'saint helena ascension and tristan da cunha',
+  ],
+
   // ════════════════════════════════════════════════════════════════
   // COMMON GLOBAL TYPOS (additional, beyond above)
   // ════════════════════════════════════════════════════════════════

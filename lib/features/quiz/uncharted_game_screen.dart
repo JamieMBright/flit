@@ -25,10 +25,15 @@ class UnchartedGameScreen extends StatefulWidget {
     super.key,
     required this.region,
     required this.mode,
+    this.showLabels = false,
   });
 
   final GameRegion region;
   final UnchartedMode mode;
+
+  /// When true, unrevealed country names are shown on the map and the
+  /// final score is halved.
+  final bool showLabels;
 
   @override
   State<UnchartedGameScreen> createState() => _UnchartedGameScreenState();
@@ -206,6 +211,10 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
   }
 
   void _showResults() {
+    // Halve score when labels are enabled.
+    final score = widget.showLabels
+        ? (_session.finalScore * 0.5).round()
+        : _session.finalScore;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => UnchartedResultsScreen(
@@ -214,10 +223,11 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
           revealedCount: _session.correctGuesses,
           totalCount: _session.totalCount,
           elapsedMs: _session.elapsedMs,
-          score: _session.finalScore,
+          score: score,
           givenUp: _session.givenUp,
           revealedCodes: _session.revealedCodes,
           guessedCodes: _session.guessedCodes,
+          labelsUsed: widget.showLabels,
         ),
       ),
     );
@@ -247,6 +257,7 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
                     lastRevealedCode: _lastRevealedCode,
                     capitalsMode: widget.mode == UnchartedMode.capitals,
                     pingProgress: _pingController.value,
+                    showUnrevealedLabels: widget.showLabels,
                   ),
                 ),
               ),
@@ -326,6 +337,24 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
               fontWeight: FontWeight.w800,
             ),
           ),
+          if (widget.showLabels) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: FlitColors.gold.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'x0.5',
+                style: TextStyle(
+                  color: FlitColors.gold,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
           const SizedBox(width: 12),
           // Give up.
           TextButton(
@@ -497,6 +526,7 @@ class UnchartedResultsScreen extends ConsumerStatefulWidget {
     required this.givenUp,
     required this.revealedCodes,
     this.guessedCodes,
+    this.labelsUsed = false,
   });
 
   final GameRegion region;
@@ -510,6 +540,9 @@ class UnchartedResultsScreen extends ConsumerStatefulWidget {
 
   /// Codes the player actually typed. Null when all revealed = guessed.
   final Set<String>? guessedCodes;
+
+  /// Whether country name labels were shown (score halved).
+  final bool labelsUsed;
 
   @override
   ConsumerState<UnchartedResultsScreen> createState() =>
@@ -767,6 +800,12 @@ class _UnchartedResultsScreenState
                 value: '${widget.revealedCount} / ${widget.totalCount}',
               ),
               _StatRow(label: 'Time', value: _elapsedFormatted),
+              if (widget.labelsUsed)
+                const _StatRow(
+                  label: 'Labels',
+                  value: 'ON (score halved)',
+                  valueColor: FlitColors.gold,
+                ),
               if (progress != null && progress.hasPlayed) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -1048,10 +1087,15 @@ class _MiniStat extends StatelessWidget {
 }
 
 class _StatRow extends StatelessWidget {
-  const _StatRow({required this.label, required this.value});
+  const _StatRow({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
 
   final String label;
   final String value;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
@@ -1073,11 +1117,11 @@ class _StatRow extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           SizedBox(
-            width: 100,
+            width: 140,
             child: Text(
               value,
-              style: const TextStyle(
-                color: FlitColors.textPrimary,
+              style: TextStyle(
+                color: valueColor ?? FlitColors.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),

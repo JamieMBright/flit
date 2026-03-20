@@ -56,13 +56,22 @@ List<Offset> chaikinSmooth(List<Offset> points, [int iterations = 2]) {
 ///
 /// Shared across all map renderers so that tiny-area handling is consistent.
 const Set<String> alwaysTinyCodes = {
-  // European micro-states (city-states / < 500 km²)
+  // European micro-states and small territories
+  'AX', // Åland Islands (1,580 km² but small scattered islands)
+  'FO', // Faroe Islands (1,399 km² but small scattered islands)
+  'GG', // Guernsey (65 km²)
   'GI', // Gibraltar (6.8 km²)
+  'IM', // Isle of Man (572 km²)
+  'JE', // Jersey (120 km²)
   'MC', // Monaco (2.0 km²)
   'SM', // San Marino (61 km²)
   'VA', // Vatican City (0.44 km²)
 
-  // City-states
+  // City-states and small territories
+  'BM', // Bermuda (54 km²)
+  'GU', // Guam (544 km²)
+  'HK', // Hong Kong (1,114 km²)
+  'MO', // Macao (33 km²)
   'SG', // Singapore (733 km²)
 
   // Scattered atolls — no single island large enough to render
