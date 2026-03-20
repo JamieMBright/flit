@@ -127,10 +127,22 @@ class EarningsConfig {
   /// Maximum gold earnable from free flight per day.
   final int freeFlightDailyCap;
 
+  /// Gold reward for completing a campaign mission.
+  final int campaignMissionReward;
+
+  /// Base gold reward for completing a game.
+  final int gameCompletionBaseReward;
+
+  /// Gold reward for completing a flight school level.
+  final int flightSchoolReward;
+
   const EarningsConfig({
     this.dailyScrambleBaseReward = 150,
     this.freeFlightPerClueReward = 15,
     this.freeFlightDailyCap = 150,
+    this.campaignMissionReward = 100,
+    this.gameCompletionBaseReward = 50,
+    this.flightSchoolReward = 75,
   });
 
   factory EarningsConfig.fromJson(Map<String, dynamic>? json) {
@@ -139,6 +151,9 @@ class EarningsConfig {
       dailyScrambleBaseReward: json['dailyScrambleBaseReward'] as int? ?? 150,
       freeFlightPerClueReward: json['freeFlightPerClueReward'] as int? ?? 15,
       freeFlightDailyCap: json['freeFlightDailyCap'] as int? ?? 150,
+      campaignMissionReward: json['campaignMissionReward'] as int? ?? 100,
+      gameCompletionBaseReward: json['gameCompletionBaseReward'] as int? ?? 50,
+      flightSchoolReward: json['flightSchoolReward'] as int? ?? 75,
     );
   }
 
@@ -147,6 +162,9 @@ class EarningsConfig {
       'dailyScrambleBaseReward': dailyScrambleBaseReward,
       'freeFlightPerClueReward': freeFlightPerClueReward,
       'freeFlightDailyCap': freeFlightDailyCap,
+      'campaignMissionReward': campaignMissionReward,
+      'gameCompletionBaseReward': gameCompletionBaseReward,
+      'flightSchoolReward': flightSchoolReward,
     };
   }
 }
@@ -235,6 +253,9 @@ class EconomyConfig {
         dailyScrambleBaseReward: 150,
         freeFlightPerClueReward: 15,
         freeFlightDailyCap: 150,
+        campaignMissionReward: 100,
+        gameCompletionBaseReward: 50,
+        flightSchoolReward: 75,
       ),
       shopPriceOverrides: <String, int>{},
       promotions: <Promotion>[],
