@@ -18,6 +18,7 @@ import 'core/utils/web_error_bridge.dart';
 import 'core/utils/web_flush_bridge.dart';
 import 'core/widgets/error_overlay_manager.dart';
 import 'data/services/user_preferences_service.dart';
+import 'game/data/country_difficulty.dart';
 import 'game/quiz/alias_service.dart';
 import 'features/auth/login_screen.dart';
 
@@ -80,6 +81,9 @@ Future<void> main() async {
     anonKey: SupabaseConfig.anonKey,
   );
   _log.info('app', 'Supabase initialized');
+
+  // Load admin difficulty overrides from remote_config (non-blocking).
+  await loadDifficultyOverridesFromRemote();
 
   // Initialize the error telemetry service (V0).
   final errorService = ErrorService.instance;
