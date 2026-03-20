@@ -157,6 +157,7 @@ class _UnchartedMapPainter extends CustomPainter {
       final path = _buildAreaPath(area, transform);
       final isRevealed = revealedCodes.contains(area.code);
       final isFlashing = area.code == lastRevealedCode && flashProgress < 1.0;
+      final tiny = _isTinyArea(area, transform);
 
       if (isRevealed) {
         if (isFlashing) {
@@ -166,17 +167,72 @@ class _UnchartedMapPainter extends CustomPainter {
             const Color(0xFF1B6B4A),
             flashProgress,
           )!;
-          canvas.drawPath(path, Paint()..color = flashColor);
+          if (tiny) {
+            _drawTinyMarker(canvas, area, transform,
+                fill: Paint()..color = flashColor, stroke: revealedStroke);
+          } else {
+            canvas.drawPath(path, Paint()..color = flashColor);
+          }
         } else {
-          canvas.drawPath(path, revealedFill);
+          if (tiny) {
+            _drawTinyMarker(canvas, area, transform,
+                fill: revealedFill, stroke: revealedStroke);
+          } else {
+            canvas.drawPath(path, revealedFill);
+          }
         }
-        canvas.drawPath(path, revealedStroke);
+        if (!tiny) canvas.drawPath(path, revealedStroke);
         _drawLabel(canvas, area, transform);
       } else {
-        // Unrevealed: just outline.
-        canvas.drawPath(path, outlinePaint);
+        // Unrevealed: outline or marker for tiny areas.
+        if (tiny) {
+          _drawTinyMarker(canvas, area, transform, stroke: outlinePaint);
+        } else {
+          canvas.drawPath(path, outlinePaint);
+        }
       }
     }
+  }
+
+  /// Minimum canvas diameter (logical pixels) below which an area gets a
+  /// visible marker instead of its raw polygon outline.
+  static const double _tinyThreshold = 14.0;
+
+  /// Radius of the expanded marker drawn for tiny areas.
+  static const double _markerRadius = 8.0;
+
+  /// Whether an area is too small on canvas to be visible as a polygon.
+  bool _isTinyArea(RegionalArea area, _GeoTransform transform) {
+    if (area.points.length < 3) return true;
+    var minX = double.infinity, maxX = -double.infinity;
+    var minY = double.infinity, maxY = -double.infinity;
+    for (final p in area.points) {
+      final cp = transform.toCanvas(p.x, p.y);
+      if (cp.dx < minX) minX = cp.dx;
+      if (cp.dx > maxX) maxX = cp.dx;
+      if (cp.dy < minY) minY = cp.dy;
+      if (cp.dy > maxY) maxY = cp.dy;
+    }
+    final w = (maxX - minX) * zoomScale;
+    final h = (maxY - minY) * zoomScale;
+    return w < _tinyThreshold && h < _tinyThreshold;
+  }
+
+  /// Draw a circular marker for a tiny area so it's visible on the map.
+  void _drawTinyMarker(
+    Canvas canvas,
+    RegionalArea area,
+    _GeoTransform transform, {
+    Paint? fill,
+    required Paint stroke,
+  }) {
+    final centroid = _computeCentroid(area, transform);
+    if (centroid == null) return;
+    final r = _markerRadius / zoomScale;
+    if (fill != null) {
+      canvas.drawCircle(centroid, r, fill);
+    }
+    canvas.drawCircle(centroid, r, stroke);
   }
 
   Path _buildAreaPath(RegionalArea area, _GeoTransform transform) {

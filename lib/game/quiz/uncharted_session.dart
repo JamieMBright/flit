@@ -129,12 +129,21 @@ class UnchartedSession {
     _startTime = DateTime.now();
   }
 
+  /// Minimum input length for auto-submit to trigger.
+  ///
+  /// Prevents very short aliases ('us', 'uk', 'dr', 'dc', 'ss', 'nz', 'tt')
+  /// from firing while the player is still typing. Recognised 3-letter
+  /// acronyms like CAR, UAE, DRC still auto-submit.
+  static const int _autoSubmitMinLength = 3;
+
   /// Check if [input] exactly matches an unrevealed area (no side effects).
   ///
-  /// Returns true only for exact or alias matches (distance 0), so that
-  /// auto-submit doesn't fire on partial fuzzy matches.
+  /// Returns true only for exact or alias matches (distance 0) with at least
+  /// [_autoSubmitMinLength] characters, so that auto-submit doesn't fire on
+  /// short abbreviations mid-typing.
   bool hasExactMatch(String input) {
     if (isComplete) return false;
+    if (input.trim().length < _autoSubmitMinLength) return false;
     final result = _matcher.bestMatch(input, excludeCodes: _revealedCodes);
     return result != null && result.isExact;
   }

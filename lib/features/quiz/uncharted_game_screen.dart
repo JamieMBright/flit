@@ -319,19 +319,15 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
                   hintStyle: TextStyle(
                     color: FlitColors.textSecondary.withOpacity(0.5),
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: FlitColors.accent),
+                  border: const OutlineInputBorder(
+                    borderSide: BorderSide(color: FlitColors.accent),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
                     borderSide:
                         BorderSide(color: FlitColors.accent.withOpacity(0.4)),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: FlitColors.accent, width: 2),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: FlitColors.accent, width: 2),
                   ),
                   filled: true,
                   fillColor: const Color(0xFF1A2A3A),
