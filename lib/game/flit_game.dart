@@ -818,10 +818,16 @@ class FlitGame extends FlameGame
       }
     }
 
+    // Expanded hit radius (degrees) for tiny island nations.
+    const tinyHitRadius = 0.8;
+
     for (var ci = 0; ci < countries.length; ci++) {
       // Fast bounding-box reject (skips ~95% of countries).
       final b = _countryBounds![ci];
-      if (lng < b.left || lng > b.right || lat < b.top || lat > b.bottom) {
+      if (lng < b.left - tinyHitRadius ||
+          lng > b.right + tinyHitRadius ||
+          lat < b.top - tinyHitRadius ||
+          lat > b.bottom + tinyHitRadius) {
         continue;
       }
 
@@ -836,6 +842,24 @@ class FlitGame extends FlameGame
             _log.info(
               'game',
               'Entered country',
+              data: {
+                'from': _previousCountryName ?? 'ocean',
+                'to': country.name,
+              },
+            );
+          }
+          return;
+        }
+        // Proximity fallback for tiny islands too small to hit precisely.
+        if (_hitTest.isTinyPolygon(polygon) &&
+            _hitTest.isNearPolygonVec2(lat, lng, polygon, tinyHitRadius)) {
+          if (_cachedCountryName != country.name) {
+            _previousCountryName = _cachedCountryName;
+            _cachedCountryName = country.name;
+            _countryFlashTimer = _countryFlashDuration;
+            _log.info(
+              'game',
+              'Entered country (proximity)',
               data: {
                 'from': _previousCountryName ?? 'ocean',
                 'to': country.name,

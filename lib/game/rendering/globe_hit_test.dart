@@ -215,6 +215,35 @@ class GlobeHitTest {
     return inside;
   }
 
+  /// Expanded hit-test for tiny polygons: checks if a point is within
+  /// [radiusDeg] degrees of any vertex in the polygon. Used as a fallback
+  /// when the polygon itself is too small to reliably hit.
+  bool isNearPolygonVec2(
+      double lat, double lng, List<Vector2> polygon, double radiusDeg) {
+    final r2 = radiusDeg * radiusDeg;
+    for (final v in polygon) {
+      final dLng = v.x - lng;
+      final dLat = v.y - lat;
+      if (dLng * dLng + dLat * dLat <= r2) return true;
+    }
+    return false;
+  }
+
+  /// Whether a polygon's bounding box spans less than [thresholdDeg] in
+  /// both longitude and latitude, indicating a tiny island.
+  bool isTinyPolygon(List<Vector2> polygon, {double thresholdDeg = 1.5}) {
+    if (polygon.length < 3) return true;
+    var minX = double.infinity, maxX = -double.infinity;
+    var minY = double.infinity, maxY = -double.infinity;
+    for (final v in polygon) {
+      if (v.x < minX) minX = v.x;
+      if (v.x > maxX) maxX = v.x;
+      if (v.y < minY) minY = v.y;
+      if (v.y > maxY) maxY = v.y;
+    }
+    return (maxX - minX) < thresholdDeg && (maxY - minY) < thresholdDeg;
+  }
+
   /// Great-circle angular distance between two points in degrees.
   ///
   /// Uses the Haversine formula for numerical stability.

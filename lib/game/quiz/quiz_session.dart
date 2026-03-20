@@ -461,17 +461,16 @@ class QuizSession {
           if (area.funFact != null && area.funFact!.isNotEmpty) {
             hints.add(area.funFact!);
           }
-          // Capital as fallback for tier 2 if not used in tier 1
-          if (category == QuizCategory.capital &&
-              area.capital != null &&
-              area.capital!.isNotEmpty) {
-            // Capital was the question, skip it
-          } else if (area.capital != null && area.capital!.isNotEmpty) {
-            hints.add('Capital: ${area.capital}');
+          if (area.population != null) {
+            hints.add('Population: ${_formatPopulation(area.population!)}');
           }
         }
       }
     }
+
+    // Deduplicate: remove any clue already shown or matching the question.
+    final questionText = question.clueText;
+    hints.removeWhere((h) => _extraClueTexts.contains(h) || h == questionText);
 
     if (hints.isEmpty) return null;
     return hints[_random.nextInt(hints.length)];
