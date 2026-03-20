@@ -504,8 +504,9 @@ class _LeaderboardRow extends StatelessWidget {
                           children:
                               _splitEmojis(entry.roundEmojis!).map((emoji) {
                             return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 1.5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 1.5,
+                              ),
                               child: Container(
                                 width: 10,
                                 height: 10,
@@ -813,7 +814,11 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.flag, color: FlitColors.warning, size: 36),
+                const Icon(
+                  Icons.flag,
+                  color: FlitColors.warning,
+                  size: 36,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   'Report @${entry.playerName}',
@@ -898,24 +903,35 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
                                   detailsController.text.trim().isEmpty
                                       ? null
                                       : detailsController.text.trim();
-                              Navigator.of(dialogContext).pop();
                               try {
                                 await ReportService.instance.submitReport(
                                   reportedUserId: entry.playerId,
                                   reason: reason,
                                   details: details,
                                 );
+                                if (dialogContext.mounted) {
+                                  Navigator.of(dialogContext).pop();
+                                }
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
+                                  ScaffoldMessenger.of(
+                                    context,
+                                  ).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Report submitted.'),
+                                      content: Text(
+                                        'Report submitted.',
+                                      ),
                                       backgroundColor: FlitColors.success,
                                     ),
                                   );
                                 }
                               } catch (_) {
+                                if (dialogContext.mounted) {
+                                  Navigator.of(dialogContext).pop();
+                                }
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
+                                  ScaffoldMessenger.of(
+                                    context,
+                                  ).showSnackBar(
                                     const SnackBar(
                                       content: Text(
                                         'Failed to submit report. Please try again.',

@@ -56,14 +56,23 @@ List<Offset> chaikinSmooth(List<Offset> points, [int iterations = 2]) {
 ///
 /// Shared across all map renderers so that tiny-area handling is consistent.
 const Set<String> alwaysTinyCodes = {
-  // European micro-states (city-states / < 500 km²)
+  // European micro-states and small territories
+  'AX', // Åland Islands (1,580 km² but small scattered islands)
+  'FO', // Faroe Islands (1,399 km² but small scattered islands)
+  'GG', // Guernsey (65 km²)
   'GI', // Gibraltar (6.8 km²)
+  'IM', // Isle of Man (572 km²)
+  'JE', // Jersey (120 km²)
   'MC', // Monaco (2.0 km²)
   'SM', // San Marino (61 km²)
   'VA', // Vatican City (0.44 km²)
   'LI', // Liechtenstein (160 km²)
 
-  // City-states
+  // City-states and small territories
+  'BM', // Bermuda (54 km²)
+  'GU', // Guam (544 km²)
+  'HK', // Hong Kong (1,114 km²)
+  'MO', // Macao (33 km²)
   'SG', // Singapore (733 km²)
 
   // Scattered atolls — no single island large enough to render
@@ -76,12 +85,38 @@ const Set<String> alwaysTinyCodes = {
   'KI', // Kiribati (scattered atolls across 3.5M km² of ocean)
   'FM', // Micronesia (scattered across 2.6M km² of ocean)
 
-  // Tiny Caribbean islands (< 350 km², single small islands)
+  // Tiny Caribbean islands
   'AG', // Antigua and Barbuda (440 km² but two tiny islands)
-  'KN', // Saint Kitts and Nevis (261 km², two tiny islands)
+  'AI', // Anguilla (91 km²)
+  'BB', // Barbados (430 km²)
+  'CW', // Curaçao (444 km²)
+  'DM', // Dominica (751 km² but narrow)
   'GD', // Grenada (344 km²)
+  'KN', // Saint Kitts and Nevis (261 km², two tiny islands)
+  'LC', // Saint Lucia (617 km² but narrow)
+  'MS', // Montserrat (102 km²)
   'VC', // Saint Vincent and the Grenadines (389 km², scattered)
+  'VG', // British Virgin Islands (151 km²)
+  'VI', // U.S. Virgin Islands (346 km²)
+
+  // Tiny Pacific/Atlantic islands
+  'AS', // American Samoa (199 km²)
+  'CK', // Cook Islands (236 km², scattered)
+  'NF', // Norfolk Island (35 km²)
+  'NU', // Niue (260 km²)
+  'PM', // St. Pierre and Miquelon (242 km²)
+  'PN', // Pitcairn Islands (47 km²)
+  'SH', // Saint Helena (394 km²)
+  'TO', // Tonga (747 km², scattered)
+  'WF', // Wallis and Futuna (142 km²)
+  'WS', // Samoa (2,842 km² but islands are tiny polygons)
 
   // Tiny African islands
+  'CV', // Cape Verde (4,033 km² but scattered tiny islands)
+  'KM', // Comoros (1,862 km² but scattered tiny islands)
+  'MU', // Mauritius (2,040 km² but small polygon)
   'ST', // São Tomé and Príncipe (1,001 km² but two small islands)
+
+  // Tiny Middle Eastern
+  'BH', // Bahrain (778 km², small island)
 };

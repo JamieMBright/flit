@@ -24,6 +24,7 @@ class UnchartedSetupScreen extends ConsumerStatefulWidget {
 class _UnchartedSetupScreenState extends ConsumerState<UnchartedSetupScreen> {
   GameRegion _selectedRegion = GameRegion.world;
   UnchartedMode _selectedMode = UnchartedMode.countries;
+  bool _showLabels = false;
 
   static const _regions = [
     GameRegion.world,
@@ -59,6 +60,7 @@ class _UnchartedSetupScreenState extends ConsumerState<UnchartedSetupScreen> {
         builder: (_) => UnchartedGameScreen(
           region: _selectedRegion,
           mode: _selectedMode,
+          showLabels: _showLabels,
         ),
       ),
     );
@@ -126,6 +128,75 @@ class _UnchartedSetupScreenState extends ConsumerState<UnchartedSetupScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            // Labels toggle.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: GestureDetector(
+                onTap: () => setState(() => _showLabels = !_showLabels),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: _showLabels
+                        ? FlitColors.gold.withValues(alpha: 0.12)
+                        : FlitColors.backgroundMid,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: _showLabels
+                          ? FlitColors.gold.withValues(alpha: 0.5)
+                          : FlitColors.cardBorder,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _showLabels
+                            ? Icons.label_rounded
+                            : Icons.label_off_rounded,
+                        color: _showLabels
+                            ? FlitColors.gold
+                            : FlitColors.textSecondary,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Show Country Names',
+                              style: TextStyle(
+                                color: _showLabels
+                                    ? FlitColors.gold
+                                    : FlitColors.textPrimary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const Text(
+                              'Labels visible — score halved',
+                              style: TextStyle(
+                                color: FlitColors.textSecondary,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        _showLabels
+                            ? Icons.check_circle_rounded
+                            : Icons.circle_outlined,
+                        color: _showLabels
+                            ? FlitColors.gold
+                            : FlitColors.textSecondary,
+                        size: 22,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
             // Section header.

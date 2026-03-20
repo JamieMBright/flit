@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,7 +11,6 @@ import '../../data/providers/account_provider.dart';
 import '../../data/services/leaderboard_service.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/uncharted_map_widget.dart';
-import '../../game/quiz/uncharted_progress.dart';
 import '../../game/quiz/uncharted_session.dart';
 import '../../game/ui/ink_burst_overlay.dart';
 
@@ -25,10 +25,15 @@ class UnchartedGameScreen extends StatefulWidget {
     super.key,
     required this.region,
     required this.mode,
+    this.showLabels = false,
   });
 
   final GameRegion region;
   final UnchartedMode mode;
+
+  /// When true, unrevealed country names are shown on the map and the
+  /// final score is halved.
+  final bool showLabels;
 
   @override
   State<UnchartedGameScreen> createState() => _UnchartedGameScreenState();
@@ -166,7 +171,7 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
           style: TextStyle(color: FlitColors.textPrimary),
         ),
         content: Text(
-          'You\'ve found ${_session.revealedCount} of ${_session.totalCount}. '
+          'You\'ve found ${_session.correctGuesses} of ${_session.totalCount}. '
           'What would you like to do?',
           style: const TextStyle(color: FlitColors.textSecondary),
         ),
@@ -206,17 +211,23 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
   }
 
   void _showResults() {
+    // Halve score when labels are enabled.
+    final score = widget.showLabels
+        ? (_session.finalScore * 0.5).round()
+        : _session.finalScore;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => UnchartedResultsScreen(
           region: widget.region,
           mode: widget.mode,
-          revealedCount: _session.revealedCount,
+          revealedCount: _session.correctGuesses,
           totalCount: _session.totalCount,
           elapsedMs: _session.elapsedMs,
-          score: _session.finalScore,
+          score: score,
           givenUp: _session.givenUp,
           revealedCodes: _session.revealedCodes,
+          guessedCodes: _session.guessedCodes,
+          labelsUsed: widget.showLabels,
         ),
       ),
     );
@@ -226,50 +237,66 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
   Widget build(BuildContext context) {
     // Use resizeToAvoidBottomInset: false so the map doesn't shrink when
     // the keyboard appears. The HUD floats on top via a Stack.
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D1B2A),
-      resizeToAvoidBottomInset: false,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Full-screen map — stays still regardless of keyboard state.
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _pingController,
-                builder: (context, _) => UnchartedMapWidget(
-                  region: widget.region,
-                  revealedCodes: _session.revealedCodes,
-                  lastRevealedCode: _lastRevealedCode,
-                  capitalsMode: widget.mode == UnchartedMode.capitals,
-                  pingProgress: _pingController.value,
+    return KeyboardListener(
+      focusNode: FocusNode(),
+      autofocus: false,
+      onKeyEvent: _handleKeyEvent,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0D1B2A),
+        resizeToAvoidBottomInset: false,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              // Full-screen map — stays still regardless of keyboard state.
+              Positioned.fill(
+                child: AnimatedBuilder(
+                  animation: _pingController,
+                  builder: (context, _) => UnchartedMapWidget(
+                    region: widget.region,
+                    revealedCodes: _session.revealedCodes,
+                    lastRevealedCode: _lastRevealedCode,
+                    capitalsMode: widget.mode == UnchartedMode.capitals,
+                    pingProgress: _pingController.value,
+                    showUnrevealedLabels: widget.showLabels,
+                  ),
                 ),
               ),
-            ),
-            // Top bar HUD.
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: _exploringMap ? _buildExploreTopBar() : _buildTopBar(),
-            ),
-            // Feedback + input bar at the bottom (hidden in explore mode).
-            if (!_exploringMap)
+              // Top bar HUD.
               Positioned(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
+                top: 0,
                 left: 0,
                 right: 0,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildFeedback(),
-                    _buildInputBar(),
-                  ],
-                ),
+                child: _exploringMap ? _buildExploreTopBar() : _buildTopBar(),
               ),
-          ],
+              // Feedback + input bar at the bottom (hidden in explore mode).
+              if (!_exploringMap)
+                Positioned(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                  left: 0,
+                  right: 0,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildFeedback(),
+                      _buildInputBar(),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  void _handleKeyEvent(KeyEvent event) {
+    // Ctrl key triggers a ping/flash of unrevealed areas on desktop.
+    if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.controlLeft ||
+        event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.controlRight) {
+      _triggerPing();
+    }
   }
 
   Widget _buildTopBar() {
@@ -303,13 +330,31 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
           const Spacer(),
           // Progress.
           Text(
-            '${_session.revealedCount} / ${_session.totalCount}',
+            '${_session.correctGuesses} / ${_session.totalCount}',
             style: const TextStyle(
               color: FlitColors.gold,
               fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
           ),
+          if (widget.showLabels) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: FlitColors.gold.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'x0.5',
+                style: TextStyle(
+                  color: FlitColors.gold,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
           const SizedBox(width: 12),
           // Give up.
           TextButton(
@@ -480,6 +525,8 @@ class UnchartedResultsScreen extends ConsumerStatefulWidget {
     required this.score,
     required this.givenUp,
     required this.revealedCodes,
+    this.guessedCodes,
+    this.labelsUsed = false,
   });
 
   final GameRegion region;
@@ -490,6 +537,12 @@ class UnchartedResultsScreen extends ConsumerStatefulWidget {
   final int score;
   final bool givenUp;
   final Set<String> revealedCodes;
+
+  /// Codes the player actually typed. Null when all revealed = guessed.
+  final Set<String>? guessedCodes;
+
+  /// Whether country name labels were shown (score halved).
+  final bool labelsUsed;
 
   @override
   ConsumerState<UnchartedResultsScreen> createState() =>
@@ -639,8 +692,13 @@ class _UnchartedResultsScreenState
             .toList()
         : areas;
 
-    final found = eligible
-        .where((a) => widget.revealedCodes.contains(a.code))
+    final playerGuessed = widget.guessedCodes ?? widget.revealedCodes;
+    final found = eligible.where((a) => playerGuessed.contains(a.code)).toList()
+      ..sort((a, b) => displayName(a).compareTo(displayName(b)));
+    final forceRevealed = eligible
+        .where((a) =>
+            widget.revealedCodes.contains(a.code) &&
+            !playerGuessed.contains(a.code))
         .toList()
       ..sort((a, b) => displayName(a).compareTo(displayName(b)));
     final missed = eligible
@@ -742,6 +800,12 @@ class _UnchartedResultsScreenState
                 value: '${widget.revealedCount} / ${widget.totalCount}',
               ),
               _StatRow(label: 'Time', value: _elapsedFormatted),
+              if (widget.labelsUsed)
+                const _StatRow(
+                  label: 'Labels',
+                  value: 'ON (score halved)',
+                  valueColor: FlitColors.gold,
+                ),
               if (progress != null && progress.hasPlayed) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -867,6 +931,24 @@ class _UnchartedResultsScreenState
                   runSpacing: 6,
                   children: found
                       .map((a) => _AreaChip(name: displayName(a), found: true))
+                      .toList(),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // ── Force-revealed areas (from "Reveal All") ──
+              if (forceRevealed.isNotEmpty) ...[
+                _SectionHeader(
+                  icon: Icons.visibility,
+                  label: 'Revealed (${forceRevealed.length})',
+                  color: FlitColors.gold,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: forceRevealed
+                      .map((a) => _AreaChip(name: displayName(a), found: false))
                       .toList(),
                 ),
                 const SizedBox(height: 20),
@@ -1005,10 +1087,15 @@ class _MiniStat extends StatelessWidget {
 }
 
 class _StatRow extends StatelessWidget {
-  const _StatRow({required this.label, required this.value});
+  const _StatRow({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
 
   final String label;
   final String value;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
@@ -1030,11 +1117,11 @@ class _StatRow extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           SizedBox(
-            width: 100,
+            width: 140,
             child: Text(
               value,
-              style: const TextStyle(
-                color: FlitColors.textPrimary,
+              style: TextStyle(
+                color: valueColor ?? FlitColors.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),

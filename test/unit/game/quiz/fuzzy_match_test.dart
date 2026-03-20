@@ -80,8 +80,8 @@ void main() {
       expect(result!.code, 'BA');
     });
 
-    test('abbreviation: UK → United Kingdom', () {
-      final result = matcher.bestMatch('UK');
+    test('alias: Britain → United Kingdom', () {
+      final result = matcher.bestMatch('Britain');
       expect(result, isNotNull);
       expect(result!.code, 'GB');
     });

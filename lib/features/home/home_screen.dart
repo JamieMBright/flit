@@ -413,16 +413,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'CHOOSE YOUR FLIGHT',
-                style: TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 2,
-                ),
+              // ── FLIGHT DECK — globe & flying modes ──
+              const _SectionLabel(
+                icon: Icons.flight_takeoff_rounded,
+                label: 'FLIGHT DECK',
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
               // Pilot Training (campaign) — always first for new players
               _GameModeCard(
                 title: 'Pilot Training',
@@ -435,7 +431,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
               ),
               const SizedBox(height: 10),
-              // Daily modes at the top in red
+              // Daily modes in red
               if (_dailyScrambleEnabled) ...[
                 _GameModeCard(
                   title: 'Daily Scramble',
@@ -485,26 +481,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
               const SizedBox(height: 10),
               _GameModeCard(
-                title: 'Flight School',
-                subtitle: 'Quiz yourself on states, capitals & more',
-                icon: Icons.quiz_rounded,
-                onTap: () => _closeSheetAndNavigate(
-                  ctx,
-                  const FlightSchoolScreen(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              _GameModeCard(
-                title: 'Uncharted',
-                subtitle: 'Type country names to reveal the map',
-                icon: Icons.explore,
-                onTap: () => _closeSheetAndNavigate(
-                  ctx,
-                  const UnchartedSetupScreen(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              _GameModeCard(
                 title: 'Dogfight',
                 subtitle: 'Challenge your friends head-to-head',
                 icon: Icons.people_rounded,
@@ -527,6 +503,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
                 const SizedBox(height: 10),
               ],
+
+              const SizedBox(height: 20),
+
+              // ── GROUND SCHOOL — quiz & study modes ──
+              const _SectionLabel(
+                icon: Icons.menu_book_rounded,
+                label: 'GROUND SCHOOL',
+              ),
+              const SizedBox(height: 12),
+              _GameModeCard(
+                title: 'Flight School',
+                subtitle: 'Quiz yourself on states, capitals & more',
+                icon: Icons.quiz_rounded,
+                onTap: () => _closeSheetAndNavigate(
+                  ctx,
+                  const FlightSchoolScreen(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              _GameModeCard(
+                title: 'Uncharted',
+                subtitle: 'Type country names to reveal the map',
+                icon: Icons.explore,
+                onTap: () => _closeSheetAndNavigate(
+                  ctx,
+                  const UnchartedSetupScreen(),
+                ),
+              ),
               const SizedBox(height: 16),
             ],
           ),
@@ -1512,6 +1516,39 @@ class _MenuButton extends StatelessWidget {
           ),
         ),
       );
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: FlitColors.textSecondary, size: 16),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            color: FlitColors.textSecondary,
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 2,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: FlitColors.cardBorder,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _GameModeCard extends StatelessWidget {

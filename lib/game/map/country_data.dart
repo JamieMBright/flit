@@ -72882,7 +72882,6 @@ abstract class CountryData {
   /// flag (e.g. UM shows 🇺🇸 rather than anything unique).
   static const Set<String> excludedTerritories = {
     'AI', // Anguilla
-    'AQ', // Antarctica
     'AS', // American Samoa
     'MS', // Montserrat
     'NF', // Norfolk Island

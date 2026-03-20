@@ -89,19 +89,27 @@ class UnchartedSession {
   final Map<String, String> _capitalToAreaName = {};
 
   final Set<String> _revealedCodes = {};
+  final Set<String> _guessedCodes = {};
   DateTime? _startTime;
   bool _givenUp = false;
 
   // ── Public getters ──
 
   bool get isStarted => _startTime != null;
-  bool get isComplete => _revealedCodes.length >= _totalCount || _givenUp;
+  bool get isComplete => _guessedCodes.length >= _totalCount || _givenUp;
   bool get givenUp => _givenUp;
   int get totalCount => _totalCount;
   int get revealedCount => _revealedCodes.length;
-  int get remainingCount => _totalCount - _revealedCodes.length;
-  int get correctGuesses => _revealedCodes.length;
+  int get remainingCount => _totalCount - _guessedCodes.length;
+
+  /// Number of areas the player actually guessed (excludes force-revealed).
+  int get correctGuesses => _guessedCodes.length;
+
+  /// All codes currently shown on the map (guessed + force-revealed).
   Set<String> get revealedCodes => Set.unmodifiable(_revealedCodes);
+
+  /// Only codes the player actually typed correctly.
+  Set<String> get guessedCodes => Set.unmodifiable(_guessedCodes);
   double get progress =>
       _totalCount > 0 ? _revealedCodes.length / _totalCount : 0;
 
@@ -149,6 +157,7 @@ class UnchartedSession {
     }
 
     _revealedCodes.add(result.code);
+    _guessedCodes.add(result.code);
 
     return UnchartedGuessResult(
       matched: true,
@@ -186,9 +195,10 @@ class UnchartedSession {
   /// - Time bonus: faster = higher (decays over 10 minutes)
   /// - Completion bonus: 2000 extra for finding all areas
   int get finalScore {
-    if (_revealedCodes.isEmpty) return 0;
+    if (_guessedCodes.isEmpty) return 0;
 
-    final basePoints = _revealedCodes.length * 100;
+    // Only score areas the player actually guessed, not force-revealed ones.
+    final basePoints = _guessedCodes.length * 100;
 
     // Time bonus: up to 1.5x for under 2 minutes, decays to 1.0x over 10 min.
     final seconds = elapsedMs / 1000.0;
@@ -198,7 +208,7 @@ class UnchartedSession {
 
     // Completion bonus: 2000 extra points for completing all areas.
     final completionBonus =
-        (!_givenUp && _revealedCodes.length >= _totalCount) ? 2000 : 0;
+        (!_givenUp && _guessedCodes.length >= _totalCount) ? 2000 : 0;
 
     return (basePoints * timeMult).round() + completionBonus;
   }

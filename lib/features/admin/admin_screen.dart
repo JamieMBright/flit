@@ -226,18 +226,26 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               return;
             }
             if (amount == null || amount <= 0) {
-              setDialogState(() => error = 'Enter a valid positive amount');
+              setDialogState(
+                () => error = 'Enter a valid positive amount',
+              );
               return;
             }
 
             try {
               final user = await _lookupUser(username);
               if (user == null) {
-                setDialogState(() => error = 'User @$username not found');
+                setDialogState(
+                  () => error = 'User @$username not found',
+                );
                 return;
               }
 
-              await _incrementStat(user['id'] as String, 'coins', amount);
+              await _incrementStat(
+                user['id'] as String,
+                'coins',
+                amount,
+              );
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
               if (!context.mounted) return;
@@ -286,18 +294,26 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               return;
             }
             if (amount == null || amount <= 0) {
-              setDialogState(() => error = 'Enter a valid positive number');
+              setDialogState(
+                () => error = 'Enter a valid positive number',
+              );
               return;
             }
 
             try {
               final user = await _lookupUser(username);
               if (user == null) {
-                setDialogState(() => error = 'User @$username not found');
+                setDialogState(
+                  () => error = 'User @$username not found',
+                );
                 return;
               }
 
-              await _incrementStat(user['id'] as String, 'level', amount);
+              await _incrementStat(
+                user['id'] as String,
+                'level',
+                amount,
+              );
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
               if (!context.mounted) return;
@@ -312,7 +328,10 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
           children: [
             _UsernameField(controller: usernameCtl),
             const SizedBox(height: 12),
-            _AmountField(controller: amountCtl, hint: 'Number of levels'),
+            _AmountField(
+              controller: amountCtl,
+              hint: 'Number of levels',
+            ),
           ],
         ),
       ),
@@ -346,14 +365,18 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               return;
             }
             if (amount == null || amount <= 0) {
-              setDialogState(() => error = 'Enter a valid positive number');
+              setDialogState(
+                () => error = 'Enter a valid positive number',
+              );
               return;
             }
 
             try {
               final user = await _lookupUser(username);
               if (user == null) {
-                setDialogState(() => error = 'User @$username not found');
+                setDialogState(
+                  () => error = 'User @$username not found',
+                );
                 return;
               }
 
@@ -376,7 +399,10 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
           children: [
             _UsernameField(controller: usernameCtl),
             const SizedBox(height: 12),
-            _AmountField(controller: amountCtl, hint: 'Number of flights'),
+            _AmountField(
+              controller: amountCtl,
+              hint: 'Number of flights',
+            ),
           ],
         ),
       ),
@@ -415,18 +441,26 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               return;
             }
             if (targetValue == null || targetValue < 0) {
-              setDialogState(() => error = 'Enter a valid value (>= 0)');
+              setDialogState(
+                () => error = 'Enter a valid value (>= 0)',
+              );
               return;
             }
 
             try {
               final user = await _lookupUser(username);
               if (user == null) {
-                setDialogState(() => error = 'User @$username not found');
+                setDialogState(
+                  () => error = 'User @$username not found',
+                );
                 return;
               }
 
-              await _setStat(user['id'] as String, statColumn, targetValue);
+              await _setStat(
+                user['id'] as String,
+                statColumn,
+                targetValue,
+              );
 
               // If admin set their own stat, force-refresh to bypass
               // monotonic protection so the new value takes effect.
@@ -437,7 +471,10 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
               if (!context.mounted) return;
-              _snack(context, 'Set $statColumn for @$username to $targetValue');
+              _snack(
+                context,
+                'Set $statColumn for @$username to $targetValue',
+              );
             } on PostgrestException catch (e) {
               setDialogState(() => error = 'Failed: ${e.message}');
             } catch (_) {
@@ -481,7 +518,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             try {
               final user = await _lookupUser(username);
               if (user == null) {
-                setDialogState(() => error = 'User @$username not found');
+                setDialogState(
+                  () => error = 'User @$username not found',
+                );
                 return;
               }
 
@@ -730,9 +769,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: FlitColors.error.withOpacity(
-                                          0.2,
-                                        ),
+                                        color:
+                                            FlitColors.error.withOpacity(0.2),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: const Text(
@@ -860,7 +898,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             final newName = newUsernameCtl.text.trim();
 
             if (oldName.isEmpty) {
-              setDialogState(() => error = 'Enter the current username');
+              setDialogState(
+                () => error = 'Enter the current username',
+              );
               return;
             }
             if (newName.isEmpty || newName.length < 3) {
@@ -873,7 +913,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             try {
               final user = await _lookupUser(oldName);
               if (user == null) {
-                setDialogState(() => error = 'User @$oldName not found');
+                setDialogState(
+                  () => error = 'User @$oldName not found',
+                );
                 return;
               }
 
@@ -903,7 +945,10 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               hint: 'Current username',
             ),
             const SizedBox(height: 12),
-            _UsernameField(controller: newUsernameCtl, hint: 'New username'),
+            _UsernameField(
+              controller: newUsernameCtl,
+              hint: 'New username',
+            ),
           ],
         ),
       ),
@@ -931,7 +976,11 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.star, color: Color(0xFF9B59B6), size: 36),
+                const Icon(
+                  Icons.star,
+                  color: Color(0xFF9B59B6),
+                  size: 36,
+                ),
                 const SizedBox(height: 12),
                 const Text(
                   'Gift Cosmetic Item',
@@ -954,7 +1003,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                     value: selectedItemId,
                     isExpanded: true,
                     dropdownColor: FlitColors.cardBackground,
-                    style: const TextStyle(color: FlitColors.textPrimary),
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                    ),
                     underline: const SizedBox.shrink(),
                     items: items.entries
                         .map(
@@ -1018,90 +1069,204 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
     final usernameCtl = TextEditingController();
     String selectedRole = 'moderator';
     String? error;
+    List<Map<String, dynamic>>? currentRoles;
+
+    Future<void> loadCurrentRoles(
+      void Function(void Function()) setDialogState,
+    ) async {
+      try {
+        final data = await _client
+            .from('profiles')
+            .select('username, admin_role')
+            .not('admin_role', 'is', null)
+            .order('admin_role');
+        setDialogState(() {
+          currentRoles = List<Map<String, dynamic>>.from(data as List);
+        });
+      } catch (_) {
+        // Non-critical — just don't show the list.
+      }
+    }
 
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => _AdminDialog(
-          icon: Icons.shield,
-          iconColor: FlitColors.accent,
-          title: 'Manage Player Role',
-          subtitle: 'Set role: moderator, collaborator, or revoke.',
-          error: error,
-          actionLabel: 'Set Role',
-          actionIcon: Icons.shield,
-          actionColor: FlitColors.accent,
-          onAction: () async {
-            final username = usernameCtl.text.trim();
-            if (username.isEmpty) {
-              setDialogState(() => error = 'Enter a username');
-              return;
-            }
-
-            try {
-              final user = await _lookupUser(username);
-              if (user == null) {
-                setDialogState(() => error = 'User @$username not found');
+        builder: (ctx, setDialogState) {
+          // Load roles on first build.
+          if (currentRoles == null) {
+            loadCurrentRoles(setDialogState);
+          }
+          return _AdminDialog(
+            icon: Icons.shield,
+            iconColor: FlitColors.accent,
+            title: 'Manage Player Role',
+            subtitle: 'Set role: moderator, collaborator, or revoke.',
+            error: error,
+            actionLabel: 'Set Role',
+            actionIcon: Icons.shield,
+            actionColor: FlitColors.accent,
+            onAction: () async {
+              final username = usernameCtl.text.trim();
+              if (username.isEmpty) {
+                setDialogState(() => error = 'Enter a username');
                 return;
               }
 
-              final userId = user['id'] as String;
-              final roleValue = selectedRole == 'revoke' ? null : selectedRole;
+              try {
+                final user = await _lookupUser(username);
+                if (user == null) {
+                  setDialogState(() => error = 'User @$username not found');
+                  return;
+                }
 
-              await _client.rpc(
-                'admin_set_role',
-                params: {'target_user_id': userId, 'p_role': roleValue},
-              );
+                final userId = user['id'] as String;
+                final roleValue =
+                    selectedRole == 'revoke' ? null : selectedRole;
 
-              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
-              final label = roleValue ?? 'regular user';
-              if (!context.mounted) return;
-              _snack(context, '@$username is now: $label');
-            } on PostgrestException catch (e) {
-              setDialogState(() => error = 'Failed: ${e.message}');
-            } catch (_) {
-              setDialogState(() => error = 'Something went wrong');
-            }
-          },
-          onCancel: () => Navigator.of(dialogCtx).pop(),
-          children: [
-            _UsernameField(controller: usernameCtl),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: FlitColors.backgroundMid,
-                borderRadius: BorderRadius.circular(8),
+                await _client.rpc(
+                  'admin_set_role',
+                  params: {'target_user_id': userId, 'p_role': roleValue},
+                );
+
+                if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+                final label = roleValue ?? 'regular user';
+                if (!context.mounted) return;
+                _snack(context, '@$username is now: $label');
+              } on PostgrestException catch (e) {
+                setDialogState(() => error = 'Failed: ${e.message}');
+              } catch (_) {
+                setDialogState(() => error = 'Something went wrong');
+              }
+            },
+            onCancel: () => Navigator.of(dialogCtx).pop(),
+            children: [
+              // ── Current Roles ──
+              if (currentRoles != null && currentRoles!.isNotEmpty) ...[
+                const Text(
+                  'Current Roles',
+                  style: TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                ...currentRoles!.map(
+                  (r) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      children: [
+                        Icon(
+                          r['admin_role'] == 'owner'
+                              ? Icons.star
+                              : r['admin_role'] == 'moderator'
+                                  ? Icons.shield
+                                  : Icons.build,
+                          size: 14,
+                          color: r['admin_role'] == 'owner'
+                              ? FlitColors.gold
+                              : FlitColors.accent,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '@${r['username'] ?? '—'}',
+                          style: const TextStyle(
+                            color: FlitColors.textPrimary,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: r['admin_role'] == 'owner'
+                                ? FlitColors.gold.withValues(
+                                    alpha: 0.15,
+                                  )
+                                : FlitColors.accent.withValues(
+                                    alpha: 0.15,
+                                  ),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            (r['admin_role'] as String?)?.toUpperCase() ?? '',
+                            style: TextStyle(
+                              color: r['admin_role'] == 'owner'
+                                  ? FlitColors.gold
+                                  : FlitColors.accent,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const Divider(color: FlitColors.cardBorder, height: 20),
+              ] else if (currentRoles == null) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                ),
+              ],
+              // ── Assign Role ──
+              const Text(
+                'Assign Role',
+                style: TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              child: DropdownButton<String>(
-                value: selectedRole,
-                isExpanded: true,
-                dropdownColor: FlitColors.cardBackground,
-                style: const TextStyle(color: FlitColors.textPrimary),
-                underline: const SizedBox.shrink(),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'moderator',
-                    child: Text('Moderator'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'collaborator',
-                    child: Text('Collaborator'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'revoke',
-                    child: Text('Revoke (Regular User)'),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setDialogState(() => selectedRole = value);
-                  }
-                },
+              const SizedBox(height: 6),
+              _UsernameField(controller: usernameCtl),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: FlitColors.backgroundMid,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: DropdownButton<String>(
+                  value: selectedRole,
+                  isExpanded: true,
+                  dropdownColor: FlitColors.cardBackground,
+                  style: const TextStyle(color: FlitColors.textPrimary),
+                  underline: const SizedBox.shrink(),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'moderator',
+                      child: Text('Moderator'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'collaborator',
+                      child: Text('Collaborator'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'revoke',
+                      child: Text('Revoke (Regular User)'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setDialogState(() => selectedRole = value);
+                    }
+                  },
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -1134,7 +1299,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             try {
               final user = await _lookupUser(username);
               if (user == null) {
-                setDialogState(() => error = 'User @$username not found');
+                setDialogState(
+                  () => error = 'User @$username not found',
+                );
                 return;
               }
 
@@ -1213,7 +1380,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               if (entry.value.isNotEmpty) {
                 final v = int.tryParse(entry.value);
                 if (v == null || v < 1 || v > 25) {
-                  setDialogState(() => error = '${entry.key} must be 1-25');
+                  setDialogState(
+                    () => error = '${entry.key} must be 1-25',
+                  );
                   return;
                 }
               }
@@ -1222,7 +1391,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             try {
               final user = await _lookupUser(username);
               if (user == null) {
-                setDialogState(() => error = 'User @$username not found');
+                setDialogState(
+                  () => error = 'User @$username not found',
+                );
                 return;
               }
 
@@ -1360,7 +1531,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             try {
               final user = await _lookupUser(username);
               if (user == null) {
-                setDialogState(() => error = 'User @$username not found');
+                setDialogState(
+                  () => error = 'User @$username not found',
+                );
                 return;
               }
 
@@ -1423,7 +1596,12 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                 style: const TextStyle(color: FlitColors.textPrimary),
                 underline: const SizedBox.shrink(),
                 items: AvatarStyle.values
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
+                    .map(
+                      (s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(s.name),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) {
                   if (v != null) setDialogState(() => selectedStyle = v);
@@ -1454,7 +1632,12 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                 style: const TextStyle(color: FlitColors.textPrimary),
                 underline: const SizedBox.shrink(),
                 items: AvatarSkinColor.values
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
+                    .map(
+                      (s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(s.name),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) {
                   if (v != null) setDialogState(() => selectedSkin = v);
@@ -1479,7 +1662,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                       ),
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: FlitColors.backgroundMid,
                           borderRadius: BorderRadius.circular(8),
@@ -1503,7 +1688,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                               .toList(),
                           onChanged: (v) {
                             if (v != null) {
-                              setDialogState(() => selectedHairColor = v);
+                              setDialogState(
+                                () => selectedHairColor = v,
+                              );
                             }
                           },
                         ),
@@ -1537,7 +1724,12 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                 style: const TextStyle(color: FlitColors.textPrimary),
                 underline: const SizedBox.shrink(),
                 items: AvatarCompanion.values
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
+                    .map(
+                      (s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(s.name),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) {
                   if (v != null) setDialogState(() => selectedCompanion = v);
@@ -1564,6 +1756,15 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
     final dailyCapCtl = TextEditingController(
       text: '${config.earnings.freeFlightDailyCap}',
     );
+    final campaignCtl = TextEditingController(
+      text: '${config.earnings.campaignMissionReward}',
+    );
+    final gameCompCtl = TextEditingController(
+      text: '${config.earnings.gameCompletionBaseReward}',
+    );
+    final flightSchoolCtl = TextEditingController(
+      text: '${config.earnings.flightSchoolReward}',
+    );
     String? error;
 
     showDialog<void>(
@@ -1583,6 +1784,11 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             final scramble = int.tryParse(scrambleCtl.text.trim());
             final perClue = int.tryParse(perClueCtl.text.trim());
             final cap = int.tryParse(dailyCapCtl.text.trim());
+            final campaign = int.tryParse(campaignCtl.text.trim());
+            final gameComp = int.tryParse(gameCompCtl.text.trim());
+            final flightSchool = int.tryParse(
+              flightSchoolCtl.text.trim(),
+            );
 
             if (scramble == null || scramble < 0) {
               setDialogState(
@@ -1602,6 +1808,24 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               );
               return;
             }
+            if (campaign == null || campaign < 0) {
+              setDialogState(
+                () => error = 'Campaign Mission Reward must be >= 0',
+              );
+              return;
+            }
+            if (gameComp == null || gameComp < 0) {
+              setDialogState(
+                () => error = 'Game Completion Reward must be >= 0',
+              );
+              return;
+            }
+            if (flightSchool == null || flightSchool < 0) {
+              setDialogState(
+                () => error = 'Flight School Reward must be >= 0',
+              );
+              return;
+            }
 
             try {
               final updated = EconomyConfig(
@@ -1609,6 +1833,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                   dailyScrambleBaseReward: scramble,
                   freeFlightPerClueReward: perClue,
                   freeFlightDailyCap: cap,
+                  campaignMissionReward: campaign,
+                  gameCompletionBaseReward: gameComp,
+                  flightSchoolReward: flightSchool,
                 ),
                 shopPriceOverrides: config.shopPriceOverrides,
                 promotions: config.promotions,
@@ -1638,6 +1865,23 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             _AdminTextField(
               controller: dailyCapCtl,
               label: 'Free Flight Daily Cap',
+            ),
+            const SizedBox(height: 16),
+            const Divider(color: FlitColors.cardBorder),
+            const SizedBox(height: 8),
+            _AdminTextField(
+              controller: campaignCtl,
+              label: 'Campaign Mission Reward',
+            ),
+            const SizedBox(height: 10),
+            _AdminTextField(
+              controller: gameCompCtl,
+              label: 'Game Completion Base Reward',
+            ),
+            const SizedBox(height: 10),
+            _AdminTextField(
+              controller: flightSchoolCtl,
+              label: 'Flight School Reward',
             ),
           ],
         ),
@@ -1764,7 +2008,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             try {
               final user = await _lookupUser(username);
               if (user == null) {
-                setDialogState(() => error = 'User @$username not found');
+                setDialogState(
+                  () => error = 'User @$username not found',
+                );
                 return;
               }
 
@@ -1835,8 +2081,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
     );
   }
 
-  void _showUnbanUserDialog(BuildContext context) {
-    final usernameCtl = TextEditingController();
+  void _showUnbanUserDialog(BuildContext context, {String? prefillUsername}) {
+    final usernameCtl = TextEditingController(text: prefillUsername ?? '');
+    final reasonCtl = TextEditingController();
     String? error;
 
     showDialog<void>(
@@ -1846,6 +2093,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
           icon: Icons.lock_open,
           iconColor: FlitColors.success,
           title: 'Unban Player',
+          subtitle: 'Optionally provide a reason for the unban.',
           error: error,
           actionLabel: 'Unban',
           actionIcon: Icons.lock_open,
@@ -1860,13 +2108,19 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             try {
               final user = await _lookupUser(username);
               if (user == null) {
-                setDialogState(() => error = 'User @$username not found');
+                setDialogState(
+                  () => error = 'User @$username not found',
+                );
                 return;
               }
 
+              final reason = reasonCtl.text.trim();
               await _client.rpc(
                 'admin_unban_user',
-                params: {'target_user_id': user['id']},
+                params: {
+                  'target_user_id': user['id'],
+                  'p_unban_reason': reason.isEmpty ? null : reason,
+                },
               );
 
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
@@ -1879,7 +2133,15 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             }
           },
           onCancel: () => Navigator.of(dialogCtx).pop(),
-          children: [_UsernameField(controller: usernameCtl)],
+          children: [
+            _UsernameField(controller: usernameCtl),
+            const SizedBox(height: 12),
+            _AmountField(
+              controller: reasonCtl,
+              hint: 'Reason for unban (optional)',
+              isNumeric: false,
+            ),
+          ],
         ),
       ),
     );
@@ -2144,6 +2406,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
 
           // ── Ban Management (moderator + owner) ──
           if (_can(state, AdminPermission.tempBanUser)) ...[
+            const _SectionHeader(title: 'Ban Management'),
+            const SizedBox(height: 8),
             _AdminActionCard(
               icon: Icons.gavel,
               iconColor: FlitColors.error,
@@ -2158,6 +2422,28 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               iconColor: FlitColors.success,
               label: 'Unban Player',
               onTap: () => _showUnbanUserDialog(context),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (_can(state, AdminPermission.tempBanUser)) ...[
+            _AdminActionCard(
+              icon: Icons.people_outline,
+              iconColor: FlitColors.warning,
+              label: 'View Banned Players',
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => _BannedPlayersScreen(
+                      onUnban: (username) {
+                        _showUnbanUserDialog(
+                          context,
+                          prefillUsername: username,
+                        );
+                      },
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 8),
           ],
@@ -2277,9 +2563,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             const SizedBox(height: 24),
           ],
 
-          // ── Economy & Gold (owner only) ──
+          // ── Economy Management (owner only) ──
           if (_can(state, AdminPermission.editEarnings)) ...[
-            const _SectionHeader(title: 'Economy & Gold'),
+            const _SectionHeader(title: 'Economy Management'),
             const SizedBox(height: 8),
             if (_economyConfigLoading)
               const Center(
@@ -2545,7 +2831,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               onTap: () async {
                 await Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                      builder: (_) => const _GameLogScreen()),
+                    builder: (_) => const _GameLogScreen(),
+                  ),
                 );
                 _refreshAdminData();
               },
@@ -2773,7 +3060,9 @@ class _UserDetailScreenState extends State<_UserDetailScreen> {
                       onPressed: () async {
                         final email = emailCtl.text.trim();
                         if (email.isEmpty || !email.contains('@')) {
-                          setDialogState(() => error = 'Enter a valid email');
+                          setDialogState(
+                            () => error = 'Enter a valid email',
+                          );
                           return;
                         }
                         try {
@@ -3728,14 +4017,24 @@ class _LogEntryTileState extends State<_LogEntryTile> {
   bool _isExpanded = false;
 
   void _copyEntry() {
+    final e = widget.entry;
     final buf = StringBuffer()
       ..writeln(
-        '[${widget.entry.timeString}] ${widget.entry.levelTag} '
-        '${widget.entry.category}',
+        '[${e.timeString}] ${e.levelTag} '
+        '${e.category}',
       )
-      ..writeln(widget.entry.message);
-    if (widget.entry.data != null) buf.writeln('Data: ${widget.entry.data}');
-    if (widget.entry.error != null) buf.writeln('Error: ${widget.entry.error}');
+      ..writeln(e.message);
+    if (e.data != null && e.data!.isNotEmpty) {
+      buf.writeln('Data: ${e.data}');
+    }
+    if (e.error != null) {
+      buf.writeln('Error: ${e.error}');
+    }
+    if (e.stackTrace != null) {
+      buf.writeln('Stack trace:');
+      final frames = e.stackTrace.toString().split('\n').take(10).join('\n');
+      buf.writeln(frames);
+    }
     Clipboard.setData(ClipboardData(text: buf.toString()));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -4068,7 +4367,9 @@ class _PromotionsDialogState extends State<_PromotionsDialog> {
                     value: selectedType,
                     isExpanded: true,
                     dropdownColor: FlitColors.cardBackground,
-                    style: const TextStyle(color: FlitColors.textPrimary),
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                    ),
                     underline: const SizedBox.shrink(),
                     items: const [
                       DropdownMenuItem(
@@ -4260,7 +4561,9 @@ class _PromotionsDialogState extends State<_PromotionsDialog> {
                               fontSize: 12,
                             ),
                           ),
-                          selected: selectedCategories.contains(entry.key),
+                          selected: selectedCategories.contains(
+                            entry.key,
+                          ),
                           selectedColor: FlitColors.gold,
                           backgroundColor: FlitColors.backgroundMid,
                           checkmarkColor: FlitColors.backgroundDark,
@@ -4307,18 +4610,26 @@ class _PromotionsDialogState extends State<_PromotionsDialog> {
                       onPressed: () {
                         final name = nameCtl.text.trim();
                         if (name.isEmpty) {
-                          setFormState(() => formError = 'Name is required');
+                          setFormState(
+                            () => formError = 'Name is required',
+                          );
                           return;
                         }
-                        final multiplier = (selectedType ==
-                                    PromotionType.earningsBoost ||
-                                selectedType == PromotionType.both)
-                            ? double.tryParse(multiplierCtl.text.trim()) ?? 1.0
-                            : 1.0;
+                        final multiplier =
+                            (selectedType == PromotionType.earningsBoost ||
+                                    selectedType == PromotionType.both)
+                                ? double.tryParse(
+                                      multiplierCtl.text.trim(),
+                                    ) ??
+                                    1.0
+                                : 1.0;
                         final discount =
                             (selectedType == PromotionType.shopDiscount ||
                                     selectedType == PromotionType.both)
-                                ? int.tryParse(discountCtl.text.trim()) ?? 0
+                                ? int.tryParse(
+                                      discountCtl.text.trim(),
+                                    ) ??
+                                    0
                                 : 0;
 
                         final promo = Promotion(
@@ -4332,7 +4643,9 @@ class _PromotionsDialogState extends State<_PromotionsDialog> {
                           appliesTo: selectedCategories.toList(),
                         );
 
-                        setState(() => _promotions = [..._promotions, promo]);
+                        setState(
+                          () => _promotions = [..._promotions, promo],
+                        );
                         Navigator.of(formCtx).pop();
                       },
                       icon: const Icon(Icons.add, size: 16),
@@ -5432,6 +5745,282 @@ class _DifficultyEditorScreenState extends State<_DifficultyEditorScreen> {
   }
 }
 
+// ── Banned Players Screen ──
+
+class _BannedPlayersScreen extends StatefulWidget {
+  const _BannedPlayersScreen({required this.onUnban});
+
+  final void Function(String username) onUnban;
+
+  @override
+  State<_BannedPlayersScreen> createState() => _BannedPlayersScreenState();
+}
+
+class _BannedPlayersScreenState extends State<_BannedPlayersScreen> {
+  List<Map<String, dynamic>>? _bannedPlayers;
+  bool _loading = true;
+  String? _error;
+
+  SupabaseClient get _client => Supabase.instance.client;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final data = await _client
+          .from('profiles')
+          .select(
+            'id, username, banned_at, ban_expires_at, ban_reason, banned_by',
+          )
+          .not('banned_at', 'is', null)
+          .order('banned_at', ascending: false);
+
+      final players = List<Map<String, dynamic>>.from(data as List);
+
+      // Resolve banned_by usernames.
+      final bannerIds = players
+          .map((p) => p['banned_by'] as String?)
+          .where((id) => id != null)
+          .toSet()
+          .toList();
+      final bannerMap = <String, String>{};
+      if (bannerIds.isNotEmpty) {
+        final profiles = await _client
+            .from('profiles')
+            .select('id, username')
+            .inFilter('id', bannerIds);
+        for (final p in profiles) {
+          bannerMap[p['id'] as String] = p['username'] as String? ?? '—';
+        }
+      }
+
+      for (final p in players) {
+        final bannerId = p['banned_by'] as String?;
+        p['banned_by_username'] =
+            bannerId != null ? bannerMap[bannerId] ?? '—' : '—';
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _bannedPlayers = players;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to load banned players: $e';
+        _loading = false;
+      });
+    }
+  }
+
+  String _formatBanDuration(Map<String, dynamic> player) {
+    final expiresAt = player['ban_expires_at'] as String?;
+    if (expiresAt == null) return 'Permanent';
+    final expires = DateTime.tryParse(expiresAt);
+    if (expires == null) return 'Unknown';
+    final now = DateTime.now().toUtc();
+    if (expires.isBefore(now)) return 'Expired';
+    final remaining = expires.difference(now);
+    if (remaining.inDays > 0) return '${remaining.inDays}d remaining';
+    if (remaining.inHours > 0) return '${remaining.inHours}h remaining';
+    return '${remaining.inMinutes}m remaining';
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return '—';
+    final dt = DateTime.tryParse(dateStr);
+    if (dt == null) return '—';
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-'
+        '${dt.day.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: FlitColors.backgroundDark,
+      appBar: AppBar(
+        backgroundColor: FlitColors.backgroundDark,
+        foregroundColor: FlitColors.textPrimary,
+        title: const Text('Banned Players'),
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
+        ],
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: FlitColors.error),
+                  ),
+                )
+              : _bannedPlayers == null || _bannedPlayers!.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No banned players',
+                        style: TextStyle(color: FlitColors.textMuted),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _bannedPlayers!.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final p = _bannedPlayers![index];
+                        final username = p['username'] as String? ?? '—';
+                        final reason =
+                            p['ban_reason'] as String? ?? 'No reason';
+                        final bannedByName =
+                            p['banned_by_username'] as String? ?? '—';
+                        final duration = _formatBanDuration(p);
+                        final bannedDate =
+                            _formatDate(p['banned_at'] as String?);
+                        final isExpired = duration == 'Expired';
+
+                        return Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: FlitColors.cardBackground,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isExpired
+                                  ? FlitColors.cardBorder
+                                  : FlitColors.error.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.gavel,
+                                    size: 16,
+                                    color: isExpired
+                                        ? FlitColors.textMuted
+                                        : FlitColors.error,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '@$username',
+                                    style: const TextStyle(
+                                      color: FlitColors.textPrimary,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isExpired
+                                          ? FlitColors.textMuted.withValues(
+                                              alpha: 0.15,
+                                            )
+                                          : FlitColors.error.withValues(
+                                              alpha: 0.15,
+                                            ),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      duration,
+                                      style: TextStyle(
+                                        color: isExpired
+                                            ? FlitColors.textMuted
+                                            : FlitColors.error,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              _BanDetailRow(label: 'Reason', value: reason),
+                              _BanDetailRow(
+                                label: 'Banned by',
+                                value: '@$bannedByName',
+                              ),
+                              _BanDetailRow(label: 'Date', value: bannedDate),
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton.icon(
+                                  icon: const Icon(
+                                    Icons.lock_open,
+                                    size: 16,
+                                    color: FlitColors.success,
+                                  ),
+                                  label: const Text(
+                                    'Unban',
+                                    style: TextStyle(
+                                      color: FlitColors.success,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    widget.onUnban(username);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+    );
+  }
+}
+
+class _BanDetailRow extends StatelessWidget {
+  const _BanDetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: const TextStyle(color: FlitColors.textMuted, fontSize: 12),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ReportQueuePlaceholder extends StatefulWidget {
   const _ReportQueuePlaceholder();
 
@@ -5534,7 +6123,9 @@ class _ReportQueuePlaceholderState extends State<_ReportQueuePlaceholder>
           onAction: () async {
             final action = actionCtl.text.trim();
             if (action.isEmpty) {
-              setDialogState(() => dialogError = 'Describe the action taken');
+              setDialogState(
+                () => dialogError = 'Describe the action taken',
+              );
               return;
             }
             try {
@@ -5570,11 +6161,15 @@ class _ReportQueuePlaceholderState extends State<_ReportQueuePlaceholder>
                 fillColor: FlitColors.backgroundDark,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: FlitColors.cardBorder),
+                  borderSide: const BorderSide(
+                    color: FlitColors.cardBorder,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: FlitColors.cardBorder),
+                  borderSide: const BorderSide(
+                    color: FlitColors.cardBorder,
+                  ),
                 ),
               ),
             ),
@@ -6003,11 +6598,15 @@ class _ClueReportQueueState extends State<_ClueReportQueue>
                 fillColor: FlitColors.backgroundDark,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: FlitColors.cardBorder),
+                  borderSide: const BorderSide(
+                    color: FlitColors.cardBorder,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: FlitColors.cardBorder),
+                  borderSide: const BorderSide(
+                    color: FlitColors.cardBorder,
+                  ),
                 ),
               ),
             ),
@@ -6878,12 +7477,18 @@ class _AnnouncementsPlaceholderState extends State<_AnnouncementsPlaceholder> {
                         ),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'info', child: Text('Info')),
+                        DropdownMenuItem(
+                          value: 'info',
+                          child: Text('Info'),
+                        ),
                         DropdownMenuItem(
                           value: 'warning',
                           child: Text('Warning'),
                         ),
-                        DropdownMenuItem(value: 'event', child: Text('Event')),
+                        DropdownMenuItem(
+                          value: 'event',
+                          child: Text('Event'),
+                        ),
                         DropdownMenuItem(
                           value: 'maintenance',
                           child: Text('Maintenance'),
@@ -6913,8 +7518,9 @@ class _AnnouncementsPlaceholderState extends State<_AnnouncementsPlaceholder> {
                             label: '$priority',
                             activeColor: FlitColors.accent,
                             inactiveColor: FlitColors.backgroundLight,
-                            onChanged: (v) =>
-                                setDialogState(() => priority = v.round()),
+                            onChanged: (v) => setDialogState(
+                              () => priority = v.round(),
+                            ),
                           ),
                         ),
                         SizedBox(
@@ -6967,7 +7573,10 @@ class _AnnouncementsPlaceholderState extends State<_AnnouncementsPlaceholder> {
                                 setDialogState(() => startsAt = picked);
                               }
                             },
-                            icon: const Icon(Icons.calendar_today, size: 14),
+                            icon: const Icon(
+                              Icons.calendar_today,
+                              size: 14,
+                            ),
                             label: Text(
                               startsAt != null
                                   ? 'Starts: ${_formatDate(startsAt)}'
@@ -6996,7 +7605,10 @@ class _AnnouncementsPlaceholderState extends State<_AnnouncementsPlaceholder> {
                                 setDialogState(() => expiresAt = picked);
                               }
                             },
-                            icon: const Icon(Icons.calendar_today, size: 14),
+                            icon: const Icon(
+                              Icons.calendar_today,
+                              size: 14,
+                            ),
                             label: Text(
                               expiresAt != null
                                   ? 'Expires: ${_formatDate(expiresAt)}'
@@ -7064,7 +7676,9 @@ class _AnnouncementsPlaceholderState extends State<_AnnouncementsPlaceholder> {
                               );
                               _load();
                             } catch (e) {
-                              setDialogState(() => dialogError = 'Failed: $e');
+                              setDialogState(
+                                () => dialogError = 'Failed: $e',
+                              );
                             }
                           },
                           icon: const Icon(Icons.save, size: 16),

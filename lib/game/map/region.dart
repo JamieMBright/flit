@@ -247,6 +247,7 @@ abstract class RegionalData {
     'AD',
     'AL',
     'AT',
+    'AX', // Åland Islands
     'BA',
     'BE',
     'BG',
@@ -259,14 +260,19 @@ abstract class RegionalData {
     'EE',
     'ES',
     'FI',
+    'FO', // Faroe Islands
     'FR',
     'GB',
+    'GG', // Guernsey
+    'GI', // Gibraltar
     'GR',
     'HR',
     'HU',
     'IE',
+    'IM', // Isle of Man
     'IS',
     'IT',
+    'JE', // Jersey
     'LI',
     'LT',
     'LU',
@@ -290,6 +296,7 @@ abstract class RegionalData {
     'TR',
     'UA',
     'VA',
+    'XC', // Northern Cyprus
     'XK',
   };
 
@@ -335,11 +342,11 @@ abstract class RegionalData {
     'RW',
     'SC',
     'SD',
+    'SH', // Saint Helena
     'SL',
     'SN',
     'SO',
     'SS',
-    'XS',
     'ST',
     'SZ',
     'TD',
@@ -347,6 +354,7 @@ abstract class RegionalData {
     'TN',
     'TZ',
     'UG',
+    'XS',
     'ZA',
     'ZM',
     'ZW',
@@ -363,6 +371,7 @@ abstract class RegionalData {
     'BT',
     'CN',
     'GE',
+    'HK', // Hong Kong
     'ID',
     'IL',
     'IN',
@@ -381,6 +390,7 @@ abstract class RegionalData {
     'LK',
     'MM',
     'MN',
+    'MO', // Macao
     'MV',
     'MY',
     'NP',
@@ -403,21 +413,34 @@ abstract class RegionalData {
   };
 
   static const _latinAmericaCodes = <String>{
+    'AG', // Antigua and Barbuda
+    'AI', // Anguilla
     'AR',
+    'AW', // Aruba
+    'BB', // Barbados
+    'BM', // Bermuda
     'BO',
     'BR',
+    'BS', // Bahamas
     'BZ',
     'CL',
     'CO',
     'CR',
     'CU',
+    'CW', // Curaçao
+    'DM', // Dominica
     'DO',
     'EC',
+    'FK', // Falkland Islands
+    'GD', // Grenada
     'GT',
     'GY',
     'HN',
     'HT',
     'JM',
+    'KN', // Saint Kitts and Nevis
+    'LC', // Saint Lucia
+    'MS', // Montserrat
     'MX',
     'NI',
     'PA',
@@ -428,16 +451,23 @@ abstract class RegionalData {
     'SV',
     'TT',
     'UY',
+    'VC', // Saint Vincent and the Grenadines
     'VE',
+    'VG', // British Virgin Islands
   };
 
   static const _oceaniaCodes = <String>{
+    'AS', // American Samoa
     'AU',
+    'CK', // Cook Islands
     'FJ',
     'FM',
+    'GU', // Guam
     'KI',
     'MH',
+    'NC', // New Caledonia
     'NR',
+    'NU', // Niue
     'NZ',
     'PG',
     'PW',
@@ -445,6 +475,7 @@ abstract class RegionalData {
     'TO',
     'TV',
     'VU',
+    'WF', // Wallis and Futuna
     'WS',
   };
 
