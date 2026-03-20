@@ -275,60 +275,86 @@ class _UnchartedMapPainter extends CustomPainter {
             .clamp(0.0, 1.0)
         : 0.0;
 
-    // First pass: draw all fills, strokes, and markers.
-    // Labels are deferred to a second pass so they aren't clipped by
-    // neighbouring countries' satellite fills.
+    // Three-pass rendering to prevent satellite fills from covering
+    // neighbouring unrevealed outlines (e.g. Italy covering San Marino).
+    //
+    // Pass 1: Satellite fills only (revealed areas).
+    // Pass 2: All outlines, markers, and ping effects (both revealed & unrevealed).
+    // Pass 3: Labels on top.
     final revealedAreas = <RegionalArea>[];
 
+    // ── Pass 1: Satellite fills ──
+    for (final area in areas) {
+      final path = pathCache[area.code];
+      if (path == null) continue;
+
+      final isRevealed = revealedCodes.contains(area.code);
+      if (!isRevealed) continue;
+
+      final isFlashing = area.code == lastRevealedCode && flashProgress < 1.0;
+      final isTiny = _isTinyArea(area, transform);
+
+      if (isTiny) {
+        final rrect = _tinyAreaRRect(area, transform);
+        if (isFlashing) {
+          final revealAlpha =
+              Curves.easeOut.transform(flashProgress).clamp(0.0, 1.0);
+          if (satelliteImage != null && revealAlpha > 0.01) {
+            _drawSatelliteRRect(canvas, rrect, transform, size,
+                opacity: revealAlpha);
+          }
+        } else {
+          if (satelliteImage != null) {
+            _drawSatelliteRRect(canvas, rrect, transform, size);
+          } else {
+            canvas.drawRRect(
+              rrect,
+              Paint()..color = const Color(0xFF1B6B4A),
+            );
+          }
+        }
+      } else {
+        if (isFlashing) {
+          final revealAlpha =
+              Curves.easeOut.transform(flashProgress).clamp(0.0, 1.0);
+          if (satelliteImage != null && revealAlpha > 0.01) {
+            _drawSatelliteFill(canvas, path, transform, size,
+                opacity: revealAlpha);
+          }
+        } else {
+          if (satelliteImage != null) {
+            _drawSatelliteFill(canvas, path, transform, size);
+          } else {
+            canvas.drawPath(
+              path,
+              Paint()..color = const Color(0xFF1B6B4A),
+            );
+          }
+        }
+      }
+      revealedAreas.add(area);
+    }
+
+    // ── Pass 2: Outlines, markers, and ping effects ──
+    // Drawn AFTER all satellite fills so unrevealed outlines are always
+    // visible on top of revealed neighbours' satellite imagery.
     for (final area in areas) {
       final path = pathCache[area.code];
       if (path == null) continue;
 
       final isRevealed = revealedCodes.contains(area.code);
       final isFlashing = area.code == lastRevealedCode && flashProgress < 1.0;
-
       final isTiny = _isTinyArea(area, transform);
 
       if (isRevealed) {
         if (isTiny) {
-          // For tiny areas, reveal satellite fill inside the rounded rect
-          // bounding box so the country is actually visible.
           final rrect = _tinyAreaRRect(area, transform);
-
-          if (isFlashing) {
-            // Gradual reveal: fade satellite in over the flash duration.
-            final revealAlpha =
-                Curves.easeOut.transform(flashProgress).clamp(0.0, 1.0);
-            if (satelliteImage != null && revealAlpha > 0.01) {
-              _drawSatelliteRRect(canvas, rrect, transform, size,
-                  opacity: revealAlpha);
-            }
-          } else {
-            // Fully revealed.
-            if (satelliteImage != null) {
-              _drawSatelliteRRect(canvas, rrect, transform, size);
-            } else {
-              canvas.drawRRect(
-                rrect,
-                Paint()..color = const Color(0xFF1B6B4A),
-              );
-            }
-          }
-
-          // Green dashed border for revealed tiny areas.
           final rrectPath = Path()..addRRect(rrect);
           _drawDashedPath(canvas, rrectPath, revealedStroke, 16);
         } else {
-          // Reveal satellite imagery clipped to the area polygon.
           if (isFlashing) {
-            // Gradual reveal: fade satellite in over the flash duration.
             final revealAlpha =
                 Curves.easeOut.transform(flashProgress).clamp(0.0, 1.0);
-            if (satelliteImage != null && revealAlpha > 0.01) {
-              _drawSatelliteFill(canvas, path, transform, size,
-                  opacity: revealAlpha);
-            }
-            // Draw the outline during reveal too.
             canvas.drawPath(
                 path,
                 Paint()
@@ -338,42 +364,27 @@ class _UnchartedMapPainter extends CustomPainter {
                   ..isAntiAlias = true
                   ..color = Color.fromRGBO(46, 204, 113, revealAlpha));
           } else {
-            if (satelliteImage != null) {
-              _drawSatelliteFill(canvas, path, transform, size);
-            } else {
-              // Fallback if image hasn't loaded yet.
-              canvas.drawPath(
-                path,
-                Paint()..color = const Color(0xFF1B6B4A),
-              );
-            }
             canvas.drawPath(path, revealedStroke);
           }
         }
-        revealedAreas.add(area);
       } else {
-        // Unrevealed: just outline.
+        // Unrevealed: outline always on top of any satellite fills.
         canvas.drawPath(path, outlinePaint);
 
-        // Draw dashed rounded polygon marker for tiny countries.
         if (isTiny) {
           _drawTinyMarker(canvas, area, transform, pingAlpha);
         }
 
-        // Ping flash: briefly highlight unrevealed areas.
-        if (hasPing) {
-          if (!isTiny) {
-            canvas.drawPath(
-              path,
-              Paint()..color = Color.fromRGBO(232, 165, 90, pingAlpha * 0.35),
-            );
-          }
+        if (hasPing && !isTiny) {
+          canvas.drawPath(
+            path,
+            Paint()..color = Color.fromRGBO(232, 165, 90, pingAlpha * 0.35),
+          );
         }
       }
     }
 
-    // Second pass: draw labels on top of all fills so they're never clipped
-    // by neighbouring countries' satellite texture.
+    // ── Pass 3: Labels ──
     for (final area in revealedAreas) {
       _drawLabel(canvas, area, transform);
     }

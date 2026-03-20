@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,7 +11,6 @@ import '../../data/providers/account_provider.dart';
 import '../../data/services/leaderboard_service.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/uncharted_map_widget.dart';
-import '../../game/quiz/uncharted_progress.dart';
 import '../../game/quiz/uncharted_session.dart';
 import '../../game/ui/ink_burst_overlay.dart';
 
@@ -226,50 +226,65 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
   Widget build(BuildContext context) {
     // Use resizeToAvoidBottomInset: false so the map doesn't shrink when
     // the keyboard appears. The HUD floats on top via a Stack.
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D1B2A),
-      resizeToAvoidBottomInset: false,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Full-screen map — stays still regardless of keyboard state.
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _pingController,
-                builder: (context, _) => UnchartedMapWidget(
-                  region: widget.region,
-                  revealedCodes: _session.revealedCodes,
-                  lastRevealedCode: _lastRevealedCode,
-                  capitalsMode: widget.mode == UnchartedMode.capitals,
-                  pingProgress: _pingController.value,
+    return KeyboardListener(
+      focusNode: FocusNode(),
+      autofocus: false,
+      onKeyEvent: _handleKeyEvent,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0D1B2A),
+        resizeToAvoidBottomInset: false,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              // Full-screen map — stays still regardless of keyboard state.
+              Positioned.fill(
+                child: AnimatedBuilder(
+                  animation: _pingController,
+                  builder: (context, _) => UnchartedMapWidget(
+                    region: widget.region,
+                    revealedCodes: _session.revealedCodes,
+                    lastRevealedCode: _lastRevealedCode,
+                    capitalsMode: widget.mode == UnchartedMode.capitals,
+                    pingProgress: _pingController.value,
+                  ),
                 ),
               ),
-            ),
-            // Top bar HUD.
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: _exploringMap ? _buildExploreTopBar() : _buildTopBar(),
-            ),
-            // Feedback + input bar at the bottom (hidden in explore mode).
-            if (!_exploringMap)
+              // Top bar HUD.
               Positioned(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
+                top: 0,
                 left: 0,
                 right: 0,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildFeedback(),
-                    _buildInputBar(),
-                  ],
-                ),
+                child: _exploringMap ? _buildExploreTopBar() : _buildTopBar(),
               ),
-          ],
+              // Feedback + input bar at the bottom (hidden in explore mode).
+              if (!_exploringMap)
+                Positioned(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                  left: 0,
+                  right: 0,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildFeedback(),
+                      _buildInputBar(),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  void _handleKeyEvent(KeyEvent event) {
+    // Ctrl key triggers a ping/flash of unrevealed areas on desktop.
+    if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.controlLeft ||
+        event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.controlRight) {
+      _triggerPing();
+    }
   }
 
   Widget _buildTopBar() {
