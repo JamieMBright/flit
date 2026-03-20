@@ -47,7 +47,7 @@ const Map<String, List<String>> countryAliases = {
 
   'central african republic': ['car', 'central africa', 'centrafrique'],
 
-  'south sudan': ['s sudan', 'ss', 'republic of south sudan'],
+  'south sudan': ['s sudan', 'southsudan', 'republic of south sudan'],
 
   'burkina faso': ['upper volta', 'burkinafaso', 'burkina'],
 
@@ -58,7 +58,14 @@ const Map<String, List<String>> countryAliases = {
     'tanazania',
   ],
 
-  'guinea bissau': ['guinea-bissau', 'guinee bissau', 'guine bissau'],
+  'guinea bissau': [
+    'guinea-bissau',
+    'guinee bissau',
+    'guine bissau',
+    'guineabissau',
+    'guinea bisau',
+    'guinea bissaw',
+  ],
 
   'sao tome and principe': [
     'sao tome',
@@ -66,6 +73,9 @@ const Map<String, List<String>> countryAliases = {
     'sao tome principe',
     'sao tome n principe',
     'saint thomas and prince',
+    'saotome',
+    'sao tome and princape',
+    'sao tome and princpe',
   ],
 
   'equatorial guinea': [
@@ -73,11 +83,14 @@ const Map<String, List<String>> countryAliases = {
     'eq. guinea',
     'equatorial guinea republic',
     'guinea ecuatorial',
+    'equitorial guinea',
+    'equatoreal guinea',
+    'equatoriel guinea',
   ],
 
   'western sahara': [
     'w sahara',
-    'ws',
+    'westernsahara',
     'sahrawi republic',
     'western sahara territory',
   ],
@@ -123,16 +136,34 @@ const Map<String, List<String>> countryAliases = {
 
   'zambia': ['zamiba', 'republic of zambia'],
 
-  'zimbabwe': ['zimbabwae', 'zimbawbe', 'republic of zimbabwe'],
+  'zimbabwe': [
+    'zimbabwae',
+    'zimbawbe',
+    'zimbabwi',
+    'zimbabwei',
+    'zimbambwe',
+    'republic of zimbabwe',
+  ],
 
   'mozambique': [
     'mozambik',
     'mocambique',
     'republic of mozambique',
     'mozanbique',
+    'mozambque',
+    'mozambiqe',
+    'mozamibque',
+    'mozmbique',
   ],
 
-  'madagascar': ['madagasgar', 'madagaskar', 'republic of madagascar'],
+  'madagascar': [
+    'madagasgar',
+    'madagaskar',
+    'madagasar',
+    'madagscar',
+    'madgascar',
+    'republic of madagascar',
+  ],
 
   'malawi': ['malwi', 'nyasaland', 'republic of malawi'],
 
@@ -159,7 +190,14 @@ const Map<String, List<String>> countryAliases = {
 
   'benin': ['republic of benin', 'dahomey'],
 
-  'mauritania': ['mauritana', 'mouritania', 'islamic republic of mauritania'],
+  'mauritania': [
+    'mauritana',
+    'mouritania',
+    'mauritaina',
+    'mauretania',
+    'mauritanai',
+    'islamic republic of mauritania',
+  ],
 
   'gambia': ['the gambia', 'republic of the gambia'],
 
@@ -305,6 +343,12 @@ const Map<String, List<String>> countryAliases = {
     'azerbijan',
     'azerbaijaan',
     'azerbajian',
+    'azerbajan',
+    'azerbiajn',
+    'azerbijaan',
+    'azerbeijan',
+    'azerbaizan',
+    'azerbaijin',
   ],
 
   'armenia': ['hayastan', 'republic of armenia'],
@@ -345,6 +389,12 @@ const Map<String, List<String>> countryAliases = {
     'afhanistan',
     'afghansitan',
     'afghnaistan',
+    'afganestan',
+    'afghanastan',
+    'afghnistan',
+    'afghanstan',
+    'afghansitan',
+    'afhganistan',
   ],
 
   'pakistan': ['pakstan', 'pak', 'islamic republic of pakistan'],
@@ -356,6 +406,9 @@ const Map<String, List<String>> countryAliases = {
     'bangladash',
     'bangladehs',
     'bengladesh',
+    'bangladseh',
+    'bangaldesh',
+    'banagladesh',
     'peoples republic of bangladesh',
   ],
 
@@ -382,6 +435,9 @@ const Map<String, List<String>> countryAliases = {
     'malayasia',
     'federation of malaysia',
     'malasyia',
+    'maylasia',
+    'malasiya',
+    'malaysa',
   ],
 
   'singapore': ['singapur', 'singapor', 'republic of singapore'],
@@ -394,6 +450,11 @@ const Map<String, List<String>> countryAliases = {
     'philipines',
     'philippenes',
     'philipines',
+    'phillipenes',
+    'philipenes',
+    'philippins',
+    'phillippins',
+    'filipines',
     'republic of the philippines',
   ],
 
@@ -416,7 +477,7 @@ const Map<String, List<String>> countryAliases = {
 
   'mongolia': ['mongolian people republic'],
 
-  'hong kong': ['hk', 'hong kong sar'],
+  'hong kong': ['hongkong', 'hong kong sar'],
 
   'macao': ['macau', 'macao sar'],
 
@@ -432,10 +493,8 @@ const Map<String, List<String>> countryAliases = {
   // ════════════════════════════════════════════════════════════════
 
   'united kingdom': [
-    'uk',
     'britain',
     'great britain',
-    'gb',
     'england',
     'uk of great britain',
   ],
@@ -443,9 +502,13 @@ const Map<String, List<String>> countryAliases = {
   'czech republic': [
     'czechia',
     'czech rep',
-    'cz',
+    'czech',
     'czechoslovakia',
     'bohemia',
+    'chech republic',
+    'czek republic',
+    'czesch republic',
+    'checz republic',
   ],
 
   'bosnia and herzegovina': [
@@ -467,7 +530,16 @@ const Map<String, List<String>> countryAliases = {
 
   'belarus': ['byelorussia', 'republic of belarus', 'byelorus'],
 
-  'switzerland': ['swiss', 'swiss confederation', 'helvetia'],
+  'switzerland': [
+    'swiss',
+    'swiss confederation',
+    'helvetia',
+    'switerland',
+    'switserland',
+    'swizerland',
+    'switzeland',
+    'switerzland',
+  ],
 
   'germany': ['deutschland', 'federal republic of germany', 'germay'],
 
@@ -485,11 +557,30 @@ const Map<String, List<String>> countryAliases = {
 
   'belgium': ['kingdom of belgium', 'belgique'],
 
-  'luxembourg': ['luxemburg', 'luxemborg', 'grand duchy of luxembourg'],
+  'luxembourg': [
+    'luxemburg',
+    'luxemborg',
+    'luxemberg',
+    'luxemboourg',
+    'luxenbourg',
+    'luxeumbourg',
+    'grand duchy of luxembourg',
+  ],
 
   'liechtenstein': [
     'lichtenstein',
     'liechenstein',
+    'leicthenstein',
+    'liecthenstein',
+    'litchenstein',
+    'litchenstien',
+    'leichtenstein',
+    'lichenstein',
+    'liechtenstien',
+    'liechstenstein',
+    'liechtenstien',
+    'liechetenstein',
+    'leichtenstien',
     'principality of liechtenstein',
   ],
 
@@ -549,11 +640,9 @@ const Map<String, List<String>> countryAliases = {
 
   'united states': [
     'usa',
-    'us',
     'america',
     'united states of america',
     'us of america',
-    'the us',
     'the usa',
   ],
 
@@ -591,7 +680,6 @@ const Map<String, List<String>> countryAliases = {
 
   'trinidad and tobago': [
     'trinidad',
-    'tt',
     'trinidad tobago',
     'trinidad n tobago',
     'tobago',
@@ -647,7 +735,7 @@ const Map<String, List<String>> countryAliases = {
 
   'haiti': ['republic of haiti', 'ayiti'],
 
-  'jamaica': ['ja'],
+  'jamaica': ['jamaca', 'jamiaca', 'jameica', 'jamaika'],
 
   'bahamas': ['the bahamas', 'commonwealth of the bahamas'],
 
@@ -665,7 +753,7 @@ const Map<String, List<String>> countryAliases = {
 
   'papua new guinea': ['png', 'pnginea', 'new guinea'],
 
-  'new zealand': ['nz', 'aotearoa', 'new zeland'],
+  'new zealand': ['aotearoa', 'new zeland', 'newzealand'],
 
   'micronesia': [
     'federated states of micronesia',
@@ -728,7 +816,7 @@ const Map<String, List<String>> countryAliases = {
 
   'guam': ['territory of guam'],
 
-  'puerto rico': ['pr', 'commonwealth of puerto rico'],
+  'puerto rico': ['puertorico', 'commonwealth of puerto rico'],
 
   'bermuda': ['bermudas'],
 
@@ -756,11 +844,25 @@ const Map<String, List<String>> countryAliases = {
   // US STATES
   // ════════════════════════════════════════════════════════════════
 
-  'connecticut': ['conneticut', 'connnecticut'],
-  'massachusetts': ['massachussets', 'massachussetts', 'masachusetts'],
-  'mississippi': ['missisippi', 'mississipi'],
+  'connecticut': ['conneticut', 'connnecticut', 'conecticut', 'conecitcut'],
+  'massachusetts': [
+    'massachussets',
+    'massachussetts',
+    'masachusetts',
+    'massechusetts',
+    'massachusets',
+    'massachusettes',
+    'massachsuetts',
+  ],
+  'mississippi': ['missisippi', 'mississipi', 'misissipi', 'missisipi'],
   'tennessee': ['tennesee', 'tennesse'],
-  'pennsylvania': ['pensilvania', 'pensylvania'],
+  'pennsylvania': [
+    'pensilvania',
+    'pensylvania',
+    'pennsylvaina',
+    'pennslvania',
+    'pennyslvania',
+  ],
   'louisiana': ['louisianna'],
   'minnesota': ['minnisota', 'minnesotta'],
   'wisconsin': ['wisconson', 'wiscosin'],
@@ -778,7 +880,7 @@ const Map<String, List<String>> countryAliases = {
   'south dakota': ['s dakota', 'southdakota'],
   'west virginia': ['westvirginia', 'w virginia'],
   'rhode island': ['rhodeisland'],
-  'district of columbia': ['dc', 'washington dc'],
+  'district of columbia': ['washington dc'],
 
   // ════════════════════════════════════════════════════════════════
   // UK COUNTIES — TRADITIONAL SHIRES
@@ -895,7 +997,6 @@ const Map<String, List<String>> countryAliases = {
     'newfoundland',
     'labrador',
     'nfld',
-    'nl',
     'newfoundland n labrador',
     'newfoundland labrador',
   ],
@@ -909,9 +1010,9 @@ const Map<String, List<String>> countryAliases = {
 
   'northwest territories': ['nwt', 'northwest territory'],
 
-  'british columbia': ['bc', 'b.c.'],
+  'british columbia': ['britishcolumbia'],
 
-  'new brunswick': ['nb'],
+  'new brunswick': ['newbrunswick'],
 
-  'nova scotia': ['ns'],
+  'nova scotia': ['novascotia'],
 };
