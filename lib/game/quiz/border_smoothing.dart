@@ -75,12 +75,38 @@ const Set<String> alwaysTinyCodes = {
   'KI', // Kiribati (scattered atolls across 3.5M km² of ocean)
   'FM', // Micronesia (scattered across 2.6M km² of ocean)
 
-  // Tiny Caribbean islands (< 350 km², single small islands)
+  // Tiny Caribbean islands
   'AG', // Antigua and Barbuda (440 km² but two tiny islands)
-  'KN', // Saint Kitts and Nevis (261 km², two tiny islands)
+  'AI', // Anguilla (91 km²)
+  'BB', // Barbados (430 km²)
+  'CW', // Curaçao (444 km²)
+  'DM', // Dominica (751 km² but narrow)
   'GD', // Grenada (344 km²)
+  'KN', // Saint Kitts and Nevis (261 km², two tiny islands)
+  'LC', // Saint Lucia (617 km² but narrow)
+  'MS', // Montserrat (102 km²)
   'VC', // Saint Vincent and the Grenadines (389 km², scattered)
+  'VG', // British Virgin Islands (151 km²)
+  'VI', // U.S. Virgin Islands (346 km²)
+
+  // Tiny Pacific/Atlantic islands
+  'AS', // American Samoa (199 km²)
+  'CK', // Cook Islands (236 km², scattered)
+  'NF', // Norfolk Island (35 km²)
+  'NU', // Niue (260 km²)
+  'PM', // St. Pierre and Miquelon (242 km²)
+  'PN', // Pitcairn Islands (47 km²)
+  'SH', // Saint Helena (394 km²)
+  'TO', // Tonga (747 km², scattered)
+  'WF', // Wallis and Futuna (142 km²)
+  'WS', // Samoa (2,842 km² but islands are tiny polygons)
 
   // Tiny African islands
+  'CV', // Cape Verde (4,033 km² but scattered tiny islands)
+  'KM', // Comoros (1,862 km² but scattered tiny islands)
+  'MU', // Mauritius (2,040 km² but small polygon)
   'ST', // São Tomé and Príncipe (1,001 km² but two small islands)
+
+  // Tiny Middle Eastern
+  'BH', // Bahrain (778 km², small island)
 };

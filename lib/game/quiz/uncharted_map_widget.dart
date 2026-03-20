@@ -71,15 +71,10 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
     _loadSatelliteImage();
   }
 
-  /// Get areas for the region, filtering out excluded territories for world.
+  /// Get areas for the region. All areas in the candidate pool are rendered
+  /// so that every guessable country is visible on the map.
   static List<RegionalArea> _getFilteredAreas(GameRegion region) {
-    final areas = RegionalData.getAreas(region);
-    if (region == GameRegion.world) {
-      return areas
-          .where((a) => !CountryData.excludedTerritories.contains(a.code))
-          .toList();
-    }
-    return areas;
+    return RegionalData.getAreas(region);
   }
 
   Future<void> _loadSatelliteImage() async {
@@ -274,6 +269,9 @@ class _UnchartedMapPainter extends CustomPainter {
         ? (pingProgress < 0.5 ? pingProgress * 2.0 : (1.0 - pingProgress) * 2.0)
             .clamp(0.0, 1.0)
         : 0.0;
+    // Expanding ripple scale: 0→1 over the animation, used for ring expansion.
+    final double pingRipple =
+        hasPing ? Curves.easeOut.transform(pingProgress) : 0.0;
 
     // Three-pass rendering to prevent satellite fills from covering
     // neighbouring unrevealed outlines (e.g. Italy covering San Marino).
@@ -372,13 +370,24 @@ class _UnchartedMapPainter extends CustomPainter {
         canvas.drawPath(path, outlinePaint);
 
         if (isTiny) {
-          _drawTinyMarker(canvas, area, transform, pingAlpha);
+          _drawTinyMarker(canvas, area, transform, pingAlpha, pingRipple);
         }
 
         if (hasPing && !isTiny) {
+          // Bright amber fill over the polygon.
           canvas.drawPath(
             path,
-            Paint()..color = Color.fromRGBO(232, 165, 90, pingAlpha * 0.35),
+            Paint()..color = Color.fromRGBO(255, 190, 80, pingAlpha * 0.55),
+          );
+          // Expanding glow stroke around the polygon edge.
+          canvas.drawPath(
+            path,
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = (3.0 + pingRipple * 6.0) / zoomScale
+              ..strokeJoin = StrokeJoin.round
+              ..isAntiAlias = true
+              ..color = Color.fromRGBO(255, 200, 80, pingAlpha * 0.7),
           );
         }
       }
@@ -537,23 +546,43 @@ class _UnchartedMapPainter extends CustomPainter {
 
   /// Draw a faint dashed rounded polygon marker for a tiny unrevealed area.
   ///
-  /// When [pingAlpha] > 0, the marker pulses with the same ping animation
-  /// as regular country fills.
+  /// When [pingAlpha] > 0, the marker pulses with an expanding ripple ring
+  /// that extends well beyond the marker bounds so small islands are visible.
   void _drawTinyMarker(
     Canvas canvas,
     RegionalArea area,
     _GeoTransform transform,
     double pingAlpha,
+    double pingRipple,
   ) {
     final rrect = _tinyAreaRRect(area, transform);
     final center = rrect.center;
     if (center.dx.isNaN || center.dy.isNaN) return;
 
-    // Ping pulse fill for tiny markers (matches regular country ping).
+    // Ping pulse: bright fill + expanding ripple ring beyond marker bounds.
     if (pingAlpha > 0.0) {
+      // Bright fill on the marker itself.
       canvas.drawRRect(
         rrect,
-        Paint()..color = Color.fromRGBO(232, 165, 90, pingAlpha * 0.35),
+        Paint()..color = Color.fromRGBO(255, 190, 80, pingAlpha * 0.6),
+      );
+      // Expanding circle ripple that extends beyond the marker.
+      final baseRadius = math.max(rrect.width, rrect.height) * 0.5;
+      final expandRadius = baseRadius + (20.0 + baseRadius) * pingRipple;
+      canvas.drawCircle(
+        center,
+        expandRadius,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = (2.5 + pingRipple * 3.0) / zoomScale
+          ..isAntiAlias = true
+          ..color = Color.fromRGBO(255, 200, 80, pingAlpha * 0.8),
+      );
+      // Inner glow disc.
+      canvas.drawCircle(
+        center,
+        expandRadius * 0.6,
+        Paint()..color = Color.fromRGBO(255, 200, 80, pingAlpha * 0.15),
       );
     }
 

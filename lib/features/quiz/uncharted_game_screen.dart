@@ -166,7 +166,7 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
           style: TextStyle(color: FlitColors.textPrimary),
         ),
         content: Text(
-          'You\'ve found ${_session.revealedCount} of ${_session.totalCount}. '
+          'You\'ve found ${_session.correctGuesses} of ${_session.totalCount}. '
           'What would you like to do?',
           style: const TextStyle(color: FlitColors.textSecondary),
         ),
@@ -211,12 +211,13 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
         builder: (_) => UnchartedResultsScreen(
           region: widget.region,
           mode: widget.mode,
-          revealedCount: _session.revealedCount,
+          revealedCount: _session.correctGuesses,
           totalCount: _session.totalCount,
           elapsedMs: _session.elapsedMs,
           score: _session.finalScore,
           givenUp: _session.givenUp,
           revealedCodes: _session.revealedCodes,
+          guessedCodes: _session.guessedCodes,
         ),
       ),
     );
@@ -318,7 +319,7 @@ class _UnchartedGameScreenState extends State<UnchartedGameScreen>
           const Spacer(),
           // Progress.
           Text(
-            '${_session.revealedCount} / ${_session.totalCount}',
+            '${_session.correctGuesses} / ${_session.totalCount}',
             style: const TextStyle(
               color: FlitColors.gold,
               fontSize: 16,
@@ -495,6 +496,7 @@ class UnchartedResultsScreen extends ConsumerStatefulWidget {
     required this.score,
     required this.givenUp,
     required this.revealedCodes,
+    this.guessedCodes,
   });
 
   final GameRegion region;
@@ -505,6 +507,9 @@ class UnchartedResultsScreen extends ConsumerStatefulWidget {
   final int score;
   final bool givenUp;
   final Set<String> revealedCodes;
+
+  /// Codes the player actually typed. Null when all revealed = guessed.
+  final Set<String>? guessedCodes;
 
   @override
   ConsumerState<UnchartedResultsScreen> createState() =>
@@ -654,8 +659,13 @@ class _UnchartedResultsScreenState
             .toList()
         : areas;
 
-    final found = eligible
-        .where((a) => widget.revealedCodes.contains(a.code))
+    final playerGuessed = widget.guessedCodes ?? widget.revealedCodes;
+    final found = eligible.where((a) => playerGuessed.contains(a.code)).toList()
+      ..sort((a, b) => displayName(a).compareTo(displayName(b)));
+    final forceRevealed = eligible
+        .where((a) =>
+            widget.revealedCodes.contains(a.code) &&
+            !playerGuessed.contains(a.code))
         .toList()
       ..sort((a, b) => displayName(a).compareTo(displayName(b)));
     final missed = eligible
@@ -882,6 +892,24 @@ class _UnchartedResultsScreenState
                   runSpacing: 6,
                   children: found
                       .map((a) => _AreaChip(name: displayName(a), found: true))
+                      .toList(),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // ── Force-revealed areas (from "Reveal All") ──
+              if (forceRevealed.isNotEmpty) ...[
+                _SectionHeader(
+                  icon: Icons.visibility,
+                  label: 'Revealed (${forceRevealed.length})',
+                  color: FlitColors.gold,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: forceRevealed
+                      .map((a) => _AreaChip(name: displayName(a), found: false))
                       .toList(),
                 ),
                 const SizedBox(height: 20),
