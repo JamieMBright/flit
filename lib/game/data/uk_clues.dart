@@ -783,7 +783,7 @@ abstract class UkClues {
       footballTeam: 'Swansea City',
       nickname: 'The Copperopolis',
       flag:
-          'Swansea\'s flag combines the castle from its Norman fortification — one of the first Norman castles in Wales — with the black swan that gives the city its English name (derived from "Sweyn\'s ey," a Norse-origin name). The red and gold colours derive from the arms of the ancient Welsh kingdom of Deheubarth, whose princes ruled southwest Wales before the Norman conquest.',
+          'This city\'s flag combines the castle from its Norman fortification — one of the first Norman castles in Wales — with the black swan that gives the city its English name (derived from "Sweyn\'s ey," a Norse-origin name). The red and gold colours derive from the arms of the ancient Welsh kingdom of Deheubarth, whose princes ruled southwest Wales before the Norman conquest.',
     ),
     'GWN': UkCountyClueData(
       country: 'Wales',
@@ -792,7 +792,7 @@ abstract class UkClues {
       footballTeam: 'Bangor City',
       nickname: 'Land of Castles',
       flag:
-          'Gwynedd\'s eagles derive from the arms of the Princes of Gwynedd — the most powerful Welsh dynasty, who resisted English domination longest. The eagle was associated with Llywelyn ap Gruffudd, "The Last Prince," who was killed in 1282, ending the independent Principality of Wales. The lions come from the arms of Owain Gwynedd, who united Wales in the 12th century.',
+          'This county\'s eagles derive from the arms of the Princes of this region — the most powerful Welsh dynasty, who resisted English domination longest. The eagle was associated with Llywelyn ap Gruffudd, "The Last Prince," who was killed in 1282, ending the independent Principality of Wales. The lions come from the arms of Owain, the 12th-century prince who united Wales.',
     ),
     'PEM': UkCountyClueData(
       country: 'Wales',
@@ -801,7 +801,7 @@ abstract class UkClues {
       footballTeam: 'Haverfordwest County',
       nickname: 'Little England Beyond Wales',
       flag:
-          'This county\'s gold lions on blue derive from the arms of the ancient Kingdom of Deheubarth, the most powerful Welsh kingdom of southwest Wales. Pembroke Castle itself was the birthplace of Henry VII, founder of the Tudor dynasty. The county is nicknamed "Little England Beyond Wales" because Norman and Flemish settlers colonised it so thoroughly in the 12th century that its language and culture remained English long after the surrounding areas returned to Welsh.',
+          'This county\'s gold lions on blue derive from the arms of the ancient Kingdom of Deheubarth, the most powerful Welsh kingdom of southwest Wales. The great castle here was the birthplace of Henry VII, founder of the Tudor dynasty. The county is nicknamed "Little England Beyond Wales" because Norman and Flemish settlers colonised it so thoroughly in the 12th century that its language and culture remained English long after the surrounding areas returned to Welsh.',
     ),
     // PWS renamed to POW (Powys)
     'POW': UkCountyClueData(
@@ -811,7 +811,7 @@ abstract class UkClues {
       footballTeam: 'Newtown AFC',
       nickname: 'The Green Desert of Wales',
       flag:
-          'This county\'s gold lion rampant on red derives from the arms of the ancient Kingdom of Powys Fadog, the northern division of the historic Welsh kingdom of Powys. The region traces its lineage to the sub-Roman princes who ruled central Wales after the Roman withdrawal. The county\'s remoteness and sparse population — the "Green Desert" — allowed its Celtic Welsh culture and language to survive intact.',
+          'This county\'s gold lion rampant on red derives from the arms of the ancient kingdoms of central Wales, whose northern division gave rise to the modern county boundaries. The region traces its lineage to the sub-Roman princes who ruled central Wales after the Roman withdrawal. The county\'s remoteness and sparse population — the "Green Desert" — allowed its Celtic Welsh culture and language to survive intact.',
     ),
     // CRD renamed to CAY (Caerphilly)
     'CAY': UkCountyClueData(
@@ -821,7 +821,7 @@ abstract class UkClues {
       footballTeam: 'Cardiff Metropolitan',
       nickname: 'The Valleys',
       flag:
-          'Caerphilly\'s flag combines the Welsh red dragon — the ancient symbol of the Britons — with a red chevron referencing the Norman castle at Caerphilly, one of the largest castles in Britain, built by Gilbert de Clare in 1268 specifically to contain the growing power of Llywelyn ap Gruffudd, the last native Prince of Wales. The tension between these symbols captures the contested Welsh-Norman history of the valleys.',
+          'This county\'s flag combines the Welsh red dragon — the ancient symbol of the Britons — with a red chevron referencing the great Norman castle here, one of the largest castles in Britain, built by Gilbert de Clare in 1268 specifically to contain the growing power of Llywelyn ap Gruffudd, the last native Prince of Wales. The tension between these symbols captures the contested Welsh-Norman history of the valleys.',
     ),
     'NWP': UkCountyClueData(
       country: 'Wales',
@@ -830,7 +830,7 @@ abstract class UkClues {
       footballTeam: 'Newport County',
       nickname: 'The Gateway to Wales',
       flag:
-          'Newport\'s chevron and three towers derive from the town\'s Norman castle and its role as a major crossing point of the River Usk. The chevron references the Clare family arms — Earls of Gloucester who controlled this strategic borderland after the Norman Conquest. Newport became a major coal and iron export port in the 19th century, and was the scene of the Chartist Uprising of 1839 — the last armed rebellion on British soil.',
+          'This city\'s chevron and three towers derive from the town\'s Norman castle and its role as a major crossing point of the River Usk. The chevron references the Clare family arms — Earls of Gloucester who controlled this strategic borderland after the Norman Conquest. The town became a major coal and iron export port in the 19th century, and was the scene of the Chartist Uprising of 1839 — the last armed rebellion on British soil.',
     ),
     'RCT': UkCountyClueData(
       country: 'Wales',
@@ -839,7 +839,7 @@ abstract class UkClues {
       footballTeam: 'Pontypridd Town',
       nickname: 'The Rhondda Valleys',
       flag:
-          'Rhondda Cynon Taf\'s black and gold colours represent coal and gold — the valley\'s defining resources. Black reflects the coal seams that made the Rhondda one of the most productive coalfields in the world, while gold represents the wealth and aspiration of its communities. The Welsh dragon asserts the region\'s cultural identity, preserved through choirs, chapels and the Welsh language even as coal defined its economic destiny.',
+          'This county\'s black and gold colours represent coal and gold — the valley\'s defining resources. Black reflects the coal seams that made this region one of the most productive coalfields in the world, while gold represents the wealth and aspiration of its communities. The Welsh dragon asserts the region\'s cultural identity, preserved through choirs, chapels and the Welsh language even as coal defined its economic destiny.',
     ),
     'FLN': UkCountyClueData(
       country: 'Wales',
@@ -848,7 +848,7 @@ abstract class UkClues {
       footballTeam: 'Connah\'s Quay Nomads',
       nickname: 'The Borderlands',
       flag:
-          'Flintshire\'s lion rampant and castle reflect the county\'s position as a March (border) county, fought over by Welsh princes and English kings for centuries. Flint Castle was the first of Edward I\'s iron ring of castles built to subjugate Wales, constructed in 1277. It was here, in 1399, that Richard II surrendered to Henry Bolingbroke — an event that changed the English succession and inspired Shakespeare.',
+          'This county\'s lion rampant and castle reflect its position as a March (border) county, fought over by Welsh princes and English kings for centuries. The local castle was the first of Edward I\'s iron ring of castles built to subjugate Wales, constructed in 1277. It was here, in 1399, that Richard II surrendered to Henry Bolingbroke — an event that changed the English succession and inspired Shakespeare.',
     ),
     'WRX': UkCountyClueData(
       country: 'Wales',
@@ -857,7 +857,7 @@ abstract class UkClues {
       footballTeam: 'Wrexham AFC',
       nickname: 'The Gateway to Wales',
       flag:
-          'Wrexham\'s cross and lion combine the traditions of the Welsh Marches with the heraldry of the ancient Kingdom of Powys. The town grew around its parish church — St Giles, one of the finest in Wales — and developed as a coal and steel centre. The lion echoes the Powys royal arms, asserting Welsh identity in a borderland that was historically more English in population and culture.',
+          'This county\'s cross and lion combine the traditions of the Welsh Marches with the heraldry of the ancient Kingdom of Powys. The town grew around its parish church — St Giles, one of the finest in Wales — and developed as a coal and steel centre. The lion echoes the Powys royal arms, asserting Welsh identity in a borderland that was historically more English in population and culture.',
     ),
     'CMN': UkCountyClueData(
       country: 'Wales',
@@ -866,7 +866,7 @@ abstract class UkClues {
       footballTeam: 'Carmarthen Town',
       nickname: 'The Garden of Wales',
       flag:
-          'This county\'s quartered blue and gold field with lions and towers derives from the arms of the ancient Welsh kingdom of Deheubarth and the later Norman lords of Carmarthen. The county town itself claims to be the oldest town in Wales, with Roman origins, and is traditionally associated with the wizard Merlin — legend holds the town will flood when a certain oak tree falls.',
+          'This county\'s quartered blue and gold field with lions and towers derives from the arms of the ancient Welsh kingdom of Deheubarth and the later Norman lords who controlled the county town. The county town itself claims to be the oldest town in Wales, with Roman origins, and is traditionally associated with the wizard Merlin — legend holds the town will flood when a certain oak tree falls.',
     ),
     'CRG': UkCountyClueData(
       country: 'Wales',
