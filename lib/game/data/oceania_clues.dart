@@ -72,7 +72,7 @@ abstract class OceaniaClues {
       famousLandmark: 'Kokoda Track',
       famousPerson: 'Michael Somare',
       flag:
-          'The diagonal design was created by a 15-year-old student Susan Karike; the red panel bears a gold Raggiana bird-of-paradise (the national bird), while the black panel displays the Southern Cross, linking Papua New Guinea to its Pacific neighbours',
+          'The diagonal design was created by a 15-year-old student Susan Karike; the red panel bears a gold Raggiana bird-of-paradise (the national bird), while the black panel displays the Southern Cross, linking this nation to its Pacific neighbours',
     ),
     'PW': OceaniaClueData(
       nickname: 'The Pristine Paradise of the Pacific',
@@ -86,21 +86,21 @@ abstract class OceaniaClues {
       famousLandmark: 'Guadalcanal',
       famousPerson: 'Peter Kenilorea',
       flag:
-          'The blue represents the surrounding Pacific, the green symbolises the fertile land and forests, the yellow diagonal stripe represents sunshine, and the five white stars honour the five main island groups of the Solomons',
+          'The blue represents the surrounding Pacific, the green symbolises the fertile land and forests, the yellow diagonal stripe represents sunshine, and the five white stars honour the five main island groups of this nation',
     ),
     'TO': OceaniaClueData(
       nickname: 'The Friendly Islands',
       famousLandmark: 'Ha\'amonga \'a Maui Trilithon',
       famousPerson: 'King George Tupou I',
       flag:
-          'The red field represents the blood of Christ, reflecting the nation\'s deep Christian faith, while the white canton with a bold red cross directly symbolises Christianity — Tonga being one of the Pacific\'s most devoutly Christian nations',
+          'The red field represents the blood of Christ, reflecting the nation\'s deep Christian faith, while the white canton with a bold red cross directly symbolises Christianity — this being one of the Pacific\'s most devoutly Christian nations',
     ),
     'TV': OceaniaClueData(
       nickname: 'The Eight Standing Together',
       famousLandmark: 'Funafuti Conservation Area',
       famousPerson: 'Toaripi Lauti',
       flag:
-          'The light blue represents the Pacific Ocean, the Union Jack reflects British colonial ties, and the nine yellow stars are arranged in the geographic pattern of Tuvalu\'s nine islands — the country\'s name means "eight standing together" plus the later addition of Niulakita',
+          'The light blue represents the Pacific Ocean, the Union Jack reflects British colonial ties, and the nine yellow stars are arranged in the geographic pattern of this nation\'s nine islands — the country\'s name means "eight standing together" plus the later addition of Niulakita',
     ),
     'VU': OceaniaClueData(
       nickname: 'The Land of Eternal Happiness',

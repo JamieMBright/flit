@@ -267,7 +267,7 @@ abstract class AsiaClues {
       famousLandmark: 'The Pearl-Qatar',
       famousPerson: 'Sheikh Tamim bin Hamad Al Thani',
       flag:
-          'The maroon colour (originally red, darkened by the desert sun) is unique among national flags and represents the blood shed in Qatar\'s wars; the white represents peace; the nine-pointed serrated line records Qatar as the ninth member of the "reconciled Emirates" after the 1916 treaty',
+          'The maroon colour (originally red, darkened by the desert sun) is unique among national flags and represents the blood shed in this nation\'s wars; the white represents peace; the nine-pointed serrated line records this country as the ninth member of the "reconciled Emirates" after the 1916 treaty',
     ),
     'SA': AsiaClueData(
       nickname: 'The Land of the Two Holy Mosques',
@@ -288,7 +288,7 @@ abstract class AsiaClues {
       famousLandmark: 'Ancient City of Damascus',
       famousPerson: 'Queen Zenobia',
       flag:
-          'The red-white-black horizontal tricolour uses Pan-Arab colours representing the Hashemite dynasty, the Umayyad dynasty, and the Abbasid dynasty; the two green stars originally represented Egypt and Syria in the United Arab Republic',
+          'The red-white-black horizontal tricolour uses Pan-Arab colours representing the Hashemite dynasty, the Umayyad dynasty, and the Abbasid dynasty; the two green stars originally represented Egypt and this country in the United Arab Republic',
     ),
     'TH': AsiaClueData(
       nickname: 'The Land of Smiles',
@@ -302,7 +302,7 @@ abstract class AsiaClues {
       famousLandmark: 'Ismoil Somoni Peak',
       famousPerson: 'Ismoil Somoni',
       flag:
-          'The red represents the sun and victory, the white symbolises purity and cotton (a major crop), the green represents agriculture and spring; the golden crown and seven stars above it represent the Tajik people — "Tajik" is said to derive from the word for "crown"',
+          'The red represents the sun and victory, the white symbolises purity and cotton (a major crop), the green represents agriculture and spring; the golden crown and seven stars above it represent this nation\'s people — the country\'s name is said to derive from the word for "crown"',
     ),
     'TL': AsiaClueData(
       nickname: 'The Land of the Rising Sun of Southeast Asia',
@@ -316,7 +316,7 @@ abstract class AsiaClues {
       famousLandmark: 'Darvaza Gas Crater',
       famousPerson: 'Saparmurat Niyazov',
       flag:
-          'The green field represents Islam, the crescent and five stars symbolise the five provinces; the unique carpet gul stripe along the hoist displays five traditional Turkmen carpet designs representing the five major tribes — the only national flag featuring carpet patterns',
+          'The green field represents Islam, the crescent and five stars symbolise the five provinces; the unique carpet gul stripe along the hoist displays five traditional carpet designs of this nation representing the five major tribes — the only national flag featuring carpet patterns',
     ),
     'TW': AsiaClueData(
       nickname: 'The Beautiful Island',
@@ -337,7 +337,7 @@ abstract class AsiaClues {
       famousLandmark: 'Ha Long Bay',
       famousPerson: 'Ho Chi Minh',
       flag:
-          'The red background represents the revolution and the blood of martyrs, and the five-pointed gold star represents the five classes of Vietnamese society — workers, peasants, soldiers, intellectuals, and business people — united under communism',
+          'The red background represents the revolution and the blood of martyrs, and the five-pointed gold star represents the five classes of this nation\'s society — workers, peasants, soldiers, intellectuals, and business people — united under communism',
     ),
     'YE': AsiaClueData(
       nickname: 'The Land of Sheba',

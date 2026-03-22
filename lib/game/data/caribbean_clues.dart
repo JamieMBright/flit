@@ -37,7 +37,7 @@ abstract class CaribbeanClues {
       famousLandmark: 'Exuma Cays Land and Sea Park',
       famousPerson: 'Sir Lynden Pindling',
       flag:
-          'Aquamarine represents the sea and sky, gold the island\'s sandy beaches, and the black triangle the unity of the Bahamian people forging ahead toward independence, achieved in 1973.',
+          'Aquamarine represents the sea and sky, gold the island\'s sandy beaches, and the black triangle the unity of the people forging ahead toward independence, achieved in 1973.',
     ),
     'CU': CaribbeanClueData(
       nickname: 'The Pearl of the Antilles',
@@ -72,14 +72,14 @@ abstract class CaribbeanClues {
       famousLandmark: 'Citadelle Laferriere',
       famousPerson: 'Toussaint Louverture',
       flag:
-          'Born from the Haitian Revolution of 1803, when rebels tore the white from the French tricolour to reject colonialism; blue and red united all Haitians in the world\'s first successful slave revolt.',
+          'Born from the revolution of 1803, when rebels tore the white from the French tricolour to reject colonialism; blue and red united all freedom fighters in the world\'s first successful slave revolt.',
     ),
     'JM': CaribbeanClueData(
       nickname: 'The Land of Wood and Water',
       famousLandmark: 'Blue Mountains',
       famousPerson: 'Bob Marley',
       flag:
-          'Gold represents the island\'s natural wealth, black the strength of the Jamaican people, and green the lush landscape; the design deliberately avoids red, unlike most Commonwealth flags, adopted at independence in 1962.',
+          'Gold represents the island\'s natural wealth, black the strength of the people, and green the lush landscape; the design deliberately avoids red, unlike most Commonwealth flags, adopted at independence in 1962.',
     ),
     'KN': CaribbeanClueData(
       nickname: 'The Sugar City',
@@ -107,7 +107,7 @@ abstract class CaribbeanClues {
       famousLandmark: 'Pitch Lake',
       famousPerson: 'V. S. Naipaul',
       flag:
-          'Red represents the warmth of the people and fire of the sun, black honours the African heritage of Trinidad and Tobago, and white symbolises the sea uniting the nation; adopted at independence in 1962.',
+          'Red represents the warmth of the people and fire of the sun, black honours the African heritage of this twin-island nation, and white symbolises the sea uniting the nation; adopted at independence in 1962.',
     ),
     'VC': CaribbeanClueData(
       nickname: 'The Gem of the Antilles',

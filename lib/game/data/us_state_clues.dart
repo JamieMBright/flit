@@ -3,7 +3,7 @@ abstract class UsStateClues {
   static const Map<String, StateClueData> data = {
     'AL': StateClueData(
       flag:
-          'The crimson saltire recalls Alabama\'s Confederate heritage and Scottish-Irish roots; adopted in 1895, its St. Andrew\'s cross design deliberately echoes the Confederate battle flag, placed on white to honor both Southern identity and the state\'s founding settlers',
+          'The crimson saltire recalls this state\'s Confederate heritage and Scottish-Irish roots; adopted in 1895, its St. Andrew\'s cross design deliberately echoes the Confederate battle flag, placed on white to honor both Southern identity and the state\'s founding settlers',
       sportsTeams: [
         'Alabama Crimson Tide (NCAA Football)',
         'Auburn Tigers (NCAA Football)',
@@ -20,7 +20,7 @@ abstract class UsStateClues {
     ),
     'AK': StateClueData(
       flag:
-          'Designed in 1927 by 13-year-old Benny Benson, the gold stars of Ursa Major and Polaris on deep blue symbolize Alaska\'s northern wilderness and its guiding star — Polaris represents the state\'s future as the northernmost point of the nation',
+          'Designed in 1927 by 13-year-old Benny Benson, the gold stars of Ursa Major and Polaris on deep blue symbolize this state\'s northern wilderness and its guiding star — Polaris represents the state\'s future as the northernmost point of the nation',
       sportsTeams: [
         'Alaska Aces (ECHL Hockey)',
         'Alaska Anchorage Seawolves (NCAA Hockey)',
@@ -41,7 +41,7 @@ abstract class UsStateClues {
     ),
     'AZ': StateClueData(
       flag:
-          'Adopted in 1917, the 13 red and gold rays represent the Spanish and Mexican heritage of Arizona plus the original colonies; the copper star honors Arizona\'s status as the nation\'s largest copper producer, and blue and gold recall the Union Army\'s colors from the Civil War era',
+          'Adopted in 1917, the 13 red and gold rays represent the Spanish and Mexican heritage of this state plus the original colonies; the copper star honors this state\'s status as the nation\'s largest copper producer, and blue and gold recall the Union Army\'s colors from the Civil War era',
       sportsTeams: [
         'Arizona Cardinals (NFL)',
         'Phoenix Suns (NBA)',
@@ -62,7 +62,7 @@ abstract class UsStateClues {
     ),
     'AR': StateClueData(
       flag:
-          'Adopted in 1913, the diamond shape honors Arkansas as the only diamond-producing state in the US; the 25 stars represent Arkansas as the 25th state admitted to the Union, and the blue border with three upper stars and one lower star reflects its Confederate history and the United States, France, and Spain — nations that previously held sovereignty over the territory',
+          'Adopted in 1913, the diamond shape honors this state as the only diamond-producing state in the US; the 25 stars represent this state as the 25th state admitted to the Union, and the blue border with three upper stars and one lower star reflects its Confederate history and the United States, France, and Spain — nations that previously held sovereignty over the territory',
       sportsTeams: [
         'Arkansas Razorbacks (NCAA Football)',
         'Arkansas Razorbacks (NCAA Basketball)',
@@ -142,7 +142,7 @@ abstract class UsStateClues {
     ),
     'DE': StateClueData(
       flag:
-          'The colonial blue and buff colors honor the uniform of the Delaware Regiment in the Revolutionary War, renowned for their bravery at the Battle of Long Island in 1776; the buff diamond frames the state coat of arms, and the date December 7, 1787 commemorates Delaware\'s historic ratification of the U.S. Constitution as the very first state',
+          'The colonial blue and buff colors honor the uniform of the Delaware Regiment in the Revolutionary War, renowned for their bravery at the Battle of Long Island in 1776; the buff diamond frames the state coat of arms, and the date December 7, 1787 commemorates this state\'s historic ratification of the U.S. Constitution as the very first state',
       sportsTeams: [
         'Delaware Blue Coats (NBA G League)',
         'Delaware Fightin\' Blue Hens (NCAA Football)',
@@ -163,7 +163,7 @@ abstract class UsStateClues {
     ),
     'FL': StateClueData(
       flag:
-          'The red diagonal cross was added in 1900 to distinguish the flag from a plain white one at sea; Florida\'s seal at center depicts the Seminole woman honoring the indigenous people who resisted forced removal during the 19th-century wars, the rising sun symbolizes Florida\'s role as the Sunshine State, and the sabal palm and steamboat represent the state\'s natural beauty and commerce',
+          'The red diagonal cross was added in 1900 to distinguish the flag from a plain white one at sea; the seal at center depicts the Seminole woman honoring the indigenous people who resisted forced removal during the 19th-century wars, the rising sun symbolizes this state\'s role as the Sunshine State, and the sabal palm and steamboat represent the state\'s natural beauty and commerce',
       sportsTeams: [
         'Miami Dolphins (NFL)',
         'Miami Heat (NBA)',
@@ -184,7 +184,7 @@ abstract class UsStateClues {
     ),
     'GA': StateClueData(
       flag:
-          'Adopted in 2003 after decades of controversy over the previous flag\'s Confederate battle emblem, Georgia\'s current design incorporates the Stars and Bars of the first Confederate national flag, framing the state seal with its three pillars for the legislative, executive, and judicial branches — the arch above them guarded by a militiaman symbolizes constitutional government defended by the people',
+          'Adopted in 2003 after decades of controversy over the previous flag\'s Confederate battle emblem, this state\'s current design incorporates the Stars and Bars of the first Confederate national flag, framing the state seal with its three pillars for the legislative, executive, and judicial branches — the arch above them guarded by a militiaman symbolizes constitutional government defended by the people',
       sportsTeams: [
         'Atlanta Falcons (NFL)',
         'Atlanta Hawks (NBA)',
@@ -205,7 +205,7 @@ abstract class UsStateClues {
     ),
     'HI': StateClueData(
       flag:
-          'Hawaii\'s unique flag blends British and American symbolism: the Union Jack in the canton honors King Kamehameha I\'s close alliance with Britain and the British ship Discovery that visited in 1778; the eight alternating white, red, and blue stripes represent the eight main Hawaiian islands, and the flag\'s design dates to approximately 1816 during the Kingdom of Hawaii era',
+          'This state\'s unique flag blends British and American symbolism: the Union Jack in the canton honors King Kamehameha I\'s close alliance with Britain and the British ship Discovery that visited in 1778; the eight alternating white, red, and blue stripes represent the eight main islands, and the flag\'s design dates to approximately 1816 during the Kingdom of Hawaii era',
       sportsTeams: [
         'Hawaii Rainbow Warriors (NCAA Football)',
         'Hawaii Rainbow Warriors (NCAA Basketball)',
@@ -227,7 +227,7 @@ abstract class UsStateClues {
     ),
     'ID': StateClueData(
       flag:
-          'Idaho\'s seal, adopted in 1891, is the only U.S. state seal designed by a woman — Emma Edwards Green; the female figure of Justice and Liberty stands alongside a miner representing the state\'s silver and gold mining heritage, while the elk head above honors Idaho\'s abundant wildlife, and the shield bears images of the Snake River canyon and mountain scenery central to Idaho\'s identity',
+          'This state\'s seal, adopted in 1891, is the only U.S. state seal designed by a woman — Emma Edwards Green; the female figure of Justice and Liberty stands alongside a miner representing the state\'s silver and gold mining heritage, while the elk head above honors this state\'s abundant wildlife, and the shield bears images of the Snake River canyon and mountain scenery central to this state\'s identity',
       sportsTeams: [
         'Boise State Broncos (NCAA Football)',
         'Idaho Steelheads (ECHL Hockey)',
@@ -248,7 +248,7 @@ abstract class UsStateClues {
     ),
     'IL': StateClueData(
       flag:
-          'The bald eagle on Illinois\'s seal clutches a shield bearing the U.S. flag, symbolizing Illinois\'s fierce loyalty to the Union during the Civil War; the eagle holds a banner reading "State Sovereignty, National Union" — a phrase reflecting the tension between states\' rights and federal authority that defined Illinois politics; the redesigned 1868 seal added the date 1818, marking statehood',
+          'The bald eagle on this state\'s seal clutches a shield bearing the U.S. flag, symbolizing this state\'s fierce loyalty to the Union during the Civil War; the eagle holds a banner reading "State Sovereignty, National Union" — a phrase reflecting the tension between states\' rights and federal authority that defined this state\'s politics; the redesigned 1868 seal added the date 1818, marking statehood',
       sportsTeams: [
         'Chicago Bears (NFL)',
         'Chicago Bulls (NBA)',
@@ -290,7 +290,7 @@ abstract class UsStateClues {
     ),
     'IA': StateClueData(
       flag:
-          'Adopted in 1921, Iowa\'s tricolor of blue, white, and red directly honors France — reflecting Iowa\'s history as part of French Louisiana Territory before the 1803 Louisiana Purchase; the bald eagle at center carries the state motto on a streamer, and the colors also echo the American and French revolutionary ideals of liberty that shaped Iowa\'s territorial politics',
+          'Adopted in 1921, this state\'s tricolor of blue, white, and red directly honors France — reflecting this state\'s history as part of French Louisiana Territory before the 1803 Louisiana Purchase; the bald eagle at center carries the state motto on a streamer, and the colors also echo the American and French revolutionary ideals of liberty that shaped this state\'s territorial politics',
       sportsTeams: [
         'Iowa Hawkeyes (NCAA Football)',
         'Iowa State Cyclones (NCAA Football)',
@@ -311,7 +311,7 @@ abstract class UsStateClues {
     ),
     'KS': StateClueData(
       flag:
-          'The sunflower crowning Kansas\'s seal, adopted in 1927, is the state flower and emblematic of the vast prairie landscape; the seal itself depicts the frontier struggle of the 1860s — a rising sun over wheat fields, a settler\'s log cabin, a steam riverboat, a westward wagon train, and bison hunted by Native Americans — all beneath the state motto "Ad Astra per Aspera" (To the Stars Through Difficulties)',
+          'The sunflower crowning this state\'s seal, adopted in 1927, is the state flower and emblematic of the vast prairie landscape; the seal itself depicts the frontier struggle of the 1860s — a rising sun over wheat fields, a settler\'s log cabin, a steam riverboat, a westward wagon train, and bison hunted by Native Americans — all beneath the state motto "Ad Astra per Aspera" (To the Stars Through Difficulties)',
       sportsTeams: [
         'Kansas City Chiefs (NFL)',
         'Kansas Jayhawks (NCAA Basketball)',
@@ -332,7 +332,7 @@ abstract class UsStateClues {
     ),
     'KY': StateClueData(
       flag:
-          'The handshake on Kentucky\'s seal symbolizes the state\'s motto "United We Stand, Divided We Fall" — a reference to Kentucky\'s agonizing border-state position in the Civil War, when citizens fought on both sides; the figures of a frontiersman and statesman shaking hands represent the union of frontier spirit and civic governance that defined early Kentucky statehood in 1792',
+          'The handshake on this state\'s seal symbolizes the state\'s motto "United We Stand, Divided We Fall" — a reference to this state\'s agonizing border-state position in the Civil War, when citizens fought on both sides; the figures of a frontiersman and statesman shaking hands represent the union of frontier spirit and civic governance that defined early statehood in 1792',
       sportsTeams: [
         'Kentucky Wildcats (NCAA Basketball)',
         'Louisville Cardinals (NCAA Basketball)',
@@ -353,7 +353,7 @@ abstract class UsStateClues {
     ),
     'LA': StateClueData(
       flag:
-          'The "pelican in her piety" — a mother pelican piercing her own breast to feed her young with blood — is an ancient Christian symbol of self-sacrifice, adopted as Louisiana\'s emblem in 1812 at statehood; the brown pelican reflects Louisiana\'s Gulf Coast identity, and the motto "Union, Justice, and Confidence" encircles the nest on a white banner, representing the ideals of the newly admitted state',
+          'The "pelican in her piety" — a mother pelican piercing her own breast to feed her young with blood — is an ancient Christian symbol of self-sacrifice, adopted as this state\'s emblem in 1812 at statehood; the brown pelican reflects this state\'s Gulf Coast identity, and the motto "Union, Justice, and Confidence" encircles the nest on a white banner, representing the ideals of the newly admitted state',
       sportsTeams: [
         'New Orleans Saints (NFL)',
         'New Orleans Pelicans (NBA)',
@@ -374,7 +374,7 @@ abstract class UsStateClues {
     ),
     'ME': StateClueData(
       flag:
-          'Maine\'s coat of arms, granted in 1820 at statehood, features a moose resting beneath a towering white pine — the pine tree was so vital to the colonial shipbuilding industry that the British Crown reserved large pines for the Royal Navy, a source of colonial resentment; the North Star and motto "Dirigo" (I Lead) reflect Maine\'s self-image as a guiding northern frontier state',
+          'This state\'s coat of arms, granted in 1820 at statehood, features a moose resting beneath a towering white pine — the pine tree was so vital to the colonial shipbuilding industry that the British Crown reserved large pines for the Royal Navy, a source of colonial resentment; the North Star and motto "Dirigo" (I Lead) reflect this state\'s self-image as a guiding northern frontier state',
       sportsTeams: [
         'Maine Celtics (NBA G League)',
         'Maine Mariners (ECHL Hockey)',
@@ -395,7 +395,7 @@ abstract class UsStateClues {
     ),
     'MD': StateClueData(
       flag:
-          'Maryland\'s heraldic flag — among the oldest and most distinctive in the U.S. — quarters the gold-and-black arms of the Calvert family (founders of the Maryland colony in 1634) with the red-and-white cross-bottony of the Crossland family (mother\'s side of Lord Baltimore); during the Civil War, Confederate Marylanders wore Crossland colors as a symbol of secession, and the reunited design after the war became a symbol of reconciliation',
+          'This state\'s heraldic flag — among the oldest and most distinctive in the U.S. — quarters the gold-and-black arms of the Calvert family (founders of the Maryland colony in 1634) with the red-and-white cross-bottony of the Crossland family (mother\'s side of Lord Baltimore); during the Civil War, Confederate residents of this state wore Crossland colors as a symbol of secession, and the reunited design after the war became a symbol of reconciliation',
       sportsTeams: [
         'Baltimore Ravens (NFL)',
         'Baltimore Orioles (MLB)',
@@ -416,7 +416,7 @@ abstract class UsStateClues {
     ),
     'MA': StateClueData(
       flag:
-          'The Algonquian figure on Massachusetts\'s seal holds a bow and arrow pointed downward — a symbol of peace — while a sword arm emerges from clouds above, reflecting the colony\'s Puritan ideal of peaceful coexistence backed by force; the star near the figure\'s head marks Massachusetts as a founding state; the Latin motto translates as seeking peace through liberty, reflecting Boston\'s role as the cradle of the American Revolution',
+          'The Algonquian figure on this state\'s seal holds a bow and arrow pointed downward — a symbol of peace — while a sword arm emerges from clouds above, reflecting the colony\'s Puritan ideal of peaceful coexistence backed by force; the star near the figure\'s head marks this state as a founding state; the Latin motto translates as seeking peace through liberty, reflecting the state\'s role as the cradle of the American Revolution',
       sportsTeams: [
         'New England Patriots (NFL)',
         'Boston Celtics (NBA)',
@@ -438,7 +438,7 @@ abstract class UsStateClues {
     ),
     'MI': StateClueData(
       flag:
-          'Michigan\'s coat of arms, adopted at statehood in 1835, features a bald eagle symbolizing federal authority above the state shield, supported by an elk and moose representing Michigan\'s wilderness; the shield depicts a man on a peninsula sunrise with the Latin motto "Si Quaeris Peninsulam Amoenam Circumspice" (If You Seek a Pleasant Peninsula, Look About You) — a nod to Michigan\'s unique Great Lakes geography',
+          'This state\'s coat of arms, adopted at statehood in 1835, features a bald eagle symbolizing federal authority above the state shield, supported by an elk and moose representing this state\'s wilderness; the shield depicts a man on a peninsula sunrise with the Latin motto "Si Quaeris Peninsulam Amoenam Circumspice" (If You Seek a Pleasant Peninsula, Look About You) — a nod to this state\'s unique Great Lakes geography',
       sportsTeams: [
         'Detroit Lions (NFL)',
         'Detroit Pistons (NBA)',
@@ -456,7 +456,7 @@ abstract class UsStateClues {
     ),
     'MN': StateClueData(
       flag:
-          'Minnesota\'s 2024 redesigned flag — replacing a controversial 1893 seal — features a circular design on a dark blue field with a six-pointed star representing the North Star and the state motto "L\'Étoile du Nord"; the loon and meadow imagery reflect Minnesota\'s northern lakes character, replacing imagery critics said depicted Native displacement; the redesign was part of a broader reckoning with Minnesota\'s Indigenous history',
+          'This state\'s 2024 redesigned flag — replacing a controversial 1893 seal — features a circular design on a dark blue field with a six-pointed star representing the North Star and the state motto "L\'Étoile du Nord"; the loon and meadow imagery reflect this state\'s northern lakes character, replacing imagery critics said depicted Native displacement; the redesign was part of a broader reckoning with this state\'s Indigenous history',
       sportsTeams: [
         'Minnesota Vikings (NFL)',
         'Minnesota Timberwolves (NBA)',
@@ -477,7 +477,7 @@ abstract class UsStateClues {
     ),
     'MS': StateClueData(
       flag:
-          'Adopted in 2020 after voters retired the previous flag bearing the Confederate battle emblem — the last U.S. state flag to do so — Mississippi\'s new design centers a magnolia blossom representing the state flower and Southern hospitality; 20 gold stars honor Mississippi as the 20th state, one large star above honors Native peoples, and the colors echo the American flag to emphasize Mississippi\'s renewed commitment to unity',
+          'Adopted in 2020 after voters retired the previous flag bearing the Confederate battle emblem — the last U.S. state flag to do so — this state\'s new design centers a magnolia blossom representing the state flower and Southern hospitality; 20 gold stars honor this state as the 20th state, one large star above honors Native peoples, and the colors echo the American flag to emphasize this state\'s renewed commitment to unity',
       sportsTeams: [
         'Ole Miss Rebels (NCAA Football)',
         'Mississippi State Bulldogs (NCAA Football)',
@@ -520,7 +520,7 @@ abstract class UsStateClues {
     ),
     'MT': StateClueData(
       flag:
-          'Montana\'s seal, adopted at statehood in 1889 and carried on the flag, depicts the Great Falls of the Missouri River flanked by mountains and ponderosa pine — the landscape that define the Treasure State; the plow, pick, and shovel symbolize agriculture and mining, the twin industries of Montana\'s economy; the Spanish motto "Oro y Plata" (Gold and Silver) reflects the precious metal mining that drove settlement',
+          'This state\'s seal, adopted at statehood in 1889 and carried on the flag, depicts the Great Falls of the Missouri River flanked by mountains and ponderosa pine — the landscape that defines the Treasure State; the plow, pick, and shovel symbolize agriculture and mining, the twin industries of this state\'s economy; the Spanish motto "Oro y Plata" (Gold and Silver) reflects the precious metal mining that drove settlement',
       sportsTeams: [
         'Montana Grizzlies (NCAA Football)',
         'Montana State Bobcats (NCAA Football)',
@@ -541,7 +541,7 @@ abstract class UsStateClues {
     ),
     'NE': StateClueData(
       flag:
-          'Nebraska\'s seal, adopted in 1867 at statehood and placed on the flag in 1925, depicts a steamboat on the Missouri River, a settler\'s cabin with wheat sheaves, and a blacksmith — narrating the transformation from frontier wilderness to agricultural and industrial state; the train heading toward the Rocky Mountains symbolizes the transcontinental railroad\'s completion in 1869, a defining event in Nebraska\'s growth',
+          'This state\'s seal, adopted in 1867 at statehood and placed on the flag in 1925, depicts a steamboat on the Missouri River, a settler\'s cabin with wheat sheaves, and a blacksmith — narrating the transformation from frontier wilderness to agricultural and industrial state; the train heading toward the Rocky Mountains symbolizes the transcontinental railroad\'s completion in 1869, a defining event in this state\'s growth',
       sportsTeams: [
         'Nebraska Cornhuskers (NCAA Football)',
         'Creighton Bluejays (NCAA Basketball)',
@@ -562,7 +562,7 @@ abstract class UsStateClues {
     ),
     'NV': StateClueData(
       flag:
-          'The motto "Battle Born" at the top commemorates Nevada\'s admission to the Union on October 31, 1864 — rushed into statehood during the Civil War to provide electoral votes for Lincoln\'s re-election; the silver star honors Nevada\'s silver mining boom that powered the economy, the sagebrush wreath symbolizes the state\'s high desert landscape, and the state name banner completes the striking design adopted in 1929',
+          'The motto "Battle Born" at the top commemorates this state\'s admission to the Union on October 31, 1864 — rushed into statehood during the Civil War to provide electoral votes for Lincoln\'s re-election; the silver star honors this state\'s silver mining boom that powered the economy, the sagebrush wreath symbolizes the state\'s high desert landscape, and the state name banner completes the striking design adopted in 1929',
       sportsTeams: [
         'Las Vegas Raiders (NFL)',
         'Vegas Golden Knights (NHL)',
@@ -583,7 +583,7 @@ abstract class UsStateClues {
     ),
     'NH': StateClueData(
       flag:
-          'The warship on New Hampshire\'s seal is the USS Raleigh, one of the first 13 ships built for the Continental Navy in 1776 — constructed at Portsmouth, NH; this Revolutionary War vessel anchors New Hampshire\'s identity as a cradle of naval power and independence; the granite outcrop around the seal reflects the state\'s geological character as the Granite State',
+          'The warship on this state\'s seal is the USS Raleigh, one of the first 13 ships built for the Continental Navy in 1776 — constructed at Portsmouth; this Revolutionary War vessel anchors this state\'s identity as a cradle of naval power and independence; the granite outcrop around the seal reflects the state\'s geological character as the Granite State',
       sportsTeams: [
         'New Hampshire Fisher Cats (Minor League Baseball)',
         'New Hampshire Wildcats (NCAA Hockey)',
@@ -604,7 +604,7 @@ abstract class UsStateClues {
     ),
     'NJ': StateClueData(
       flag:
-          'New Jersey\'s buff-and-blue colors honor the uniform of the New Jersey Continental Line in the Revolutionary War — a uniform color scheme personally approved by George Washington; the three plows on the shield represent the state\'s agricultural heritage, while Liberty (with a pole and cap) and Ceres (goddess of grain) as supporters evoke the ideals of freedom and abundance that characterized the colonial Garden State',
+          'This state\'s buff-and-blue colors honor the uniform of the New Jersey Continental Line in the Revolutionary War — a uniform color scheme personally approved by George Washington; the three plows on the shield represent the state\'s agricultural heritage, while Liberty (with a pole and cap) and Ceres (goddess of grain) as supporters evoke the ideals of freedom and abundance that characterized the colonial Garden State',
       sportsTeams: [
         'New York Giants (NFL)',
         'New York Jets (NFL)',
@@ -646,7 +646,7 @@ abstract class UsStateClues {
     ),
     'NY': StateClueData(
       flag:
-          'New York\'s coat of arms, dating to 1777, depicts Liberty — her crown discarded as a rejection of monarchy — and Justice blindfolded, flanking a shield bearing a rising sun over the Hudson River highlands; an American eagle perches atop a globe showing the Atlantic, symbolizing New York\'s role in global commerce; the motto "Excelsior" (Ever Upward) reflects the state\'s relentless ambition as the gateway to America',
+          'This state\'s coat of arms, dating to 1777, depicts Liberty — her crown discarded as a rejection of monarchy — and Justice blindfolded, flanking a shield bearing a rising sun over the Hudson River highlands; an American eagle perches atop a globe showing the Atlantic, symbolizing this state\'s role in global commerce; the motto "Excelsior" (Ever Upward) reflects the state\'s relentless ambition as the gateway to America',
       sportsTeams: [
         'New York Giants (NFL)',
         'New York Knicks (NBA)',

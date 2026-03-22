@@ -331,7 +331,7 @@ abstract class AfricaClues {
       famousLandmark: 'Sudd Wetland',
       famousPerson: 'John Garang de Mabior',
       flag:
-          'The black represents the South Sudanese people, the red symbolises blood shed for freedom, the green represents the land, the white symbolises peace, the blue represents the Nile River, and the golden star represents the Star of Bethlehem guiding unity',
+          'The black represents the people, the red symbolises blood shed for freedom, the green represents the land, the white symbolises peace, the blue represents the Nile River, and the golden star represents the Star of Bethlehem guiding unity',
     ),
     'ST': AfricaClueData(
       nickname: 'The Chocolate Islands',
@@ -345,7 +345,7 @@ abstract class AfricaClues {
       famousLandmark: 'Sibebe Rock',
       famousPerson: 'King Sobhuza II',
       flag:
-          'The blue represents peace, the yellow symbolises mineral resources, and the red stands for past battles; the central Nguni shield and spears reflect Swazi warrior traditions and the king\'s commitment to defending the nation',
+          'The blue represents peace, the yellow symbolises mineral resources, and the red stands for past battles; the central Nguni shield and spears reflect this nation\'s warrior traditions and the king\'s commitment to defending the nation',
     ),
     'TD': AfricaClueData(
       nickname: 'The Babel Tower of the World',
@@ -359,7 +359,7 @@ abstract class AfricaClues {
       famousLandmark: 'Koutammakou Landscape',
       famousPerson: 'Gnassingbe Eyadema',
       flag:
-          'The five alternating green and yellow stripes represent the five regions of Togo; the red canton symbolises the blood shed by martyrs for independence, and the white star represents hope and purity — Pan-African colours inspired by Ethiopia',
+          'The five alternating green and yellow stripes represent the five regions of this country; the red canton symbolises the blood shed by martyrs for independence, and the white star represents hope and purity — Pan-African colours inspired by Ethiopia',
     ),
     'TN': AfricaClueData(
       nickname: 'The Green Country',
@@ -380,14 +380,14 @@ abstract class AfricaClues {
       famousLandmark: 'Bwindi Impenetrable Forest',
       famousPerson: 'Idi Amin',
       flag:
-          'The six horizontal stripes alternate black (African people), yellow (sunshine), and red (brotherhood); the central white disc bears the grey crowned crane, Uganda\'s national bird, which was also used as a military badge during British colonial rule',
+          'The six horizontal stripes alternate black (African people), yellow (sunshine), and red (brotherhood); the central white disc bears the grey crowned crane, this nation\'s national bird, which was also used as a military badge during British colonial rule',
     ),
     'ZA': AfricaClueData(
       nickname: 'The Rainbow Nation',
       famousLandmark: 'Table Mountain',
       famousPerson: 'Nelson Mandela',
       flag:
-          'Adopted in 1994 at the end of apartheid, the Y-shape represents the convergence of diverse elements in South African society; the six colours (black, gold, green, red, white, blue) encompass the colours of all major political parties and historical flags',
+          'Adopted in 1994 at the end of apartheid, the Y-shape represents the convergence of diverse elements in this nation\'s society; the six colours (black, gold, green, red, white, blue) encompass the colours of all major political parties and historical flags',
     ),
     'ZM': AfricaClueData(
       nickname: 'The Real Africa',

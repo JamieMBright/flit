@@ -49,7 +49,7 @@ abstract class UkClues {
       footballTeam: 'Manchester United, Manchester City',
       nickname: 'Cottonopolis',
       flag:
-          'Greater Manchester\'s flag draws on the arms of Manchester city, where the gold ship symbolises the Manchester Ship Canal — once the lifeline of the cotton trade that made the city the world\'s first industrial metropolis. The three gold stripes represent the rivers Irwell, Medlock and Irk that shaped the city\'s growth.',
+          'This county\'s flag draws on the arms of Manchester city, where the gold ship symbolises the Manchester Ship Canal — once the lifeline of the cotton trade that made the city the world\'s first industrial metropolis. The three gold stripes represent the rivers Irwell, Medlock and Irk that shaped the city\'s growth.',
     ),
     'WYK': UkCountyClueData(
       country: 'England',
@@ -58,7 +58,7 @@ abstract class UkClues {
       footballTeam: 'Leeds United',
       nickname: 'God\'s Own County',
       flag:
-          'The white rose on blue is the emblem of the House of York, one of the two rival dynasties of the Wars of the Roses. The white rose has symbolised Yorkshire since at least the 15th century and represents the county\'s fierce pride in its identity — the most populous county in England.',
+          'The white rose on blue is the emblem of the House of York, one of the two rival dynasties of the Wars of the Roses. The white rose has symbolised this county since at least the 15th century and represents its fierce pride in its identity — the most populous county in England.',
     ),
     'MER': UkCountyClueData(
       country: 'England',
@@ -76,7 +76,7 @@ abstract class UkClues {
       footballTeam: 'Sheffield United, Sheffield Wednesday',
       nickname: 'Steel City',
       flag:
-          'South Yorkshire\'s flag combines the white rose of the House of York with the green of the county\'s rural landscape — acknowledging that even this industrial heartland, home to the steel and cutlery trades, is rooted in the broader Yorkshire identity forged over centuries of shared history.',
+          'This county\'s flag combines the white rose of the House of York with the green of the county\'s rural landscape — acknowledging that even this industrial heartland, home to the steel and cutlery trades, is rooted in the broader Yorkshire identity forged over centuries of shared history.',
     ),
     'TWR': UkCountyClueData(
       country: 'England',
@@ -116,7 +116,7 @@ abstract class UkClues {
       footballTeam: 'Southampton FC, Portsmouth FC',
       nickname: 'Hants',
       flag:
-          'Hampshire\'s flag features the Tudor rose, the dynastic emblem created by Henry VII to unite the white rose of York and red rose of Lancaster after the Wars of the Roses. Winchester, Hampshire\'s county town, was the ancient capital of England and seat of the Anglo-Saxon kings — hence the regal crown acknowledging its historic primacy.',
+          'This county\'s flag features the Tudor rose, the dynastic emblem created by Henry VII to unite the white rose of York and red rose of Lancaster after the Wars of the Roses. Winchester, the county town, was the ancient capital of England and seat of the Anglo-Saxon kings — hence the regal crown acknowledging its historic primacy.',
     ),
     'SRY': UkCountyClueData(
       country: 'England',
@@ -125,7 +125,7 @@ abstract class UkClues {
       footballTeam: 'Crystal Palace',
       nickname: 'The Home Counties',
       flag:
-          'Surrey\'s gold and red chequered arms derive directly from the heraldry of the de Warenne family, Earls of Surrey — powerful Norman lords who held the county from the Conquest. The chequy pattern was their dynastic emblem, and by inheritance it became the county\'s enduring symbol after the earldom passed to the Crown.',
+          'This county\'s gold and red chequered arms derive directly from the heraldry of the de Warenne family, Earls of Surrey — powerful Norman lords who held the county from the Conquest. The chequy pattern was their dynastic emblem, and by inheritance it became the county\'s enduring symbol after the earldom passed to the Crown.',
     ),
     'HRT': UkCountyClueData(
       country: 'England',
@@ -134,7 +134,7 @@ abstract class UkClues {
       footballTeam: 'Watford FC',
       nickname: 'Herts',
       flag:
-          'Hertfordshire\'s symbol is the hart (a male deer), a visual pun on the county\'s name — a form of canting heraldry, where the charge sounds like the name it represents. The county was named for Hertford ("hart ford"), the river crossing used by deer. The stag has appeared in the county arms since at least the 16th century.',
+          'This county\'s symbol is the hart (a male deer), a visual pun on the county\'s name — a form of canting heraldry, where the charge sounds like the name it represents. The county was named for Hertford ("hart ford"), the river crossing used by deer. The stag has appeared in the county arms since at least the 16th century.',
     ),
     // SUS renamed to SSX (East Sussex)
     'SSX': UkCountyClueData(
@@ -153,7 +153,7 @@ abstract class UkClues {
       footballTeam: 'Reading FC',
       nickname: 'Royal County',
       flag:
-          'Berkshire\'s flag features the white stag, a symbol associated with the royal forests of the county and Windsor Great Park, where kings hunted for centuries. The oak alludes to these ancient royal hunting grounds. Windsor Castle, the oldest occupied castle in the world, has stood here since William the Conqueror and given the county its "Royal" designation.',
+          'This county\'s flag features the white stag, a symbol associated with the royal forests of the county and Windsor Great Park, where kings hunted for centuries. The oak alludes to these ancient royal hunting grounds. Windsor Castle, the oldest occupied castle in the world, has stood here since William the Conqueror and given the county its "Royal" designation.',
     ),
     'WSX': UkCountyClueData(
       country: 'England',
@@ -184,7 +184,7 @@ abstract class UkClues {
       footballTeam: 'Norwich City',
       nickname: 'The Broads',
       flag:
-          'Norfolk\'s black and white bicolour derives from the arms of the de Ufford family and later the Mowbray Dukes of Norfolk, whose heraldic colours of sable (black) and argent (white/silver) became associated with the county. These colours also echo the distinctive black-and-white flint-knapped buildings that characterise Norfolk\'s vernacular architecture.',
+          'This county\'s black and white bicolour derives from the arms of the de Ufford family and later the Mowbray Dukes of Norfolk, whose heraldic colours of sable (black) and argent (white/silver) became associated with the county. These colours also echo the distinctive black-and-white flint-knapped buildings that characterise this county\'s vernacular architecture.',
     ),
     'SUF': UkCountyClueData(
       country: 'England',
@@ -202,7 +202,7 @@ abstract class UkClues {
       footballTeam: 'Cambridge United',
       nickname: 'The Fens',
       flag:
-          'The three golden crowns on blue are the arms of the East Anglian kingdom, representing the three legendary kings who once ruled the region. They are also associated with the Three Kings of Cologne, whose relics were venerated at Ely Cathedral — a centre of medieval pilgrimage in the Fens at the heart of Cambridgeshire.',
+          'The three golden crowns on blue are the arms of the East Anglian kingdom, representing the three legendary kings who once ruled the region. They are also associated with the Three Kings of Cologne, whose relics were venerated at Ely Cathedral — a centre of medieval pilgrimage in the Fens at the heart of this county.',
     ),
     'LIN': UkCountyClueData(
       country: 'England',
@@ -211,7 +211,7 @@ abstract class UkClues {
       footballTeam: 'Lincoln City',
       nickname: 'The Yellow Bellies',
       flag:
-          'Lincolnshire\'s flag combines the green of its famous limestone wolds and rich agricultural fenland with the fleur-de-lis taken from the arms of the City of Lincoln — a symbol linked to the French connection of the Norman cathedral builders. Lincoln was one of the largest cities in medieval England, and its arms reflect centuries of trade with France.',
+          'This county\'s flag combines the green of its famous limestone wolds and rich agricultural fenland with the fleur-de-lis taken from the arms of the City of Lincoln — a symbol linked to the French connection of the Norman cathedral builders. Lincoln was one of the largest cities in medieval England, and its arms reflect centuries of trade with France.',
     ),
     'BED': UkCountyClueData(
       country: 'England',
@@ -220,7 +220,7 @@ abstract class UkClues {
       footballTeam: 'Luton Town',
       nickname: 'The Bedfordshire Clanger County',
       flag:
-          'Bedfordshire\'s flag bears the arms of the Beauchamp family — Earls of Bedford — who held the county in the medieval period. The three silver escallop shells on a red bend (diagonal stripe) are classic Beauchamp heraldry; the scallop shell in medieval heraldry signified a pilgrim or crusader, reflecting the family\'s religious and martial prestige.',
+          'This county\'s flag bears the arms of the Beauchamp family — Earls of Bedford — who held the county in the medieval period. The three silver escallop shells on a red bend (diagonal stripe) are classic Beauchamp heraldry; the scallop shell in medieval heraldry signified a pilgrim or crusader, reflecting the family\'s religious and martial prestige.',
     ),
 
     // =========================================================================
@@ -242,7 +242,7 @@ abstract class UkClues {
       footballTeam: 'Plymouth Argyle, Exeter City',
       nickname: 'Glorious Devon',
       flag:
-          'Devon\'s green and black bicolour references the county\'s landscape contrasts: the lush green of its rolling farmland and the dark moorland of Dartmoor and Exmoor. The colours also appear in the arms of many Devon gentry families. Devon was the county of Sir Francis Drake and Sir Walter Raleigh — Elizabethan sea-dogs who shaped England\'s maritime empire.',
+          'This county\'s green and black bicolour references the landscape contrasts: the lush green of its rolling farmland and the dark moorland of Dartmoor and Exmoor. The colours also appear in the arms of many of this county\'s gentry families. This was the county of Sir Francis Drake and Sir Walter Raleigh — Elizabethan sea-dogs who shaped England\'s maritime empire.',
     ),
     'COR': UkCountyClueData(
       country: 'England',
@@ -251,7 +251,7 @@ abstract class UkClues {
       footballTeam: 'Truro City',
       nickname: 'The Duchy',
       flag:
-          'St Piran\'s Cross — white on black — is the flag of Cornwall and its patron saint, a 5th-century Irish monk who reputedly discovered tin smelting when his black hearthstone glowed white-hot. The colours represent tin (white/silver) emerging from the black ore, celebrating the industry that defined Cornwall\'s Celtic identity for two millennia.',
+          'St Piran\'s Cross — white on black — is the flag of this county and its patron saint, a 5th-century Irish monk who reputedly discovered tin smelting when his black hearthstone glowed white-hot. The colours represent tin (white/silver) emerging from the black ore, celebrating the industry that defined this county\'s Celtic identity for two millennia.',
     ),
     'SOM': UkCountyClueData(
       country: 'England',
@@ -278,7 +278,7 @@ abstract class UkClues {
       footballTeam: 'Cheltenham Town, Forest Green Rovers',
       nickname: 'The Cotswolds County',
       flag:
-          'Gloucestershire\'s green and gold reflect the fertile Severn Vale and the wealth of the medieval wool trade that built the county\'s magnificent churches and manor houses. The chevron pattern is drawn from the arms of Clare, Earls of Gloucester — one of the most powerful Anglo-Norman dynasties, whose red chevrons on gold became inseparable from the county\'s identity.',
+          'This county\'s green and gold reflect the fertile Severn Vale and the wealth of the medieval wool trade that built the county\'s magnificent churches and manor houses. The chevron pattern is drawn from the arms of Clare, Earls of Gloucester — one of the most powerful Anglo-Norman dynasties, whose red chevrons on gold became inseparable from the county\'s identity.',
     ),
     'WIL': UkCountyClueData(
       country: 'England',
@@ -287,7 +287,7 @@ abstract class UkClues {
       footballTeam: 'Swindon Town',
       nickname: 'The Moonraker County',
       flag:
-          'The Great Bustard on Wiltshire\'s flag celebrates the bird that once roamed Salisbury Plain in great numbers before being hunted to extinction in Britain by the 1840s. The bustard has been the county\'s symbol since at least the 18th century, appearing in Wiltshire regimental badges and arms — a reminder of the ancient chalk downland that defines the county.',
+          'The Great Bustard on this county\'s flag celebrates the bird that once roamed Salisbury Plain in great numbers before being hunted to extinction in Britain by the 1840s. The bustard has been the county\'s symbol since at least the 18th century, appearing in this county\'s regimental badges and arms — a reminder of the ancient chalk downland that defines the region.',
     ),
 
     // =========================================================================
@@ -318,7 +318,7 @@ abstract class UkClues {
       footballTeam: 'Northampton Town',
       nickname: 'The Rose of the Shires',
       flag:
-          'The red rose of Northamptonshire is distinct from the red rose of Lancaster — it is an older heraldic charge associated with the county\'s Norman lords. Northamptonshire sits at the geographic heart of England and was a royal county, with numerous hunting lodges and manor houses; the rose reflects its long association with courtly culture and nobility.',
+          'The red rose of this county is distinct from the red rose of Lancaster — it is an older heraldic charge associated with the county\'s Norman lords. This county sits at the geographic heart of England and was a royal county, with numerous hunting lodges and manor houses; the rose reflects its long association with courtly culture and nobility.',
     ),
     'LEI': UkCountyClueData(
       country: 'England',
@@ -327,7 +327,7 @@ abstract class UkClues {
       footballTeam: 'Leicester City',
       nickname: 'The Foxes',
       flag:
-          'Leicestershire\'s fox has been the county\'s symbol since at least the 19th century, celebrating its world-famous foxhunting tradition — the Quorn, Belvoir and Pytchley hunts made the Leicestershire countryside the spiritual home of the sport. The cinquefoil (five-petalled flower) comes from the arms of the de Quincy Earls of Winchester, who held great Leicestershire estates.',
+          'This county\'s fox has been the county\'s symbol since at least the 19th century, celebrating its world-famous foxhunting tradition — the Quorn, Belvoir and Pytchley hunts made this county\'s countryside the spiritual home of the sport. The cinquefoil (five-petalled flower) comes from the arms of the de Quincy Earls of Winchester, who held great estates here.',
     ),
     'NOT': UkCountyClueData(
       country: 'England',
@@ -336,7 +336,7 @@ abstract class UkClues {
       footballTeam: 'Nottingham Forest, Notts County',
       nickname: 'Robin Hood Country',
       flag:
-          'Nottinghamshire\'s green reflects the ancient forest of Sherwood, the royal hunting forest that covered a third of the county in the medieval period and gave rise to the legend of Robin Hood. The outlaw\'s silhouette on the flag is a modern addition that celebrates the county\'s most famous mythological figure, whose story of fighting Norman oppression resonates across centuries.',
+          'This county\'s green reflects the ancient forest of Sherwood, the royal hunting forest that covered a third of the county in the medieval period and gave rise to the legend of Robin Hood. The outlaw\'s silhouette on the flag is a modern addition that celebrates the county\'s most famous mythological figure, whose story of fighting Norman oppression resonates across centuries.',
     ),
     'DER': UkCountyClueData(
       country: 'England',
@@ -345,7 +345,7 @@ abstract class UkClues {
       footballTeam: 'Derby County',
       nickname: 'The Peak',
       flag:
-          'Derbyshire\'s flag combines the Tudor rose — recalling the county\'s prominence during the Tudor era, when the Derbyshire lead mines enriched the Crown — with the blue cross derived from the arms of Robert de Ferrers, the powerful Norman Earl of Derby. The green represents the Peak District moorland, England\'s first national park.',
+          'This county\'s flag combines the Tudor rose — recalling the county\'s prominence during the Tudor era, when its lead mines enriched the Crown — with the blue cross derived from the arms of Robert de Ferrers, the powerful Norman Earl of Derby. The green represents the Peak District moorland, England\'s first national park.',
     ),
     'STS': UkCountyClueData(
       country: 'England',
@@ -354,7 +354,7 @@ abstract class UkClues {
       footballTeam: 'Stoke City',
       nickname: 'The Potteries',
       flag:
-          'The Staffordshire Knot is one of England\'s most distinctive heraldic badges, a three-looped knot of uncertain but ancient origin. It is first recorded in the 14th century and was used by the Stafford Dukes of Buckingham, who took their title and arms from the county. The knot became so embedded in county identity that it appears on civic heraldry, regimental badges and pub signs across Staffordshire.',
+          'The county knot is one of England\'s most distinctive heraldic badges, a three-looped knot of uncertain but ancient origin. It is first recorded in the 14th century and was used by the Stafford Dukes of Buckingham, who took their title and arms from the county. The knot became so embedded in county identity that it appears on civic heraldry, regimental badges and pub signs across the region.',
     ),
     'BKM': UkCountyClueData(
       country: 'England',
@@ -372,7 +372,7 @@ abstract class UkClues {
       footballTeam: 'Hereford FC',
       nickname: 'The Marches',
       flag:
-          'Herefordshire\'s flag celebrates the famous Hereford breed of cattle, whose red-and-white colouring has been selectively developed in the county since the 18th century and exported worldwide. The three gold lions derive from the arms of the de Lacy lords of Hereford — Norman barons who built Hereford Castle and controlled the Welsh Marches for the Crown.',
+          'This county\'s flag celebrates the famous Hereford breed of cattle, whose red-and-white colouring has been selectively developed in the county since the 18th century and exported worldwide. The three gold lions derive from the arms of the de Lacy lords of Hereford — Norman barons who built the castle here and controlled the Welsh Marches for the Crown.',
     ),
     'WOR': UkCountyClueData(
       country: 'England',
@@ -381,7 +381,7 @@ abstract class UkClues {
       footballTeam: 'Worcester City',
       nickname: 'The Faithful City County',
       flag:
-          'The pear tree on Worcestershire\'s flag is a reference to the famous Worcestershire pear — the county has been renowned for its perry (pear cider) and dessert pears since at least the 17th century. The wavy lines represent the River Severn, which bisects the county. The combination reflects a uniquely agrarian identity, rich orchards and the gentle landscape celebrated by Edward Elgar in his music.',
+          'The pear tree on this county\'s flag is a reference to the famous local pear — the county has been renowned for its perry (pear cider) and dessert pears since at least the 17th century. The wavy lines represent the River Severn, which bisects the county. The combination reflects a uniquely agrarian identity, rich orchards and the gentle landscape celebrated by Edward Elgar in his music.',
     ),
     'RUT': UkCountyClueData(
       country: 'England',

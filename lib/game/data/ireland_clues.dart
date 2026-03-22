@@ -52,7 +52,7 @@ abstract class IrelandClues {
       gaaTeam: 'The Model County (Purple & Gold)',
       nickname: 'The Model County',
       flag:
-          'Purple and gold reflect the arms of the Roche family, Anglo-Norman lords of Wexford since the 12th century; purple was a colour of high nobility and ecclesiastical authority, honouring Wexford\'s long role as a centre of Norman church influence in Leinster',
+          'Purple and gold reflect the arms of the Roche family, Anglo-Norman lords of this county since the 12th century; purple was a colour of high nobility and ecclesiastical authority, honouring this county\'s long role as a centre of Norman church influence in Leinster',
     ),
     'KK': CountyClueData(
       province: 'Leinster',
@@ -62,7 +62,7 @@ abstract class IrelandClues {
       gaaTeam: 'The Cats (Black & Amber)',
       nickname: 'The Marble City',
       flag:
-          'Black and amber trace to the heraldic arms of the Butler dynasty, the Anglo-Norman Earls of Ormond who dominated Kilkenny from the 14th century; their castle still stands in the city and the colours became inseparable from Kilkenny\'s identity',
+          'Black and amber trace to the heraldic arms of the Butler dynasty, the Anglo-Norman Earls of Ormond who dominated this county from the 14th century; their castle still stands in the city and the colours became inseparable from this county\'s identity',
     ),
     'CW': CountyClueData(
       province: 'Leinster',
@@ -184,7 +184,7 @@ abstract class IrelandClues {
       gaaTeam: 'The Banner County (Saffron & Blue)',
       nickname: 'The Banner County',
       flag:
-          'Saffron was the traditional colour of Gaelic Irish dress and symbolises the ancient Celtic culture of the O\'Brien kings who ruled Clare as part of Thomond; blue honours the county\'s connection to the sea and the Clare coastline, while saffron together with blue evokes the county\'s dual identity of Gaelic nobility and Atlantic wildness',
+          'Saffron was the traditional colour of Gaelic Irish dress and symbolises the ancient Celtic culture of the O\'Brien kings who ruled this county as part of Thomond; blue honours the county\'s connection to the sea and the local coastline, while saffron together with blue evokes the county\'s dual identity of Gaelic nobility and Atlantic wildness',
     ),
     'T': CountyClueData(
       province: 'Munster',
@@ -194,7 +194,7 @@ abstract class IrelandClues {
       gaaTeam: 'The Premier County (Blue & Gold)',
       nickname: 'The Premier County',
       flag:
-          'Blue and gold derive from the arms of the Butler earls of Ormond, who also held great sway in Tipperary; gold reflects the county\'s rich agricultural land and its status as the Premier County, the finest hurling territory in Ireland, while blue nods to the great Rock of Cashel that once served as the seat of Munster\'s kings',
+          'Blue and gold derive from the arms of the Butler earls of Ormond, who also held great sway in this county; gold reflects the county\'s rich agricultural land and its status as the Premier County, the finest hurling territory in Ireland, while blue nods to the great Rock of Cashel that once served as the seat of Munster\'s kings',
     ),
     'W': CountyClueData(
       province: 'Munster',
@@ -204,7 +204,7 @@ abstract class IrelandClues {
       gaaTeam: 'The Déise (White & Blue)',
       nickname: 'The Déise',
       flag:
-          'White and blue recall the colours of the Déise, the ancient Gaelic tribal group from whom Waterford takes its name; the Déise were expelled from Meath in early medieval times and settled in Munster, their proud tribal identity surviving in the county\'s GAA nickname and enduring in white and blue for over a millennium',
+          'White and blue recall the colours of the Déise, the ancient Gaelic tribal group who gave this county its name; the Déise were expelled from Meath in early medieval times and settled in Munster, their proud tribal identity surviving in the county\'s GAA nickname and enduring in white and blue for over a millennium',
     ),
 
     // CONNACHT
@@ -256,7 +256,7 @@ abstract class IrelandClues {
       gaaTeam: 'Green & Gold',
       nickname: 'The Wild Rose County',
       flag:
-          'Green and gold honour Seán Mac Diarmada, the Leitrim-born signatory of the 1916 Proclamation who was executed after the Easter Rising; green is the colour of Irish republicanism while gold represents the spiritual sacrifices of those who gave their lives for independence, making Leitrim\'s flag a quiet memorial to Ireland\'s revolutionary generation',
+          'Green and gold honour Seán Mac Diarmada, a native signatory of the 1916 Proclamation who was executed after the Easter Rising; green is the colour of Irish republicanism while gold represents the spiritual sacrifices of those who gave their lives for independence, making this county\'s flag a quiet memorial to Ireland\'s revolutionary generation',
     ),
 
     // ULSTER (Republic of Ireland)
@@ -288,7 +288,7 @@ abstract class IrelandClues {
       gaaTeam: 'The Farney County (White & Blue)',
       nickname: 'The Farney County',
       flag:
-          'White and blue honour the MacMahon clan, the Gaelic lords of Monaghan and rulers of Airghialla; their sept colours have endured through the centuries as a reminder that Monaghan was one of the last counties to be planted during the Ulster Plantation of 1610, when Gaelic land ownership was systematically dismantled',
+          'White and blue honour the MacMahon clan, the Gaelic lords of this county and rulers of Airghialla; their sept colours have endured through the centuries as a reminder that this was one of the last counties to be planted during the Ulster Plantation of 1610, when Gaelic land ownership was systematically dismantled',
     ),
 
     // ULSTER (Northern Ireland)

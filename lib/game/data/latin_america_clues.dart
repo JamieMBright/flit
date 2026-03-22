@@ -30,7 +30,7 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Salar de Uyuni',
       famousPerson: 'Simon Bolivar',
       flag:
-          'Red for the blood of patriots, yellow for Bolivia\'s mineral wealth, and green for the fertile valleys — colors carried from the 1825 independence movement led by Simón Bolívar.',
+          'Red for the blood of patriots, yellow for this nation\'s mineral wealth, and green for the fertile valleys — colors carried from the 1825 independence movement led by Simón Bolívar.',
     ),
     'BR': LatinAmericaClueData(
       nickname: 'The Land of the Holy Cross',
@@ -72,7 +72,7 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Old Havana',
       famousPerson: 'Jose Marti',
       flag:
-          'Designed by poet Miguel Teurbe Tolón in 1849, the three blue stripes represent Cuba\'s three military districts; the red triangle stands for the blood of patriots and Freemasonic equality.',
+          'Designed by poet Miguel Teurbe Tolón in 1849, the three blue stripes represent this nation\'s three military districts; the red triangle stands for the blood of patriots and Freemasonic equality.',
     ),
     'DO': LatinAmericaClueData(
       nickname: 'The Land of Merengue',
@@ -86,7 +86,7 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Galapagos Islands',
       famousPerson: 'Eugenio Espejo',
       flag:
-          'Sharing Gran Colombia\'s colors, Ecuador\'s flag dates to 1860 and emphasizes its equatorial position; the coat of arms features the first steamboat to sail the Pacific — the Guayas.',
+          'Sharing Gran Colombia\'s colors, this nation\'s flag dates to 1860 and emphasizes its equatorial position; the coat of arms features the first steamboat to sail the Pacific — the Guayas.',
     ),
     'GT': LatinAmericaClueData(
       nickname: 'The Land of Eternal Spring',
@@ -114,7 +114,7 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Citadelle Laferriere',
       famousPerson: 'Toussaint Louverture',
       flag:
-          'Haiti\'s founders tore the white from the French tricolor in 1803 to symbolize the expulsion of white colonialism; the blue and red halves unite Black and mixed-race freedom fighters.',
+          'The founders tore the white from the French tricolor in 1803 to symbolize the expulsion of white colonialism; the blue and red halves unite Black and mixed-race freedom fighters.',
     ),
     'JM': LatinAmericaClueData(
       nickname: 'The Land of Wood and Water',
@@ -163,14 +163,14 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Jesuit Missions of La Santisima Trinidad',
       famousPerson: 'Augusto Roa Bastos',
       flag:
-          'Paraguay is the only country with a flag that differs on each side — the obverse bears the Treasury seal and the reverse the lion of liberty, both inherited from its 1811 declaration of independence.',
+          'This country is the only nation with a flag that differs on each side — the obverse bears the Treasury seal and the reverse the lion of liberty, both inherited from its 1811 declaration of independence.',
     ),
     'SR': LatinAmericaClueData(
       nickname: 'The Greenest Country on Earth',
       famousLandmark: 'Central Suriname Nature Reserve',
       famousPerson: 'Johan Ferrier',
       flag:
-          'Adopted at independence in 1975, the green stripes honour the rainforest covering 90% of the country; the golden star was inspired by Indonesia\'s flag, reflecting Suriname\'s ties to its former Dutch colonisers\' Asian empire.',
+          'Adopted at independence in 1975, the green stripes honour the rainforest covering 90% of the country; the golden star was inspired by Indonesia\'s flag, reflecting this nation\'s ties to its former Dutch colonisers\' Asian empire.',
     ),
     'SV': LatinAmericaClueData(
       nickname: 'The Land of Volcanoes',
