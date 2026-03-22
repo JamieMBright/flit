@@ -176,6 +176,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     }
   }
 
+  /// Whether the given timestamp falls on today (UTC).
+  static bool _isFromToday(DateTime? ts) {
+    if (ts == null) return false;
+    final now = DateTime.now().toUtc();
+    return ts.year == now.year && ts.month == now.month && ts.day == now.day;
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: FlitColors.backgroundDark,
@@ -223,11 +230,22 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                           : ListView.builder(
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               itemCount: _entries.length,
-                              itemBuilder: (context, index) => _LeaderboardRow(
-                                entry: _entries[index],
-                                isCurrentPlayer:
-                                    _entries[index].playerId == _userId,
-                              ),
+                              itemBuilder: (context, index) {
+                                final e = _entries[index];
+                                final isSelf = e.playerId == _userId;
+                                // Embargo: hide round details for other
+                                // players' daily-scramble scores from today
+                                // so clues/answers aren't spoiled.
+                                final embargoed = !isSelf &&
+                                    _currentMode ==
+                                        LeaderboardMode.dailyScramble &&
+                                    _isFromToday(e.timestamp);
+                                return _LeaderboardRow(
+                                  entry: e,
+                                  isCurrentPlayer: isSelf,
+                                  isEmbargoed: embargoed,
+                                );
+                              },
                             ),
             ),
           ],
@@ -380,10 +398,18 @@ class _PlayerRankBanner extends StatelessWidget {
 // =============================================================================
 
 class _LeaderboardRow extends StatelessWidget {
-  const _LeaderboardRow({required this.entry, this.isCurrentPlayer = false});
+  const _LeaderboardRow({
+    required this.entry,
+    this.isCurrentPlayer = false,
+    this.isEmbargoed = false,
+  });
 
   final LeaderboardEntry entry;
   final bool isCurrentPlayer;
+
+  /// When true, the clue breakdown hides answer-revealing details (country
+  /// names, clue types) so other players can't spoil today's daily challenge.
+  final bool isEmbargoed;
 
   @override
   Widget build(BuildContext context) {
@@ -598,7 +624,8 @@ class _LeaderboardRow extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => _ClueBreakdownSheet(entry: entry),
+      builder: (_) =>
+          _ClueBreakdownSheet(entry: entry, isEmbargoed: isEmbargoed),
     );
   }
 
@@ -1397,9 +1424,13 @@ class _MilestoneBar extends StatelessWidget {
 // =============================================================================
 
 class _ClueBreakdownSheet extends StatelessWidget {
-  const _ClueBreakdownSheet({required this.entry});
+  const _ClueBreakdownSheet({required this.entry, this.isEmbargoed = false});
 
   final LeaderboardEntry entry;
+
+  /// When true, country names and clue types are hidden to prevent today's
+  /// daily challenge answers from being spoiled via the leaderboard.
+  final bool isEmbargoed;
 
   @override
   Widget build(BuildContext context) {
@@ -1471,6 +1502,40 @@ class _ClueBreakdownSheet extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
+            // Embargo notice for today's daily challenge (other players).
+            if (isEmbargoed)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9800).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFFFF9800).withOpacity(0.4),
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.lock_clock, size: 16, color: Color(0xFFFF9800)),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Round details are hidden until tomorrow to '
+                        "avoid spoiling today's daily challenge.",
+                        style: TextStyle(
+                          color: Color(0xFFFF9800),
+                          fontSize: 11,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             // Detailed round cards (when per-round data is available).
             if (hasDetails)
               ...List.generate(details.length, (i) {
@@ -1537,57 +1602,81 @@ class _ClueBreakdownSheet extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(width: 12),
-                      // Country + clue type
+                      // Country + clue type (hidden during embargo)
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              countryName,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: FlitColors.textPrimary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Row(
-                              children: [
-                                Text(
-                                  _clueTypeLabel(clueType),
-                                  style: const TextStyle(
-                                    color: FlitColors.textSecondary,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                                if (hintsUsed > 0) ...[
-                                  const SizedBox(width: 8),
+                        child: isEmbargoed
+                            ? const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   Text(
-                                    '$hintsUsed hint${hintsUsed == 1 ? '' : 's'}',
+                                    'Hidden until tomorrow',
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      color: hintsUsed <= 2
-                                          ? FlitColors.textMuted
-                                          : const Color(0xFFCD7F32),
+                                      color: FlitColors.textMuted,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Spoiler protection',
+                                    style: TextStyle(
+                                      color: FlitColors.textMuted,
                                       fontSize: 11,
                                     ),
                                   ),
                                 ],
-                                if (!completed) ...[
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'FAILED',
-                                    style: TextStyle(
-                                      color: Color(0xFF8B0000),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    countryName,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: FlitColors.textPrimary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
+                                  const SizedBox(height: 2),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        _clueTypeLabel(clueType),
+                                        style: const TextStyle(
+                                          color: FlitColors.textSecondary,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                      if (hintsUsed > 0) ...[
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '$hintsUsed hint${hintsUsed == 1 ? '' : 's'}',
+                                          style: TextStyle(
+                                            color: hintsUsed <= 2
+                                                ? FlitColors.textMuted
+                                                : const Color(0xFFCD7F32),
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ],
+                                      if (!completed) ...[
+                                        const SizedBox(width: 8),
+                                        const Text(
+                                          'FAILED',
+                                          style: TextStyle(
+                                            color: Color(0xFF8B0000),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
                                 ],
-                              ],
-                            ),
-                          ],
-                        ),
+                              ),
                       ),
                       // Score + time
                       Column(
