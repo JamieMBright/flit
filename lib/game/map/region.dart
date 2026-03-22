@@ -47,7 +47,7 @@ extension GameRegionExtension on GameRegion {
       case GameRegion.usStates:
         return 'US States';
       case GameRegion.ukCounties:
-        return 'British Counties';
+        return 'UK Counties';
       case GameRegion.caribbean:
         return 'Caribbean';
       case GameRegion.ireland:

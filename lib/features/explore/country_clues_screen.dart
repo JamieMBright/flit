@@ -47,7 +47,7 @@ class _CountryCluesScreenState extends State<CountryCluesScreen> {
   /// Sub-national regions (for the Sub-national tab).
   static const _subNationalRegions = <({String label, GameRegion region})>[
     (label: 'US States', region: GameRegion.usStates),
-    (label: 'British Counties', region: GameRegion.ukCounties),
+    (label: 'UK Counties', region: GameRegion.ukCounties),
     (label: 'Ireland', region: GameRegion.ireland),
     (label: 'Canada', region: GameRegion.canadianProvinces),
   ];

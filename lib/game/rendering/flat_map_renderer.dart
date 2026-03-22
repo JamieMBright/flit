@@ -8,7 +8,7 @@ import '../flit_game.dart';
 import '../map/region.dart';
 
 /// Renders a flat satellite map for regional game modes (US States, Ireland
-/// Counties, British Counties, Canadian Provinces).
+/// Counties, UK Counties, Canadian Provinces).
 ///
 /// Unlike the globe renderer, this draws a static map with an equirectangular
 /// projection where the plane sprite moves across the screen instead of the

@@ -35,7 +35,7 @@ void main() {
     test('each region has correct displayName values', () {
       expect(GameRegion.world.displayName, equals('World'));
       expect(GameRegion.usStates.displayName, equals('US States'));
-      expect(GameRegion.ukCounties.displayName, equals('British Counties'));
+      expect(GameRegion.ukCounties.displayName, equals('UK Counties'));
       expect(GameRegion.caribbean.displayName, equals('Caribbean'));
       expect(GameRegion.ireland.displayName, equals('Ireland'));
       expect(GameRegion.canadianProvinces.displayName, equals('Canada'));
