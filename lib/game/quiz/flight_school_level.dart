@@ -243,7 +243,7 @@ const List<FlightSchoolLevel> flightSchoolLevels = [
     region: GameRegion.ukCounties,
     requiredLevel: 13,
     unlockCost: 1000,
-    areaCount: 107,
+    areaCount: 109,
     icon: 'castle',
     availableCategories: [
       QuizCategory.stateName,
@@ -333,6 +333,25 @@ const List<FlightSchoolLevel> flightSchoolLevels = [
       QuizCategory.landmark,
       QuizCategory.flagDescription,
       QuizCategory.celebrity,
+      QuizCategory.mixed,
+    ],
+  ),
+
+  // ── Tier 6: Special ──
+  FlightSchoolLevel(
+    id: 'disputed_territories',
+    name: 'Disputed Territories',
+    subtitle: '14 Contested Regions',
+    region: GameRegion.disputedTerritories,
+    requiredLevel: 22,
+    unlockCost: 3000,
+    areaCount: 14,
+    icon: 'gavel',
+    availableCategories: [
+      QuizCategory.stateName,
+      QuizCategory.nickname,
+      QuizCategory.landmark,
+      QuizCategory.flagDescription,
       QuizCategory.mixed,
     ],
   ),

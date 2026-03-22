@@ -33,6 +33,15 @@ abstract class UkClues {
       flag:
           'The flag of this city bears the cross of St George, patron saint of England, with the sword of St Paul in the upper hoist — a tribute to the city\'s patron saint and the apostle martyred by beheading, whose symbol has appeared on the city\'s arms since the medieval period.',
     ),
+    'LDN': UkCountyClueData(
+      country: 'England',
+      famousPerson: 'Samuel Pepys',
+      famousLandmark: 'St Paul\'s Cathedral',
+      footballTeam: 'None — the Square Mile has no football club',
+      nickname: 'The Square Mile',
+      flag:
+          'The flag of the City of London bears the red cross of St George with the sword of St Paul in the first quarter — identical in layout to England\'s flag but distinguished by the red dagger commemorating the martyrdom of Saint Paul, the city\'s patron saint. This design has been used since the medieval period.',
+    ),
     'WMD': UkCountyClueData(
       country: 'England',
       famousPerson: 'Ozzy Osbourne',
@@ -432,6 +441,15 @@ abstract class UkClues {
       nickname: 'Land of the Prince Bishops',
       flag:
           'This county\'s flag honours the Prince Bishops who wielded royal power within the county palatine from the Norman Conquest until 1836. The gold cross on blue derives from the arms of the Bishopric — the lions represent the power vested in the bishops by the Crown to defend the northern frontier against Scottish invasion. The cathedral here, built to house St Cuthbert\'s relics, was the seat of this unique ecclesiastical state.',
+    ),
+    'TEE': UkCountyClueData(
+      country: 'England',
+      famousPerson: 'Captain James Cook',
+      famousLandmark: 'Middlesbrough Transporter Bridge',
+      footballTeam: 'Middlesbrough FC',
+      nickname: 'The Land of the Prince Bishops',
+      flag:
+          'The flag of Teesside features a deep blue background symbolising the River Tees and the North Sea coast, with a white stylised bridge motif representing the iconic Transporter Bridge at Middlesbrough — an engineering marvel from 1911 that remains one of only six operational transporter bridges worldwide.',
     ),
     // CUM renamed to CMA (Cumbria)
     'CMA': UkCountyClueData(

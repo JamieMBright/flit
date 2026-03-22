@@ -5,6 +5,7 @@ import '../data/country_difficulty.dart';
 import '../data/asia_clues.dart';
 import '../data/canada_clues.dart';
 import '../data/caribbean_clues.dart';
+import '../data/disputed_territory_clues.dart';
 import '../data/europe_clues.dart';
 import '../data/ireland_clues.dart';
 import '../data/latin_america_clues.dart';
@@ -244,6 +245,13 @@ const Map<GameRegion, List<QuizCategory>> regionCategories = {
     QuizCategory.landmark,
     QuizCategory.flagDescription,
     QuizCategory.celebrity,
+  ],
+  GameRegion.disputedTerritories: [
+    QuizCategory.stateName,
+    QuizCategory.nickname,
+    QuizCategory.landmark,
+    QuizCategory.flagDescription,
+    QuizCategory.mixed,
   ],
 };
 
@@ -500,6 +508,8 @@ class QuizQuestionGenerator {
         return _caribbeanField(areaCode, field);
       case GameRegion.world:
         return null;
+      case GameRegion.disputedTerritories:
+        return _disputedField(areaCode, field);
     }
   }
 
@@ -717,6 +727,23 @@ class QuizQuestionGenerator {
         return _nonEmpty(d.famousLandmark);
       case 'celebrity':
         return _nonEmpty(d.famousPerson);
+      case 'flag':
+        return _nonEmpty(d.flag);
+      default:
+        return null;
+    }
+  }
+
+  // ── Disputed Territories ────────────────────────────────────────────
+
+  String? _disputedField(String code, String field) {
+    final d = DisputedTerritoryClues.data[code];
+    if (d == null) return null;
+    switch (field) {
+      case 'nickname':
+        return _nonEmpty(d.nickname);
+      case 'landmark':
+        return _nonEmpty(d.famousLandmark);
       case 'flag':
         return _nonEmpty(d.flag);
       default:

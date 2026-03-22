@@ -72,6 +72,9 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
       case GameRegion.ukCounties:
       case GameRegion.canadianProvinces:
         return false;
+      case GameRegion.disputedTerritories:
+        // Disputed territories use ISO 3166-1 alpha-2 codes — flag emoji apply.
+        return true;
     }
   }
 

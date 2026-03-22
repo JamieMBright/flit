@@ -8,7 +8,7 @@ void main() {
   group('GameRegion enum', () {
     test('has all expected enum values', () {
       const values = GameRegion.values;
-      expect(values.length, equals(11));
+      expect(values.length, equals(12));
       expect(values, contains(GameRegion.world));
       expect(values, contains(GameRegion.usStates));
       expect(values, contains(GameRegion.ukCounties));
@@ -20,6 +20,7 @@ void main() {
       expect(values, contains(GameRegion.asia));
       expect(values, contains(GameRegion.latinAmerica));
       expect(values, contains(GameRegion.oceania));
+      expect(values, contains(GameRegion.disputedTerritories));
     });
 
     test('each region has a non-empty displayName', () {
@@ -96,9 +97,14 @@ void main() {
       expect(areas.length, equals(32));
     });
 
-    test('ukCounties returns exactly 107 areas', () {
+    test('ukCounties returns exactly 109 areas', () {
       final areas = RegionalData.getAreas(GameRegion.ukCounties);
-      expect(areas.length, equals(107));
+      expect(areas.length, equals(109));
+    });
+
+    test('disputedTerritories returns exactly 14 areas', () {
+      final areas = RegionalData.getAreas(GameRegion.disputedTerritories);
+      expect(areas.length, equals(14));
     });
 
     test('canadianProvinces returns exactly 13 areas', () {

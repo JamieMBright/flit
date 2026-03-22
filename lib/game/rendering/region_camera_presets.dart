@@ -162,6 +162,16 @@ abstract class RegionCameraPresets {
     fovOverride: 50.0,
   );
 
+  /// Disputed Territories: near-global view, slightly lower than world.
+  static const CameraPreset _disputedTerritoriesPreset = CameraPreset(
+    centerLat: 30.0,
+    centerLng: 40.0,
+    altitudeDistance: 3.4,
+    maxBoundsLat: 90.0,
+    maxBoundsLng: 180.0,
+    fovOverride: 55.0,
+  );
+
   // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
@@ -191,6 +201,8 @@ abstract class RegionCameraPresets {
         return _latinAmericaPreset;
       case GameRegion.oceania:
         return _oceaniaPreset;
+      case GameRegion.disputedTerritories:
+        return _disputedTerritoriesPreset;
     }
   }
 

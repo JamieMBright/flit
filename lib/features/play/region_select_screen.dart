@@ -36,6 +36,8 @@ class RegionSelectScreen extends ConsumerWidget {
         return 2000;
       case GameRegion.oceania:
         return 2500;
+      case GameRegion.disputedTerritories:
+        return 5000;
     }
   }
 
@@ -470,6 +472,8 @@ class _RegionCard extends StatelessWidget {
         return Icons.festival;
       case GameRegion.oceania:
         return Icons.beach_access;
+      case GameRegion.disputedTerritories:
+        return Icons.warning_amber;
     }
   }
 }
