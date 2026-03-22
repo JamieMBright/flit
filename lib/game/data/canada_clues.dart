@@ -78,7 +78,7 @@ abstract class CanadaClues {
     ),
     'NB': ProvinceClueData(
       flag:
-          'New Brunswick\'s flag bears the arms granted in 1868, showing a golden lion passant on red in the upper section — the lion of Brunswick from the German duchy whose Loyalist settlers flooded the province after the American Revolution — and a golden galley on blue waves below, honouring the shipbuilding industry that made Saint John one of the world\'s great wooden shipbuilding ports in the 19th century',
+          'This province\'s flag bears the arms granted in 1868, showing a golden lion passant on red in the upper section — the lion from the German duchy whose Loyalist settlers flooded the province after the American Revolution — and a golden galley on blue waves below, honouring the shipbuilding industry that made Saint John one of the world\'s great wooden shipbuilding ports in the 19th century',
       sportsTeams: ['Moncton Wildcats (QMJHL)'],
       premier: 'Blaine Higgs',
       nickname: 'The Picture Province',
@@ -87,7 +87,7 @@ abstract class CanadaClues {
     ),
     'NL': ProvinceClueData(
       flag:
-          'Newfoundland and Labrador\'s flag was designed by artist Christopher Pratt and adopted in 1980, replacing the Union Jack to assert a distinct identity 31 years after joining Canada; the geometric design in blue, red, gold, and white evokes the Union Jack\'s structure symbolically, with the blue representing the sea that defines the province, the red arrow pointing toward the future, the gold recognising the province\'s natural resources, and the white trident-like form honouring the fishing industry and the hardy people of The Rock',
+          'This province\'s flag was designed by artist Christopher Pratt and adopted in 1980, replacing the Union Jack to assert a distinct identity 31 years after joining Canada; the geometric design in blue, red, gold, and white evokes the Union Jack\'s structure symbolically, with the blue representing the sea that defines the province, the red arrow pointing toward the future, the gold recognising the province\'s natural resources, and the white trident-like form honouring the fishing industry and the hardy people of The Rock',
       sportsTeams: ['St. John\'s Edge (NBLC)'],
       premier: 'Andrew Furey',
       nickname: 'The Rock',
@@ -114,7 +114,7 @@ abstract class CanadaClues {
     ),
     'YT': ProvinceClueData(
       flag:
-          'Yukon\'s tricolour flag has green for the spruce forests, white for the snows and the Klondike Gold Rush stampede that transformed the territory in 1898, and blue for the rivers and lakes; at the centre sits the territorial coat of arms featuring a malamute dog on a red background above golden wavy lines for the Yukon River, with two vair roundels representing the fur trade history and a red Cross of Saint George honouring the North-West Mounted Police who kept order during the gold rush era',
+          'This territory\'s tricolour flag has green for the spruce forests, white for the snows and the Klondike Gold Rush stampede that transformed the territory in 1898, and blue for the rivers and lakes; at the centre sits the territorial coat of arms featuring a malamute dog on a red background above golden wavy lines for the great northern river, with two vair roundels representing the fur trade history and a red Cross of Saint George honouring the North-West Mounted Police who kept order during the gold rush era',
       sportsTeams: <String>[],
       premier: 'Ranj Pillai',
       nickname: 'Canada\'s True North',
@@ -123,7 +123,7 @@ abstract class CanadaClues {
     ),
     'NU': ProvinceClueData(
       flag:
-          'Nunavut\'s flag was adopted in 1999 when the territory was created, designed entirely to reflect Inuit identity; the red inuksuk at the centre is an ancient stone landmark built by Inuit across the Arctic to guide travellers and hunters — a symbol of community, direction, and the human presence in the landscape; the blue star above it is Niqirtsuituq, the North Star used for navigation, while gold and white represent the riches of the land and the Arctic light',
+          'This territory\'s flag was adopted in 1999 when the territory was created, designed entirely to reflect Inuit identity; the red inuksuk at the centre is an ancient stone landmark built by Inuit across the Arctic to guide travellers and hunters — a symbol of community, direction, and the human presence in the landscape; the blue star above it is Niqirtsuituq, the North Star used for navigation, while gold and white represent the riches of the land and the Arctic light',
       sportsTeams: <String>[],
       premier: 'P.J. Akeeagok',
       nickname: 'Our Land',

@@ -23,14 +23,14 @@ abstract class OceaniaClues {
       famousLandmark: 'Sydney Opera House',
       famousPerson: 'Steve Irwin',
       flag:
-          'The Union Jack honours British colonial heritage, the Commonwealth Star beneath it has seven points for the six states and territories, and the Southern Cross constellation affirms Australia\'s location in the southern hemisphere',
+          'The Union Jack honours British colonial heritage, the Commonwealth Star beneath it has seven points for the six states and territories, and the Southern Cross constellation affirms the nation\'s location in the southern hemisphere',
     ),
     'FJ': OceaniaClueData(
       nickname: 'The Soft Coral Capital of the World',
       famousLandmark: 'Garden of the Sleeping Giant',
       famousPerson: 'Ratu Sir Lala Sukuna',
       flag:
-          'The light blue represents the Pacific Ocean surrounding the islands, the Union Jack reflects Fiji\'s history as a British colony, and the shield bears sugarcane, coconut palm, bananas, and a dove of peace — resources vital to the nation',
+          'The light blue represents the Pacific Ocean surrounding the islands, the Union Jack reflects the nation\'s history as a British colony, and the shield bears sugarcane, coconut palm, bananas, and a dove of peace — resources vital to the nation',
     ),
     'FM': OceaniaClueData(
       nickname: 'The Land of the Small Islands',
@@ -58,14 +58,14 @@ abstract class OceaniaClues {
       famousLandmark: 'Buada Lagoon',
       famousPerson: 'Hammer DeRoburt',
       flag:
-          'The blue represents the Pacific Ocean, the gold stripe symbolises the equator on which Nauru sits, and the twelve-pointed star below represents the island\'s twelve original tribes, placed in the southern hemisphere beneath the equator line',
+          'The blue represents the Pacific Ocean, the gold stripe symbolises the equator on which this island nation sits, and the twelve-pointed star below represents the island\'s twelve original tribes, placed in the southern hemisphere beneath the equator line',
     ),
     'NZ': OceaniaClueData(
       nickname: 'The Land of the Long White Cloud',
       famousLandmark: 'Milford Sound',
       famousPerson: 'Sir Edmund Hillary',
       flag:
-          'The Union Jack honours New Zealand\'s ties to Britain, while the four red stars outlined in white depict the Southern Cross constellation — a navigational guide used by Polynesian and European explorers alike',
+          'The Union Jack honours the nation\'s ties to Britain, while the four red stars outlined in white depict the Southern Cross constellation — a navigational guide used by Polynesian and European explorers alike',
     ),
     'PG': OceaniaClueData(
       nickname: 'The Land of the Unexpected',
@@ -114,7 +114,7 @@ abstract class OceaniaClues {
       famousLandmark: 'To Sua Ocean Trench',
       famousPerson: 'Robert Louis Stevenson',
       flag:
-          'The red represents courage, the blue canton symbolises freedom, and the five white stars of the Southern Cross reflect Samoa\'s position in the southern Pacific — the flag\'s simplicity echoes the nation\'s motto "Fa\'avae i le Atua Samoa" (Samoa is founded on God)',
+          'The red represents courage, the blue canton symbolises freedom, and the five white stars of the Southern Cross reflect the nation\'s position in the southern Pacific — the flag\'s simplicity echoes the national motto meaning "founded on God"',
     ),
   };
 }

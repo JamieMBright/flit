@@ -23,7 +23,7 @@ abstract class AsiaClues {
       famousLandmark: 'Burj Khalifa',
       famousPerson: 'Sheikh Zayed bin Sultan Al Nahyan',
       flag:
-          'The red represents courage, the green symbolises fertility, the white represents peace, and the black represents the defeat of enemies — the Pan-Arab colours also reflect unity among the seven emirates and the broader Arab world',
+          'The red represents courage, the green symbolises fertility, the white represents peace, and the black represents the defeat of enemies — the Pan-Arab colours also reflect unity among the seven constituent states and the broader Arab world',
     ),
     'AF': AsiaClueData(
       nickname: 'The Graveyard of Empires',

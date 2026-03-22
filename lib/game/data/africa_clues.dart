@@ -156,7 +156,7 @@ abstract class AfricaClues {
       famousLandmark: 'Kunta Kinteh Island',
       famousPerson: 'Dawda Jawara',
       flag:
-          'The red represents the sun and savanna, the blue symbolises the River Gambia (the country\'s defining geographic feature), the green represents the forested areas, and the white stripes represent unity and peace',
+          'The red represents the sun and savanna, the blue symbolises the great river (the country\'s defining geographic feature), the green represents the forested areas, and the white stripes represent unity and peace',
     ),
     'GN': AfricaClueData(
       nickname: 'The Water Tower of West Africa',
@@ -275,7 +275,7 @@ abstract class AfricaClues {
       famousLandmark: 'Agadez Mosque',
       famousPerson: 'Hamani Diori',
       flag:
-          'The orange represents the Sahara desert in the north, the white symbolises purity and the Niger River, the green represents the fertile southern regions, and the central orange circle represents the sun — colours reflecting this nation\'s landscape from desert to green',
+          'The orange represents the Sahara desert in the north, the white symbolises purity and the great river, the green represents the fertile southern regions, and the central orange circle represents the sun — colours reflecting this nation\'s landscape from desert to green',
     ),
     'NG': AfricaClueData(
       nickname: 'The Giant of Africa',
@@ -401,7 +401,7 @@ abstract class AfricaClues {
       famousLandmark: 'Great Zimbabwe Ruins',
       famousPerson: 'Robert Mugabe',
       flag:
-          'The seven stripes represent the seven signatories and the nation\'s ethnic diversity; the red star symbolises the socialist ideals of the liberation struggle, the Zimbabwe Bird in the white triangle is from the ancient city of Great Zimbabwe — a powerful symbol of national heritage',
+          'The seven stripes represent the seven signatories and the nation\'s ethnic diversity; the red star symbolises the socialist ideals of the liberation struggle, the ancient bird emblem in the white triangle is from the ancient city — a powerful symbol of national heritage',
     ),
   };
 }

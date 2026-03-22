@@ -57,7 +57,7 @@ abstract class EuropeClues {
       famousLandmark: 'Stari Most (Old Bridge of Mostar)',
       famousPeople: ['Ivo Andric', 'Edin Dzeko'],
       flag:
-          'Adopted after the Dayton Agreement, the blue field and white stars evoke Europe, the yellow triangle represents the country\'s three constituent peoples (Bosniaks, Croats, and Serbs) and roughly mirrors the shape of this nation on the map',
+          'Adopted after the Dayton Agreement, the blue field and white stars evoke Europe, the yellow triangle represents the three constituent peoples of this nation and roughly mirrors the shape of this nation on the map',
       motto: '',
       footballTeam: 'Zmajevi',
     ),
@@ -115,7 +115,7 @@ abstract class EuropeClues {
       famousLandmark: 'Prague Castle',
       famousPeople: ['Franz Kafka', 'Jaromir Jagr', 'Antonin Dvorak'],
       flag:
-          'The white and red horizontal bands come from the ancient Bohemian coat of arms (a white lion on red), and the blue triangle was added in 1920 to distinguish Czechoslovakia from Poland\'s similar white-and-red flag',
+          'The white and red horizontal bands come from the ancient Bohemian coat of arms (a white lion on red), and the blue triangle was added in 1920 to distinguish the former federation from Poland\'s similar white-and-red flag',
       motto: 'Pravda vitezi (Truth prevails)',
       footballTeam: 'Narodni tym',
     ),

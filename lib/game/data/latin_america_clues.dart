@@ -58,14 +58,14 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Lost City (Ciudad Perdida)',
       famousPerson: 'Gabriel Garcia Marquez',
       flag:
-          'The colors derive from the short-lived Gran Colombia federation — yellow for sovereignty and justice, blue for the oceans, red for the blood shed in the independence wars of the 1810s.',
+          'The colors derive from the short-lived Gran federation — yellow for sovereignty and justice, blue for the oceans, red for the blood shed in the independence wars of the 1810s.',
     ),
     'CR': LatinAmericaClueData(
       nickname: 'The Rich Coast',
       famousLandmark: 'Arenal Volcano',
       famousPerson: 'Oscar Arias Sanchez',
       flag:
-          'Adapted from the Federal Republic of Central America flag, the red was added in 1848 inspired by France\'s tricolor; Costa Rica uniquely added it after abolishing its army in 1948.',
+          'Adapted from the Federal Republic of Central America flag, the red was added in 1848 inspired by France\'s tricolor; this nation uniquely added it after abolishing its army in 1948.',
     ),
     'CU': LatinAmericaClueData(
       nickname: 'The Pearl of the Antilles',
@@ -100,14 +100,14 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Kaieteur Falls',
       famousPerson: 'Cheddi Jagan',
       flag:
-          'Designed by art teacher David Doris in 1966, the green represents the forests, the golden arrowhead points to a dynamic future, and the red and black warn enemies that Guyana will defend its resources.',
+          'Designed by art teacher David Doris in 1966, the green represents the forests, the golden arrowhead points to a dynamic future, and the red and black warn enemies that this nation will defend its resources.',
     ),
     'HN': LatinAmericaClueData(
       nickname: 'The Land of the Great Depths',
       famousLandmark: 'Copan Ruins',
       famousPerson: 'Francisco Morazan',
       flag:
-          'The five stars added in 1866 represent the five Central American nations of the old federation; the blue recalls the two oceans that Honduras touches — an exceptional geographical distinction.',
+          'The five stars added in 1866 represent the five Central American nations of the old federation; the blue recalls the two oceans that this nation touches — an exceptional geographical distinction.',
     ),
     'HT': LatinAmericaClueData(
       nickname: 'The Pearl of the Antilles',
@@ -191,14 +191,14 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Colonia del Sacramento',
       famousPerson: 'Jose Gervasio Artigas',
       flag:
-          'The nine stripes represent the original departments of 1830; the Sun of May commemorates the May Revolution of 1810 and links Uruguay to its Argentine neighbour, both children of the Viceroyalty of the Río de la Plata.',
+          'The nine stripes represent the original departments of 1830; the Sun of May commemorates the May Revolution of 1810 and links this nation to its Argentine neighbour, both children of the Viceroyalty of the Río de la Plata.',
     ),
     'VE': LatinAmericaClueData(
       nickname: 'The Land of Grace',
       famousLandmark: 'Angel Falls',
       famousPerson: 'Simon Bolivar',
       flag:
-          'The seven original stars matched Venezuela\'s provinces at independence in 1811; an eighth was added by Chávez in 2006 to honour Simón Bolívar\'s dream of including Guayana as a founding province.',
+          'The seven original stars matched this nation\'s provinces at independence in 1811; an eighth was added by Chávez in 2006 to honour Simón Bolívar\'s dream of including Guayana as a founding province.',
     ),
   };
 }

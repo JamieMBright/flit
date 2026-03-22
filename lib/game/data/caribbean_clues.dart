@@ -23,7 +23,7 @@ abstract class CaribbeanClues {
       famousLandmark: 'Natural Bridge',
       famousPerson: 'Betico Croes',
       flag:
-          'The blue honours the sea, the yellow stripes represent the sun\'s wealth, and the red star symbolises Aruba\'s right to self-determination, adopted upon separate status in 1986.',
+          'The blue honours the sea, the yellow stripes represent the sun\'s wealth, and the red star symbolises this island\'s right to self-determination, adopted upon separate status in 1986.',
     ),
     'BB': CaribbeanClueData(
       nickname: 'The Gem of the Caribbean Sea',
@@ -44,7 +44,7 @@ abstract class CaribbeanClues {
       famousLandmark: 'Old Havana',
       famousPerson: 'Jose Marti',
       flag:
-          'Designed by Cuban exiles in 1849, the Lone Star evokes Latin American liberation ideals; the red triangle represents blood spilled for freedom in the struggle against Spanish colonial rule.',
+          'Designed by exiles from the island in 1849, the Lone Star evokes Latin American liberation ideals; the red triangle represents blood spilled for freedom in the struggle against Spanish colonial rule.',
     ),
     'CW': CaribbeanClueData(
       nickname: 'The Island of Diversity',
@@ -58,7 +58,7 @@ abstract class CaribbeanClues {
       famousLandmark: 'Boiling Lake',
       famousPerson: 'Jean Rhys',
       flag:
-          'The Sisserou parrot is found nowhere else on Earth, making Dominica\'s flag unique for featuring a purple bird; green honours the lush rainforest of this island called the Nature Isle.',
+          'The Sisserou parrot is found nowhere else on Earth, making this nation\'s flag unique for featuring a purple bird; green honours the lush rainforest of this island called the Nature Isle.',
     ),
     'DO': CaribbeanClueData(
       nickname: 'The Land of Merengue',
@@ -86,7 +86,7 @@ abstract class CaribbeanClues {
       famousLandmark: 'Brimstone Hill Fortress',
       famousPerson: 'Robert Bradshaw',
       flag:
-          'Green honours the fertile land, red the African heritage of its people, and the two stars represent the two-island federation of Saint Kitts and Nevis; black recalls the African diaspora\'s contribution to the nation.',
+          'Green honours the fertile land, red the African heritage of its people, and the two stars represent the two-island federation; black recalls the African diaspora\'s contribution to the nation.',
     ),
     'LC': CaribbeanClueData(
       nickname: 'The Helen of the West Indies',
@@ -100,7 +100,7 @@ abstract class CaribbeanClues {
       famousLandmark: 'El Morro Fortress',
       famousPerson: 'Roberto Clemente',
       flag:
-          'Designed by Cuban independence leader Ramón Emeterio Betances in 1895 as a mirror of Cuba\'s flag, asserting shared liberation ideals; the lone star represents Puerto Rican statehood aspirations.',
+          'Designed by Cuban independence leader Ramón Emeterio Betances in 1895 as a mirror of Cuba\'s flag, asserting shared liberation ideals; the lone star represents the island\'s statehood aspirations.',
     ),
     'TT': CaribbeanClueData(
       nickname: 'The Land of the Hummingbird',

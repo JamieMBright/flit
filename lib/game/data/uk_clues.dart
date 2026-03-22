@@ -76,7 +76,7 @@ abstract class UkClues {
       footballTeam: 'Sheffield United, Sheffield Wednesday',
       nickname: 'Steel City',
       flag:
-          'This county\'s flag combines the white rose of the House of York with the green of the county\'s rural landscape — acknowledging that even this industrial heartland, home to the steel and cutlery trades, is rooted in the broader Yorkshire identity forged over centuries of shared history.',
+          'This county\'s flag combines the white rose of the House of York with the green of the county\'s rural landscape — acknowledging that even this industrial heartland, home to the steel and cutlery trades, is rooted in the broader regional identity forged over centuries of shared history.',
     ),
     'TWR': UkCountyClueData(
       country: 'England',
@@ -171,7 +171,7 @@ abstract class UkClues {
       footballTeam: 'Newport IOW FC',
       nickname: 'The Island',
       flag:
-          'This island county\'s flag reflects its ancient status as a semi-independent entity. The island was for centuries the seat of the Lords of the Isle — a title held by Norman lords and later English nobility — giving it a distinct identity apart from the mainland. The gold outline of the island itself is a rare heraldic device emphasising its island nature.',
+          'This island county\'s flag reflects its ancient status as a semi-independent entity. The island was for centuries the seat of the island lords — a title held by Norman lords and later English nobility — giving it a distinct identity apart from the mainland. The gold outline of the island itself is a rare heraldic device emphasising its island nature.',
     ),
 
     // =========================================================================
@@ -459,7 +459,7 @@ abstract class UkClues {
       footballTeam: 'Harrogate Town, York City',
       nickname: 'God\'s Own County',
       flag:
-          'This county carries the white rose of the House of York on blue — the same emblem shared across all Yorkshire ridings. As England\'s largest county, it encompasses the great medieval landscapes of the Yorkshire Dales and North York Moors, and the historic city of York itself, the former Roman capital of Britannia and seat of the Archbishop whose power historically rivalled Canterbury.',
+          'This county carries the white rose of the House of York on blue — the same emblem shared across all the ridings. As England\'s largest county, it encompasses the great medieval landscapes of the Dales and North York Moors, and the historic city of York itself, the former Roman capital of Britannia and seat of the Archbishop whose power historically rivalled Canterbury.',
     ),
     'ERY': UkCountyClueData(
       country: 'England',
@@ -468,7 +468,7 @@ abstract class UkClues {
       footballTeam: 'Hull City',
       nickname: 'The Wolds',
       flag:
-          'This county carries the white rose of York, shared across all three Yorkshire ridings as a mark of common identity. The wavy band represents the Humber estuary — one of Britain\'s great river mouths — which made Kingston upon Hull a prosperous medieval port and the gateway through which Scandinavian culture and trade flowed into England.',
+          'This county carries the white rose of York, shared across all three ridings as a mark of common identity. The wavy band represents the Humber estuary — one of Britain\'s great river mouths — which made Kingston upon Hull a prosperous medieval port and the gateway through which Scandinavian culture and trade flowed into England.',
     ),
 
     // =========================================================================
@@ -608,7 +608,7 @@ abstract class UkClues {
       footballTeam: 'Stornoway United',
       nickname: 'The Western Isles',
       flag:
-          'This region\'s flag combines the Norse longship — reflecting the Viking kingdom of the Isles (Suðreyjar) that controlled the Hebrides from the 9th to 13th centuries — with the herring, the silver harvest that sustained island communities for generations. These islands were finally ceded by Norway to Scotland only in 1266, and Norse language and place names still echo across the islands.',
+          'This region\'s flag combines the Norse longship — reflecting the Viking sea kingdom (Suðreyjar) that controlled the Hebrides from the 9th to 13th centuries — with the herring, the silver harvest that sustained island communities for generations. These islands were finally ceded by Norway to Scotland only in 1266, and Norse language and place names still echo across the islands.',
     ),
     'ELN': UkCountyClueData(
       country: 'Scotland',
@@ -725,7 +725,7 @@ abstract class UkClues {
       footballTeam: 'Gala Fairydean Rovers',
       nickname: 'Scott\'s Country',
       flag:
-          'This region\'s flag reflects its contested history as a battleground between Scotland and England for centuries. The tower represents the characteristic peel towers built throughout the region as refuges against the raids of Border Reivers — the lawless clans who terrorised both sides of the frontier from the 13th to 17th centuries. The gold saltire acknowledges the region\'s Scottish identity.',
+          'This region\'s flag reflects its contested history as a battleground between Scotland and England for centuries. The tower represents the characteristic peel towers built throughout the region as refuges against the raids of Border Reivers — the lawless clans who terrorised both sides of the frontier from the 13th to 17th centuries. The gold saltire acknowledges the region\'s national identity.',
     ),
     'SLK': UkCountyClueData(
       country: 'Scotland',

@@ -79,7 +79,7 @@ abstract class UsStateClues {
     ),
     'CA': StateClueData(
       flag:
-          'Inspired by the Bear Flag Revolt of June 1846, when American settlers overthrew Mexican rule and briefly declared the California Republic; the grizzly bear symbolizes strength and independence, the lone star echoes the Texas Republic flag that inspired the rebels, and the red stripe and "California Republic" text commemorate the 25-day republic before U.S. annexation',
+          'Inspired by the Bear Flag Revolt of June 1846, when American settlers overthrew Mexican rule and briefly declared the short-lived republic; the grizzly bear symbolizes strength and independence, the lone star echoes the Texas Republic flag that inspired the rebels, and the red stripe and the republic text on the flag commemorate the 25-day republic before U.S. annexation',
       sportsTeams: [
         'Los Angeles Lakers (NBA)',
         'San Francisco 49ers (NFL)',
@@ -100,7 +100,7 @@ abstract class UsStateClues {
     ),
     'CO': StateClueData(
       flag:
-          'Adopted in 1911 and redesigned in 1964, the blue stripes represent this state\'s clear skies and mountain streams, the white stripe its snow-capped peaks; the red letter C honors the Colorado River (from the Spanish "rojo" meaning red) and the gold disk within symbolizes the abundant sunshine and mineral wealth that drew settlers during the gold rush era',
+          'Adopted in 1911 and redesigned in 1964, the blue stripes represent this state\'s clear skies and mountain streams, the white stripe its snow-capped peaks; the red letter C honors the great river that shares its name (from the Spanish "rojo" meaning red) and the gold disk within symbolizes the abundant sunshine and mineral wealth that drew settlers during the gold rush era',
       sportsTeams: [
         'Denver Broncos (NFL)',
         'Denver Nuggets (NBA)',
@@ -142,7 +142,7 @@ abstract class UsStateClues {
     ),
     'DE': StateClueData(
       flag:
-          'The colonial blue and buff colors honor the uniform of the Delaware Regiment in the Revolutionary War, renowned for their bravery at the Battle of Long Island in 1776; the buff diamond frames the state coat of arms, and the date December 7, 1787 commemorates this state\'s historic ratification of the U.S. Constitution as the very first state',
+          'The colonial blue and buff colors honor the uniform of the state regiment in the Revolutionary War, renowned for their bravery at the Battle of Long Island in 1776; the buff diamond frames the state coat of arms, and the date December 7, 1787 commemorates this state\'s historic ratification of the U.S. Constitution as the very first state',
       sportsTeams: [
         'Delaware Blue Coats (NBA G League)',
         'Delaware Fightin\' Blue Hens (NCAA Football)',
@@ -205,7 +205,7 @@ abstract class UsStateClues {
     ),
     'HI': StateClueData(
       flag:
-          'This state\'s unique flag blends British and American symbolism: the Union Jack in the canton honors King Kamehameha I\'s close alliance with Britain and the British ship Discovery that visited in 1778; the eight alternating white, red, and blue stripes represent the eight main islands, and the flag\'s design dates to approximately 1816 during the Kingdom of Hawaii era',
+          'This state\'s unique flag blends British and American symbolism: the Union Jack in the canton honors King Kamehameha I\'s close alliance with Britain and the British ship Discovery that visited in 1778; the eight alternating white, red, and blue stripes represent the eight main islands, and the flag\'s design dates to approximately 1816 during the era of this island kingdom',
       sportsTeams: [
         'Hawaii Rainbow Warriors (NCAA Football)',
         'Hawaii Rainbow Warriors (NCAA Basketball)',
@@ -395,7 +395,7 @@ abstract class UsStateClues {
     ),
     'MD': StateClueData(
       flag:
-          'This state\'s heraldic flag — among the oldest and most distinctive in the U.S. — quarters the gold-and-black arms of the Calvert family (founders of the Maryland colony in 1634) with the red-and-white cross-bottony of the Crossland family (mother\'s side of Lord Baltimore); during the Civil War, Confederate residents of this state wore Crossland colors as a symbol of secession, and the reunited design after the war became a symbol of reconciliation',
+          'This state\'s heraldic flag — among the oldest and most distinctive in the U.S. — quarters the gold-and-black arms of the Calvert family (founders of the colony in 1634) with the red-and-white cross-bottony of the Crossland family (mother\'s side of Lord Baltimore); during the Civil War, Confederate residents of this state wore Crossland colors as a symbol of secession, and the reunited design after the war became a symbol of reconciliation',
       sportsTeams: [
         'Baltimore Ravens (NFL)',
         'Baltimore Orioles (MLB)',
@@ -730,7 +730,7 @@ abstract class UsStateClues {
     ),
     'OK': StateClueData(
       flag:
-          'This state\'s flag, adopted in 1925, is a tribute to this state\'s deep Native American heritage — the name "Oklahoma" means "red people" in Choctaw; the sky blue background honors the Choctaw Nation, while the Osage war shield decorated with eagle feathers represents the warrior spirit; the peace pipe and olive branch crossing the shield symbolize the hoped-for peace between Native peoples and settlers after the tumultuous land runs of 1889',
+          'This state\'s flag, adopted in 1925, is a tribute to this state\'s deep Native American heritage — its name means "red people" in Choctaw; the sky blue background honors the Choctaw Nation, while the Osage war shield decorated with eagle feathers represents the warrior spirit; the peace pipe and olive branch crossing the shield symbolize the hoped-for peace between Native peoples and settlers after the tumultuous land runs of 1889',
       sportsTeams: [
         'Oklahoma City Thunder (NBA)',
         'Oklahoma Sooners (NCAA Football)',
@@ -751,7 +751,7 @@ abstract class UsStateClues {
     ),
     'OR': StateClueData(
       flag:
-          'This state is the only U.S. state with a two-sided flag — the reverse bears a beaver, the state animal, symbolizing industriousness and the vital fur trade that opened the Oregon Territory; the obverse seal depicts a covered wagon crossing the plains, a British warship fleeing an American ship (celebrating the 1846 Oregon Treaty ending joint British-U.S. occupation), and the motto "She Flies With Her Own Wings" — this state\'s declaration of self-reliance at statehood in 1859',
+          'This state is the only U.S. state with a two-sided flag — the reverse bears a beaver, the state animal, symbolizing industriousness and the vital fur trade that opened the territory; the obverse seal depicts a covered wagon crossing the plains, a British warship fleeing an American ship (celebrating the 1846 treaty ending joint British-U.S. occupation), and the motto "She Flies With Her Own Wings" — this state\'s declaration of self-reliance at statehood in 1859',
       sportsTeams: [
         'Portland Trail Blazers (NBA)',
         'Oregon Ducks (NCAA Football)',
@@ -856,7 +856,7 @@ abstract class UsStateClues {
     ),
     'TN': StateClueData(
       flag:
-          'Designed in 1905, this state\'s flag features three stars representing the state\'s three distinct geographical regions: East Tennessee (Appalachian highlands), Middle Tennessee (central basin), and West Tennessee (coastal plain lowlands); the blue circle binding the stars symbolizes the unity of these regions, and the narrow blue stripe at the fly edge distinguishes the flag at a distance; the red field evokes this state\'s passionate Volunteer spirit',
+          'Designed in 1905, this state\'s flag features three stars representing the state\'s three distinct geographical regions: the eastern region (Appalachian highlands), the central region (central basin), and the western region (coastal plain lowlands); the blue circle binding the stars symbolizes the unity of these regions, and the narrow blue stripe at the fly edge distinguishes the flag at a distance; the red field evokes this state\'s passionate Volunteer spirit',
       sportsTeams: [
         'Tennessee Titans (NFL)',
         'Memphis Grizzlies (NBA)',
@@ -877,7 +877,7 @@ abstract class UsStateClues {
     ),
     'TX': StateClueData(
       flag:
-          'The Lone Star flag, adopted by the Republic of Texas in 1839 and retained at U.S. statehood in 1845, embodies this state\'s unique identity as one of only two U.S. states to have previously been an independent nation; the lone star symbolizes this state\'s struggle for independence from Mexico and pride in standing alone; blue represents loyalty, white represents purity, and red represents bravery — virtues that defined the Texas Revolution of 1836',
+          'The Lone Star flag, adopted by the republic in 1839 and retained at U.S. statehood in 1845, embodies this state\'s unique identity as one of only two U.S. states to have previously been an independent nation; the lone star symbolizes this state\'s struggle for independence from Mexico and pride in standing alone; blue represents loyalty, white represents purity, and red represents bravery — virtues that defined the revolution of 1836',
       sportsTeams: [
         'Dallas Cowboys (NFL)',
         'Houston Texans (NFL)',
