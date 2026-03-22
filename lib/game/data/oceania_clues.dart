@@ -23,14 +23,14 @@ abstract class OceaniaClues {
       famousLandmark: 'Sydney Opera House',
       famousPerson: 'Steve Irwin',
       flag:
-          'The Union Jack honours British colonial heritage, the Commonwealth Star beneath it has seven points for the six states and territories, and the Southern Cross constellation affirms Australia\'s location in the southern hemisphere',
+          'The Union Jack honours British colonial heritage, the Commonwealth Star beneath it has seven points for the six states and territories, and the Southern Cross constellation affirms the nation\'s location in the southern hemisphere',
     ),
     'FJ': OceaniaClueData(
       nickname: 'The Soft Coral Capital of the World',
       famousLandmark: 'Garden of the Sleeping Giant',
       famousPerson: 'Ratu Sir Lala Sukuna',
       flag:
-          'The light blue represents the Pacific Ocean surrounding the islands, the Union Jack reflects Fiji\'s history as a British colony, and the shield bears sugarcane, coconut palm, bananas, and a dove of peace — resources vital to the nation',
+          'The light blue represents the Pacific Ocean surrounding the islands, the Union Jack reflects the nation\'s history as a British colony, and the shield bears sugarcane, coconut palm, bananas, and a dove of peace — resources vital to the nation',
     ),
     'FM': OceaniaClueData(
       nickname: 'The Land of the Small Islands',
@@ -58,21 +58,21 @@ abstract class OceaniaClues {
       famousLandmark: 'Buada Lagoon',
       famousPerson: 'Hammer DeRoburt',
       flag:
-          'The blue represents the Pacific Ocean, the gold stripe symbolises the equator on which Nauru sits, and the twelve-pointed star below represents the island\'s twelve original tribes, placed in the southern hemisphere beneath the equator line',
+          'The blue represents the Pacific Ocean, the gold stripe symbolises the equator on which this island nation sits, and the twelve-pointed star below represents the island\'s twelve original tribes, placed in the southern hemisphere beneath the equator line',
     ),
     'NZ': OceaniaClueData(
       nickname: 'The Land of the Long White Cloud',
       famousLandmark: 'Milford Sound',
       famousPerson: 'Sir Edmund Hillary',
       flag:
-          'The Union Jack honours New Zealand\'s ties to Britain, while the four red stars outlined in white depict the Southern Cross constellation — a navigational guide used by Polynesian and European explorers alike',
+          'The Union Jack honours the nation\'s ties to Britain, while the four red stars outlined in white depict the Southern Cross constellation — a navigational guide used by Polynesian and European explorers alike',
     ),
     'PG': OceaniaClueData(
       nickname: 'The Land of the Unexpected',
       famousLandmark: 'Kokoda Track',
       famousPerson: 'Michael Somare',
       flag:
-          'The diagonal design was created by a 15-year-old student Susan Karike; the red panel bears a gold Raggiana bird-of-paradise (the national bird), while the black panel displays the Southern Cross, linking Papua New Guinea to its Pacific neighbours',
+          'The diagonal design was created by a 15-year-old student Susan Karike; the red panel bears a gold Raggiana bird-of-paradise (the national bird), while the black panel displays the Southern Cross, linking this nation to its Pacific neighbours',
     ),
     'PW': OceaniaClueData(
       nickname: 'The Pristine Paradise of the Pacific',
@@ -86,21 +86,21 @@ abstract class OceaniaClues {
       famousLandmark: 'Guadalcanal',
       famousPerson: 'Peter Kenilorea',
       flag:
-          'The blue represents the surrounding Pacific, the green symbolises the fertile land and forests, the yellow diagonal stripe represents sunshine, and the five white stars honour the five main island groups of the Solomons',
+          'The blue represents the surrounding Pacific, the green symbolises the fertile land and forests, the yellow diagonal stripe represents sunshine, and the five white stars honour the five main island groups of this nation',
     ),
     'TO': OceaniaClueData(
       nickname: 'The Friendly Islands',
       famousLandmark: 'Ha\'amonga \'a Maui Trilithon',
       famousPerson: 'King George Tupou I',
       flag:
-          'The red field represents the blood of Christ, reflecting the nation\'s deep Christian faith, while the white canton with a bold red cross directly symbolises Christianity — Tonga being one of the Pacific\'s most devoutly Christian nations',
+          'The red field represents the blood of Christ, reflecting the nation\'s deep Christian faith, while the white canton with a bold red cross directly symbolises Christianity — this being one of the Pacific\'s most devoutly Christian nations',
     ),
     'TV': OceaniaClueData(
       nickname: 'The Eight Standing Together',
       famousLandmark: 'Funafuti Conservation Area',
       famousPerson: 'Toaripi Lauti',
       flag:
-          'The light blue represents the Pacific Ocean, the Union Jack reflects British colonial ties, and the nine yellow stars are arranged in the geographic pattern of Tuvalu\'s nine islands — the country\'s name means "eight standing together" plus the later addition of Niulakita',
+          'The light blue represents the Pacific Ocean, the Union Jack reflects British colonial ties, and the nine yellow stars are arranged in the geographic pattern of this nation\'s nine islands — the country\'s name means "eight standing together" plus the later addition of Niulakita',
     ),
     'VU': OceaniaClueData(
       nickname: 'The Land of Eternal Happiness',
@@ -114,7 +114,7 @@ abstract class OceaniaClues {
       famousLandmark: 'To Sua Ocean Trench',
       famousPerson: 'Robert Louis Stevenson',
       flag:
-          'The red represents courage, the blue canton symbolises freedom, and the five white stars of the Southern Cross reflect Samoa\'s position in the southern Pacific — the flag\'s simplicity echoes the nation\'s motto "Fa\'avae i le Atua Samoa" (Samoa is founded on God)',
+          'The red represents courage, the blue canton symbolises freedom, and the five white stars of the Southern Cross reflect the nation\'s position in the southern Pacific — the flag\'s simplicity echoes the national motto meaning "founded on God"',
     ),
   };
 }

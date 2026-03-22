@@ -26,7 +26,7 @@ abstract class EuropeClues {
       famousLandmark: 'Vall del Madriu-Perafita-Claror',
       famousPeople: ['Boris Skossyreff'],
       flag:
-          'The blue, yellow, and red vertical stripes blend the colours of France and Spain — Andorra\'s two co-sovereign neighbours — while the central coat of arms unites symbols of both protecting powers',
+          'The blue, yellow, and red vertical stripes blend the colours of France and Spain — this nation\'s two co-sovereign neighbours — while the central coat of arms unites symbols of both protecting powers',
       motto: 'Virtus Unita Fortior',
       footballTeam: 'FC Andorra',
     ),
@@ -57,7 +57,7 @@ abstract class EuropeClues {
       famousLandmark: 'Stari Most (Old Bridge of Mostar)',
       famousPeople: ['Ivo Andric', 'Edin Dzeko'],
       flag:
-          'Adopted after the Dayton Agreement, the blue field and white stars evoke Europe, the yellow triangle represents the country\'s three constituent peoples (Bosniaks, Croats, and Serbs) and roughly mirrors the shape of Bosnia-Herzegovina on the map',
+          'Adopted after the Dayton Agreement, the blue field and white stars evoke Europe, the yellow triangle represents the three constituent peoples of this nation and roughly mirrors the shape of this nation on the map',
       motto: '',
       footballTeam: 'Zmajevi',
     ),
@@ -88,7 +88,7 @@ abstract class EuropeClues {
       famousLandmark: 'Mir Castle',
       famousPeople: ['Marc Chagall', 'Victoria Azarenka'],
       flag:
-          'The red and green recall Soviet-era Belarusian colours; the red symbolises the blood shed in defence of the nation, the green represents forests and spring, and the ornamental side panel reproduces a traditional rushnyk woven textile pattern',
+          'The red and green recall Soviet-era national colours; the red symbolises the blood shed in defence of the nation, the green represents forests and spring, and the ornamental side panel reproduces a traditional rushnyk woven textile pattern',
       motto: '',
       footballTeam: 'FC BATE Borisov',
     ),
@@ -97,7 +97,7 @@ abstract class EuropeClues {
       famousLandmark: 'Matterhorn',
       famousPeople: ['Albert Einstein', 'Roger Federer', 'William Tell'],
       flag:
-          'The white cross on red dates to the Battle of Laupen in 1339 and derives from the Holy Roman Empire\'s war banner; Switzerland is one of only two sovereign states with a square flag, reflecting the federal coat of arms',
+          'The white cross on red dates to the Battle of Laupen in 1339 and derives from the Holy Roman Empire\'s war banner; this nation is one of only two sovereign states with a square flag, reflecting the federal coat of arms',
       motto: 'Unus pro omnibus, omnes pro uno (One for all, all for one)',
       footballTeam: 'Nati',
     ),
@@ -106,7 +106,7 @@ abstract class EuropeClues {
       famousLandmark: 'Tombs of the Kings',
       famousPeople: ['Zeno of Citium'],
       flag:
-          'The white field represents peace between Greek and Turkish Cypriots, the copper-orange silhouette of the island honours Cyprus\'s name (from the Greek "kypros" meaning copper), and the olive branches below reinforce the hope for peace',
+          'The white field represents peace between the island\'s Greek and Turkish communities, the copper-orange silhouette honours the island\'s name (from the Greek "kypros" meaning copper), and the olive branches below reinforce the hope for peace',
       motto: '',
       footballTeam: 'APOEL FC',
     ),
@@ -115,7 +115,7 @@ abstract class EuropeClues {
       famousLandmark: 'Prague Castle',
       famousPeople: ['Franz Kafka', 'Jaromir Jagr', 'Antonin Dvorak'],
       flag:
-          'The white and red horizontal bands come from the ancient Bohemian coat of arms (a white lion on red), and the blue triangle was added in 1920 to distinguish Czechoslovakia from Poland\'s similar white-and-red flag',
+          'The white and red horizontal bands come from the ancient Bohemian coat of arms (a white lion on red), and the blue triangle was added in 1920 to distinguish the former federation from Poland\'s similar white-and-red flag',
       motto: 'Pravda vitezi (Truth prevails)',
       footballTeam: 'Narodni tym',
     ),
@@ -128,7 +128,7 @@ abstract class EuropeClues {
         'Angela Merkel'
       ],
       flag:
-          'The black, red, and gold trace back to the uniforms of the Lützow Free Corps who fought Napoleon — the black cloth, red facings, and gold buttons became symbols of German unity and the democratic movement of 1848',
+          'The black, red, and gold trace back to the uniforms of the Lützow Free Corps who fought Napoleon — the black cloth, red facings, and gold buttons became symbols of national unity and the democratic movement of 1848',
       motto: 'Einigkeit und Recht und Freiheit (Unity and Justice and Freedom)',
       footballTeam: 'Die Mannschaft',
     ),
@@ -137,7 +137,7 @@ abstract class EuropeClues {
       famousLandmark: 'The Little Mermaid',
       famousPeople: ['Hans Christian Andersen', 'Mads Mikkelsen', 'Niels Bohr'],
       flag:
-          'The Dannebrog is the oldest continuously used national flag in the world; legend holds it fell from the sky during the Battle of Lyndanisse in 1219, and the white Scandinavian cross on red has been Denmark\'s symbol ever since',
+          'The Dannebrog is the oldest continuously used national flag in the world; legend holds it fell from the sky during the Battle of Lyndanisse in 1219, and the white Scandinavian cross on red has been this nation\'s symbol ever since',
       motto: '',
       footballTeam: 'Danish Dynamite',
     ),
@@ -146,7 +146,7 @@ abstract class EuropeClues {
       famousLandmark: 'Tallinn Old Town',
       famousPeople: ['Arvo Part', 'Ott Tanak'],
       flag:
-          'The blue represents the sky, sea, and national loyalty; the black symbolises the dark past of oppression and the fertile soil; the white stands for snow, purity, and the aspiration for freedom — together they paint the Estonian landscape',
+          'The blue represents the sky, sea, and national loyalty; the black symbolises the dark past of oppression and the fertile soil; the white stands for snow, purity, and the aspiration for freedom — together they paint the national landscape',
       motto: '',
       footballTeam: 'FC Flora Tallinn',
     ),
@@ -169,7 +169,7 @@ abstract class EuropeClues {
       famousLandmark: 'Suomenlinna Fortress',
       famousPeople: ['Jean Sibelius', 'Kimi Raikkonen', 'Linus Torvalds'],
       flag:
-          'The blue Nordic cross represents the thousands of lakes and the sky, set on a white field symbolising the winter snow — a design adopted at independence in 1917 to express Finnish identity within the Scandinavian cross tradition',
+          'The blue Nordic cross represents the thousands of lakes and the sky, set on a white field symbolising the winter snow — a design adopted at independence in 1917 to express this nation\'s identity within the Scandinavian cross tradition',
       motto: '',
       footballTeam: 'Huuhkajat',
     ),
@@ -183,7 +183,7 @@ abstract class EuropeClues {
         'Victor Hugo',
       ],
       flag:
-          'The tricolore combines the red and blue of Paris (colours of the city\'s coat of arms) with the white of the Bourbon monarchy, symbolising the unity of the king and the people during the French Revolution',
+          'The tricolore combines the red and blue of Paris (colours of the city\'s coat of arms) with the white of the Bourbon monarchy, symbolising the unity of the king and the people during the 1789 Revolution',
       motto: 'Liberte, Egalite, Fraternite',
       footballTeam: 'Les Bleus',
     ),
@@ -206,7 +206,7 @@ abstract class EuropeClues {
       famousLandmark: 'Parthenon',
       famousPeople: ['Aristotle', 'Socrates', 'Alexander the Great'],
       flag:
-          'The nine blue and white stripes may represent the nine syllables of "Eleftheria i Thanatos" (Freedom or Death), the motto of the Greek War of Independence; the white cross in the canton symbolises Greek Orthodoxy',
+          'The nine blue and white stripes may represent the nine syllables of "Eleftheria i Thanatos" (Freedom or Death), the motto of the War of Independence; the white cross in the canton symbolises Orthodox Christianity',
       motto: 'Eleftheria i Thanatos (Freedom or Death)',
       footballTeam: 'Ethniki',
     ),
@@ -215,7 +215,7 @@ abstract class EuropeClues {
       famousLandmark: 'Dubrovnik Old Town',
       famousPeople: ['Nikola Tesla', 'Luka Modric'],
       flag:
-          'The red-white-blue Pan-Slavic tricolour links Croatia to its Slavic roots, while the chequerboard shield (šahovnica) has been a Croatian symbol since the medieval Kingdom of Croatia, first documented in the 15th century',
+          'The red-white-blue Pan-Slavic tricolour links this nation to its Slavic roots, while the chequerboard shield (šahovnica) has been a national symbol since the medieval kingdom, first documented in the 15th century',
       motto: '',
       footballTeam: 'Vatreni',
     ),
@@ -224,7 +224,7 @@ abstract class EuropeClues {
       famousLandmark: 'Hungarian Parliament Building',
       famousPeople: ['Franz Liszt', 'Rubik Erno (inventor of Rubik\'s Cube)'],
       flag:
-          'The red, white, and green horizontal tricolour draws from the Hungarian coat of arms — red for strength, white for faithfulness, and green for hope — popularised during the 1848 revolution against Habsburg rule',
+          'The red, white, and green horizontal tricolour draws from the national coat of arms — red for strength, white for faithfulness, and green for hope — popularised during the 1848 revolution against Habsburg rule',
       motto: '',
       footballTeam: 'Magyarok',
     ),
@@ -242,7 +242,7 @@ abstract class EuropeClues {
       famousLandmark: 'Hallgrimskirkja',
       famousPeople: ['Bjork', 'Hafthor Bjornsson'],
       flag:
-          'The blue field represents the Atlantic Ocean and mountains, the white recalls snow and ice, and the red Nordic cross symbolises volcanic fire — together depicting Iceland\'s landscape of fire and ice',
+          'The blue field represents the Atlantic Ocean and mountains, the white recalls snow and ice, and the red Nordic cross symbolises volcanic fire — together depicting this nation\'s landscape of fire and ice',
       motto: '',
       footballTeam: 'Strakarnir okkar',
     ),
@@ -256,7 +256,7 @@ abstract class EuropeClues {
         'Andrea Bocelli',
       ],
       flag:
-          'Inspired by the French Tricolore, the green-white-red tricolour was first used by the Cisalpine Republic in 1797; green is said to represent the Italian landscape, white the snowy Alps, and red the blood shed for independence',
+          'Inspired by the French Tricolore, the green-white-red tricolour was first used by the Cisalpine Republic in 1797; green is said to represent the national landscape, white the snowy Alps, and red the blood shed for independence',
       motto: '',
       footballTeam: 'Gli Azzurri',
     ),
@@ -274,7 +274,7 @@ abstract class EuropeClues {
       famousLandmark: 'Gediminas Tower',
       famousPeople: ['Violeta Urmana', 'Arvydas Sabonis'],
       flag:
-          'The yellow symbolises the golden wheat fields and sunshine, the green represents the forests and countryside, and the red honours the blood shed for Lithuanian sovereignty — colours used since the early 20th century independence movement',
+          'The yellow symbolises the golden wheat fields and sunshine, the green represents the forests and countryside, and the red honours the blood shed for this nation\'s sovereignty — colours used since the early 20th century independence movement',
       motto:
           'Tautos jega, vienybe teze (The strength of the nation lies in unity)',
       footballTeam: 'FK Zalgiris Vilnius',
@@ -284,7 +284,7 @@ abstract class EuropeClues {
       famousLandmark: 'Casemates du Bock',
       famousPeople: ['Robert Schuman'],
       flag:
-          'The red, white, and blue horizontal tricolour derives from the 13th-century coat of arms of the Counts of Luxembourg (a red lion on blue-and-white stripes), though it resembles the Dutch flag — the blue is intentionally a lighter shade to distinguish it',
+          'The red, white, and blue horizontal tricolour derives from the 13th-century coat of arms of the local ruling Counts (a red lion on blue-and-white stripes), though it resembles the Dutch flag — the blue is intentionally a lighter shade to distinguish it',
       motto: 'Mir welle bleiwe wat mir sinn (We want to remain what we are)',
       footballTeam: 'F91 Dudelange',
     ),
@@ -293,7 +293,7 @@ abstract class EuropeClues {
       famousLandmark: 'Riga Old Town',
       famousPeople: ['Mikhail Eisenstein', 'Kristaps Porzingis'],
       flag:
-          'The dark carmine-white-carmine design is one of the oldest in Europe, reportedly dating to a 13th-century chronicle where a Latvian leader was carried wounded on a white sheet stained with blood on both edges',
+          'The dark carmine-white-carmine design is one of the oldest in Europe, reportedly dating to a 13th-century chronicle where a tribal leader was carried wounded on a white sheet stained with blood on both edges',
       motto: 'Tiesu tiesai (For justice)',
       footballTeam: 'FK RFS',
     ),
@@ -310,7 +310,7 @@ abstract class EuropeClues {
       famousLandmark: 'Orheiul Vechi',
       famousPeople: ['Eugen Doga'],
       flag:
-          'The blue-yellow-red vertical tricolour reflects Moldova\'s Romanian heritage (similar to Romania\'s flag), and the central coat of arms features an eagle holding a cross, sceptre, and olive branch over the traditional aurochs head',
+          'The blue-yellow-red vertical tricolour reflects this nation\'s Romanian heritage (similar to Romania\'s flag), and the central coat of arms features an eagle holding a cross, sceptre, and olive branch over the traditional aurochs head',
       motto: '',
       footballTeam: 'Sheriff Tiraspol',
     ),
@@ -319,7 +319,7 @@ abstract class EuropeClues {
       famousLandmark: 'Bay of Kotor',
       famousPeople: ['Petar II Petrovic-Njegos'],
       flag:
-          'The red field with gold border echoes the historical flag of the Montenegrin dynasty of Petrović-Njegoš; the double-headed eagle and lion on the central coat of arms symbolise the unity of church and state',
+          'The red field with gold border echoes the historical flag of the ruling dynasty of Petrović-Njegoš; the double-headed eagle and lion on the central coat of arms symbolise the unity of church and state',
       motto: '',
       footballTeam: 'Hrabri Sokoli',
     ),
@@ -337,7 +337,7 @@ abstract class EuropeClues {
       famousLandmark: 'Megalithic Temples of Malta',
       famousPeople: ['Dom Mintoff'],
       flag:
-          'The white and red halves derive from the colours of Count Roger I of Sicily, who aided Malta in 1091; the George Cross in the canton was awarded by King George VI in 1942 for the island\'s heroic resistance during World War II',
+          'The white and red halves derive from the colours of Count Roger I of Sicily, who aided the island in 1091; the George Cross in the canton was awarded by King George VI in 1942 for the island\'s heroic resistance during World War II',
       motto: '',
       footballTeam: 'Valletta FC',
     ),
@@ -355,7 +355,7 @@ abstract class EuropeClues {
       famousLandmark: 'Geirangerfjord',
       famousPeople: ['Edvard Munch', 'Erling Haaland', 'Roald Amundsen'],
       flag:
-          'The red field with a blue Scandinavian cross outlined in white combines Denmark\'s red-and-white (recalling Norway\'s union with Denmark) and the blue of Sweden and France as a symbol of liberty — created in 1821 during the push for full independence',
+          'The red field with a blue Scandinavian cross outlined in white combines Denmark\'s red-and-white (recalling this nation\'s union with Denmark) and the blue of Sweden and France as a symbol of liberty — created in 1821 during the push for full independence',
       motto: 'Alt for Norge (Everything for Norway)',
       footballTeam: 'Landslaget',
     ),
@@ -364,7 +364,7 @@ abstract class EuropeClues {
       famousLandmark: 'Wawel Castle',
       famousPeople: ['Marie Curie', 'Frederic Chopin', 'Robert Lewandowski'],
       flag:
-          'The white and red derive from the Polish coat of arms — a white eagle on a red shield — dating back to the 13th-century Piast dynasty; the simple bicolour was adopted during the struggle for independence in 1831',
+          'The white and red derive from the national coat of arms — a white eagle on a red shield — dating back to the 13th-century Piast dynasty; the simple bicolour was adopted during the struggle for independence in 1831',
       motto: '',
       footballTeam: 'Bialo-Czerwoni',
     ),
@@ -373,7 +373,7 @@ abstract class EuropeClues {
       famousLandmark: 'Tower of Belem',
       famousPeople: ['Cristiano Ronaldo', 'Vasco da Gama', 'Fernando Pessoa'],
       flag:
-          'The green and red were revolutionary colours adopted after the 1910 overthrow of the monarchy; the armillary sphere represents Portugal\'s Age of Exploration, and the shield bears five smaller shields recalling the victory at the Battle of Ourique in 1139',
+          'The green and red were revolutionary colours adopted after the 1910 overthrow of the monarchy; the armillary sphere represents this nation\'s Age of Exploration, and the shield bears five smaller shields recalling the victory at the Battle of Ourique in 1139',
       motto: '',
       footballTeam: 'Selecao das Quinas',
     ),
@@ -382,7 +382,7 @@ abstract class EuropeClues {
       famousLandmark: 'Bran Castle',
       famousPeople: ['Nadia Comaneci', 'Gheorghe Hagi'],
       flag:
-          'The blue-yellow-red vertical tricolour represents Transylvania (blue), Wallachia (yellow), and Moldavia (red) — the three historic principalities united as Romania; the colours were used in the 1848 Wallachian revolution',
+          'The blue-yellow-red vertical tricolour represents Transylvania (blue), Wallachia (yellow), and Moldavia (red) — the three historic principalities united as this nation; the colours were used in the 1848 Wallachian revolution',
       motto: '',
       footballTeam: 'Tricolorii',
     ),
@@ -391,7 +391,7 @@ abstract class EuropeClues {
       famousLandmark: 'Belgrade Fortress',
       famousPeople: ['Nikola Tesla', 'Novak Djokovic'],
       flag:
-          'The red-blue-white horizontal tricolour uses Pan-Slavic colours in a distinct order; the coat of arms features the double-headed white eagle of the Nemanjić dynasty and a crown recalling the medieval Serbian Empire',
+          'The red-blue-white horizontal tricolour uses Pan-Slavic colours in a distinct order; the coat of arms features the double-headed white eagle of the Nemanjić dynasty and a crown recalling the medieval empire',
       motto: '',
       footballTeam: 'Orlovi',
     ),
@@ -409,7 +409,7 @@ abstract class EuropeClues {
       famousLandmark: 'Vasa Museum',
       famousPeople: ['Alfred Nobel', 'Zlatan Ibrahimovic', 'ABBA'],
       flag:
-          'The blue and gold Nordic cross derives from the Swedish coat of arms (three gold crowns on blue); the Scandinavian cross design was influenced by Denmark\'s Dannebrog, and the colours have symbolised Sweden since at least the 16th century',
+          'The blue and gold Nordic cross derives from the national coat of arms (three gold crowns on blue); the Scandinavian cross design was influenced by Denmark\'s Dannebrog, and the colours have symbolised this nation since at least the 16th century',
       motto: 'For Sverige i tiden (For Sweden, with the times)',
       footballTeam: 'Blagult',
     ),
@@ -427,7 +427,7 @@ abstract class EuropeClues {
       famousLandmark: 'Spis Castle',
       famousPeople: ['Andy Warhol', 'Peter Sagan'],
       flag:
-          'The white-blue-red horizontal tricolour uses Pan-Slavic colours, and the coat of arms depicts a double cross on three hills (Tatra, Fatra, and Mátra mountains), symbolising Slovakia\'s Christian heritage and geographic landscape',
+          'The white-blue-red horizontal tricolour uses Pan-Slavic colours, and the coat of arms depicts a double cross on three hills (Tatra, Fatra, and Mátra mountains), symbolising this nation\'s Christian heritage and geographic landscape',
       motto: '',
       footballTeam: 'Repre',
     ),
@@ -453,7 +453,7 @@ abstract class EuropeClues {
       famousLandmark: 'Saint Sophia\'s Cathedral, Kyiv',
       famousPeople: ['Taras Shevchenko', 'Andriy Shevchenko', 'Mila Kunis'],
       flag:
-          'The blue represents the sky above and the yellow the wheat fields below — a simple depiction of the Ukrainian landscape; the colours were first used by the Ukrainian People\'s Republic in 1918 and restored at independence in 1992',
+          'The blue represents the sky above and the yellow the wheat fields below — a simple depiction of the national landscape; the colours were first used by the People\'s Republic in 1918 and restored at independence in 1992',
       motto: '',
       footballTeam: 'Zbirna',
     ),
@@ -471,7 +471,7 @@ abstract class EuropeClues {
       famousLandmark: 'Gjakova Bazaar',
       famousPeople: ['Ibrahim Rugova', 'Dua Lipa'],
       flag:
-          'Adopted at independence in 2008, the blue field represents aspirations for European integration, the gold map silhouette shows Kosovo\'s territory, and the six white stars above symbolise the six major ethnic groups — Albanian, Serbian, Turkish, Gorani, Romani, and Bosniak',
+          'Adopted at independence in 2008, the blue field represents aspirations for European integration, the gold map silhouette shows the national territory, and the six white stars above symbolise the six major ethnic groups — Albanian, Serbian, Turkish, Gorani, Romani, and Bosniak',
       motto: '',
       footballTeam: 'Dardanet',
     ),

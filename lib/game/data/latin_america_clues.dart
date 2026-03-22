@@ -30,7 +30,7 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Salar de Uyuni',
       famousPerson: 'Simon Bolivar',
       flag:
-          'Red for the blood of patriots, yellow for Bolivia\'s mineral wealth, and green for the fertile valleys — colors carried from the 1825 independence movement led by Simón Bolívar.',
+          'Red for the blood of patriots, yellow for this nation\'s mineral wealth, and green for the fertile valleys — colors carried from the 1825 independence movement led by Simón Bolívar.',
     ),
     'BR': LatinAmericaClueData(
       nickname: 'The Land of the Holy Cross',
@@ -58,21 +58,21 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Lost City (Ciudad Perdida)',
       famousPerson: 'Gabriel Garcia Marquez',
       flag:
-          'The colors derive from the short-lived Gran Colombia federation — yellow for sovereignty and justice, blue for the oceans, red for the blood shed in the independence wars of the 1810s.',
+          'The colors derive from the short-lived Gran federation — yellow for sovereignty and justice, blue for the oceans, red for the blood shed in the independence wars of the 1810s.',
     ),
     'CR': LatinAmericaClueData(
       nickname: 'The Rich Coast',
       famousLandmark: 'Arenal Volcano',
       famousPerson: 'Oscar Arias Sanchez',
       flag:
-          'Adapted from the Federal Republic of Central America flag, the red was added in 1848 inspired by France\'s tricolor; Costa Rica uniquely added it after abolishing its army in 1948.',
+          'Adapted from the Federal Republic of Central America flag, the red was added in 1848 inspired by France\'s tricolor; this nation uniquely added it after abolishing its army in 1948.',
     ),
     'CU': LatinAmericaClueData(
       nickname: 'The Pearl of the Antilles',
       famousLandmark: 'Old Havana',
       famousPerson: 'Jose Marti',
       flag:
-          'Designed by poet Miguel Teurbe Tolón in 1849, the three blue stripes represent Cuba\'s three military districts; the red triangle stands for the blood of patriots and Freemasonic equality.',
+          'Designed by poet Miguel Teurbe Tolón in 1849, the three blue stripes represent this nation\'s three military districts; the red triangle stands for the blood of patriots and Freemasonic equality.',
     ),
     'DO': LatinAmericaClueData(
       nickname: 'The Land of Merengue',
@@ -86,7 +86,7 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Galapagos Islands',
       famousPerson: 'Eugenio Espejo',
       flag:
-          'Sharing Gran Colombia\'s colors, Ecuador\'s flag dates to 1860 and emphasizes its equatorial position; the coat of arms features the first steamboat to sail the Pacific — the Guayas.',
+          'Sharing Gran Colombia\'s colors, this nation\'s flag dates to 1860 and emphasizes its equatorial position; the coat of arms features the first steamboat to sail the Pacific — the Guayas.',
     ),
     'GT': LatinAmericaClueData(
       nickname: 'The Land of Eternal Spring',
@@ -100,21 +100,21 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Kaieteur Falls',
       famousPerson: 'Cheddi Jagan',
       flag:
-          'Designed by art teacher David Doris in 1966, the green represents the forests, the golden arrowhead points to a dynamic future, and the red and black warn enemies that Guyana will defend its resources.',
+          'Designed by art teacher David Doris in 1966, the green represents the forests, the golden arrowhead points to a dynamic future, and the red and black warn enemies that this nation will defend its resources.',
     ),
     'HN': LatinAmericaClueData(
       nickname: 'The Land of the Great Depths',
       famousLandmark: 'Copan Ruins',
       famousPerson: 'Francisco Morazan',
       flag:
-          'The five stars added in 1866 represent the five Central American nations of the old federation; the blue recalls the two oceans that Honduras touches — an exceptional geographical distinction.',
+          'The five stars added in 1866 represent the five Central American nations of the old federation; the blue recalls the two oceans that this nation touches — an exceptional geographical distinction.',
     ),
     'HT': LatinAmericaClueData(
       nickname: 'The Pearl of the Antilles',
       famousLandmark: 'Citadelle Laferriere',
       famousPerson: 'Toussaint Louverture',
       flag:
-          'Haiti\'s founders tore the white from the French tricolor in 1803 to symbolize the expulsion of white colonialism; the blue and red halves unite Black and mixed-race freedom fighters.',
+          'The founders tore the white from the French tricolor in 1803 to symbolize the expulsion of white colonialism; the blue and red halves unite Black and mixed-race freedom fighters.',
     ),
     'JM': LatinAmericaClueData(
       nickname: 'The Land of Wood and Water',
@@ -163,14 +163,14 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Jesuit Missions of La Santisima Trinidad',
       famousPerson: 'Augusto Roa Bastos',
       flag:
-          'Paraguay is the only country with a flag that differs on each side — the obverse bears the Treasury seal and the reverse the lion of liberty, both inherited from its 1811 declaration of independence.',
+          'This country is the only nation with a flag that differs on each side — the obverse bears the Treasury seal and the reverse the lion of liberty, both inherited from its 1811 declaration of independence.',
     ),
     'SR': LatinAmericaClueData(
       nickname: 'The Greenest Country on Earth',
       famousLandmark: 'Central Suriname Nature Reserve',
       famousPerson: 'Johan Ferrier',
       flag:
-          'Adopted at independence in 1975, the green stripes honour the rainforest covering 90% of the country; the golden star was inspired by Indonesia\'s flag, reflecting Suriname\'s ties to its former Dutch colonisers\' Asian empire.',
+          'Adopted at independence in 1975, the green stripes honour the rainforest covering 90% of the country; the golden star was inspired by Indonesia\'s flag, reflecting this nation\'s ties to its former Dutch colonisers\' Asian empire.',
     ),
     'SV': LatinAmericaClueData(
       nickname: 'The Land of Volcanoes',
@@ -191,14 +191,14 @@ abstract class LatinAmericaClues {
       famousLandmark: 'Colonia del Sacramento',
       famousPerson: 'Jose Gervasio Artigas',
       flag:
-          'The nine stripes represent the original departments of 1830; the Sun of May commemorates the May Revolution of 1810 and links Uruguay to its Argentine neighbour, both children of the Viceroyalty of the Río de la Plata.',
+          'The nine stripes represent the original departments of 1830; the Sun of May commemorates the May Revolution of 1810 and links this nation to its Argentine neighbour, both children of the Viceroyalty of the Río de la Plata.',
     ),
     'VE': LatinAmericaClueData(
       nickname: 'The Land of Grace',
       famousLandmark: 'Angel Falls',
       famousPerson: 'Simon Bolivar',
       flag:
-          'The seven original stars matched Venezuela\'s provinces at independence in 1811; an eighth was added by Chávez in 2006 to honour Simón Bolívar\'s dream of including Guayana as a founding province.',
+          'The seven original stars matched this nation\'s provinces at independence in 1811; an eighth was added by Chávez in 2006 to honour Simón Bolívar\'s dream of including Guayana as a founding province.',
     ),
   };
 }
