@@ -608,7 +608,7 @@ abstract class UkClues {
       footballTeam: 'Stornoway United',
       nickname: 'The Western Isles',
       flag:
-          'This region\'s flag combines the Norse longship — reflecting the Viking kingdom of the Isles (Suðreyjar) that controlled the Hebrides from the 9th to 13th centuries — with the herring, the silver harvest that sustained island communities for generations. The Western Isles were finally ceded by Norway to Scotland only in 1266, and Norse language and place names still echo across the islands.',
+          'This region\'s flag combines the Norse longship — reflecting the Viking kingdom of the Isles (Suðreyjar) that controlled the Hebrides from the 9th to 13th centuries — with the herring, the silver harvest that sustained island communities for generations. These islands were finally ceded by Norway to Scotland only in 1266, and Norse language and place names still echo across the islands.',
     ),
     'ELN': UkCountyClueData(
       country: 'Scotland',
@@ -626,7 +626,7 @@ abstract class UkClues {
       footballTeam: 'Arthurlie FC',
       nickname: 'The Ren',
       flag:
-          'East Renfrewshire\'s thistle — the national emblem of Scotland — represents the county\'s Scottish identity, while the chevron derives from older Renfrewshire heraldry associated with the Stewart family. Walter FitzAlan, ancestor of the Royal House of Stewart, held estates in Renfrewshire, making this ground the ancestral home of the dynasty that would rule Scotland for three centuries.',
+          'This county\'s thistle — the national emblem of Scotland — represents the county\'s Scottish identity, while the chevron derives from older local heraldry associated with the Stewart family. Walter FitzAlan, ancestor of the Royal House of Stewart, held estates here, making this ground the ancestral home of the dynasty that would rule Scotland for three centuries.',
     ),
     'FAL': UkCountyClueData(
       country: 'Scotland',
@@ -644,7 +644,7 @@ abstract class UkClues {
       footballTeam: 'Greenock Morton',
       nickname: 'The Tail of the Bank',
       flag:
-          'Inverclyde\'s herring and sailing ship reflect Greenock\'s history as one of Scotland\'s most important maritime ports. The silver herring represents the fishing trade that sustained the town before the industrial era, while the sailing ship recalls the sugar and rum trade with the Caribbean — and the town\'s role as a departure point for generations of Scottish emigrants seeking new lives abroad.',
+          'This county\'s herring and sailing ship reflect its principal town\'s history as one of Scotland\'s most important maritime ports. The silver herring represents the fishing trade that sustained the town before the industrial era, while the sailing ship recalls the sugar and rum trade with the Caribbean — and the town\'s role as a departure point for generations of Scottish emigrants seeking new lives abroad.',
     ),
     'MLN': UkCountyClueData(
       country: 'Scotland',
@@ -653,7 +653,7 @@ abstract class UkClues {
       footballTeam: 'Bonnyrigg Rose Athletic',
       nickname: 'The Heart of Midlothian',
       flag:
-          'This county\'s castle and stars derive from the arms associated with Edinburgh\'s hinterland — the county that surrounds the capital. The castle references Edinburgh Castle itself, which defined the region\'s destiny. The name "Heart of Midlothian" — immortalised by Sir Walter Scott — refers to the old Edinburgh Tolbooth prison that once stood at the heart of the county\'s civic life.',
+          'This county\'s castle and stars derive from the arms associated with Edinburgh\'s hinterland — the county that surrounds the capital. The castle references Edinburgh Castle itself, which defined the region\'s destiny. The nickname "Heart of" this county — immortalised by Sir Walter Scott — refers to the old Edinburgh Tolbooth prison that once stood at the heart of the county\'s civic life.',
     ),
     'MRY': UkCountyClueData(
       country: 'Scotland',
@@ -662,7 +662,7 @@ abstract class UkClues {
       footballTeam: 'Elgin City',
       nickname: 'The Malt Whisky Country',
       flag:
-          'This county\'s castle and stars reflect the ancient Mormaerdom of Moray — one of the most powerful Celtic provinces of early Scotland — whose lords periodically challenged the kings of Scots for supremacy. The star symbols echo the Pictish stone carvings found throughout the region. The area is now most famous as the whisky-producing heartland of Scotland, home to the greatest concentration of malt whisky distilleries in the world.',
+          'This county\'s castle and stars reflect the ancient Celtic province here — one of the most powerful in early Scotland — whose lords periodically challenged the kings of Scots for supremacy. The star symbols echo the Pictish stone carvings found throughout the region. The area is now most famous as the whisky-producing heartland of Scotland, home to the greatest concentration of malt whisky distilleries in the world.',
     ),
     'NAY': UkCountyClueData(
       country: 'Scotland',
@@ -689,7 +689,7 @@ abstract class UkClues {
       footballTeam: 'Orkney FC',
       nickname: 'The Northern Isles',
       flag:
-          'Orkney\'s Nordic cross in red and gold on blue directly references its Norse heritage — the islands were part of the Kingdom of Norway until pledged to Scotland in 1468 as dowry for Margaret of Denmark, and never redeemed. The Norn language, a Norse dialect, was spoken here until the 18th century. The cross design follows Scandinavian flag tradition, connecting Orkney to its Norse identity more emphatically than any other Scottish council.',
+          'This county\'s Nordic cross in red and gold on blue directly references its Norse heritage — the islands were part of the Kingdom of Norway until pledged to Scotland in 1468 as dowry for Margaret of Denmark, and never redeemed. The Norn language, a Norse dialect, was spoken here until the 18th century. The cross design follows Scandinavian flag tradition, connecting this island group to its Norse identity more emphatically than any other Scottish council.',
     ),
     'PKN': UkCountyClueData(
       country: 'Scotland',
@@ -698,7 +698,7 @@ abstract class UkClues {
       footballTeam: 'St Johnstone',
       nickname: 'The Big County',
       flag:
-          'Perth\'s red eagle on gold derives from the arms of the ancient earldom of Strathearn, whose lords were among the most powerful in medieval Scotland. Scone, just north of Perth, was the coronation site of Scottish kings for centuries — the Stone of Destiny (Stone of Scone) was kept here until Edward I removed it to Westminster in 1296. Perth served as the effective capital of Scotland for much of the medieval period.',
+          'This county\'s red eagle on gold derives from the arms of the ancient earldom of Strathearn, whose lords were among the most powerful in medieval Scotland. Scone, just north of the county town, was the coronation site of Scottish kings for centuries — the Stone of Destiny was kept here until Edward I removed it to Westminster in 1296. The county town served as the effective capital of Scotland for much of the medieval period.',
     ),
     'RFW': UkCountyClueData(
       country: 'Scotland',
@@ -743,7 +743,7 @@ abstract class UkClues {
       footballTeam: 'Dumbarton FC',
       nickname: 'The Rock',
       flag:
-          'West Dunbartonshire\'s elephant and castle is a surprising heraldic device for a Scottish county, but derives from the arms of Dumbarton burgh. The elephant represents exotic strength and rarity, a symbol often used in heraldry to indicate the exotic trade connections of a port town. Dumbarton Rock — one of the oldest continuously occupied strongholds in Britain — was the capital of the ancient Kingdom of Strathclyde.',
+          'This county\'s elephant and castle is a surprising heraldic device for a Scottish county, but derives from the arms of the principal burgh here. The elephant represents exotic strength and rarity, a symbol often used in heraldry to indicate the exotic trade connections of a port town. The great rock — one of the oldest continuously occupied strongholds in Britain — was the capital of the ancient Kingdom of Strathclyde.',
     ),
     'WLN': UkCountyClueData(
       country: 'Scotland',
@@ -761,7 +761,7 @@ abstract class UkClues {
       footballTeam: 'Shetland FC',
       nickname: 'The Old Rock',
       flag:
-          'Shetland\'s white Nordic cross on blue directly proclaims its Norse identity — the islands were part of the Kingdom of Norway until 1468, when they were pledged to Scotland as security for a dowry that was never paid. The Norn language survived here longer than anywhere else in Britain. More than any Scottish council area, Shetland looks to Scandinavia rather than the Scottish mainland for its cultural identity.',
+          'This county\'s white Nordic cross on blue directly proclaims its Norse identity — the islands were part of the Kingdom of Norway until 1468, when they were pledged to Scotland as security for a dowry that was never paid. The Norn language survived here longer than anywhere else in Britain. More than any Scottish council area, this island group looks to Scandinavia rather than the Scottish mainland for its cultural identity.',
     ),
 
     // =========================================================================
@@ -774,7 +774,7 @@ abstract class UkClues {
       footballTeam: 'Cardiff City',
       nickname: 'The Capital',
       flag:
-          'Cardiff\'s flag carries Y Ddraig Goch — the Red Dragon of Wales — one of the oldest national symbols in Europe. The red dragon appears in the Historia Brittonum (9th century) as the emblem of the Britons battling the white dragon of the Saxons. Henry VII, of Welsh Tudor descent, used the dragon at the Battle of Bosworth in 1485, cementing its status as the symbol of Wales and Welsh nationhood.',
+          'This city\'s flag carries Y Ddraig Goch — the Red Dragon of Wales — one of the oldest national symbols in Europe. The red dragon appears in the Historia Brittonum (9th century) as the emblem of the Britons battling the white dragon of the Saxons. Henry VII, of Welsh Tudor descent, used the dragon at the Battle of Bosworth in 1485, cementing its status as the symbol of Wales and Welsh nationhood.',
     ),
     'SWA': UkCountyClueData(
       country: 'Wales',
