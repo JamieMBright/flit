@@ -464,12 +464,10 @@ class _RegionMapPainter extends CustomPainter {
         for (final pt in ring) {
           canvasPoints.add(transform.toCanvas(pt.x, pt.y));
         }
-        // Apply Chaikin subdivision for smoother borders.
-        final smoothed = chaikinSmooth(canvasPoints, 2);
-        if (smoothed.isEmpty) continue;
-        path.moveTo(smoothed.first.dx, smoothed.first.dy);
-        for (var i = 1; i < smoothed.length; i++) {
-          path.lineTo(smoothed[i].dx, smoothed[i].dy);
+        if (canvasPoints.isEmpty) continue;
+        path.moveTo(canvasPoints.first.dx, canvasPoints.first.dy);
+        for (var i = 1; i < canvasPoints.length; i++) {
+          path.lineTo(canvasPoints[i].dx, canvasPoints[i].dy);
         }
         path.close();
       }
@@ -482,11 +480,10 @@ class _RegionMapPainter extends CustomPainter {
     for (final pt in points) {
       canvasPoints.add(transform.toCanvas(pt.x, pt.y));
     }
-    final smoothed = chaikinSmooth(canvasPoints, 2);
-    if (smoothed.isEmpty) return path;
-    path.moveTo(smoothed.first.dx, smoothed.first.dy);
-    for (var i = 1; i < smoothed.length; i++) {
-      path.lineTo(smoothed[i].dx, smoothed[i].dy);
+    if (canvasPoints.isEmpty) return path;
+    path.moveTo(canvasPoints.first.dx, canvasPoints.first.dy);
+    for (var i = 1; i < canvasPoints.length; i++) {
+      path.lineTo(canvasPoints[i].dx, canvasPoints[i].dy);
     }
 
     path.close();

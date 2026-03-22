@@ -42,6 +42,7 @@ class _CountryCluesScreenState extends State<CountryCluesScreen> {
     (label: 'Latin America', region: GameRegion.latinAmerica),
     (label: 'Oceania', region: GameRegion.oceania),
     (label: 'Caribbean', region: GameRegion.caribbean),
+    (label: 'Disputed Territories', region: GameRegion.disputedTerritories),
   ];
 
   /// Sub-national regions (for the Sub-national tab).

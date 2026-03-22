@@ -38,6 +38,7 @@ class _UnchartedSetupScreenState extends ConsumerState<UnchartedSetupScreen> {
     GameRegion.ukCounties,
     GameRegion.ireland,
     GameRegion.canadianProvinces,
+    GameRegion.disputedTerritories,
   ];
 
   static const _regionIcons = <GameRegion, IconData>{
@@ -52,6 +53,7 @@ class _UnchartedSetupScreenState extends ConsumerState<UnchartedSetupScreen> {
     GameRegion.ukCounties: Icons.account_balance,
     GameRegion.ireland: Icons.grass,
     GameRegion.canadianProvinces: Icons.landscape,
+    GameRegion.disputedTerritories: Icons.warning_amber,
   };
 
   void _startGame() {
