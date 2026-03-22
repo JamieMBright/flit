@@ -938,7 +938,7 @@ abstract class UkClues {
       footballTeam: 'Merthyr Town',
       nickname: 'Iron Capital of the World',
       flag:
-          'This county\'s crown on red acknowledges the town\'s extraordinary industrial importance — the town was the largest iron-producing centre in the world in the early 19th century, making it briefly the most important industrial town on earth. The crown is a symbol of this civic pride and the Welsh royal heritage associated with the name Tydfil, a 5th-century Celtic saint who was martyred here and around whom the settlement grew.',
+          'This county\'s crown on red acknowledges the town\'s extraordinary industrial importance — the town was the largest iron-producing centre in the world in the early 19th century, making it briefly the most important industrial town on earth. The crown is a symbol of this civic pride and the Welsh royal heritage, honouring the 5th-century Celtic saint who was martyred here and around whom the original settlement grew.',
     ),
     'NPT': UkCountyClueData(
       country: 'Wales',
@@ -996,7 +996,7 @@ abstract class UkClues {
       footballTeam: 'Glenavon FC',
       nickname: 'The Mournes',
       flag:
-          'This county\'s ship and fish reflect its maritime identity along the Irish Sea coast and Strangford Lough. The ship references the county\'s importance as a landing point from Scotland and Britain, while the fish represent the rich waters of Strangford Lough — one of Ireland\'s most important marine habitats. St Patrick is traditionally held to have landed here and to be buried at Downpatrick Cathedral.',
+          'This county\'s ship and fish reflect its maritime identity along the Irish Sea coast and Strangford Lough. The ship references the county\'s importance as a landing point from Scotland and Britain, while the fish represent the rich waters of Strangford Lough — one of Ireland\'s most important marine habitats. St Patrick is traditionally held to have landed here and to be buried at the cathedral in the county town.',
     ),
     'FER': UkCountyClueData(
       country: 'Northern Ireland',
