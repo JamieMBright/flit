@@ -481,7 +481,7 @@ abstract class UkClues {
       footballTeam: 'Celtic, Rangers',
       nickname: 'The Dear Green Place',
       flag:
-          'Glasgow\'s arms feature four symbols from the legend of St Mungo, the city\'s 6th-century patron saint: the tree he lit by breathing on a branch, the bird (robin) he restored to life, the bell he brought from Rome, and the fish with a ring in its mouth — recalling a queen\'s lost ring found inside a salmon. The rhyme "Here is the bird that never flew…" encodes all four symbols in Glasgow\'s civic identity.',
+          'This city\'s arms feature four symbols from the legend of St Mungo, the city\'s 6th-century patron saint: the tree he lit by breathing on a branch, the bird (robin) he restored to life, the bell he brought from Rome, and the fish with a ring in its mouth — recalling a queen\'s lost ring found inside a salmon. The rhyme "Here is the bird that never flew…" encodes all four symbols in the city\'s civic identity.',
     ),
     'EDH': UkCountyClueData(
       country: 'Scotland',
@@ -490,7 +490,7 @@ abstract class UkClues {
       footballTeam: 'Hibernian, Hearts',
       nickname: 'Auld Reekie',
       flag:
-          'Edinburgh\'s arms feature the castle, representing the volcanic crag fortress that has been occupied for over 3,000 years. The castle has been the seat of Scottish kings, a state prison and treasury housing the Honours of Scotland — the oldest crown jewels in the British Isles. Edinburgh became the capital of Scotland in the 15th century, cementing its identity as a seat of law, Church and government.',
+          'This city\'s arms feature the castle, representing the volcanic crag fortress that has been occupied for over 3,000 years. The castle has been the seat of Scottish kings, a state prison and treasury housing the Honours of Scotland — the oldest crown jewels in the British Isles. The city became the capital of Scotland in the 15th century, cementing its identity as a seat of law, Church and government.',
     ),
     'FIF': UkCountyClueData(
       country: 'Scotland',
@@ -499,7 +499,7 @@ abstract class UkClues {
       footballTeam: 'Dunfermline Athletic',
       nickname: 'The Kingdom of Fife',
       flag:
-          'The Kingdom of Fife — as this region has been known since at least the 12th century — carries the red lion rampant on gold, derived from the arms of the ancient MacDuff Earls of Fife. The MacDuffs held one of the seven earldoms of Scotland and had the sacred privilege of crowning the Scottish King at Scone. The chequered border echoes the tressure found on the Royal Standard of Scotland.',
+          'Known as a kingdom since at least the 12th century, this region carries the red lion rampant on gold, derived from the arms of the ancient MacDuff earldom. The MacDuffs held one of the seven earldoms of Scotland and had the sacred privilege of crowning the Scottish King at Scone. The chequered border echoes the tressure found on the Royal Standard of Scotland.',
     ),
     'HLD': UkCountyClueData(
       country: 'Scotland',
@@ -508,7 +508,7 @@ abstract class UkClues {
       footballTeam: 'Inverness Caledonian Thistle',
       nickname: 'The Highlands',
       flag:
-          'The Highlands uses the Saltire — the national flag of Scotland — the white diagonal cross on blue that represents St Andrew, Scotland\'s patron saint, who was martyred on a diagonal (X-shaped) cross at Patras in Greece. Legend holds that St Andrew\'s relics were brought to Scotland in the 4th century by a monk called Rule, and the sight of a white cross against a blue sky before battle confirmed the symbol as Scotland\'s own.',
+          'This region uses the Saltire — the national flag of Scotland — the white diagonal cross on blue that represents St Andrew, Scotland\'s patron saint, who was martyred on a diagonal (X-shaped) cross at Patras in Greece. Legend holds that St Andrew\'s relics were brought to Scotland in the 4th century by a monk called Rule, and the sight of a white cross against a blue sky before battle confirmed the symbol as Scotland\'s own.',
     ),
     'ABD': UkCountyClueData(
       country: 'Scotland',
@@ -526,7 +526,7 @@ abstract class UkClues {
       footballTeam: 'Aberdeen FC',
       nickname: 'The Silver City',
       flag:
-          'Aberdeen city\'s arms reflect its medieval importance as a royal burgh and trading hub. The three silver towers represent the city\'s fortifications and its status as a place of strength at the mouth of the River Dee. The leopards (derived from Scottish royal heraldry) acknowledge Aberdeen\'s close ties to the Scottish Crown, which granted the city its first royal charter.',
+          'This city\'s arms reflect its medieval importance as a royal burgh and trading hub. The three silver towers represent the city\'s fortifications and its status as a place of strength at the mouth of the River Dee. The leopards (derived from Scottish royal heraldry) acknowledge this city\'s close ties to the Scottish Crown, which granted the city its first royal charter.',
     ),
     'AYR': UkCountyClueData(
       country: 'Scotland',
@@ -544,7 +544,7 @@ abstract class UkClues {
       footballTeam: 'Queen of the South',
       nickname: 'The Galloway Hills',
       flag:
-          'The white lion rampant of Galloway represents the ancient Lords of Galloway, a semi-independent Celtic lordship that resisted both Scottish and English overlordship for centuries. Galloway\'s white lion on blue is one of the most ancient heraldic symbols in Scotland, pre-dating many royal arms and embodying the region\'s fiercely independent Celtic and Gaelic heritage.',
+          'The white lion rampant of this region represents the ancient local lords, a semi-independent Celtic lordship that resisted both Scottish and English overlordship for centuries. The white lion on blue is one of the most ancient heraldic symbols in Scotland, pre-dating many royal arms and embodying the region\'s fiercely independent Celtic and Gaelic heritage.',
     ),
     // STI renamed to STG (Stirling)
     'STG': UkCountyClueData(
@@ -554,7 +554,7 @@ abstract class UkClues {
       footballTeam: 'Stirling Albion',
       nickname: 'The Gateway to the Highlands',
       flag:
-          'Stirling\'s wolf on gold derives from the burgh\'s ancient arms, symbolising the ferocity needed to hold this strategic fortress — "the key to Scotland." Whoever held Stirling controlled movement between the Highlands and Lowlands. Stirling Castle was the birthplace of James II and Mary Queen of Scots, and the town witnessed two of Scotland\'s most decisive battles: Stirling Bridge (1297) and Bannockburn (1314).',
+          'This county\'s wolf on gold derives from the burgh\'s ancient arms, symbolising the ferocity needed to hold this strategic fortress — "the key to Scotland." Whoever held this town controlled movement between the Highlands and Lowlands. The castle here was the birthplace of James II and Mary Queen of Scots, and the town witnessed two of Scotland\'s most decisive battles: the Bridge (1297) and Bannockburn (1314).',
     ),
     'ANS': UkCountyClueData(
       country: 'Scotland',
@@ -572,7 +572,7 @@ abstract class UkClues {
       footballTeam: 'Oban Saints',
       nickname: 'The Gateway to the Isles',
       flag:
-          'The lymphad (a single-masted Highland galley) is the heraldic emblem of Clan Campbell, Dukes of Argyll — one of the most powerful families in Scottish history. Their control of this county\'s sea-lanes and island chains gave them dominance over western Scotland for centuries. The galley itself symbolises the Gaelic-Norse seafaring culture that shaped the Hebridean and west coast identity for a thousand years.',
+          'The lymphad (a single-masted Highland galley) is the heraldic emblem of Clan Campbell, one of the most powerful families in Scottish history, who were Dukes of this region. Their control of this county\'s sea-lanes and island chains gave them dominance over western Scotland for centuries. The galley itself symbolises the Gaelic-Norse seafaring culture that shaped the Hebridean and west coast identity for a thousand years.',
     ),
     'CLK': UkCountyClueData(
       country: 'Scotland',
@@ -590,7 +590,7 @@ abstract class UkClues {
       footballTeam: 'Dundee FC, Dundee United',
       nickname: 'The City of Discovery',
       flag:
-          'Dundee\'s pot of lilies is a symbol of the Virgin Mary, reflecting the medieval city\'s dedication to Our Lady — Dundee\'s founding charter was associated with the Church. The city became famous for its three Js: jute, jam and journalism, making it a vital Victorian industrial port. The RRS Discovery, the ship that carried Scott to the Antarctic, was built and launched here.',
+          'This city\'s pot of lilies is a symbol of the Virgin Mary, reflecting the medieval city\'s dedication to Our Lady — the founding charter was associated with the Church. The city became famous for its three Js: jute, jam and journalism, making it a vital Victorian industrial port. The RRS Discovery, the ship that carried Scott to the Antarctic, was built and launched here.',
     ),
     'EDU': UkCountyClueData(
       country: 'Scotland',
@@ -599,7 +599,7 @@ abstract class UkClues {
       footballTeam: 'Kirkintilloch Rob Roy',
       nickname: 'The Bears Den',
       flag:
-          'East Dunbartonshire\'s bear derives from the heraldry of the ancient earldom of Lennox, whose lords held this territory for centuries before the Reformation. The bear was a symbol of strength and protection; the wavy band represents the River Kelvin flowing through the area. The Lennox earldom was one of Scotland\'s most prestigious titles, and its arms shaped the heraldry of communities throughout the Clyde valley.',
+          'This county\'s bear derives from the heraldry of the ancient earldom of Lennox, whose lords held this territory for centuries before the Reformation. The bear was a symbol of strength and protection; the wavy band represents the River Kelvin flowing through the area. The Lennox earldom was one of Scotland\'s most prestigious titles, and its arms shaped the heraldry of communities throughout the Clyde valley.',
     ),
     'EIL': UkCountyClueData(
       country: 'Scotland',
