@@ -37,7 +37,7 @@ abstract class AsiaClues {
       famousLandmark: 'Geghard Monastery',
       famousPerson: 'Charles Aznavour',
       flag:
-          'The red symbolises the Armenian Highland, the struggle for survival, and Christian faith; the blue represents the will to live under peaceful skies; the orange represents the creative nature and hard-working character of the Armenian people',
+          'The red symbolises the highland, the struggle for survival, and Christian faith; the blue represents the will to live under peaceful skies; the orange represents the creative nature and hard-working character of this nation\'s people',
     ),
     'AZ': AsiaClueData(
       nickname: 'The Land of Fire',
@@ -51,7 +51,7 @@ abstract class AsiaClues {
       famousLandmark: 'Sundarbans Mangrove Forest',
       famousPerson: 'Sheikh Mujibur Rahman',
       flag:
-          'The dark green represents the lush vegetation of Bangladesh, and the red disc symbolises the rising sun and the blood shed in the 1971 Liberation War — the disc is offset toward the hoist so it appears centred when the flag flies',
+          'The dark green represents the lush vegetation of this country, and the red disc symbolises the rising sun and the blood shed in the 1971 Liberation War — the disc is offset toward the hoist so it appears centred when the flag flies',
     ),
     'BH': AsiaClueData(
       nickname: 'The Pearl of the Gulf',
@@ -65,28 +65,28 @@ abstract class AsiaClues {
       famousLandmark: 'Omar Ali Saifuddien Mosque',
       famousPerson: 'Sultan Hassanal Bolkiah',
       flag:
-          'The yellow field represents the Sultan, the white and black diagonal stripes symbolise the chief ministers, and the national crest bears the crescent of Islam with the motto "Always in service with God\'s guidance" — reflecting Brunei\'s Islamic monarchy',
+          'The yellow field represents the Sultan, the white and black diagonal stripes symbolise the chief ministers, and the national crest bears the crescent of Islam with the motto "Always in service with God\'s guidance" — reflecting this nation\'s Islamic monarchy',
     ),
     'BT': AsiaClueData(
       nickname: 'The Land of the Thunder Dragon',
       famousLandmark: 'Tiger\'s Nest Monastery',
       famousPerson: 'Jigme Singye Wangchuck',
       flag:
-          'The dragon (Druk, the Thunder Dragon) gives Bhutan its native name "Druk Yul"; the orange represents the Buddhist spiritual tradition, the saffron-yellow represents the secular authority of the king, and the jewels in the dragon\'s claws symbolise national wealth',
+          'The dragon (Druk, the Thunder Dragon) gives this country its native name "Druk Yul"; the orange represents the Buddhist spiritual tradition, the saffron-yellow represents the secular authority of the king, and the jewels in the dragon\'s claws symbolise national wealth',
     ),
     'CN': AsiaClueData(
       nickname: 'The Middle Kingdom',
       famousLandmark: 'Great Wall of China',
       famousPerson: 'Confucius',
       flag:
-          'The red symbolises the Communist revolution, the large gold star represents the Communist Party of China, and the four smaller stars represent the four social classes — workers, peasants, petty bourgeoisie, and national bourgeoisie — united under the Party',
+          'The red symbolises the Communist revolution, the large gold star represents the Communist Party, and the four smaller stars represent the four social classes — workers, peasants, petty bourgeoisie, and national bourgeoisie — united under the Party',
     ),
     'GE': AsiaClueData(
       nickname: 'The Balcony of Europe',
       famousLandmark: 'Jvari Monastery',
       famousPerson: 'Joseph Stalin',
       flag:
-          'The white field represents purity and innocence, and the five red crosses (one large St. George\'s cross and four smaller Bolnisi crosses) are ancient Georgian Christian symbols — the design recalls medieval Georgian kingdom banners',
+          'The white field represents purity and innocence, and the five red crosses (one large St. George\'s cross and four smaller Bolnisi crosses) are ancient Christian symbols of this nation — the design recalls medieval kingdom banners of this country',
     ),
     'ID': AsiaClueData(
       nickname: 'The Emerald of the Equator',
@@ -135,21 +135,21 @@ abstract class AsiaClues {
       famousLandmark: 'Mount Fuji',
       famousPerson: 'Emperor Meiji',
       flag:
-          'The white field represents honesty and purity, and the red circle (Hinomaru) symbolises the sun — Japan is known as "Nippon" (origin of the sun), and the design has been used for centuries by feudal lords and imperial courts',
+          'The white field represents honesty and purity, and the red circle (Hinomaru) symbolises the sun — this country is known as "Nippon" (origin of the sun), and the design has been used for centuries by feudal lords and imperial courts',
     ),
     'KG': AsiaClueData(
       nickname: 'The Switzerland of Central Asia',
       famousLandmark: 'Issyk-Kul Lake',
       famousPerson: 'Chingiz Aitmatov',
       flag:
-          'The red field represents the banner of the legendary hero Manas, the golden sun with 40 rays represents the 40 Kyrgyz tribes united by Manas, and the symbol inside the sun depicts the tunduk — the crown of a traditional Kyrgyz yurt, symbolising family and the universe',
+          'The red field represents the banner of the legendary hero Manas, the golden sun with 40 rays represents the 40 tribes united by Manas, and the symbol inside the sun depicts the tunduk — the crown of a traditional yurt of this nation, symbolising family and the universe',
     ),
     'KH': AsiaClueData(
       nickname: 'The Kingdom of Wonder',
       famousLandmark: 'Angkor Wat',
       famousPerson: 'Norodom Sihanouk',
       flag:
-          'The blue stripes represent royalty, the red symbolises the nation and its people, and the white Angkor Wat temple in the centre is a source of immense national pride — Cambodia is the only country in the world to feature a building on its flag',
+          'The blue stripes represent royalty, the red symbolises the nation and its people, and the white Angkor Wat temple in the centre is a source of immense national pride — this is the only country in the world to feature a building on its flag',
     ),
     'KP': AsiaClueData(
       nickname: 'The Hermit Kingdom',
@@ -163,7 +163,7 @@ abstract class AsiaClues {
       famousLandmark: 'Gyeongbokgung Palace',
       famousPerson: 'King Sejong the Great',
       flag:
-          'The white background represents peace and purity; the central Taeguk (yin-yang) symbolises the balance of cosmic forces; the four black trigrams from the I Ching represent heaven, earth, water, and fire — the design reflects Korean philosophical and cosmological traditions',
+          'The white background represents peace and purity; the central Taeguk (yin-yang) symbolises the balance of cosmic forces; the four black trigrams from the I Ching represent heaven, earth, water, and fire — the design reflects this nation\'s philosophical and cosmological traditions',
     ),
     'KW': AsiaClueData(
       nickname: 'The Pearl of the Gulf',
@@ -177,7 +177,7 @@ abstract class AsiaClues {
       famousLandmark: 'Bayterek Tower',
       famousPerson: 'Al-Farabi',
       flag:
-          'The sky blue represents the Turkic peoples and the endless sky, the golden sun with 32 rays represents abundance and life, the soaring steppe eagle symbolises freedom, and the ornamental pattern along the hoist is a traditional Kazakh "koshkar-muiz" (ram\'s horn) design',
+          'The sky blue represents the Turkic peoples and the endless sky, the golden sun with 32 rays represents abundance and life, the soaring steppe eagle symbolises freedom, and the ornamental pattern along the hoist is a traditional "koshkar-muiz" (ram\'s horn) design of this nation',
     ),
     'LA': AsiaClueData(
       nickname: 'The Land of a Million Elephants',
@@ -191,7 +191,7 @@ abstract class AsiaClues {
       famousLandmark: 'Baalbek Temples',
       famousPerson: 'Khalil Gibran',
       flag:
-          'The red stripes represent the blood shed for liberation, the white represents peace and snow of the mountains, and the green cedar tree is the symbol of Lebanon — an ancient emblem representing holiness, eternity, and peace, referenced throughout the Bible',
+          'The red stripes represent the blood shed for liberation, the white represents peace and snow of the mountains, and the green cedar tree is the symbol of this nation — an ancient emblem representing holiness, eternity, and peace, referenced throughout the Bible',
     ),
     'LK': AsiaClueData(
       nickname: 'The Pearl of the Indian Ocean',
@@ -212,7 +212,7 @@ abstract class AsiaClues {
       famousLandmark: 'Genghis Khan Equestrian Statue',
       famousPerson: 'Genghis Khan',
       flag:
-          'The red symbolises progress and prosperity, the blue represents the eternal blue sky (a sacred concept in Mongol culture), and the golden Soyombo symbol contains sun, moon, fire, and yin-yang elements representing the Mongol people\'s eternal existence',
+          'The red symbolises progress and prosperity, the blue represents the eternal blue sky (a sacred concept in this nation\'s culture), and the golden Soyombo symbol contains sun, moon, fire, and yin-yang elements representing this nation\'s people\'s eternal existence',
     ),
     'MV': AsiaClueData(
       nickname: 'The Sunny Side of Life',
@@ -232,14 +232,14 @@ abstract class AsiaClues {
       famousLandmark: 'Mount Everest',
       famousPerson: 'Tenzing Norgay',
       flag:
-          'The world\'s only non-rectangular national flag; the two stacked triangles represent the Himalaya Mountains and the two major religions (Hinduism and Buddhism); the moon symbolises the calm demeanour of Nepalis and the sun represents fierce resolve',
+          'The world\'s only non-rectangular national flag; the two stacked triangles represent the Himalaya Mountains and the two major religions (Hinduism and Buddhism); the moon symbolises the calm demeanour of this nation\'s people and the sun represents fierce resolve',
     ),
     'OM': AsiaClueData(
       nickname: 'The Jewel of Arabia',
       famousLandmark: 'Sultan Qaboos Grand Mosque',
       famousPerson: 'Sultan Qaboos bin Said',
       flag:
-          'The white represents peace and the Imam, the red is the traditional colour of the Omani people, the green represents the Green Mountains (Al Hajar) and fertility; the national emblem (khanjar dagger and crossed swords) symbolises the historical Omani defense',
+          'The white represents peace and the Imam, the red is the traditional colour of this nation\'s people, the green represents the Green Mountains (Al Hajar) and fertility; the national emblem (khanjar dagger and crossed swords) symbolises this country\'s historical defense',
     ),
     'PH': AsiaClueData(
       nickname: 'The Pearl of the Orient Seas',
@@ -253,7 +253,7 @@ abstract class AsiaClues {
       famousLandmark: 'Badshahi Mosque',
       famousPerson: 'Muhammad Ali Jinnah',
       flag:
-          'The green represents the Muslim majority, the white stripe represents religious minorities, the crescent symbolises progress, and the five-pointed star represents light and knowledge — designed to represent all citizens of Pakistan',
+          'The green represents the Muslim majority, the white stripe represents religious minorities, the crescent symbolises progress, and the five-pointed star represents light and knowledge — designed to represent all citizens of this nation',
     ),
     'PS': AsiaClueData(
       nickname: 'The Holy Land',

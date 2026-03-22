@@ -51,7 +51,7 @@ abstract class AfricaClues {
       famousLandmark: 'Okavango Delta',
       famousPerson: 'Seretse Khama',
       flag:
-          'The light blue represents water and rain (Botswana means "land of the rains"), reflecting the nation\'s dependence on rainfall; the central black-and-white stripes symbolise racial harmony and the zebra, the national animal',
+          'The light blue represents water and rain (the name means "land of the rains"), reflecting the nation\'s dependence on rainfall; the central black-and-white stripes symbolise racial harmony and the zebra, the national animal',
     ),
     'CD': AfricaClueData(
       nickname: 'The Congo',
@@ -72,14 +72,14 @@ abstract class AfricaClues {
       famousLandmark: 'Odzala-Kokoua National Park',
       famousPerson: 'Denis Sassou Nguesso',
       flag:
-          'The green-yellow-red diagonal design uses Pan-African colours; green symbolises agriculture and forests, yellow represents friendship and the nobility of the Congolese people, and red honours those who struggled for independence',
+          'The green-yellow-red diagonal design uses Pan-African colours; green symbolises agriculture and forests, yellow represents friendship and the nobility of the people, and red honours those who struggled for independence',
     ),
     'CI': AfricaClueData(
       nickname: 'Land of the Elephants',
       famousLandmark: 'Basilica of Our Lady of Peace',
       famousPerson: 'Didier Drogba',
       flag:
-          'The orange represents the savanna of the north, the white symbolises peace and unity, and the green represents the coastal forests of the south — modelled after the French Tricolore but with colours of the Ivorian landscape',
+          'The orange represents the savanna of the north, the white symbolises peace and unity, and the green represents the coastal forests of the south — modelled after the French Tricolore but with colours reflecting the national landscape',
     ),
     'CM': AfricaClueData(
       nickname: 'Africa in Miniature',
@@ -107,7 +107,7 @@ abstract class AfricaClues {
       famousLandmark: 'Casbah of Algiers',
       famousPerson: 'Albert Camus',
       flag:
-          'The green represents Islam and paradise, the white symbolises purity and peace, the red crescent and star are traditional symbols of Islam — adopted after independence from France in 1962 to reflect Algerian identity',
+          'The green represents Islam and paradise, the white symbolises purity and peace, the red crescent and star are traditional symbols of Islam — adopted after independence from France in 1962 to reflect this nation\'s identity',
     ),
     'EG': AfricaClueData(
       nickname: 'The Land of the Pharaohs',
@@ -142,7 +142,7 @@ abstract class AfricaClues {
       famousLandmark: 'Lope National Park',
       famousPerson: 'Omar Bongo',
       flag:
-          'The green represents the equatorial forests, the yellow symbolises the equator (which passes directly through Gabon), and the blue represents the Atlantic coastline — three colours capturing Gabon\'s geographic identity',
+          'The green represents the equatorial forests, the yellow symbolises the equator (which passes directly through this country), and the blue represents the Atlantic coastline — three colours capturing this nation\'s geographic identity',
     ),
     'GH': AfricaClueData(
       nickname: 'The Gateway to West Africa',
@@ -184,7 +184,7 @@ abstract class AfricaClues {
       famousLandmark: 'Maasai Mara National Reserve',
       famousPerson: 'Wangari Maathai',
       flag:
-          'The black represents the Kenyan people, the red symbolises the blood shed for independence, the green represents the natural landscape, and the Maasai shield and crossed spears at the centre signify the defence of freedom — white stripes represent peace',
+          'The black represents the people, the red symbolises the blood shed for independence, the green represents the natural landscape, and the Maasai shield and crossed spears at the centre signify the defence of freedom — white stripes represent peace',
     ),
     'KM': AfricaClueData(
       nickname: 'The Perfume Islands',
@@ -198,21 +198,21 @@ abstract class AfricaClues {
       famousLandmark: 'Sapo National Park',
       famousPerson: 'Ellen Johnson Sirleaf',
       flag:
-          'Modelled closely on the American flag reflecting the country\'s founding by freed American slaves; the eleven red and white stripes represent the signatories of the Liberian Declaration of Independence, and the lone white star symbolises the first independent republic in Africa',
+          'Modelled closely on the American flag reflecting the country\'s founding by freed American slaves; the eleven red and white stripes represent the signatories of this nation\'s Declaration of Independence, and the lone white star symbolises the first independent republic in Africa',
     ),
     'LS': AfricaClueData(
       nickname: 'The Kingdom in the Sky',
       famousLandmark: 'Maletsunyane Falls',
       famousPerson: 'Moshoeshoe I',
       flag:
-          'The blue represents sky and rain, the white symbolises peace, the green represents prosperity, and the black Basotho hat (mokorotlo) in the centre is a traditional symbol of Lesotho\'s national identity and heritage',
+          'The blue represents sky and rain, the white symbolises peace, the green represents prosperity, and the black Basotho hat (mokorotlo) in the centre is a traditional symbol of this nation\'s identity and heritage',
     ),
     'LY': AfricaClueData(
       nickname: 'The Mediterranean Gateway to Africa',
       famousLandmark: 'Leptis Magna',
       famousPerson: 'Omar Mukhtar',
       flag:
-          'The red-black-green horizontal tricolour with white crescent and star restores the flag of the Kingdom of Libya used before Gaddafi\'s rule; red represents the blood of martyrs, black represents Fezzan, and green represents Tripolitania',
+          'The red-black-green horizontal tricolour with white crescent and star restores the historic kingdom\'s flag used before Gaddafi\'s rule; red represents the blood of martyrs, black represents Fezzan, and green represents Tripolitania',
     ),
     'MA': AfricaClueData(
       nickname: 'The Gateway to Africa',
@@ -275,14 +275,14 @@ abstract class AfricaClues {
       famousLandmark: 'Agadez Mosque',
       famousPerson: 'Hamani Diori',
       flag:
-          'The orange represents the Sahara desert in the north, the white symbolises purity and the Niger River, the green represents the fertile southern regions, and the central orange circle represents the sun — colours reflecting Niger\'s landscape from desert to green',
+          'The orange represents the Sahara desert in the north, the white symbolises purity and the Niger River, the green represents the fertile southern regions, and the central orange circle represents the sun — colours reflecting this nation\'s landscape from desert to green',
     ),
     'NG': AfricaClueData(
       nickname: 'The Giant of Africa',
       famousLandmark: 'Zuma Rock',
       famousPerson: 'Wole Soyinka',
       flag:
-          'The green-white-green vertical tricolour was designed by Michael Taiwo Akinkunmi as a student in 1959; the green represents Nigeria\'s agricultural wealth and lush vegetation, and the white symbolises peace and unity',
+          'The green-white-green vertical tricolour was designed by Michael Taiwo Akinkunmi as a student in 1959; the green represents this nation\'s agricultural wealth and lush vegetation, and the white symbolises peace and unity',
     ),
     'RW': AfricaClueData(
       nickname: 'The Land of a Thousand Hills',
@@ -303,7 +303,7 @@ abstract class AfricaClues {
       famousLandmark: 'Meroe Pyramids',
       famousPerson: 'Mahdi Muhammad Ahmad',
       flag:
-          'The red-white-black horizontal tricolour uses Pan-Arab colours; the red represents struggle and sacrifice, white represents peace and optimism, black represents Sudan\'s identity (Sudan means "land of the blacks" in Arabic), and the green triangle represents Islam and agricultural prosperity',
+          'The red-white-black horizontal tricolour uses Pan-Arab colours; the red represents struggle and sacrifice, white represents peace and optimism, black represents this nation\'s identity (the country\'s name means "land of the blacks" in Arabic), and the green triangle represents Islam and agricultural prosperity',
     ),
     'SL': AfricaClueData(
       nickname: 'The Lion Mountain',
@@ -324,7 +324,7 @@ abstract class AfricaClues {
       famousLandmark: 'Laas Geel Cave Paintings',
       famousPerson: 'Iman Abdulmajid',
       flag:
-          'The light blue field was originally chosen to match the United Nations flag, honouring the UN\'s role in Somali independence; the white five-pointed star represents the five regions where ethnic Somalis historically lived — Italian Somaliland, British Somaliland, French Somaliland, Ogaden, and the NFD',
+          'The light blue field was originally chosen to match the United Nations flag, honouring the UN\'s role in this nation\'s independence; the white five-pointed star represents the five regions where the ethnic majority historically lived — Italian Somaliland, British Somaliland, French Somaliland, Ogaden, and the NFD',
     ),
     'SS': AfricaClueData(
       nickname: 'The Land of the Sudd',
