@@ -49,7 +49,7 @@ abstract class UkClues {
       footballTeam: 'Manchester United, Manchester City',
       nickname: 'Cottonopolis',
       flag:
-          'This county\'s flag draws on the arms of Manchester city, where the gold ship symbolises the Manchester Ship Canal — once the lifeline of the cotton trade that made the city the world\'s first industrial metropolis. The three gold stripes represent the rivers Irwell, Medlock and Irk that shaped the city\'s growth.',
+          'This county\'s flag draws on the arms of its principal city, where the gold ship symbolises the great Ship Canal — once the lifeline of the cotton trade that made the city the world\'s first industrial metropolis. The three gold stripes represent the rivers Irwell, Medlock and Irk that shaped the city\'s growth.',
     ),
     'WYK': UkCountyClueData(
       country: 'England',
@@ -399,7 +399,7 @@ abstract class UkClues {
       footballTeam: 'Shrewsbury Town',
       nickname: 'Salop',
       flag:
-          'Shropshire\'s three white leopard faces (or lion faces passant) on blue and gold derive from the arms of the de Belmeis and later Fitz Alan lords who held the county. The Fitz Alans, Earls of Arundel, were among the most powerful Marcher lords guarding the Welsh border; their heraldry merged with local tradition to produce Shropshire\'s distinctive blue-and-gold identity.',
+          'This county\'s three white leopard faces (or lion faces passant) on blue and gold derive from the arms of the de Belmeis and later Fitz Alan lords who held the county. The Fitz Alans, Earls of Arundel, were among the most powerful Marcher lords guarding the Welsh border; their heraldry merged with local tradition to produce the distinctive blue-and-gold identity of this county.',
     ),
 
     // =========================================================================
@@ -422,7 +422,7 @@ abstract class UkClues {
       footballTeam: 'Chester FC',
       nickname: 'The County Palatine',
       flag:
-          'The three golden wheatsheaves of this county derive from the arms of the ancient Earldom of Chester, one of England\'s most powerful palatine earldoms. The sword represents the county\'s status as a County Palatine — a jurisdiction where the Earl exercised powers equivalent to the King, including his own courts, mint and army. The earldom was merged with the Crown in 1254.',
+          'The three golden wheatsheaves of this county derive from the arms of the ancient earldom here, one of England\'s most powerful palatine earldoms. The sword represents the county\'s status as a County Palatine — a jurisdiction where the Earl exercised powers equivalent to the King, including his own courts, mint and army. The earldom was merged with the Crown in 1254.',
     ),
     'DUR': UkCountyClueData(
       country: 'England',
@@ -431,7 +431,7 @@ abstract class UkClues {
       footballTeam: 'Darlington FC',
       nickname: 'Land of the Prince Bishops',
       flag:
-          'This county\'s flag honours the Prince Bishops of Durham, who wielded royal power within the county palatine from the Norman Conquest until 1836. The gold cross on blue derives from the arms of the Bishopric — the lions represent the power vested in the bishops by the Crown to defend the northern frontier against Scottish invasion. The cathedral here, built to house St Cuthbert\'s relics, was the seat of this unique ecclesiastical state.',
+          'This county\'s flag honours the Prince Bishops who wielded royal power within the county palatine from the Norman Conquest until 1836. The gold cross on blue derives from the arms of the Bishopric — the lions represent the power vested in the bishops by the Crown to defend the northern frontier against Scottish invasion. The cathedral here, built to house St Cuthbert\'s relics, was the seat of this unique ecclesiastical state.',
     ),
     // CUM renamed to CMA (Cumbria)
     'CMA': UkCountyClueData(
@@ -450,7 +450,7 @@ abstract class UkClues {
       footballTeam: 'Newcastle United',
       nickname: 'The Far North',
       flag:
-          'This county\'s arms draw on the ancient heraldry of the Earldom of Northumberland, one of the most turbulent titles in English history. The red and gold quartering echoes the Percy family arms — Earls of Northumberland since the 14th century — whose power rivalled the Crown and whose rebellion against Henry IV inspired Shakespeare\'s Henry IV plays. The blue and white chequered canton derives from the ancient Kingdom of Northumbria.',
+          'This county\'s arms draw on the ancient heraldry of the local earldom, one of the most turbulent titles in English history. The red and gold quartering echoes the Percy family arms — Earls of this county since the 14th century — whose power rivalled the Crown and whose rebellion against Henry IV inspired Shakespeare\'s Henry IV plays. The blue and white chequered canton derives from the ancient Kingdom of Northumbria.',
     ),
     'NYK': UkCountyClueData(
       country: 'England',
