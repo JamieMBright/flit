@@ -1,7 +1,7 @@
 name: flit
 description: A geography-based flight game with low-fi aesthetics.
 publish_to: 'none'
-version: 1.0.349+349
+version: 1.0.350+350
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
