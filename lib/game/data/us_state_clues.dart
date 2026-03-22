@@ -100,7 +100,7 @@ abstract class UsStateClues {
     ),
     'CO': StateClueData(
       flag:
-          'Adopted in 1911 and redesigned in 1964, the blue stripes represent Colorado\'s clear skies and mountain streams, the white stripe its snow-capped peaks; the red letter C honors the Colorado River (from the Spanish "rojo" meaning red) and the gold disk within symbolizes the abundant sunshine and mineral wealth that drew settlers during the gold rush era',
+          'Adopted in 1911 and redesigned in 1964, the blue stripes represent this state\'s clear skies and mountain streams, the white stripe its snow-capped peaks; the red letter C honors the Colorado River (from the Spanish "rojo" meaning red) and the gold disk within symbolizes the abundant sunshine and mineral wealth that drew settlers during the gold rush era',
       sportsTeams: [
         'Denver Broncos (NFL)',
         'Denver Nuggets (NBA)',
@@ -121,7 +121,7 @@ abstract class UsStateClues {
     ),
     'CT': StateClueData(
       flag:
-          'The three grapevines on Connecticut\'s coat of arms, adopted in 1647 and carried on the flag, represent the three original settlements of Windsor, Hartford, and Wethersfield transplanted from England; the motto "Qui Transtulit Sustinet" (He Who Transplanted Still Sustains) reflects the Puritan faith that God guided the founding colonists to their new home',
+          'The three grapevines on this state\'s coat of arms, adopted in 1647 and carried on the flag, represent the three original settlements of Windsor, Hartford, and Wethersfield transplanted from England; the motto "Qui Transtulit Sustinet" (He Who Transplanted Still Sustains) reflects the Puritan faith that God guided the founding colonists to their new home',
       sportsTeams: [
         'UConn Huskies (NCAA Basketball)',
         'Hartford Wolf Pack (AHL Hockey)',
@@ -269,7 +269,7 @@ abstract class UsStateClues {
     ),
     'IN': StateClueData(
       flag:
-          'Designed in 1917 for Indiana\'s centennial celebrations, the gold torch at center symbolizes enlightenment and liberty; the outer ring of 13 stars represents the original colonies, the inner ring of five stars honors the next five states admitted, and the large star above the torch marks Indiana as the 19th state to join the Union in 1816',
+          'Designed in 1917 for this state\'s centennial celebrations, the gold torch at center symbolizes enlightenment and liberty; the outer ring of 13 stars represents the original colonies, the inner ring of five stars honors the next five states admitted, and the large star above the torch marks this state as the 19th state to join the Union in 1816',
       sportsTeams: [
         'Indianapolis Colts (NFL)',
         'Indiana Pacers (NBA)',
@@ -498,7 +498,7 @@ abstract class UsStateClues {
     ),
     'MO': StateClueData(
       flag:
-          'Missouri\'s tricolor mirrors the French tricolore to honor the Louisiana Territory\'s French heritage before the 1803 Purchase; the two grizzly bears supporting the shield represent strength and the state\'s frontier character, while the crescent moon and grizzly on the shield itself recall Missouri\'s origin as part of the wilderness beyond the Mississippi; the 24 stars mark Missouri as the 24th state, admitted in 1821',
+          'This state\'s tricolor mirrors the French tricolore to honor the Louisiana Territory\'s French heritage before the 1803 Purchase; the two grizzly bears supporting the shield represent strength and the state\'s frontier character, while the crescent moon and grizzly on the shield itself recall this state\'s origin as part of the wilderness beyond the Mississippi; the 24 stars mark this state as the 24th state, admitted in 1821',
       sportsTeams: [
         'Kansas City Chiefs (NFL)',
         'St. Louis Cardinals (MLB)',
@@ -835,7 +835,7 @@ abstract class UsStateClues {
     ),
     'SD': StateClueData(
       flag:
-          'South Dakota\'s seal, placed on the state flag in 1909, encircles "The Mount Rushmore State" name and depicts a farmer plowing, a steamboat on the Missouri River, a smelting furnace, and cattle grazing against mountain scenery — representing the four economic pillars of agriculture, river commerce, mining, and ranching that built the territory; the sunburst design around the seal reflects the motto "Under God the People Rule"',
+          'This state\'s seal, placed on the state flag in 1909, encircles "The Mount Rushmore State" name and depicts a farmer plowing, a steamboat on the Missouri River, a smelting furnace, and cattle grazing against mountain scenery — representing the four economic pillars of agriculture, river commerce, mining, and ranching that built the territory; the sunburst design around the seal reflects the motto "Under God the People Rule"',
       sportsTeams: [
         'South Dakota State Jackrabbits (NCAA Football)',
         'South Dakota Coyotes (NCAA Basketball)',

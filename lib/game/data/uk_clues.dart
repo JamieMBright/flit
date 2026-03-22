@@ -40,7 +40,7 @@ abstract class UkClues {
       footballTeam: 'Aston Villa, Birmingham City',
       nickname: 'The Black Country',
       flag:
-          'The black and gold colours of the West Midlands flag reflect the identity of the Black Country — a region named for its coal-black skies during the Industrial Revolution. The diagonal cross echoes the heraldic traditions of the Mercian kingdom that once ruled this heartland of England.',
+          'The black and gold colours of this county\'s flag reflect the identity of the Black Country — a region named for its coal-black skies during the Industrial Revolution. The diagonal cross echoes the heraldic traditions of the Mercian kingdom that once ruled this heartland of England.',
     ),
     'GTM': UkCountyClueData(
       country: 'England',
@@ -85,7 +85,7 @@ abstract class UkClues {
       footballTeam: 'Newcastle United, Sunderland AFC',
       nickname: 'The Geordies',
       flag:
-          'Tyne and Wear\'s arms draw on the heraldry of Newcastle and Sunderland. The castle references Newcastle\'s Norman fortification — the "new castle" built by Robert Curthose, son of William the Conqueror, in 1080. The lion echoes the arms of the powerful Percy family, Earls of Northumberland, who dominated the region for centuries.',
+          'This county\'s arms draw on the heraldry of Newcastle and Sunderland. The castle references Newcastle\'s Norman fortification — the "new castle" built by Robert Curthose, son of William the Conqueror, in 1080. The lion echoes the arms of the powerful Percy family, Earls of Northumberland, who dominated the region for centuries.',
     ),
 
     // =========================================================================
@@ -716,7 +716,7 @@ abstract class UkClues {
       footballTeam: 'Ayr United',
       nickname: 'The Burns Coast',
       flag:
-          'South Ayrshire\'s saltire and castle draw on the arms of the burgh of Ayr — one of Scotland\'s most important medieval trading ports, granted its royal charter in 1205. The saltire connects the county to the national symbol of St Andrew, while the castle represents Ayr\'s royal fortification. The county contains Culzean Castle, gifted to General Eisenhower by the Scottish people after World War II.',
+          'This county\'s saltire and castle draw on the arms of the burgh of Ayr — one of Scotland\'s most important medieval trading ports, granted its royal charter in 1205. The saltire connects the county to the national symbol of St Andrew, while the castle represents Ayr\'s royal fortification. The county contains Culzean Castle, gifted to General Eisenhower by the Scottish people after World War II.',
     ),
     'SCB': UkCountyClueData(
       country: 'Scotland',
@@ -725,7 +725,7 @@ abstract class UkClues {
       footballTeam: 'Gala Fairydean Rovers',
       nickname: 'Scott\'s Country',
       flag:
-          'The Scottish Borders\' flag reflects the region\'s contested history as a battleground between Scotland and England for centuries. The tower represents the characteristic peel towers built throughout the Borders as refuges against the raids of Border Reivers — the lawless clans who terrorised both sides of the frontier from the 13th to 17th centuries. The gold saltire acknowledges the region\'s Scottish identity.',
+          'This region\'s flag reflects its contested history as a battleground between Scotland and England for centuries. The tower represents the characteristic peel towers built throughout the region as refuges against the raids of Border Reivers — the lawless clans who terrorised both sides of the frontier from the 13th to 17th centuries. The gold saltire acknowledges the region\'s Scottish identity.',
     ),
     'SLK': UkCountyClueData(
       country: 'Scotland',
@@ -734,7 +734,7 @@ abstract class UkClues {
       footballTeam: 'Hamilton Academical',
       nickname: 'The Clyde Valley',
       flag:
-          'South Lanarkshire\'s double-headed eagle and cinquefoils combine two great heraldic traditions of the region. The eagle comes from the arms of the Hamilton family — Dukes of Hamilton and once heirs presumptive to the Scottish throne — while the cinquefoils (five-petalled flowers) represent the Fraser family, another powerful Lanarkshire dynasty. New Lanark, within the county, was Robert Owen\'s pioneering model community and a founding site of the cooperative movement.',
+          'This county\'s double-headed eagle and cinquefoils combine two great heraldic traditions of the region. The eagle comes from the arms of the Hamilton family — Dukes of Hamilton and once heirs presumptive to the Scottish throne — while the cinquefoils (five-petalled flowers) represent the Fraser family, another powerful local dynasty. New Lanark, within the county, was Robert Owen\'s pioneering model community and a founding site of the cooperative movement.',
     ),
     'WDU': UkCountyClueData(
       country: 'Scotland',
@@ -752,7 +752,7 @@ abstract class UkClues {
       footballTeam: 'Livingston FC',
       nickname: 'The Shale Oil County',
       flag:
-          'West Lothian\'s black dog on gold derives from the arms of Linlithgow burgh, where the dog (a greyhound or similar) was associated with royal hunting and the adjacent royal palace. Linlithgow Palace was the birthplace of Mary Queen of Scots in 1542 and a favourite residence of the Scottish kings. The region was also the centre of Scotland\'s 19th-century shale oil industry, pioneered by James Young.',
+          'This county\'s black dog on gold derives from the arms of Linlithgow burgh, where the dog (a greyhound or similar) was associated with royal hunting and the adjacent royal palace. Linlithgow Palace was the birthplace of Mary Queen of Scots in 1542 and a favourite residence of the Scottish kings. The region was also the centre of Scotland\'s 19th-century shale oil industry, pioneered by James Young.',
     ),
     'ZET': UkCountyClueData(
       country: 'Scotland',
@@ -801,7 +801,7 @@ abstract class UkClues {
       footballTeam: 'Haverfordwest County',
       nickname: 'Little England Beyond Wales',
       flag:
-          'Pembrokeshire\'s gold lions on blue derive from the arms of the ancient Kingdom of Deheubarth, the most powerful Welsh kingdom of southwest Wales. Pembroke Castle itself was the birthplace of Henry VII, founder of the Tudor dynasty. The county is nicknamed "Little England Beyond Wales" because Norman and Flemish settlers colonised it so thoroughly in the 12th century that its language and culture remained English long after the surrounding areas returned to Welsh.',
+          'This county\'s gold lions on blue derive from the arms of the ancient Kingdom of Deheubarth, the most powerful Welsh kingdom of southwest Wales. Pembroke Castle itself was the birthplace of Henry VII, founder of the Tudor dynasty. The county is nicknamed "Little England Beyond Wales" because Norman and Flemish settlers colonised it so thoroughly in the 12th century that its language and culture remained English long after the surrounding areas returned to Welsh.',
     ),
     // PWS renamed to POW (Powys)
     'POW': UkCountyClueData(
@@ -811,7 +811,7 @@ abstract class UkClues {
       footballTeam: 'Newtown AFC',
       nickname: 'The Green Desert of Wales',
       flag:
-          'Powys\'s gold lion rampant on red derives from the arms of the ancient Kingdom of Powys Fadog, the northern division of the historic Welsh kingdom of Powys. Powys was one of the oldest Welsh kingdoms, tracing its lineage to the sub-Roman princes who ruled central Wales after the Roman withdrawal. The county\'s remoteness and sparse population — the "Green Desert" — allowed its Celtic Welsh culture and language to survive intact.',
+          'This county\'s gold lion rampant on red derives from the arms of the ancient Kingdom of Powys Fadog, the northern division of the historic Welsh kingdom of Powys. The region traces its lineage to the sub-Roman princes who ruled central Wales after the Roman withdrawal. The county\'s remoteness and sparse population — the "Green Desert" — allowed its Celtic Welsh culture and language to survive intact.',
     ),
     // CRD renamed to CAY (Caerphilly)
     'CAY': UkCountyClueData(
@@ -866,7 +866,7 @@ abstract class UkClues {
       footballTeam: 'Carmarthen Town',
       nickname: 'The Garden of Wales',
       flag:
-          'Carmarthenshire\'s quartered blue and gold field with lions and towers derives from the arms of the ancient Welsh kingdom of Deheubarth and the later Norman lords of Carmarthen. Carmarthen itself claims to be the oldest town in Wales, with Roman origins, and is traditionally associated with the wizard Merlin — legend holds the town will flood when a certain oak tree falls.',
+          'This county\'s quartered blue and gold field with lions and towers derives from the arms of the ancient Welsh kingdom of Deheubarth and the later Norman lords of Carmarthen. The county town itself claims to be the oldest town in Wales, with Roman origins, and is traditionally associated with the wizard Merlin — legend holds the town will flood when a certain oak tree falls.',
     ),
     'CRG': UkCountyClueData(
       country: 'Wales',
@@ -875,7 +875,7 @@ abstract class UkClues {
       footballTeam: 'Aberystwyth Town',
       nickname: 'The Celtic Heartland',
       flag:
-          'Ceredigion\'s dolphins and lion are drawn from the county\'s arms reflecting its coastal identity on Cardigan Bay — home to one of the most important populations of bottlenose dolphins in Britain. The red lion derives from the arms of the Kingdom of Deheubarth, whose heartland was here. The county is considered one of the most Welsh of all Welsh counties in language and culture, with over half the population speaking Welsh.',
+          'This county\'s dolphins and lion are drawn from the county\'s arms reflecting its coastal identity on Cardigan Bay — home to one of the most important populations of bottlenose dolphins in Britain. The red lion derives from the arms of the Kingdom of Deheubarth, whose heartland was here. The county is considered one of the most Welsh of all Welsh counties in language and culture, with over half the population speaking Welsh.',
     ),
     'AGY': UkCountyClueData(
       country: 'Wales',
@@ -1005,7 +1005,7 @@ abstract class UkClues {
       footballTeam: 'Enniskillen Town',
       nickname: 'The Lakeland County',
       flag:
-          'Fermanagh\'s flag combines the Red Hand of Ulster — symbol of the ancient O\'Neill and Ulster kingdoms — with a silver cross acknowledging the county\'s deep Christian heritage. Fermanagh\'s lake-studded landscape (the "Lakeland County") was home to important early Christian monasteries, most notably on the island of Devenish in Lough Erne, where a perfectly preserved 12th-century round tower still stands.',
+          'This county\'s flag combines the Red Hand of Ulster — symbol of the ancient O\'Neill and Ulster kingdoms — with a silver cross acknowledging the county\'s deep Christian heritage. This county\'s lake-studded landscape (the "Lakeland County") was home to important early Christian monasteries, most notably on the island of Devenish in Lough Erne, where a perfectly preserved 12th-century round tower still stands.',
     ),
     'LDY': UkCountyClueData(
       country: 'Northern Ireland',
