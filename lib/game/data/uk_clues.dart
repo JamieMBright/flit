@@ -412,7 +412,7 @@ abstract class UkClues {
       footballTeam: 'Blackburn Rovers, Preston North End',
       nickname: 'The Red Rose County',
       flag:
-          'The red rose of Lancashire is the emblem of the House of Lancaster, the royal dynasty that produced Henry IV, V and VI. After the Wars of the Roses, the red rose became firmly associated with Lancashire\'s fierce county pride. The gold field derives from the arms of the Duchy of Lancaster, which remains a personal possession of the Crown to this day.',
+          'The red rose of this county is the emblem of the House of Lancaster, the royal dynasty that produced Henry IV, V and VI. After the Wars of the Roses, the red rose became firmly associated with this county\'s fierce county pride. The gold field derives from the arms of the Duchy of Lancaster, which remains a personal possession of the Crown to this day.',
     ),
     // CHS renamed to CHE (Cheshire)
     'CHE': UkCountyClueData(
@@ -422,7 +422,7 @@ abstract class UkClues {
       footballTeam: 'Chester FC',
       nickname: 'The County Palatine',
       flag:
-          'The three golden wheatsheaves of Cheshire derive from the arms of the ancient Earldom of Chester, one of England\'s most powerful palatine earldoms. The sword represents the county\'s status as a County Palatine — a jurisdiction where the Earl exercised powers equivalent to the King, including his own courts, mint and army. The earldom was merged with the Crown in 1254.',
+          'The three golden wheatsheaves of this county derive from the arms of the ancient Earldom of Chester, one of England\'s most powerful palatine earldoms. The sword represents the county\'s status as a County Palatine — a jurisdiction where the Earl exercised powers equivalent to the King, including his own courts, mint and army. The earldom was merged with the Crown in 1254.',
     ),
     'DUR': UkCountyClueData(
       country: 'England',
@@ -431,7 +431,7 @@ abstract class UkClues {
       footballTeam: 'Darlington FC',
       nickname: 'Land of the Prince Bishops',
       flag:
-          'Durham\'s flag honours the Prince Bishops of Durham, who wielded royal power within the county palatine from the Norman Conquest until 1836. The gold cross on blue derives from the arms of the Bishopric — the lions represent the power vested in the bishops by the Crown to defend the northern frontier against Scottish invasion. Durham Cathedral, built to house St Cuthbert\'s relics, was the seat of this unique ecclesiastical state.',
+          'This county\'s flag honours the Prince Bishops of Durham, who wielded royal power within the county palatine from the Norman Conquest until 1836. The gold cross on blue derives from the arms of the Bishopric — the lions represent the power vested in the bishops by the Crown to defend the northern frontier against Scottish invasion. The cathedral here, built to house St Cuthbert\'s relics, was the seat of this unique ecclesiastical state.',
     ),
     // CUM renamed to CMA (Cumbria)
     'CMA': UkCountyClueData(
@@ -441,7 +441,7 @@ abstract class UkClues {
       footballTeam: 'Carlisle United',
       nickname: 'The Lake District',
       flag:
-          'Cumbria\'s flag combines elements from its constituent historic counties — Cumberland and Westmorland — which merged in 1974. The gold fleece reflects the county\'s ancient wool trade from Herdwick sheep, bred on the fells since Viking settlement. The colours of green, blue and gold represent the lake, fell and pastoral landscape that Wordsworth immortalised as the English sublime.',
+          'This county\'s flag combines elements from its constituent historic counties — Cumberland and Westmorland — which merged in 1974. The gold fleece reflects the county\'s ancient wool trade from Herdwick sheep, bred on the fells since Viking settlement. The colours of green, blue and gold represent the lake, fell and pastoral landscape that Wordsworth immortalised as the English sublime.',
     ),
     'NBL': UkCountyClueData(
       country: 'England',
@@ -450,7 +450,7 @@ abstract class UkClues {
       footballTeam: 'Newcastle United',
       nickname: 'The Far North',
       flag:
-          'Northumberland\'s arms draw on the ancient heraldry of the Earldom of Northumberland, one of the most turbulent titles in English history. The red and gold quartering echoes the Percy family arms — Earls of Northumberland since the 14th century — whose power rivalled the Crown and whose rebellion against Henry IV inspired Shakespeare\'s Henry IV plays. The blue and white chequered canton derives from the ancient Kingdom of Northumbria.',
+          'This county\'s arms draw on the ancient heraldry of the Earldom of Northumberland, one of the most turbulent titles in English history. The red and gold quartering echoes the Percy family arms — Earls of Northumberland since the 14th century — whose power rivalled the Crown and whose rebellion against Henry IV inspired Shakespeare\'s Henry IV plays. The blue and white chequered canton derives from the ancient Kingdom of Northumbria.',
     ),
     'NYK': UkCountyClueData(
       country: 'England',
@@ -459,7 +459,7 @@ abstract class UkClues {
       footballTeam: 'Harrogate Town, York City',
       nickname: 'God\'s Own County',
       flag:
-          'North Yorkshire carries the white rose of the House of York on blue — the same emblem shared across all Yorkshire ridings. As England\'s largest county, North Yorkshire encompasses the great medieval landscapes of the Yorkshire Dales and North York Moors, and the historic city of York itself, the former Roman capital of Britannia and seat of the Archbishop whose power historically rivalled Canterbury.',
+          'This county carries the white rose of the House of York on blue — the same emblem shared across all Yorkshire ridings. As England\'s largest county, it encompasses the great medieval landscapes of the Yorkshire Dales and North York Moors, and the historic city of York itself, the former Roman capital of Britannia and seat of the Archbishop whose power historically rivalled Canterbury.',
     ),
     'ERY': UkCountyClueData(
       country: 'England',
@@ -468,7 +468,7 @@ abstract class UkClues {
       footballTeam: 'Hull City',
       nickname: 'The Wolds',
       flag:
-          'The East Riding of Yorkshire carries the white rose of York, shared across all three Yorkshire ridings as a mark of common identity. The wavy band represents the Humber estuary — one of Britain\'s great river mouths — which made Kingston upon Hull a prosperous medieval port and the gateway through which Scandinavian culture and trade flowed into England.',
+          'This county carries the white rose of York, shared across all three Yorkshire ridings as a mark of common identity. The wavy band represents the Humber estuary — one of Britain\'s great river mouths — which made Kingston upon Hull a prosperous medieval port and the gateway through which Scandinavian culture and trade flowed into England.',
     ),
 
     // =========================================================================
@@ -499,7 +499,7 @@ abstract class UkClues {
       footballTeam: 'Dunfermline Athletic',
       nickname: 'The Kingdom of Fife',
       flag:
-          'The Kingdom of Fife — as it has been known since at least the 12th century — carries the red lion rampant on gold, derived from the arms of the ancient MacDuff Earls of Fife. The MacDuffs held one of the seven earldoms of Scotland and had the sacred privilege of crowning the Scottish King at Scone. The chequered border echoes the tressure found on the Royal Standard of Scotland.',
+          'The Kingdom of Fife — as this region has been known since at least the 12th century — carries the red lion rampant on gold, derived from the arms of the ancient MacDuff Earls of Fife. The MacDuffs held one of the seven earldoms of Scotland and had the sacred privilege of crowning the Scottish King at Scone. The chequered border echoes the tressure found on the Royal Standard of Scotland.',
     ),
     'HLD': UkCountyClueData(
       country: 'Scotland',
@@ -517,7 +517,7 @@ abstract class UkClues {
       footballTeam: 'Aberdeen FC',
       nickname: 'The Granite City',
       flag:
-          'Aberdeenshire\'s three silver towers on blue derive from the ancient arms of the region, representing the great castles that once controlled the Grampian routes. The county was home to more castles per square mile than almost anywhere in Europe, reflecting its importance as a buffer zone between the Lowland kingdoms and the Highland clans. Balmoral, the royal residence chosen by Queen Victoria, lies here.',
+          'This county\'s three silver towers on blue derive from the ancient arms of the region, representing the great castles that once controlled the Grampian routes. The county was home to more castles per square mile than almost anywhere in Europe, reflecting its importance as a buffer zone between the Lowland kingdoms and the Highland clans. Balmoral, the royal residence chosen by Queen Victoria, lies here.',
     ),
     'ABE': UkCountyClueData(
       country: 'Scotland',
@@ -535,7 +535,7 @@ abstract class UkClues {
       footballTeam: 'Ayr United, Kilmarnock',
       nickname: 'Burns Country',
       flag:
-          'The heart on Ayrshire\'s flag is the Bleeding Heart of Douglas — emblem of the powerful Black Douglas family, who were the dominant lords of this region in the 14th and 15th centuries. The Good Sir James Douglas carried the embalmed heart of Robert the Bruce on crusade in 1330, and the heart symbol has defined Douglas heraldry ever since, passing into the wider identity of Ayrshire.',
+          'The heart on this county\'s flag is the Bleeding Heart of Douglas — emblem of the powerful Black Douglas family, who were the dominant lords of this region in the 14th and 15th centuries. The Good Sir James Douglas carried the embalmed heart of Robert the Bruce on crusade in 1330, and the heart symbol has defined Douglas heraldry ever since, passing into the wider identity of this county.',
     ),
     'DGY': UkCountyClueData(
       country: 'Scotland',
@@ -563,7 +563,7 @@ abstract class UkClues {
       footballTeam: 'Arbroath FC, Forfar Athletic',
       nickname: 'The Land o\' the Angus Glens',
       flag:
-          'The white lion passant (walking) of Angus derives from the arms of the ancient earldom, one of the seven great earldoms of Scotland. Glamis Castle, within Angus, was the childhood home of Queen Elizabeth The Queen Mother and the legendary setting of Macbeth. The lion passant distinguishes Angus\'s arms from the rampant lion of Scotland, reflecting the earldom\'s subordinate but prestigious status.',
+          'The white lion passant (walking) of this county derives from the arms of the ancient earldom, one of the seven great earldoms of Scotland. Glamis Castle, within this county, was the childhood home of Queen Elizabeth The Queen Mother and the legendary setting of Macbeth. The lion passant distinguishes this county\'s arms from the rampant lion of Scotland, reflecting the earldom\'s subordinate but prestigious status.',
     ),
     'ARG': UkCountyClueData(
       country: 'Scotland',
@@ -572,7 +572,7 @@ abstract class UkClues {
       footballTeam: 'Oban Saints',
       nickname: 'The Gateway to the Isles',
       flag:
-          'The lymphad (a single-masted Highland galley) is the heraldic emblem of Clan Campbell, Dukes of Argyll — one of the most powerful families in Scottish history. Their control of Argyll\'s sea-lanes and island chains gave them dominance over western Scotland for centuries. The galley itself symbolises the Gaelic-Norse seafaring culture that shaped the Hebridean and west coast identity for a thousand years.',
+          'The lymphad (a single-masted Highland galley) is the heraldic emblem of Clan Campbell, Dukes of Argyll — one of the most powerful families in Scottish history. Their control of this county\'s sea-lanes and island chains gave them dominance over western Scotland for centuries. The galley itself symbolises the Gaelic-Norse seafaring culture that shaped the Hebridean and west coast identity for a thousand years.',
     ),
     'CLK': UkCountyClueData(
       country: 'Scotland',
@@ -581,7 +581,7 @@ abstract class UkClues {
       footballTeam: 'Alloa Athletic',
       nickname: 'The Wee County',
       flag:
-          'Clackmannanshire\'s oak tree on gold derives from an ancient legend: the stone and mannan (a Pictish word possibly meaning "rock" or relating to a local deity) gave the county its name, and the oak has been its symbol since heraldic records begin. The black saltire reflects the county\'s identity within the Scottish kingdom. As Scotland\'s smallest county it punches above its weight in historical associations with the Wars of Independence.',
+          'This county\'s oak tree on gold derives from an ancient legend: the stone and mannan (a Pictish word possibly meaning "rock" or relating to a local deity) gave the county its name, and the oak has been its symbol since heraldic records begin. The black saltire reflects the county\'s identity within the Scottish kingdom. As Scotland\'s smallest county it punches above its weight in historical associations with the Wars of Independence.',
     ),
     'DND': UkCountyClueData(
       country: 'Scotland',
@@ -608,7 +608,7 @@ abstract class UkClues {
       footballTeam: 'Stornoway United',
       nickname: 'The Western Isles',
       flag:
-          'Na h-Eileanan Siar\'s flag combines the Norse longship — reflecting the Viking kingdom of the Isles (Suðreyjar) that controlled the Hebrides from the 9th to 13th centuries — with the herring, the silver harvest that sustained island communities for generations. The Western Isles were finally ceded by Norway to Scotland only in 1266, and Norse language and place names still echo across the islands.',
+          'This region\'s flag combines the Norse longship — reflecting the Viking kingdom of the Isles (Suðreyjar) that controlled the Hebrides from the 9th to 13th centuries — with the herring, the silver harvest that sustained island communities for generations. The Western Isles were finally ceded by Norway to Scotland only in 1266, and Norse language and place names still echo across the islands.',
     ),
     'ELN': UkCountyClueData(
       country: 'Scotland',
@@ -617,7 +617,7 @@ abstract class UkClues {
       footballTeam: 'Dunbar United',
       nickname: 'Scotland\'s Golf Coast',
       flag:
-          'East Lothian\'s white goat derives from the county\'s ancient arms, representing the hardy livestock that have grazed these fertile coastal farmlands since antiquity. The county was historically one of the most productive in Scotland — the breadbasket of Edinburgh. Haddington, the county town, was a royal burgh and birthplace of John Knox, founder of the Scottish Reformation.',
+          'This county\'s white goat derives from the county\'s ancient arms, representing the hardy livestock that have grazed these fertile coastal farmlands since antiquity. The county was historically one of the most productive in Scotland — the breadbasket of Edinburgh. Haddington, the county town, was a royal burgh and birthplace of John Knox, founder of the Scottish Reformation.',
     ),
     'ERW': UkCountyClueData(
       country: 'Scotland',
@@ -635,7 +635,7 @@ abstract class UkClues {
       footballTeam: 'Falkirk FC',
       nickname: 'The Bairns\' Town',
       flag:
-          'Falkirk\'s stag represents the ancient burgh\'s arms, symbolising the great Caledonian Forest and the hunting grounds of Scottish kings in this central belt region. The Forth bridge references the county\'s role as the crossing point between the Lowlands and the North. Falkirk itself was the site of two significant battles — in 1298 (Wallace\'s defeat by Edward I) and 1746 (the last Jacobite victory on Scottish soil).',
+          'This area\'s stag represents the ancient burgh\'s arms, symbolising the great Caledonian Forest and the hunting grounds of Scottish kings in this central belt region. The Forth bridge references the county\'s role as the crossing point between the Lowlands and the North. The main town was the site of two significant battles — in 1298 (Wallace\'s defeat by Edward I) and 1746 (the last Jacobite victory on Scottish soil).',
     ),
     'INV': UkCountyClueData(
       country: 'Scotland',
@@ -653,7 +653,7 @@ abstract class UkClues {
       footballTeam: 'Bonnyrigg Rose Athletic',
       nickname: 'The Heart of Midlothian',
       flag:
-          'Midlothian\'s castle and stars derive from the arms associated with Edinburgh\'s hinterland — the county that surrounds the capital. The castle references Edinburgh Castle itself, which defined the region\'s destiny. The name "Heart of Midlothian" — immortalised by Sir Walter Scott — refers to the old Edinburgh Tolbooth prison that once stood at the heart of the county\'s civic life.',
+          'This county\'s castle and stars derive from the arms associated with Edinburgh\'s hinterland — the county that surrounds the capital. The castle references Edinburgh Castle itself, which defined the region\'s destiny. The name "Heart of Midlothian" — immortalised by Sir Walter Scott — refers to the old Edinburgh Tolbooth prison that once stood at the heart of the county\'s civic life.',
     ),
     'MRY': UkCountyClueData(
       country: 'Scotland',
@@ -662,7 +662,7 @@ abstract class UkClues {
       footballTeam: 'Elgin City',
       nickname: 'The Malt Whisky Country',
       flag:
-          'Moray\'s castle and stars reflect the ancient Mormaerdom of Moray — one of the most powerful Celtic provinces of early Scotland — whose lords periodically challenged the kings of Scots for supremacy. The star symbols echo the Pictish stone carvings found throughout the region. The area is now most famous as the whisky-producing heartland of Scotland, home to the greatest concentration of malt whisky distilleries in the world.',
+          'This county\'s castle and stars reflect the ancient Mormaerdom of Moray — one of the most powerful Celtic provinces of early Scotland — whose lords periodically challenged the kings of Scots for supremacy. The star symbols echo the Pictish stone carvings found throughout the region. The area is now most famous as the whisky-producing heartland of Scotland, home to the greatest concentration of malt whisky distilleries in the world.',
     ),
     'NAY': UkCountyClueData(
       country: 'Scotland',
@@ -671,7 +671,7 @@ abstract class UkClues {
       footballTeam: 'Kilwinning Rangers',
       nickname: 'The Ayrshire Coast',
       flag:
-          'North Ayrshire\'s saltire and heart combine two heraldic traditions: the saltire from the arms of the old County of Ayr, connecting to St Andrew\'s cross, and the heart from the Douglas family, who dominated this coastline. The Isle of Arran, within the county, was a prehistoric and Viking stronghold, and Brodick Castle was long a seat of the Dukes of Hamilton — the premier Scottish peerage.',
+          'This county\'s saltire and heart combine two heraldic traditions: the saltire from the arms of the old County of Ayr, connecting to St Andrew\'s cross, and the heart from the Douglas family, who dominated this coastline. The Isle of Arran, within the county, was a prehistoric and Viking stronghold, and Brodick Castle was long a seat of the Dukes of Hamilton — the premier Scottish peerage.',
     ),
     'NLK': UkCountyClueData(
       country: 'Scotland',
@@ -680,7 +680,7 @@ abstract class UkClues {
       footballTeam: 'Motherwell FC, Airdrieonians',
       nickname: 'The Lanarkshire Heartland',
       flag:
-          'The double-headed eagle of North Lanarkshire derives from the arms of the Hamilton family, Dukes of Hamilton — the premier Scottish peerage and at one point possible heirs to the Scottish throne. The double-headed eagle was one of the most powerful symbols in European heraldry, borrowed from the Holy Roman Empire, and its use by the Hamiltons reflects their extraordinary status in Scottish society.',
+          'The double-headed eagle of this county derives from the arms of the Hamilton family, Dukes of Hamilton — the premier Scottish peerage and at one point possible heirs to the Scottish throne. The double-headed eagle was one of the most powerful symbols in European heraldry, borrowed from the Holy Roman Empire, and its use by the Hamiltons reflects their extraordinary status in Scottish society.',
     ),
     'ORK': UkCountyClueData(
       country: 'Scotland',
@@ -707,7 +707,7 @@ abstract class UkClues {
       footballTeam: 'St Mirren',
       nickname: 'The Buddies\' Land',
       flag:
-          'Renfrewshire\'s flag features the mitre of Paisley Abbey — one of Scotland\'s most important medieval monasteries, founded in 1163 by Walter FitzAlan, ancestor of the Royal House of Stewart. The chequered band derives from the Stewart heraldry, acknowledging that this county was the ancestral cradle of the dynasty that went on to rule Scotland, and later through James VI, all of Britain.',
+          'This county\'s flag features the mitre of Paisley Abbey — one of Scotland\'s most important medieval monasteries, founded in 1163 by Walter FitzAlan, ancestor of the Royal House of Stewart. The chequered band derives from the Stewart heraldry, acknowledging that this county was the ancestral cradle of the dynasty that went on to rule Scotland, and later through James VI, all of Britain.',
     ),
     'SAY': UkCountyClueData(
       country: 'Scotland',

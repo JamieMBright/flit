@@ -688,7 +688,7 @@ abstract class UsStateClues {
     ),
     'ND': StateClueData(
       flag:
-          'North Dakota\'s flag closely resembles the U.S. coat of arms and was adapted from the regimental banner of the First North Dakota Infantry during the 1898 Spanish-American War; the bald eagle holds an olive branch (peace) and arrows (war) while 13 stars represent the original colonies; the shield on the eagle\'s breast echoes national loyalty, reflecting North Dakota\'s strong patriotic identity when it became a state in 1889',
+          'This state\'s flag closely resembles the U.S. coat of arms and was adapted from the regimental banner of the First North Dakota Infantry during the 1898 Spanish-American War; the bald eagle holds an olive branch (peace) and arrows (war) while 13 stars represent the original colonies; the shield on the eagle\'s breast echoes national loyalty, reflecting this state\'s strong patriotic identity when it became a state in 1889',
       sportsTeams: [
         'North Dakota Fighting Hawks (NCAA Hockey)',
         'North Dakota State Bison (NCAA Football)',
@@ -709,7 +709,7 @@ abstract class UsStateClues {
     ),
     'OH': StateClueData(
       flag:
-          'Ohio boasts the only non-rectangular U.S. state flag — a burgee (swallowtail pennant) designed in 1902 by architect John Eisemann; the blue triangle represents Ohio\'s hills and valleys, the stripes symbolize roads and waterways; the white circle with red center represents the buckeye nut (Ohio\'s emblem) and echoes the "O" of Ohio, while 17 stars acknowledge Ohio as the 17th state admitted in 1803',
+          'This state boasts the only non-rectangular U.S. state flag — a burgee (swallowtail pennant) designed in 1902 by architect John Eisemann; the blue triangle represents this state\'s hills and valleys, the stripes symbolize roads and waterways; the white circle with red center represents the buckeye nut (this state\'s emblem) and echoes the shape of the letter O, while 17 stars acknowledge this state as the 17th state admitted in 1803',
       sportsTeams: [
         'Cleveland Browns (NFL)',
         'Cleveland Cavaliers (NBA)',
@@ -730,7 +730,7 @@ abstract class UsStateClues {
     ),
     'OK': StateClueData(
       flag:
-          'Oklahoma\'s flag, adopted in 1925, is a tribute to the state\'s deep Native American heritage — Oklahoma means "red people" in Choctaw; the sky blue background honors the Choctaw Nation, while the Osage war shield decorated with eagle feathers represents the warrior spirit; the peace pipe and olive branch crossing the shield symbolize the hoped-for peace between Native peoples and settlers after the tumultuous land runs of 1889',
+          'This state\'s flag, adopted in 1925, is a tribute to this state\'s deep Native American heritage — the name "Oklahoma" means "red people" in Choctaw; the sky blue background honors the Choctaw Nation, while the Osage war shield decorated with eagle feathers represents the warrior spirit; the peace pipe and olive branch crossing the shield symbolize the hoped-for peace between Native peoples and settlers after the tumultuous land runs of 1889',
       sportsTeams: [
         'Oklahoma City Thunder (NBA)',
         'Oklahoma Sooners (NCAA Football)',
@@ -751,7 +751,7 @@ abstract class UsStateClues {
     ),
     'OR': StateClueData(
       flag:
-          'Oregon is the only U.S. state with a two-sided flag — the reverse bears a beaver, the state animal, symbolizing industriousness and the vital fur trade that opened the Oregon Territory; the obverse seal depicts a covered wagon crossing the plains, a British warship fleeing an American ship (celebrating the 1846 Oregon Treaty ending joint British-U.S. occupation), and the motto "She Flies With Her Own Wings" — Oregon\'s declaration of self-reliance at statehood in 1859',
+          'This state is the only U.S. state with a two-sided flag — the reverse bears a beaver, the state animal, symbolizing industriousness and the vital fur trade that opened the Oregon Territory; the obverse seal depicts a covered wagon crossing the plains, a British warship fleeing an American ship (celebrating the 1846 Oregon Treaty ending joint British-U.S. occupation), and the motto "She Flies With Her Own Wings" — this state\'s declaration of self-reliance at statehood in 1859',
       sportsTeams: [
         'Portland Trail Blazers (NBA)',
         'Oregon Ducks (NCAA Football)',
@@ -772,7 +772,7 @@ abstract class UsStateClues {
     ),
     'PA': StateClueData(
       flag:
-          'Pennsylvania\'s coat of arms, granted in 1778 during the Revolutionary War, reflects the state\'s economic foundations: an eagle above the shield symbolizes strength, a ship represents commerce on the Delaware River, a plow honors agriculture, and three wheat sheaves recall Penn\'s granary role; two horses as supporters embody Pennsylvania\'s strength, and the bald eagle atop proclaims national pride; the Commonwealth was the second state to ratify the Constitution in 1787',
+          'This state\'s coat of arms, granted in 1778 during the Revolutionary War, reflects the state\'s economic foundations: an eagle above the shield symbolizes strength, a ship represents commerce on the Delaware River, a plow honors agriculture, and three wheat sheaves recall Penn\'s granary role; two horses as supporters embody this state\'s strength, and the bald eagle atop proclaims national pride; the Commonwealth was the second state to ratify the Constitution in 1787',
       sportsTeams: [
         'Philadelphia Eagles (NFL)',
         'Pittsburgh Steelers (NFL)',
@@ -793,7 +793,7 @@ abstract class UsStateClues {
     ),
     'RI': StateClueData(
       flag:
-          'Rhode Island\'s anchor symbol, in use since 1647, represents the state\'s maritime identity as a seafaring colony founded on Narragansett Bay; the 13 gold stars honor the original colonies and Rhode Island\'s role as the last to ratify the Constitution in 1790, having held out for stronger civil liberties protections; the single word "HOPE" reflects the Puritan virtue that guided Roger Williams\'s founding of Providence in 1636 as a haven for religious freedom',
+          'This state\'s anchor symbol, in use since 1647, represents the state\'s maritime identity as a seafaring colony founded on Narragansett Bay; the 13 gold stars honor the original colonies and this state\'s role as the last to ratify the Constitution in 1790, having held out for stronger civil liberties protections; the single word "HOPE" reflects the Puritan virtue that guided Roger Williams\'s founding of Providence in 1636 as a haven for religious freedom',
       sportsTeams: [
         'Providence Bruins (AHL Hockey)',
         'Providence College Friars (NCAA Hockey)',
@@ -814,7 +814,7 @@ abstract class UsStateClues {
     ),
     'SC': StateClueData(
       flag:
-          'The sabal palmetto tree on South Carolina\'s flag honors the Battle of Sullivan\'s Island (June 28, 1776), where a fort built of spongy palmetto logs absorbed British cannon fire, enabling a decisive American victory; the crescent is derived from the silver gorget (throat armor) worn by the colonial troops, not an Islamic symbol; the indigo-blue background reflects South Carolina\'s indigo dye industry that made the colony wealthy before cotton',
+          'The sabal palmetto tree on this state\'s flag honors the Battle of Sullivan\'s Island (June 28, 1776), where a fort built of spongy palmetto logs absorbed British cannon fire, enabling a decisive American victory; the crescent is derived from the silver gorget (throat armor) worn by the colonial troops, not an Islamic symbol; the indigo-blue background reflects this state\'s indigo dye industry that made the colony wealthy before cotton',
       sportsTeams: [
         'Carolina Panthers (NFL)',
         'South Carolina Gamecocks (NCAA Football)',
@@ -856,7 +856,7 @@ abstract class UsStateClues {
     ),
     'TN': StateClueData(
       flag:
-          'Designed in 1905, Tennessee\'s flag features three stars representing the state\'s three distinct geographical regions: East Tennessee (Appalachian highlands), Middle Tennessee (central basin), and West Tennessee (coastal plain lowlands); the blue circle binding the stars symbolizes the unity of these regions, and the narrow blue stripe at the fly edge distinguishes the flag at a distance; the red field evokes Tennessee\'s passionate Volunteer spirit',
+          'Designed in 1905, this state\'s flag features three stars representing the state\'s three distinct geographical regions: East Tennessee (Appalachian highlands), Middle Tennessee (central basin), and West Tennessee (coastal plain lowlands); the blue circle binding the stars symbolizes the unity of these regions, and the narrow blue stripe at the fly edge distinguishes the flag at a distance; the red field evokes this state\'s passionate Volunteer spirit',
       sportsTeams: [
         'Tennessee Titans (NFL)',
         'Memphis Grizzlies (NBA)',
@@ -877,7 +877,7 @@ abstract class UsStateClues {
     ),
     'TX': StateClueData(
       flag:
-          'The Lone Star flag, adopted by the Republic of Texas in 1839 and retained at U.S. statehood in 1845, embodies Texas\'s unique identity as one of only two U.S. states to have previously been an independent nation; the lone star symbolizes Texas\'s struggle for independence from Mexico and pride in standing alone; blue represents loyalty, white represents purity, and red represents bravery — virtues that defined the Texas Revolution of 1836',
+          'The Lone Star flag, adopted by the Republic of Texas in 1839 and retained at U.S. statehood in 1845, embodies this state\'s unique identity as one of only two U.S. states to have previously been an independent nation; the lone star symbolizes this state\'s struggle for independence from Mexico and pride in standing alone; blue represents loyalty, white represents purity, and red represents bravery — virtues that defined the Texas Revolution of 1836',
       sportsTeams: [
         'Dallas Cowboys (NFL)',
         'Houston Texans (NFL)',
@@ -898,7 +898,7 @@ abstract class UsStateClues {
     ),
     'UT': StateClueData(
       flag:
-          'Utah\'s beehive symbol derives from the Deseret — the LDS Church\'s word for honeybee — and has represented Utah since the Mormon pioneers arrived in 1847, embodying the industrious, cooperative spirit of the settlers; the sego lily honors the plant that saved early settlers from starvation, while the American flags flanking the shield affirm Utah\'s U.S. patriotism after decades of tension over statehood, finally granted in 1896',
+          'This state\'s beehive symbol derives from the Deseret — the LDS Church\'s word for honeybee — and has represented this state since the Mormon pioneers arrived in 1847, embodying the industrious, cooperative spirit of the settlers; the sego lily honors the plant that saved early settlers from starvation, while the American flags flanking the shield affirm this state\'s U.S. patriotism after decades of tension over statehood, finally granted in 1896',
       sportsTeams: [
         'Utah Jazz (NBA)',
         'Real Salt Lake (MLS Soccer)',
@@ -919,7 +919,7 @@ abstract class UsStateClues {
     ),
     'VT': StateClueData(
       flag:
-          'Vermont\'s coat of arms, adopted at independence in 1777 — Vermont was an independent republic for 14 years before joining the Union in 1791 — features a pine tree representing the Green Mountains, a cow honoring dairy farming, and wheat sheaves symbolizing agriculture; the deer atop the shield represents Vermont\'s abundant wildlife; the motto "Freedom and Unity" reflects Vermont\'s proud history as the first state to ban slavery in its 1777 constitution',
+          'This state\'s coat of arms, adopted at independence in 1777 — this state was an independent republic for 14 years before joining the Union in 1791 — features a pine tree representing the Green Mountains, a cow honoring dairy farming, and wheat sheaves symbolizing agriculture; the deer atop the shield represents this state\'s abundant wildlife; the motto "Freedom and Unity" reflects this state\'s proud history as the first state to ban slavery in its 1777 constitution',
       sportsTeams: [
         'Vermont Lake Monsters (Minor League Baseball)',
         'Vermont Catamounts (NCAA Hockey)',
@@ -961,7 +961,7 @@ abstract class UsStateClues {
     ),
     'WA': StateClueData(
       flag:
-          'Washington is the only U.S. state named after a president, and its flag uniquely features a portrait of George Washington on a dark green field — adopted in 1923; the green background symbolizes the state\'s lush evergreen forests; the seal was designed using a portrait of Washington by Gilbert Stuart, the same artist whose 1796 portrait appears on the one-dollar bill, reinforcing Washington\'s legacy as the "Evergreen State"',
+          'This is the only U.S. state named after a president, and its flag uniquely features a portrait of George Washington on a dark green field — adopted in 1923; the green background symbolizes the state\'s lush evergreen forests; the seal was designed using a portrait of Washington by Gilbert Stuart, the same artist whose 1796 portrait appears on the one-dollar bill, reinforcing Washington\'s legacy as the "Evergreen State"',
       sportsTeams: [
         'Seattle Seahawks (NFL)',
         'Seattle Mariners (MLB)',
@@ -982,7 +982,7 @@ abstract class UsStateClues {
     ),
     'WV': StateClueData(
       flag:
-          'West Virginia\'s flag features the coat of arms adopted at statehood in 1863, when western Virginia counties broke away from Virginia to remain in the Union during the Civil War; the farmer and miner on the shield represent the state\'s agricultural and coal/mineral industries; the crossed rifles symbolize the willingness of West Virginians to defend the Union, and the motto "Montani Semper Liberi" (Mountaineers Are Always Free) proclaims the independence that justified the split from Virginia',
+          'This state\'s flag features the coat of arms adopted at statehood in 1863, when western Virginia counties broke away from Virginia to remain in the Union during the Civil War; the farmer and miner on the shield represent the state\'s agricultural and coal/mineral industries; the crossed rifles symbolize the willingness of this state\'s residents to defend the Union, and the motto "Montani Semper Liberi" (Mountaineers Are Always Free) proclaims the independence that justified the split from Virginia',
       sportsTeams: [
         'West Virginia Mountaineers (NCAA Football)',
         'West Virginia Power (Minor League Baseball)',
@@ -1003,7 +1003,7 @@ abstract class UsStateClues {
     ),
     'WI': StateClueData(
       flag:
-          'Wisconsin\'s coat of arms, placed on the flag in 1913, features a sailor and a miner supporting a shield divided into four panels representing the state\'s industries: a plow (agriculture), a pick and shovel (mining), an arm holding a hammer (manufacturing), and an anchor (commerce); the badger atop the shield gave Wisconsin its nickname — early lead miners were called "badgers" for burrowing into hillsides to live during winter; the 1848 date marks statehood',
+          'This state\'s coat of arms, placed on the flag in 1913, features a sailor and a miner supporting a shield divided into four panels representing the state\'s industries: a plow (agriculture), a pick and shovel (mining), an arm holding a hammer (manufacturing), and an anchor (commerce); the badger atop the shield gave this state its nickname — early lead miners were called "badgers" for burrowing into hillsides to live during winter; the 1848 date marks statehood',
       sportsTeams: [
         'Green Bay Packers (NFL)',
         'Milwaukee Bucks (NBA)',
@@ -1024,7 +1024,7 @@ abstract class UsStateClues {
     ),
     'WY': StateClueData(
       flag:
-          'Wyoming\'s flag, adopted in 1917, places the state seal on a bison — the American buffalo that once roamed Wyoming\'s plains in millions and remains a symbol of the West\'s wild heritage; the bison\'s branded seal echoes Wyoming\'s cattle ranching culture; blue represents the sky and mountains, white represents purity, and red the Native American peoples and the blood of pioneers; Wyoming was the first U.S. territory to grant women the right to vote, in 1869',
+          'This state\'s flag, adopted in 1917, places the state seal on a bison — the American buffalo that once roamed this state\'s plains in millions and remains a symbol of the West\'s wild heritage; the bison\'s branded seal echoes this state\'s cattle ranching culture; blue represents the sky and mountains, white represents purity, and red the Native American peoples and the blood of pioneers; this state was the first U.S. territory to grant women the right to vote, in 1869',
       sportsTeams: [
         'Wyoming Cowboys (NCAA Football)',
         'Wyoming Cowgirls (NCAA Basketball)',
