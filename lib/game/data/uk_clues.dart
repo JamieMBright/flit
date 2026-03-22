@@ -965,7 +965,7 @@ abstract class UkClues {
       footballTeam: 'Barry Town United',
       nickname: 'Garden of Wales',
       flag:
-          'Vale of Glamorgan\'s green and gold with a rose reflects the county\'s identity as the fertile "Garden of Glamorgan" — the most productive agricultural land in Wales, contrasting sharply with the coal valleys to its north. The rose is a symbol of the pastoral beauty and gentle landscape of the Vale, while the gold references the rich farmland that has been continuously cultivated since prehistoric times.',
+          'This county\'s green and gold with a rose reflects its identity as the fertile garden of the region — the most productive agricultural land in Wales, contrasting sharply with the coal valleys to its north. The rose is a symbol of the pastoral beauty and gentle landscape of the Vale, while the gold references the rich farmland that has been continuously cultivated since prehistoric times.',
     ),
 
     // =========================================================================
@@ -978,7 +978,7 @@ abstract class UkClues {
       footballTeam: 'Glentoran, Cliftonville, Linfield',
       nickname: 'The Glens',
       flag:
-          'County Antrim\'s flag features the Red Hand of Ulster — one of Ireland\'s most ancient heraldic symbols, associated with the O\'Neill dynasty and the ancient kingdom of Ulster. Legend holds the hand was severed by a king who threw it ashore to win a boat race. The castle derives from the arms of the O\'Neill lords who controlled northeast Ireland, and references the fortifications built to defend this coastline against Viking and Scottish raids.',
+          'This county\'s flag features the Red Hand of Ulster — one of Ireland\'s most ancient heraldic symbols, associated with the O\'Neill dynasty and the ancient kingdom of Ulster. Legend holds the hand was severed by a king who threw it ashore to win a boat race. The castle derives from the arms of the O\'Neill lords who controlled northeast Ireland, and references the fortifications built to defend this coastline against Viking and Scottish raids.',
     ),
     'ARM': UkCountyClueData(
       country: 'Northern Ireland',
@@ -987,7 +987,7 @@ abstract class UkClues {
       footballTeam: 'Armagh City FC',
       nickname: 'The Orchard County',
       flag:
-          'Armagh\'s flag bears the Red Hand of Ulster on a gold shield — the emblem of the ancient Kingdom of Ulster and its ruling O\'Neill dynasty. Armagh is considered the ecclesiastical capital of Ireland: St Patrick founded his church here in 445 AD, and both the Roman Catholic and Church of Ireland primates have their cathedrals in this small city, making it Ireland\'s most sacred ground.',
+          'This county\'s flag bears the Red Hand of Ulster on a gold shield — the emblem of the ancient Kingdom of Ulster and its ruling O\'Neill dynasty. The county town is considered the ecclesiastical capital of Ireland: St Patrick founded his church here in 445 AD, and both the Roman Catholic and Church of Ireland primates have their cathedrals in this small city, making it Ireland\'s most sacred ground.',
     ),
     'DOW': UkCountyClueData(
       country: 'Northern Ireland',
@@ -996,7 +996,7 @@ abstract class UkClues {
       footballTeam: 'Glenavon FC',
       nickname: 'The Mournes',
       flag:
-          'County Down\'s ship and fish reflect its maritime identity along the Irish Sea coast and Strangford Lough. The ship references Down\'s importance as a landing point from Scotland and Britain, while the fish represent the rich waters of Strangford Lough — one of Ireland\'s most important marine habitats. St Patrick is traditionally held to have landed in County Down and to be buried at Downpatrick Cathedral.',
+          'This county\'s ship and fish reflect its maritime identity along the Irish Sea coast and Strangford Lough. The ship references the county\'s importance as a landing point from Scotland and Britain, while the fish represent the rich waters of Strangford Lough — one of Ireland\'s most important marine habitats. St Patrick is traditionally held to have landed here and to be buried at Downpatrick Cathedral.',
     ),
     'FER': UkCountyClueData(
       country: 'Northern Ireland',
@@ -1014,7 +1014,7 @@ abstract class UkClues {
       footballTeam: 'Derry City FC',
       nickname: 'The Maiden City',
       flag:
-          'Derry\'s flag features a castle with a skeleton in the tower — a uniquely macabre heraldic device based on the city\'s coat of arms. The skeleton represents a figure from the city\'s founding legend associated with the O\'Cahans, who possessed the land before the Plantation of Ulster. The red cross on white connects to the English St George\'s Cross, acknowledging the Plantation settlers who built the city\'s famous walls in 1613–1619.',
+          'This city\'s flag features a castle with a skeleton in the tower — a uniquely macabre heraldic device based on the city\'s coat of arms. The skeleton represents a figure from the city\'s founding legend associated with the O\'Cahans, who possessed the land before the Plantation of Ulster. The red cross on white connects to the English St George\'s Cross, acknowledging the Plantation settlers who built the city\'s famous walls in 1613–1619.',
     ),
     'TYR': UkCountyClueData(
       country: 'Northern Ireland',
@@ -1023,7 +1023,7 @@ abstract class UkClues {
       footballTeam: 'Dungannon Swifts',
       nickname: 'O\'Neill Country',
       flag:
-          'Tyrone — O\'Neill Country — carries the Red Hand of Ulster on gold, directly from the arms of the O\'Neill dynasty, the most powerful Gaelic Irish family in Ulster. The O\'Neills were High Kings of Ulster for centuries and the leading figures in the Nine Years\' War (1593–1603) — the last great Gaelic Irish resistance to English conquest. Hugh O\'Neill, the Great O\'Neill, almost drove the English from Ireland before his defeat at Kinsale in 1601.',
+          'This county — O\'Neill Country — carries the Red Hand of Ulster on gold, directly from the arms of the O\'Neill dynasty, the most powerful Gaelic Irish family in Ulster. The O\'Neills were High Kings of Ulster for centuries and the leading figures in the Nine Years\' War (1593–1603) — the last great Gaelic Irish resistance to English conquest. Hugh O\'Neill, the Great O\'Neill, almost drove the English from Ireland before his defeat at Kinsale in 1601.',
     ),
   };
 }
