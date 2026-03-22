@@ -884,7 +884,7 @@ abstract class UkClues {
       footballTeam: 'Holyhead Hotspur',
       nickname: 'Mother of Wales',
       flag:
-          'Anglesey\'s coronet and lions reflect its title as "Mam Cymru" — Mother of Wales — the fertile island that fed mainland Wales through centuries of conflict. The coronet acknowledges the island\'s royal connections as the final stronghold of the Princes of Gwynedd; the Romans called it Mona and targeted it to destroy the druidic religion that centred on its sacred groves, massacring the druids there in 60 AD.',
+          'This island county\'s coronet and lions reflect its title as "Mam Cymru" — Mother of Wales — the fertile island that fed mainland Wales through centuries of conflict. The coronet acknowledges the island\'s royal connections as the final stronghold of the Princes of Gwynedd; the Romans called it Mona and targeted it to destroy the druidic religion that centred on its sacred groves, massacring the druids there in 60 AD.',
     ),
     'BGE': UkCountyClueData(
       country: 'Wales',
@@ -893,7 +893,7 @@ abstract class UkClues {
       footballTeam: 'Bridgend Town',
       nickname: 'Gateway to the Valleys',
       flag:
-          'Bridgend\'s castle and bridge are literal representations of the town\'s name — Pen-y-bont ar Ogwr in Welsh, meaning "the head of the bridge on the Ogmore." The castle refers to Newcastle, the Norman fortification built to control the river crossing. The blue field derives from the heraldic tradition of the county borough, representing the rivers that flow through this industrial and agricultural borderland between the coalfield valleys and the Glamorgan coast.',
+          'This county\'s castle and bridge are literal representations of the town\'s name — Pen-y-bont ar Ogwr in Welsh, meaning "the head of the bridge on the Ogmore." The castle refers to Newcastle, the Norman fortification built to control the river crossing. The blue field derives from the heraldic tradition of the county borough, representing the rivers that flow through this industrial and agricultural borderland between the coalfield valleys and the Glamorgan coast.',
     ),
     'BGW': UkCountyClueData(
       country: 'Wales',
@@ -902,7 +902,7 @@ abstract class UkClues {
       footballTeam: 'Ebbw Vale',
       nickname: 'Valleys Gateway',
       flag:
-          'Blaenau Gwent\'s green and white colours represent the landscape of the South Wales valleys before and after industrialisation. The mining symbol honours the iron and coal industries that once defined this region — Ebbw Vale was home to one of the largest steelworks in Britain. The county is named after Aneurin Bevan\'s parliamentary constituency; Bevan, born in Tredegar nearby, created the NHS in 1948 — one of the most significant social achievements of the 20th century.',
+          'This county\'s green and white colours represent the landscape of the South Wales valleys before and after industrialisation. The mining symbol honours the iron and coal industries that once defined this region — Ebbw Vale was home to one of the largest steelworks in Britain. The county is named after Aneurin Bevan\'s parliamentary constituency; Bevan, born in Tredegar nearby, created the NHS in 1948 — one of the most significant social achievements of the 20th century.',
     ),
     'CWY': UkCountyClueData(
       country: 'Wales',
@@ -911,7 +911,7 @@ abstract class UkClues {
       footballTeam: 'Conwy Borough',
       nickname: 'Land of Castles',
       flag:
-          'Conwy\'s red eagle on gold derives from the arms of the ancient Welsh princes and the powerful de Lacey family who held the region after the Norman conquest. Conwy Castle, built by Edward I between 1283 and 1289, is one of the finest examples of medieval military architecture in Europe. The county takes its name from the River Conwy, the ancient boundary between the kingdoms of Gwynedd and Gwynedd\'s eastern neighbours.',
+          'This county\'s red eagle on gold derives from the arms of the ancient Welsh princes and the powerful de Lacey family who held the region after the Norman conquest. The great castle here, built by Edward I between 1283 and 1289, is one of the finest examples of medieval military architecture in Europe. The county takes its name from the river that forms its boundary — the ancient dividing line between the kingdoms of Gwynedd and Gwynedd\'s eastern neighbours.',
     ),
     'DEN': UkCountyClueData(
       country: 'Wales',
@@ -920,7 +920,7 @@ abstract class UkClues {
       footballTeam: 'Rhyl',
       nickname: 'Heart of the Vale',
       flag:
-          'Denbighshire\'s red and gold stripes with a black lion derive from the arms of the ancient Lordship of Denbigh, granted to Henry de Lacy, Earl of Lincoln, after Edward I\'s conquest of Wales in 1282. The black lion was a de Lacy heraldic charge. This borderland county was historically a contested zone between English lordships and the residual power of the Welsh gentry who clung to their language and traditions.',
+          'This county\'s red and gold stripes with a black lion derive from the arms of the ancient local lordship, granted to Henry de Lacy, Earl of Lincoln, after Edward I\'s conquest of Wales in 1282. The black lion was a de Lacy heraldic charge. This borderland county was historically a contested zone between English lordships and the residual power of the Welsh gentry who clung to their language and traditions.',
     ),
     'MON': UkCountyClueData(
       country: 'Wales',
@@ -929,7 +929,7 @@ abstract class UkClues {
       footballTeam: 'Monmouth Town',
       nickname: 'Gateway to Wales',
       flag:
-          'Monmouthshire\'s three chevrons on gold derive from the arms of the Clare family — Earls of Gloucester and Hertford — who controlled the county from their headquarters at Chepstow Castle after the Norman conquest. The chevron (roof-like shape) is one of the most ancient heraldic charges. Monmouthshire\'s ambiguous status between England and Wales — it was legally treated as English from Henry VIII until 1974 — is embodied in its Norman-English heraldry sitting on the Welsh border.',
+          'This county\'s three chevrons on gold derive from the arms of the Clare family — Earls of Gloucester and Hertford — who controlled the county from their headquarters at Chepstow Castle after the Norman conquest. The chevron (roof-like shape) is one of the most ancient heraldic charges. This county\'s ambiguous status between England and Wales — it was legally treated as English from Henry VIII until 1974 — is embodied in its Norman-English heraldry sitting on the Welsh border.',
     ),
     'MTY': UkCountyClueData(
       country: 'Wales',
@@ -938,7 +938,7 @@ abstract class UkClues {
       footballTeam: 'Merthyr Town',
       nickname: 'Iron Capital of the World',
       flag:
-          'Merthyr Tydfil\'s crown on red acknowledges the town\'s extraordinary industrial importance — Merthyr was the largest iron-producing centre in the world in the early 19th century, making it briefly the most important industrial town on earth. The crown is a symbol of this civic pride and the Welsh royal heritage associated with the name Tydfil, a 5th-century Celtic saint who was martyred here and around whom the settlement grew.',
+          'This county\'s crown on red acknowledges the town\'s extraordinary industrial importance — the town was the largest iron-producing centre in the world in the early 19th century, making it briefly the most important industrial town on earth. The crown is a symbol of this civic pride and the Welsh royal heritage associated with the name Tydfil, a 5th-century Celtic saint who was martyred here and around whom the settlement grew.',
     ),
     'NPT': UkCountyClueData(
       country: 'Wales',
@@ -947,7 +947,7 @@ abstract class UkClues {
       footballTeam: 'Port Talbot Town',
       nickname: 'Steel Town',
       flag:
-          'Neath Port Talbot\'s blue and gold colours derive from the heraldic traditions of the borough of Neath (Castell-nedd) and reference the industrial heritage of the Swansea Bay hinterland. The area was the global centre of copper smelting in the 18th and 19th centuries, and later steel. The industrial symbols honour a community shaped by metal working from the Roman occupation — when Neath had a Roman fort — to the age of heavy industry.',
+          'This county\'s blue and gold colours derive from the heraldic traditions of the principal borough here (Castell-nedd) and reference the industrial heritage of the Swansea Bay hinterland. The area was the global centre of copper smelting in the 18th and 19th centuries, and later steel. The industrial symbols honour a community shaped by metal working from the Roman occupation — when the town had a Roman fort — to the age of heavy industry.',
     ),
     'TOF': UkCountyClueData(
       country: 'Wales',
@@ -956,7 +956,7 @@ abstract class UkClues {
       footballTeam: 'Cwmbran Celtic',
       nickname: 'Land of the Torrent',
       flag:
-          'Torfaen\'s torch on green represents enlightenment and the industrial knowledge that transformed this valley — Blaenavon, within Torfaen, was a UNESCO World Heritage Site for its remarkably preserved ironworks and mining landscape. The green reflects the natural environment of the Afon Lwyd valley reclaimed after the industrial era. The name Torfaen means "stone gap" in Welsh, referencing the dramatic valley geology.',
+          'This county\'s torch on green represents enlightenment and the industrial knowledge that transformed this valley — Blaenavon, within this county, was a UNESCO World Heritage Site for its remarkably preserved ironworks and mining landscape. The green reflects the natural environment of the Afon Lwyd valley reclaimed after the industrial era. The county name means "stone gap" in Welsh, referencing the dramatic valley geology.',
     ),
     'VGL': UkCountyClueData(
       country: 'Wales',
