@@ -31,7 +31,7 @@ abstract class UkClues {
       footballTeam: 'Arsenal, Chelsea, Tottenham',
       nickname: 'The Big Smoke',
       flag:
-          'The flag of the City of London bears the cross of St George, patron saint of England, with the sword of St Paul in the upper hoist — a tribute to the city\'s patron saint and the apostle martyred by beheading, whose symbol has appeared on London\'s arms since the medieval period.',
+          'The flag of this city bears the cross of St George, patron saint of England, with the sword of St Paul in the upper hoist — a tribute to the city\'s patron saint and the apostle martyred by beheading, whose symbol has appeared on the city\'s arms since the medieval period.',
     ),
     'WMD': UkCountyClueData(
       country: 'England',
@@ -98,7 +98,7 @@ abstract class UkClues {
       footballTeam: 'Gillingham FC',
       nickname: 'The Garden of England',
       flag:
-          'The white horse of Kent (the Invicta horse) is one of England\'s oldest county symbols, appearing in arms since at least the 14th century. It likely derives from the Saxon kingdom of Kent, whose legendary founders Hengist and Horsa bore horse names, and whose battle standard was said to carry this symbol when they first conquered the land.',
+          'The white horse (the Invicta horse) is one of England\'s oldest county symbols, appearing in arms since at least the 14th century. It likely derives from the Saxon kingdom that once occupied this land, whose legendary founders Hengist and Horsa bore horse names, and whose battle standard was said to carry this symbol when they first conquered the land.',
     ),
     'ESS': UkCountyClueData(
       country: 'England',
@@ -107,7 +107,7 @@ abstract class UkClues {
       footballTeam: 'Colchester United',
       nickname: 'The Saxon Shore',
       flag:
-          'Essex takes its name from the East Saxons, and its three seaxes (curved Saxon swords) are among the oldest heraldic emblems in England. The seax was the signature weapon of the Saxon people; these blades represent the three divisions of the ancient kingdom of Essex — a symbol carried since the medieval roll of arms.',
+          'This county takes its name from the East Saxons, and its three seaxes (curved Saxon swords) are among the oldest heraldic emblems in England. The seax was the signature weapon of the Saxon people; these blades represent the three divisions of the ancient kingdom here — a symbol carried since the medieval roll of arms.',
     ),
     'HAM': UkCountyClueData(
       country: 'England',
@@ -125,7 +125,7 @@ abstract class UkClues {
       footballTeam: 'Crystal Palace',
       nickname: 'The Home Counties',
       flag:
-          'This county\'s gold and red chequered arms derive directly from the heraldry of the de Warenne family, Earls of Surrey — powerful Norman lords who held the county from the Conquest. The chequy pattern was their dynastic emblem, and by inheritance it became the county\'s enduring symbol after the earldom passed to the Crown.',
+          'This county\'s gold and red chequered arms derive directly from the heraldry of the de Warenne family, who were the Earls here — powerful Norman lords who held the county from the Conquest. The chequy pattern was their dynastic emblem, and by inheritance it became the county\'s enduring symbol after the earldom passed to the Crown.',
     ),
     'HRT': UkCountyClueData(
       country: 'England',
@@ -144,7 +144,7 @@ abstract class UkClues {
       footballTeam: 'Brighton & Hove Albion',
       nickname: 'The Downs',
       flag:
-          'The six golden martlets (a legless heraldic bird derived from the swift) on blue are the ancient arms of the Kingdom of Sussex, one of the original Anglo-Saxon heptarchy kingdoms. The martlet appears on the coats of arms of many Sussex families and towns, symbolising the county\'s Saxon heritage and its identity as a distinct historic nation.',
+          'The six golden martlets (a legless heraldic bird derived from the swift) on blue are the ancient arms of the Anglo-Saxon kingdom that once occupied this region, one of the original heptarchy kingdoms. The martlet appears on the coats of arms of many local families and towns, symbolising the county\'s Saxon heritage and its identity as a distinct historic nation.',
     ),
     'BRK': UkCountyClueData(
       country: 'England',
@@ -162,7 +162,7 @@ abstract class UkClues {
       footballTeam: 'Crawley Town',
       nickname: 'The South Downs',
       flag:
-          'West Sussex shares the six golden martlets of the ancient Kingdom of Sussex with its eastern neighbour, a common Saxon heritage predating the modern administrative split. The crown distinguishes West Sussex and honours Arundel Castle, ancestral seat of the Dukes of Norfolk — the highest-ranking dukedom in England and the foremost Catholic noble family.',
+          'This county shares the six golden martlets of the ancient Anglo-Saxon kingdom with its eastern neighbour, a common Saxon heritage predating the modern administrative split. The crown distinguishes this county and honours Arundel Castle, ancestral seat of the Dukes of Norfolk — the highest-ranking dukedom in England and the foremost Catholic noble family.',
     ),
     'IOW': UkCountyClueData(
       country: 'England',
@@ -171,7 +171,7 @@ abstract class UkClues {
       footballTeam: 'Newport IOW FC',
       nickname: 'The Island',
       flag:
-          'The Isle of Wight\'s flag reflects its ancient status as a semi-independent entity. The island was for centuries the seat of the Lords of the Isle — a title held by Norman lords and later English nobility — giving it a distinct identity apart from the mainland. The gold outline of the island itself is a rare heraldic device emphasising its island nature.',
+          'This island county\'s flag reflects its ancient status as a semi-independent entity. The island was for centuries the seat of the Lords of the Isle — a title held by Norman lords and later English nobility — giving it a distinct identity apart from the mainland. The gold outline of the island itself is a rare heraldic device emphasising its island nature.',
     ),
 
     // =========================================================================
@@ -184,7 +184,7 @@ abstract class UkClues {
       footballTeam: 'Norwich City',
       nickname: 'The Broads',
       flag:
-          'This county\'s black and white bicolour derives from the arms of the de Ufford family and later the Mowbray Dukes of Norfolk, whose heraldic colours of sable (black) and argent (white/silver) became associated with the county. These colours also echo the distinctive black-and-white flint-knapped buildings that characterise this county\'s vernacular architecture.',
+          'This county\'s black and white bicolour derives from the arms of the de Ufford family and later the Mowbray dukes who held this earldom, whose heraldic colours of sable (black) and argent (white/silver) became associated with the county. These colours also echo the distinctive black-and-white flint-knapped buildings that characterise this county\'s vernacular architecture.',
     ),
     'SUF': UkCountyClueData(
       country: 'England',
@@ -193,7 +193,7 @@ abstract class UkClues {
       footballTeam: 'Ipswich Town',
       nickname: 'Silly Suffolk',
       flag:
-          'Suffolk\'s flag draws on the arms of the ancient Anglo-Saxon Kingdom of the East Angles, of which Suffolk was the southern half (South Folk). The crown references the saintly East Anglian king Edmund the Martyr, killed by Vikings in 869 and venerated as a king-saint, whose royal emblem long represented the region.',
+          'This county\'s flag draws on the arms of the ancient Anglo-Saxon Kingdom of the East Angles, of which this county was the southern half (South Folk). The crown references the saintly East Anglian king Edmund the Martyr, killed by Vikings in 869 and venerated as a king-saint, whose royal emblem long represented the region.',
     ),
     'CAM': UkCountyClueData(
       country: 'England',
@@ -233,7 +233,7 @@ abstract class UkClues {
       footballTeam: 'Bristol City / Bristol Rovers',
       nickname: 'City of Bridges',
       flag:
-          'Bristol\'s ship-and-castle arms originate in the city\'s medieval status as England\'s second-greatest port. The castle represents the Norman Clifton fortress built to control the Avon Gorge, while the ship embodies the Atlantic trade that made Bristol wealthy — including, controversially, its role as a central hub of the transatlantic slave trade.',
+          'This city\'s ship-and-castle arms originate in its medieval status as England\'s second-greatest port. The castle represents the Norman Clifton fortress built to control the Avon Gorge, while the ship embodies the Atlantic trade that made this city wealthy — including, controversially, its role as a central hub of the transatlantic slave trade.',
     ),
     'DEV': UkCountyClueData(
       country: 'England',
