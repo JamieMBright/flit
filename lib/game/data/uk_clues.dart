@@ -33,6 +33,15 @@ abstract class UkClues {
       flag:
           'The flag of this city bears the cross of St George, patron saint of England, with the sword of St Paul in the upper hoist — a tribute to the city\'s patron saint and the apostle martyred by beheading, whose symbol has appeared on the city\'s arms since the medieval period.',
     ),
+    'COL': UkCountyClueData(
+      country: 'England',
+      famousPerson: 'Samuel Pepys',
+      famousLandmark: 'St Paul\'s Cathedral',
+      footballTeam: 'No professional football team',
+      nickname: 'The Square Mile',
+      flag:
+          'The flag of the City of London bears the cross of St George with the red sword of St Paul in the upper hoist canton. The sword commemorates the martyrdom of St Paul, the city\'s patron saint, who was beheaded. The City has maintained its own unique governance since medieval times, with a Lord Mayor, its own police force, and a Commission of Lieutenancy rather than a single Lord-Lieutenant.',
+    ),
     'WMD': UkCountyClueData(
       country: 'England',
       famousPerson: 'Ozzy Osbourne',

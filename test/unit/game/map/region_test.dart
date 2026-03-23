@@ -96,9 +96,9 @@ void main() {
       expect(areas.length, equals(32));
     });
 
-    test('ukCounties returns exactly 107 areas', () {
+    test('ukCounties returns exactly 108 areas', () {
       final areas = RegionalData.getAreas(GameRegion.ukCounties);
-      expect(areas.length, equals(107));
+      expect(areas.length, equals(108));
     });
 
     test('canadianProvinces returns exactly 13 areas', () {
