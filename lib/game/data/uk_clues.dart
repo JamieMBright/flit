@@ -33,6 +33,15 @@ abstract class UkClues {
       flag:
           'The flag of this city bears the cross of St George, patron saint of England, with the sword of St Paul in the upper hoist — a tribute to the city\'s patron saint and the apostle martyred by beheading, whose symbol has appeared on the city\'s arms since the medieval period.',
     ),
+    'COL': UkCountyClueData(
+      country: 'England',
+      famousPerson: 'Samuel Pepys',
+      famousLandmark: 'St Paul\'s Cathedral',
+      footballTeam: 'No professional football team',
+      nickname: 'The Square Mile',
+      flag:
+          'The flag of the City of London bears the cross of St George with the red sword of St Paul in the upper hoist canton. The sword commemorates the martyrdom of St Paul, the city\'s patron saint, who was beheaded. The City has maintained its own unique governance since medieval times, with a Lord Mayor, its own police force, and a Commission of Lieutenancy rather than a single Lord-Lieutenant.',
+    ),
     'WMD': UkCountyClueData(
       country: 'England',
       famousPerson: 'Ozzy Osbourne',
@@ -234,33 +243,6 @@ abstract class UkClues {
       nickname: 'City of Bridges',
       flag:
           'This city\'s ship-and-castle arms originate in its medieval status as England\'s second-greatest port. The castle represents the Norman Clifton fortress built to control the Avon Gorge, while the ship embodies the Atlantic trade that made this city wealthy — including, controversially, its role as a central hub of the transatlantic slave trade.',
-    ),
-    'BAS': UkCountyClueData(
-      country: 'England',
-      famousPerson: 'Jane Austen',
-      famousLandmark: 'Roman Baths',
-      footballTeam: 'Bath City',
-      nickname: 'The World Heritage City',
-      flag:
-          'Bath\'s Georgian crescents and Roman heritage define this area. The Roman Baths, built around natural hot springs, are among the best-preserved Roman remains in Northern Europe. Jane Austen lived here and set two novels in the city.',
-    ),
-    'NSM': UkCountyClueData(
-      country: 'England',
-      famousPerson: 'John Cleese',
-      famousLandmark: 'Grand Pier at Weston-super-Mare',
-      footballTeam: 'Weston-super-Mare AFC',
-      nickname: 'The Gateway to the West',
-      flag:
-          'This area stretches along the Bristol Channel coast from Clevedon to Weston-super-Mare. The dramatic Mendip Hills rise to the south, while the former mining village of Nailsea and the elegant Victorian resort of Clevedon reflect its diverse character.',
-    ),
-    'SGC': UkCountyClueData(
-      country: 'England',
-      famousPerson: 'Cary Grant',
-      famousLandmark: 'Aerospace Bristol',
-      footballTeam: 'Bristol Rovers',
-      nickname: 'The Northern Fringe',
-      flag:
-          'Home to Filton Airfield where the first British-built Concorde was assembled and took its maiden flight in 1969. The area blends rural Cotswold villages with the high-tech northern fringe of Bristol, home to major aerospace and defence industries.',
     ),
     'DEV': UkCountyClueData(
       country: 'England',
@@ -496,33 +478,6 @@ abstract class UkClues {
       nickname: 'The Wolds',
       flag:
           'This county carries the white rose of York, shared across all three ridings as a mark of common identity. The wavy band represents the Humber estuary — one of Britain\'s great river mouths — which made Kingston upon Hull a prosperous medieval port and the gateway through which Scandinavian culture and trade flowed into England.',
-    ),
-    'KHL': UkCountyClueData(
-      country: 'England',
-      famousPerson: 'William Wilberforce',
-      famousLandmark: 'The Deep',
-      footballTeam: 'Hull City',
-      nickname: 'City of Culture',
-      flag:
-          'Kingston upon Hull was named by Edward I in 1299 and became one of England\'s greatest medieval ports. William Wilberforce, born here in 1759, led the campaign to abolish the slave trade. The city was UK City of Culture in 2017 and is home to The Deep, one of the world\'s most spectacular aquariums.',
-    ),
-    'NLN': UkCountyClueData(
-      country: 'England',
-      famousPerson: 'Tony Jacklin',
-      famousLandmark: 'Humber Bridge',
-      footballTeam: 'Scunthorpe United',
-      nickname: 'The Steel Country',
-      flag:
-          'This area south of the Humber was once part of the historic county of Lincolnshire. Scunthorpe became one of Britain\'s great steelmaking towns in the 19th century. The Humber Bridge, opened in 1981, was for 16 years the world\'s longest single-span suspension bridge, connecting this area to East Yorkshire.',
-    ),
-    'NEL': UkCountyClueData(
-      country: 'England',
-      famousPerson: 'Kevin Keegan',
-      famousLandmark: 'Grimsby Dock Tower',
-      footballTeam: 'Grimsby Town',
-      nickname: 'The Fishing Heritage Coast',
-      flag:
-          'Grimsby was once the largest fishing port in the world, its docks teeming with trawlers that supplied much of Britain\'s fish. The Dock Tower, modelled on Siena\'s Torre del Mangia, stands as a monument to this maritime golden age. Cleethorpes, the neighbouring seaside resort, has been a popular holiday destination since Victorian times.',
     ),
 
     // =========================================================================
