@@ -145,7 +145,7 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
         _ensurePathCache(size);
 
         return AnimatedBuilder(
-          animation: _flashController,
+          animation: Listenable.merge([_flashController, _transformController]),
           builder: (context, _) {
             return InteractiveViewer(
               transformationController: _transformController,
@@ -343,6 +343,11 @@ class _UnchartedMapPainter extends CustomPainter {
     // ── Pass 2: Outlines, markers, and ping effects ──
     // Drawn AFTER all satellite fills so unrevealed outlines are always
     // visible on top of revealed neighbours' satellite imagery.
+    //
+    // Ping effect is composited into a single path to avoid doubled
+    // semi-transparent fills/strokes at shared borders between areas.
+    Path? compositePingPath;
+
     for (final area in areas) {
       final path = pathCache[area.code];
       if (path == null) continue;
@@ -380,24 +385,30 @@ class _UnchartedMapPainter extends CustomPainter {
           _drawTinyMarker(canvas, area, transform, pingAlpha, pingRipple);
         }
 
+        // Collect non-tiny unrevealed paths for composite ping effect.
         if (hasPing && !isTiny) {
-          // Bright amber fill over the polygon.
-          canvas.drawPath(
-            path,
-            Paint()..color = Color.fromRGBO(255, 190, 80, pingAlpha * 0.55),
-          );
-          // Expanding glow stroke around the polygon edge.
-          canvas.drawPath(
-            path,
-            Paint()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = (3.0 + pingRipple * 6.0) / zoomScale
-              ..strokeJoin = StrokeJoin.round
-              ..isAntiAlias = true
-              ..color = Color.fromRGBO(255, 200, 80, pingAlpha * 0.7),
-          );
+          compositePingPath ??= Path();
+          compositePingPath!.addPath(path, Offset.zero);
         }
       }
+    }
+
+    // Draw composite ping effect once over all unrevealed areas so shared
+    // borders don't get doubled semi-transparent fills and strokes.
+    if (compositePingPath != null) {
+      canvas.drawPath(
+        compositePingPath!,
+        Paint()..color = Color.fromRGBO(255, 190, 80, pingAlpha * 0.55),
+      );
+      canvas.drawPath(
+        compositePingPath!,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = (3.0 + pingRipple * 6.0) / zoomScale
+          ..strokeJoin = StrokeJoin.round
+          ..isAntiAlias = true
+          ..color = Color.fromRGBO(255, 200, 80, pingAlpha * 0.7),
+      );
     }
 
     // ── Pass 3: Labels ──
