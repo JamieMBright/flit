@@ -97,6 +97,12 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
 
     final activeCountryName = gameRef.currentCountryName;
 
+    // Composite all country outlines into a single path before drawing so
+    // that shared borders between adjacent countries are not double-blended
+    // (the stroke is semi-transparent, so overlapping draws produce visible
+    // bright seams at every shared edge).
+    final compositePath = ui.Path();
+
     for (final country in CountryData.countries) {
       // Skip the active country — it gets the red highlight instead.
       if (country.name == activeCountryName) continue;
@@ -168,10 +174,12 @@ class CountryBorderOverlay extends Component with HasGameRef<FlitGame> {
           if (!hasOccluded) {
             path.close();
           }
-          canvas.drawPath(path, outlinePaint);
+          compositePath.addPath(path, Offset.zero);
         }
       }
     }
+
+    canvas.drawPath(compositePath, outlinePaint);
   }
 
   // -----------------------------------------------------------------------
