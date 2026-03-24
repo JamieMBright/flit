@@ -185,19 +185,6 @@ class _RegionMapPainter extends CustomPainter {
     final areas = RegionalData.getAreas(region);
     final transform = _regionTransform(size);
 
-    // Background landmass fill: draw unsmoothed composite of all areas in the
-    // idle fill color. This covers gaps between Chaikin-smoothed polygons so
-    // the dark ocean background never peeks through between counties.
-    final bgPath = Path();
-    for (final area in areas) {
-      if (eliminatedCodes.contains(area.code)) continue;
-      if (excludedCodes.contains(area.code)) continue;
-      bgPath.addPath(
-          _buildRawPath(area.points, transform, polygons: area.polygons),
-          Offset.zero);
-    }
-    canvas.drawPath(bgPath, Paint()..color = const Color(0xFF2A4A5A));
-
     // Draw fills
     for (final area in areas) {
       _drawArea(canvas, size, area, transform);
@@ -460,35 +447,6 @@ class _RegionMapPainter extends CustomPainter {
     }
   }
 
-  /// Build an unsmoothed path (no Chaikin) for background landmass fill.
-  static Path _buildRawPath(List<Vector2> points, _GeoTransform transform,
-      {List<List<Vector2>>? polygons}) {
-    final path = Path();
-    if (polygons != null && polygons.isNotEmpty) {
-      for (final ring in polygons) {
-        if (ring.isEmpty) continue;
-        if (_crossesAntimeridian(ring)) continue;
-        final first = transform.toCanvas(ring.first.x, ring.first.y);
-        path.moveTo(first.dx, first.dy);
-        for (var i = 1; i < ring.length; i++) {
-          final pt = transform.toCanvas(ring[i].x, ring[i].y);
-          path.lineTo(pt.dx, pt.dy);
-        }
-        path.close();
-      }
-      return path;
-    }
-    if (points.isEmpty) return path;
-    final first = transform.toCanvas(points.first.x, points.first.y);
-    path.moveTo(first.dx, first.dy);
-    for (var i = 1; i < points.length; i++) {
-      final pt = transform.toCanvas(points[i].x, points[i].y);
-      path.lineTo(pt.dx, pt.dy);
-    }
-    path.close();
-    return path;
-  }
-
   Path _buildPath(List<Vector2> points, _GeoTransform transform,
       {List<List<Vector2>>? polygons}) {
     final path = Path();
@@ -506,12 +464,10 @@ class _RegionMapPainter extends CustomPainter {
         for (final pt in ring) {
           canvasPoints.add(transform.toCanvas(pt.x, pt.y));
         }
-        // Apply Chaikin subdivision for smoother borders.
-        final smoothed = chaikinSmooth(canvasPoints, 2);
-        if (smoothed.isEmpty) continue;
-        path.moveTo(smoothed.first.dx, smoothed.first.dy);
-        for (var i = 1; i < smoothed.length; i++) {
-          path.lineTo(smoothed[i].dx, smoothed[i].dy);
+        if (canvasPoints.isEmpty) continue;
+        path.moveTo(canvasPoints.first.dx, canvasPoints.first.dy);
+        for (var i = 1; i < canvasPoints.length; i++) {
+          path.lineTo(canvasPoints[i].dx, canvasPoints[i].dy);
         }
         path.close();
       }
@@ -524,11 +480,9 @@ class _RegionMapPainter extends CustomPainter {
     for (final pt in points) {
       canvasPoints.add(transform.toCanvas(pt.x, pt.y));
     }
-    final smoothed = chaikinSmooth(canvasPoints, 2);
-    if (smoothed.isEmpty) return path;
-    path.moveTo(smoothed.first.dx, smoothed.first.dy);
-    for (var i = 1; i < smoothed.length; i++) {
-      path.lineTo(smoothed[i].dx, smoothed[i].dy);
+    path.moveTo(canvasPoints.first.dx, canvasPoints.first.dy);
+    for (var i = 1; i < canvasPoints.length; i++) {
+      path.lineTo(canvasPoints[i].dx, canvasPoints[i].dy);
     }
 
     path.close();
