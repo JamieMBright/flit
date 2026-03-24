@@ -304,7 +304,7 @@ class _ChallengeHeader extends StatelessWidget {
                 const Icon(Icons.map, color: FlitColors.gold, size: 14),
                 const SizedBox(width: 6),
                 Text(
-                  'Map: ${challenge.mapRegion}',
+                  'Map: Whole World',
                   style: const TextStyle(
                     color: FlitColors.gold,
                     fontSize: 11,
