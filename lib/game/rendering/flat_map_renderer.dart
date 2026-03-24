@@ -120,6 +120,11 @@ class FlatMapRenderer extends Component with HasGameRef<FlitGame> {
       ..strokeJoin = StrokeJoin.round
       ..isAntiAlias = true;
 
+    // Composite all boundary paths into a single Path before drawing so that
+    // shared borders between adjacent areas are not double-blended (the stroke
+    // is semi-transparent, so overlapping draws produce visible bright seams).
+    final compositePath = ui.Path();
+
     for (final area in areas) {
       if (area.points.length < 3) continue;
 
@@ -130,7 +135,7 @@ class FlatMapRenderer extends Component with HasGameRef<FlitGame> {
       for (final ring in rings) {
         if (ring.length < 3) continue;
 
-        final path = ui.Path();
+        final ringPath = ui.Path();
         var started = false;
 
         for (var i = 0; i < ring.length; i++) {
@@ -138,19 +143,21 @@ class FlatMapRenderer extends Component with HasGameRef<FlitGame> {
           if (screenPos.x < -500) continue;
 
           if (!started) {
-            path.moveTo(screenPos.x, screenPos.y);
+            ringPath.moveTo(screenPos.x, screenPos.y);
             started = true;
           } else {
-            path.lineTo(screenPos.x, screenPos.y);
+            ringPath.lineTo(screenPos.x, screenPos.y);
           }
         }
 
         if (started) {
-          path.close();
-          canvas.drawPath(path, borderPaint);
+          ringPath.close();
+          compositePath.addPath(ringPath, Offset.zero);
         }
       }
     }
+
+    canvas.drawPath(compositePath, borderPaint);
   }
 
   // ---------------------------------------------------------------------------

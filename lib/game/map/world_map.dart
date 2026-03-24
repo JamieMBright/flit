@@ -310,17 +310,29 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
     _countryPathCache.clear();
     final borderPaint = _isHighAltitude ? _borderHighPaint : _borderLowPaint;
 
+    // Composite semi-transparent strokes into single paths so that shared
+    // borders between adjacent countries are not double-blended (which
+    // produces visible bright seams at every shared edge).
+    final compositeBorderPath = Path();
+    final compositeHighlightPath = Path();
+
     for (final country in CountryData.countries) {
       final path = _createCountryPath(country, screenSize, globeRadius);
       if (path == null) continue;
       _countryPathCache.add(path);
 
+      // Land fill is fully opaque — safe to draw per-country.
       canvas.drawPath(path, _landFillPaint);
+      compositeBorderPath.addPath(path, Offset.zero);
       if (!_isHighAltitude) {
-        canvas.drawPath(path, _landHighlightPaint);
+        compositeHighlightPath.addPath(path, Offset.zero);
       }
-      canvas.drawPath(path, borderPaint);
     }
+
+    if (!_isHighAltitude) {
+      canvas.drawPath(compositeHighlightPath, _landHighlightPaint);
+    }
+    canvas.drawPath(compositeBorderPath, borderPaint);
   }
 
   void _renderCoastlines(
@@ -334,10 +346,13 @@ class WorldMap extends Component with HasGameRef<FlitGame> {
       ..strokeWidth = _isHighAltitude ? 2.0 : 4.0
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
 
-    // Reuse paths cached by _renderCountries (avoids double projection).
+    // Composite all coastline paths into a single path before drawing so
+    // that shared borders are not double-blended (semi-transparent + blurred).
+    final compositeCoast = Path();
     for (final path in _countryPathCache) {
-      canvas.drawPath(path, coastPaint);
+      compositeCoast.addPath(path, Offset.zero);
     }
+    canvas.drawPath(compositeCoast, coastPaint);
   }
 
   Path? _createCountryPath(
