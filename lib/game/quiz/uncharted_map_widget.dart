@@ -58,14 +58,9 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
   late List<RegionalArea> _areas;
   ui.Image? _satelliteImage;
 
-  /// Cached smoothed paths keyed by area code.
+  /// Cached paths keyed by area code.
   /// Rebuilt only when canvas size or region changes.
   Map<String, Path> _pathCache = {};
-
-  /// Composite path of ALL areas built WITHOUT Chaikin smoothing.
-  /// Covers gaps between smoothed polygons when drawn as a background fill.
-  Path _backgroundPath = Path();
-
   _GeoTransform? _cachedTransform;
   Size? _cachedSize;
 
@@ -134,13 +129,10 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
     _cachedTransform = transform;
 
     final newCache = <String, Path>{};
-    final bgPath = Path();
     for (final area in _areas) {
       newCache[area.code] = _buildAreaPath(area, transform);
-      bgPath.addPath(_buildRawAreaPath(area, transform), Offset.zero);
     }
     _pathCache = newCache;
-    _backgroundPath = bgPath;
   }
 
   @override
@@ -174,7 +166,6 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
                   capitalsMode: widget.capitalsMode,
                   pingProgress: widget.pingProgress,
                   pathCache: _pathCache,
-                  backgroundPath: _backgroundPath,
                   cachedTransform: _cachedTransform,
                   showUnrevealedLabels: widget.showUnrevealedLabels,
                 ),
@@ -191,25 +182,7 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
     return matrix.getMaxScaleOnAxis();
   }
 
-  /// Build an unsmoothed path for an area's polygons (for background fill).
-  static Path _buildRawAreaPath(RegionalArea area, _GeoTransform transform) {
-    final path = Path();
-    final rings = area.polygons ?? [area.points];
-    for (final ring in rings) {
-      if (ring.isEmpty) continue;
-      if (_UnchartedMapPainter._crossesAntimeridian(ring)) continue;
-      final first = transform.toCanvas(ring.first.x, ring.first.y);
-      path.moveTo(first.dx, first.dy);
-      for (var i = 1; i < ring.length; i++) {
-        final pt = transform.toCanvas(ring[i].x, ring[i].y);
-        path.lineTo(pt.dx, pt.dy);
-      }
-      path.close();
-    }
-    return path;
-  }
-
-  /// Build a smoothed path for an area's polygons.
+  /// Build a path for an area's polygons.
   static Path _buildAreaPath(RegionalArea area, _GeoTransform transform) {
     final path = Path();
     final rings = area.polygons ?? [area.points];
@@ -223,12 +196,10 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
       for (final pt in ring) {
         canvasPoints.add(transform.toCanvas(pt.x, pt.y));
       }
-      // Apply Chaikin subdivision for smoother borders.
-      final smoothed = chaikinSmooth(canvasPoints, 2);
-      if (smoothed.isEmpty) continue;
-      path.moveTo(smoothed.first.dx, smoothed.first.dy);
-      for (var i = 1; i < smoothed.length; i++) {
-        path.lineTo(smoothed[i].dx, smoothed[i].dy);
+      if (canvasPoints.isEmpty) continue;
+      path.moveTo(canvasPoints.first.dx, canvasPoints.first.dy);
+      for (var i = 1; i < canvasPoints.length; i++) {
+        path.lineTo(canvasPoints[i].dx, canvasPoints[i].dy);
       }
       path.close();
     }
@@ -248,7 +219,6 @@ class _UnchartedMapPainter extends CustomPainter {
     this.capitalsMode = false,
     this.pingProgress = 0.0,
     required this.pathCache,
-    required this.backgroundPath,
     this.cachedTransform,
     this.showUnrevealedLabels = false,
   });
@@ -263,7 +233,6 @@ class _UnchartedMapPainter extends CustomPainter {
   final bool capitalsMode;
   final double pingProgress;
   final Map<String, Path> pathCache;
-  final Path backgroundPath;
   final _GeoTransform? cachedTransform;
   final bool showUnrevealedLabels;
 
@@ -284,14 +253,6 @@ class _UnchartedMapPainter extends CustomPainter {
           canvasWidth: size.width,
           canvasHeight: size.height,
         );
-
-    // Background landmass fill: draw unsmoothed composite path in a subtle
-    // dark land color. This covers gaps between Chaikin-smoothed county
-    // polygons so that the ocean background never peeks through.
-    canvas.drawPath(
-      backgroundPath,
-      Paint()..color = const Color(0xFF152535),
-    );
 
     final outlinePaint = Paint()
       ..style = PaintingStyle.stroke
