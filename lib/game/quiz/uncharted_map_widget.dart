@@ -64,6 +64,76 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
   _GeoTransform? _cachedTransform;
   Size? _cachedSize;
 
+  // ── US States inset support ────────────────────────────────────────────────
+  // Pre-built paths for Alaska and Hawaii drawn in corner inset boxes.
+  // Only populated when region == GameRegion.usStates.
+  Path? _cachedAkPath;
+  Path? _cachedHiPath;
+  _GeoTransform? _cachedAkTransform;
+  _GeoTransform? _cachedHiTransform;
+
+  static const double _insetSize = 0.18; // fraction of canvas width
+  static const double _insetPadding = 0.02;
+  static const double _akMinLng = -170.0;
+  static const double _akMaxLng = -130.0;
+  static const double _akMinLat = 54.0;
+  static const double _akMaxLat = 72.0;
+  static const double _hiMinLng = -160.5;
+  static const double _hiMaxLng = -154.5;
+  static const double _hiMinLat = 18.5;
+  static const double _hiMaxLat = 22.5;
+
+  Rect _akInsetRect(Size size) {
+    final insetW = size.width * _insetSize;
+    final insetH = insetW * 0.75;
+    return Rect.fromLTWH(
+      size.width * _insetPadding,
+      size.height - insetH - size.height * _insetPadding,
+      insetW,
+      insetH,
+    );
+  }
+
+  Rect _hiInsetRect(Size size) {
+    final insetW = size.width * _insetSize;
+    final insetH = insetW * 0.55;
+    final akRect = _akInsetRect(size);
+    return Rect.fromLTWH(
+      akRect.right + size.width * _insetPadding,
+      size.height - insetH - size.height * _insetPadding,
+      insetW,
+      insetH,
+    );
+  }
+
+  _GeoTransform _buildAkTransform(Rect rect) {
+    final pad = rect.width * 0.08;
+    return _GeoTransform.fromInset(
+      minLng: _akMinLng,
+      maxLng: _akMaxLng,
+      minLat: _akMinLat,
+      maxLat: _akMaxLat,
+      left: rect.left + pad,
+      top: rect.top + pad,
+      drawWidth: rect.width - pad * 2,
+      drawHeight: rect.height - pad * 2,
+    );
+  }
+
+  _GeoTransform _buildHiTransform(Rect rect) {
+    final pad = rect.width * 0.08;
+    return _GeoTransform.fromInset(
+      minLng: _hiMinLng,
+      maxLng: _hiMaxLng,
+      minLat: _hiMinLat,
+      maxLat: _hiMaxLat,
+      left: rect.left + pad,
+      top: rect.top + pad,
+      drawWidth: rect.width - pad * 2,
+      drawHeight: rect.height - pad * 2,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -101,6 +171,10 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
       _areas = _getFilteredAreas(widget.region);
       _pathCache.clear();
       _cachedSize = null;
+      _cachedAkPath = null;
+      _cachedHiPath = null;
+      _cachedAkTransform = null;
+      _cachedHiTransform = null;
     }
   }
 
@@ -133,6 +207,20 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
       newCache[area.code] = _buildAreaPath(area, transform);
     }
     _pathCache = newCache;
+
+    // For US States, also build AK and HI paths with their inset transforms.
+    if (widget.region == GameRegion.usStates) {
+      final akRect = _akInsetRect(size);
+      final hiRect = _hiInsetRect(size);
+      final akTransform = _buildAkTransform(akRect);
+      final hiTransform = _buildHiTransform(hiRect);
+      _cachedAkTransform = akTransform;
+      _cachedHiTransform = hiTransform;
+      final akArea = _areas.where((a) => a.code == 'AK').firstOrNull;
+      final hiArea = _areas.where((a) => a.code == 'HI').firstOrNull;
+      if (akArea != null) _cachedAkPath = _buildAreaPath(akArea, akTransform);
+      if (hiArea != null) _cachedHiPath = _buildAreaPath(hiArea, hiTransform);
+    }
   }
 
   @override
@@ -168,6 +256,16 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
                   pathCache: _pathCache,
                   cachedTransform: _cachedTransform,
                   showUnrevealedLabels: widget.showUnrevealedLabels,
+                  akInsetPath: _cachedAkPath,
+                  hiInsetPath: _cachedHiPath,
+                  akInsetTransform: _cachedAkTransform,
+                  hiInsetTransform: _cachedHiTransform,
+                  akInsetRect: widget.region == GameRegion.usStates
+                      ? _akInsetRect(size)
+                      : null,
+                  hiInsetRect: widget.region == GameRegion.usStates
+                      ? _hiInsetRect(size)
+                      : null,
                 ),
               ),
             );
@@ -221,6 +319,12 @@ class _UnchartedMapPainter extends CustomPainter {
     required this.pathCache,
     this.cachedTransform,
     this.showUnrevealedLabels = false,
+    this.akInsetPath,
+    this.hiInsetPath,
+    this.akInsetTransform,
+    this.hiInsetTransform,
+    this.akInsetRect,
+    this.hiInsetRect,
   });
 
   final List<RegionalArea> areas;
@@ -235,6 +339,21 @@ class _UnchartedMapPainter extends CustomPainter {
   final Map<String, Path> pathCache;
   final _GeoTransform? cachedTransform;
   final bool showUnrevealedLabels;
+
+  // US States inset data (null for other regions).
+  final Path? akInsetPath;
+  final Path? hiInsetPath;
+  final _GeoTransform? akInsetTransform;
+  final _GeoTransform? hiInsetTransform;
+  final Rect? akInsetRect;
+  final Rect? hiInsetRect;
+
+  // Explicit label positions (lng, lat) for states whose polygon centroid
+  // drifts into water due to bays, capes, or island chains.
+  static const Map<String, List<double>> _labelOverrides = {
+    'MA': [-71.95, 42.35],
+    'RI': [-71.55, 41.70],
+  };
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -288,6 +407,12 @@ class _UnchartedMapPainter extends CustomPainter {
 
     // ── Pass 1: Satellite fills ──
     for (final area in areas) {
+      // AK and HI are rendered in separate inset boxes for US States.
+      if (region == GameRegion.usStates &&
+          (area.code == 'AK' || area.code == 'HI')) {
+        continue;
+      }
+
       final path = pathCache[area.code];
       if (path == null) continue;
 
@@ -347,6 +472,12 @@ class _UnchartedMapPainter extends CustomPainter {
     Path? compositePingPath;
 
     for (final area in areas) {
+      // AK and HI are rendered in separate inset boxes for US States.
+      if (region == GameRegion.usStates &&
+          (area.code == 'AK' || area.code == 'HI')) {
+        continue;
+      }
+
       final path = pathCache[area.code];
       if (path == null) continue;
 
@@ -419,9 +550,123 @@ class _UnchartedMapPainter extends CustomPainter {
     if (showUnrevealedLabels) {
       for (final area in areas) {
         if (revealedCodes.contains(area.code)) continue;
+        // AK/HI handled in insets below.
+        if (region == GameRegion.usStates &&
+            (area.code == 'AK' || area.code == 'HI')) {
+          continue;
+        }
         _drawUnrevealedLabel(canvas, area, transform);
       }
     }
+
+    // ── US States insets: Alaska and Hawaii ──
+    if (region == GameRegion.usStates) {
+      _drawUsInset(
+        canvas,
+        insetRect: akInsetRect,
+        statePath: akInsetPath,
+        stateTransform: akInsetTransform,
+        stateCode: 'AK',
+        label: 'Alaska',
+        size: size,
+      );
+      _drawUsInset(
+        canvas,
+        insetRect: hiInsetRect,
+        statePath: hiInsetPath,
+        stateTransform: hiInsetTransform,
+        stateCode: 'HI',
+        label: 'Hawaii',
+        size: size,
+      );
+    }
+  }
+
+  void _drawUsInset(
+    Canvas canvas, {
+    required Rect? insetRect,
+    required Path? statePath,
+    required _GeoTransform? stateTransform,
+    required String stateCode,
+    required String label,
+    required Size size,
+  }) {
+    if (insetRect == null || statePath == null || stateTransform == null)
+      return;
+
+    // Box background and border.
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(insetRect, const Radius.circular(8)),
+      Paint()..color = const Color(0xFF0D1B2A),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(insetRect, const Radius.circular(8)),
+      Paint()
+        ..color = const Color(0xFF3A5A7A)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5 / zoomScale
+        ..isAntiAlias = true,
+    );
+
+    // Box label.
+    final labelFontSize = (9.0 / zoomScale).clamp(3.0, 12.0);
+    final labelPainter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: TextStyle(
+          color: const Color(0xFF8AA0B0),
+          fontSize: labelFontSize,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 1,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    labelPainter.paint(canvas, Offset(insetRect.left + 6, insetRect.top + 4));
+
+    // Clip rendering to inset box.
+    canvas.save();
+    canvas.clipRRect(
+        RRect.fromRectAndRadius(insetRect, const Radius.circular(8)));
+
+    final isRevealed = revealedCodes.contains(stateCode);
+    if (isRevealed && satelliteImage != null) {
+      _drawSatelliteFill(canvas, statePath, stateTransform, size);
+    } else {
+      canvas.drawPath(
+        statePath,
+        Paint()
+          ..color =
+              isRevealed ? const Color(0xFF1B6B4A) : const Color(0xFF152535),
+      );
+    }
+
+    // Border.
+    final isFlashing = stateCode == lastRevealedCode && flashProgress < 1.0;
+    final borderColor =
+        isRevealed ? const Color(0xFF2ECC71) : const Color(0xFF3A5A7A);
+    canvas.drawPath(
+      statePath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = (isFlashing ? 2.0 : 1.5) / zoomScale
+        ..strokeJoin = StrokeJoin.round
+        ..isAntiAlias = true
+        ..color = isFlashing
+            ? const Color(0xFF2ECC71)
+                .withValues(alpha: Curves.easeOut.transform(flashProgress))
+            : borderColor,
+    );
+
+    // State name label when revealed.
+    if (isRevealed) {
+      final stateArea = areas.where((a) => a.code == stateCode).firstOrNull;
+      if (stateArea != null) {
+        _drawLabel(canvas, stateArea, stateTransform);
+      }
+    }
+
+    canvas.restore();
   }
 
   /// Minimum canvas diameter below which an area is considered "tiny".
@@ -436,6 +681,10 @@ class _UnchartedMapPainter extends CustomPainter {
 
   /// Whether an area's polygon footprint on canvas is too small to see.
   bool _isTinyArea(RegionalArea area, _GeoTransform transform) {
+    // For US States, only MA and RI get the bounding-box marker treatment.
+    if (region == GameRegion.usStates) {
+      return area.code == 'MA' || area.code == 'RI';
+    }
     if (_alwaysTinyCodes.contains(area.code)) return true;
     if (area.points.length < 3) return true;
 
@@ -806,6 +1055,12 @@ class _UnchartedMapPainter extends CustomPainter {
 
   /// Compute centroid from all points (fine for most countries).
   Offset? _computeCentroid(RegionalArea area, _GeoTransform transform) {
+    // Use explicit override when polygon centroid drifts into water.
+    final override = _labelOverrides[area.code];
+    if (override != null) {
+      return transform.toCanvas(override[0], override[1]);
+    }
+
     final points = area.points;
     if (points.isEmpty) return null;
 
@@ -886,6 +1141,34 @@ class _GeoTransform {
     projectedHeight = latRange * _scale;
     offsetX = (canvasWidth - projectedWidth) / 2;
     offsetY = (canvasHeight - projectedHeight) / 2;
+  }
+
+  /// Build a transform that maps geo coords into an inset rectangle on canvas.
+  _GeoTransform.fromInset({
+    required this.minLng,
+    required this.maxLng,
+    required this.minLat,
+    required this.maxLat,
+    required double left,
+    required double top,
+    required double drawWidth,
+    required double drawHeight,
+  }) {
+    final lngRange = maxLng - minLng;
+    final latRange = maxLat - minLat;
+    final midLat = (minLat + maxLat) / 2;
+    _aspectCorrection = math.cos(midLat * math.pi / 180);
+
+    final effectiveLngRange = lngRange * _aspectCorrection;
+    _scale = math.min(
+      drawWidth / effectiveLngRange,
+      drawHeight / latRange,
+    );
+
+    projectedWidth = effectiveLngRange * _scale;
+    projectedHeight = latRange * _scale;
+    offsetX = left + (drawWidth - projectedWidth) / 2;
+    offsetY = top + (drawHeight - projectedHeight) / 2;
   }
 
   final double minLng, maxLng, minLat, maxLat;

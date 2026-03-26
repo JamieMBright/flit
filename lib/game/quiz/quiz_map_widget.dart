@@ -228,11 +228,18 @@ class _UsaMapPainter extends CustomPainter {
   static const double _hiMinLat = 18.5;
   static const double _hiMaxLat = 22.5;
 
-  // Northeast inset bounds (zoomed view of small NE states)
-  static const double _neMinLng = -80.0;
-  static const double _neMaxLng = -66.5;
-  static const double _neMinLat = 38.5;
-  static const double _neMaxLat = 47.5;
+  // Northeast inset bounds — tight zoom focused on MA and RI.
+  static const double _neMinLng = -74.0;
+  static const double _neMaxLng = -69.7;
+  static const double _neMinLat = 40.9;
+  static const double _neMaxLat = 43.5;
+
+  // Explicit label positions (lng, lat) for states whose polygon centroid
+  // drifts into water due to bays, capes, or island chains.
+  static const Map<String, List<double>> _labelOverrides = {
+    'MA': [-71.95, 42.35], // pull west of Cape Cod
+    'RI': [-71.55, 41.70], // pull west of Narragansett Bay
+  };
 
   // States shown in the NE inset
   static const _neStateCodes = {
@@ -581,9 +588,15 @@ class _UsaMapPainter extends CustomPainter {
     RegionalArea area,
     _GeoTransform transform,
   ) {
-    // Only label states that are large enough
-    final centroid = _centroid(area.points);
-    final pos = transform.toCanvas(centroid.x, centroid.y);
+    // Use explicit override when polygon centroid drifts into water.
+    final Offset pos;
+    final override = _labelOverrides[area.code];
+    if (override != null) {
+      pos = transform.toCanvas(override[0], override[1]);
+    } else {
+      final centroid = _centroid(area.points);
+      pos = transform.toCanvas(centroid.x, centroid.y);
+    }
 
     // Skip if label would be off-screen
     if (pos.dx < 0 ||
