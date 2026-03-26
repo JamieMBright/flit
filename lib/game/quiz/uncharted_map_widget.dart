@@ -353,6 +353,10 @@ class _UnchartedMapPainter extends CustomPainter {
   static const Map<String, List<double>> _labelOverrides = {
     'MA': [-71.95, 42.35],
     'RI': [-71.55, 41.70],
+    // Saginaw Bay creates a deep concave notch in the Lower Peninsula.
+    'MI': [-84.50, 43.80],
+    // Chesapeake Bay bisects Maryland; centroid drifts into the water.
+    'MD': [-76.80, 39.10],
   };
 
   @override
@@ -1053,7 +1057,28 @@ class _UnchartedMapPainter extends CustomPainter {
     );
   }
 
-  /// Compute centroid from all points (fine for most countries).
+  /// Area-weighted polygon centroid via the shoelace formula (canvas space).
+  /// Returns null for degenerate (zero-area) polygons.
+  static Offset? _shoelaceCentroid(List<Offset> pts) {
+    if (pts.length < 3) return null;
+    var area = 0.0;
+    var cx = 0.0;
+    var cy = 0.0;
+    final n = pts.length;
+    for (var i = 0; i < n; i++) {
+      final j = (i + 1) % n;
+      final cross = pts[i].dx * pts[j].dy - pts[j].dx * pts[i].dy;
+      area += cross;
+      cx += (pts[i].dx + pts[j].dx) * cross;
+      cy += (pts[i].dy + pts[j].dy) * cross;
+    }
+    area /= 2.0;
+    if (area.abs() < 1e-10) return null;
+    return Offset(cx / (6.0 * area), cy / (6.0 * area));
+  }
+
+  /// Compute centroid for a polygon area using the shoelace formula.
+  /// Falls back to arithmetic mean if shoelace returns null.
   Offset? _computeCentroid(RegionalArea area, _GeoTransform transform) {
     // Use explicit override when polygon centroid drifts into water.
     final override = _labelOverrides[area.code];
@@ -1069,14 +1094,32 @@ class _UnchartedMapPainter extends CustomPainter {
       return _computeCentroidLargestRing(area, transform);
     }
 
+    // Prefer largest ring for area-weighted centroid (ignores small islands).
+    final rings = area.polygons;
+    if (rings != null && rings.isNotEmpty) {
+      var largest = rings[0];
+      for (final ring in rings) {
+        if (ring.length > largest.length) largest = ring;
+      }
+      final canvasPts =
+          largest.map((p) => transform.toCanvas(p.x, p.y)).toList();
+      final centroid = _shoelaceCentroid(canvasPts);
+      if (centroid != null) return centroid;
+    }
+
+    // Fallback: shoelace on flat points list.
+    final canvasPts = points.map((p) => transform.toCanvas(p.x, p.y)).toList();
+    final centroid = _shoelaceCentroid(canvasPts);
+    if (centroid != null) return centroid;
+
+    // Last resort: arithmetic mean.
     var cx = 0.0;
     var cy = 0.0;
-    for (final p in points) {
-      final canvasP = transform.toCanvas(p.x, p.y);
-      cx += canvasP.dx;
-      cy += canvasP.dy;
+    for (final p in canvasPts) {
+      cx += p.dx;
+      cy += p.dy;
     }
-    return Offset(cx / points.length, cy / points.length);
+    return Offset(cx / canvasPts.length, cy / canvasPts.length);
   }
 
   /// Compute centroid from only the largest polygon ring.
@@ -1091,14 +1134,17 @@ class _UnchartedMapPainter extends CustomPainter {
       if (ring.length > largest.length) largest = ring;
     }
     if (largest.isEmpty) return null;
+    final canvasPts = largest.map((p) => transform.toCanvas(p.x, p.y)).toList();
+    final centroid = _shoelaceCentroid(canvasPts);
+    if (centroid != null) return centroid;
+    // Fallback to arithmetic mean.
     var cx = 0.0;
     var cy = 0.0;
-    for (final p in largest) {
-      final canvasP = transform.toCanvas(p.x, p.y);
-      cx += canvasP.dx;
-      cy += canvasP.dy;
+    for (final p in canvasPts) {
+      cx += p.dx;
+      cy += p.dy;
     }
-    return Offset(cx / largest.length, cy / largest.length);
+    return Offset(cx / canvasPts.length, cy / canvasPts.length);
   }
 
   @override
