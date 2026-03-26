@@ -489,8 +489,31 @@ class _RegionMapPainter extends CustomPainter {
     return path;
   }
 
+  /// Area-weighted polygon centroid via the shoelace formula (geo space).
+  /// Returns null for degenerate (zero-area) polygons.
+  static Vector2? _shoelaceCentroidGeo(List<Vector2> pts) {
+    if (pts.length < 3) return null;
+    var area = 0.0;
+    var cx = 0.0;
+    var cy = 0.0;
+    final n = pts.length;
+    for (var i = 0; i < n; i++) {
+      final j = (i + 1) % n;
+      final cross = pts[i].x * pts[j].y - pts[j].x * pts[i].y;
+      area += cross;
+      cx += (pts[i].x + pts[j].x) * cross;
+      cy += (pts[i].y + pts[j].y) * cross;
+    }
+    area /= 2.0;
+    if (area.abs() < 1e-10) return null;
+    return Vector2(cx / (6.0 * area), cy / (6.0 * area));
+  }
+
   Vector2 _centroid(List<Vector2> points) {
     if (points.isEmpty) return Vector2.zero();
+    final centroid = _shoelaceCentroidGeo(points);
+    if (centroid != null) return centroid;
+    // Fallback: arithmetic mean for degenerate cases.
     var sumX = 0.0;
     var sumY = 0.0;
     for (final p in points) {
@@ -635,6 +658,11 @@ class _RegionMapPainter extends CustomPainter {
       if (ring.length > largest.length) largest = ring;
     }
     if (largest.isEmpty) return Offset.zero;
+    final geoCenter = _shoelaceCentroidGeo(largest);
+    if (geoCenter != null) {
+      return transform.toCanvas(geoCenter.x, geoCenter.y);
+    }
+    // Fallback: arithmetic mean.
     var cx = 0.0;
     var cy = 0.0;
     for (final p in largest) {
