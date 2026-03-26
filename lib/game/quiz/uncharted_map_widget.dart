@@ -83,12 +83,21 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
   static const double _hiMinLat = 18.5;
   static const double _hiMaxLat = 22.5;
 
+  /// Canvas y-coordinate of the bottom edge of the CONUS map polygon area.
+  /// Falls back to 75 % of canvas height before the transform is first built.
+  double _conusBottom(Size size) {
+    final t = _cachedTransform;
+    if (t == null) return size.height * 0.75;
+    return t.offsetY + t.projectedHeight;
+  }
+
   Rect _akInsetRect(Size size) {
     final insetW = size.width * _insetSize;
     final insetH = insetW * 0.75;
+    final topY = _conusBottom(size) + size.height * _insetPadding;
     return Rect.fromLTWH(
       size.width * _insetPadding,
-      size.height - insetH - size.height * _insetPadding,
+      topY,
       insetW,
       insetH,
     );
@@ -98,9 +107,10 @@ class _UnchartedMapWidgetState extends State<UnchartedMapWidget>
     final insetW = size.width * _insetSize;
     final insetH = insetW * 0.55;
     final akRect = _akInsetRect(size);
+    final topY = _conusBottom(size) + size.height * _insetPadding;
     return Rect.fromLTWH(
       akRect.right + size.width * _insetPadding,
-      size.height - insetH - size.height * _insetPadding,
+      topY,
       insetW,
       insetH,
     );
