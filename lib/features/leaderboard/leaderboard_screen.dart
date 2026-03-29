@@ -1543,10 +1543,22 @@ class _ClueBreakdownSheet extends StatelessWidget {
                 final countryName =
                     round['country_name'] as String? ?? 'Unknown';
                 final clueType = round['clue_type'] as String? ?? '?';
+                final countryCode = round['country_code'] as String? ?? '';
                 final timeMs = round['time_ms'] as int? ?? 0;
                 final roundScore = round['score'] as int? ?? 0;
                 final hintsUsed = round['hints_used'] as int? ?? 0;
                 final completed = round['completed'] as bool? ?? false;
+
+                final clueTypeEnum = ClueType.values.firstWhere(
+                  (e) => e.name == clueType,
+                  orElse: () => ClueType.flag,
+                );
+                final diffPct = countryCode.isNotEmpty
+                    ? (roundDifficulty(clueTypeEnum, countryCode) * 100).round()
+                    : null;
+                final maxAvailable = countryCode.isNotEmpty
+                    ? (10000 * difficultyMultiplier(countryCode)).round()
+                    : null;
 
                 final emoji = i < emojiRunes.length ? emojiRunes[i] : '';
                 final roundTime = Duration(milliseconds: timeMs);
@@ -1650,6 +1662,34 @@ class _ClueBreakdownSheet extends StatelessWidget {
                                           fontSize: 11,
                                         ),
                                       ),
+                                      if (diffPct != null) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 5,
+                                            vertical: 1,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: _difficultyColor(diffPct)
+                                                .withOpacity(0.15),
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            border: Border.all(
+                                              color: _difficultyColor(diffPct)
+                                                  .withOpacity(0.4),
+                                              width: 0.5,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '$diffPct%',
+                                            style: TextStyle(
+                                              color: _difficultyColor(diffPct),
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                       if (hintsUsed > 0) ...[
                                         const SizedBox(width: 8),
                                         Text(
@@ -1678,18 +1718,26 @@ class _ClueBreakdownSheet extends StatelessWidget {
                                 ],
                               ),
                       ),
-                      // Score + time
+                      // Score + max available + time
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            '+$roundScore',
+                            completed ? '+$roundScore' : '--',
                             style: const TextStyle(
                               color: FlitColors.textPrimary,
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          if (maxAvailable != null && completed)
+                            Text(
+                              'of ${_formatLeaderboardNum(maxAvailable)}',
+                              style: const TextStyle(
+                                color: FlitColors.textMuted,
+                                fontSize: 10,
+                              ),
+                            ),
                           Text(
                             _formatTime(roundTime),
                             style: const TextStyle(
@@ -1954,6 +2002,25 @@ class _ErrorState extends StatelessWidget {
 // =============================================================================
 // Helpers
 // =============================================================================
+
+/// Format a number with comma-separated thousands (e.g. 9150 → "9,150").
+String _formatLeaderboardNum(int n) {
+  final s = n.toString();
+  final buf = StringBuffer();
+  for (int i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
+    buf.write(s[i]);
+  }
+  return buf.toString();
+}
+
+/// Maps a difficulty percentage (0–100) to a display colour.
+Color _difficultyColor(int pct) {
+  if (pct < 30) return const Color(0xFF4CAF50); // green  – easy
+  if (pct < 55) return const Color(0xFFFFD700); // yellow – moderate
+  if (pct < 75) return const Color(0xFFFF9800); // orange – hard
+  return const Color(0xFFCC4444); // red    – very hard
+}
 
 String _formatTime(Duration d) {
   final minutes = d.inMinutes;
