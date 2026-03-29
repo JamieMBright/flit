@@ -224,6 +224,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   final List<_RoundResult> _roundResults = [];
   late final Random _sessionSeedRandom;
 
+  /// Country codes already used in this daily challenge (prevents duplicates).
+  final Set<String> _usedDailyCountryCodes = {};
+
   /// Key for accessing the coach overlay during campaign missions.
   final GlobalKey<CoachOverlayState> _coachOverlayKey =
       GlobalKey<CoachOverlayState>();
@@ -587,6 +590,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         roundSeed,
         allowedClueTypes: widget.enabledClueTypes,
         preferredClueType: widget.preferredClueType,
+        excludedCountryCodes: Set.unmodifiable(_usedDailyCountryCodes),
       );
     }
     // Campaign missions use a fixed seed derived from the mission ID so the
@@ -940,6 +944,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     _inkBurstKey.currentState?.trigger(
       Offset(mq.size.width / 2, mq.padding.top + 56),
     );
+
+    // Track used country to prevent duplicates in daily challenge.
+    if (widget.dailySeed != null && _session != null) {
+      _usedDailyCountryCodes.add(_session!.targetCountry.code);
+    }
 
     setState(() {
       _currentRound++;
@@ -1359,6 +1368,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                   _totalScore = 0;
                   _cumulativeTime = Duration.zero;
                 });
+                _usedDailyCountryCodes.clear();
                 _startNewGame();
               }
             : null,

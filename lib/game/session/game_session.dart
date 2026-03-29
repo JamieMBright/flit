@@ -286,6 +286,7 @@ class GameSession {
     double? maxDifficulty,
     List<String>? targetCountryCodes,
     Vector2? overrideStartPosition,
+    Set<String>? excludedCountryCodes,
   }) {
     final random = Random(seed);
 
@@ -302,6 +303,13 @@ class GameSession {
           .toList();
     } else {
       pool = CountryData.playableCountries;
+    }
+
+    // Remove already-used countries to prevent duplicates (e.g. daily challenge).
+    if (excludedCountryCodes != null && excludedCountryCodes.isNotEmpty) {
+      final filtered =
+          pool.where((c) => !excludedCountryCodes.contains(c.code)).toList();
+      if (filtered.isNotEmpty) pool = filtered;
     }
 
     // Fallback to full pool if filtering yields nothing (shouldn't happen

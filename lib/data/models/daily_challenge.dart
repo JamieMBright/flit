@@ -228,15 +228,22 @@ class DailyChallenge {
   static int _computeDifficultyPercent(int seed, Set<String> enabledClueTypes) {
     final rounds = <(ClueType, String)>[];
     final clueTypeList = enabledClueTypes.toList()..sort();
-    final playable = CountryData.playableCountries;
+    final usedCodes = <String>{};
 
     for (int i = 0; i < roundCount; i++) {
       final roundSeed = seed + i * _roundSeedStride;
       final rng = Random(roundSeed);
 
-      // Mirror GameSession.seeded country selection
-      final countryIndex = rng.nextInt(playable.length);
-      final country = playable[countryIndex];
+      // Mirror GameSession.seeded country selection (with deduplication).
+      List<CountryShape> pool = CountryData.playableCountries;
+      if (usedCodes.isNotEmpty) {
+        final filtered =
+            pool.where((c) => !usedCodes.contains(c.code)).toList();
+        if (filtered.isNotEmpty) pool = filtered;
+      }
+      final countryIndex = rng.nextInt(pool.length);
+      final country = pool[countryIndex];
+      usedCodes.add(country.code);
 
       // Mirror Clue.random type selection (picks from allowed pool)
       final ClueType clueType;
