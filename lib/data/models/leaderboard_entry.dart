@@ -172,3 +172,19 @@ extension TimeframeTabExtension on TimeframeTab {
     }
   }
 }
+
+/// Sort order for leaderboard entries.
+enum LeaderboardSort { score, proficiency, time }
+
+extension LeaderboardSortExtension on LeaderboardSort {
+  String get displayName {
+    switch (this) {
+      case LeaderboardSort.score:
+        return 'Score';
+      case LeaderboardSort.proficiency:
+        return 'Proficiency';
+      case LeaderboardSort.time:
+        return 'Time';
+    }
+  }
+}

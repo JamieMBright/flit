@@ -99,6 +99,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   late final TabController _modeTabController;
   LeaderboardMode _currentMode = LeaderboardMode.dailyScramble;
   TimeframeTab _timeframe = TimeframeTab.today;
+  LeaderboardSort _sort = LeaderboardSort.score;
   bool _loading = true;
   String? _errorMessage;
   List<LeaderboardEntry> _entries = [];
@@ -176,6 +177,53 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     }
   }
 
+  void _onSortChanged(LeaderboardSort sort) {
+    setState(() => _sort = sort);
+  }
+
+  /// Compute proficiency percentage for an entry from its round details.
+  ///
+  /// Returns null when round details are unavailable (older entries).
+  int? _computeProficiencyPct(LeaderboardEntry e) {
+    final details = e.roundDetails;
+    if (details == null || details.isEmpty) return null;
+    int maxPossible = 0;
+    for (final rd in details) {
+      if (rd is! Map) continue;
+      final code = (rd['country_code'] as String?) ?? '';
+      maxPossible += code.isNotEmpty
+          ? (10000 * difficultyMultiplier(code)).round()
+          : 10000;
+    }
+    if (maxPossible == 0) return null;
+    return ((e.score / maxPossible) * 100).round().clamp(0, 100);
+  }
+
+  /// Returns [_entries] sorted according to [_sort].
+  List<LeaderboardEntry> get _sortedEntries {
+    final sorted = List<LeaderboardEntry>.from(_entries);
+    switch (_sort) {
+      case LeaderboardSort.score:
+        sorted.sort((a, b) {
+          final c = b.score.compareTo(a.score);
+          return c != 0 ? c : a.time.compareTo(b.time);
+        });
+      case LeaderboardSort.time:
+        sorted.sort((a, b) {
+          final c = a.time.compareTo(b.time);
+          return c != 0 ? c : b.score.compareTo(a.score);
+        });
+      case LeaderboardSort.proficiency:
+        sorted.sort((a, b) {
+          final pA = _computeProficiencyPct(a) ?? -1;
+          final pB = _computeProficiencyPct(b) ?? -1;
+          final c = pB.compareTo(pA);
+          return c != 0 ? c : b.score.compareTo(a.score);
+        });
+    }
+    return sorted;
+  }
+
   /// Whether the given timestamp falls on today (UTC).
   static bool _isFromToday(DateTime? ts) {
     if (ts == null) return false;
@@ -216,9 +264,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             // Sub-tab chips: Today | Last Month | All Time
             _TimeframeChips(
                 selected: _timeframe, onChanged: _onTimeframeChanged),
+            // Sort chips: Score | Proficiency | Time
+            _SortChips(selected: _sort, onChanged: _onSortChanged),
             const Divider(color: FlitColors.cardBorder, height: 1),
-            // Player rank banner
-            if (_playerRank != null) _PlayerRankBanner(entry: _playerRank!),
+            // Player rank banner (score-based; hidden when not sorting by score)
+            if (_playerRank != null && _sort == LeaderboardSort.score)
+              _PlayerRankBanner(entry: _playerRank!),
             // Leaderboard list
             Expanded(
               child: _loading
@@ -229,9 +280,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                           ? const _EmptyState()
                           : ListView.builder(
                               padding: const EdgeInsets.symmetric(vertical: 8),
-                              itemCount: _entries.length,
+                              itemCount: _sortedEntries.length,
                               itemBuilder: (context, index) {
-                                final e = _entries[index];
+                                final e = _sortedEntries[index];
                                 final isSelf = e.playerId == _userId;
                                 // Embargo: hide round details for other
                                 // players' daily-scramble scores from today
@@ -242,8 +293,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                                     _isFromToday(e.timestamp);
                                 return _LeaderboardRow(
                                   entry: e,
+                                  rank: index + 1,
                                   isCurrentPlayer: isSelf,
                                   isEmbargoed: embargoed,
+                                  sort: _sort,
+                                  proficiencyPct: _computeProficiencyPct(e),
                                 );
                               },
                             ),
@@ -290,6 +344,54 @@ class _TimeframeChips extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      );
+}
+
+// =============================================================================
+// Sort chips
+// =============================================================================
+
+class _SortChips extends StatelessWidget {
+  const _SortChips({required this.selected, required this.onChanged});
+
+  final LeaderboardSort selected;
+  final ValueChanged<LeaderboardSort> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        height: 40,
+        color: FlitColors.backgroundMid,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: LeaderboardSort.values
+              .map(
+                (sort) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: ChoiceChip(
+                    label: Text(sort.displayName),
+                    selected: sort == selected,
+                    onSelected: (_) => onChanged(sort),
+                    selectedColor: FlitColors.accentDark,
+                    backgroundColor: FlitColors.cardBackground,
+                    labelStyle: TextStyle(
+                      color: sort == selected
+                          ? FlitColors.textPrimary
+                          : FlitColors.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
                   ),
                 ),
               )
@@ -400,16 +502,29 @@ class _PlayerRankBanner extends StatelessWidget {
 class _LeaderboardRow extends StatelessWidget {
   const _LeaderboardRow({
     required this.entry,
+    this.rank,
     this.isCurrentPlayer = false,
     this.isEmbargoed = false,
+    this.sort = LeaderboardSort.score,
+    this.proficiencyPct,
   });
 
   final LeaderboardEntry entry;
+
+  /// Display rank for the current sort order (overrides entry.rank when set).
+  final int? rank;
   final bool isCurrentPlayer;
 
   /// When true, the clue breakdown hides answer-revealing details (country
   /// names, clue types) so other players can't spoil today's daily challenge.
   final bool isEmbargoed;
+
+  /// Current sort mode — controls which metric is shown prominently.
+  final LeaderboardSort sort;
+
+  /// Proficiency percentage (0–100) computed from round details; null if
+  /// round details are unavailable for this entry.
+  final int? proficiencyPct;
 
   @override
   Widget build(BuildContext context) {
@@ -424,7 +539,7 @@ class _LeaderboardRow extends StatelessWidget {
         border: Border.all(
           color: isCurrentPlayer
               ? FlitColors.accent
-              : entry.rank <= 3
+              : _displayRank <= 3
                   ? _rankColor.withOpacity(0.6)
                   : FlitColors.cardBorder.withOpacity(0.5),
         ),
@@ -434,7 +549,7 @@ class _LeaderboardRow extends StatelessWidget {
           // Rank badge
           SizedBox(
             width: 30,
-            child: entry.rank <= 3
+            child: _displayRank <= 3
                 ? Text(
                     _rankEmoji,
                     textAlign: TextAlign.center,
@@ -444,7 +559,7 @@ class _LeaderboardRow extends StatelessWidget {
                     ),
                   )
                 : Text(
-                    '#${entry.rank}',
+                    '#$_displayRank',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
@@ -565,28 +680,67 @@ class _LeaderboardRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          // Score + time
+          // Metric column — primary value depends on sort mode.
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                '${entry.score}',
-                style: TextStyle(
-                  color: isCurrentPlayer
-                      ? FlitColors.accent
-                      : FlitColors.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+              if (sort == LeaderboardSort.proficiency) ...[
+                Text(
+                  proficiencyPct != null ? '$proficiencyPct%' : '—',
+                  style: TextStyle(
+                    color: isCurrentPlayer
+                        ? FlitColors.accent
+                        : FlitColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              Text(
-                _formatTime(entry.time),
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 10,
-                  fontFamily: 'monospace',
+                Text(
+                  '${entry.score} pts',
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 10,
+                  ),
                 ),
-              ),
+              ] else if (sort == LeaderboardSort.time) ...[
+                Text(
+                  _formatTime(entry.time),
+                  style: TextStyle(
+                    color: isCurrentPlayer
+                        ? FlitColors.accent
+                        : FlitColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                Text(
+                  '${entry.score} pts',
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 10,
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  '${entry.score}',
+                  style: TextStyle(
+                    color: isCurrentPlayer
+                        ? FlitColors.accent
+                        : FlitColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  _formatTime(entry.time),
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 10,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
             ],
           ),
         ],
@@ -640,8 +794,10 @@ class _LeaderboardRow extends StatelessWidget {
     return const Color(0xFFCC4444);
   }
 
+  int get _displayRank => rank ?? entry.rank;
+
   Color get _rankColor {
-    switch (entry.rank) {
+    switch (_displayRank) {
       case 1:
         return const Color(0xFFFFD700);
       case 2:
@@ -654,7 +810,7 @@ class _LeaderboardRow extends StatelessWidget {
   }
 
   String get _rankEmoji {
-    switch (entry.rank) {
+    switch (_displayRank) {
       case 1:
         return '\u{1F947}';
       case 2:
