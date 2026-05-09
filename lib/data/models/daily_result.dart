@@ -132,6 +132,27 @@ class DailyResult {
   /// Challenge theme title (e.g. "Flag Frenzy").
   final String theme;
 
+  /// Proficiency as a percentage of the maximum possible score.
+  ///
+  /// For each played round: max = (10,000 × difficultyMultiplier).
+  /// Unplayed rounds contribute 10,000 to the denominator (difficulty unknown).
+  int get proficiencyPercent {
+    int maxPossible = 0;
+    for (final round in rounds) {
+      if (round.countryCode.isNotEmpty) {
+        maxPossible +=
+            (10000 * difficultyMultiplier(round.countryCode)).round();
+      } else {
+        maxPossible += 10000;
+      }
+    }
+    // Unplayed rounds penalise proficiency (score 0, max 10,000 each).
+    final unplayed = totalRounds - rounds.length;
+    if (unplayed > 0) maxPossible += unplayed * 10000;
+    if (maxPossible == 0) return 0;
+    return ((totalScore / maxPossible) * 100).round().clamp(0, 100);
+  }
+
   /// Generate the Wordle-style shareable text.
   ///
   /// Example output:
@@ -140,17 +161,20 @@ class DailyResult {
   /// Flit daily challenge!
   /// 🟢🟡🟠🟢🔴
   /// Score: 34,655 pts
+  /// Proficiency: 94%
   /// Time: 4m30s
   /// ```
   String toShareText() {
     final emojiRow = _buildEmojiRow();
     final scoreFormatted = formatScore(totalScore);
     final timeFormatted = formatTime(totalTimeMs);
+    final pct = proficiencyPercent;
 
     return '     \u{1F6EB} \u{1F30D} \u{1F6EC}\n'
         'Flit daily challenge!\n'
         '$emojiRow\n'
         'Score: $scoreFormatted pts\n'
+        'Proficiency: $pct%\n'
         'Time: $timeFormatted';
   }
 

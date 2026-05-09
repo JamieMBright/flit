@@ -20,6 +20,7 @@ import '../avatar/avatar_widget.dart';
 import '../license/license_screen.dart';
 import '../../core/widgets/social_titles_card.dart';
 import '../../data/services/leaderboard_service.dart';
+import '../../game/data/country_difficulty.dart';
 
 /// Aviation rank title and icon for player level.
 ({String title, IconData icon}) _aviationRank(int level) {
@@ -1987,6 +1988,7 @@ class _GameHistoryEntry {
     required this.date,
     required this.roundsCompleted,
     this.roundEmojis,
+    this.maxPossibleScore,
   });
 
   final String region;
@@ -1996,15 +1998,28 @@ class _GameHistoryEntry {
   final int roundsCompleted;
   final String? roundEmojis;
 
+  /// Sum of (10,000 × difficultyMultiplier) for each round; null if unknown.
+  final int? maxPossibleScore;
+
+  /// Proficiency as a percentage (0–100), or null if max score is unknown.
+  int? get proficiencyPercent {
+    final max = maxPossibleScore;
+    if (max == null || max == 0) return null;
+    return ((score / max) * 100).round().clamp(0, 100);
+  }
+
   /// Generate shareable result text for socials.
   String toShareText() {
     final timeFormatted = _formatShareTime(duration);
     final scoreFormatted = _formatShareScore(score);
     final regionLabel = region[0].toUpperCase() + region.substring(1);
+    final pct = proficiencyPercent;
+    final proficiencyLine = pct != null ? 'Proficiency: $pct%\n' : '';
     return '     \u{1F6EB} \u{1F30D} \u{1F6EC}\n'
         'Flit — $regionLabel\n'
         '$clueEmojiRow\n'
         'Score: $scoreFormatted pts\n'
+        '$proficiencyLine'
         'Time: $timeFormatted\n'
         'Rounds: $roundsCompleted';
   }
@@ -2080,6 +2095,22 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
             final createdAt = entry['created_at'];
             // Skip entries with missing required fields instead of crashing.
             if (timeMs == null || score == null || createdAt == null) continue;
+            final roundDetails = entry['round_details'] as List<dynamic>?;
+            int? maxPossible;
+            if (roundDetails != null && roundDetails.isNotEmpty) {
+              maxPossible = 0;
+              for (final rd in roundDetails) {
+                final code =
+                    (rd as Map<dynamic, dynamic>)['country_code'] as String? ??
+                        '';
+                if (code.isNotEmpty) {
+                  maxPossible = maxPossible! +
+                      (10000 * difficultyMultiplier(code)).round();
+                } else {
+                  maxPossible = maxPossible! + 10000;
+                }
+              }
+            }
             parsed.add(
               _GameHistoryEntry(
                 region: (entry['region'] as String?) ?? 'World',
@@ -2091,6 +2122,7 @@ class _GameHistoryScreenState extends ConsumerState<_GameHistoryScreen> {
                 date: DateTime.parse(createdAt as String),
                 roundsCompleted: (entry['rounds_completed'] as int?) ?? 0,
                 roundEmojis: entry['round_emojis'] as String?,
+                maxPossibleScore: maxPossible,
               ),
             );
           } catch (e) {

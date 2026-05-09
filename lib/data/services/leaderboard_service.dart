@@ -245,7 +245,7 @@ class LeaderboardService {
       final data = await _client
           .from('scores')
           .select(
-            'score, time_ms, region, rounds_completed, round_emojis, created_at',
+            'score, time_ms, region, rounds_completed, round_emojis, round_details, created_at',
           )
           .eq('user_id', userId)
           .order('created_at', ascending: false)
