@@ -17,6 +17,8 @@ concurrency:
 
 env:
   FLUTTER_VERSION: '3.29.3'
+  # Opt into Node.js 24 for all JS actions (required before June 2 2026 deadline).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   # ── Lint, Test, Security (single job, one flutter create) ──
@@ -157,6 +159,8 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
+        with:
+          enablement: true
 
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3

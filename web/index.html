@@ -338,7 +338,7 @@
 
   <!--
     Flutter bootstrap: try flutter_bootstrap.js first (Flutter 3.22+).
-    If it 404s, fall back to flutter.js + _flutter.loader (Flutter 3.16-3.21).
+    If it 404s, fall back to flutter.js + _flutter.loader.load().
     Force CanvasKit renderer so fragment shaders work on iOS Safari.
   -->
   <script>
@@ -358,18 +358,7 @@
       fl.defer = true;
       fl.onload = function() {
         var canvasKitConfig = { renderer: 'canvaskit' };
-        // Flutter 3.22+ uses load(), 3.16-3.21 uses loadEntrypoint().
-        if (_flutter.loader.load) {
-          _flutter.loader.load({ config: canvasKitConfig });
-        } else {
-          _flutter.loader.loadEntrypoint({
-            onEntrypointLoaded: function(engineInitializer) {
-              engineInitializer.initializeEngine(canvasKitConfig).then(function(appRunner) {
-                appRunner.runApp();
-              });
-            }
-          });
-        }
+        _flutter.loader.load({ config: canvasKitConfig });
       };
       fl.onerror = function() {
         freezeWithError('Could not load Flutter engine (neither flutter_bootstrap.js nor flutter.js found).', null);
