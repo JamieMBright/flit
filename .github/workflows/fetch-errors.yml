@@ -2,8 +2,8 @@ name: Fetch Runtime Errors
 
 on:
   schedule:
-    # Run every 6 hours to check for critical errors
-    - cron: '0 */6 * * *'
+    # Run every 8 hours (05:00, 13:00, 21:00 UTC) to check for critical errors
+    - cron: '0 5,13,21 * * *'
   workflow_dispatch:
     # Allow manual triggering from the Actions tab.
 
