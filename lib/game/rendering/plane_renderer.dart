@@ -2956,7 +2956,6 @@ class PlaneRenderer {
     final detail = _detail(colorScheme, 0xFFFFFFFF); // white/snow
 
     final bodyShift = bankSin * 1.5;
-    final dynamicWingSpan = wingSpan * bankCos.abs() * 1.1;
     final wingDip = -bankSin * 3.5;
 
     final leftColor =
@@ -2964,52 +2963,36 @@ class PlaneRenderer {
     final rightColor =
         bankSin < 0 ? secondary : Color.lerp(secondary, Colors.black, 0.2)!;
 
-    // --- Runners (curved blades extending L + R like wings) ---
-    // Left runner: curves from rear-left around to front-left.
-    final leftRunner = Path()
-      ..moveTo(bodyShift - 2, -8) // front tip
-      ..cubicTo(
-        bodyShift - dynamicWingSpan * 0.5,
-        -10 + wingDip,
-        -dynamicWingSpan + bodyShift,
-        -4 + wingDip,
-        -dynamicWingSpan + bodyShift,
-        4 + wingDip, // outer tip (mid-height)
-      )
-      ..lineTo(-dynamicWingSpan + bodyShift + 2, 5 + wingDip)
-      ..cubicTo(
-        -dynamicWingSpan * 0.6 + bodyShift,
-        6 + wingDip * 0.5,
-        bodyShift - 2,
-        2,
-        bodyShift - 2,
-        -8, // back to start
-      );
-    _wash(canvas, leftRunner, leftColor, seed: planeId);
-    _pencilOutline(leftRunner, canvas, leftColor, strokeWidth: 0.9);
+    // --- Runners (skis): two narrow gold blades running front-to-back, each
+    // with the iconic upward scroll at the front. Drawn close beside the body,
+    // NOT spread wide like wings. ---
+    final runnerStroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
-    // Right runner (mirror).
-    final rightRunner = Path()
-      ..moveTo(bodyShift + 2, -8)
-      ..cubicTo(
-        bodyShift + dynamicWingSpan * 0.5,
-        -10 - wingDip,
-        dynamicWingSpan + bodyShift,
-        -4 - wingDip,
-        dynamicWingSpan + bodyShift,
-        4 - wingDip,
-      )
-      ..lineTo(dynamicWingSpan + bodyShift - 2, 5 - wingDip)
-      ..cubicTo(
-        dynamicWingSpan * 0.6 + bodyShift,
-        6 - wingDip * 0.5,
-        bodyShift + 2,
-        2,
-        bodyShift + 2,
-        -8,
-      );
-    _wash(canvas, rightRunner, rightColor, seed: planeId);
-    _pencilOutline(rightRunner, canvas, rightColor, strokeWidth: 0.9);
+    void drawRunner(double sideX, Color c) {
+      final x = bodyShift + sideX;
+      final s = sideX < 0 ? -1.0 : 1.0;
+      final dip = s * wingDip * 0.25;
+      final path = Path()
+        ..moveTo(x, 13 + dip) // rear of the blade
+        ..lineTo(x, -9 + dip) // forward along the blade
+        ..quadraticBezierTo(
+          x, -14 + dip, // up to the front
+          x + s * 3.5, -13.5 + dip, // curl up and outward (ski tip)
+        )
+        ..quadraticBezierTo(
+          x + s * 5.2, -13.1 + dip,
+          x + s * 4.2, -11.3 + dip, // small scroll back
+        );
+      runnerStroke.color = c;
+      canvas.drawPath(path, runnerStroke);
+    }
+
+    drawRunner(-5.5, leftColor);
+    drawRunner(5.5, rightColor);
 
     // --- Body group (roll-foreshortens with bankCos) ---
     canvas.save();
@@ -3059,22 +3042,6 @@ class PlaneRenderer {
       Offset(bodyShift, 7.5),
       1.4,
       Paint()..color = secondary,
-    );
-
-    // Reins — thin line projecting forward from the prow.
-    final reinPaint = Paint()
-      ..color = _darken(detail, 0.3).withOpacity(0.7)
-      ..strokeWidth = 0.9
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(
-      Offset(bodyShift - 1.5, -14),
-      Offset(bodyShift - 3, -22),
-      reinPaint,
-    );
-    canvas.drawLine(
-      Offset(bodyShift + 1.5, -14),
-      Offset(bodyShift + 3, -22),
-      reinPaint,
     );
 
     // Gold prow highlight (bright point at nose).
