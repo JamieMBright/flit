@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../data/models/challenge.dart';
 import '../../data/models/cosmetic.dart';
+import '../../data/models/seasonal_theme.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/challenge_service.dart';
 import '../../data/services/matchmaking_service.dart';
@@ -263,7 +264,9 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
           challengeId: _matchResult!.challengeId,
           challengeSeeds: seeds,
           totalRounds: Challenge.totalRounds,
-          planeColorScheme: plane?.colorScheme,
+          planeColorScheme: SeasonalTheme.resolvePlaneColorScheme(
+            fallback: plane?.colorScheme,
+          ),
           planeWingSpan: plane?.wingSpan,
           equippedPlaneId: planeId,
           companionType: companion,

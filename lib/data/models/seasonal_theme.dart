@@ -179,6 +179,25 @@ class SeasonalTheme {
     return null;
   }
 
+  // ── Plane colour-scheme resolver ────────────────────────────────────
+
+  /// Returns the active seasonal event's vehicle colour scheme when an event
+  /// is active, otherwise returns [fallback] unchanged.
+  ///
+  /// Drop-in replacement for `plane?.colorScheme` at every game-launch site so
+  /// that all modes consistently pick up seasonal colours with zero duplication.
+  ///
+  /// NOTE: This overrides the *colour scheme* only. The seasonal vehicle
+  /// *shape* (e.g. an actual sleigh/broom silhouette) is not yet applied here —
+  /// only the palette is swapped. Shape overrides are a future TODO.
+  static Map<String, int>? resolvePlaneColorScheme({
+    required Map<String, int>? fallback,
+    DateTime? now,
+  }) {
+    final theme = now != null ? forDate(now) : current();
+    return theme?.vehicleColorScheme ?? fallback;
+  }
+
   // ── Serialisation ───────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
