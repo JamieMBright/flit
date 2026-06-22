@@ -52,6 +52,12 @@ run_integration_ios() {
     fi
 }
 
+run_e2e_tests() {
+    echo "🔬 Running E2E integration tests (host runner)..."
+    flutter test test/integration/
+    echo "   ✓ E2E integration tests passed"
+}
+
 echo "🧪 Running Flit test suite..."
 echo ""
 
@@ -69,6 +75,8 @@ case "$TEST_TYPE" in
         run_integration_android
         echo ""
         run_integration_ios
+        echo ""
+        run_e2e_tests
         ;;
     security)
         run_security_audit
@@ -87,6 +95,8 @@ case "$TEST_TYPE" in
         run_integration_android
         echo ""
         run_integration_ios
+        echo ""
+        run_e2e_tests
         ;;
     shaders)
         echo "Running shader compilation checks..."
@@ -96,8 +106,11 @@ case "$TEST_TYPE" in
         done
         echo "Shader syntax check passed (full compilation requires Flutter build)."
         ;;
+    e2e)
+        run_e2e_tests
+        ;;
     *)
-        echo "Usage: ./scripts/test.sh [unit|integration|security|shaders|all]"
+        echo "Usage: ./scripts/test.sh [unit|integration|security|shaders|e2e|all]"
         exit 1
         ;;
 esac
