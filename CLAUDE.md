@@ -224,6 +224,14 @@ flutter analyze              # Static analysis (authoritative for prefer_const_c
 
 ---
 
+## Design Skills
+
+Two design skills live in `.claude/skills/` — use them for any visual work:
+- **`flit-canvas-art`** — hand-drawn Canvas art (planes, seasonal vehicles, HUD, map/globe overlays via `CustomPainter`, e.g. `lib/game/rendering/plane_renderer.dart`). Enforces **silhouette-first** design and a **golden-render verification loop** (render to PNG → look → refine) so art is visually verified, not just compiled. Never ship Canvas art you haven't looked at — the squint test catches what code review can't.
+- **`frontend-design`** (official Anthropic skill) — menu/screen/HUD UI: deliberate palette + typography, avoiding templated "AI-slop" defaults, via brainstorm → critique → build → critique.
+
+---
+
 ## Agent Usage
 
 ### When to Use Agents
