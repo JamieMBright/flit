@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/app_remote_config.dart';
 import '../../data/models/player.dart';
 import '../../data/providers/account_provider.dart';
@@ -106,67 +107,73 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           fit: StackFit.expand,
           children: [
             const _AuthBackground(),
-            SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Column(
-                  children: [
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.12),
-                    const Text(
-                      'FLIT',
-                      style: TextStyle(
-                        color: FlitColors.textPrimary,
-                        fontSize: 64,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 16,
+            MenuContentWrapper(
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.12,
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'A GEOGRAPHICAL ADVENTURE',
-                      style: TextStyle(
-                        color: FlitColors.gold,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 3,
-                      ),
-                    ),
-                    const SizedBox(height: 48),
-                    if (_mode == _AuthMode.welcome) _buildWelcome(),
-                    if (_mode == _AuthMode.signUp) _buildSignUp(),
-                    if (_mode == _AuthMode.signIn) _buildSignIn(),
-                    if (_mode == _AuthMode.confirmEmail) _buildConfirmEmail(),
-                    if (_mode == _AuthMode.forgotPassword)
-                      _buildForgotPassword(),
-                    if (_mode == _AuthMode.resetEmailSent)
-                      _buildResetEmailSent(),
-                    if (_error != null) ...[
-                      const SizedBox(height: 16),
-                      _ErrorBanner(message: _error!),
-                    ],
-                    if (_isLoading) ...[
-                      const SizedBox(height: 24),
-                      const CircularProgressIndicator(color: FlitColors.accent),
-                    ],
-                    const SizedBox(height: 40),
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _PrivacyLink(),
-                        SizedBox(width: 16),
-                        Text(
-                          '|',
-                          style: TextStyle(
-                            color: FlitColors.textMuted,
-                            fontSize: 11,
-                          ),
+                      const Text(
+                        'FLIT',
+                        style: TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 64,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 16,
                         ),
-                        SizedBox(width: 16),
-                        _TermsLink(),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'A GEOGRAPHICAL ADVENTURE',
+                        style: TextStyle(
+                          color: FlitColors.gold,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 3,
+                        ),
+                      ),
+                      const SizedBox(height: 48),
+                      if (_mode == _AuthMode.welcome) _buildWelcome(),
+                      if (_mode == _AuthMode.signUp) _buildSignUp(),
+                      if (_mode == _AuthMode.signIn) _buildSignIn(),
+                      if (_mode == _AuthMode.confirmEmail) _buildConfirmEmail(),
+                      if (_mode == _AuthMode.forgotPassword)
+                        _buildForgotPassword(),
+                      if (_mode == _AuthMode.resetEmailSent)
+                        _buildResetEmailSent(),
+                      if (_error != null) ...[
+                        const SizedBox(height: 16),
+                        _ErrorBanner(message: _error!),
                       ],
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                      if (_isLoading) ...[
+                        const SizedBox(height: 24),
+                        const CircularProgressIndicator(
+                          color: FlitColors.accent,
+                        ),
+                      ],
+                      const SizedBox(height: 40),
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _PrivacyLink(),
+                          SizedBox(width: 16),
+                          Text(
+                            '|',
+                            style: TextStyle(
+                              color: FlitColors.textMuted,
+                              fontSize: 11,
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          _TermsLink(),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
                 ),
               ),
             ),

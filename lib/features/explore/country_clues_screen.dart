@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/services/clue_report_service.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/data/canada_clues.dart';
@@ -124,88 +125,90 @@ class _CountryCluesScreenState extends State<CountryCluesScreen> {
             ],
           ),
         ),
-        body: Column(
-          children: [
-            // Search bar (shared across tabs)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: TextField(
-                controller: _searchCtl,
-                onChanged: (v) => setState(() => _search = v.trim()),
-                style: const TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 14,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Search…',
-                  hintStyle: const TextStyle(color: FlitColors.textMuted),
-                  prefixIcon: const Icon(
-                    Icons.search,
-                    color: FlitColors.textMuted,
-                    size: 20,
+        body: MenuContentWrapper(
+          child: Column(
+            children: [
+              // Search bar (shared across tabs)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: TextField(
+                  controller: _searchCtl,
+                  onChanged: (v) => setState(() => _search = v.trim()),
+                  style: const TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 14,
                   ),
-                  suffixIcon: _search.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(
-                            Icons.close,
-                            color: FlitColors.textMuted,
-                            size: 18,
-                          ),
-                          onPressed: () {
-                            _searchCtl.clear();
-                            setState(() => _search = '');
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: FlitColors.backgroundMid,
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
+                  decoration: InputDecoration(
+                    hintText: 'Search…',
+                    hintStyle: const TextStyle(color: FlitColors.textMuted),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: FlitColors.textMuted,
+                      size: 20,
+                    ),
+                    suffixIcon: _search.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(
+                              Icons.close,
+                              color: FlitColors.textMuted,
+                              size: 18,
+                            ),
+                            onPressed: () {
+                              _searchCtl.clear();
+                              setState(() => _search = '');
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: FlitColors.backgroundMid,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 10,
+                      horizontal: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            // Tab content
-            Expanded(
-              child: TabBarView(
-                children: [
-                  // All World tab
-                  _CountriesTab(
-                    countries: _filteredCountries,
-                    unsupportedFlags: _unsupportedFlagCodes,
-                  ),
+              // Tab content
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    // All World tab
+                    _CountriesTab(
+                      countries: _filteredCountries,
+                      unsupportedFlags: _unsupportedFlagCodes,
+                    ),
 
-                  // Regions tab (continental with filter)
-                  _FilteredRegionalTab(
-                    regions: _continentalRegions,
-                    selectedRegion: _selectedContinental,
-                    onRegionChanged: (r) =>
-                        setState(() => _selectedContinental = r),
-                    filteredAreas: _selectedContinental != null
-                        ? _filteredAreas(_selectedContinental!)
-                        : null,
-                  ),
+                    // Regions tab (continental with filter)
+                    _FilteredRegionalTab(
+                      regions: _continentalRegions,
+                      selectedRegion: _selectedContinental,
+                      onRegionChanged: (r) =>
+                          setState(() => _selectedContinental = r),
+                      filteredAreas: _selectedContinental != null
+                          ? _filteredAreas(_selectedContinental!)
+                          : null,
+                    ),
 
-                  // Sub-national tab (with filter)
-                  _FilteredRegionalTab(
-                    regions: _subNationalRegions,
-                    selectedRegion: _selectedSubNational,
-                    onRegionChanged: (r) =>
-                        setState(() => _selectedSubNational = r),
-                    filteredAreas: _selectedSubNational != null
-                        ? _filteredAreas(_selectedSubNational!)
-                        : null,
-                  ),
-                ],
+                    // Sub-national tab (with filter)
+                    _FilteredRegionalTab(
+                      regions: _subNationalRegions,
+                      selectedRegion: _selectedSubNational,
+                      onRegionChanged: (r) =>
+                          setState(() => _selectedSubNational = r),
+                      filteredAreas: _selectedSubNational != null
+                          ? _filteredAreas(_selectedSubNational!)
+                          : null,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

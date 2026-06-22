@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/map/region.dart';
 import 'free_flight_setup_screen.dart';
@@ -91,77 +92,79 @@ class RegionSelectScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Difficulty selector bar
-          ListenableBuilder(
-            listenable: GameSettings.instance,
-            builder: (context, _) => _DifficultyBar(
-              difficulty: GameSettings.instance.difficulty,
-              onChanged: (d) => GameSettings.instance.difficulty = d,
+      body: MenuContentWrapper(
+        child: Column(
+          children: [
+            // Difficulty selector bar
+            ListenableBuilder(
+              listenable: GameSettings.instance,
+              builder: (context, _) => _DifficultyBar(
+                difficulty: GameSettings.instance.difficulty,
+                onChanged: (d) => GameSettings.instance.difficulty = d,
+              ),
             ),
-          ),
-          // Region list
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: GameRegion.values.length,
-              itemBuilder: (context, index) {
-                final region = GameRegion.values[index];
-                final isUnlockedByLevel = playerLevel >= region.requiredLevel;
-                final isUnlockedByPurchase =
-                    accountState.unlockedRegions.contains(region.name);
-                final isUnlocked = isUnlockedByLevel || isUnlockedByPurchase;
-                final cost = unlockCost(region);
-                final canAfford = coins >= cost && cost > 0;
+            // Region list
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: GameRegion.values.length,
+                itemBuilder: (context, index) {
+                  final region = GameRegion.values[index];
+                  final isUnlockedByLevel = playerLevel >= region.requiredLevel;
+                  final isUnlockedByPurchase =
+                      accountState.unlockedRegions.contains(region.name);
+                  final isUnlocked = isUnlockedByLevel || isUnlockedByPurchase;
+                  final cost = unlockCost(region);
+                  final canAfford = coins >= cost && cost > 0;
 
-                final isAdmin = accountState.isAdmin;
-                final isWorld = region == GameRegion.world;
+                  final isAdmin = accountState.isAdmin;
+                  final isWorld = region == GameRegion.world;
 
-                // For non-admin users, non-World regions are gated behind a
-                // "Coming Soon" dialog regardless of unlock / purchase state.
-                VoidCallback? tapHandler;
-                VoidCallback? buyHandler;
+                  // For non-admin users, non-World regions are gated behind a
+                  // "Coming Soon" dialog regardless of unlock / purchase state.
+                  VoidCallback? tapHandler;
+                  VoidCallback? buyHandler;
 
-                if (isAdmin) {
-                  // Admin: full existing behaviour.
-                  tapHandler = isUnlocked
-                      ? () => _launchPlay(context, ref, region)
-                      : null;
-                  buyHandler = (!isUnlocked && canAfford)
-                      ? () => _showUnlockDialog(context, ref, region, cost)
-                      : null;
-                } else if (isWorld) {
-                  // Regular user, World region: normal play flow (always unlocked).
-                  tapHandler = isUnlocked
-                      ? () => _launchPlay(context, ref, region)
-                      : null;
-                  // World is always unlocked so buyHandler stays null.
-                } else {
-                  // Regular user, non-World region: show "Coming Soon" for both
-                  // tap (when nominally unlocked) and buy button.
-                  tapHandler = isUnlocked
-                      ? () => _showComingSoonDialog(context, region)
-                      : null;
-                  buyHandler = (!isUnlocked && canAfford)
-                      ? () => _showComingSoonDialog(context, region)
-                      : null;
-                }
+                  if (isAdmin) {
+                    // Admin: full existing behaviour.
+                    tapHandler = isUnlocked
+                        ? () => _launchPlay(context, ref, region)
+                        : null;
+                    buyHandler = (!isUnlocked && canAfford)
+                        ? () => _showUnlockDialog(context, ref, region, cost)
+                        : null;
+                  } else if (isWorld) {
+                    // Regular user, World region: normal play flow (always unlocked).
+                    tapHandler = isUnlocked
+                        ? () => _launchPlay(context, ref, region)
+                        : null;
+                    // World is always unlocked so buyHandler stays null.
+                  } else {
+                    // Regular user, non-World region: show "Coming Soon" for both
+                    // tap (when nominally unlocked) and buy button.
+                    tapHandler = isUnlocked
+                        ? () => _showComingSoonDialog(context, region)
+                        : null;
+                    buyHandler = (!isUnlocked && canAfford)
+                        ? () => _showComingSoonDialog(context, region)
+                        : null;
+                  }
 
-                return _RegionCard(
-                  region: region,
-                  isUnlocked: isUnlocked,
-                  playerLevel: playerLevel,
-                  unlockCost: cost,
-                  canBuy: !isUnlocked && canAfford,
-                  isAdmin: isAdmin,
-                  onTap: tapHandler,
-                  onBuy: buyHandler,
-                );
-              },
-            ),
-          ), // Expanded
-        ], // Column
+                  return _RegionCard(
+                    region: region,
+                    isUnlocked: isUnlocked,
+                    playerLevel: playerLevel,
+                    unlockCost: cost,
+                    canBuy: !isUnlocked && canAfford,
+                    isAdmin: isAdmin,
+                    onTap: tapHandler,
+                    onBuy: buyHandler,
+                  );
+                },
+              ),
+            ), // Expanded
+          ], // Column
+        ),
       ),
     );
   }

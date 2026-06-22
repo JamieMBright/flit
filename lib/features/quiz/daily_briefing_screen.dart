@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../game/quiz/daily_briefing.dart';
 import '../guide/gameplay_guide_screen.dart';
 import '../../game/quiz/quiz_category.dart';
@@ -131,22 +132,24 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen>
           ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  _buildMissionHeader(),
-                  const SizedBox(height: 24),
-                  _buildBriefingCard(),
-                  const SizedBox(height: 24),
-                  _buildActionArea(),
-                  const SizedBox(height: 32),
-                  _buildInfoFooter(),
-                ],
+      body: MenuContentWrapper(
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _buildMissionHeader(),
+                    const SizedBox(height: 24),
+                    _buildBriefingCard(),
+                    const SizedBox(height: 24),
+                    _buildActionArea(),
+                    const SizedBox(height: 32),
+                    _buildInfoFooter(),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 
