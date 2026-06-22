@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/h2h_challenge.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_difficulty.dart';
@@ -62,118 +63,120 @@ class _H2HResultsScreenState extends State<H2HResultsScreen>
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
       body: SafeArea(
-        child: AnimatedBuilder(
-          animation: _animController,
-          builder: (context, child) {
-            return Opacity(
-              opacity: _fadeIn.value,
-              child: Transform.translate(
-                offset: Offset(0, _slideUp.value),
-                child: child,
-              ),
-            );
-          },
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 24,
-                  ),
-                  child: Column(
-                    children: [
-                      // Trophy / result badge
-                      _buildResultBadge(isDraw, winnerName),
-                      const SizedBox(height: 16),
+        child: MenuContentWrapper(
+          child: AnimatedBuilder(
+            animation: _animController,
+            builder: (context, child) {
+              return Opacity(
+                opacity: _fadeIn.value,
+                child: Transform.translate(
+                  offset: Offset(0, _slideUp.value),
+                  child: child,
+                ),
+              );
+            },
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 24,
+                    ),
+                    child: Column(
+                      children: [
+                        // Trophy / result badge
+                        _buildResultBadge(isDraw, winnerName),
+                        const SizedBox(height: 16),
 
-                      // Title
-                      Text(
-                        isDraw
-                            ? 'DRAW'
-                            : winnerName != null
-                                ? '$winnerName WINS!'
-                                : 'MATCH COMPLETE',
-                        style: TextStyle(
-                          color: isDraw
-                              ? FlitColors.textSecondary
-                              : FlitColors.gold,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Matchup subtitle
-                      Text(
-                        '${challenge.challengerName} vs ${challenge.challengedName}',
-                        style: const TextStyle(
-                          color: FlitColors.textSecondary,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-
-                      // Overall score
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: FlitColors.accent.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: FlitColors.accent.withOpacity(0.25),
-                          ),
-                        ),
-                        child: Text(
-                          challenge.scoreText,
-                          style: const TextStyle(
-                            color: FlitColors.accent,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-
-                      // Round details
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'ROUNDS',
+                        // Title
+                        Text(
+                          isDraw
+                              ? 'DRAW'
+                              : winnerName != null
+                                  ? '$winnerName WINS!'
+                                  : 'MATCH COMPLETE',
                           style: TextStyle(
-                            color: FlitColors.textMuted,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.5,
+                            color: isDraw
+                                ? FlitColors.textSecondary
+                                : FlitColors.gold,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
+                        const SizedBox(height: 8),
 
-                      for (var i = 0; i < challenge.rounds.length; i++) ...[
-                        _RoundResultCard(
-                          round: challenge.rounds[i],
-                          roundNumber: i + 1,
-                          challengerName: challenge.challengerName,
-                          challengedName: challenge.challengedName,
+                        // Matchup subtitle
+                        Text(
+                          '${challenge.challengerName} vs ${challenge.challengedName}',
+                          style: const TextStyle(
+                            color: FlitColors.textSecondary,
+                            fontSize: 14,
+                          ),
                         ),
-                        if (i < challenge.rounds.length - 1)
-                          const SizedBox(height: 10),
-                      ],
+                        const SizedBox(height: 6),
 
-                      const SizedBox(height: 24),
-                    ],
+                        // Overall score
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: FlitColors.accent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: FlitColors.accent.withOpacity(0.25),
+                            ),
+                          ),
+                          child: Text(
+                            challenge.scoreText,
+                            style: const TextStyle(
+                              color: FlitColors.accent,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+
+                        // Round details
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'ROUNDS',
+                            style: TextStyle(
+                              color: FlitColors.textMuted,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        for (var i = 0; i < challenge.rounds.length; i++) ...[
+                          _RoundResultCard(
+                            round: challenge.rounds[i],
+                            roundNumber: i + 1,
+                            challengerName: challenge.challengerName,
+                            challengedName: challenge.challengedName,
+                          ),
+                          if (i < challenge.rounds.length - 1)
+                            const SizedBox(height: 10),
+                        ],
+
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
-              // Bottom actions
-              _buildBottomBar(),
-            ],
+                // Bottom actions
+                _buildBottomBar(),
+              ],
+            ),
           ),
         ),
       ),

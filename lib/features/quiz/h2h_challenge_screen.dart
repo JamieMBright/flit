@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/h2h_challenge.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/challenge_service.dart';
@@ -64,9 +65,11 @@ class _H2HChallengeScreenState extends ConsumerState<H2HChallengeScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [_CreateChallengeTab(), _MyChallengesTab()],
+      body: MenuContentWrapper(
+        child: TabBarView(
+          controller: _tabController,
+          children: const [_CreateChallengeTab(), _MyChallengesTab()],
+        ),
       ),
     );
   }

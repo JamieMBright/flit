@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/uncharted_progress.dart';
@@ -97,182 +98,184 @@ class _UnchartedSetupScreenState extends ConsumerState<UnchartedSetupScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Mode toggle.
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _ModeChip(
-                      label: 'Countries',
-                      subtitle: 'Name the countries',
-                      icon: Icons.map_outlined,
-                      selected: _selectedMode == UnchartedMode.countries,
-                      onTap: () => setState(
-                        () => _selectedMode = UnchartedMode.countries,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _ModeChip(
-                      label: 'Capitals',
-                      subtitle: 'Name the capitals',
-                      icon: Icons.location_city,
-                      selected: _selectedMode == UnchartedMode.capitals,
-                      onTap: () => setState(
-                        () => _selectedMode = UnchartedMode.capitals,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Labels toggle.
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-              child: GestureDetector(
-                onTap: () => setState(() => _showLabels = !_showLabels),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: _showLabels
-                        ? FlitColors.gold.withValues(alpha: 0.12)
-                        : FlitColors.backgroundMid,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: _showLabels
-                          ? FlitColors.gold.withValues(alpha: 0.5)
-                          : FlitColors.cardBorder,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _showLabels
-                            ? Icons.label_rounded
-                            : Icons.label_off_rounded,
-                        color: _showLabels
-                            ? FlitColors.gold
-                            : FlitColors.textSecondary,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Show Country Names',
-                              style: TextStyle(
-                                color: _showLabels
-                                    ? FlitColors.gold
-                                    : FlitColors.textPrimary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const Text(
-                              'Labels visible — score halved',
-                              style: TextStyle(
-                                color: FlitColors.textSecondary,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
+        child: MenuContentWrapper(
+          child: Column(
+            children: [
+              // Mode toggle.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _ModeChip(
+                        label: 'Countries',
+                        subtitle: 'Name the countries',
+                        icon: Icons.map_outlined,
+                        selected: _selectedMode == UnchartedMode.countries,
+                        onTap: () => setState(
+                          () => _selectedMode = UnchartedMode.countries,
                         ),
                       ),
-                      Icon(
-                        _showLabels
-                            ? Icons.check_circle_rounded
-                            : Icons.circle_outlined,
-                        color: _showLabels
-                            ? FlitColors.gold
-                            : FlitColors.textSecondary,
-                        size: 22,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _ModeChip(
+                        label: 'Capitals',
+                        subtitle: 'Name the capitals',
+                        icon: Icons.location_city,
+                        selected: _selectedMode == UnchartedMode.capitals,
+                        onTap: () => setState(
+                          () => _selectedMode = UnchartedMode.capitals,
+                        ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // Section header.
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'SELECT REGION',
-                  style: TextStyle(
-                    color: FlitColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-              ),
-            ),
-            // Region list.
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _regions.length,
-                itemBuilder: (context, index) {
-                  final region = _regions[index];
-                  final areaCount = RegionalData.getAreas(region).length;
-                  final isSelected = region == _selectedRegion;
-                  final key = '${region.name}_${_selectedMode.name}';
-                  final progress =
-                      ref.watch(accountProvider).unchartedProgress[key];
-                  return _RegionCard(
-                    region: region,
-                    areaCount: areaCount,
-                    icon: _regionIcons[region] ?? Icons.public,
-                    selected: isSelected,
-                    progress: progress,
-                    onTap: () => setState(() => _selectedRegion = region),
-                  );
-                },
-              ),
-            ),
-            // Fixed bottom start button.
-            Container(
-              decoration: BoxDecoration(
-                color: FlitColors.backgroundDark,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _startGame,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FlitColors.accent,
-                    foregroundColor: FlitColors.textPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
                     ),
-                    textStyle: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1,
+                  ],
+                ),
+              ),
+              // Labels toggle.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                child: GestureDetector(
+                  onTap: () => setState(() => _showLabels = !_showLabels),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _showLabels
+                          ? FlitColors.gold.withValues(alpha: 0.12)
+                          : FlitColors.backgroundMid,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _showLabels
+                            ? FlitColors.gold.withValues(alpha: 0.5)
+                            : FlitColors.cardBorder,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _showLabels
+                              ? Icons.label_rounded
+                              : Icons.label_off_rounded,
+                          color: _showLabels
+                              ? FlitColors.gold
+                              : FlitColors.textSecondary,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Show Country Names',
+                                style: TextStyle(
+                                  color: _showLabels
+                                      ? FlitColors.gold
+                                      : FlitColors.textPrimary,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const Text(
+                                'Labels visible — score halved',
+                                style: TextStyle(
+                                  color: FlitColors.textSecondary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          _showLabels
+                              ? Icons.check_circle_rounded
+                              : Icons.circle_outlined,
+                          color: _showLabels
+                              ? FlitColors.gold
+                              : FlitColors.textSecondary,
+                          size: 22,
+                        ),
+                      ],
                     ),
                   ),
-                  child: const Text('START'),
                 ),
               ),
-            ),
-          ],
+              // Section header.
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'SELECT REGION',
+                    style: TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+              // Region list.
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _regions.length,
+                  itemBuilder: (context, index) {
+                    final region = _regions[index];
+                    final areaCount = RegionalData.getAreas(region).length;
+                    final isSelected = region == _selectedRegion;
+                    final key = '${region.name}_${_selectedMode.name}';
+                    final progress =
+                        ref.watch(accountProvider).unchartedProgress[key];
+                    return _RegionCard(
+                      region: region,
+                      areaCount: areaCount,
+                      icon: _regionIcons[region] ?? Icons.public,
+                      selected: isSelected,
+                      progress: progress,
+                      onTap: () => setState(() => _selectedRegion = region),
+                    );
+                  },
+                ),
+              ),
+              // Fixed bottom start button.
+              Container(
+                decoration: BoxDecoration(
+                  color: FlitColors.backgroundDark,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _startGame,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.accent,
+                      foregroundColor: FlitColors.textPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    child: const Text('START'),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

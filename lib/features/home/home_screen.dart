@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_version.dart';
 import '../../data/providers/account_provider.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/theme/flit_theme.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/challenge.dart';
 import '../../data/services/app_config_service.dart';
 import '../../data/services/challenge_service.dart';
@@ -167,30 +169,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               child: const AnnouncementBanner(),
             ),
 
-            // Menu overlay
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
-                child: Column(
-                  children: [
-                    const Spacer(flex: 3),
-                    // Title block with paper plane accent
-                    _buildTitle(),
-                    const Spacer(flex: 2),
-                    _buildMenuButtons(context),
-                    const Spacer(flex: 1),
-                    // Version number
-                    const Text(
-                      appVersion,
-                      style: TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w400,
-                        letterSpacing: 1,
+            // Menu overlay — constrained to kMaxContentWidth and centered so it
+            // keeps a phone-like column on wide screens (desktop browser).
+            // The full-bleed background above still fills the screen.
+            MenuContentWrapper(
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  child: Column(
+                    children: [
+                      const Spacer(flex: 3),
+                      // Title block with paper plane accent
+                      _buildTitle(),
+                      const Spacer(flex: 2),
+                      _buildMenuButtons(context),
+                      const Spacer(flex: 1),
+                      // Version number
+                      const Text(
+                        appVersion,
+                        style: TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 1,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
+                      const SizedBox(height: 4),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -406,6 +412,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       isScrollControlled: true,
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
+        maxWidth: kMaxContentWidth,
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),

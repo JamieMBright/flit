@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/providers/account_provider.dart';
 import '../shop/shop_screen.dart';
@@ -1854,46 +1855,48 @@ class _AvatarEditorScreenState extends ConsumerState<AvatarEditorScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // -- Avatar preview --
-          _AvatarPreviewSection(config: _config),
+      body: MenuContentWrapper(
+        child: Column(
+          children: [
+            // -- Avatar preview --
+            _AvatarPreviewSection(config: _config),
 
-          // -- Category tabs --
-          _CategoryTabBar(
-            categories: _categories,
-            selectedIndex: _selectedCategory,
-            onSelected: (index) {
-              setState(() => _selectedCategory = index);
-            },
-          ),
-
-          // -- Parts grid --
-          Expanded(
-            child: _PartsGrid(
-              category: _categories[_selectedCategory],
-              currentConfig: _config,
-              selectedPartId: _selectedPartForCategory(
-                _categories[_selectedCategory].configKey,
-              ),
-              ownedParts: ownedParts,
-              coins: coins,
-              onPartTapped: (part) {
-                final key = _categories[_selectedCategory].configKey;
-                if (part.isCustomPicker) {
-                  _showCustomColorPickerDialog(key);
-                } else if (_canUsePart(part)) {
-                  _selectPart(key, part.id);
-                } else {
-                  _showPurchaseDialog(part, key);
-                }
+            // -- Category tabs --
+            _CategoryTabBar(
+              categories: _categories,
+              selectedIndex: _selectedCategory,
+              onSelected: (index) {
+                setState(() => _selectedCategory = index);
               },
             ),
-          ),
 
-          // -- Save button --
-          _SaveBar(coins: coins, onSave: _saveConfig),
-        ],
+            // -- Parts grid --
+            Expanded(
+              child: _PartsGrid(
+                category: _categories[_selectedCategory],
+                currentConfig: _config,
+                selectedPartId: _selectedPartForCategory(
+                  _categories[_selectedCategory].configKey,
+                ),
+                ownedParts: ownedParts,
+                coins: coins,
+                onPartTapped: (part) {
+                  final key = _categories[_selectedCategory].configKey;
+                  if (part.isCustomPicker) {
+                    _showCustomColorPickerDialog(key);
+                  } else if (_canUsePart(part)) {
+                    _selectPart(key, part.id);
+                  } else {
+                    _showPurchaseDialog(part, key);
+                  }
+                },
+              ),
+            ),
+
+            // -- Save button --
+            _SaveBar(coins: coins, onSave: _saveConfig),
+          ],
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/clues/clue_types.dart';
@@ -317,49 +318,51 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Scrollable content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 20,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    _buildHeader(),
-                    const SizedBox(height: 20),
+        child: MenuContentWrapper(
+          child: Column(
+            children: [
+              // Scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 20,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      _buildHeader(),
+                      const SizedBox(height: 20),
 
-                    // Coin cost display
-                    _buildCostDisplay(coins),
-                    const SizedBox(height: 20),
+                      // Coin cost display
+                      _buildCostDisplay(coins),
+                      const SizedBox(height: 20),
 
-                    // Section label: Clue Types
-                    _buildSectionLabel('CLUE TYPES', Icons.tune),
-                    const SizedBox(height: 10),
+                      // Section label: Clue Types
+                      _buildSectionLabel('CLUE TYPES', Icons.tune),
+                      const SizedBox(height: 10),
 
-                    // Clue type toggle cards
-                    ..._buildClueToggleCards(),
-                    const SizedBox(height: 24),
+                      // Clue type toggle cards
+                      ..._buildClueToggleCards(),
+                      const SizedBox(height: 24),
 
-                    // Section label: Clue Progress
-                    _buildSectionLabel('CLUE PROGRESS', Icons.trending_up),
-                    const SizedBox(height: 10),
+                      // Section label: Clue Progress
+                      _buildSectionLabel('CLUE PROGRESS', Icons.trending_up),
+                      const SizedBox(height: 10),
 
-                    // Clue progress cards
-                    ..._buildClueProgressCards(),
-                    const SizedBox(height: 24),
-                  ],
+                      // Clue progress cards
+                      ..._buildClueProgressCards(),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // Bottom action bar (always visible)
-            _buildBottomBar(coins, canStart),
-          ],
+              // Bottom action bar (always visible)
+              _buildBottomBar(coins, canStart),
+            ],
+          ),
         ),
       ),
     );

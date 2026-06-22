@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/clues/clue_types.dart';
@@ -182,49 +183,51 @@ class _FreeFlightSetupScreenState extends ConsumerState<FreeFlightSetupScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Difficulty selector bar
-            ListenableBuilder(
-              listenable: GameSettings.instance,
-              builder: (context, _) => _DifficultyBar(
-                difficulty: GameSettings.instance.difficulty,
-                onChanged: (d) => GameSettings.instance.difficulty = d,
-              ),
-            ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 20,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    _buildHeader(),
-                    const SizedBox(height: 20),
-
-                    // Round count
-                    _buildSectionLabel('ROUNDS', Icons.repeat),
-                    const SizedBox(height: 10),
-                    _buildRoundSelector(),
-                    const SizedBox(height: 20),
-
-                    // Clue types
-                    _buildSectionLabel('CLUE TYPES', Icons.tune),
-                    const SizedBox(height: 10),
-                    ..._buildClueToggleCards(),
-                    const SizedBox(height: 24),
-                  ],
+        child: MenuContentWrapper(
+          child: Column(
+            children: [
+              // Difficulty selector bar
+              ListenableBuilder(
+                listenable: GameSettings.instance,
+                builder: (context, _) => _DifficultyBar(
+                  difficulty: GameSettings.instance.difficulty,
+                  onChanged: (d) => GameSettings.instance.difficulty = d,
                 ),
               ),
-            ),
 
-            // Bottom bar
-            _buildBottomBar(),
-          ],
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 20,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      _buildHeader(),
+                      const SizedBox(height: 20),
+
+                      // Round count
+                      _buildSectionLabel('ROUNDS', Icons.repeat),
+                      const SizedBox(height: 10),
+                      _buildRoundSelector(),
+                      const SizedBox(height: 20),
+
+                      // Clue types
+                      _buildSectionLabel('CLUE TYPES', Icons.tune),
+                      const SizedBox(height: 10),
+                      ..._buildClueToggleCards(),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Bottom bar
+              _buildBottomBar(),
+            ],
+          ),
         ),
       ),
     );

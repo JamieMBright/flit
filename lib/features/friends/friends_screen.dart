@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/challenge.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/friend.dart';
@@ -200,15 +201,17 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
             ),
           ],
         ),
-        body: _loading
-            ? const Center(
-                child: CircularProgressIndicator(color: FlitColors.accent),
-              )
-            : RefreshIndicator(
-                onRefresh: _loadData,
-                color: FlitColors.accent,
-                child: _buildBody(),
-              ),
+        body: MenuContentWrapper(
+          child: _loading
+              ? const Center(
+                  child: CircularProgressIndicator(color: FlitColors.accent),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadData,
+                  color: FlitColors.accent,
+                  child: _buildBody(),
+                ),
+        ),
       );
 
   Widget _buildBody() {

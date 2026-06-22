@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/theme/rarity_colors.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/models/leaderboard_entry.dart';
@@ -259,50 +260,54 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             ],
           ),
         ),
-        body: Column(
-          children: [
-            // Sub-tab chips: Today | Last Month | All Time
-            _TimeframeChips(
-                selected: _timeframe, onChanged: _onTimeframeChanged),
-            // Sort chips: Score | Proficiency | Time
-            _SortChips(selected: _sort, onChanged: _onSortChanged),
-            const Divider(color: FlitColors.cardBorder, height: 1),
-            // Player rank banner (score-based; hidden when not sorting by score)
-            if (_playerRank != null && _sort == LeaderboardSort.score)
-              _PlayerRankBanner(entry: _playerRank!),
-            // Leaderboard list
-            Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _errorMessage != null
-                      ? _ErrorState(message: _errorMessage!, onRetry: _loadData)
-                      : _entries.isEmpty
-                          ? const _EmptyState()
-                          : ListView.builder(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              itemCount: _sortedEntries.length,
-                              itemBuilder: (context, index) {
-                                final e = _sortedEntries[index];
-                                final isSelf = e.playerId == _userId;
-                                // Embargo: hide round details for other
-                                // players' daily-scramble scores from today
-                                // so clues/answers aren't spoiled.
-                                final embargoed = !isSelf &&
-                                    _currentMode ==
-                                        LeaderboardMode.dailyScramble &&
-                                    _isFromToday(e.timestamp);
-                                return _LeaderboardRow(
-                                  entry: e,
-                                  rank: index + 1,
-                                  isCurrentPlayer: isSelf,
-                                  isEmbargoed: embargoed,
-                                  sort: _sort,
-                                  proficiencyPct: _computeProficiencyPct(e),
-                                );
-                              },
-                            ),
-            ),
-          ],
+        body: MenuContentWrapper(
+          child: Column(
+            children: [
+              // Sub-tab chips: Today | Last Month | All Time
+              _TimeframeChips(
+                  selected: _timeframe, onChanged: _onTimeframeChanged),
+              // Sort chips: Score | Proficiency | Time
+              _SortChips(selected: _sort, onChanged: _onSortChanged),
+              const Divider(color: FlitColors.cardBorder, height: 1),
+              // Player rank banner (score-based; hidden when not sorting by score)
+              if (_playerRank != null && _sort == LeaderboardSort.score)
+                _PlayerRankBanner(entry: _playerRank!),
+              // Leaderboard list
+              Expanded(
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _errorMessage != null
+                        ? _ErrorState(
+                            message: _errorMessage!, onRetry: _loadData)
+                        : _entries.isEmpty
+                            ? const _EmptyState()
+                            : ListView.builder(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                itemCount: _sortedEntries.length,
+                                itemBuilder: (context, index) {
+                                  final e = _sortedEntries[index];
+                                  final isSelf = e.playerId == _userId;
+                                  // Embargo: hide round details for other
+                                  // players' daily-scramble scores from today
+                                  // so clues/answers aren't spoiled.
+                                  final embargoed = !isSelf &&
+                                      _currentMode ==
+                                          LeaderboardMode.dailyScramble &&
+                                      _isFromToday(e.timestamp);
+                                  return _LeaderboardRow(
+                                    entry: e,
+                                    rank: index + 1,
+                                    isCurrentPlayer: isSelf,
+                                    isEmbargoed: embargoed,
+                                    sort: _sort,
+                                    proficiencyPct: _computeProficiencyPct(e),
+                                  );
+                                },
+                              ),
+              ),
+            ],
+          ),
         ),
       );
 }

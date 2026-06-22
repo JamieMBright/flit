@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 
 /// Identifies a tab within the gameplay guide.
 ///
@@ -131,18 +132,20 @@ class _GameplayGuideScreenState extends State<GameplayGuideScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [
-          _OverviewTab(),
-          _DailyScrambleTab(),
-          _FreeFlightTab(),
-          _TrainingSortieTab(),
-          _DailyBriefingTab(),
-          _FlightSchoolTab(),
-          _UnchartedTab(),
-          _DogfightTab(),
-        ],
+      body: MenuContentWrapper(
+        child: TabBarView(
+          controller: _tabController,
+          children: const [
+            _OverviewTab(),
+            _DailyScrambleTab(),
+            _FreeFlightTab(),
+            _TrainingSortieTab(),
+            _DailyBriefingTab(),
+            _FlightSchoolTab(),
+            _UnchartedTab(),
+            _DogfightTab(),
+          ],
+        ),
       ),
     );
   }

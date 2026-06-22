@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/web_download.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/widgets/settings_sheet.dart';
 import '../../core/widgets/sync_status_indicator.dart';
 import '../../core/utils/profanity_filter.dart';
@@ -684,73 +685,75 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Avatar and name
-            _ProfileHeader(player: player, avatarConfig: avatarConfig),
-            const SizedBox(height: 24),
-            // Level progress
-            _LevelProgress(player: player),
-            const SizedBox(height: 24),
-            // Stats grid
-            _StatsGrid(
-              player: player,
-              bestDailyScore: _bestDailyScore,
-              bestDailyTime: _bestDailyTime,
-              bestTrainingScore: _bestTrainingScore,
-              bestTrainingTime: _bestTrainingTime,
-            ),
-            const SizedBox(height: 24),
-            // Quick links
-            Row(
-              children: [
-                Expanded(
-                  child: _QuickLinkButton(
-                    icon: Icons.face,
-                    label: 'Avatar',
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const AvatarEditorScreen(),
+      body: MenuContentWrapper(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Avatar and name
+              _ProfileHeader(player: player, avatarConfig: avatarConfig),
+              const SizedBox(height: 24),
+              // Level progress
+              _LevelProgress(player: player),
+              const SizedBox(height: 24),
+              // Stats grid
+              _StatsGrid(
+                player: player,
+                bestDailyScore: _bestDailyScore,
+                bestDailyTime: _bestDailyTime,
+                bestTrainingScore: _bestTrainingScore,
+                bestTrainingTime: _bestTrainingTime,
+              ),
+              const SizedBox(height: 24),
+              // Quick links
+              Row(
+                children: [
+                  Expanded(
+                    child: _QuickLinkButton(
+                      icon: Icons.face,
+                      label: 'Avatar',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const AvatarEditorScreen(),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _QuickLinkButton(
-                    icon: Icons.badge,
-                    label: 'License',
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const LicenseScreen(),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _QuickLinkButton(
+                      icon: Icons.badge,
+                      label: 'License',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const LicenseScreen(),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // Nationality
-            _NationalitySection(
-              nationality: account.license.nationality,
-              onTap: () => _showNationalityPicker(),
-            ),
-            const SizedBox(height: 24),
-            // Social titles
-            const SocialTitlesCard(),
-            const SizedBox(height: 24),
-            // Actions
-            _ProfileActions(
-              onEditProfile: _editProfile,
-              onChangePassword: _changePassword,
-              onGameHistory: _showGameHistory,
-              onExportData: _exportData,
-              onDeleteAccount: _deleteAccount,
-              onSignOut: _signOut,
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 24),
+              // Nationality
+              _NationalitySection(
+                nationality: account.license.nationality,
+                onTap: () => _showNationalityPicker(),
+              ),
+              const SizedBox(height: 24),
+              // Social titles
+              const SocialTitlesCard(),
+              const SizedBox(height: 24),
+              // Actions
+              _ProfileActions(
+                onEditProfile: _editProfile,
+                onChangePassword: _changePassword,
+                onGameHistory: _showGameHistory,
+                onExportData: _exportData,
+                onDeleteAccount: _deleteAccount,
+                onSignOut: _signOut,
+              ),
+            ],
+          ),
         ),
       ),
     );
