@@ -45,6 +45,10 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  # End-to-end / widget integration tests
+  integration_test:
+    sdk: flutter
+
   # Linting
   flutter_lints: ^3.0.1
 
