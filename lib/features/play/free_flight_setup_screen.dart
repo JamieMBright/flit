@@ -5,6 +5,7 @@ import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/cosmetic.dart';
+import '../../data/models/seasonal_theme.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/map/region.dart';
@@ -134,9 +135,11 @@ class _FreeFlightSetupScreenState extends ConsumerState<FreeFlightSetupScreen> {
           region: widget.region,
           totalRounds: _selectedRounds == 0 ? 99999 : _selectedRounds,
           isEndless: _selectedRounds == 0,
-          planeColorScheme: plane?.colorScheme,
+          planeColorScheme: SeasonalTheme.resolvePlaneColorScheme(
+            fallback: plane?.colorScheme,
+          ),
           planeWingSpan: plane?.wingSpan,
-          equippedPlaneId: planeId,
+          equippedPlaneId: SeasonalTheme.resolvePlaneShapeId(fallback: planeId),
           companionType: companion,
           fuelBoostMultiplier: fuelBoost,
           clueChance: license.clueChance,

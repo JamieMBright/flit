@@ -162,9 +162,11 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           region: GameRegion.world,
           totalRounds: 5,
           coinReward: reward,
-          planeColorScheme: plane?.colorScheme,
+          planeColorScheme: SeasonalTheme.resolvePlaneColorScheme(
+            fallback: plane?.colorScheme,
+          ),
           planeWingSpan: plane?.wingSpan,
-          equippedPlaneId: planeId,
+          equippedPlaneId: SeasonalTheme.resolvePlaneShapeId(fallback: planeId),
           companionType: companion,
           fuelBoostMultiplier: fuelBoost,
           clueChance: license.clueChance,
