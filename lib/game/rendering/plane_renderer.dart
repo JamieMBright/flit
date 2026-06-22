@@ -302,6 +302,31 @@ class PlaneRenderer {
           planeId,
         );
         break;
+      case 'plane_santa_sleigh':
+        // Seasonal Christmas silhouette — injected via resolvePlaneShapeId.
+        _renderSantaSleigh(
+            canvas, bankCos, bankSin, wingSpan, colorScheme, planeId);
+        break;
+      case 'plane_witch_broom':
+        // Seasonal Halloween silhouette — injected via resolvePlaneShapeId.
+        _renderWitchBroom(
+            canvas, bankCos, bankSin, wingSpan, colorScheme, planeId);
+        break;
+      case 'plane_easter_carriage':
+        // Seasonal Easter silhouette — injected via resolvePlaneShapeId.
+        _renderEasterCarriage(
+            canvas, bankCos, bankSin, wingSpan, colorScheme, planeId);
+        break;
+      case 'plane_cupid_arrow':
+        // Seasonal Valentines silhouette — injected via resolvePlaneShapeId.
+        _renderCupidArrow(
+            canvas, bankCos, bankSin, wingSpan, colorScheme, planeId);
+        break;
+      case 'plane_clover_copter':
+        // Seasonal St Patrick's Day silhouette — injected via resolvePlaneShapeId.
+        _renderCloverCopter(
+            canvas, bankCos, bankSin, wingSpan, colorScheme, planeId);
+        break;
       default:
         _renderBiPlane(
           canvas,
@@ -2907,5 +2932,702 @@ class PlaneRenderer {
       1.4,
       Paint()..color = secondary,
     );
+  }
+
+  // ─── Santa's Sleigh (seasonal Christmas) ────────────────────────────
+
+  /// Draws Santa's sleigh: a curved-runner body (viewed from the side/above)
+  /// with a bulging gift sack at the rear, two curved runners extending left
+  /// and right (as "wings" to imply forward motion), and a reins line
+  /// projecting forward.
+  ///
+  /// Colours: primary = sleigh body (red), secondary = runners/gilt trim (gold),
+  /// detail = snow/gift accents (white).
+  static void _renderSantaSleigh(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+    String planeId,
+  ) {
+    final primary = _primary(colorScheme, 0xFFCC0000); // deep red
+    final secondary = _secondary(colorScheme, 0xFFFFD700); // gold
+    final detail = _detail(colorScheme, 0xFFFFFFFF); // white/snow
+
+    final bodyShift = bankSin * 1.5;
+    final dynamicWingSpan = wingSpan * bankCos.abs() * 1.1;
+    final wingDip = -bankSin * 3.5;
+
+    final leftColor =
+        bankSin > 0 ? secondary : Color.lerp(secondary, Colors.black, 0.2)!;
+    final rightColor =
+        bankSin < 0 ? secondary : Color.lerp(secondary, Colors.black, 0.2)!;
+
+    // --- Runners (curved blades extending L + R like wings) ---
+    // Left runner: curves from rear-left around to front-left.
+    final leftRunner = Path()
+      ..moveTo(bodyShift - 2, -8) // front tip
+      ..cubicTo(
+        bodyShift - dynamicWingSpan * 0.5,
+        -10 + wingDip,
+        -dynamicWingSpan + bodyShift,
+        -4 + wingDip,
+        -dynamicWingSpan + bodyShift,
+        4 + wingDip, // outer tip (mid-height)
+      )
+      ..lineTo(-dynamicWingSpan + bodyShift + 2, 5 + wingDip)
+      ..cubicTo(
+        -dynamicWingSpan * 0.6 + bodyShift,
+        6 + wingDip * 0.5,
+        bodyShift - 2,
+        2,
+        bodyShift - 2,
+        -8, // back to start
+      );
+    _wash(canvas, leftRunner, leftColor, seed: planeId);
+    _pencilOutline(leftRunner, canvas, leftColor, strokeWidth: 0.9);
+
+    // Right runner (mirror).
+    final rightRunner = Path()
+      ..moveTo(bodyShift + 2, -8)
+      ..cubicTo(
+        bodyShift + dynamicWingSpan * 0.5,
+        -10 - wingDip,
+        dynamicWingSpan + bodyShift,
+        -4 - wingDip,
+        dynamicWingSpan + bodyShift,
+        4 - wingDip,
+      )
+      ..lineTo(dynamicWingSpan + bodyShift - 2, 5 - wingDip)
+      ..cubicTo(
+        dynamicWingSpan * 0.6 + bodyShift,
+        6 - wingDip * 0.5,
+        bodyShift + 2,
+        2,
+        bodyShift + 2,
+        -8,
+      );
+    _wash(canvas, rightRunner, rightColor, seed: planeId);
+    _pencilOutline(rightRunner, canvas, rightColor, strokeWidth: 0.9);
+
+    // --- Body group (roll-foreshortens with bankCos) ---
+    canvas.save();
+    final rollScale = 0.55 + bankCos.abs() * 0.45;
+    canvas.translate(bodyShift, 0);
+    canvas.scale(rollScale, 1.0);
+    canvas.translate(-bodyShift, 0);
+
+    // Sleigh body — tapers to a curved prow at the front (top).
+    final bodyPath = Path()
+      ..moveTo(bodyShift, -14) // prow tip
+      ..quadraticBezierTo(bodyShift + 5, -10, bodyShift + 5, -2) // right side
+      ..lineTo(bodyShift + 4, 10) // right rear
+      ..quadraticBezierTo(bodyShift, 12, bodyShift - 4, 10) // rear curve
+      ..lineTo(bodyShift - 5, -2) // left rear side
+      ..quadraticBezierTo(bodyShift - 5, -10, bodyShift, -14)
+      ..close();
+    _wash(canvas, bodyPath, primary, seed: planeId);
+    _pencilOutline(bodyPath, canvas, primary, strokeWidth: 1.0);
+    _crossHatch(
+      canvas,
+      Rect.fromLTRB(bodyShift - 5, -14, bodyShift + 5, 10),
+      primary,
+      spacing: 5.0,
+      opacity: 0.08,
+    );
+
+    // Gold trim lines along the sleigh sides.
+    final trimPaint = Paint()
+      ..color = secondary.withOpacity(0.85)
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+        Offset(bodyShift - 4, -10), Offset(bodyShift - 3.5, 8), trimPaint);
+    canvas.drawLine(
+        Offset(bodyShift + 4, -10), Offset(bodyShift + 3.5, 8), trimPaint);
+
+    // Gift sack (bulging oval at the rear / tail).
+    final sackPath = Path()
+      ..addOval(
+        Rect.fromCenter(center: Offset(bodyShift, 12), width: 10, height: 8),
+      );
+    _wash(canvas, sackPath, detail, seed: planeId);
+    _pencilOutline(sackPath, canvas, detail, strokeWidth: 0.9);
+    // Tie-off knot on the sack.
+    canvas.drawCircle(
+      Offset(bodyShift, 7.5),
+      1.4,
+      Paint()..color = secondary,
+    );
+
+    // Reins — thin line projecting forward from the prow.
+    final reinPaint = Paint()
+      ..color = _darken(detail, 0.3).withOpacity(0.7)
+      ..strokeWidth = 0.9
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(bodyShift - 1.5, -14),
+      Offset(bodyShift - 3, -22),
+      reinPaint,
+    );
+    canvas.drawLine(
+      Offset(bodyShift + 1.5, -14),
+      Offset(bodyShift + 3, -22),
+      reinPaint,
+    );
+
+    // Gold prow highlight (bright point at nose).
+    canvas.drawCircle(
+      Offset(bodyShift, -14),
+      1.6,
+      Paint()..color = secondary,
+    );
+
+    canvas.restore();
+  }
+
+  // ─── Witch's Broom (seasonal Halloween) ─────────────────────────────
+
+  /// Draws a witch's broom flying horizontally (nose = top, bristles at
+  /// bottom/rear). A long handle, a fan of bristles spread at the rear, and
+  /// a tiny seated witch silhouette + trailing smoke wisp.
+  ///
+  /// Colours: primary = handle/broom shaft (near-black), secondary = bristles
+  /// (orange), detail = witch/wisp (purple).
+  static void _renderWitchBroom(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+    String planeId,
+  ) {
+    final primary = _primary(colorScheme, 0xFF1A0A2E); // near-black purple
+    final secondary = _secondary(colorScheme, 0xFFFF6600); // orange bristles
+    final detail = _detail(colorScheme, 0xFF6B21A8); // purple witch/wisp
+
+    final bodyShift = bankSin * 1.5;
+    final dynamicWingSpan = wingSpan * bankCos.abs() * 1.0;
+    final wingDip = -bankSin * 2.5;
+
+    // --- Bristle fan (spread behind the broom like wings) ---
+    // Fan rendered as a series of individual bristle lines spreading left/right.
+    const bristleRootY = 8.0; // where shaft ends / bristles begin
+    const bristleCount = 7;
+    for (var i = 0; i < bristleCount; i++) {
+      final t = i / (bristleCount - 1); // 0..1
+      final side = (t - 0.5) * 2.0; // -1..1 (left to right)
+      final xTip = side * (dynamicWingSpan * 0.9) + bodyShift;
+      final yTip = bristleRootY + 8.0 + side.abs() * 2.0 + wingDip * side * 0.5;
+      // Darken outer bristles on the descending (banking) side.
+      final bristleColor =
+          (side * bankSin > 0.1) ? _darken(secondary, 0.25) : secondary;
+      canvas.drawLine(
+        Offset(bodyShift, bristleRootY),
+        Offset(xTip, yTip),
+        Paint()
+          ..color = bristleColor
+          ..strokeWidth = 1.2
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+    // Bristle binding band (band of secondary colour at the root of the fan).
+    canvas.drawLine(
+      Offset(bodyShift - 3, bristleRootY - 0.5),
+      Offset(bodyShift + 3, bristleRootY - 0.5),
+      Paint()
+        ..color = _darken(secondary, 0.15)
+        ..strokeWidth = 3.0
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // --- Body group ---
+    canvas.save();
+    final rollScale = 0.55 + bankCos.abs() * 0.45;
+    canvas.translate(bodyShift, 0);
+    canvas.scale(rollScale, 1.0);
+    canvas.translate(-bodyShift, 0);
+
+    // Broom handle (long slim shaft, nose = top, tapers to a point).
+    final handlePath = Path()
+      ..moveTo(bodyShift, -20) // tip of handle
+      ..lineTo(bodyShift + 1.5, -15)
+      ..lineTo(bodyShift + 2.0, bristleRootY)
+      ..lineTo(bodyShift - 2.0, bristleRootY)
+      ..lineTo(bodyShift - 1.5, -15)
+      ..close();
+    _wash(canvas, handlePath, primary, seed: planeId);
+    _pencilOutline(handlePath, canvas, primary, strokeWidth: 1.0);
+    // Wood-grain lines along the handle.
+    final grainPaint = Paint()
+      ..color = _lighten(primary, 0.25).withOpacity(0.4)
+      ..strokeWidth = 0.5;
+    for (var y = -16.0; y < bristleRootY; y += 4.0) {
+      canvas.drawLine(Offset(bodyShift - 1.5, y),
+          Offset(bodyShift + 1.5, y + 1.0), grainPaint);
+    }
+
+    // Seated witch silhouette — small oval body + conical hat above handle.
+    // Body (sits astride the broom at mid-handle).
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, -4), width: 6, height: 9),
+      Paint()..color = detail,
+    );
+    // Hat brim.
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, -9.5), width: 8, height: 2),
+      Paint()..color = primary,
+    );
+    // Hat cone.
+    final hatPath = Path()
+      ..moveTo(bodyShift, -18)
+      ..lineTo(bodyShift - 3.5, -9.5)
+      ..lineTo(bodyShift + 3.5, -9.5)
+      ..close();
+    _wash(canvas, hatPath, primary, seed: planeId);
+
+    // Trailing wisp / smoke (curvy line behind the bristles in detail colour).
+    final wispPaint = Paint()
+      ..color = detail.withOpacity(0.55)
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    final wispPath = Path()
+      ..moveTo(bodyShift, bristleRootY + 10)
+      ..cubicTo(
+        bodyShift + 4,
+        bristleRootY + 13,
+        bodyShift - 4,
+        bristleRootY + 16,
+        bodyShift + 2,
+        bristleRootY + 19,
+      );
+    canvas.drawPath(wispPath, wispPaint);
+
+    canvas.restore();
+  }
+
+  // ─── Easter Egg Express Carriage (seasonal Easter) ───────────────────
+
+  /// Draws a rounded egg-shaped carriage with small wheels, decorated with
+  /// painted-egg band accents. Viewed from the side/above; "nose" is top (−Y).
+  ///
+  /// Colours: primary = egg shell (pastel pink), secondary = carriage frame /
+  /// wheels (pastel blue), detail = painted-egg accent stripes (pastel yellow).
+  static void _renderEasterCarriage(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+    String planeId,
+  ) {
+    final primary = _primary(colorScheme, 0xFFFFB6C1); // pastel pink
+    final secondary = _secondary(colorScheme, 0xFFADD8E6); // pastel blue
+    final detail = _detail(colorScheme, 0xFFFFFF99); // pastel yellow
+
+    final bodyShift = bankSin * 1.5;
+    final dynamicWingSpan = wingSpan * bankCos.abs() * 0.9;
+    final wingDip = -bankSin * 3.0;
+
+    final leftColor =
+        bankSin > 0 ? secondary : Color.lerp(secondary, Colors.black, 0.2)!;
+    final rightColor =
+        bankSin < 0 ? secondary : Color.lerp(secondary, Colors.black, 0.2)!;
+
+    // --- Side wheels (drawn as arcs extending L/R like "wing stubs") ---
+    // Left wheel.
+    final leftWheel = Path()
+      ..addOval(
+        Rect.fromCenter(
+          center: Offset(-dynamicWingSpan * 0.6 + bodyShift, 6 + wingDip),
+          width: dynamicWingSpan * 0.55,
+          height: 5,
+        ),
+      );
+    _wash(canvas, leftWheel, leftColor, seed: planeId);
+    _pencilOutline(leftWheel, canvas, leftColor, strokeWidth: 0.9);
+
+    // Right wheel.
+    final rightWheel = Path()
+      ..addOval(
+        Rect.fromCenter(
+          center: Offset(dynamicWingSpan * 0.6 + bodyShift, 6 - wingDip),
+          width: dynamicWingSpan * 0.55,
+          height: 5,
+        ),
+      );
+    _wash(canvas, rightWheel, rightColor, seed: planeId);
+    _pencilOutline(rightWheel, canvas, rightColor, strokeWidth: 0.9);
+
+    // --- Body group ---
+    canvas.save();
+    final rollScale = 0.55 + bankCos.abs() * 0.45;
+    canvas.translate(bodyShift, 0);
+    canvas.scale(rollScale, 1.0);
+    canvas.translate(-bodyShift, 0);
+
+    // Egg-shaped carriage body (tall oval, pointed top, rounded base).
+    final bodyPath = Path()
+      ..moveTo(bodyShift, -18) // pointed top / "nose"
+      ..cubicTo(
+        bodyShift + 7,
+        -14,
+        bodyShift + 8,
+        -2,
+        bodyShift + 7,
+        10,
+      ) // right curve
+      ..quadraticBezierTo(bodyShift, 16, bodyShift - 7, 10) // base curve
+      ..cubicTo(
+        bodyShift - 8,
+        -2,
+        bodyShift - 7,
+        -14,
+        bodyShift,
+        -18,
+      )
+      ..close();
+    _wash(canvas, bodyPath, primary, seed: planeId);
+    _pencilOutline(bodyPath, canvas, primary, strokeWidth: 1.1);
+
+    // Decorative horizontal bands (painted-egg style).
+    final bandPaint = Paint()
+      ..color = detail.withOpacity(0.80)
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round;
+    for (final y in [-8.0, -1.0, 6.0]) {
+      // Clip bands to stay inside the egg outline — approximate with short lines.
+      final halfW = (y < -12 || y > 13) ? 3.0 : (y.abs() < 4 ? 7.5 : 6.0);
+      canvas.drawLine(
+        Offset(bodyShift - halfW, y),
+        Offset(bodyShift + halfW, y),
+        bandPaint,
+      );
+    }
+
+    // Secondary-colour frame ring at the equator (widest point).
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(bodyShift, -1),
+        width: 16,
+        height: 4,
+      ),
+      Paint()
+        ..color = secondary.withOpacity(0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0,
+    );
+
+    // Small circular window (porthole).
+    canvas.drawCircle(
+      Offset(bodyShift, -7),
+      3.0,
+      Paint()..color = secondary.withOpacity(0.6),
+    );
+    canvas.drawCircle(
+      Offset(bodyShift, -7),
+      3.0,
+      Paint()
+        ..color = _darken(secondary, 0.2)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.7,
+    );
+
+    canvas.restore();
+  }
+
+  // ─── Cupid's Arrow (seasonal Valentines) ────────────────────────────
+
+  /// Draws a large horizontal arrow travelling upward (−Y = nose), with a
+  /// heart-shaped arrowhead at the front and feathered fletching at the rear.
+  /// A trail of small petals/hearts streams behind.
+  ///
+  /// Colours: primary = arrow shaft (pink), secondary = heart tip (crimson),
+  /// detail = feathers / petal trail (white).
+  static void _renderCupidArrow(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+    String planeId,
+  ) {
+    final primary = _primary(colorScheme, 0xFFFF69B4); // hot pink
+    final secondary = _secondary(colorScheme, 0xFFDC143C); // crimson
+    final detail = _detail(colorScheme, 0xFFFFFFFF); // white feathers
+
+    final bodyShift = bankSin * 1.5;
+    final dynamicWingSpan = wingSpan * bankCos.abs() * 1.05;
+    final wingDip = -bankSin * 3.0;
+
+    final leftColor =
+        bankSin > 0 ? primary : Color.lerp(primary, Colors.black, 0.2)!;
+    final rightColor =
+        bankSin < 0 ? primary : Color.lerp(primary, Colors.black, 0.2)!;
+
+    // --- Fletching fins (left + right, like wings near the rear) ---
+    // Left fletching — a teardrop feather shape.
+    final leftFletch = Path()
+      ..moveTo(bodyShift, 10) // root at shaft
+      ..quadraticBezierTo(
+        bodyShift - dynamicWingSpan * 0.5,
+        6 + wingDip,
+        -dynamicWingSpan * 0.85 + bodyShift,
+        12 + wingDip,
+      )
+      ..quadraticBezierTo(
+        bodyShift - dynamicWingSpan * 0.4,
+        16 + wingDip * 0.5,
+        bodyShift,
+        18,
+      )
+      ..close();
+    _wash(canvas, leftFletch, leftColor, seed: planeId);
+    _pencilOutline(leftFletch, canvas, leftColor, strokeWidth: 0.9);
+
+    // Right fletching.
+    final rightFletch = Path()
+      ..moveTo(bodyShift, 10)
+      ..quadraticBezierTo(
+        bodyShift + dynamicWingSpan * 0.5,
+        6 - wingDip,
+        dynamicWingSpan * 0.85 + bodyShift,
+        12 - wingDip,
+      )
+      ..quadraticBezierTo(
+        bodyShift + dynamicWingSpan * 0.4,
+        16 - wingDip * 0.5,
+        bodyShift,
+        18,
+      )
+      ..close();
+    _wash(canvas, rightFletch, rightColor, seed: planeId);
+    _pencilOutline(rightFletch, canvas, rightColor, strokeWidth: 0.9);
+
+    // --- Body group ---
+    canvas.save();
+    final rollScale = 0.55 + bankCos.abs() * 0.45;
+    canvas.translate(bodyShift, 0);
+    canvas.scale(rollScale, 1.0);
+    canvas.translate(-bodyShift, 0);
+
+    // Arrow shaft (slim rectangle along the centreline).
+    final shaftPath = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(bodyShift, 2), width: 4, height: 34),
+          const Radius.circular(2),
+        ),
+      );
+    _wash(canvas, shaftPath, primary, seed: planeId);
+    _pencilOutline(shaftPath, canvas, primary, strokeWidth: 0.8);
+
+    // Heart-shaped arrowhead at the front/top.
+    // Drawn as two overlapping circles + a triangle point below.
+    final heartLeft = Path()
+      ..addOval(Rect.fromCenter(
+          center: Offset(bodyShift - 2.8, -16), width: 5.6, height: 5.6));
+    final heartRight = Path()
+      ..addOval(Rect.fromCenter(
+          center: Offset(bodyShift + 2.8, -16), width: 5.6, height: 5.6));
+    final heartPoint = Path()
+      ..moveTo(bodyShift - 5, -14.5)
+      ..lineTo(bodyShift, -10)
+      ..lineTo(bodyShift + 5, -14.5)
+      ..close();
+    for (final p in [heartLeft, heartRight, heartPoint]) {
+      _wash(canvas, p, secondary, seed: planeId);
+    }
+    _pencilOutline(
+      Path()
+        ..addPath(heartLeft, Offset.zero)
+        ..addPath(heartRight, Offset.zero)
+        ..addPath(heartPoint, Offset.zero),
+      canvas,
+      secondary,
+      strokeWidth: 1.0,
+    );
+
+    // Feather quill lines on the fletching (detail white stripes).
+    final quillPaint = Paint()
+      ..color = detail.withOpacity(0.65)
+      ..strokeWidth = 0.7
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 4; i++) {
+      final t = i / 3.0;
+      final x = bodyShift - 2.5 + t * 2.5;
+      canvas.drawLine(
+          Offset(x, 10 + t * 4), Offset(x - 2.5, 16 + t * 2), quillPaint);
+      canvas.drawLine(
+          Offset(x, 10 + t * 4), Offset(x + 2.5, 16 + t * 2), quillPaint);
+    }
+
+    // Petal trail (small dots/hearts streaming behind the arrow).
+    final petalPaint = Paint()..color = secondary.withOpacity(0.45);
+    for (final dy in [22.0, 26.0, 30.0]) {
+      canvas.drawCircle(
+          Offset(bodyShift + (dy - 26) * 0.4, dy), 1.2, petalPaint);
+    }
+
+    canvas.restore();
+  }
+
+  // ─── Lucky Clover Copter (seasonal St Patrick's Day) ─────────────────
+
+  /// Draws a helicopter whose rotor reads as a 4-leaf clover (four heart-leaf
+  /// blades arranged in a + pattern). A small rounded cockpit sits below the
+  /// rotor hub. Viewed from above, nose pointing up (−Y).
+  ///
+  /// Colours: primary = clover blades (green), secondary = cockpit (gold),
+  /// detail = highlights / stem (white).
+  static void _renderCloverCopter(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+    String planeId,
+  ) {
+    final primary = _primary(colorScheme, 0xFF228B22); // forest green
+    final secondary = _secondary(colorScheme, 0xFFFFD700); // gold
+    final detail = _detail(colorScheme, 0xFFFFFFFF); // white
+
+    final bodyShift = bankSin * 1.5;
+    final dynamicWingSpan = wingSpan * bankCos.abs() * 1.1;
+    final wingDip = -bankSin * 3.5;
+
+    // --- 4-Leaf clover rotor (four heart-leaf blades around the hub) ---
+    // Each blade is a pair of overlapping circles forming a heart-leaf,
+    // arranged top/bottom/left/right. Banking compresses L/R span.
+    // Top blade (forward, −Y).
+    final topBlade = Path()
+      ..addOval(Rect.fromCenter(
+          center: Offset(bodyShift - 2.5, -dynamicWingSpan * 0.35),
+          width: 7,
+          height: 8))
+      ..addOval(Rect.fromCenter(
+          center: Offset(bodyShift + 2.5, -dynamicWingSpan * 0.35),
+          width: 7,
+          height: 8));
+    final leftBladeDx = -dynamicWingSpan * 0.6;
+    final leftBlade = Path()
+      ..addOval(Rect.fromCenter(
+          center: Offset(bodyShift + leftBladeDx, wingDip * 0.5 - 2.5),
+          width: 8,
+          height: 7))
+      ..addOval(Rect.fromCenter(
+          center: Offset(bodyShift + leftBladeDx, wingDip * 0.5 + 2.5),
+          width: 8,
+          height: 7));
+    final rightBladeDx = dynamicWingSpan * 0.6;
+    final rightBlade = Path()
+      ..addOval(Rect.fromCenter(
+          center: Offset(bodyShift + rightBladeDx, -wingDip * 0.5 - 2.5),
+          width: 8,
+          height: 7))
+      ..addOval(Rect.fromCenter(
+          center: Offset(bodyShift + rightBladeDx, -wingDip * 0.5 + 2.5),
+          width: 8,
+          height: 7));
+    final bottomBlade = Path()
+      ..addOval(Rect.fromCenter(
+          center: Offset(bodyShift - 2.5, dynamicWingSpan * 0.35),
+          width: 7,
+          height: 8))
+      ..addOval(Rect.fromCenter(
+          center: Offset(bodyShift + 2.5, dynamicWingSpan * 0.35),
+          width: 7,
+          height: 8));
+
+    final leftBladeColor =
+        bankSin > 0 ? primary : Color.lerp(primary, Colors.black, 0.2)!;
+    final rightBladeColor =
+        bankSin < 0 ? primary : Color.lerp(primary, Colors.black, 0.2)!;
+
+    _wash(canvas, topBlade, primary, seed: planeId);
+    _pencilOutline(topBlade, canvas, primary, strokeWidth: 0.9);
+    _wash(canvas, leftBlade, leftBladeColor, seed: planeId);
+    _pencilOutline(leftBlade, canvas, leftBladeColor, strokeWidth: 0.9);
+    _wash(canvas, rightBlade, rightBladeColor, seed: planeId);
+    _pencilOutline(rightBlade, canvas, rightBladeColor, strokeWidth: 0.9);
+    _wash(canvas, bottomBlade, primary, seed: planeId);
+    _pencilOutline(bottomBlade, canvas, primary, strokeWidth: 0.9);
+
+    // Clover stem connecting blades to hub (small lines).
+    final stemPaint = Paint()
+      ..color = _darken(primary, 0.25)
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(bodyShift, 0),
+        Offset(bodyShift, -dynamicWingSpan * 0.22), stemPaint);
+    canvas.drawLine(Offset(bodyShift, 0),
+        Offset(bodyShift + leftBladeDx * 0.45, wingDip * 0.25), stemPaint);
+    canvas.drawLine(Offset(bodyShift, 0),
+        Offset(bodyShift + rightBladeDx * 0.45, -wingDip * 0.25), stemPaint);
+    canvas.drawLine(Offset(bodyShift, 0),
+        Offset(bodyShift, dynamicWingSpan * 0.22), stemPaint);
+
+    // --- Body group (cockpit) ---
+    canvas.save();
+    final rollScale = 0.55 + bankCos.abs() * 0.45;
+    canvas.translate(bodyShift, 0);
+    canvas.scale(rollScale, 1.0);
+    canvas.translate(-bodyShift, 0);
+
+    // Cockpit body — a small rounded capsule / bubble.
+    final cockpitPath = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(bodyShift, 0), width: 7, height: 12),
+          const Radius.circular(4),
+        ),
+      );
+    _wash(canvas, cockpitPath, secondary, seed: planeId);
+    _pencilOutline(cockpitPath, canvas, secondary, strokeWidth: 1.0);
+
+    // Rotor hub (gold disc at centre).
+    canvas.drawCircle(
+      Offset(bodyShift, 0),
+      2.5,
+      Paint()..color = secondary,
+    );
+    canvas.drawCircle(
+      Offset(bodyShift, 0),
+      1.2,
+      Paint()..color = detail,
+    );
+
+    // Cockpit bubble window.
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, -2), width: 4.5, height: 5),
+      Paint()..color = const Color(0xFF87CEEB).withOpacity(0.7),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(bodyShift, -2), width: 4.5, height: 5),
+      Paint()
+        ..color = _darken(secondary, 0.25)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.6,
+    );
+
+    // Tail boom (slim line at the back, pointing downward/rear).
+    final tailPath = Path()
+      ..moveTo(bodyShift, 6)
+      ..lineTo(bodyShift + 1, 15)
+      ..lineTo(bodyShift - 1, 15)
+      ..close();
+    _wash(canvas, tailPath, secondary, seed: planeId);
+    _pencilOutline(tailPath, canvas, secondary, strokeWidth: 0.8);
+
+    // Small tail rotor disc.
+    canvas.drawCircle(
+      Offset(bodyShift, 15),
+      2.0,
+      Paint()..color = _darken(primary, 0.1),
+    );
+
+    canvas.restore();
   }
 }

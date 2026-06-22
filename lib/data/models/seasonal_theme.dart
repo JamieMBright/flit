@@ -232,13 +232,17 @@ class SeasonalTheme {
       case SeasonalEvent.summer:
         return 'plane_hang_glider';
       case SeasonalEvent.christmas:
+        return 'plane_santa_sleigh';
       case SeasonalEvent.halloween:
+        return 'plane_witch_broom';
       case SeasonalEvent.easter:
+        return 'plane_easter_carriage';
       case SeasonalEvent.valentines:
+        return 'plane_cupid_arrow';
       case SeasonalEvent.stPatricks:
+        return 'plane_clover_copter';
       case SeasonalEvent.none:
-        // No bespoke shape yet — keep the player's equipped silhouette while
-        // still applying the seasonal palette via resolvePlaneColorScheme.
+        // No seasonal event active — keep the player's equipped silhouette.
         return null;
     }
   }
