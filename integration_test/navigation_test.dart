@@ -1,100 +1,53 @@
-/// Device integration test: navigation between top-level screens.
+/// Device integration test: the REAL game-launch screens.
 ///
 /// Run with: flutter test --device-id=<id> integration_test/navigation_test.dart
 library navigation_test;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
+
+import 'package:flit/features/campaign/campaign_screen.dart';
+import 'package:flit/features/play/free_flight_setup_screen.dart';
+import 'package:flit/features/play/practice_screen.dart';
+import 'package:flit/features/quiz/uncharted_setup_screen.dart';
+import 'package:flit/game/map/region.dart';
 
 import 'helpers/test_harness.dart';
 
-class _StubScreen extends StatelessWidget {
-  const _StubScreen({required this.title, required this.screenKey});
-  final String title;
-  final Key screenKey;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      key: screenKey,
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text(title)),
-    );
-  }
-}
-
-class _NavTestHome extends StatelessWidget {
-  const _NavTestHome();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      key: const Key('nav_home'),
-      backgroundColor: const Color(0xFF0A0E1A),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _NavButton(label: 'Flight School',
-              destination: const _StubScreen(title: 'Flight School', screenKey: Key('screen_flight_school'))),
-            _NavButton(label: 'Daily Briefing',
-              destination: const _StubScreen(title: 'Daily Briefing', screenKey: Key('screen_daily_briefing'))),
-            _NavButton(label: 'Uncharted',
-              destination: const _StubScreen(title: 'Uncharted', screenKey: Key('screen_uncharted'))),
-            _NavButton(label: 'Free Flight',
-              destination: const _StubScreen(title: 'Free Flight', screenKey: Key('screen_free_flight'))),
-            _NavButton(label: 'Profile',
-              destination: const _StubScreen(title: 'Profile', screenKey: Key('screen_profile'))),
-            _NavButton(label: 'Leaderboard',
-              destination: const _StubScreen(title: 'Leaderboard', screenKey: Key('screen_leaderboard'))),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavButton extends StatelessWidget {
-  const _NavButton({required this.label, required this.destination});
-  final String label;
-  final Widget destination;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: ElevatedButton(
-        key: Key('nav_btn_$label'),
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => destination),
-        ),
-        child: Text(label),
-      ),
-    );
-  }
-}
-
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async {
+    await TestHarness.ensureTestEnv();
+  });
 
-  group('Navigation (device)', () {
-    testWidgets('home navigation menu renders all buttons', (tester) async {
-      await TestHarness.pumpApp(tester, child: const _NavTestHome());
-      expect(find.byKey(const Key('nav_home')), findsOneWidget);
-      expect(find.byKey(const Key('nav_btn_Flight School')), findsOneWidget);
-      expect(find.byKey(const Key('nav_btn_Leaderboard')), findsOneWidget);
+  group('Launch screens (device)', () {
+    testWidgets('Campaign renders the real Pilot Training list',
+        (tester) async {
+      await TestHarness.pumpRealScreen(tester, const CampaignScreen());
+      expect(find.text('PILOT TRAINING'), findsOneWidget);
+      await TestHarness.takeScreenshot(tester, 'device_campaign');
     });
 
-    testWidgets('tap Flight School navigates', (tester) async {
-      await TestHarness.pumpApp(tester, child: const _NavTestHome());
-      await TestHarness.tapText(tester, 'Flight School', frames: 10);
-      expect(find.byKey(const Key('screen_flight_school')), findsOneWidget);
+    testWidgets('Free Flight setup renders and round chip updates the CTA',
+        (tester) async {
+      await TestHarness.pumpRealScreen(
+        tester,
+        const FreeFlightSetupScreen(region: GameRegion.world),
+      );
+      expect(find.text('FREE FLIGHT'), findsWidgets);
+      await tester.tap(find.text('10').first);
+      await TestHarness.settle(tester, frames: 8);
+      expect(find.textContaining('×10'), findsWidgets);
     });
 
-    testWidgets(
-      'real HomeScreen navigation — requires live device and auth',
-      (tester) async {},
-      skip: true, // Requires real device and authenticated Supabase session
-    );
+    testWidgets('Practice renders the unranked notice', (tester) async {
+      await TestHarness.pumpRealScreen(tester, const PracticeScreen());
+      expect(find.text('Not ranked on the global leaderboard'), findsOneWidget);
+      await TestHarness.takeScreenshot(tester, 'device_practice');
+    });
+
+    testWidgets('Uncharted setup renders the region picker', (tester) async {
+      await TestHarness.pumpRealScreen(tester, const UnchartedSetupScreen());
+      expect(find.text('SELECT REGION'), findsOneWidget);
+      await TestHarness.takeScreenshot(tester, 'device_uncharted');
+    });
   });
 }

@@ -49,25 +49,36 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
 
   Future<void> _loadData() async {
     final service = LeaderboardService.instance;
-    final results = await Future.wait([
-      service.fetchDailyLeaderboard(),
-      service.fetchHallOfFame(),
-      service.fetchDailyPlayerCount(),
-      EconomyConfigService.instance.getConfig(),
-    ]);
-    if (mounted) {
-      final config = results[3] as EconomyConfig;
-      setState(() {
-        _leaderboardEntries = results[0] as List<DailyLeaderboardEntry>;
-        _hallOfFame = results[1] as List<Map<String, dynamic>>;
-        _dailyPlayerCount = results[2] as int;
-        _economyConfig = config;
-        // Rebuild challenge with config-driven reward if available.
-        _challenge = DailyChallenge.forToday(
-          baseRewardOverride: config.earnings.dailyScrambleBaseReward,
-        );
-        _loadingLeaderboard = false;
-      });
+    try {
+      final results = await Future.wait([
+        service.fetchDailyLeaderboard(),
+        service.fetchHallOfFame(),
+        service.fetchDailyPlayerCount(),
+        EconomyConfigService.instance.getConfig(),
+      ]);
+      if (mounted) {
+        final config = results[3] as EconomyConfig;
+        setState(() {
+          _leaderboardEntries = results[0] as List<DailyLeaderboardEntry>;
+          _hallOfFame = results[1] as List<Map<String, dynamic>>;
+          _dailyPlayerCount = results[2] as int;
+          _economyConfig = config;
+          // Rebuild challenge with config-driven reward if available.
+          _challenge = DailyChallenge.forToday(
+            baseRewardOverride: config.earnings.dailyScrambleBaseReward,
+          );
+          _loadingLeaderboard = false;
+        });
+      }
+    } catch (e) {
+      // A network/Supabase failure on entry must not throw an uncaught async
+      // error or leave the leaderboard spinner stuck forever. Clear the
+      // loading flag and keep the (empty) defaults; the rest of the screen
+      // still renders.
+      debugPrint('[DailyChallengeScreen] _loadData failed: $e');
+      if (mounted) {
+        setState(() => _loadingLeaderboard = false);
+      }
     }
   }
 

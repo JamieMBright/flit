@@ -585,7 +585,10 @@ class _GlobeBackgroundPainter extends CustomPainter {
     for (var i = 0; i < 80; i++) {
       final x = rng.nextDouble() * w;
       final y = rng.nextDouble() * h;
-      final brightness = 0.02 + 0.06 * sin(t * 2 * pi + i * 0.9);
+      // Clamp to [0,1]: the sin() term dips below zero for part of the cycle,
+      // and withOpacity asserts a valid opacity in debug/profile builds.
+      final brightness =
+          (0.02 + 0.06 * sin(t * 2 * pi + i * 0.9)).clamp(0.0, 1.0);
       final radius = 0.4 + rng.nextDouble() * 1.0;
       starPaint.color = FlitColors.textPrimary.withOpacity(brightness);
       canvas.drawCircle(Offset(x, y), radius, starPaint);
@@ -594,7 +597,9 @@ class _GlobeBackgroundPainter extends CustomPainter {
     for (var i = 0; i < 8; i++) {
       final x = rng.nextDouble() * w;
       final y = rng.nextDouble() * h;
-      final brightness = 0.10 + 0.12 * sin(t * 2 * pi * 0.7 + i * 2.1);
+      // Clamp to [0,1]: the sin() term can drive this negative.
+      final brightness =
+          (0.10 + 0.12 * sin(t * 2 * pi * 0.7 + i * 2.1)).clamp(0.0, 1.0);
       starPaint.color = FlitColors.textPrimary.withOpacity(brightness);
       canvas.drawCircle(Offset(x, y), 1.5, starPaint);
     }
@@ -900,7 +905,9 @@ class _GlobeBackgroundPainter extends CustomPainter {
     for (var i = 0; i < cities.length; i++) {
       final cx = globeCx + globeR * cities[i][0];
       final cy = globeCy + globeR * cities[i][1];
-      final twinkle = 0.12 + 0.22 * sin(t * 2 * pi * 1.5 + i * 1.4);
+      // Clamp to [0,1]: the sin() term can drive this negative.
+      final twinkle =
+          (0.12 + 0.22 * sin(t * 2 * pi * 1.5 + i * 1.4)).clamp(0.0, 1.0);
       cityPaint.color = FlitColors.gold.withOpacity(twinkle);
       canvas.drawCircle(Offset(cx, cy), 1.5, cityPaint);
     }

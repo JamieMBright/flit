@@ -1,70 +1,39 @@
-/// Device integration test: button and control interactions.
+/// Device integration test: the REAL menu screens and their controls.
 ///
 /// Run with: flutter test --device-id=<id> integration_test/interactions_test.dart
 library interactions_test;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
+
+import 'package:flit/features/explore/country_clues_screen.dart';
+import 'package:flit/features/guide/gameplay_guide_screen.dart';
 
 import 'helpers/test_harness.dart';
 
-class _CounterWidget extends StatefulWidget {
-  const _CounterWidget({super.key});
-
-  @override
-  State<_CounterWidget> createState() => _CounterWidgetState();
-}
-
-class _CounterWidgetState extends State<_CounterWidget> {
-  int _count = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text('Count: $_count', key: const Key('counter_label')),
-        ElevatedButton(
-          key: const Key('increment_btn'),
-          onPressed: () => setState(() => _count++),
-          child: const Text('Increment'),
-        ),
-        ElevatedButton(
-          key: const Key('reset_btn'),
-          onPressed: () => setState(() => _count = 0),
-          child: const Text('Reset'),
-        ),
-      ],
-    );
-  }
-}
-
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async {
+    await TestHarness.ensureTestEnv();
+  });
 
-  group('Interactions (device)', () {
-    testWidgets('initial count is 0', (tester) async {
-      await TestHarness.pumpApp(
-        tester,
-        child: const Scaffold(body: Center(child: _CounterWidget())),
-      );
-      expect(find.text('Count: 0'), findsOneWidget);
+  group('Menu screens (device)', () {
+    testWidgets('Country Clues renders tabs and switches to Regions',
+        (tester) async {
+      await TestHarness.pumpRealScreen(tester, const CountryCluesScreen());
+      expect(find.text('All World'), findsOneWidget);
+      expect(find.text('Regions'), findsOneWidget);
+      await tester.tap(find.text('Regions'));
+      await TestHarness.settle(tester, frames: 10);
+      expect(find.byType(CountryCluesScreen), findsOneWidget);
+      await TestHarness.takeScreenshot(tester, 'device_country_clues');
     });
 
-    testWidgets('tap Increment increases count to 1', (tester) async {
-      await TestHarness.pumpApp(
-        tester,
-        child: const Scaffold(body: Center(child: _CounterWidget())),
-      );
-      await TestHarness.tapKey(tester, const Key('increment_btn'));
-      expect(find.text('Count: 1'), findsOneWidget);
+    testWidgets('Gameplay Guide renders and switches tabs', (tester) async {
+      await TestHarness.pumpRealScreen(tester, const GameplayGuideScreen());
+      expect(find.text('How to Play'), findsWidgets);
+      await tester.tap(find.text('Daily Scramble').first);
+      await TestHarness.settle(tester, frames: 10);
+      expect(find.byType(GameplayGuideScreen), findsOneWidget);
+      await TestHarness.takeScreenshot(tester, 'device_guide');
     });
-
-    testWidgets(
-      'game quiz answer submission — requires auth',
-      (tester) async {},
-      skip: true, // Requires real device and authenticated Supabase session
-    );
   });
 }

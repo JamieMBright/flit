@@ -1,21 +1,25 @@
 # Flit Integration Tests
 
-End-to-end widget-level integration tests for the Flit geography game.
+End-to-end widget-level integration tests for the Flit geography game. These
+tests drive the **real** app screens (HomeScreen, the game-launch setup
+screens, and the menu screens) — not stub look-alikes.
 
 ## Structure
 
 ```
 test/integration/             # Host-runner tests (no device required, runs in CI)
-  helpers/test_harness.dart   # Shared helpers: pumpApp, pumpAndSettleSafely, tap, screenshot
-  app_boot_test.dart          # App renders without crashing
-  navigation_test.dart        # Push/pop navigation between screens
-  interactions_test.dart      # Button taps, text input, toggle state
+  helpers/test_harness.dart   # pumpRealScreen, ensureTestEnv, loggedInOverrides, settle
+  app_boot_test.dart          # Real HomeScreen: title, PLAY, mode sheet
+  navigation_test.dart        # Real launch screens (Campaign, Free Flight, Practice,
+                              #   Daily Challenge, Daily Briefing, Flight School, Uncharted)
+  interactions_test.dart      # Real menu screens (Shop, Profile, Friends, Leaderboard,
+                              #   Country Clues, Guide) + real control interactions
 
 integration_test/             # Device-based tests (flutter test --device-id=<id>)
-  helpers/test_harness.dart   # Same API but wraps IntegrationTestWidgetsFlutterBinding
-  app_boot_test.dart          # Boot tests on real device
-  navigation_test.dart        # Navigation on real device
-  interactions_test.dart      # Interactions on real device
+  helpers/test_harness.dart   # Same API, wraps IntegrationTestWidgetsFlutterBinding
+  app_boot_test.dart          # Real HomeScreen on a real device (+ screenshots)
+  navigation_test.dart        # Real launch screens on a real device
+  interactions_test.dart      # Real menu screens on a real device
 
 test_driver/
   integration_test.dart       # flutter_driver entry point (legacy drive protocol)
@@ -30,18 +34,11 @@ export PATH="/tmp/flutter/bin:/tmp/flutter/bin/cache/dart-sdk/bin:$PATH"
 flutter test test/integration/
 ```
 
-Or via the project script:
-
-```bash
-./scripts/test-e2e.sh
-```
-
 ### Real device / emulator
 
 ```bash
 flutter devices
 flutter test --device-id=<device-id> integration_test/
-./scripts/test-e2e.sh --device <device-id>
 ```
 
 ### flutter drive (legacy protocol)
@@ -55,28 +52,45 @@ flutter drive \
 
 ## Design decisions
 
-### pumpAndSettleSafely
+### Real screens, no stubs
+
+These tests pump the actual production screens. To do that under `flutter test`
+without a real backend, the harness `setUpAll` calls `TestHarness.ensureTestEnv()`,
+which:
+
+- Mocks `SharedPreferences` (`setMockInitialValues({})`).
+- Initialises Supabase against an **unreachable** URL (`http://localhost:1`).
+  This is deliberate: screens that read `Supabase.instance.client.auth.currentUser`
+  synchronously (e.g. ProfileScreen, LeaderboardScreen) get a clean `null` session
+  instead of an `AssertionError`, and every real query fails fast (connection
+  refused) and is swallowed by each screen's own try/catch, falling back to its
+  empty/default state. No real network traffic leaves the test, and `main()` is
+  never called (so audio / error-telemetry / real Supabase init are skipped).
+
+`TestHarness.loggedInOverrides()` seeds `accountProvider` with a fake level-99
+pilot (`AccountNotifier()..switchAccount(fakePlayer)`) so every game mode is
+unlocked and the real menus render fully.
+
+`TestHarness.pumpRealScreen(tester, screen)` wraps the screen in
+`ProviderScope(overrides: ...) + MaterialApp`, pumps a fixed number of frames,
+and drains the background async exceptions raised by the dead-URL fetches.
+
+### settle, never pumpAndSettle
 
 `WidgetTester.pumpAndSettle()` loops until all animations settle. Flit has a
-continuously-animated globe shader that never stops, so pumpAndSettle deadlocks.
-All tests use `TestHarness.pumpAndSettleSafely(tester, frames: N)` which pumps
-exactly N frames of ~16 ms each and returns.
-
-### Stub screens
-
-The real Flit screens require Supabase.initialize, AudioManager.initialize, and
-FragmentProgram.fromAsset — all need a real device, network, and GPU. Integration
-tests use lightweight stub widgets that exercise navigation and interaction
-plumbing without external dependencies. Tests requiring a real device are marked
-`skip: true`.
+continuously-animated globe background (and pulse controllers) that never stop,
+so pumpAndSettle deadlocks. All tests use `TestHarness.settle(tester, frames: N)`
+(an alias for fixed-frame pumping) which pumps exactly N ~16 ms frames and
+returns, draining any async exception per frame.
 
 ### Keys
 
-No Keys were added to app production code. All Keys are on stub widgets defined
-inside the integration test files themselves.
+No Keys were added to production code. All finders use real on-screen text or
+widget types (e.g. `find.text('PLAY')`, `find.byType(ShopScreen)`).
 
 ### Screenshots
 
-`TestHarness.takeScreenshot(tester, 'name')` wraps
-`IntegrationTestWidgetsFlutterBinding.takeScreenshot()` in a try/catch. On the
-host runner it silently no-ops. On a real device it captures a PNG.
+`TestHarness.takeScreenshot(tester, 'name')` captures a PNG on a real device
+(via `IntegrationTestWidgetsFlutterBinding`). On the host runner it asserts a
+rendered surface and no-ops the capture.
+```

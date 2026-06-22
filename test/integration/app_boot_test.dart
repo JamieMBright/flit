@@ -1,7 +1,8 @@
-/// Widget-level integration test: app boot / initial render.
+/// Widget-level integration test: app boot / initial render of the REAL home.
 ///
-/// Verifies that the Flit app shell renders without crashing and that key
-/// widgets are present after a few animation frames.
+/// Pumps the real [HomeScreen] (with logged-in provider overrides + a dead
+/// Supabase client) and asserts that the real title, PLAY button, and menu
+/// tiles render. No stub widgets.
 ///
 /// Run with: flutter test test/integration/
 library app_boot_test;
@@ -9,106 +10,82 @@ library app_boot_test;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:flit/features/home/home_screen.dart';
+
 import 'helpers/test_harness.dart';
 
 void main() {
-  group('App boot', () {
+  setUpAll(() async {
+    await TestHarness.ensureTestEnv();
+  });
+
+  group('App boot — real HomeScreen', () {
     testWidgets('renders without crashing', (tester) async {
-      await TestHarness.pumpApp(tester);
-      expect(find.byKey(const Key('stub_home_scaffold')), findsOneWidget);
+      await TestHarness.pumpRealScreen(tester, const HomeScreen());
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.byType(Scaffold), findsOneWidget);
     });
 
-    testWidgets('home screen shows FLIT title', (tester) async {
-      await TestHarness.pumpApp(tester);
-      expect(find.byKey(const Key('flit_title')), findsOneWidget);
+    testWidgets('home screen shows FLIT title and tagline', (tester) async {
+      await TestHarness.pumpRealScreen(tester, const HomeScreen());
+      // Real title block from _buildTitle().
       expect(find.text('FLIT'), findsOneWidget);
+      expect(find.text('A GEOGRAPHICAL ADVENTURE'), findsOneWidget);
     });
 
-    testWidgets('home screen shows Play button', (tester) async {
-      await TestHarness.pumpApp(tester);
-      expect(find.byKey(const Key('stub_play_btn')), findsOneWidget);
-      expect(find.text('Play'), findsOneWidget);
+    testWidgets('home screen shows real PLAY button', (tester) async {
+      await TestHarness.pumpRealScreen(tester, const HomeScreen());
+      // _PlayButton renders the literal "PLAY" label (not the stub "Play").
+      expect(find.text('PLAY'), findsOneWidget);
+      expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
     });
 
-    testWidgets('pumpAndSettleSafely does not deadlock on animated widget',
+    testWidgets('home screen shows the secondary menu tiles', (tester) async {
+      await TestHarness.pumpRealScreen(tester, const HomeScreen());
+      // _MenuTile labels are upper-cased in the widget. Assert the
+      // UNCONDITIONAL tiles only — SHOP and LEADERBOARD are feature-flag gated
+      // and the flags resolve to false against the dead Supabase URL, so those
+      // tiles are intentionally hidden here.
+      expect(find.text('PROFILE'), findsOneWidget);
+      expect(find.text('FRIENDS'), findsOneWidget);
+      expect(find.text('CLUES'), findsOneWidget);
+      expect(find.text('HOW TO PLAY'), findsOneWidget);
+    });
+
+    testWidgets('home screen shows the daily-streak card prompt',
         (tester) async {
-      // Use a widget with a continuous ticker to prove safe pump doesn't block.
-      await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: _ContinuousAnimationWidget())),
+      await TestHarness.pumpRealScreen(tester, const HomeScreen());
+      // _DailyStreakCard with a zero streak shows the call-to-action.
+      expect(
+        find.text('Play the daily to start your streak!'),
+        findsOneWidget,
       );
-      // Drive 60 frames. If pumpAndSettle were used here it would deadlock.
-      await TestHarness.pumpAndSettleSafely(tester, frames: 60);
-      expect(find.byType(_ContinuousAnimationWidget), findsOneWidget);
+    });
+
+    testWidgets('tapping PLAY opens the real game-mode sheet', (tester) async {
+      await TestHarness.pumpRealScreen(tester, const HomeScreen());
+      await tester.tap(find.text('PLAY'));
+      await TestHarness.settle(tester, frames: 12);
+      // The modal bottom sheet renders the real section labels + mode cards.
+      expect(find.text('FLIGHT DECK'), findsOneWidget);
+      expect(find.text('BRIEFING ROOM'), findsOneWidget);
+      expect(find.text('Free Flight'), findsOneWidget);
+      expect(find.text('Uncharted'), findsOneWidget);
     });
 
     testWidgets('screenshot helper does not throw on host runner',
         (tester) async {
-      await TestHarness.pumpApp(tester);
-      // takeScreenshot should be a no-op (not throw) when on host runner.
+      await TestHarness.pumpRealScreen(tester, const HomeScreen());
       await TestHarness.takeScreenshot(tester, 'app_boot_home');
     });
 
-    testWidgets('MaterialApp theme is applied (dark background)',
+    testWidgets('settle does not deadlock on the animated globe background',
         (tester) async {
-      await TestHarness.pumpApp(tester);
-      final scaffold = tester.widget<Scaffold>(
-        find.byKey(const Key('stub_home_scaffold')),
-      );
-      expect(scaffold.backgroundColor, const Color(0xFF0A0E1A));
-    });
-
-    testWidgets('custom child widget is rendered when provided',
-        (tester) async {
-      await TestHarness.pumpApp(
-        tester,
-        child: const Scaffold(
-          body: Center(child: Text('Custom Child', key: Key('custom_child'))),
-        ),
-      );
-      expect(find.byKey(const Key('custom_child')), findsOneWidget);
-      expect(find.text('Custom Child'), findsOneWidget);
+      // HomeScreen runs a 20s repeating globe controller; settle() must not
+      // loop forever the way pumpAndSettle would.
+      await TestHarness.pumpRealScreen(tester, const HomeScreen());
+      await TestHarness.settle(tester, frames: 60);
+      expect(find.text('FLIT'), findsOneWidget);
     });
   });
-}
-
-// ---------------------------------------------------------------------------
-// Helper — widget with a continuous animation ticker.
-// ---------------------------------------------------------------------------
-
-/// A widget that ticks forever (like the Flit globe shader), used to verify
-/// that pumpAndSettleSafely terminates rather than looping forever.
-class _ContinuousAnimationWidget extends StatefulWidget {
-  const _ContinuousAnimationWidget();
-
-  @override
-  State<_ContinuousAnimationWidget> createState() =>
-      _ContinuousAnimationWidgetState();
-}
-
-class _ContinuousAnimationWidgetState extends State<_ContinuousAnimationWidget>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) => const SizedBox.expand(),
-    );
-  }
 }
