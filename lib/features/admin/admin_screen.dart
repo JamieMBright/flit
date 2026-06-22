@@ -11,6 +11,8 @@ import '../../game/data/country_difficulty.dart';
 import '../../game/map/country_data.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/models/cosmetic.dart';
+import '../../data/models/seasonal_theme.dart';
+import '../../game/rendering/plane_renderer.dart';
 import '../../data/models/economy_config.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
@@ -2560,6 +2562,117 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                 _refreshAdminData();
               },
             ),
+            const SizedBox(height: 24),
+          ],
+
+          // ── Seasonal Vehicles (moderator + owner) ──
+          if (_can(state, AdminPermission.viewDesignPreviews)) ...[
+            const _SectionHeader(title: 'Seasonal Vehicles'),
+            const SizedBox(height: 8),
+            ...SeasonalTheme.allThemes.map((theme) {
+              final shapeId = theme.planeShapeId ?? 'plane_biplane';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: FlitColors.cardBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: FlitColors.cardBorder),
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Vehicle preview canvas
+                      Container(
+                        width: 108,
+                        height: 108,
+                        decoration: BoxDecoration(
+                          color: FlitColors.backgroundDark,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: CustomPaint(
+                          painter: _SeasonalVehiclePainter(
+                            planeId: shapeId,
+                            colorScheme: theme.vehicleColorScheme,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Text info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              theme.vehicleName,
+                              style: const TextStyle(
+                                color: FlitColors.textPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              theme.vehicleDescription,
+                              style: const TextStyle(
+                                color: FlitColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.event,
+                                  size: 12,
+                                  color: FlitColors.textMuted,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  theme.event.name,
+                                  style: const TextStyle(
+                                    color: FlitColors.textMuted,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.date_range,
+                                  size: 12,
+                                  color: FlitColors.textMuted,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  theme.dateWindowLabel,
+                                  style: const TextStyle(
+                                    color: FlitColors.textMuted,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Shape: $shapeId',
+                              style: const TextStyle(
+                                color: FlitColors.textMuted,
+                                fontSize: 10,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
             const SizedBox(height: 24),
           ],
 
@@ -8747,4 +8860,44 @@ class _DifficultyRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Paints a single seasonal vehicle silhouette centred in the available space.
+///
+/// Uses the same [PlaneRenderer.renderPlane] path as the in-game plane and the
+/// shop/debug preview screens, so admins see exactly what players will see.
+/// Canvas is translated to centre, scaled proportionally, and rendered with
+/// non-banking defaults (bankCos: 1.0, bankSin: 0.0) matching the shop card.
+class _SeasonalVehiclePainter extends CustomPainter {
+  const _SeasonalVehiclePainter({
+    required this.planeId,
+    this.colorScheme,
+  });
+
+  final String planeId;
+  final Map<String, int>? colorScheme;
+
+  // Wing-span constant shared by paint() and shouldRepaint(); kept here so
+  // the admin preview matches the shop card's 26-unit span exactly.
+  static const double _wingSpan = 26.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final scale = size.shortestSide / (_wingSpan * 2.5);
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.scale(scale, scale * 0.7); // 0.7 perspective foreshortening
+    PlaneRenderer.renderPlane(
+      canvas: canvas,
+      bankCos: 1.0,
+      bankSin: 0.0,
+      wingSpan: _wingSpan,
+      planeId: planeId,
+      colorScheme: colorScheme,
+      propAngle: 0.0,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SeasonalVehiclePainter oldDelegate) =>
+      oldDelegate.planeId != planeId || oldDelegate.colorScheme != colorScheme;
 }

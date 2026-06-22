@@ -179,6 +179,35 @@ class SeasonalTheme {
     return null;
   }
 
+  // ── Per-instance accessors ──────────────────────────────────────────
+
+  /// The [PlaneRenderer] plane-shape id for this theme's vehicle silhouette,
+  /// or `null` when the event has no bespoke shape yet.
+  ///
+  /// Convenience accessor so the admin UI (and any other display code) can
+  /// retrieve the shape id without duplicating the [_shapeIdForEvent] mapping.
+  String? get planeShapeId => _shapeIdForEvent(event);
+
+  /// Human-readable date window, e.g. `"Jun 21 – Jul 4"`.
+  String get dateWindowLabel {
+    const months = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[startMonth]} $startDay – ${months[endMonth]} $endDay';
+  }
+
   // ── Plane colour-scheme resolver ────────────────────────────────────
 
   /// Returns the active seasonal event's vehicle colour scheme when an event
