@@ -324,6 +324,7 @@ gh workflow run fetch-errors.yml
 7. **Update architecture docs if necessary** — If your changes affect the persistence layer, rendering pipeline, data flow, or any architecture described in this file or other docs, update those sections to reflect the new design before committing
 8. Commit with descriptive message
 9. Push after tests pass (formatting/lint warnings are acceptable)
+10. **Auto-merge to `main`** once tests pass and any required checks are green — see the Merge Protocol below. Don't wait for a manual merge.
 
 ### Flutter SDK (Claude Code web sessions)
 The SessionStart hook automatically installs Flutter SDK (including Dart) at `/tmp/flutter`.
@@ -355,7 +356,21 @@ Pushed to: claude/feature-name-XXXXX
 Create PR: https://github.com/JamieMBright/flit/pull/new/claude/feature-name-XXXXX
 ```
 
-User is on iOS Claude Code app - they need the direct link to merge.
+User is on iOS Claude Code app — still provide the direct PR link for visibility, but **you own the merge** (see Merge Protocol below).
+
+---
+
+## Merge Protocol (Auto-Merge to Main)
+
+**Default workflow for every task: run tests → push → auto-merge to `main`.** The user should not have to merge manually.
+
+1. **Run the full test suite first** — `flutter test` and `flutter analyze` (and `./scripts/test.sh` where applicable). Passing tests are the merge gate.
+2. **Push** the branch and open/refresh its PR (always include the PR URL in your reply).
+3. **Auto-merge into `main` once tests pass.** Prefer enabling auto-merge so the PR lands the moment any required CI checks go green; if there are no required PR-branch checks, merge directly after local tests pass.
+4. **Never merge with failing tests.** Test failures are blocking — stop, report, fix, then merge. Formatting/lint warnings stay advisory (non-blocking).
+5. **Resolve conflicts before merging.** If the branch conflicts with `main` (e.g. several PRs touching the same files), rebase/resolve and re-run tests before merging.
+6. **Merge order for overlapping PRs:** merge independent PRs first, then rebase each dependent PR in turn so it merges clean.
+7. This policy is the standing authorisation to push/merge to `main` for normal task work. Still never force-push `main`, and never merge clearly broken or unreviewed work.
 
 ---
 
