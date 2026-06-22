@@ -1416,6 +1416,14 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                 },
               );
 
+              // If admin set their own license, force-refresh local state so
+              // the debounced write queue doesn't clobber the admin-set values
+              // with the stale in-memory license on the next _syncAccountState.
+              final currentUserId = ref.read(accountProvider).currentPlayer.id;
+              if (userId == currentUserId) {
+                await ref.read(accountProvider.notifier).adminForceRefresh();
+              }
+
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
               if (!context.mounted) return;
               _snack(
