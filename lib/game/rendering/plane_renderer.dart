@@ -290,6 +290,18 @@ class PlaneRenderer {
           planeId,
         );
         break;
+      case 'plane_hang_glider':
+        // Seasonal summer "Beach Glider" silhouette. Not a catalog cosmetic —
+        // injected only via SeasonalTheme.resolvePlaneShapeId during the event.
+        _renderHangGlider(
+          canvas,
+          bankCos,
+          bankSin,
+          wingSpan,
+          colorScheme,
+          planeId,
+        );
+        break;
       default:
         _renderBiPlane(
           canvas,
@@ -2659,5 +2671,241 @@ class PlaneRenderer {
     );
 
     canvas.restore(); // End body roll transform
+  }
+
+  // ─── Hang Glider (seasonal summer "Beach Glider") ───────────────────
+
+  /// Draws a hang-glider silhouette: a swept delta fabric wing (canopy) with a
+  /// central keel spine and a small pilot slung beneath on an A-frame control
+  /// bar. Top-down/behind view, nose pointing up (−Y), matching the watercolour
+  /// conventions of the other plane shapes.
+  ///
+  /// Colours: primary = sail/canopy fabric, secondary = keel + sail accent
+  /// stripes + control bar, detail = pilot/harness. The seasonal Beach Glider
+  /// palette (cyan / yellow / white) is wired in via the passed [colorScheme].
+  static void _renderHangGlider(
+    Canvas canvas,
+    double bankCos,
+    double bankSin,
+    double wingSpan,
+    Map<String, int>? colorScheme,
+    String planeId,
+  ) {
+    final rng = _sketchRng(planeId);
+    final primary = _primary(colorScheme, 0xFF00CED1); // sail fabric (cyan)
+    final secondary = _secondary(colorScheme, 0xFFFFD700); // keel / accents
+    final detail = _detail(colorScheme, 0xFFFFFFFF); // pilot / harness
+
+    final shade = bankSin;
+    final bodyShift = bankSin * 1.5;
+    // The delta wing is broad — give it a generous span like the flying-wing
+    // shapes so the triangular canopy reads clearly at small sizes.
+    final dynamicWingSpan = wingSpan * bankCos.abs() * 1.25;
+    final wingDip = -bankSin * 3.0;
+
+    // Inner (turning) half darkens, outer half stays lit — same banking
+    // treatment used by the jet / shuttle deltas.
+    final leftSailColor =
+        shade > 0 ? primary : Color.lerp(primary, Colors.black, 0.22)!;
+    final rightSailColor =
+        shade < 0 ? primary : Color.lerp(primary, Colors.black, 0.22)!;
+
+    // Apex of the delta (nose / leading point) sits forward of centre.
+    const noseY = -16.0;
+    // Trailing edge sweeps back to the rear corners.
+    const trailY = 12.0;
+
+    final leftSpan =
+        dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.5;
+    final rightSpan =
+        dynamicWingSpan * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.5;
+
+    // --- Left sail half (delta triangle: nose → left tip → keel tail) ---
+    final leftSail = Path()
+      ..moveTo(bodyShift, noseY) // nose apex
+      ..lineTo(-leftSpan, trailY - 4 + wingDip) // swept-back left tip
+      ..quadraticBezierTo(
+        -leftSpan * 0.45,
+        trailY + 1 + wingDip * 0.5,
+        bodyShift,
+        trailY, // keel tail (centre trailing point)
+      )
+      ..close();
+    _wash(canvas, leftSail, leftSailColor, seed: planeId);
+    _crossHatch(
+      canvas,
+      Rect.fromLTRB(-leftSpan, noseY, bodyShift, trailY + wingDip),
+      leftSailColor,
+      spacing: 5.5,
+      opacity: 0.09,
+    );
+    _pencilOutline(leftSail, canvas, leftSailColor, strokeWidth: 1.0);
+
+    // --- Right sail half ---
+    final rightSail = Path()
+      ..moveTo(bodyShift, noseY)
+      ..lineTo(rightSpan, trailY - 4 - wingDip)
+      ..quadraticBezierTo(
+        rightSpan * 0.45,
+        trailY + 1 - wingDip * 0.5,
+        bodyShift,
+        trailY,
+      )
+      ..close();
+    _wash(canvas, rightSail, rightSailColor, seed: planeId);
+    _crossHatch(
+      canvas,
+      Rect.fromLTRB(bodyShift, noseY, rightSpan, trailY - wingDip),
+      rightSailColor,
+      spacing: 5.5,
+      opacity: 0.09,
+    );
+    _pencilOutline(rightSail, canvas, rightSailColor, strokeWidth: 1.0);
+
+    // Sail accent stripes (one per half) running nose → tip, secondary colour.
+    final stripePaint = Paint()
+      ..color = secondary.withOpacity(0.85)
+      ..strokeWidth = 1.6
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(bodyShift, noseY),
+      Offset(-leftSpan * 0.62, trailY - 5 + wingDip * 0.6),
+      stripePaint,
+    );
+    canvas.drawLine(
+      Offset(bodyShift, noseY),
+      Offset(rightSpan * 0.62, trailY - 5 - wingDip * 0.6),
+      stripePaint,
+    );
+
+    // Sail highlight on the lit half (soft watercolour glint near the nose).
+    final highlightPaint = Paint()
+      ..color = FlitColors.planeHighlight.withOpacity(0.30);
+    if (shade <= 0) {
+      canvas.drawPath(
+        Path()
+          ..moveTo(bodyShift, noseY + 1)
+          ..lineTo(-leftSpan * 0.5, trailY - 6 + wingDip * 0.5)
+          ..lineTo(-leftSpan * 0.3, trailY - 5 + wingDip * 0.5)
+          ..lineTo(bodyShift, noseY + 4)
+          ..close(),
+        highlightPaint,
+      );
+    } else {
+      canvas.drawPath(
+        Path()
+          ..moveTo(bodyShift, noseY + 1)
+          ..lineTo(rightSpan * 0.5, trailY - 6 - wingDip * 0.5)
+          ..lineTo(rightSpan * 0.3, trailY - 5 - wingDip * 0.5)
+          ..lineTo(bodyShift, noseY + 4)
+          ..close(),
+        highlightPaint,
+      );
+    }
+
+    // --- Body group (keel spine + control bar + slung pilot) ---
+    // Wrapped in the same roll transform as the other shapes so the underslung
+    // assembly foreshortens correctly when banking.
+    canvas.save();
+    final rollScale = 0.55 + bankCos.abs() * 0.45;
+    canvas.translate(bodyShift, 0);
+    canvas.scale(rollScale, 1.0);
+    canvas.translate(-bodyShift, 0);
+
+    // Keel spine — the central tube/batten from nose to tail.
+    final keelPath = Path()
+      ..moveTo(bodyShift, noseY)
+      ..lineTo(bodyShift + 1.3, trailY)
+      ..lineTo(bodyShift - 1.3, trailY)
+      ..close();
+    _wash(canvas, keelPath, secondary, seed: planeId);
+    final keelSketchPaint = Paint()
+      ..color = _darken(secondary, 0.35).withOpacity(0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..strokeCap = StrokeCap.round;
+    _sketchPath(keelPath, canvas, keelSketchPaint, rng, wobble: 0.3);
+
+    // Cross-bar (the spanwise batten across the wing, behind the pilot).
+    canvas.drawLine(
+      Offset(bodyShift - dynamicWingSpan * 0.5, -1),
+      Offset(bodyShift + dynamicWingSpan * 0.5, -1),
+      Paint()
+        ..color = _darken(secondary, 0.15).withOpacity(0.55)
+        ..strokeWidth = 0.9,
+    );
+
+    // A-frame control bar — triangle of struts hanging below the keel that the
+    // pilot holds. Drawn as thin lines for a wireframe look.
+    const hangApexY = -2.0; // hang point on the keel
+    const barY = 9.0; // base bar (where hands grip)
+    const barHalf = 4.5;
+    final framePaint = Paint()
+      ..color = _darken(secondary, 0.2)
+      ..strokeWidth = 1.1
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(bodyShift, hangApexY),
+      Offset(bodyShift - barHalf, barY),
+      framePaint,
+    );
+    canvas.drawLine(
+      Offset(bodyShift, hangApexY),
+      Offset(bodyShift + barHalf, barY),
+      framePaint,
+    );
+    // Base bar (control bar the pilot grips).
+    canvas.drawLine(
+      Offset(bodyShift - barHalf, barY),
+      Offset(bodyShift + barHalf, barY),
+      framePaint,
+    );
+
+    // --- Pilot slung beneath, prone (head forward, body trailing aft) ---
+    // Suspension strap from the hang point down to the harness.
+    canvas.drawLine(
+      Offset(bodyShift, hangApexY),
+      Offset(bodyShift, 4),
+      Paint()
+        ..color = _darken(detail, 0.4)
+        ..strokeWidth = 1.0,
+    );
+
+    // Harness / pilot torso — a slim capsule lying along the keel.
+    final pilotPath = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(bodyShift, 3), width: 5, height: 13),
+          const Radius.circular(2.5),
+        ),
+      );
+    _wash(canvas, pilotPath, detail, seed: planeId);
+    _pencilOutline(pilotPath, canvas, detail, strokeWidth: 0.9);
+
+    // Pilot head (small circle near the nose/front of the harness).
+    canvas.drawCircle(
+      Offset(bodyShift, -3),
+      2.2,
+      Paint()..color = _darken(detail, 0.12),
+    );
+    canvas.drawCircle(
+      Offset(bodyShift - 0.5, -3.5),
+      0.9,
+      Paint()..color = _lighten(detail, 0.6),
+    );
+
+    // Hands gripping the control bar (two small dots at the base bar).
+    final handPaint = Paint()..color = _darken(detail, 0.25);
+    canvas.drawCircle(Offset(bodyShift - 2.4, barY), 1.0, handPaint);
+    canvas.drawCircle(Offset(bodyShift + 2.4, barY), 1.0, handPaint);
+
+    canvas.restore(); // End body roll transform
+
+    // Nose-tip nav highlight (tiny bright point at the leading apex).
+    canvas.drawCircle(
+      Offset(bodyShift, noseY),
+      1.4,
+      Paint()..color = secondary,
+    );
   }
 }

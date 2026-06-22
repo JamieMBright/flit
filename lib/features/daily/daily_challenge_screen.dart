@@ -163,7 +163,7 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
             fallback: plane?.colorScheme,
           ),
           planeWingSpan: plane?.wingSpan,
-          equippedPlaneId: planeId,
+          equippedPlaneId: SeasonalTheme.resolvePlaneShapeId(fallback: planeId),
           companionType: companion,
           fuelBoostMultiplier: fuelBoost,
           clueChance: license.clueChance,

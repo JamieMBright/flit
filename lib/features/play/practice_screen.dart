@@ -235,7 +235,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             fallback: plane?.colorScheme,
           ),
           planeWingSpan: plane?.wingSpan,
-          equippedPlaneId: planeId,
+          equippedPlaneId: SeasonalTheme.resolvePlaneShapeId(fallback: planeId),
           companionType: companion,
           fuelBoostMultiplier: fuelBoost,
           clueChance: license.clueChance,

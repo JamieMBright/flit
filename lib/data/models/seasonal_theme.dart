@@ -187,15 +187,60 @@ class SeasonalTheme {
   /// Drop-in replacement for `plane?.colorScheme` at every game-launch site so
   /// that all modes consistently pick up seasonal colours with zero duplication.
   ///
-  /// NOTE: This overrides the *colour scheme* only. The seasonal vehicle
-  /// *shape* (e.g. an actual sleigh/broom silhouette) is not yet applied here —
-  /// only the palette is swapped. Shape overrides are a future TODO.
+  /// This overrides the *colour scheme* (palette) only. The seasonal vehicle
+  /// *shape* is overridden separately via [resolvePlaneShapeId]; both resolvers
+  /// are applied side-by-side at every launch site.
   static Map<String, int>? resolvePlaneColorScheme({
     required Map<String, int>? fallback,
     DateTime? now,
   }) {
     final theme = now != null ? forDate(now) : current();
     return theme?.vehicleColorScheme ?? fallback;
+  }
+
+  // ── Plane shape (silhouette) resolver ───────────────────────────────
+
+  /// Returns the plane-shape id to draw for the active seasonal event, or
+  /// [fallback] (the player's equipped plane id) when no event maps to a
+  /// distinct shape.
+  ///
+  /// Drop-in replacement for the `equippedPlaneId` argument at every
+  /// game-launch site. The returned id flows unchanged through
+  /// `PlayScreen → FlitGame → PlaneComponent → PlaneRenderer.renderPlane`,
+  /// whose `switch (planeId)` already maps ids to distinct drawing routines —
+  /// so a seasonal shape needs no new plumbing, only a new `case` in the
+  /// renderer. Centralising the mapping here means zero per-mode duplication.
+  ///
+  /// Only the summer "Beach Glider" event currently maps to a bespoke shape
+  /// (`'plane_hang_glider'`). All other events fall back to the player's
+  /// equipped shape (their themed silhouettes are a future addition); they
+  /// still receive the seasonal *palette* via [resolvePlaneColorScheme].
+  static String resolvePlaneShapeId({
+    required String fallback,
+    DateTime? now,
+  }) {
+    final theme = now != null ? forDate(now) : current();
+    if (theme == null) return fallback;
+    return _shapeIdForEvent(theme.event) ?? fallback;
+  }
+
+  /// Maps a [SeasonalEvent] to a [PlaneRenderer] plane-shape id, or `null`
+  /// when the event has no bespoke silhouette yet (falls back to the equipped
+  /// plane). Add new `case`s here as themed shapes are authored.
+  static String? _shapeIdForEvent(SeasonalEvent event) {
+    switch (event) {
+      case SeasonalEvent.summer:
+        return 'plane_hang_glider';
+      case SeasonalEvent.christmas:
+      case SeasonalEvent.halloween:
+      case SeasonalEvent.easter:
+      case SeasonalEvent.valentines:
+      case SeasonalEvent.stPatricks:
+      case SeasonalEvent.none:
+        // No bespoke shape yet — keep the player's equipped silhouette while
+        // still applying the seasonal palette via resolvePlaneColorScheme.
+        return null;
+    }
   }
 
   // ── Serialisation ───────────────────────────────────────────────────
