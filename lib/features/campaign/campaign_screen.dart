@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/tutorial/campaign_mission.dart';
@@ -84,52 +85,55 @@ class CampaignScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: Column(
-        children: [
-          // Clue type legend
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 12, 20, 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _LegendItem(icon: Icons.flag, label: 'Flag'),
-                SizedBox(width: 10),
-                _LegendItem(icon: Icons.crop_square, label: 'Outline'),
-                SizedBox(width: 10),
-                _LegendItem(icon: Icons.border_all, label: 'Borders'),
-                SizedBox(width: 10),
-                _LegendItem(icon: Icons.location_city, label: 'Capital'),
-                SizedBox(width: 10),
-                _LegendItem(icon: Icons.bar_chart, label: 'Stats'),
-              ],
+      body: MenuContentWrapper(
+        child: Column(
+          children: [
+            // Clue type legend
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 12, 20, 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _LegendItem(icon: Icons.flag, label: 'Flag'),
+                  SizedBox(width: 10),
+                  _LegendItem(icon: Icons.crop_square, label: 'Outline'),
+                  SizedBox(width: 10),
+                  _LegendItem(icon: Icons.border_all, label: 'Borders'),
+                  SizedBox(width: 10),
+                  _LegendItem(icon: Icons.location_city, label: 'Capital'),
+                  SizedBox(width: 10),
+                  _LegendItem(icon: Icons.bar_chart, label: 'Stats'),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              itemCount: campaignMissions.length,
-              itemBuilder: (context, index) {
-                final mission = campaignMissions[index];
-                final result = progress[mission.id];
-                final isCompleted = result != null;
+            Expanded(
+              child: ListView.builder(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                itemCount: campaignMissions.length,
+                itemBuilder: (context, index) {
+                  final mission = campaignMissions[index];
+                  final result = progress[mission.id];
+                  final isCompleted = result != null;
 
-                // A mission is unlocked if it's the first, or the previous one is complete.
-                final isUnlocked = index == 0 ||
-                    progress.containsKey(campaignMissions[index - 1].id);
+                  // A mission is unlocked if it's the first, or the previous one is complete.
+                  final isUnlocked = index == 0 ||
+                      progress.containsKey(campaignMissions[index - 1].id);
 
-                return _MissionCard(
-                  mission: mission,
-                  result: result,
-                  isUnlocked: isUnlocked,
-                  isCompleted: isCompleted,
-                  onTap: isUnlocked
-                      ? () => _startMission(context, ref, mission)
-                      : null,
-                );
-              },
+                  return _MissionCard(
+                    mission: mission,
+                    result: result,
+                    isUnlocked: isUnlocked,
+                    isCompleted: isCompleted,
+                    onTap: isUnlocked
+                        ? () => _startMission(context, ref, mission)
+                        : null,
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/challenge.dart';
 import '../../data/models/cosmetic.dart';
+import '../../data/models/seasonal_theme.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/challenge_service.dart';
 import '../../data/services/matchmaking_service.dart';
@@ -263,9 +265,11 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
           challengeId: _matchResult!.challengeId,
           challengeSeeds: seeds,
           totalRounds: Challenge.totalRounds,
-          planeColorScheme: plane?.colorScheme,
+          planeColorScheme: SeasonalTheme.resolvePlaneColorScheme(
+            fallback: plane?.colorScheme,
+          ),
           planeWingSpan: plane?.wingSpan,
-          equippedPlaneId: planeId,
+          equippedPlaneId: SeasonalTheme.resolvePlaneShapeId(fallback: planeId),
           companionType: companion,
           fuelBoostMultiplier: fuelBoost,
           clueChance: license.clueChance,
@@ -326,27 +330,30 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            children: [
-              const SizedBox(height: 24),
-              // Player ELO card
-              _EloCard(elo: elo, level: player.level),
-              const SizedBox(height: 24),
-              // Main action area
-              Expanded(child: _buildStateContent()),
-              // Pool entries
-              if (_poolEntries.isNotEmpty && _state != _MatchState.matched) ...[
-                const Divider(color: FlitColors.cardBorder, height: 1),
-                _PoolEntriesSection(
-                  entries: _poolEntries,
-                  onCheckMatch: _checkForMatches,
-                  onCancelEntry: _cancelEntry,
-                ),
+        child: MenuContentWrapper(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                const SizedBox(height: 24),
+                // Player ELO card
+                _EloCard(elo: elo, level: player.level),
+                const SizedBox(height: 24),
+                // Main action area
+                Expanded(child: _buildStateContent()),
+                // Pool entries
+                if (_poolEntries.isNotEmpty &&
+                    _state != _MatchState.matched) ...[
+                  const Divider(color: FlitColors.cardBorder, height: 1),
+                  _PoolEntriesSection(
+                    entries: _poolEntries,
+                    onCheckMatch: _checkForMatches,
+                    onCancelEntry: _cancelEntry,
+                  ),
+                ],
+                const SizedBox(height: 16),
               ],
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
         ),
       ),

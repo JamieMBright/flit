@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_difficulty.dart';
@@ -150,46 +151,48 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
         iconTheme: const IconThemeData(color: FlitColors.textPrimary),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 20,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(),
-                    const SizedBox(height: 24),
+        child: MenuContentWrapper(
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 20,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(),
+                      const SizedBox(height: 24),
 
-                    // Difficulty selector
-                    _buildSectionLabel('DIFFICULTY', Icons.tune),
-                    const SizedBox(height: 10),
-                    _buildDifficultySelector(),
-                    // Area reduction slider (easy mode only)
-                    if (_selectedDifficulty == QuizDifficulty.easy) ...[
-                      const SizedBox(height: 16),
-                      _buildAreaReductionSlider(),
+                      // Difficulty selector
+                      _buildSectionLabel('DIFFICULTY', Icons.tune),
+                      const SizedBox(height: 10),
+                      _buildDifficultySelector(),
+                      // Area reduction slider (easy mode only)
+                      if (_selectedDifficulty == QuizDifficulty.easy) ...[
+                        const SizedBox(height: 16),
+                        _buildAreaReductionSlider(),
+                      ],
+                      const SizedBox(height: 24),
+
+                      _buildSectionLabel('GAME MODE', Icons.videogame_asset),
+                      const SizedBox(height: 10),
+                      ..._buildModeCards(),
+                      const SizedBox(height: 24),
+
+                      _buildSectionLabel('CATEGORIES', Icons.category),
+                      const SizedBox(height: 10),
+                      _buildCategorySection(),
+                      const SizedBox(height: 24),
                     ],
-                    const SizedBox(height: 24),
-
-                    _buildSectionLabel('GAME MODE', Icons.videogame_asset),
-                    const SizedBox(height: 10),
-                    ..._buildModeCards(),
-                    const SizedBox(height: 24),
-
-                    _buildSectionLabel('CATEGORIES', Icons.category),
-                    const SizedBox(height: 10),
-                    _buildCategorySection(),
-                    const SizedBox(height: 24),
-                  ],
+                  ),
                 ),
               ),
-            ),
-            _buildBottomBar(),
-          ],
+              _buildBottomBar(),
+            ],
+          ),
         ),
       ),
     );

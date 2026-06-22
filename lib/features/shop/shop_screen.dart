@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/economy_config.dart';
 import '../../data/providers/account_provider.dart';
@@ -135,66 +136,68 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Promo banner when shop discount is active.
-          if (hasAnyPromo) _PromoBanner(config: _economyConfig),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                Column(
-                  children: [
-                    _MysteryPlaneButton(
-                      coins: coins,
-                      ownedIds: ownedIds,
-                      onReveal: (Cosmetic plane) {
-                        ref.read(accountProvider.notifier).purchaseCosmetic(
-                              plane.id,
-                              _MysteryPlaneButton._mysteryCost,
-                            );
-                        setState(() {});
-                      },
-                    ),
-                    Expanded(
-                      child: _CosmeticGrid(
-                        items: CosmeticCatalog.planes,
-                        ownedIds: ownedIds,
-                        equippedId: equippedPlane,
+      body: MenuContentWrapper(
+        child: Column(
+          children: [
+            // Promo banner when shop discount is active.
+            if (hasAnyPromo) _PromoBanner(config: _economyConfig),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  Column(
+                    children: [
+                      _MysteryPlaneButton(
                         coins: coins,
-                        level: level,
-                        onPurchase: _purchaseItem,
-                        onEquip: _equipPlane,
-                        economyConfig: _economyConfig,
+                        ownedIds: ownedIds,
+                        onReveal: (Cosmetic plane) {
+                          ref.read(accountProvider.notifier).purchaseCosmetic(
+                                plane.id,
+                                _MysteryPlaneButton._mysteryCost,
+                              );
+                          setState(() {});
+                        },
                       ),
-                    ),
-                  ],
-                ),
-                _CosmeticGrid(
-                  items: CosmeticCatalog.contrails,
-                  ownedIds: ownedIds,
-                  equippedId: equippedContrail,
-                  coins: coins,
-                  level: level,
-                  onPurchase: _purchaseItem,
-                  onEquip: _equipContrail,
-                  economyConfig: _economyConfig,
-                ),
-                _CosmeticGrid(
-                  items: CosmeticCatalog.companions,
-                  ownedIds: ownedIds,
-                  equippedId: equippedCompanion,
-                  coins: coins,
-                  level: level,
-                  onPurchase: _purchaseItem,
-                  onEquip: _equipCompanion,
-                  economyConfig: _economyConfig,
-                ),
-                _GoldShopTab(economyConfig: _economyConfig),
-              ],
+                      Expanded(
+                        child: _CosmeticGrid(
+                          items: CosmeticCatalog.planes,
+                          ownedIds: ownedIds,
+                          equippedId: equippedPlane,
+                          coins: coins,
+                          level: level,
+                          onPurchase: _purchaseItem,
+                          onEquip: _equipPlane,
+                          economyConfig: _economyConfig,
+                        ),
+                      ),
+                    ],
+                  ),
+                  _CosmeticGrid(
+                    items: CosmeticCatalog.contrails,
+                    ownedIds: ownedIds,
+                    equippedId: equippedContrail,
+                    coins: coins,
+                    level: level,
+                    onPurchase: _purchaseItem,
+                    onEquip: _equipContrail,
+                    economyConfig: _economyConfig,
+                  ),
+                  _CosmeticGrid(
+                    items: CosmeticCatalog.companions,
+                    ownedIds: ownedIds,
+                    equippedId: equippedCompanion,
+                    coins: coins,
+                    level: level,
+                    onPurchase: _purchaseItem,
+                    onEquip: _equipCompanion,
+                    economyConfig: _economyConfig,
+                  ),
+                  _GoldShopTab(economyConfig: _economyConfig),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

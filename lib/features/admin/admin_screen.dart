@@ -5,12 +5,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/config/admin_config.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/utils/game_log.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/data/country_difficulty.dart';
 import '../../game/map/country_data.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/models/cosmetic.dart';
+import '../../data/models/seasonal_theme.dart';
+import '../../game/rendering/plane_renderer.dart';
 import '../../data/models/economy_config.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
@@ -1415,6 +1418,14 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                 },
               );
 
+              // If admin set their own license, force-refresh local state so
+              // the debounced write queue doesn't clobber the admin-set values
+              // with the stale in-memory license on the next _syncAccountState.
+              final currentUserId = ref.read(accountProvider).currentPlayer.id;
+              if (userId == currentUserId) {
+                await ref.read(accountProvider.notifier).adminForceRefresh();
+              }
+
               if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
               if (!context.mounted) return;
               _snack(
@@ -2171,418 +2182,299 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
         title: Text('$roleName Panel'),
         centerTitle: true,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // ── Current account info ──
-          const _SectionHeader(title: 'Current Account'),
-          _AccountCard(player: player),
-          const SizedBox(height: 24),
+      body: MenuContentWrapper(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // ── Current account info ──
+            const _SectionHeader(title: 'Current Account'),
+            _AccountCard(player: player),
+            const SizedBox(height: 24),
 
-          // ── Analytics (moderator + owner) ──
-          if (_can(state, AdminPermission.viewAnalytics)) ...[
-            const _SectionHeader(title: 'Analytics'),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.analytics,
-              iconColor: FlitColors.oceanHighlight,
-              label: 'Usage Stats',
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const AdminStatsScreen(),
-                  ),
-                );
-                _refreshAdminData();
-              },
-            ),
-            if (_can(state, AdminPermission.viewCoinLedger)) ...[
+            // ── Analytics (moderator + owner) ──
+            if (_can(state, AdminPermission.viewAnalytics)) ...[
+              const _SectionHeader(title: 'Analytics'),
               const SizedBox(height: 8),
               _AdminActionCard(
-                icon: Icons.receipt_long,
-                iconColor: FlitColors.gold,
-                label: 'Coin Ledger Explorer',
-                onTap: () => _showCoinLedgerDialog(context),
-              ),
-            ],
-            const SizedBox(height: 24),
-          ],
-
-          // ── User Lookup (moderator + owner) ──
-          if (_can(state, AdminPermission.viewUserData)) ...[
-            const _SectionHeader(title: 'User Lookup'),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.person_search,
-              iconColor: FlitColors.oceanHighlight,
-              label: 'Look Up Player',
-              onTap: () => _showUserLookupDialog(context),
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // ── Quick self-actions (owner only) ──
-          if (_can(state, AdminPermission.selfServiceActions)) ...[
-            const _SectionHeader(title: 'Quick Actions (Self)'),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _ActionChip(
-                  label: '+100 Gold',
-                  onTap: () => notifier.addCoins(
-                    100,
-                    applyBoost: false,
-                    source: 'admin_grant',
-                  ),
-                ),
-                _ActionChip(
-                  label: '+1,000 Gold',
-                  onTap: () => notifier.addCoins(
-                    1000,
-                    applyBoost: false,
-                    source: 'admin_grant',
-                  ),
-                ),
-                _ActionChip(
-                  label: '+999,999 Gold',
-                  onTap: () => notifier.addCoins(
-                    999999,
-                    applyBoost: false,
-                    source: 'admin_grant',
-                  ),
-                ),
-                _ActionChip(label: '+50 XP', onTap: () => notifier.addXp(50)),
-                _ActionChip(label: '+500 XP', onTap: () => notifier.addXp(500)),
-                _ActionChip(
-                  label: '+1 Flight',
-                  onTap: () => notifier.incrementGamesPlayed(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // ── Gift to Player (owner only) ──
-          if (_can(state, AdminPermission.giftGold)) ...[
-            const _SectionHeader(title: 'Gift to Player'),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.monetization_on,
-              iconColor: FlitColors.gold,
-              label: 'Gift Gold',
-              onTap: () => _showGiftGoldDialog(context),
-            ),
-            if (_can(state, AdminPermission.giftLevels)) ...[
-              const SizedBox(height: 8),
-              _AdminActionCard(
-                icon: Icons.arrow_upward,
-                iconColor: FlitColors.accent,
-                label: 'Gift Levels',
-                onTap: () => _showGiftLevelsDialog(context),
-              ),
-            ],
-            if (_can(state, AdminPermission.giftFlights)) ...[
-              const SizedBox(height: 8),
-              _AdminActionCard(
-                icon: Icons.flight,
+                icon: Icons.analytics,
                 iconColor: FlitColors.oceanHighlight,
-                label: 'Gift Flights',
-                onTap: () => _showGiftFlightsDialog(context),
-              ),
-            ],
-            if (_can(state, AdminPermission.setCoins)) ...[
-              const SizedBox(height: 8),
-              _AdminActionCard(
-                icon: Icons.monetization_on_outlined,
-                iconColor: FlitColors.gold,
-                label: 'Set Coins',
-                onTap: () => _showSetStatDialog(
-                  context,
-                  title: 'Set Coins',
-                  statColumn: 'coins',
-                  valueLabel: 'Coins total',
-                  icon: Icons.monetization_on,
-                  iconColor: FlitColors.gold,
-                ),
-              ),
-            ],
-            if (_can(state, AdminPermission.setLevel)) ...[
-              const SizedBox(height: 8),
-              _AdminActionCard(
-                icon: Icons.trending_up,
-                iconColor: FlitColors.accent,
-                label: 'Set Level',
-                onTap: () => _showSetStatDialog(
-                  context,
-                  title: 'Set Level',
-                  statColumn: 'level',
-                  valueLabel: 'Level',
-                  icon: Icons.trending_up,
-                  iconColor: FlitColors.accent,
-                ),
-              ),
-            ],
-            if (_can(state, AdminPermission.setFlights)) ...[
-              const SizedBox(height: 8),
-              _AdminActionCard(
-                icon: Icons.flight_takeoff,
-                iconColor: FlitColors.oceanHighlight,
-                label: 'Set Flights',
-                onTap: () => _showSetStatDialog(
-                  context,
-                  title: 'Set Flights',
-                  statColumn: 'games_played',
-                  valueLabel: 'Flights',
-                  icon: Icons.flight_takeoff,
-                  iconColor: FlitColors.oceanHighlight,
-                ),
-              ),
-            ],
-            if (_can(state, AdminPermission.giftCosmetic)) ...[
-              const SizedBox(height: 8),
-              _AdminActionCard(
-                icon: Icons.star,
-                iconColor: const Color(0xFF9B59B6),
-                label: 'Gift Cosmetic Item',
-                onTap: () => _showGiftCosmeticDialog(context),
-              ),
-            ],
-            if (_can(state, AdminPermission.setLicense)) ...[
-              const SizedBox(height: 8),
-              _AdminActionCard(
-                icon: Icons.badge,
-                iconColor: FlitColors.oceanHighlight,
-                label: 'Set Player License',
-                onTap: () => _showSetLicenseDialog(context),
-              ),
-            ],
-            if (_can(state, AdminPermission.setAvatar)) ...[
-              const SizedBox(height: 8),
-              _AdminActionCard(
-                icon: Icons.face,
-                iconColor: FlitColors.gold,
-                label: 'Set Player Avatar',
-                onTap: () => _showSetAvatarDialog(context),
-              ),
-            ],
-            const SizedBox(height: 24),
-          ],
-
-          // ── Moderation (moderator + owner) ──
-          if (_can(state, AdminPermission.changeUsername)) ...[
-            const _SectionHeader(title: 'Moderation'),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.edit,
-              iconColor: FlitColors.warning,
-              label: 'Change Player Username',
-              onTap: () => _showChangeUsernameDialog(context),
-            ),
-            const SizedBox(height: 8),
-          ],
-          if (_can(state, AdminPermission.manageRoles)) ...[
-            _AdminActionCard(
-              icon: Icons.shield,
-              iconColor: FlitColors.accent,
-              label: 'Manage Moderators',
-              onTap: () => _showManageRoleDialog(context),
-            ),
-            const SizedBox(height: 8),
-          ],
-          if (_can(state, AdminPermission.unlockAll)) ...[
-            _AdminActionCard(
-              icon: Icons.lock_open,
-              iconColor: FlitColors.success,
-              label: 'Unlock All (Player)',
-              onTap: () => _showUnlockAllDialog(context),
-            ),
-            const SizedBox(height: 8),
-          ],
-          if (_can(state, AdminPermission.changeUsername) ||
-              _can(state, AdminPermission.manageRoles))
-            const SizedBox(height: 24),
-
-          // ── Ban Management (moderator + owner) ──
-          if (_can(state, AdminPermission.tempBanUser)) ...[
-            const _SectionHeader(title: 'Ban Management'),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.gavel,
-              iconColor: FlitColors.error,
-              label: 'Ban Player',
-              onTap: () => _showBanUserDialog(context),
-            ),
-            const SizedBox(height: 8),
-          ],
-          if (_can(state, AdminPermission.unbanUser)) ...[
-            _AdminActionCard(
-              icon: Icons.lock_open,
-              iconColor: FlitColors.success,
-              label: 'Unban Player',
-              onTap: () => _showUnbanUserDialog(context),
-            ),
-            const SizedBox(height: 8),
-          ],
-          if (_can(state, AdminPermission.tempBanUser)) ...[
-            _AdminActionCard(
-              icon: Icons.people_outline,
-              iconColor: FlitColors.warning,
-              label: 'View Banned Players',
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => _BannedPlayersScreen(
-                      onUnban: (username) {
-                        _showUnbanUserDialog(
-                          context,
-                          prefillUsername: username,
-                        );
-                      },
-                    ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-
-          // ── Report Queue (moderator + owner) ──
-          if (_can(state, AdminPermission.viewReports)) ...[
-            const _SectionHeader(title: 'Reports'),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.flag,
-              iconColor: FlitColors.warning,
-              label: _pendingReportCount > 0
-                  ? 'Player Reports ($_pendingReportCount pending)'
-                  : 'Player Reports',
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const _ReportQueuePlaceholder(),
-                  ),
-                );
-                _refreshAdminData();
-              },
-            ),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.map_outlined,
-              iconColor: FlitColors.warning,
-              label: _pendingClueReportCount > 0
-                  ? 'Clue Reports ($_pendingClueReportCount pending)'
-                  : 'Clue Reports',
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const _ClueReportQueue(),
-                  ),
-                );
-                _refreshAdminData();
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // ── Difficulty Ratings (view: moderator + owner, edit: owner) ──
-          if (_can(state, AdminPermission.viewDifficulty)) ...[
-            const _SectionHeader(title: 'Difficulty Ratings'),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.speed,
-              iconColor: const Color(0xFFFF9800),
-              label: _can(state, AdminPermission.editDifficulty)
-                  ? 'View / Edit Country Difficulty'
-                  : 'View Country Difficulty',
-              onTap: () => _showDifficultyEditorDialog(context),
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // ── Design Preview (moderator + owner) ──
-          if (_can(state, AdminPermission.viewDesignPreviews)) ...[
-            const _SectionHeader(title: 'Design Preview'),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.flight,
-              iconColor: FlitColors.accent,
-              label: 'Plane Preview (all variants)',
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const PlanePreviewScreen(),
-                  ),
-                );
-                _refreshAdminData();
-              },
-            ),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.face,
-              iconColor: FlitColors.oceanHighlight,
-              label: 'Avatar Preview (all styles)',
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const AvatarPreviewScreen(),
-                  ),
-                );
-                _refreshAdminData();
-              },
-            ),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.flag,
-              iconColor: FlitColors.landMassHighlight,
-              label: 'Country Preview (flags & outlines)',
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const CountryPreviewScreen(),
-                  ),
-                );
-                _refreshAdminData();
-              },
-            ),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.pets,
-              iconColor: FlitColors.gold,
-              label: 'Companion Preview (all creatures)',
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const CompanionPreviewScreen(),
-                  ),
-                );
-                _refreshAdminData();
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // ── Economy Management (owner only) ──
-          if (_can(state, AdminPermission.editEarnings)) ...[
-            const _SectionHeader(title: 'Economy Management'),
-            const SizedBox(height: 8),
-            if (_economyConfigLoading)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: CircularProgressIndicator(),
-                ),
-              )
-            else ...[
-              _AdminActionCard(
-                icon: Icons.monetization_on,
-                iconColor: FlitColors.gold,
-                label: 'Gold Management',
+                label: 'Usage Stats',
                 onTap: () async {
                   await Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => const GoldManagementScreen(),
+                      builder: (_) => const AdminStatsScreen(),
+                    ),
+                  );
+                  _refreshAdminData();
+                },
+              ),
+              if (_can(state, AdminPermission.viewCoinLedger)) ...[
+                const SizedBox(height: 8),
+                _AdminActionCard(
+                  icon: Icons.receipt_long,
+                  iconColor: FlitColors.gold,
+                  label: 'Coin Ledger Explorer',
+                  onTap: () => _showCoinLedgerDialog(context),
+                ),
+              ],
+              const SizedBox(height: 24),
+            ],
+
+            // ── User Lookup (moderator + owner) ──
+            if (_can(state, AdminPermission.viewUserData)) ...[
+              const _SectionHeader(title: 'User Lookup'),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.person_search,
+                iconColor: FlitColors.oceanHighlight,
+                label: 'Look Up Player',
+                onTap: () => _showUserLookupDialog(context),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // ── Quick self-actions (owner only) ──
+            if (_can(state, AdminPermission.selfServiceActions)) ...[
+              const _SectionHeader(title: 'Quick Actions (Self)'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _ActionChip(
+                    label: '+100 Gold',
+                    onTap: () => notifier.addCoins(
+                      100,
+                      applyBoost: false,
+                      source: 'admin_grant',
+                    ),
+                  ),
+                  _ActionChip(
+                    label: '+1,000 Gold',
+                    onTap: () => notifier.addCoins(
+                      1000,
+                      applyBoost: false,
+                      source: 'admin_grant',
+                    ),
+                  ),
+                  _ActionChip(
+                    label: '+999,999 Gold',
+                    onTap: () => notifier.addCoins(
+                      999999,
+                      applyBoost: false,
+                      source: 'admin_grant',
+                    ),
+                  ),
+                  _ActionChip(label: '+50 XP', onTap: () => notifier.addXp(50)),
+                  _ActionChip(
+                      label: '+500 XP', onTap: () => notifier.addXp(500)),
+                  _ActionChip(
+                    label: '+1 Flight',
+                    onTap: () => notifier.incrementGamesPlayed(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // ── Gift to Player (owner only) ──
+            if (_can(state, AdminPermission.giftGold)) ...[
+              const _SectionHeader(title: 'Gift to Player'),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.monetization_on,
+                iconColor: FlitColors.gold,
+                label: 'Gift Gold',
+                onTap: () => _showGiftGoldDialog(context),
+              ),
+              if (_can(state, AdminPermission.giftLevels)) ...[
+                const SizedBox(height: 8),
+                _AdminActionCard(
+                  icon: Icons.arrow_upward,
+                  iconColor: FlitColors.accent,
+                  label: 'Gift Levels',
+                  onTap: () => _showGiftLevelsDialog(context),
+                ),
+              ],
+              if (_can(state, AdminPermission.giftFlights)) ...[
+                const SizedBox(height: 8),
+                _AdminActionCard(
+                  icon: Icons.flight,
+                  iconColor: FlitColors.oceanHighlight,
+                  label: 'Gift Flights',
+                  onTap: () => _showGiftFlightsDialog(context),
+                ),
+              ],
+              if (_can(state, AdminPermission.setCoins)) ...[
+                const SizedBox(height: 8),
+                _AdminActionCard(
+                  icon: Icons.monetization_on_outlined,
+                  iconColor: FlitColors.gold,
+                  label: 'Set Coins',
+                  onTap: () => _showSetStatDialog(
+                    context,
+                    title: 'Set Coins',
+                    statColumn: 'coins',
+                    valueLabel: 'Coins total',
+                    icon: Icons.monetization_on,
+                    iconColor: FlitColors.gold,
+                  ),
+                ),
+              ],
+              if (_can(state, AdminPermission.setLevel)) ...[
+                const SizedBox(height: 8),
+                _AdminActionCard(
+                  icon: Icons.trending_up,
+                  iconColor: FlitColors.accent,
+                  label: 'Set Level',
+                  onTap: () => _showSetStatDialog(
+                    context,
+                    title: 'Set Level',
+                    statColumn: 'level',
+                    valueLabel: 'Level',
+                    icon: Icons.trending_up,
+                    iconColor: FlitColors.accent,
+                  ),
+                ),
+              ],
+              if (_can(state, AdminPermission.setFlights)) ...[
+                const SizedBox(height: 8),
+                _AdminActionCard(
+                  icon: Icons.flight_takeoff,
+                  iconColor: FlitColors.oceanHighlight,
+                  label: 'Set Flights',
+                  onTap: () => _showSetStatDialog(
+                    context,
+                    title: 'Set Flights',
+                    statColumn: 'games_played',
+                    valueLabel: 'Flights',
+                    icon: Icons.flight_takeoff,
+                    iconColor: FlitColors.oceanHighlight,
+                  ),
+                ),
+              ],
+              if (_can(state, AdminPermission.giftCosmetic)) ...[
+                const SizedBox(height: 8),
+                _AdminActionCard(
+                  icon: Icons.star,
+                  iconColor: const Color(0xFF9B59B6),
+                  label: 'Gift Cosmetic Item',
+                  onTap: () => _showGiftCosmeticDialog(context),
+                ),
+              ],
+              if (_can(state, AdminPermission.setLicense)) ...[
+                const SizedBox(height: 8),
+                _AdminActionCard(
+                  icon: Icons.badge,
+                  iconColor: FlitColors.oceanHighlight,
+                  label: 'Set Player License',
+                  onTap: () => _showSetLicenseDialog(context),
+                ),
+              ],
+              if (_can(state, AdminPermission.setAvatar)) ...[
+                const SizedBox(height: 8),
+                _AdminActionCard(
+                  icon: Icons.face,
+                  iconColor: FlitColors.gold,
+                  label: 'Set Player Avatar',
+                  onTap: () => _showSetAvatarDialog(context),
+                ),
+              ],
+              const SizedBox(height: 24),
+            ],
+
+            // ── Moderation (moderator + owner) ──
+            if (_can(state, AdminPermission.changeUsername)) ...[
+              const _SectionHeader(title: 'Moderation'),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.edit,
+                iconColor: FlitColors.warning,
+                label: 'Change Player Username',
+                onTap: () => _showChangeUsernameDialog(context),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (_can(state, AdminPermission.manageRoles)) ...[
+              _AdminActionCard(
+                icon: Icons.shield,
+                iconColor: FlitColors.accent,
+                label: 'Manage Moderators',
+                onTap: () => _showManageRoleDialog(context),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (_can(state, AdminPermission.unlockAll)) ...[
+              _AdminActionCard(
+                icon: Icons.lock_open,
+                iconColor: FlitColors.success,
+                label: 'Unlock All (Player)',
+                onTap: () => _showUnlockAllDialog(context),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (_can(state, AdminPermission.changeUsername) ||
+                _can(state, AdminPermission.manageRoles))
+              const SizedBox(height: 24),
+
+            // ── Ban Management (moderator + owner) ──
+            if (_can(state, AdminPermission.tempBanUser)) ...[
+              const _SectionHeader(title: 'Ban Management'),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.gavel,
+                iconColor: FlitColors.error,
+                label: 'Ban Player',
+                onTap: () => _showBanUserDialog(context),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (_can(state, AdminPermission.unbanUser)) ...[
+              _AdminActionCard(
+                icon: Icons.lock_open,
+                iconColor: FlitColors.success,
+                label: 'Unban Player',
+                onTap: () => _showUnbanUserDialog(context),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (_can(state, AdminPermission.tempBanUser)) ...[
+              _AdminActionCard(
+                icon: Icons.people_outline,
+                iconColor: FlitColors.warning,
+                label: 'View Banned Players',
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => _BannedPlayersScreen(
+                        onUnban: (username) {
+                          _showUnbanUserDialog(
+                            context,
+                            prefillUsername: username,
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+
+            // ── Report Queue (moderator + owner) ──
+            if (_can(state, AdminPermission.viewReports)) ...[
+              const _SectionHeader(title: 'Reports'),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.flag,
+                iconColor: FlitColors.warning,
+                label: _pendingReportCount > 0
+                    ? 'Player Reports ($_pendingReportCount pending)'
+                    : 'Player Reports',
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const _ReportQueuePlaceholder(),
                     ),
                   );
                   _refreshAdminData();
@@ -2590,292 +2482,525 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               ),
               const SizedBox(height: 8),
               _AdminActionCard(
-                icon: Icons.attach_money,
-                iconColor: FlitColors.gold,
-                label: 'Set Earnings',
-                onTap: () => _showEarningsConfigDialog(context),
+                icon: Icons.map_outlined,
+                iconColor: FlitColors.warning,
+                label: _pendingClueReportCount > 0
+                    ? 'Clue Reports ($_pendingClueReportCount pending)'
+                    : 'Clue Reports',
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const _ClueReportQueue(),
+                    ),
+                  );
+                  _refreshAdminData();
+                },
               ),
-              if (_can(state, AdminPermission.editPromotions)) ...[
-                const SizedBox(height: 8),
-                _AdminActionCard(
-                  icon: Icons.local_offer,
-                  iconColor: FlitColors.accent,
-                  label: 'Manage Promotions',
-                  onTap: () => _showPromotionsDialog(context),
-                ),
-              ],
-              if (_can(state, AdminPermission.editGoldPackages)) ...[
-                const SizedBox(height: 8),
-                _AdminActionCard(
-                  icon: Icons.inventory_2,
-                  iconColor: FlitColors.gold,
-                  label: 'Edit Gold Packages',
-                  onTap: () => _showGoldPackagesDialog(context),
-                ),
-              ],
-              if (_can(state, AdminPermission.editShopPrices)) ...[
-                const SizedBox(height: 8),
-                _AdminActionCard(
-                  icon: Icons.price_change,
-                  iconColor: FlitColors.oceanHighlight,
-                  label: 'Shop Price Overrides',
-                  onTap: () => _showShopPriceOverridesDialog(context),
-                ),
-              ],
+              const SizedBox(height: 24),
             ],
-            const SizedBox(height: 24),
-          ],
 
-          // ── Flight School Config (owner only) ──
-          if (_can(state, AdminPermission.editEarnings)) ...[
-            const _SectionHeader(title: 'Flight School'),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.school,
-              iconColor: FlitColors.oceanHighlight,
-              label: 'Flight School Config',
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const FlightSchoolAdminScreen(),
-                  ),
-                );
-                _refreshAdminData();
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
+            // ── Difficulty Ratings (view: moderator + owner, edit: owner) ──
+            if (_can(state, AdminPermission.viewDifficulty)) ...[
+              const _SectionHeader(title: 'Difficulty Ratings'),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.speed,
+                iconColor: const Color(0xFFFF9800),
+                label: _can(state, AdminPermission.editDifficulty)
+                    ? 'View / Edit Country Difficulty'
+                    : 'View Country Difficulty',
+                onTap: () => _showDifficultyEditorDialog(context),
+              ),
+              const SizedBox(height: 24),
+            ],
 
-          // ── Country Aliases (moderator + owner) ──
-          if (_can(state, AdminPermission.editAliases)) ...[
-            const _SectionHeader(title: 'Country Aliases'),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.spellcheck,
-              iconColor: FlitColors.success,
-              label: 'Country Aliases',
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const AliasAdminScreen(),
-                  ),
-                );
-                _refreshAdminData();
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
+            // ── Design Preview (moderator + owner) ──
+            if (_can(state, AdminPermission.viewDesignPreviews)) ...[
+              const _SectionHeader(title: 'Design Preview'),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.flight,
+                iconColor: FlitColors.accent,
+                label: 'Plane Preview (all variants)',
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const PlanePreviewScreen(),
+                    ),
+                  );
+                  _refreshAdminData();
+                },
+              ),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.face,
+                iconColor: FlitColors.oceanHighlight,
+                label: 'Avatar Preview (all styles)',
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AvatarPreviewScreen(),
+                    ),
+                  );
+                  _refreshAdminData();
+                },
+              ),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.flag,
+                iconColor: FlitColors.landMassHighlight,
+                label: 'Country Preview (flags & outlines)',
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const CountryPreviewScreen(),
+                    ),
+                  );
+                  _refreshAdminData();
+                },
+              ),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.pets,
+                iconColor: FlitColors.gold,
+                label: 'Companion Preview (all creatures)',
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const CompanionPreviewScreen(),
+                    ),
+                  );
+                  _refreshAdminData();
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
 
-          // ── App Config (owner only) ──
-          if (_can(state, AdminPermission.editAppConfig)) ...[
-            const _SectionHeader(title: 'App Config'),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.system_update,
-              iconColor: FlitColors.accent,
-              label: 'Version Gate & Maintenance',
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const _AppConfigPlaceholder(),
-                  ),
-                );
-                _refreshAdminData();
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // ── Announcements (moderator + owner) ──
-          if (_can(state, AdminPermission.viewAnnouncements)) ...[
-            const _SectionHeader(title: 'Announcements'),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.campaign,
-              iconColor: FlitColors.gold,
-              label: 'Manage Announcements',
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const _AnnouncementsPlaceholder(),
-                  ),
-                );
-                _refreshAdminData();
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // ── Feature Flags (owner: edit, moderator: view) ──
-          if (_can(state, AdminPermission.viewFeatureFlags)) ...[
-            const _SectionHeader(title: 'Feature Flags'),
-            const SizedBox(height: 8),
-            if (_featureFlagsLoading)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: CircularProgressIndicator(),
-                ),
-              )
-            else
-              ...(_featureFlags.entries.map(
-                (entry) => Padding(
-                  key: ValueKey('ff_${entry.key}'),
+            // ── Seasonal Vehicles (moderator + owner) ──
+            if (_can(state, AdminPermission.viewDesignPreviews)) ...[
+              const _SectionHeader(title: 'Seasonal Vehicles'),
+              const SizedBox(height: 8),
+              ...SeasonalTheme.allThemes.map((theme) {
+                final shapeId = theme.planeShapeId ?? 'plane_biplane';
+                return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
                     decoration: BoxDecoration(
                       color: FlitColors.cardBackground,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: FlitColors.cardBorder),
                     ),
+                    padding: const EdgeInsets.all(12),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          entry.value ? Icons.toggle_on : Icons.toggle_off,
-                          color: entry.value
-                              ? FlitColors.success
-                              : FlitColors.textMuted,
-                          size: 28,
+                        // Vehicle preview canvas
+                        Container(
+                          width: 108,
+                          height: 108,
+                          decoration: BoxDecoration(
+                            color: FlitColors.backgroundDark,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: CustomPaint(
+                            painter: _SeasonalVehiclePainter(
+                              planeId: shapeId,
+                              colorScheme: theme.vehicleColorScheme,
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 12),
+                        // Text info
                         Expanded(
-                          child: Text(
-                            entry.key,
-                            style: const TextStyle(
-                              color: FlitColors.textPrimary,
-                              fontSize: 14,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                theme.vehicleName,
+                                style: const TextStyle(
+                                  color: FlitColors.textPrimary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                theme.vehicleDescription,
+                                style: const TextStyle(
+                                  color: FlitColors.textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.event,
+                                    size: 12,
+                                    color: FlitColors.textMuted,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    theme.event.name,
+                                    style: const TextStyle(
+                                      color: FlitColors.textMuted,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.date_range,
+                                    size: 12,
+                                    color: FlitColors.textMuted,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    theme.dateWindowLabel,
+                                    style: const TextStyle(
+                                      color: FlitColors.textMuted,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Shape: $shapeId',
+                                style: const TextStyle(
+                                  color: FlitColors.textMuted,
+                                  fontSize: 10,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        if (_can(state, AdminPermission.editFeatureFlags))
-                          Switch(
-                            value: entry.value,
-                            activeColor: FlitColors.success,
-                            onChanged: (val) async {
-                              // Optimistic local update — avoids a full
-                              // async reload that can reorder the list.
-                              final oldVal = entry.value;
-                              setState(() => _featureFlags[entry.key] = val);
-                              try {
-                                await FeatureFlagService.instance.setFlag(
-                                  flagKey: entry.key,
-                                  enabled: val,
-                                );
-                              } catch (_) {
-                                // Revert on failure.
-                                if (mounted) {
-                                  setState(
-                                    () => _featureFlags[entry.key] = oldVal,
-                                  );
-                                  _snack(
-                                    context,
-                                    'Failed to update flag',
-                                    isError: true,
-                                  );
-                                }
-                              }
-                            },
-                          )
-                        else
-                          Text(
-                            entry.value ? 'ON' : 'OFF',
-                            style: TextStyle(
-                              color: entry.value
-                                  ? FlitColors.success
-                                  : FlitColors.textMuted,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
                       ],
                     ),
                   ),
-                ),
-              )),
-            const SizedBox(height: 24),
-          ],
-
-          // ── Suspicious Activity (moderator + owner) ──
-          if (_can(state, AdminPermission.viewSuspiciousActivity)) ...[
-            const _SectionHeader(title: 'Anomaly Detection'),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.warning_amber,
-              iconColor: FlitColors.error,
-              label: 'Suspicious Activity',
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const _SuspiciousActivityPlaceholder(),
-                  ),
                 );
-                _refreshAdminData();
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
+              }),
+              const SizedBox(height: 24),
+            ],
 
-          // ── Game Log (moderator + owner) ──
-          if (_can(state, AdminPermission.viewGameLog)) ...[
-            const _SectionHeader(title: 'Game Log'),
-            const SizedBox(height: 8),
-            _AdminActionCard(
-              icon: Icons.bug_report,
-              iconColor: FlitColors.warning,
-              label:
-                  'View Game Log (${GameLog.instance.entries.length} entries)',
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const _GameLogScreen(),
+            // ── Economy Management (owner only) ──
+            if (_can(state, AdminPermission.editEarnings)) ...[
+              const _SectionHeader(title: 'Economy Management'),
+              const SizedBox(height: 8),
+              if (_economyConfigLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: CircularProgressIndicator(),
                   ),
-                );
-                _refreshAdminData();
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // ── Info footer ──
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: FlitColors.cardBackground,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: FlitColors.cardBorder),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$roleName Panel',
-                  style: const TextStyle(
-                    color: FlitColors.accent,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                )
+              else ...[
+                _AdminActionCard(
+                  icon: Icons.monetization_on,
+                  iconColor: FlitColors.gold,
+                  label: 'Gold Management',
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const GoldManagementScreen(),
+                      ),
+                    );
+                    _refreshAdminData();
+                  },
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  player.isOwner
-                      ? 'Full owner access. Gift actions write directly to '
-                          'Supabase. Username changes enforce uniqueness.'
-                      : 'Moderator access. You can view player data, game '
-                          'designs, and rename offensive usernames. Economy '
-                          'and gifting tools are restricted to owners.',
-                  style: const TextStyle(
-                    color: FlitColors.textSecondary,
-                    fontSize: 14,
-                  ),
+                _AdminActionCard(
+                  icon: Icons.attach_money,
+                  iconColor: FlitColors.gold,
+                  label: 'Set Earnings',
+                  onTap: () => _showEarningsConfigDialog(context),
                 ),
+                if (_can(state, AdminPermission.editPromotions)) ...[
+                  const SizedBox(height: 8),
+                  _AdminActionCard(
+                    icon: Icons.local_offer,
+                    iconColor: FlitColors.accent,
+                    label: 'Manage Promotions',
+                    onTap: () => _showPromotionsDialog(context),
+                  ),
+                ],
+                if (_can(state, AdminPermission.editGoldPackages)) ...[
+                  const SizedBox(height: 8),
+                  _AdminActionCard(
+                    icon: Icons.inventory_2,
+                    iconColor: FlitColors.gold,
+                    label: 'Edit Gold Packages',
+                    onTap: () => _showGoldPackagesDialog(context),
+                  ),
+                ],
+                if (_can(state, AdminPermission.editShopPrices)) ...[
+                  const SizedBox(height: 8),
+                  _AdminActionCard(
+                    icon: Icons.price_change,
+                    iconColor: FlitColors.oceanHighlight,
+                    label: 'Shop Price Overrides',
+                    onTap: () => _showShopPriceOverridesDialog(context),
+                  ),
+                ],
               ],
+              const SizedBox(height: 24),
+            ],
+
+            // ── Flight School Config (owner only) ──
+            if (_can(state, AdminPermission.editEarnings)) ...[
+              const _SectionHeader(title: 'Flight School'),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.school,
+                iconColor: FlitColors.oceanHighlight,
+                label: 'Flight School Config',
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const FlightSchoolAdminScreen(),
+                    ),
+                  );
+                  _refreshAdminData();
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // ── Country Aliases (moderator + owner) ──
+            if (_can(state, AdminPermission.editAliases)) ...[
+              const _SectionHeader(title: 'Country Aliases'),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.spellcheck,
+                iconColor: FlitColors.success,
+                label: 'Country Aliases',
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AliasAdminScreen(),
+                    ),
+                  );
+                  _refreshAdminData();
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // ── App Config (owner only) ──
+            if (_can(state, AdminPermission.editAppConfig)) ...[
+              const _SectionHeader(title: 'App Config'),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.system_update,
+                iconColor: FlitColors.accent,
+                label: 'Version Gate & Maintenance',
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const _AppConfigPlaceholder(),
+                    ),
+                  );
+                  _refreshAdminData();
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // ── Announcements (moderator + owner) ──
+            if (_can(state, AdminPermission.viewAnnouncements)) ...[
+              const _SectionHeader(title: 'Announcements'),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.campaign,
+                iconColor: FlitColors.gold,
+                label: 'Manage Announcements',
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const _AnnouncementsPlaceholder(),
+                    ),
+                  );
+                  _refreshAdminData();
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // ── Feature Flags (owner: edit, moderator: view) ──
+            if (_can(state, AdminPermission.viewFeatureFlags)) ...[
+              const _SectionHeader(title: 'Feature Flags'),
+              const SizedBox(height: 8),
+              if (_featureFlagsLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else
+                ...(_featureFlags.entries.map(
+                  (entry) => Padding(
+                    key: ValueKey('ff_${entry.key}'),
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: FlitColors.cardBackground,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: FlitColors.cardBorder),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            entry.value ? Icons.toggle_on : Icons.toggle_off,
+                            color: entry.value
+                                ? FlitColors.success
+                                : FlitColors.textMuted,
+                            size: 28,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              entry.key,
+                              style: const TextStyle(
+                                color: FlitColors.textPrimary,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          if (_can(state, AdminPermission.editFeatureFlags))
+                            Switch(
+                              value: entry.value,
+                              activeColor: FlitColors.success,
+                              onChanged: (val) async {
+                                // Optimistic local update — avoids a full
+                                // async reload that can reorder the list.
+                                final oldVal = entry.value;
+                                setState(() => _featureFlags[entry.key] = val);
+                                try {
+                                  await FeatureFlagService.instance.setFlag(
+                                    flagKey: entry.key,
+                                    enabled: val,
+                                  );
+                                } catch (_) {
+                                  // Revert on failure.
+                                  if (mounted) {
+                                    setState(
+                                      () => _featureFlags[entry.key] = oldVal,
+                                    );
+                                    _snack(
+                                      context,
+                                      'Failed to update flag',
+                                      isError: true,
+                                    );
+                                  }
+                                }
+                              },
+                            )
+                          else
+                            Text(
+                              entry.value ? 'ON' : 'OFF',
+                              style: TextStyle(
+                                color: entry.value
+                                    ? FlitColors.success
+                                    : FlitColors.textMuted,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )),
+              const SizedBox(height: 24),
+            ],
+
+            // ── Suspicious Activity (moderator + owner) ──
+            if (_can(state, AdminPermission.viewSuspiciousActivity)) ...[
+              const _SectionHeader(title: 'Anomaly Detection'),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.warning_amber,
+                iconColor: FlitColors.error,
+                label: 'Suspicious Activity',
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const _SuspiciousActivityPlaceholder(),
+                    ),
+                  );
+                  _refreshAdminData();
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // ── Game Log (moderator + owner) ──
+            if (_can(state, AdminPermission.viewGameLog)) ...[
+              const _SectionHeader(title: 'Game Log'),
+              const SizedBox(height: 8),
+              _AdminActionCard(
+                icon: Icons.bug_report,
+                iconColor: FlitColors.warning,
+                label:
+                    'View Game Log (${GameLog.instance.entries.length} entries)',
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const _GameLogScreen(),
+                    ),
+                  );
+                  _refreshAdminData();
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // ── Info footer ──
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: FlitColors.cardBackground,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: FlitColors.cardBorder),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$roleName Panel',
+                    style: const TextStyle(
+                      color: FlitColors.accent,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    player.isOwner
+                        ? 'Full owner access. Gift actions write directly to '
+                            'Supabase. Username changes enforce uniqueness.'
+                        : 'Moderator access. You can view player data, game '
+                            'designs, and rename offensive usernames. Economy '
+                            'and gifting tools are restricted to owners.',
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -8747,4 +8872,44 @@ class _DifficultyRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Paints a single seasonal vehicle silhouette centred in the available space.
+///
+/// Uses the same [PlaneRenderer.renderPlane] path as the in-game plane and the
+/// shop/debug preview screens, so admins see exactly what players will see.
+/// Canvas is translated to centre, scaled proportionally, and rendered with
+/// non-banking defaults (bankCos: 1.0, bankSin: 0.0) matching the shop card.
+class _SeasonalVehiclePainter extends CustomPainter {
+  const _SeasonalVehiclePainter({
+    required this.planeId,
+    this.colorScheme,
+  });
+
+  final String planeId;
+  final Map<String, int>? colorScheme;
+
+  // Wing-span constant shared by paint() and shouldRepaint(); kept here so
+  // the admin preview matches the shop card's 26-unit span exactly.
+  static const double _wingSpan = 26.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final scale = size.shortestSide / (_wingSpan * 2.5);
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.scale(scale, scale * 0.7); // 0.7 perspective foreshortening
+    PlaneRenderer.renderPlane(
+      canvas: canvas,
+      bankCos: 1.0,
+      bankSin: 0.0,
+      wingSpan: _wingSpan,
+      planeId: planeId,
+      colorScheme: colorScheme,
+      propAngle: 0.0,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SeasonalVehiclePainter oldDelegate) =>
+      oldDelegate.planeId != planeId || oldDelegate.colorScheme != colorScheme;
 }

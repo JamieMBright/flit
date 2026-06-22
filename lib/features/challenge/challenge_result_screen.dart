@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/challenge.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/providers/account_provider.dart';
@@ -112,64 +113,66 @@ class ChallengeResultScreen extends ConsumerWidget {
         centerTitle: true,
         automaticallyImplyLeading: false,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Result header
-            _ResultHeader(
-              youWon: youWon,
-              isDraw: isDraw,
-              opponentName: opponentName,
-            ),
-            const SizedBox(height: 24),
-            // Pilot license cards side by side
-            _PilotCards(
-              yourInfo: yourInfo,
-              opponentInfo: opponentInfo,
-              youWon: youWon,
-              isDraw: isDraw,
-            ),
-            const SizedBox(height: 24),
-            // Score display — quiz uses total score, flight uses round wins
-            if (challenge.gameMode == ChallengeGameMode.quiz)
-              _QuizScoreDisplay(
-                challenge: challenge,
-                isChallenger: isChallenger,
-              )
-            else
-              _ScoreDisplay(yourWins: yourWins, theirWins: theirWins),
-            const SizedBox(height: 24),
-            // Per-round breakdown — quiz shows stats, flight shows clues
-            if (challenge.gameMode == ChallengeGameMode.quiz)
-              _QuizRoundBreakdown(
-                challenge: challenge,
-                isChallenger: isChallenger,
-                yourName: yourInfo.name,
-                opponentName: opponentInfo.name,
-              )
-            else
-              _RoundBreakdown(
-                rounds: challenge.rounds,
-                isChallenger: isChallenger,
-                yourName: yourInfo.name,
-                opponentName: opponentInfo.name,
+      body: MenuContentWrapper(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Result header
+              _ResultHeader(
+                youWon: youWon,
+                isDraw: isDraw,
+                opponentName: opponentName,
               ),
-            const SizedBox(height: 24),
-            // Coins earned
-            _RewardsDisplay(coins: yourCoins),
-            const SizedBox(height: 24),
-            // Actions
-            _ResultActions(
-              onRematch: onRematch ??
-                  () {
-                    _handleRematch(context, ref);
-                  },
-              onHome: () =>
-                  Navigator.of(context).popUntil((route) => route.isFirst),
-              onPlayAgain: onPlayAgain,
-            ),
-          ],
+              const SizedBox(height: 24),
+              // Pilot license cards side by side
+              _PilotCards(
+                yourInfo: yourInfo,
+                opponentInfo: opponentInfo,
+                youWon: youWon,
+                isDraw: isDraw,
+              ),
+              const SizedBox(height: 24),
+              // Score display — quiz uses total score, flight uses round wins
+              if (challenge.gameMode == ChallengeGameMode.quiz)
+                _QuizScoreDisplay(
+                  challenge: challenge,
+                  isChallenger: isChallenger,
+                )
+              else
+                _ScoreDisplay(yourWins: yourWins, theirWins: theirWins),
+              const SizedBox(height: 24),
+              // Per-round breakdown — quiz shows stats, flight shows clues
+              if (challenge.gameMode == ChallengeGameMode.quiz)
+                _QuizRoundBreakdown(
+                  challenge: challenge,
+                  isChallenger: isChallenger,
+                  yourName: yourInfo.name,
+                  opponentName: opponentInfo.name,
+                )
+              else
+                _RoundBreakdown(
+                  rounds: challenge.rounds,
+                  isChallenger: isChallenger,
+                  yourName: yourInfo.name,
+                  opponentName: opponentInfo.name,
+                ),
+              const SizedBox(height: 24),
+              // Coins earned
+              _RewardsDisplay(coins: yourCoins),
+              const SizedBox(height: 24),
+              // Actions
+              _ResultActions(
+                onRematch: onRematch ??
+                    () {
+                      _handleRematch(context, ref);
+                    },
+                onHome: () =>
+                    Navigator.of(context).popUntil((route) => route.isFirst),
+                onPlayAgain: onPlayAgain,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/theme/rarity_colors.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/pilot_license.dart';
@@ -220,21 +221,23 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        child: Column(
-          children: [
-            _buildLicenseCard(),
-            const SizedBox(height: 24),
-            _buildLockSection(coins),
-            const SizedBox(height: 24),
-            _buildFreeRerollButton(),
-            const SizedBox(height: 12),
-            _buildDailyScrambleRerollButton(),
-            const SizedBox(height: 12),
-            _buildRerollButton(coins),
-            const SizedBox(height: 16),
-          ],
+      body: MenuContentWrapper(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: Column(
+            children: [
+              _buildLicenseCard(),
+              const SizedBox(height: 24),
+              _buildLockSection(coins),
+              const SizedBox(height: 24),
+              _buildFreeRerollButton(),
+              const SizedBox(height: 12),
+              _buildDailyScrambleRerollButton(),
+              const SizedBox(height: 12),
+              _buildRerollButton(coins),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );

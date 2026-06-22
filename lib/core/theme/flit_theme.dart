@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 
 import 'flit_colors.dart';
 
+/// Maximum width for menu/screen content on wide displays (e.g. desktop
+/// browser). On narrow screens this is never hit, so phone layout is unchanged.
+/// The full-bleed background always fills the screen — only the interactive
+/// content column is constrained by this value.
+const double kMaxContentWidth = 560;
+
 /// Theme configuration for Flit.
 /// Pop art lo-fi realism with vintage atlas warmth.
 abstract final class FlitTheme {

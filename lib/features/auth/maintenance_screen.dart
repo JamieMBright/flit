@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/app_remote_config.dart';
 import '../../data/services/app_config_service.dart';
 import 'login_screen.dart';
@@ -44,60 +45,62 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.construction,
-                  color: FlitColors.warning,
-                  size: 64,
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Under Maintenance',
-                  style: TextStyle(
-                    color: FlitColors.textPrimary,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+        child: MenuContentWrapper(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.construction,
+                    color: FlitColors.warning,
+                    size: 64,
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  widget.message ??
-                      'Flit is temporarily down for maintenance. '
-                          'Please check back shortly.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: FlitColors.textSecondary,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton.icon(
-                  onPressed: _checking ? null : _retry,
-                  icon: _checking
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: FlitColors.textPrimary,
-                          ),
-                        )
-                      : const Icon(Icons.refresh, size: 18),
-                  label: Text(_checking ? 'Checking...' : 'Retry'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FlitColors.warning,
-                    foregroundColor: FlitColors.textPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Under Maintenance',
+                    style: TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Text(
+                    widget.message ??
+                        'Flit is temporarily down for maintenance. '
+                            'Please check back shortly.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    onPressed: _checking ? null : _retry,
+                    icon: _checking
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: FlitColors.textPrimary,
+                            ),
+                          )
+                        : const Icon(Icons.refresh, size: 18),
+                    label: Text(_checking ? 'Checking...' : 'Retry'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.warning,
+                      foregroundColor: FlitColors.textPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

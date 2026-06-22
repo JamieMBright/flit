@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/economy_config.dart';
 import '../../data/services/economy_config_service.dart';
 import '../../game/quiz/flight_school_level.dart';
@@ -360,17 +361,19 @@ class _GoldManagementScreenState extends State<GoldManagementScreen> {
         title: const Text('Gold Management'),
         centerTitle: true,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildPlayerGoldSection(),
-          const SizedBox(height: 16),
-          _buildFlightSchoolEconomySection(),
-          const SizedBox(height: 16),
-          _buildEconomyConfigSection(),
-          const SizedBox(height: 16),
-          _buildAuditLogSection(),
-        ],
+      body: MenuContentWrapper(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _buildPlayerGoldSection(),
+            const SizedBox(height: 16),
+            _buildFlightSchoolEconomySection(),
+            const SizedBox(height: 16),
+            _buildEconomyConfigSection(),
+            const SizedBox(height: 16),
+            _buildAuditLogSection(),
+          ],
+        ),
       ),
     );
   }

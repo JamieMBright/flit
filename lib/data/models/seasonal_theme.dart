@@ -179,6 +179,103 @@ class SeasonalTheme {
     return null;
   }
 
+  // ── Per-instance accessors ──────────────────────────────────────────
+
+  /// The [PlaneRenderer] plane-shape id for this theme's vehicle silhouette,
+  /// or `null` when the event has no bespoke shape yet.
+  ///
+  /// Convenience accessor so the admin UI (and any other display code) can
+  /// retrieve the shape id without duplicating the [_shapeIdForEvent] mapping.
+  String? get planeShapeId => _shapeIdForEvent(event);
+
+  /// Human-readable date window, e.g. `"Jun 21 – Jul 4"`.
+  String get dateWindowLabel {
+    const months = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[startMonth]} $startDay – ${months[endMonth]} $endDay';
+  }
+
+  // ── Plane colour-scheme resolver ────────────────────────────────────
+
+  /// Returns the active seasonal event's vehicle colour scheme when an event
+  /// is active, otherwise returns [fallback] unchanged.
+  ///
+  /// Drop-in replacement for `plane?.colorScheme` at every game-launch site so
+  /// that all modes consistently pick up seasonal colours with zero duplication.
+  ///
+  /// This overrides the *colour scheme* (palette) only. The seasonal vehicle
+  /// *shape* is overridden separately via [resolvePlaneShapeId]; both resolvers
+  /// are applied side-by-side at every launch site.
+  static Map<String, int>? resolvePlaneColorScheme({
+    required Map<String, int>? fallback,
+    DateTime? now,
+  }) {
+    final theme = now != null ? forDate(now) : current();
+    return theme?.vehicleColorScheme ?? fallback;
+  }
+
+  // ── Plane shape (silhouette) resolver ───────────────────────────────
+
+  /// Returns the plane-shape id to draw for the active seasonal event, or
+  /// [fallback] (the player's equipped plane id) when no event maps to a
+  /// distinct shape.
+  ///
+  /// Drop-in replacement for the `equippedPlaneId` argument at every
+  /// game-launch site. The returned id flows unchanged through
+  /// `PlayScreen → FlitGame → PlaneComponent → PlaneRenderer.renderPlane`,
+  /// whose `switch (planeId)` already maps ids to distinct drawing routines —
+  /// so a seasonal shape needs no new plumbing, only a new `case` in the
+  /// renderer. Centralising the mapping here means zero per-mode duplication.
+  ///
+  /// Only the summer "Beach Glider" event currently maps to a bespoke shape
+  /// (`'plane_hang_glider'`). All other events fall back to the player's
+  /// equipped shape (their themed silhouettes are a future addition); they
+  /// still receive the seasonal *palette* via [resolvePlaneColorScheme].
+  static String resolvePlaneShapeId({
+    required String fallback,
+    DateTime? now,
+  }) {
+    final theme = now != null ? forDate(now) : current();
+    if (theme == null) return fallback;
+    return _shapeIdForEvent(theme.event) ?? fallback;
+  }
+
+  /// Maps a [SeasonalEvent] to a [PlaneRenderer] plane-shape id, or `null`
+  /// when the event has no bespoke silhouette yet (falls back to the equipped
+  /// plane). Add new `case`s here as themed shapes are authored.
+  static String? _shapeIdForEvent(SeasonalEvent event) {
+    switch (event) {
+      case SeasonalEvent.summer:
+        return 'plane_hang_glider';
+      case SeasonalEvent.christmas:
+        return 'plane_santa_sleigh';
+      case SeasonalEvent.halloween:
+        return 'plane_witch_broom';
+      case SeasonalEvent.easter:
+        return 'plane_easter_carriage';
+      case SeasonalEvent.valentines:
+        return 'plane_cupid_arrow';
+      case SeasonalEvent.stPatricks:
+        return 'plane_clover_copter';
+      case SeasonalEvent.none:
+        // No seasonal event active — keep the player's equipped silhouette.
+        return null;
+    }
+  }
+
   // ── Serialisation ───────────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
