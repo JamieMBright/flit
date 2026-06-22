@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../game/data/country_difficulty.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/daily_challenge.dart';
@@ -92,50 +93,52 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
             ),
           ],
         ),
-        body: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                children: [
-                  const _StreakSection(),
-                  const SizedBox(height: 12),
-                  _ChallengeHeader(challenge: _challenge),
-                  const SizedBox(height: 12),
-                  if (_seasonalTheme != null) ...[
-                    _SeasonalBanner(theme: _seasonalTheme),
+        body: MenuContentWrapper(
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  children: [
+                    const _StreakSection(),
                     const SizedBox(height: 12),
-                  ],
-                  _RewardsSection(
-                    challenge: _challenge,
-                    playerCount: _dailyPlayerCount,
-                  ),
-                  const SizedBox(height: 12),
-                  const _MedalProgressSection(),
-                  const SizedBox(height: 16),
-                  _loadingLeaderboard
-                      ? const Padding(
-                          padding: EdgeInsets.all(20),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: FlitColors.accent,
+                    _ChallengeHeader(challenge: _challenge),
+                    const SizedBox(height: 12),
+                    if (_seasonalTheme != null) ...[
+                      _SeasonalBanner(theme: _seasonalTheme),
+                      const SizedBox(height: 12),
+                    ],
+                    _RewardsSection(
+                      challenge: _challenge,
+                      playerCount: _dailyPlayerCount,
+                    ),
+                    const SizedBox(height: 12),
+                    const _MedalProgressSection(),
+                    const SizedBox(height: 16),
+                    _loadingLeaderboard
+                        ? const Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: FlitColors.accent,
+                              ),
                             ),
-                          ),
-                        )
-                      : _LeaderboardSection(entries: _leaderboardEntries),
-                  const SizedBox(height: 16),
-                  _HallOfFameSection(entries: _hallOfFame),
-                  const SizedBox(height: 16),
-                  _InfoFooter(bonusCoinReward: _challenge.bonusCoinReward),
-                  const SizedBox(height: 16),
-                ],
+                          )
+                        : _LeaderboardSection(entries: _leaderboardEntries),
+                    const SizedBox(height: 16),
+                    _HallOfFameSection(entries: _hallOfFame),
+                    const SizedBox(height: 16),
+                    _InfoFooter(bonusCoinReward: _challenge.bonusCoinReward),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
-            ),
-            _hasDoneToday
-                ? const _CompletedBanner()
-                : _PlayButton(onPressed: _onPlay),
-          ],
+              _hasDoneToday
+                  ? const _CompletedBanner()
+                  : _PlayButton(onPressed: _onPlay),
+            ],
+          ),
         ),
       );
 

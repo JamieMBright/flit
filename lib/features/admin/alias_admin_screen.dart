@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../game/data/country_aliases.dart';
 import '../../game/map/country_data.dart';
 import '../../game/map/region.dart';
@@ -212,83 +213,85 @@ class _AliasAdminScreenState extends State<AliasAdminScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Search bar.
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: TextField(
-              controller: _searchController,
-              style: const TextStyle(color: FlitColors.textPrimary),
-              decoration: InputDecoration(
-                hintText: 'Search countries or aliases...',
-                hintStyle: TextStyle(
-                    color: FlitColors.textSecondary.withValues(alpha: 0.5)),
-                prefixIcon:
-                    const Icon(Icons.search, color: FlitColors.textSecondary),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                      color: FlitColors.accent.withValues(alpha: 0.3)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide:
-                      const BorderSide(color: FlitColors.accent, width: 2),
-                ),
-                filled: true,
-                fillColor: FlitColors.backgroundMid,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-              onChanged: (v) => setState(() => _searchQuery = v.trim()),
-            ),
-          ),
-          // Count.
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Text(
-                  '${filtered.length} areas',
-                  style: const TextStyle(
-                      color: FlitColors.textSecondary, fontSize: 13),
-                ),
-                const Spacer(),
-                if (_showRemoved)
-                  Text(
-                    'Showing removed',
-                    style: TextStyle(
-                      color: FlitColors.error.withValues(alpha: 0.7),
-                      fontSize: 11,
-                      fontStyle: FontStyle.italic,
-                    ),
+      body: MenuContentWrapper(
+        child: Column(
+          children: [
+            // Search bar.
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(color: FlitColors.textPrimary),
+                decoration: InputDecoration(
+                  hintText: 'Search countries or aliases...',
+                  hintStyle: TextStyle(
+                      color: FlitColors.textSecondary.withValues(alpha: 0.5)),
+                  prefixIcon:
+                      const Icon(Icons.search, color: FlitColors.textSecondary),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-              ],
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                        color: FlitColors.accent.withValues(alpha: 0.3)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                        const BorderSide(color: FlitColors.accent, width: 2),
+                  ),
+                  filled: true,
+                  fillColor: FlitColors.backgroundMid,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                onChanged: (v) => setState(() => _searchQuery = v.trim()),
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          // List.
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: filtered.length,
-              itemBuilder: (context, index) {
-                final entry = filtered[index];
-                return _AliasCard(
-                  entry: entry,
-                  showRemoved: _showRemoved,
-                  onAdd: () => _showAddAliasDialog(entry),
-                  onRemove: (alias) => _removeAlias(entry, alias),
-                  onRestore: (alias) => _restoreBaselineAlias(entry, alias),
-                );
-              },
+            // Count.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Text(
+                    '${filtered.length} areas',
+                    style: const TextStyle(
+                        color: FlitColors.textSecondary, fontSize: 13),
+                  ),
+                  const Spacer(),
+                  if (_showRemoved)
+                    Text(
+                      'Showing removed',
+                      style: TextStyle(
+                        color: FlitColors.error.withValues(alpha: 0.7),
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            // List.
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                itemCount: filtered.length,
+                itemBuilder: (context, index) {
+                  final entry = filtered[index];
+                  return _AliasCard(
+                    entry: entry,
+                    showRemoved: _showRemoved,
+                    onAdd: () => _showAddAliasDialog(entry),
+                    onRemove: (alias) => _removeAlias(entry, alias),
+                    onRestore: (alias) => _restoreBaselineAlias(entry, alias),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

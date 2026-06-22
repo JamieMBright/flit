@@ -374,9 +374,12 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // Coins are consumable (server-authoritative), so they are NOT protected.
     // Admin overrides bypass this protection entirely.
     final local = state.currentPlayer;
-    final player = (!adminOverride &&
-            local.id.isNotEmpty &&
-            local.id == serverPlayer.id)
+    // Same authenticated user as the in-memory state (not a fresh login or an
+    // admin override) — safe to merge in-memory/local progress with the server
+    // copy instead of letting the snapshot overwrite it.
+    final sameUser =
+        !adminOverride && local.id.isNotEmpty && local.id == serverPlayer.id;
+    final player = sameUser
         ? serverPlayer.copyWith(
             gamesPlayed: math.max(local.gamesPlayed, serverPlayer.gamesPlayed),
             countriesFound: math.max(
@@ -422,6 +425,16 @@ class AccountNotifier extends StateNotifier<AccountState> {
           )
         : serverPlayer;
 
+    // Reconcile the daily-challenge streak the same way the player stats above
+    // are protected: a stale server snapshot must not clobber streak progress
+    // this session made while briefly unauthenticated (sync writes are dropped
+    // until [_supabaseLoaded]). Take the union — the most recent completion
+    // wins the current run; all-time fields are monotonic.
+    final serverDailyStreak = snapshot.toDailyStreak();
+    final reconciledDailyStreak = sameUser
+        ? _reconcileDailyStreak(state.dailyStreak, serverDailyStreak)
+        : serverDailyStreak;
+
     state = AccountState(
       currentPlayer: player,
       avatar: snapshot.toAvatarConfig(),
@@ -434,7 +447,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
       equippedTitleId: snapshot.equippedTitleId,
       lastFreeRerollDate: snapshot.lastFreeRerollDate,
       lastDailyChallengeDate: snapshot.lastDailyChallengeDate,
-      dailyStreak: snapshot.toDailyStreak(),
+      dailyStreak: reconciledDailyStreak,
       lastDailyResult: snapshot.toLastDailyResult(),
       freeFlightCoinsToday: snapshot.freeFlightCoinsToday,
       freeFlightCoinDate: snapshot.freeFlightCoinDate,
@@ -446,6 +459,15 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // Mark Supabase data as loaded — enables writes. Must happen AFTER
     // state is set so the first write contains real data, not defaults.
     _supabaseLoaded = true;
+
+    // If reconciliation kept progress the server snapshot lacked (e.g. a daily
+    // completed during a brief unauthenticated window on this device), push the
+    // merged streak back so every device converges on the union instead of
+    // diverging permanently.
+    if (sameUser &&
+        _dailyStreakChanged(reconciledDailyStreak, serverDailyStreak)) {
+      _syncAccountState();
+    }
 
     // Only hydrate GameSettings on initial load. On subsequent refreshes,
     // skip this to avoid overwriting local settings with stale server data
@@ -475,6 +497,62 @@ class AccountNotifier extends StateNotifier<AccountState> {
       );
     }
   }
+
+  /// Merge two daily-streak snapshots without losing progress.
+  ///
+  /// All-time fields ([DailyStreak.longestStreak], [DailyStreak.totalCompleted])
+  /// are monotonic — keep the max. The current run ([DailyStreak.currentStreak]
+  /// + [DailyStreak.lastCompletionDate]) is tied to the most recent completion,
+  /// so the side with the later date wins; on a tie keep the larger streak.
+  static DailyStreak _reconcileDailyStreak(
+    DailyStreak local,
+    DailyStreak server,
+  ) {
+    final longest = math.max(local.longestStreak, server.longestStreak);
+    final total = math.max(local.totalCompleted, server.totalCompleted);
+
+    final cmp = _compareCompletionDates(
+      local.lastCompletionDate,
+      server.lastCompletionDate,
+    );
+    final int currentStreak;
+    final String? lastDate;
+    if (cmp > 0) {
+      currentStreak = local.currentStreak;
+      lastDate = local.lastCompletionDate;
+    } else if (cmp < 0) {
+      currentStreak = server.currentStreak;
+      lastDate = server.lastCompletionDate;
+    } else {
+      currentStreak = math.max(local.currentStreak, server.currentStreak);
+      lastDate = local.lastCompletionDate ?? server.lastCompletionDate;
+    }
+
+    return DailyStreak(
+      currentStreak: currentStreak,
+      longestStreak: longest,
+      lastCompletionDate: lastDate,
+      totalCompleted: total,
+    );
+  }
+
+  /// Compare two `YYYY-MM-DD` completion dates. Returns >0 when [a] is more
+  /// recent, <0 when older, 0 when equal. A null date (never completed) is
+  /// treated as the oldest possible value.
+  static int _compareCompletionDates(String? a, String? b) {
+    if (a == b) return 0;
+    if (a == null) return -1;
+    if (b == null) return 1;
+    return a.compareTo(b);
+  }
+
+  /// Whether [merged] differs from the [server] snapshot in any field — i.e.
+  /// reconciliation preserved local progress that should be pushed back.
+  static bool _dailyStreakChanged(DailyStreak merged, DailyStreak server) =>
+      merged.currentStreak != server.currentStreak ||
+      merged.longestStreak != server.longestStreak ||
+      merged.lastCompletionDate != server.lastCompletionDate ||
+      merged.totalCompleted != server.totalCompleted;
 
   static int? _maxNullable(int? a, int? b) {
     if (a == null) return b;

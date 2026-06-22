@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/quiz/flight_school_level.dart';
 import '../guide/gameplay_guide_screen.dart';
@@ -104,39 +105,41 @@ class _FlightSchoolScreenState extends ConsumerState<FlightSchoolScreen> {
         ),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: flightSchoolLevels.length,
-                itemBuilder: (context, index) {
-                  final level = flightSchoolLevels[index];
-                  final isUnlocked = notifier.isFlightSchoolLevelUnlocked(
-                    level,
-                  );
-                  final progress =
-                      progressMap[level.id] ?? const FlightSchoolProgress();
-                  final canBuyEarly = !isUnlocked &&
-                      level.unlockCost > 0 &&
-                      playerCoins >= level.unlockCost;
+        child: MenuContentWrapper(
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: flightSchoolLevels.length,
+                  itemBuilder: (context, index) {
+                    final level = flightSchoolLevels[index];
+                    final isUnlocked = notifier.isFlightSchoolLevelUnlocked(
+                      level,
+                    );
+                    final progress =
+                        progressMap[level.id] ?? const FlightSchoolProgress();
+                    final canBuyEarly = !isUnlocked &&
+                        level.unlockCost > 0 &&
+                        playerCoins >= level.unlockCost;
 
-                  return _LevelCard(
-                    level: level,
-                    progress: progress,
-                    isUnlocked: isUnlocked,
-                    canBuyEarly: canBuyEarly,
-                    playerLevel: playerLevel,
-                    playerCoins: playerCoins,
-                    onTap: isUnlocked ? () => _navigateToSetup(level) : null,
-                    onBuy:
-                        canBuyEarly ? () => _buyLevel(level, notifier) : null,
-                  );
-                },
+                    return _LevelCard(
+                      level: level,
+                      progress: progress,
+                      isUnlocked: isUnlocked,
+                      canBuyEarly: canBuyEarly,
+                      playerLevel: playerLevel,
+                      playerCoins: playerCoins,
+                      onTap: isUnlocked ? () => _navigateToSetup(level) : null,
+                      onBuy:
+                          canBuyEarly ? () => _buyLevel(level, notifier) : null,
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

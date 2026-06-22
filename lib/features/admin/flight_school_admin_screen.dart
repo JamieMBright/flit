@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/menu_content_wrapper.dart';
 import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_difficulty.dart';
@@ -261,67 +262,69 @@ class _FlightSchoolAdminScreenState extends State<FlightSchoolAdminScreen> {
         title: const Text('Flight School Config'),
         centerTitle: true,
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: FlitColors.error,
-                          size: 48,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _error!,
-                          style: const TextStyle(
-                            color: FlitColors.textSecondary,
-                            fontSize: 14,
+      body: MenuContentWrapper(
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: FlitColors.error,
+                            size: 48,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadConfig,
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    // Level selector dropdown
-                    _buildLevelSelector(),
-                    const SizedBox(height: 20),
-
-                    // Level settings card
-                    _buildLevelSettingsCard(),
-                    const SizedBox(height: 20),
-
-                    // Category multipliers header
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        'CATEGORY DIFFICULTY MULTIPLIERS',
-                        style: TextStyle(
-                          color: FlitColors.textMuted,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1,
-                        ),
+                          const SizedBox(height: 12),
+                          Text(
+                            _error!,
+                            style: const TextStyle(
+                              color: FlitColors.textSecondary,
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadConfig,
+                            child: const Text('Retry'),
+                          ),
+                        ],
                       ),
                     ),
+                  )
+                : ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      // Level selector dropdown
+                      _buildLevelSelector(),
+                      const SizedBox(height: 20),
 
-                    // Category rows
-                    ...QuizCategory.values.map(_buildCategoryRow),
-                  ],
-                ),
+                      // Level settings card
+                      _buildLevelSettingsCard(),
+                      const SizedBox(height: 20),
+
+                      // Category multipliers header
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          'CATEGORY DIFFICULTY MULTIPLIERS',
+                          style: TextStyle(
+                            color: FlitColors.textMuted,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ),
+
+                      // Category rows
+                      ...QuizCategory.values.map(_buildCategoryRow),
+                    ],
+                  ),
+      ),
     );
   }
 
