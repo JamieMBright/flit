@@ -586,10 +586,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       // Derive a per-round seed from the daily seed so each round is different
       // but deterministic across all players.
       final roundSeed = widget.dailySeed! + (_currentRound - 1) * 7919;
+      // preferredClueType is intentionally omitted so the daily clue is purely
+      // seed-determined and IDENTICAL for every player — matching the H2H path
+      // above and the deterministic assumption in
+      // DailyChallenge._computeDifficultyPercent. Passing the player's pilot-
+      // license preferredClueType here biased clue selection per player (a 25%
+      // override chance plus an extra RNG draw that desynced the sequence), so
+      // players whose licence preferred 'stats' saw statistics clues far more
+      // often than others on the same daily. License preferences apply to
+      // hints instead (see _useHint, Tier 1).
       return GameSession.seeded(
         roundSeed,
         allowedClueTypes: widget.enabledClueTypes,
-        preferredClueType: widget.preferredClueType,
         excludedCountryCodes: Set.unmodifiable(_usedDailyCountryCodes),
       );
     }
