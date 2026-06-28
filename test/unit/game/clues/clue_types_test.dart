@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flit/game/clues/clue_types.dart';
 
@@ -357,6 +359,57 @@ void main() {
       expect(ClueType.nickname.name, equals('nickname'));
       expect(ClueType.landmark.name, equals('landmark'));
       expect(ClueType.flagDescription.name, equals('flagDescription'));
+    });
+  });
+
+  group('Daily Scramble clue fairness (seed-only selection)', () {
+    // Regression guard for the daily-scramble inconsistency bug: the daily must
+    // give every player the same clue for a given seed, so Clue.random is
+    // invoked with the seeded RNG ONLY — never the player's pilot-license
+    // preferredClueType. These tests pin that contract at the level where
+    // preferredClueType actually acts.
+    const allowed = {'flag', 'stats', 'capital', 'borders', 'outline'};
+    const countries = ['FR', 'BR', 'JP', 'EG', 'AU', 'US', 'CN'];
+
+    test('same seed yields identical clue (type + content) for every player',
+        () {
+      for (final code in countries) {
+        for (var seed = 100; seed < 120; seed++) {
+          final playerA =
+              Clue.random(code, allowedTypes: allowed, random: Random(seed));
+          final playerB =
+              Clue.random(code, allowedTypes: allowed, random: Random(seed));
+          // Pure function of (seed, country, allowedTypes): players must match.
+          expect(playerB.type, equals(playerA.type),
+              reason: 'clue type diverged for $code at seed $seed');
+          expect(playerB.displayData, equals(playerA.displayData),
+              reason: 'clue content diverged for $code at seed $seed '
+                  '(stats trio / celebrity must be seed-stable)');
+        }
+      }
+    });
+
+    test('preferredClueType perturbs selection — why the daily must omit it',
+        () {
+      // Characterization: a per-player preferredClueType changes the
+      // deterministic outcome for a fixed seed (a 25% override chance plus an
+      // extra RNG draw that desyncs the sequence). Passing it into the shared
+      // daily made players with different licence preferences diverge — most
+      // visibly, 'stats'-preferring players saw statistics clues far more
+      // often than others on the same daily.
+      var diverged = 0;
+      for (var seed = 0; seed < 300; seed++) {
+        final neutral =
+            Clue.random('FR', allowedTypes: allowed, random: Random(seed));
+        final biased = Clue.random('FR',
+            allowedTypes: allowed,
+            preferredClueType: 'stats',
+            random: Random(seed));
+        if (neutral.type != biased.type) diverged++;
+      }
+      expect(diverged, greaterThan(0),
+          reason: 'preferredClueType should influence selection; it is '
+              'therefore unsafe for the shared daily scramble');
     });
   });
 }
