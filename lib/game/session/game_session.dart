@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 
 import '../../core/services/game_settings.dart';
+import '../../core/utils/math_utils.dart';
 import '../clues/clue_types.dart';
 import '../data/country_difficulty.dart';
 import '../map/country_data.dart';
@@ -269,6 +270,60 @@ class GameSession {
     }
   }
 
+  // ── Scramble spawn constraint ─────────────────────────────────────────────
+
+  /// Maximum great-circle distance (degrees) from the target at which the daily
+  /// / H2H scramble spawns the plane. The starter plane flies ≈ 1.8°/s, so 8 s
+  /// of flight ≈ 14.4°: even the slowest plane always has a chance to reach the
+  /// target ("always a chance").
+  static const double kScrambleStartMaxDistanceDeg = 14.4;
+
+  /// Seeded-random start position within [maxDistanceDeg] great-circle degrees
+  /// of [country] (capital, else centroid). Area-uniform over the spherical cap.
+  /// Consumes exactly two [random] draws so the seeded sequence stays stable for
+  /// every caller.
+  static Vector2 _seededStartNearTarget(
+    Random random,
+    CountryShape country,
+    double maxDistanceDeg,
+  ) {
+    final target = _representativePosition(country);
+    final maxRad = maxDistanceDeg * deg2rad;
+    // Area-uniform angular distance within the cap, then a random bearing.
+    final u = random.nextDouble();
+    final distRad = acos((1 - u * (1 - cos(maxRad))).clamp(-1.0, 1.0));
+    final bearing = random.nextDouble() * 2 * pi;
+    // Destination point given distance + bearing from the target (spherical).
+    final lat1 = target.y * deg2rad;
+    final lng1 = target.x * deg2rad;
+    final sinLat1 = sin(lat1);
+    final cosLat1 = cos(lat1);
+    final sinD = sin(distRad);
+    final cosD = cos(distRad);
+    final lat2 =
+        asin((sinLat1 * cosD + cosLat1 * sinD * cos(bearing)).clamp(-1.0, 1.0));
+    final lng2 =
+        lng1 + atan2(sin(bearing) * sinD * cosLat1, cosD - sinLat1 * sin(lat2));
+    var lngDeg = lng2 * rad2deg;
+    lngDeg = ((lngDeg + 540) % 360) - 180; // normalise to [-180, 180]
+    return Vector2(lngDeg, lat2 * rad2deg);
+  }
+
+  /// The target's representative position: capital city, else polygon centroid.
+  static Vector2 _representativePosition(CountryShape country) {
+    final capital = CountryData.getCapital(country.code);
+    if (capital != null) return capital.location;
+    final pts = country.allPoints;
+    if (pts.isEmpty) return Vector2.zero();
+    var sumX = 0.0;
+    var sumY = 0.0;
+    for (final p in pts) {
+      sumX += p.x;
+      sumY += p.y;
+    }
+    return Vector2(sumX / pts.length, sumY / pts.length);
+  }
+
   /// Create a seeded game session (for challenges and daily challenges).
   ///
   /// Uses a deterministic [Random] so all players with the same seed get the
@@ -287,6 +342,7 @@ class GameSession {
     List<String>? targetCountryCodes,
     Vector2? overrideStartPosition,
     Set<String>? excludedCountryCodes,
+    double? maxStartDistanceDeg,
   }) {
     final random = Random(seed);
 
@@ -331,10 +387,22 @@ class GameSession {
       random: random,
     );
 
-    // Generate start position based on seed, or use the override if provided.
-    final startLng = (random.nextDouble() * 360) - 180;
-    final startLat = (random.nextDouble() * 140) - 70;
-    final startPos = overrideStartPosition ?? Vector2(startLng, startLat);
+    // Generate start position. When [maxStartDistanceDeg] is set (daily / H2H
+    // scrambles), spawn within great-circle reach of the target so it is always
+    // catchable; otherwise spawn anywhere on the globe. Every branch consumes
+    // exactly two nextDouble() draws so the seeded sequence stays aligned.
+    final Vector2 startPos;
+    if (overrideStartPosition != null) {
+      random.nextDouble();
+      random.nextDouble();
+      startPos = overrideStartPosition;
+    } else if (maxStartDistanceDeg != null) {
+      startPos = _seededStartNearTarget(random, country, maxStartDistanceDeg);
+    } else {
+      final startLng = (random.nextDouble() * 360) - 180;
+      final startLat = (random.nextDouble() * 140) - 70;
+      startPos = Vector2(startLng, startLat);
+    }
 
     return GameSession(
       targetCountry: country,

@@ -208,6 +208,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// Current hint tier (0 = no hints, 1 = clue cycled, 2 = country revealed, 3 = wayline shown).
   int _hintTier = 0;
 
+  /// Seed of the current round in seeded modes (daily / H2H / campaign / world),
+  /// used to make hint clue-cycling deterministic. Null in unseeded free-play.
+  int? _currentRoundSeed;
+
   /// Timer for auto-hint after 2 minutes of no progress.
   Timer? _autoHintTimer;
 
@@ -449,12 +453,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         // license preference (but exclude the current type via retries).
         final hintAllowed = remainingTypes; // null = all types
         Clue? newClue;
+        // Seed hint cycling from the round seed (in seeded modes) so the
+        // revealed clue is deterministic/reproducible, while still honouring the
+        // licence preferredClueType + clueChance boost. Unseeded in free-play.
+        final hintRng = _currentRoundSeed != null
+            ? Random(_currentRoundSeed! ^ 0x9e3779b9)
+            : null;
         for (var i = 0; i < 10; i++) {
           final candidate = Clue.random(
             _session!.targetCountry.code,
             preferredClueType: widget.preferredClueType,
             clueChance: widget.clueChance,
             allowedTypes: hintAllowed,
+            random: hintRng,
           );
           // Accept candidate only if it has a different type AND different
           // content — avoids showing the same capital/clue text again.
@@ -572,6 +583,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   /// Create a GameSession for the current round, using the daily seed when
   /// available so all players get the same countries.
   GameSession _createSession() {
+    _currentRoundSeed = null;
     // H2H challenge: use the pre-generated round seed so both players get
     // the exact same country and clue for each round.
     // NOTE: preferredClueType is intentionally omitted here so the initial
@@ -580,12 +592,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     // instead — see _useHint() Tier 1.
     if (widget.challengeSeeds != null &&
         _currentRound - 1 < widget.challengeSeeds!.length) {
-      return GameSession.seeded(widget.challengeSeeds![_currentRound - 1]);
+      _currentRoundSeed = widget.challengeSeeds![_currentRound - 1];
+      return GameSession.seeded(
+        _currentRoundSeed!,
+        maxStartDistanceDeg: GameSession.kScrambleStartMaxDistanceDeg,
+      );
     }
     if (widget.dailySeed != null) {
       // Derive a per-round seed from the daily seed so each round is different
       // but deterministic across all players.
       final roundSeed = widget.dailySeed! + (_currentRound - 1) * 7919;
+      _currentRoundSeed = roundSeed;
       // preferredClueType is intentionally omitted so the daily clue is purely
       // seed-determined and IDENTICAL for every player — matching the H2H path
       // above and the deterministic assumption in
@@ -599,6 +616,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         roundSeed,
         allowedClueTypes: widget.enabledClueTypes,
         excludedCountryCodes: Set.unmodifiable(_usedDailyCountryCodes),
+        maxStartDistanceDeg: GameSession.kScrambleStartMaxDistanceDeg,
       );
     }
     // Campaign missions use a fixed seed derived from the mission ID so the
@@ -609,6 +627,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       final mission = widget.campaignMission!;
       final baseSeed = mission.id.hashCode;
       final roundSeed = baseSeed + (_currentRound - 1) * 7919;
+      _currentRoundSeed = roundSeed;
       // Only override start position on round 1 — subsequent rounds continue
       // seamlessly from the plane's current position via continueWithNewTarget.
       final overrideStart = (_currentRound == 1 &&
@@ -628,6 +647,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     if (widget.region == GameRegion.world) {
       final seed = DateTime.now().microsecondsSinceEpoch ^
           _sessionSeedRandom.nextInt(1 << 31);
+      _currentRoundSeed = seed;
       return GameSession.seeded(
         seed,
         allowedClueTypes: widget.enabledClueTypes,
