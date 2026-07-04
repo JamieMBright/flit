@@ -179,9 +179,9 @@ class TriangulationSession {
       viaCapital: viaCapital,
       isCorrect: isCorrect,
       distanceKm: distanceKm,
-      // Rhumb bearing, matching the clue arrows' flat-map convention.
+      // Flat-map bearing, matching the clue arrows' convention.
       bearingFromTargetDeg:
-          rhumbBearingDeg(round.targetCapitalLngLat, capitalLngLat),
+          flatMapBearingDeg(round.targetCapitalLngLat, capitalLngLat),
       penalty: isCorrect
           ? 0
           : triProximityPenalty(distanceKm, isNeighbor: isNeighbor),

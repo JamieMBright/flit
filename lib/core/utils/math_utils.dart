@@ -53,19 +53,21 @@ double initialBearingDeg(Vector2 from, Vector2 to) {
   return (deg % 360 + 360) % 360;
 }
 
-/// Rhumb-line (loxodrome) bearing from [from] to [to], in compass degrees
-/// normalised to [0, 360).
+/// Flat-map bearing from [from] to [to], in compass degrees normalised
+/// to [0, 360).
 ///
-/// This is the constant heading you'd follow on a Mercator map — the
-/// direction players intuitively expect (a great-circle initial bearing to
-/// a far-away point can cross near a pole, e.g. Colombo→Mexico City reads
-/// "north", which is technically right but violates map sense).
-double rhumbBearingDeg(Vector2 from, Vector2 to) {
+/// This is the direction as drawn on a standard Greenwich-centred world
+/// map (Mercator vertical scale), with NO antimeridian shortcut: Russia
+/// reads east of the USA and Japan east of California even when crossing
+/// the ±180° line would be shorter. Players reason on the flat map, so
+/// game bearings must match it — a great-circle initial bearing can cross
+/// near a pole (Colombo→Mexico City reads "north"), and a true rhumb line
+/// takes the short way around the antimeridian; both violate map sense.
+double flatMapBearingDeg(Vector2 from, Vector2 to) {
   final lat1 = from.y * deg2rad;
   final lat2 = to.y * deg2rad;
-  var dLng = (to.x - from.x) * deg2rad;
-  // Take the shorter way around the antimeridian.
-  if (dLng.abs() > pi) dLng -= dLng.sign * 2 * pi;
+  // Raw longitude difference — the on-map horizontal direction.
+  final dLng = (to.x - from.x) * deg2rad;
 
   final dPsi = log(tan(pi / 4 + lat2 / 2) / tan(pi / 4 + lat1 / 2));
   final deg = atan2(dLng, dPsi) * rad2deg;
