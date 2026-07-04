@@ -568,7 +568,8 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${diff.maxHints} hints',
+                      // Hints are unlimited at every tier; each costs score.
+                      'Hints cost score',
                       style: TextStyle(
                         color: isSelected
                             ? FlitColors.textSecondary

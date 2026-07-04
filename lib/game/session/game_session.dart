@@ -93,7 +93,9 @@ class GameSession {
       hintPenalty += hintTierPenalties[i];
     }
     final int timeDeduction = _useTimeScoring ? timePenalty : 0;
-    return max(0, base + fuelBonus - hintPenalty - timeDeduction);
+    // Enforce the documented [0, 10000] invariant explicitly so a future
+    // constant change (e.g. a bigger fuel bonus) can't silently break it.
+    return (base + fuelBonus - hintPenalty - timeDeduction).clamp(0, 10000);
   }
 
   /// Final score for this round, with difficulty multiplier applied.

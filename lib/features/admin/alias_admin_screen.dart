@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
-import '../../game/data/country_aliases.dart';
 import '../../game/map/country_data.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/alias_service.dart';
@@ -177,13 +176,13 @@ class _AliasAdminScreenState extends State<AliasAdminScreen> {
 
   Future<void> _removeAlias(_AliasEntry entry, String alias) async {
     await AliasService.instance.removeAlias(entry.normalizedName, alias);
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   Future<void> _restoreBaselineAlias(_AliasEntry entry, String alias) async {
     await AliasService.instance
         .restoreBaselineAlias(entry.normalizedName, alias);
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override

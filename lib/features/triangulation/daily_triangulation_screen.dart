@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/daily_result.dart';
+import '../../data/models/economy_config.dart';
+import '../../data/services/economy_config_service.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/data/country_difficulty.dart';
 import '../../game/triangulation/daily_triangulation.dart';
@@ -26,12 +28,32 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
   String? _completedShareText;
   int? _completedScore;
   bool _loading = true;
+  EconomyConfig? _economyConfig;
 
   @override
   void initState() {
     super.initState();
     _daily = DailyTriangulation.forToday();
     _loadResult();
+    _loadEconomyConfig();
+  }
+
+  Future<void> _loadEconomyConfig() async {
+    try {
+      final config = await EconomyConfigService.instance.getConfig();
+      if (!mounted) return;
+      setState(() => _economyConfig = config);
+    } catch (_) {
+      // Defaults apply — the reward pill just shows the default value.
+    }
+  }
+
+  /// Today's completion reward (base x promo multiplier).
+  int get _coinReward {
+    final config = _economyConfig ?? EconomyConfig.defaults();
+    return (config.earnings.dailyTriangulationBaseReward *
+            config.earningsMultiplier)
+        .round();
   }
 
   Future<void> _loadResult() async {
@@ -52,6 +74,7 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
         builder: (_) => TriangulationGameScreen(
           config: _daily.toConfig(),
           daily: _daily,
+          coinReward: _coinReward,
         ),
       ),
     );
@@ -161,9 +184,20 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
-            _DifficultyIndicator(
-              percent: _daily.difficultyPercent,
-              label: _daily.difficultyLabelText,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _DifficultyIndicator(
+                  percent: _daily.difficultyPercent,
+                  label: _daily.difficultyLabelText,
+                ),
+                const SizedBox(width: 8),
+                _BriefChip(
+                  icon: Icons.monetization_on_rounded,
+                  label: '$_coinReward coins',
+                  color: FlitColors.gold,
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             const Text(

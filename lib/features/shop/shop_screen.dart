@@ -2662,7 +2662,6 @@ class _CompanionPreviewPainter extends CustomPainter {
   void _paintCharizard(Canvas canvas, double flapOffset) {
     const s = 22.0;
     const deepOrange = Color(0xFFD85A10);
-    const brightOrange = Color(0xFFFF8833);
     const paleYellow = Color(0xFFFFE8A0);
     const tealWing = Color(0xFF1B8B7A);
     const darkTeal = Color(0xFF0E5E52);

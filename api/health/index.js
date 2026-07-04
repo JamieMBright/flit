@@ -5,9 +5,13 @@
 // (Supabase pauses after 7 days of inactivity). Vercel cron hits
 // this endpoint every 3 days via the "crons" config in vercel.json.
 
-// Supabase project details (public/client-side values — safe to embed).
-const SUPABASE_URL = 'https://zrffgpkscdaybfhujioc.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_AnlV4Gngx7a5z3KwqV7F9w_-4rQYEJs';
+// Supabase project details (publishable values — env vars take precedence
+// so rotation only needs a Vercel config change).
+const SUPABASE_URL =
+  process.env.SUPABASE_URL || 'https://zrffgpkscdaybfhujioc.supabase.co';
+const SUPABASE_ANON_KEY =
+  process.env.SUPABASE_ANON_KEY ||
+  'sb_publishable_AnlV4Gngx7a5z3KwqV7F9w_-4rQYEJs';
 
 /**
  * Lightweight Supabase ping — hits the PostgREST health endpoint.

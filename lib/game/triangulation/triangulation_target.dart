@@ -155,6 +155,15 @@ class TriangulationRound {
     var targetPool = _targetPool(difficulty)
         .where((c) => !excludedTargetCodes.contains(c.code))
         .toList();
+    if (targetPool.isEmpty) {
+      // Difficulty pool exhausted: widen to all eligible countries but
+      // keep honouring the exclusion set — targets must never repeat
+      // within a game. Only if even that is empty (absurdly long games)
+      // does reuse become allowed.
+      targetPool = _eligibleCountries()
+          .where((c) => !excludedTargetCodes.contains(c.code))
+          .toList();
+    }
     if (targetPool.isEmpty) targetPool = _eligibleCountries();
     final target = targetPool[rng.nextInt(targetPool.length)];
     final targetCapital = CountryData.getCapital(target.code)!;

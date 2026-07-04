@@ -2495,7 +2495,9 @@ $$;
 
 CREATE TABLE IF NOT EXISTS public.iap_receipts (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES auth.users(id),
+  -- ON DELETE CASCADE so GDPR account deletion can remove auth.users
+  -- without an FK violation once IAP starts writing receipts.
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   product_id TEXT NOT NULL,
   platform TEXT NOT NULL CHECK (platform IN ('ios', 'android', 'web')),
   receipt_data TEXT,

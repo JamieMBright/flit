@@ -27,6 +27,8 @@ jobs:
           # Create labels if they do not already exist (--force updates existing ones).
           gh label create "bug"         --color "d73a4a" --description "Something isn't working"    --force
           gh label create "critical"    --color "b60205" --description "Critical severity issue"    --force
+          gh label create "error"       --color "d93f0b" --description "Error severity issue"       --force
+          gh label create "warning"     --color "fbca04" --description "Warning severity issue"     --force
           gh label create "auto-triage" --color "e4e669" --description "Auto-created by CI pipeline" --force
 
       - name: Fetch critical errors and create/update GitHub issues
@@ -41,12 +43,15 @@ jobs:
           mkdir -p logs
 
           # ---------------------------------------------------------------
-          # 1. Fetch critical errors from Vercel endpoint
+          # 1. Fetch ALL severities from the Vercel endpoint. The log is
+          #    purged at the end of this workflow, so anything not fetched
+          #    here is permanently discarded — filtering to critical-only
+          #    was silently destroying error/warning telemetry.
           # ---------------------------------------------------------------
           HTTP_CODE=$(curl -s -o /tmp/errors_response.json -w "%{http_code}" \
             --max-time 30 --connect-timeout 10 \
             -H "X-API-Key: ${VERCEL_ERRORS_API_KEY}" \
-            "${ERRORS_ENDPOINT}?severity=critical&limit=100" \
+            "${ERRORS_ENDPOINT}?limit=250" \
           ) || {
             echo "::warning::curl failed to connect to errors endpoint"
             exit 0
@@ -164,7 +169,7 @@ jobs:
               gh issue create \
                 --title "$ISSUE_TITLE" \
                 --body-file /tmp/issue_body.md \
-                --label "bug,critical,auto-triage"
+                --label "bug,${SEVERITY},auto-triage"
 
               echo "Created new issue: ${ISSUE_TITLE}"
               ISSUES_CREATED=$((ISSUES_CREATED + 1))

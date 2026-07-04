@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/app_version.dart';
+import '../../core/services/audio_manager.dart';
+import '../../core/utils/haptics.dart';
 import '../../data/providers/account_provider.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/theme/flit_theme.dart';
@@ -379,6 +381,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   /// Close the bottom sheet and navigate to [destination].
   void _closeSheetAndNavigate(BuildContext sheetContext, Widget destination) {
+    AudioManager.instance.playSfx(SfxType.uiClick);
+    hapticLight();
     try {
       Navigator.of(sheetContext)
         ..pop()

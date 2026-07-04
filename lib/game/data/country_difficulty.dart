@@ -441,10 +441,12 @@ const Map<String, double> _defaultCountryDifficulty = {
   'PW': 0.92, // Palau — Pacific (confusable)
   'KM': 0.92, // Comoros — Indian Ocean
   'ST': 0.93, // São Tomé and Príncipe — Gulf of Guinea
-  // Non-playable excluded: AI, AQ, AS, MS, NF, NU, PM, PN, SH, UM, VG, WF
+  'YE': 0.48, // Yemen — Arabian peninsula, often in the news
+  'AQ': 0.95, // Antarctica — playable oddity (McMurdo), maximum obscurity
+  // Non-playable excluded: AI, AS, MS, NF, NU, PM, PN, SH, UM, VG, WF
 
   // ── Regional / special codes ───────────────────────────────────────
-  'XC': 0.80, // Cocos (Keeling) Islands
+  'XC': 0.80, // Northern Cyprus — de facto state
   'XS': 0.85, // Somaliland
 };
 

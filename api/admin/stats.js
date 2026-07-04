@@ -5,8 +5,13 @@
 // Queries Supabase directly for player counts, activity windows,
 // game volume, and matchmaking pool status.
 
-const SUPABASE_URL = 'https://zrffgpkscdaybfhujioc.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_AnlV4Gngx7a5z3KwqV7F9w_-4rQYEJs';
+// Publishable values — env vars take precedence so rotation only needs a
+// Vercel config change; the literals are last-resort fallbacks.
+const SUPABASE_URL =
+  process.env.SUPABASE_URL || 'https://zrffgpkscdaybfhujioc.supabase.co';
+const SUPABASE_ANON_KEY =
+  process.env.SUPABASE_ANON_KEY ||
+  'sb_publishable_AnlV4Gngx7a5z3KwqV7F9w_-4rQYEJs';
 
 const HEADERS = {
   apikey: SUPABASE_ANON_KEY,
@@ -112,11 +117,12 @@ module.exports = async (req, res) => {
     query('scores?select=score,time_ms,region,rounds_completed,created_at,user_id&order=created_at.desc&limit=20'),
   ]);
 
-  // Compute active players (distinct users who played in each window)
-  // We approximate this from scores data — a player who submitted a score was active
+  // Compute active players (distinct users who played in each window).
+  // Approximated from the recent-scores sample — a player who submitted a
+  // score was active. (A 7d distinct-count needs a wider query than the
+  // 20-row sample supports, so no 7d active metric is reported.)
   let activePlayers1h = 0;
   let activePlayers24h = 0;
-  let activePlayers7d = 0;
   if (recentScores) {
     const uniqueUsers1h = new Set();
     const uniqueUsers24h = new Set();

@@ -19,13 +19,15 @@ extension QuizDifficultyExtension on QuizDifficulty {
   }
 
   String get description {
+    // Hints are unlimited at every tier (using one costs score), so the
+    // copy must not promise hint limits that don't exist.
     switch (this) {
       case QuizDifficulty.easy:
-        return 'Labels shown, easier clues, hints available';
+        return 'Labels shown, easier clues';
       case QuizDifficulty.medium:
-        return 'No labels, all clue types, fewer hints';
+        return 'No labels, all clue types';
       case QuizDifficulty.hard:
-        return 'No labels, hardest clues only, no hints';
+        return 'No labels, hardest clues only';
     }
   }
 
@@ -37,19 +39,6 @@ extension QuizDifficultyExtension on QuizDifficulty {
       case QuizDifficulty.medium:
       case QuizDifficulty.hard:
         return false;
-    }
-  }
-
-  /// Maximum hints allowed per quiz session.
-  /// All difficulties now allow unlimited hints (score penalty increases).
-  int get maxHints {
-    switch (this) {
-      case QuizDifficulty.easy:
-        return 999;
-      case QuizDifficulty.medium:
-        return 999;
-      case QuizDifficulty.hard:
-        return 999;
     }
   }
 

@@ -200,11 +200,11 @@ class UnchartedSession {
     // Only score areas the player actually guessed, not force-revealed ones.
     final basePoints = _guessedCodes.length * 100;
 
-    // Time bonus: up to 1.5x for under 2 minutes, decays to 1.0x over 10 min.
+    // Time bonus: 1.5x at 0s decaying linearly to 1.0x at 10 minutes.
+    // One continuous curve — the old flat-1.5x-under-2-minutes rule
+    // created a score cliff (1.5x → 1.4x) at exactly 120s.
     final seconds = elapsedMs / 1000.0;
-    final timeMult = seconds < 120.0
-        ? 1.5
-        : (1.0 + 0.5 * (1.0 - (seconds / 600.0)).clamp(0, 1));
+    final timeMult = 1.0 + 0.5 * (1.0 - (seconds / 600.0)).clamp(0, 1);
 
     // Completion bonus: 2000 extra points for completing all areas.
     final completionBonus =

@@ -15,10 +15,24 @@ class FeatureFlagService {
   Map<String, bool>? _cache;
   DateTime? _cacheTime;
 
-  /// Whether a flag is enabled. Defaults to `false` if unknown (fail-closed).
+  /// Server-side defaults (mirrors the seeded `feature_flags` rows). Used
+  /// when a flag can't be fetched AND has no local cache — e.g. the very
+  /// first launch offline. Failing closed there would silently hide Shop,
+  /// Leaderboard, Matchmaking, and Daily Scramble on a fresh install.
+  static const Map<String, bool> _defaults = {
+    'shop_enabled': true,
+    'leaderboard_enabled': true,
+    'matchmaking_enabled': true,
+    'daily_scramble_enabled': true,
+    'gifting_enabled': true,
+  };
+
+  /// Whether a flag is enabled. Falls back to the known server default
+  /// (or `false` for unknown flags) when neither the server nor a local
+  /// cache has an answer.
   Future<bool> isEnabled(String flagKey) async {
     final flags = await fetchAll();
-    return flags[flagKey] ?? false;
+    return flags[flagKey] ?? _defaults[flagKey] ?? false;
   }
 
   /// Fetch all flags as a key→bool map.

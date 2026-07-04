@@ -20,13 +20,6 @@ Map<String, dynamic> _maintenanceConfigJson() => {
       'maintenance_message': 'Back soon — deploying hotfix.',
     };
 
-Map<String, dynamic> _gatedConfigJson() => {
-      'min_app_version': 'v1.50',
-      'recommended_version': 'v1.200',
-      'maintenance_mode': false,
-      'maintenance_message': null,
-    };
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------

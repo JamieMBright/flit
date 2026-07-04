@@ -39,7 +39,6 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
     with TickerProviderStateMixin {
   late QuizSession _session;
   late List<String> _allAreaNames;
-  late Map<String, String> _nameToCode;
   Timer? _timer;
 
   final TextEditingController _textController = TextEditingController();
@@ -114,7 +113,6 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
 
     // Build area name lookup
     final areas = RegionalData.getAreas(widget.region);
-    _nameToCode = {for (final area in areas) area.name: area.code};
     _allAreaNames = areas.map((a) => a.name).toList()..sort();
 
     _session.start();

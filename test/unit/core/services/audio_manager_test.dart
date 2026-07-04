@@ -69,8 +69,10 @@ void main() {
   });
 
   group('SfxType', () {
-    test('has 6 values', () {
-      expect(SfxType.values, hasLength(6));
+    test(
+        'lists only playable effects (boostStart removed with no boost '
+        'mechanic)', () {
+      expect(SfxType.values, hasLength(5));
     });
   });
 }

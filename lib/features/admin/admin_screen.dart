@@ -1042,10 +1042,14 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                         final username = usernameCtl.text.trim();
                         if (username.isNotEmpty) {
                           Navigator.of(dialogCtx).pop();
-                          // TODO: Send via backend API when cosmetics table exists
+                          // No admin grant RPC exists yet (gift_cosmetic
+                          // charges the gifter, which is wrong for an admin
+                          // grant) — say so instead of faking success.
                           _snack(
                             context,
-                            '${items[selectedItemId]} gifted to @$username',
+                            'Cosmetic gifting is not wired to the backend '
+                            'yet — nothing was granted.',
+                            isError: true,
                           );
                         }
                       },
@@ -1063,7 +1067,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
           ),
         ),
       ),
-    );
+    ).then((_) => usernameCtl.dispose());
   }
 
   // ── Manage Moderators ──
@@ -1761,6 +1765,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
     final scrambleCtl = TextEditingController(
       text: '${config.earnings.dailyScrambleBaseReward}',
     );
+    final triangulationCtl = TextEditingController(
+      text: '${config.earnings.dailyTriangulationBaseReward}',
+    );
     final perClueCtl = TextEditingController(
       text: '${config.earnings.freeFlightPerClueReward}',
     );
@@ -1793,6 +1800,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
           onCancel: () => Navigator.of(dialogCtx).pop(),
           onAction: () async {
             final scramble = int.tryParse(scrambleCtl.text.trim());
+            final triangulation = int.tryParse(triangulationCtl.text.trim());
             final perClue = int.tryParse(perClueCtl.text.trim());
             final cap = int.tryParse(dailyCapCtl.text.trim());
             final campaign = int.tryParse(campaignCtl.text.trim());
@@ -1804,6 +1812,12 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             if (scramble == null || scramble < 0) {
               setDialogState(
                 () => error = 'Daily Scramble Reward must be >= 0',
+              );
+              return;
+            }
+            if (triangulation == null || triangulation < 0) {
+              setDialogState(
+                () => error = 'Daily Triangulation Reward must be >= 0',
               );
               return;
             }
@@ -1842,6 +1856,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
               final updated = EconomyConfig(
                 earnings: EarningsConfig(
                   dailyScrambleBaseReward: scramble,
+                  dailyTriangulationBaseReward: triangulation,
                   freeFlightPerClueReward: perClue,
                   freeFlightDailyCap: cap,
                   campaignMissionReward: campaign,
@@ -1869,6 +1884,11 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             ),
             const SizedBox(height: 10),
             _AdminTextField(
+              controller: triangulationCtl,
+              label: 'Daily Triangulation Base Reward',
+            ),
+            const SizedBox(height: 10),
+            _AdminTextField(
               controller: perClueCtl,
               label: 'Free Flight Per-Clue Reward',
             ),
@@ -1880,19 +1900,23 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
             const SizedBox(height: 16),
             const Divider(color: FlitColors.cardBorder),
             const SizedBox(height: 8),
+            // These three are stored but not yet read by gameplay
+            // (campaign uses per-mission rewards; regular flights and
+            // Flight School compute rewards internally). Labelled so
+            // admins aren't editing dead knobs unknowingly.
             _AdminTextField(
               controller: campaignCtl,
-              label: 'Campaign Mission Reward',
+              label: 'Campaign Mission Reward (not wired yet)',
             ),
             const SizedBox(height: 10),
             _AdminTextField(
               controller: gameCompCtl,
-              label: 'Game Completion Base Reward',
+              label: 'Game Completion Base Reward (not wired yet)',
             ),
             const SizedBox(height: 10),
             _AdminTextField(
               controller: flightSchoolCtl,
-              label: 'Flight School Reward',
+              label: 'Flight School Reward (not wired yet)',
             ),
           ],
         ),
@@ -4335,13 +4359,11 @@ class _AdminTextField extends StatelessWidget {
     required this.controller,
     required this.label,
     this.keyboardType = TextInputType.number,
-    this.hintText,
   });
 
   final TextEditingController controller;
   final String label;
   final TextInputType keyboardType;
-  final String? hintText;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -4361,7 +4383,6 @@ class _AdminTextField extends StatelessWidget {
             keyboardType: keyboardType,
             style: const TextStyle(color: FlitColors.textPrimary),
             decoration: InputDecoration(
-              hintText: hintText,
               hintStyle: const TextStyle(color: FlitColors.textMuted),
               filled: true,
               fillColor: FlitColors.backgroundMid,

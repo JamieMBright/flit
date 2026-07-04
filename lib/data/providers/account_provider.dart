@@ -648,6 +648,17 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _userId = null;
     _supabaseLoaded = false;
     _prefs.clear();
+    // Reset in-memory state too: without this, widgets keep showing the
+    // previous user's coins/avatar/license until the next login loads.
+    state = AccountState(
+      currentPlayer: const Player(
+        id: '',
+        username: '',
+        level: 1,
+        xp: 0,
+        coins: 0,
+      ),
+    );
   }
 
   @override

@@ -261,6 +261,19 @@ class AccountManagementService {
       await _client.from('user_settings').delete().eq('user_id', userId);
       logStep('user_settings');
 
+      // 5b. IAP receipts — best-effort: the schema now cascades on auth
+      // deletion, but live databases created before that change would hit
+      // an FK violation at step 7 without this. RLS may deny the delete
+      // for older rows; that's fine once the cascade exists.
+      try {
+        await _client.from('iap_receipts').delete().eq('user_id', userId);
+        logStep('iap_receipts');
+      } catch (e) {
+        debugPrint(
+          '[AccountManagementService] iap_receipts delete skipped: $e',
+        );
+      }
+
       // 6. Profile (last, since other tables may reference it).
       await _client.from('profiles').delete().eq('id', userId);
       logStep('profiles');

@@ -113,19 +113,10 @@ class _SettingsSheetContentState extends State<_SettingsSheetContent> {
                   }
                 : null,
           ),
-          // Notifications — profile settings only (not during gameplay)
-          if (!widget.inGame) ...[
-            const Divider(color: FlitColors.cardBorder, height: 1),
-            _SettingsToggle(
-              label: 'Notifications',
-              icon: Icons.notifications_outlined,
-              value: GameSettings.instance.notificationsEnabled,
-              onChanged: (value) {
-                GameSettings.instance.notificationsEnabled = value;
-                setState(() {});
-              },
-            ),
-          ],
+          // NOTE: the Notifications toggle was removed — no notification
+          // service exists yet, so the switch controlled nothing. Restore
+          // it (GameSettings.notificationsEnabled is still persisted) when
+          // push/local notifications ship.
           const Divider(color: FlitColors.cardBorder, height: 1),
           _SettingsToggle(
             label: 'Haptic Feedback',

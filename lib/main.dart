@@ -37,7 +37,7 @@ bool _isNonFatalError(Object error) {
   // 'e.toString')".
   final dynamic e = error;
   if (e == null) return false;
-  final msg = e.toString() as String;
+  final msg = e.toString();
   return msg.contains('Invalid SVG') ||
       msg.contains('invalid svg') ||
       msg.contains('SVG data') ||
@@ -50,7 +50,7 @@ String _safeErrorString(Object error) {
   final dynamic e = error;
   if (e == null) return 'Unknown error (null)';
   try {
-    return e.toString() as String;
+    return e.toString();
   } catch (_) {
     return 'Error (toString failed)';
   }
