@@ -183,9 +183,11 @@ async function appendToGitHub(newLines) {
       const separator = existingContent.length > 0 && !existingContent.endsWith('\n') ? '\n' : '';
       const updatedContent = existingContent + separator + newLines.join('\n') + '\n';
 
-      // 3. PUT the updated file.
+      // 3. PUT the updated file. [skip ci] is load-bearing: without it,
+      // every telemetry batch pushed to main spawns a CI & Deploy run
+      // whose cancel-in-progress concurrency kills real deploys mid-build.
       const body = {
-        message: `chore: append ${newLines.length} error(s) from telemetry`,
+        message: `chore: append ${newLines.length} error(s) from telemetry [skip ci]`,
         content: Buffer.from(updatedContent).toString('base64'),
         branch,
       };
