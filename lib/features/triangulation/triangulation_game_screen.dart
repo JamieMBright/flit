@@ -543,10 +543,11 @@ class _StatusBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Full points inside 10s, decaying to 60s — tint the timer to match.
-    final timerColor = seconds <= 10
+    // Tint the timer to mirror the scoring curve: green in the grace
+    // window, amber while decaying, red once the penalty saturates.
+    final timerColor = seconds <= triTimeGraceSeconds
         ? FlitColors.success
-        : seconds < 60
+        : seconds < triTimeMaxSeconds
             ? FlitColors.warning
             : FlitColors.error;
     return Container(

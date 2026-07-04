@@ -1,9 +1,12 @@
 /// Scoring constants and helpers for the Triangulation game mode.
 ///
-/// Mirrors the Daily Scramble curve (daily_result.dart): full marks within
-/// 10s, linear time decay to 60s, scaled by the country difficulty
-/// multiplier — plus a per-wrong-guess proximity penalty unique to this
-/// mode (a near-miss costs little, a wild guess costs a lot).
+/// Deliberately gentler than the Daily Scramble curve (daily_result.dart):
+/// Scramble is fast recall, but Triangulation asks the player to reason
+/// over five bearings, so full marks last 30s and the decay runs out to
+/// 3 minutes. Scaled by the country difficulty multiplier, plus a
+/// per-wrong-guess proximity penalty unique to this mode (a near-miss
+/// costs little, a wild guess costs more — but never so much that a
+/// mid-round solve feels pointless).
 library;
 
 import '../data/country_difficulty.dart';
@@ -20,10 +23,19 @@ const double triCoolKm = 5000;
 const double triMaxPenaltyKm = 8000;
 
 /// Flat cost of any wrong guess.
-const int triWrongGuessFloor = 200;
+const int triWrongGuessFloor = 100;
 
 /// Distance-scaled cost on top of the floor (at >= [triMaxPenaltyKm]).
-const int triWrongGuessDistanceMax = 2300;
+const int triWrongGuessDistanceMax = 1400;
+
+/// Full-marks window: no time penalty while reading and reasoning.
+const int triTimeGraceSeconds = 30;
+
+/// Time at which the time penalty saturates.
+const int triTimeMaxSeconds = 180;
+
+/// Largest possible time penalty (at >= [triTimeMaxSeconds]).
+const int triTimePenaltyMax = 4000;
 
 /// Multiplier applied when the round is solved via the country name
 /// instead of the capital.
@@ -32,7 +44,7 @@ const double triCountryAnswerMultiplier = 0.7;
 /// Cost of the one distance hint per round (reveals how far each starting
 /// clue is from the hidden target). Wrong-guess distances are always shown
 /// free — only the up-front reveal of the original clues costs score.
-const int triDistanceHintPenalty = 1000;
+const int triDistanceHintPenalty = 600;
 
 /// Penalty for one wrong guess, based on how far the guessed capital is
 /// from the target capital. Direct neighbours are softened by half.
@@ -43,13 +55,17 @@ int triProximityPenalty(double distanceKm, {bool isNeighbor = false}) {
   return isNeighbor ? penalty ~/ 2 : penalty;
 }
 
-/// Time penalty: 0 within 10s, linear to 5000 at 60s (same curve as
-/// DailyRoundResult.computeTimeScore).
+/// Time penalty: 0 within [triTimeGraceSeconds], then linear to
+/// [triTimePenaltyMax] at [triTimeMaxSeconds]. Slower than Scramble's
+/// recall curve on purpose — thinking is the game here.
 int triTimePenalty(int timeMs) {
   final seconds = timeMs / 1000.0;
-  if (seconds <= 10) return 0;
-  if (seconds >= 60) return 5000;
-  return ((seconds - 10) / 50.0 * 5000).round();
+  if (seconds <= triTimeGraceSeconds) return 0;
+  if (seconds >= triTimeMaxSeconds) return triTimePenaltyMax;
+  return ((seconds - triTimeGraceSeconds) /
+          (triTimeMaxSeconds - triTimeGraceSeconds) *
+          triTimePenaltyMax)
+      .round();
 }
 
 /// Final round score.

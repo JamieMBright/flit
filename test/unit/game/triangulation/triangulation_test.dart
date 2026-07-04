@@ -267,12 +267,23 @@ void main() {
       expect(score, lessThanOrEqualTo(triBaseScore));
     });
 
-    test('time decay matches the daily scramble curve', () {
+    test('time decay is gentler than scramble: 30s grace, 3min saturation', () {
       expect(triTimePenalty(5000), 0);
-      expect(triTimePenalty(10000), 0);
-      expect(triTimePenalty(35000), 2500);
-      expect(triTimePenalty(60000), 5000);
-      expect(triTimePenalty(120000), 5000);
+      expect(triTimePenalty(30000), 0);
+      expect(triTimePenalty(105000), 2000); // midpoint of the decay
+      expect(triTimePenalty(180000), triTimePenaltyMax);
+      expect(triTimePenalty(240000), triTimePenaltyMax);
+    });
+
+    test('a thoughtful multi-guess solve still scores well', () {
+      // 90s solve with two wrong guesses (one neighbour, one mid-range)
+      // — the common "worked it out on the third try" game. Should keep
+      // well over half the raw score before difficulty scaling.
+      final raw = triBaseScore -
+          triTimePenalty(90000) -
+          triProximityPenalty(300, isNeighbor: true) -
+          triProximityPenalty(1700);
+      expect(raw, greaterThan(triBaseScore * 0.6));
     });
 
     test('proximity penalty orders neighbour < mid < far', () {
