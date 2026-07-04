@@ -245,10 +245,24 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url }}
     steps:
+      # Pages intermittently rejects healthy deployments with a transient
+      # "Deployment failed, try again later" (three green builds lost to it
+      # on 2026-07-04 alone). Retry twice in-job with a pause so a flake
+      # never requires a manual retrigger commit.
       - name: Deploy to GitHub Pages
         id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - name: Pause before retry
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 90
+
+      - name: Deploy to GitHub Pages (retry)
+        id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
 
   # ── Smoke Test ──
