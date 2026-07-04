@@ -414,8 +414,14 @@ class _TriangulationGameScreenState
             ),
           ),
         ),
+        // These trailing children are keyed because the feedback banner and
+        // suggestion strip appear/disappear WHILE the player is typing.
+        // Without keys, positional reconciliation re-inflates the TextField
+        // when an earlier sibling vanishes (first keystroke clears the
+        // feedback banner), which closes the keyboard on iOS/Android.
         if (_feedback != null)
           Padding(
+            key: const ValueKey('tri-feedback'),
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               _feedback!,
@@ -428,6 +434,7 @@ class _TriangulationGameScreenState
           ),
         if (suggestions.isNotEmpty)
           Container(
+            key: const ValueKey('tri-suggestions'),
             height: 44,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: ListView(
@@ -457,6 +464,7 @@ class _TriangulationGameScreenState
             ),
           ),
         Padding(
+          key: const ValueKey('tri-guess-input'),
           padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
           child: Row(
             children: [

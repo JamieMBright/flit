@@ -326,8 +326,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Keyed (with the fields below) because typing clears the
+              // banner — unkeyed, its removal would re-inflate the focused
+              // TextField and dismiss the keyboard.
               if (error != null) ...[
                 Container(
+                  key: const ValueKey('pw-error'),
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: FlitColors.error.withOpacity(0.15),
@@ -356,6 +360,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 const SizedBox(height: 12),
               ],
               TextField(
+                key: const ValueKey('pw-new'),
                 controller: newPasswordController,
                 obscureText: obscureNew,
                 style: const TextStyle(color: FlitColors.textPrimary),
@@ -388,6 +393,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
               const SizedBox(height: 16),
               TextField(
+                key: const ValueKey('pw-confirm'),
                 controller: confirmPasswordController,
                 obscureText: obscureConfirm,
                 style: const TextStyle(color: FlitColors.textPrimary),
