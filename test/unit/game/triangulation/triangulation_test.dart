@@ -60,31 +60,56 @@ void main() {
       expect(greatCircleKm(london, paris), closeTo(343, 15));
     });
 
-    test('rhumb bearing matches cardinal directions', () {
-      expect(rhumbBearingDeg(Vector2(0, 0), Vector2(0, 10)), closeTo(0, 0.01));
-      expect(rhumbBearingDeg(Vector2(0, 0), Vector2(10, 0)), closeTo(90, 0.01));
+    test('flat-map bearing matches cardinal directions', () {
       expect(
-        rhumbBearingDeg(Vector2(0, 10), Vector2(0, 0)),
+          flatMapBearingDeg(Vector2(0, 0), Vector2(0, 10)), closeTo(0, 0.01));
+      expect(
+          flatMapBearingDeg(Vector2(0, 0), Vector2(10, 0)), closeTo(90, 0.01));
+      expect(
+        flatMapBearingDeg(Vector2(0, 10), Vector2(0, 0)),
         closeTo(180, 0.01),
       );
       expect(
-        rhumbBearingDeg(Vector2(10, 0), Vector2(0, 0)),
+        flatMapBearingDeg(Vector2(10, 0), Vector2(0, 0)),
         closeTo(270, 0.01),
       );
     });
 
-    test('Colombo→Mexico City rhumb bearing reads west, not north', () {
+    test('Colombo→Mexico City flat-map bearing reads west, not north', () {
       // Great-circle initial bearing here crosses near the pole (~N),
-      // which broke map intuition in-game; the rhumb bearing is the
-      // flat-map direction players expect.
+      // which broke map intuition in-game; the flat-map bearing is the
+      // direction players expect.
       final colombo = Vector2(79.86, 6.93);
       final mexicoCity = Vector2(-99.13, 19.43);
-      final rhumb = rhumbBearingDeg(colombo, mexicoCity);
-      expect(rhumb, greaterThan(250));
-      expect(rhumb, lessThan(300));
+      final flatMap = flatMapBearingDeg(colombo, mexicoCity);
+      expect(flatMap, greaterThan(250));
+      expect(flatMap, lessThan(300));
       // Sanity: the great-circle bearing really is the unintuitive one.
       final greatCircle = initialBearingDeg(colombo, mexicoCity);
       expect(greatCircle < 45 || greatCircle > 315, isTrue);
+    });
+
+    test('no antimeridian shortcut: bearings match the flat map', () {
+      final washington = Vector2(-77.0, 38.9);
+      final losAngeles = Vector2(-118.2, 34.1);
+      final tokyo = Vector2(139.7, 35.7);
+      final moscow = Vector2(37.6, 55.8);
+
+      // Russia is east of the USA on the map.
+      final usaToRussia = flatMapBearingDeg(washington, moscow);
+      expect(usaToRussia, greaterThan(0));
+      expect(usaToRussia, lessThan(90));
+
+      // Tokyo is east of Los Angeles on the map, even though flying west
+      // across the Pacific is shorter.
+      final laToTokyo = flatMapBearingDeg(losAngeles, tokyo);
+      expect(laToTokyo, greaterThan(45));
+      expect(laToTokyo, lessThan(135));
+
+      // And the USA is west of Tokyo on the map.
+      final tokyoToDc = flatMapBearingDeg(tokyo, washington);
+      expect(tokyoToDc, greaterThan(225));
+      expect(tokyoToDc, lessThan(315));
     });
   });
 
@@ -204,7 +229,7 @@ void main() {
         expect(
           clue.bearingFromTargetDeg,
           closeTo(
-            rhumbBearingDeg(round.targetCapitalLngLat, clue.capitalLngLat),
+            flatMapBearingDeg(round.targetCapitalLngLat, clue.capitalLngLat),
             1e-9,
           ),
         );

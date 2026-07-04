@@ -63,8 +63,9 @@ class TriangulationClue {
   /// Capital coordinates as (lng, lat) degrees.
   final Vector2 capitalLngLat;
 
-  /// Rhumb-line compass bearing (0 = N, clockwise) from the hidden
-  /// target's capital to this clue's capital — the flat-map direction.
+  /// Flat-map compass bearing (0 = N, clockwise) from the hidden
+  /// target's capital to this clue's capital — the direction as drawn
+  /// on a standard world map, never shortcutting the antimeridian.
   final double bearingFromTargetDeg;
 
   /// Great-circle distance from the hidden target's capital, in km.
@@ -188,10 +189,12 @@ class TriangulationRound {
     for (final c in anchors) {
       if (clues.length >= markerCount) break;
       final capital = CountryData.getCapital(c.code)!;
-      // Rhumb-line bearing: the flat-map direction players expect (a
-      // great-circle initial bearing to a far anchor can point over the
-      // pole — Colombo→Mexico City would read "north").
-      final bearing = rhumbBearingDeg(targetCapital.location, capital.location);
+      // Flat-map bearing: the direction as drawn on a world map. No
+      // polar great-circle shortcuts (Colombo→Mexico City would read
+      // "north") and no antimeridian shortcuts (Russia stays east of
+      // the USA even when crossing ±180° is shorter).
+      final bearing =
+          flatMapBearingDeg(targetCapital.location, capital.location);
       final clue = TriangulationClue(
         countryCode: c.code,
         countryName: c.name,
