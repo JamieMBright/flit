@@ -370,8 +370,8 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
           ),
           const _RuleRow(
             icon: Icons.timer_outlined,
-            text: 'Full marks inside 10 seconds, decaying to 60s. Wild '
-                'guesses cost more than near misses.',
+            text: 'Full marks inside 30 seconds, slowly decaying to 3 '
+                'minutes. Wild guesses cost more than near misses.',
           ),
           _RuleRow(
             icon: Icons.star_outline,
