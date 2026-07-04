@@ -309,11 +309,19 @@ class _GoldManagementScreenState extends State<GoldManagementScreen> {
 
     if (_economyConfig == null) return;
 
+    // Preserve the fields this screen doesn't edit — constructing a fresh
+    // EarningsConfig with only three values silently reset every other
+    // reward to its default on save.
+    final current = _economyConfig!.earnings;
     final updated = EconomyConfig(
       earnings: EarningsConfig(
         dailyScrambleBaseReward: daily,
         freeFlightPerClueReward: perClue,
         freeFlightDailyCap: cap,
+        dailyTriangulationBaseReward: current.dailyTriangulationBaseReward,
+        campaignMissionReward: current.campaignMissionReward,
+        gameCompletionBaseReward: current.gameCompletionBaseReward,
+        flightSchoolReward: current.flightSchoolReward,
       ),
       shopPriceOverrides: _economyConfig!.shopPriceOverrides,
       promotions: _economyConfig!.promotions,

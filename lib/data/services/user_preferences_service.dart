@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/services/error_service.dart';
+
 import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/uncharted_progress.dart';
 import '../../game/tutorial/campaign_mission.dart';
@@ -111,20 +113,29 @@ class _PendingWriteQueue {
 
   /// Increment the retry counter on the oldest entry and re-persist.
   ///
-  /// If the entry has reached [_kMaxRetries] it is dropped instead.
+  /// If the entry has reached [_kMaxRetries] it is dropped instead —
+  /// with telemetry, because a dropped entry is silently lost data (a
+  /// game score, a coin-audit row). Retried entries rotate to the back
+  /// of the queue so one poisoned write can't head-block every other
+  /// queued write across drain cycles.
   Future<void> incrementRetryOrDrop() async {
     final entries = _loadAll();
     if (entries.isEmpty) return;
-    final head = entries.first;
+    final head = entries.removeAt(0);
     final retries = (head['retries'] as int? ?? 0) + 1;
     if (retries >= _kMaxRetries) {
-      entries.removeAt(0);
       debugPrint(
         '[PendingWriteQueue] dropped entry after $_kMaxRetries '
         'retries: table=${head['table']}',
       );
+      ErrorService.instance.reportWarning(
+        'Pending write dropped after $_kMaxRetries retries '
+        '(table=${head['table']}, op=${head['op']}) — data lost',
+        StackTrace.current,
+        context: {'source': 'PendingWriteQueue'},
+      );
     } else {
-      entries[0] = {...head, 'retries': retries};
+      entries.add({...head, 'retries': retries});
     }
     await _persist(entries);
   }

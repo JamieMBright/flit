@@ -10,7 +10,8 @@ class CoachTip {
 
   /// When this tip should appear.
   /// Supported triggers: 'firstClue', 'firstHint', 'fuelLow', 'fuelEmpty',
-  /// 'halfwayDone', 'correctAnswer', 'wrongRegion'.
+  /// 'halfwayDone', 'correctAnswer', 'wrongRegion' (descending far from
+  /// the target), 'lost' (first idle/lost-timer trip).
   final String trigger;
 
   /// The coach's dialogue text.

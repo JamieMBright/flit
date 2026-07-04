@@ -142,6 +142,14 @@ class CoachOverlayState extends State<CoachOverlay>
     if (!mounted) return;
     _lostHintCount++;
 
+    // First trip: play the mission's authored 'lost' tip if one exists —
+    // the coach's scripted encouragement. Later trips escalate to the
+    // hint-forcing nudges below.
+    if (_lostHintCount == 1 && showTip('lost')) {
+      startLostTimer();
+      return;
+    }
+
     // Always suggest using a hint and force them to press it.
     final coach = widget.mission.coach;
     final message = _lostSuggestion(coach);

@@ -23,9 +23,6 @@ enum SfxType {
 
   /// Whoosh for altitude toggle.
   altitudeChange,
-
-  /// Speed boost activation.
-  boostStart,
 }
 
 /// Manages all game audio: background music and one-shot SFX.
@@ -149,8 +146,8 @@ class AudioManager {
         return 'audio/sfx/ui_click.mp3';
       case SfxType.altitudeChange:
         return 'audio/sfx/altitude_change.mp3';
-      case SfxType.boostStart:
-        return 'audio/sfx/boost_start.mp3';
+      // No boost mechanic exists — boost_start.mp3 stays in assets for
+      // when one does, but the enum only lists playable effects.
     }
   }
 

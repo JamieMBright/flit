@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/haptics.dart';
 import '../../data/services/challenge_service.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_difficulty.dart';
@@ -79,7 +80,6 @@ class _QuizGameScreenState extends State<QuizGameScreen>
   late bool _showLabels;
 
   // Animation state
-  String? _lastWrongCode;
   String? _highlightCode;
   int? _lastPoints;
   bool _showPointsPopup = false;
@@ -174,13 +174,17 @@ class _QuizGameScreenState extends State<QuizGameScreen>
     final result = _session.submitAnswer(code);
     if (result == null) return;
 
+    if (result.correct) {
+      hapticMedium();
+    } else {
+      hapticLight();
+    }
     setState(() {
       if (result.correct) {
         _stateVisuals[code]?.status = StateVisualStatus.correct;
         _lastPoints = result.points;
         _showPointsPopup = true;
         _highlightCode = null;
-        _lastWrongCode = null;
 
         _pointsAnimController.forward(from: 0).then((_) {
           if (mounted) {
@@ -202,7 +206,6 @@ class _QuizGameScreenState extends State<QuizGameScreen>
         });
       } else {
         _stateVisuals[code]?.status = StateVisualStatus.wrong;
-        _lastWrongCode = code;
         _lastPoints = result.points;
         _showPointsPopup = true;
 

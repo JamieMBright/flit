@@ -191,10 +191,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 final filter = ProfanityFilter.instance;
                 final username = usernameController.text.trim();
-                var hasError = false;
 
                 // Validate username for profanity and format.
                 if (username.isNotEmpty &&
@@ -204,10 +203,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         'Username contains inappropriate content or '
                         'invalid characters';
                   });
-                  hasError = true;
+                  return;
                 }
 
-                if (hasError) return;
+                // Check uniqueness before committing (same check as
+                // signup). Without this, the debounced profile upsert hits
+                // the UNIQUE index, retries forever, and the client shows
+                // a name the server never accepted.
+                if (username.isNotEmpty && username != currentPlayer.username) {
+                  setDialogState(() => usernameError = null);
+                  try {
+                    final existing = await Supabase.instance.client
+                        .from('profiles')
+                        .select('id')
+                        .eq('username', username)
+                        .neq('id', currentPlayer.id)
+                        .maybeSingle();
+                    if (existing != null) {
+                      setDialogState(() {
+                        usernameError = 'Username @$username is already taken';
+                      });
+                      return;
+                    }
+                  } catch (_) {
+                    setDialogState(() {
+                      usernameError =
+                          'Could not verify availability — check your '
+                          'connection and try again';
+                    });
+                    return;
+                  }
+                }
+                if (!dialogContext.mounted || !context.mounted) return;
 
                 // Update player via AccountProvider
                 ref.read(accountProvider.notifier).switchAccount(
@@ -237,7 +264,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ],
         ),
       ),
-    );
+    ).then((_) => usernameController.dispose());
   }
 
   void _showNationalityPicker() {
@@ -468,7 +495,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ],
         ),
       ),
-    );
+    ).then((_) {
+      newPasswordController.dispose();
+      confirmPasswordController.dispose();
+    });
   }
 
   void _signOut() {
@@ -524,11 +554,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   void _exportData() {
     final player = ref.read(accountProvider).currentPlayer;
-    if (player.id.isEmpty || player.id == 'guest') {
+    // Guest mode no longer exists — an empty id means "not signed in".
+    if (player.id.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
-            'Data export is not available for guest accounts',
+            'Sign in to export your data',
           ),
           backgroundColor: FlitColors.warning,
           behavior: SnackBarBehavior.floating,
@@ -551,11 +582,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   void _deleteAccount() {
     final player = ref.read(accountProvider).currentPlayer;
-    if (player.id.isEmpty || player.id == 'guest') {
+    // Guest mode no longer exists — an empty id means "not signed in".
+    if (player.id.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
-            'Account deletion is not available for guest accounts',
+            'Sign in to delete your account',
           ),
           backgroundColor: FlitColors.warning,
           behavior: SnackBarBehavior.floating,

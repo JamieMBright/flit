@@ -674,7 +674,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           ),
         ),
       ),
-    );
+    ).then((_) => controller.dispose());
   }
 
   // ---------------------------------------------------------------------------
@@ -749,17 +749,20 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
+              // Flit+ gifting has no purchase backend yet — never fake a
+              // successful purchase. Both options are honest placeholders
+              // until IAP + a subscription service exist.
               _GiftOption(
                 label: '1 Month',
                 price: '\$2.99',
                 onTap: () {
                   Navigator.of(dialogContext).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    const SnackBar(
                       content: Text(
-                        'Gifted 1 month of Flit+ to ${friend.name}!',
+                        'Flit+ gifting is coming soon — no purchase was made.',
                       ),
-                      backgroundColor: FlitColors.success,
+                      backgroundColor: FlitColors.warning,
                     ),
                   );
                 },
@@ -772,11 +775,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                 onTap: () {
                   Navigator.of(dialogContext).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    const SnackBar(
                       content: Text(
-                        'Gifted 1 year of Flit+ to ${friend.name}!',
+                        'Flit+ gifting is coming soon — no purchase was made.',
                       ),
-                      backgroundColor: FlitColors.success,
+                      backgroundColor: FlitColors.warning,
                     ),
                   );
                 },

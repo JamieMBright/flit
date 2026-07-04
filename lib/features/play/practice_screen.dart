@@ -163,13 +163,18 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     for (final type in _worldClueTypes) type: true,
   };
 
-  /// Correct-answer counts per clue type, sourced from player progress data.
-  ///
-  // TODO(progress): populate from real player progress provider once the
-  // clue-progress persistence layer is wired up (see account_provider).
-  final Map<ClueType, int> _clueProgress = {
-    for (final type in _worldClueTypes) type: 0,
-  };
+  /// Correct-answer counts per clue type, from the player's lifetime
+  /// stats (the same per-type counters that drive social titles).
+  Map<ClueType, int> get _clueProgress {
+    final p = ref.watch(accountProvider).currentPlayer;
+    return {
+      ClueType.flag: p.flagsCorrect,
+      ClueType.outline: p.outlinesCorrect,
+      ClueType.borders: p.bordersCorrect,
+      ClueType.capital: p.capitalsCorrect,
+      ClueType.stats: p.statsCorrect,
+    };
+  }
 
   // ---------------------------------------------------------------------------
   // Derived state

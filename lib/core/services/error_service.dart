@@ -261,7 +261,7 @@ class ErrorService {
     String errorString;
     try {
       final dynamic e = error;
-      errorString = e == null ? 'Unknown error (null)' : e.toString() as String;
+      errorString = e == null ? 'Unknown error (null)' : e.toString();
     } catch (_) {
       errorString = 'Error (toString failed)';
     }
@@ -422,8 +422,12 @@ class ErrorService {
           );
 
           if (success) {
-            // Remove only the errors we successfully sent.
-            _queue.removeWhere((e) => batch.contains(e));
+            // Remove only the errors we successfully sent. The batch is a
+            // snapshot of the queue's head, so drop that prefix by count —
+            // identity-based removeWhere would silently stop clearing if
+            // CapturedError ever gained value equality or the queue were
+            // rebuilt.
+            _queue.removeRange(0, batch.length.clamp(0, _queue.length));
             if (kDebugMode) {
               debugPrint(
                 '[ErrorService] flush() SUCCESS: ${batch.length} errors sent',

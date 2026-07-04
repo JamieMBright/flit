@@ -83,8 +83,6 @@ class PlaneRenderer {
     Canvas canvas,
     Color baseColor, {
     double strokeWidth = 1.1,
-    double offsetX = 0.3,
-    double offsetY = 0.3,
     double opacity = 0.55,
   }) {
     WatercolorStyle.wetEdge(
@@ -141,11 +139,6 @@ class PlaneRenderer {
     String seed = '',
   }) {
     WatercolorStyle.washFill(canvas, path, color, seed: seed);
-  }
-
-  /// Draw a soft watercolour shadow under a shape.
-  static void _softShadow(Canvas canvas, Path path) {
-    WatercolorStyle.softShadow(canvas, path);
   }
 
   /// Draws a soft ambient-occlusion shadow where a wing meets the fuselage.

@@ -330,8 +330,8 @@ jobs:
           # Update version in pubspec.yaml (keep build number as PR count)
           sed -i "s/^version: .*/version: 1.0.${PR_COUNT}+${PR_COUNT}/" pubspec.yaml
 
-          # Update version in error_service.dart
-          sed -i "s/static const String appVersion = '.*'/static const String appVersion = '${CURRENT_VERSION}'/" lib/core/services/error_service.dart
+          # (error_service.dart now reads its version from app_version.dart,
+          # so it no longer needs a sed of its own.)
 
           # Update version in index.html JS error handler
           sed -i "s/appVersion: '.*'/appVersion: '${CURRENT_VERSION}'/" web/index.html
@@ -342,7 +342,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add lib/core/app_version.dart pubspec.yaml lib/core/services/error_service.dart web/index.html
+          git add lib/core/app_version.dart pubspec.yaml web/index.html
           # Only commit if there are changes
           git diff --cached --quiet || {
             git commit -m "chore: bump version to $(grep "const String appVersion" lib/core/app_version.dart | grep -oP "v1\.\d+") [skip ci]"

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/services/audio_manager.dart';
+import '../../core/utils/haptics.dart';
 import '../../core/services/error_service.dart';
 import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
@@ -402,6 +403,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         _isHighAltitude = isHigh;
         if (!isHigh) _descentMapMounted = true;
       });
+      // Descending far from the target is the "wrong region" moment —
+      // fire the mission-authored coach tip (campaign only; one-shot).
+      if (!isHigh && !_game.isNearTarget()) {
+        _coachOverlayKey.currentState?.showTip('wrongRegion');
+      }
     }
   }
 
@@ -413,6 +419,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     // Deduct fuel for using a hint. If tank is empty, abort.
     if (!_game.useHintFuel()) return;
 
+    hapticLight();
     // Fire coach tip for first hint usage (campaign missions only).
     _coachOverlayKey.currentState?.showTip('firstHint');
     // Notify coach overlay that a hint was used (explains what it does).
@@ -1039,6 +1046,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         );
     if (earned > 0) {
       _freeFlightCoinsEarned += earned;
+      AudioManager.instance.playSfx(SfxType.coinCollect);
     }
   }
 
@@ -1066,6 +1074,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     }
     _cumulativeTime += _elapsed;
     AudioManager.instance.playSfx(SfxType.landingSuccess);
+    hapticSuccess();
 
     // Fire ink-burst success animation from the clue card area.
     final mq = MediaQuery.of(context);

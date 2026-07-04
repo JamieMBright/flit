@@ -121,6 +121,9 @@ class EarningsConfig {
   /// Base gold reward for completing a daily scramble puzzle.
   final int dailyScrambleBaseReward;
 
+  /// Base gold reward for completing the daily triangulation puzzle.
+  final int dailyTriangulationBaseReward;
+
   /// Gold earned per clue discovered during free flight mode.
   final int freeFlightPerClueReward;
 
@@ -138,6 +141,7 @@ class EarningsConfig {
 
   const EarningsConfig({
     this.dailyScrambleBaseReward = 150,
+    this.dailyTriangulationBaseReward = 150,
     this.freeFlightPerClueReward = 15,
     this.freeFlightDailyCap = 150,
     this.campaignMissionReward = 100,
@@ -149,6 +153,8 @@ class EarningsConfig {
     if (json == null) return const EarningsConfig();
     return EarningsConfig(
       dailyScrambleBaseReward: json['dailyScrambleBaseReward'] as int? ?? 150,
+      dailyTriangulationBaseReward:
+          json['dailyTriangulationBaseReward'] as int? ?? 150,
       freeFlightPerClueReward: json['freeFlightPerClueReward'] as int? ?? 15,
       freeFlightDailyCap: json['freeFlightDailyCap'] as int? ?? 150,
       campaignMissionReward: json['campaignMissionReward'] as int? ?? 100,
@@ -160,6 +166,7 @@ class EarningsConfig {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'dailyScrambleBaseReward': dailyScrambleBaseReward,
+      'dailyTriangulationBaseReward': dailyTriangulationBaseReward,
       'freeFlightPerClueReward': freeFlightPerClueReward,
       'freeFlightDailyCap': freeFlightDailyCap,
       'campaignMissionReward': campaignMissionReward,

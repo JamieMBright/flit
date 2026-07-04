@@ -5,6 +5,7 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/country_outline_painter.dart';
 import '../clues/clue_types.dart';
 import '../flit_game.dart';
 import '../session/game_session.dart';
@@ -867,82 +868,23 @@ class _CountryOutline extends StatelessWidget {
     if (polygons.isEmpty) {
       return const Text('🗺️', style: TextStyle(fontSize: 48));
     }
+    // Shared painter: its shouldRepaint compares polygon data, so the
+    // silhouette updates when the clue changes (the old private copy
+    // returned false unconditionally and could show a stale country).
     return SizedBox(
       height: 80,
       width: double.infinity,
-      child: CustomPaint(painter: _CountryOutlinePainter(polygons)),
+      child: CustomPaint(
+        painter: CountryOutlinePainter(
+          polygons,
+          fillColor: FlitColors.landMass.withOpacity(0.5),
+          strokeColor: FlitColors.accent,
+          strokeWidth: 1.5,
+          padding: 4.0,
+        ),
+      ),
     );
   }
-}
-
-class _CountryOutlinePainter extends CustomPainter {
-  _CountryOutlinePainter(this.polygons);
-
-  final List<List<Vector2>> polygons;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (polygons.isEmpty || size.isEmpty) return;
-
-    // Find bounding box across ALL polygons
-    final firstPt = polygons.first.first;
-    var minX = firstPt.x;
-    var maxX = firstPt.x;
-    var minY = firstPt.y;
-    var maxY = firstPt.y;
-    for (final poly in polygons) {
-      for (final p in poly) {
-        minX = math.min(minX, p.x);
-        maxX = math.max(maxX, p.x);
-        minY = math.min(minY, p.y);
-        maxY = math.max(maxY, p.y);
-      }
-    }
-
-    final rangeX = maxX - minX;
-    final rangeY = maxY - minY;
-    if (rangeX == 0 || rangeY == 0) return;
-
-    // Scale to fit within the available size with padding
-    const padding = 4.0;
-    final drawW = size.width - padding * 2;
-    final drawH = size.height - padding * 2;
-    final scale = math.min(drawW / rangeX, drawH / rangeY);
-    final offsetX = padding + (drawW - rangeX * scale) / 2;
-    final offsetY = padding + (drawH - rangeY * scale) / 2;
-
-    final path = Path();
-    for (final poly in polygons) {
-      for (var i = 0; i < poly.length; i++) {
-        final x = offsetX + (poly[i].x - minX) * scale;
-        // Flip Y: higher latitude = higher on screen
-        final y = offsetY + (maxY - poly[i].y) * scale;
-        if (i == 0) {
-          path.moveTo(x, y);
-        } else {
-          path.lineTo(x, y);
-        }
-      }
-      path.close();
-    }
-
-    // Filled silhouette
-    canvas.drawPath(
-      path,
-      Paint()..color = FlitColors.landMass.withOpacity(0.5),
-    );
-    // Border stroke
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = FlitColors.accent
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _CountryOutlinePainter oldDelegate) => false;
 }
 
 /// Horizontal fuel gauge bar displayed above the bottom controls.

@@ -5,11 +5,14 @@ import 'package:flag/flag.dart';
 import 'package:flame/components.dart' show Vector2;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/haptics.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/daily_result.dart';
+import '../../data/providers/account_provider.dart';
 import '../../game/map/country_data.dart';
 import '../../game/quiz/fuzzy_match.dart';
 import '../../game/triangulation/daily_triangulation.dart';
@@ -20,11 +23,12 @@ import 'widgets/triangulation_compass.dart';
 
 /// The Triangulation gameplay screen: compass + guess input, round results
 /// on a map, and a final summary with spoiler-free share text.
-class TriangulationGameScreen extends StatefulWidget {
+class TriangulationGameScreen extends ConsumerStatefulWidget {
   const TriangulationGameScreen({
     super.key,
     required this.config,
     this.daily,
+    this.coinReward = 0,
   });
 
   final TriangulationConfig config;
@@ -33,8 +37,11 @@ class TriangulationGameScreen extends StatefulWidget {
   /// header and records completion so the puzzle can't be replayed.
   final DailyTriangulation? daily;
 
+  /// Coins awarded for completing the daily (0 for free play).
+  final int coinReward;
+
   @override
-  State<TriangulationGameScreen> createState() =>
+  ConsumerState<TriangulationGameScreen> createState() =>
       _TriangulationGameScreenState();
 }
 
@@ -51,7 +58,8 @@ class _GuessCandidate {
   final bool viaCapital;
 }
 
-class _TriangulationGameScreenState extends State<TriangulationGameScreen> {
+class _TriangulationGameScreenState
+    extends ConsumerState<TriangulationGameScreen> {
   late final TriangulationSession _session;
   late final FuzzyMatcher _countryMatcher;
   FuzzyMatcher? _capitalMatcher;
@@ -177,6 +185,11 @@ class _TriangulationGameScreenState extends State<TriangulationGameScreen> {
       elapsedMs: _stopwatch.elapsedMilliseconds,
     );
     _inputController.clear();
+    if (guess.isCorrect) {
+      hapticSuccess();
+    } else {
+      hapticLight();
+    }
     setState(() {
       _feedback = guess.isCorrect
           ? null
@@ -219,6 +232,25 @@ class _TriangulationGameScreenState extends State<TriangulationGameScreen> {
       'daily_triangulation_score_${daily.dateKey}',
       _session.totalScore,
     );
+    // Server-side parity with the other dailies: persist the score row
+    // (region 'daily_triangulation') and award the completion coins.
+    // Solving at least one round counts as completing the daily.
+    await ref.read(accountProvider.notifier).recordGameCompletion(
+          elapsed: Duration(milliseconds: _session.totalTimeMs),
+          score: _session.totalScore,
+          roundsCompleted: _session.solvedRounds,
+          coinReward: _session.solvedRounds > 0 ? widget.coinReward : 0,
+          region: 'daily_triangulation',
+          roundEmojis: _session.rounds
+              .map(
+                (r) =>
+                    r.wrongGuesses
+                        .map((g) => proximityEmoji(g.distanceKm))
+                        .join() +
+                    (r.solved ? '✅' : '❌'),
+              )
+              .join(' '),
+        );
   }
 
   String get _shareText => buildTriangulationShareText(
@@ -235,6 +267,7 @@ class _TriangulationGameScreenState extends State<TriangulationGameScreen> {
         shareText: _shareText,
         isDaily: widget.daily != null,
         isCapitalTarget: _isCapitalTarget,
+        coinsEarned: _session.solvedRounds > 0 ? widget.coinReward : 0,
       );
     } else if (_showingRoundResult) {
       body = _RoundResultView(
@@ -840,12 +873,14 @@ class _SummaryView extends StatelessWidget {
     required this.shareText,
     required this.isDaily,
     required this.isCapitalTarget,
+    this.coinsEarned = 0,
   });
 
   final TriangulationSession session;
   final String shareText;
   final bool isDaily;
   final bool isCapitalTarget;
+  final int coinsEarned;
 
   @override
   Widget build(BuildContext context) {
@@ -887,6 +922,28 @@ class _SummaryView extends StatelessWidget {
                     fontSize: 13,
                   ),
                 ),
+                if (coinsEarned > 0) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.monetization_on_rounded,
+                        color: FlitColors.gold,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '+$coinsEarned coins',
+                        style: const TextStyle(
+                          color: FlitColors.gold,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

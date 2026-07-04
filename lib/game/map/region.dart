@@ -227,8 +227,13 @@ abstract class RegionalData {
   }
 
   static List<RegionalArea> _countriesForCodes(Set<String> codes) {
+    // Honour the global exclusion list: territories the world modes filter
+    // out (too obscure / flag renders as the parent country's) must not
+    // resurface as playable areas in regional quizzes either.
     return CountryData.countries
-        .where((c) => codes.contains(c.code))
+        .where((c) =>
+            codes.contains(c.code) &&
+            !CountryData.excludedTerritories.contains(c.code))
         .map(
           (c) => RegionalArea(
             code: c.code,
