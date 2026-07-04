@@ -93,6 +93,10 @@ class TriangulationRoundState {
   final List<TriangulationGuess> guesses = [];
   bool solved = false;
   bool expired = false;
+
+  /// Whether the distance hint (reveal clue distances) was bought this
+  /// round. Costs [triDistanceHintPenalty] at scoring time.
+  bool hintUsed = false;
   int elapsedMs = 0;
   int score = 0;
 
@@ -142,6 +146,14 @@ class TriangulationSession {
 
   int get guessesRemaining =>
       config.guessesPerRound - currentRound.guesses.length;
+
+  /// Buy the distance hint for the current round: the compass reveals how
+  /// far each starting clue is from the hidden target. One per round;
+  /// charged in scoring. Wrong-guess distances are always free.
+  void useDistanceHint() {
+    if (currentRound.isOver) return;
+    currentRound.hintUsed = true;
+  }
 
   /// Submit a guess for the current round. [countryCode] must be an ISO
   /// code resolved by the input matcher; [viaCapital] records whether the
@@ -204,6 +216,7 @@ class TriangulationSession {
         timeMs: state.elapsedMs,
         wrongGuessPenalties: state.wrongGuesses.map((g) => g.penalty).toList(),
         targetCountryCode: round.targetCountryCode,
+        hintUsed: state.hintUsed,
       );
     }
     return guess;
