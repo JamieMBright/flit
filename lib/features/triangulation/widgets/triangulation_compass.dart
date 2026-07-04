@@ -13,12 +13,15 @@ import 'compass_painter.dart';
 
 /// The Triangulation compass: mystery circle in the centre, one arrow per
 /// clue location at its true bearing from the hidden capital, and a dashed
-/// red arrow per wrong guess. Each arrow tip carries an info box holding
-/// all enabled clue visuals and labels for that location.
+/// red arrow per wrong guess. Each arrow carries an info box holding all
+/// enabled clue visuals and labels for that location.
 ///
-/// Sized by its parent; always renders square via [AspectRatio]. All
-/// placement is fractional (no absolute positioning) so it scales across
-/// phone/tablet/web.
+/// Arrows always point at the true bearing. Info boxes are laid out by an
+/// iterative rectangle-collision pass that keeps every box outside the
+/// arrow zone and clear of its neighbours; a thin leader line ties each
+/// box back to its arrow tip. Sized by its parent; always renders square
+/// via [AspectRatio]. All placement is fractional (no absolute positioning)
+/// so it scales across phone/tablet/web.
 class TriangulationCompass extends StatelessWidget {
   const TriangulationCompass({
     super.key,
@@ -36,7 +39,7 @@ class TriangulationCompass extends StatelessWidget {
   final String centerLabel;
 
   static const double _circleFraction = 0.15;
-  static const double _arrowEndFraction = 0.30;
+  static const double _arrowEndFraction = 0.28;
 
   @override
   Widget build(BuildContext context) {
@@ -46,33 +49,30 @@ class TriangulationCompass extends StatelessWidget {
         builder: (context, constraints) {
           final side = math.min(constraints.maxWidth, constraints.maxHeight);
           final center = Offset(side / 2, side / 2);
+          final arrowEnd = side * _arrowEndFraction;
 
-          final markers = <_MarkerLayout>[
-            for (final clue in clues)
-              _MarkerLayout(
-                bearingDeg: clue.bearingFromTargetDeg,
-                isGuess: false,
-                clue: clue,
-              ),
-            for (final guess in wrongGuesses)
-              _MarkerLayout(
-                bearingDeg: guess.bearingFromTargetDeg,
-                isGuess: true,
-                guess: guess,
-              ),
+          final markers = <_MarkerContent>[
+            for (final clue in clues) _clueContent(clue),
+            for (final guess in wrongGuesses) _guessContent(guess),
           ];
-          _relaxAngles(markers);
 
-          final boxWidth = (side * 0.24).clamp(72.0, 116.0);
-          // Anchor boxes past the arrow tips but inside the square.
-          final boxRadius = math.min(
-            side * (_arrowEndFraction + 0.11),
-            side / 2 - boxWidth * 0.35,
+          // Shrink boxes when the compass gets crowded so a full game
+          // (6 clue markers + 5 guesses) still fits.
+          var boxWidth = (side * 0.24).clamp(72.0, 116.0);
+          if (markers.length > 8) boxWidth *= 0.88;
+
+          final sizes = [
+            for (final m in markers) _estimateBoxSize(m, boxWidth),
+          ];
+          final positions = _layoutBoxes(
+            markers: markers,
+            sizes: sizes,
+            side: side,
+            center: center,
+            // Boxes stay wholly outside the arrow zone, so no box can
+            // cover another marker's arrow shaft.
+            minRadius: arrowEnd + 6,
           );
-          // Neighbours still crowded after angular relaxation alternate
-          // onto an inner ring (just clear of the rose) so their boxes
-          // stack radially, not on top of each other.
-          final innerBoxRadius = side * (_circleFraction + 0.135);
 
           return Stack(
             clipBehavior: Clip.none,
@@ -90,6 +90,25 @@ class TriangulationCompass extends StatelessWidget {
                     ],
                     circleRadiusFraction: _circleFraction,
                     arrowEndFraction: _arrowEndFraction,
+                  ),
+                ),
+              ),
+              // Leader lines from each arrow tip to its (possibly pushed
+              // away) box, drawn beneath the boxes so they visually stop
+              // at the box edge.
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _LeaderLinePainter(
+                    segments: [
+                      for (var i = 0; i < markers.length; i++)
+                        (
+                          from: center +
+                              bearingToDirection(markers[i].bearingDeg) *
+                                  arrowEnd,
+                          to: positions[i],
+                          isGuess: markers[i].isGuess,
+                        ),
+                    ],
                   ),
                 ),
               ),
@@ -122,12 +141,21 @@ class TriangulationCompass extends StatelessWidget {
                   ],
                 ),
               ),
-              for (final marker in markers)
-                _positionedBox(
-                  marker,
-                  center,
-                  marker.ring == 0 ? boxRadius : innerBoxRadius,
-                  boxWidth,
+              for (var i = 0; i < markers.length; i++)
+                Positioned(
+                  left: positions[i].dx - boxWidth / 2,
+                  top: positions[i].dy - sizes[i].height / 2,
+                  width: boxWidth,
+                  child: _InfoBoxFrame(
+                    borderColor: markers[i].isGuess
+                        ? FlitColors.error
+                        : FlitColors.cardBorder,
+                    textColor: markers[i].isGuess
+                        ? FlitColors.error
+                        : FlitColors.textPrimary,
+                    visuals: markers[i].visuals,
+                    lines: markers[i].lines,
+                  ),
                 ),
             ],
           );
@@ -136,121 +164,16 @@ class TriangulationCompass extends StatelessWidget {
     );
   }
 
-  Widget _positionedBox(
-    _MarkerLayout marker,
-    Offset center,
-    double radius,
-    double boxWidth,
-  ) {
-    // Boxes sit at the (possibly relaxed) display angle; the arrow itself
-    // always points at the true bearing.
-    final dir = bearingToDirection(marker.displayAngleDeg);
-    final anchor = center + dir * radius;
-    return Positioned(
-      left: anchor.dx - boxWidth / 2,
-      top: anchor.dy,
-      width: boxWidth,
-      // Centre the box on its anchor regardless of its intrinsic height.
-      child: FractionalTranslation(
-        translation: const Offset(0, -0.5),
-        child: marker.isGuess
-            ? _GuessInfoBox(guess: marker.guess!)
-            : _ClueInfoBox(
-                clue: marker.clue!,
-                clueTypes: clueTypes,
-                labelTypes: labelTypes,
-              ),
-      ),
-    );
-  }
+  // ── Marker content ─────────────────────────────────────────────────────
 
-  /// Spreads markers apart so info boxes don't overlap: iteratively pushes
-  /// neighbours to a minimum angular separation. Only the box display
-  /// angles move (capped at ±10° so each box stays attached to its arrow
-  /// tip); the arrows themselves always point at the true bearing.
-  static void _relaxAngles(List<_MarkerLayout> markers) {
-    if (markers.length < 2) return;
-    // Minimum separation shrinks as the compass gets crowded.
-    final minGap = math.min(40.0, 320.0 / markers.length);
-    const maxShift = 10.0; // never move an arrow more than this off-true
-    markers.sort((a, b) => a.displayAngleDeg.compareTo(b.displayAngleDeg));
-    for (var pass = 0; pass < 6; pass++) {
-      var moved = false;
-      for (var i = 0; i < markers.length; i++) {
-        final a = markers[i];
-        final b = markers[(i + 1) % markers.length];
-        var gap = b.displayAngleDeg - a.displayAngleDeg;
-        if (i == markers.length - 1) gap += 360;
-        if (gap < minGap) {
-          final push = (minGap - gap) / 2;
-          a.displayAngleDeg =
-              _clampShift(a.bearingDeg, a.displayAngleDeg - push, maxShift);
-          b.displayAngleDeg =
-              _clampShift(b.bearingDeg, b.displayAngleDeg + push, maxShift);
-          moved = true;
-        }
-      }
-      if (!moved) break;
-    }
-    // Any pair still closer than the minimum gap after relaxation gets
-    // staggered across two rings so the boxes never fully stack.
-    for (var i = 1; i < markers.length; i++) {
-      final gap = markers[i].displayAngleDeg - markers[i - 1].displayAngleDeg;
-      if (gap < minGap * 0.9) {
-        markers[i].ring = markers[i - 1].ring == 0 ? 1 : 0;
-      }
-    }
-  }
-
-  static double _clampShift(double trueDeg, double proposed, double max) {
-    var delta = proposed - trueDeg;
-    while (delta > 180) {
-      delta -= 360;
-    }
-    while (delta < -180) {
-      delta += 360;
-    }
-    return trueDeg + delta.clamp(-max, max);
-  }
-}
-
-class _MarkerLayout {
-  _MarkerLayout({
-    required this.bearingDeg,
-    required this.isGuess,
-    this.clue,
-    this.guess,
-  }) : displayAngleDeg = bearingDeg;
-
-  final double bearingDeg;
-  final bool isGuess;
-  final TriangulationClue? clue;
-  final TriangulationGuess? guess;
-  double displayAngleDeg;
-
-  /// 0 = outer ring (default), 1 = inner ring for crowded neighbours.
-  int ring = 0;
-}
-
-/// Info box for a starting clue: stacks every enabled visual and label.
-class _ClueInfoBox extends StatelessWidget {
-  const _ClueInfoBox({
-    required this.clue,
-    required this.clueTypes,
-    required this.labelTypes,
-  });
-
-  final TriangulationClue clue;
-  final Set<ClueType> clueTypes;
-  final Set<TriLabel> labelTypes;
-
-  @override
-  Widget build(BuildContext context) {
+  _MarkerContent _clueContent(TriangulationClue clue) {
     final visuals = <Widget>[];
+    var hasOutline = false;
     if (clueTypes.contains(ClueType.flag)) {
       visuals.add(_MarkerFlag(code: clue.countryCode));
     }
     if (clueTypes.contains(ClueType.outline)) {
+      hasOutline = true;
       final polygons =
           CountryData.getCountry(clue.countryCode)?.polygons ?? const [];
       visuals.add(
@@ -290,35 +213,200 @@ class _ClueInfoBox extends StatelessWidget {
       }
     }
 
-    return _InfoBoxFrame(
-      borderColor: FlitColors.cardBorder,
-      textColor: FlitColors.textPrimary,
+    return _MarkerContent(
+      bearingDeg: clue.bearingFromTargetDeg,
+      isGuess: false,
       visuals: visuals,
+      hasFlag: clueTypes.contains(ClueType.flag),
+      hasOutline: hasOutline,
       lines: lines,
     );
   }
+
+  /// Wrong guess: red-tinted, flag + guessed name only (no distance —
+  /// bearing plus distance would give the answer away).
+  _MarkerContent _guessContent(TriangulationGuess guess) => _MarkerContent(
+        bearingDeg: guess.bearingFromTargetDeg,
+        isGuess: true,
+        visuals: [_MarkerFlag(code: guess.countryCode)],
+        hasFlag: true,
+        hasOutline: false,
+        lines: [
+          if (guess.viaCapital && guess.capitalName.isNotEmpty)
+            guess.capitalName
+          else
+            guess.countryName,
+        ],
+      );
+
+  // ── Layout ─────────────────────────────────────────────────────────────
+
+  /// Estimated rendered size of a marker box, mirroring [_InfoBoxFrame]'s
+  /// paddings and text metrics. Kept deliberately slightly generous so the
+  /// collision layout leaves breathing room.
+  Size _estimateBoxSize(_MarkerContent marker, double boxWidth) {
+    final innerWidth = boxWidth - 12; // horizontal padding
+    var height = 10.0; // vertical padding
+    if (marker.visuals.isNotEmpty) {
+      height += marker.hasOutline ? 30 : 22;
+      // Flag + outline may wrap to two visual rows on narrow boxes.
+      if (marker.hasFlag && marker.hasOutline && innerWidth < 78) {
+        height += 24;
+      }
+    }
+    for (final line in marker.lines) {
+      const charWidth = 6.2; // ~10.5px semi-bold
+      final rows = ((line.length * charWidth) / innerWidth).ceil().clamp(1, 2);
+      height += rows * 13.0 + 2;
+    }
+    return Size(boxWidth, height);
+  }
+
+  /// Iterative rectangle-collision layout. Each box starts at its true
+  /// bearing just past the arrow tip, then boxes push each other apart,
+  /// stay outside [minRadius] from the centre (the arrow zone), and are
+  /// softly kept inside the square. Deterministic — no randomness.
+  static List<Offset> _layoutBoxes({
+    required List<_MarkerContent> markers,
+    required List<Size> sizes,
+    required double side,
+    required Offset center,
+    required double minRadius,
+  }) {
+    const margin = 5.0;
+    final positions = <Offset>[
+      for (var i = 0; i < markers.length; i++)
+        center +
+            bearingToDirection(markers[i].bearingDeg) *
+                (minRadius + sizes[i].height / 2 + 4),
+    ];
+
+    for (var iter = 0; iter < 80; iter++) {
+      var moved = false;
+
+      // Pairwise separation along the axis of least penetration.
+      for (var i = 0; i < positions.length; i++) {
+        for (var j = i + 1; j < positions.length; j++) {
+          final dx = positions[j].dx - positions[i].dx;
+          final dy = positions[j].dy - positions[i].dy;
+          final overlapX =
+              (sizes[i].width + sizes[j].width) / 2 + margin - dx.abs();
+          final overlapY =
+              (sizes[i].height + sizes[j].height) / 2 + margin - dy.abs();
+          if (overlapX <= 0 || overlapY <= 0) continue;
+          moved = true;
+          if (overlapX < overlapY) {
+            final push = overlapX / 2 * (dx >= 0 ? 1 : -1);
+            positions[i] -= Offset(push, 0);
+            positions[j] += Offset(push, 0);
+          } else {
+            // On exact ties (identical centres) push apart vertically by
+            // index order so the pass stays deterministic.
+            final sign = dy != 0 ? (dy > 0 ? 1 : -1) : 1;
+            final push = overlapY / 2 * sign;
+            positions[i] -= Offset(0, push);
+            positions[j] += Offset(0, push);
+          }
+        }
+      }
+
+      for (var i = 0; i < positions.length; i++) {
+        // Keep the whole box outside the arrow zone: the rectangle's
+        // nearest point to the centre must be at least minRadius away.
+        final halfW = sizes[i].width / 2;
+        final halfH = sizes[i].height / 2;
+        final nearest = Offset(
+          center.dx.clamp(positions[i].dx - halfW, positions[i].dx + halfW),
+          center.dy.clamp(positions[i].dy - halfH, positions[i].dy + halfH),
+        );
+        final delta = nearest - center;
+        final dist = delta.distance;
+        if (dist < minRadius) {
+          moved = true;
+          final dir = positions[i] - center;
+          final outward = dir.distance > 0.01
+              ? dir / dir.distance
+              : bearingToDirection(markers[i].bearingDeg);
+          positions[i] += outward * (minRadius - dist + 1);
+        }
+
+        // Soft bounds: prefer staying inside the square, but allow a small
+        // overflow (the Stack doesn't clip) rather than re-overlapping.
+        final slack = side * 0.05;
+        final minX = halfW - slack;
+        final maxX = side - halfW + slack;
+        final minY = halfH - slack;
+        final maxY = side - halfH + slack;
+        final clamped = Offset(
+          positions[i].dx.clamp(minX, maxX),
+          positions[i].dy.clamp(minY, maxY),
+        );
+        if (clamped != positions[i]) {
+          moved = true;
+          positions[i] = clamped;
+        }
+      }
+
+      if (!moved) break;
+    }
+    return positions;
+  }
 }
 
-/// Info box for a wrong guess: red-tinted, flag + guessed name only (no
-/// distance — bearing plus distance would give the answer away).
-class _GuessInfoBox extends StatelessWidget {
-  const _GuessInfoBox({required this.guess});
+/// Resolved content + true bearing for one compass marker.
+class _MarkerContent {
+  const _MarkerContent({
+    required this.bearingDeg,
+    required this.isGuess,
+    required this.visuals,
+    required this.hasFlag,
+    required this.hasOutline,
+    required this.lines,
+  });
 
-  final TriangulationGuess guess;
+  final double bearingDeg;
+  final bool isGuess;
+  final List<Widget> visuals;
+  final bool hasFlag;
+  final bool hasOutline;
+  final List<String> lines;
+}
+
+/// Thin lines tying each arrow tip to its info box (drawn beneath the
+/// boxes, so they appear to stop at the box edge).
+class _LeaderLinePainter extends CustomPainter {
+  _LeaderLinePainter({required this.segments});
+
+  final List<({Offset from, Offset to, bool isGuess})> segments;
 
   @override
-  Widget build(BuildContext context) {
-    return _InfoBoxFrame(
-      borderColor: FlitColors.error,
-      textColor: FlitColors.error,
-      visuals: [_MarkerFlag(code: guess.countryCode)],
-      lines: [
-        if (guess.viaCapital && guess.capitalName.isNotEmpty)
-          guess.capitalName
-        else
-          guess.countryName,
-      ],
-    );
+  void paint(Canvas canvas, Size size) {
+    for (final seg in segments) {
+      if ((seg.to - seg.from).distance < 10) continue;
+      canvas.drawLine(
+        seg.from,
+        seg.to,
+        Paint()
+          ..color = (seg.isGuess ? FlitColors.error : FlitColors.textSecondary)
+              .withOpacity(0.45)
+          ..strokeWidth = 1.2,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_LeaderLinePainter old) =>
+      segments.length != old.segments.length ||
+      !_segmentsEqual(segments, old.segments);
+
+  static bool _segmentsEqual(
+    List<({Offset from, Offset to, bool isGuess})> a,
+    List<({Offset from, Offset to, bool isGuess})> b,
+  ) {
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 }
 
