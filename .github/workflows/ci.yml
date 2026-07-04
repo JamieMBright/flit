@@ -1,5 +1,10 @@
 name: CI & Deploy
 
+# FOOTGUN: GitHub natively skips push-triggered workflows when the skip
+# marker ('[skip ci]' and friends) appears ANYWHERE in the head commit
+# message — body included. A squash-merge whose PR description merely
+# *mentions* the marker will silently skip the whole deploy. Never quote
+# the literal marker in PR titles or bodies.
 on:
   push:
     branches: [main]
