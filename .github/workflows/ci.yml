@@ -5,6 +5,9 @@ name: CI & Deploy
 # message — body included. A squash-merge whose PR description merely
 # *mentions* the marker will silently skip the whole deploy. Never quote
 # the literal marker in PR titles or bodies.
+#
+# Pages deploys occasionally fail with a transient "Deployment failed,
+# try again later" — tests stay green; just re-run by pushing to main.
 on:
   push:
     branches: [main]
