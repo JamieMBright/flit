@@ -203,5 +203,7 @@ jobs:
           fi
 
           TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
-          git commit -m "chore: process critical errors and purge logs (${TIMESTAMP})"
+          # [skip ci]: log-only commits must not trigger (and via
+          # cancel-in-progress, kill) CI & Deploy runs.
+          git commit -m "chore: process critical errors and purge logs (${TIMESTAMP}) [skip ci]"
           git push
