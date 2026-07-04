@@ -28,6 +28,8 @@ import '../profile/profile_screen.dart';
 import '../quiz/daily_briefing_screen.dart';
 import '../quiz/flight_school_screen.dart';
 import '../quiz/uncharted_setup_screen.dart';
+import '../triangulation/daily_triangulation_screen.dart';
+import '../triangulation/triangulation_setup_screen.dart';
 import '../shop/shop_screen.dart';
 import '../campaign/campaign_screen.dart';
 import '../../game/tutorial/mode_requirements.dart';
@@ -420,6 +422,58 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // ── MISSION BOARD — daily challenges, same for all pilots ──
+              const _SectionLabel(
+                icon: Icons.push_pin_rounded,
+                label: 'MISSION BOARD',
+              ),
+              const SizedBox(height: 12),
+              _GameModeCard(
+                title: 'Daily Triangulation',
+                subtitle: 'Track the hidden capital by its bearings',
+                icon: Icons.explore_rounded,
+                isHighlighted: true,
+                isRedHighlighted: true,
+                isLocked: _isLocked('daily_triangulation'),
+                unlockHint: _lockHint('daily_triangulation'),
+                onTap: () => _closeSheetAndNavigate(
+                  ctx,
+                  const DailyTriangulationScreen(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (_dailyScrambleEnabled) ...[
+                _GameModeCard(
+                  title: 'Daily Scramble',
+                  subtitle: "Today's challenge — compete for glory",
+                  icon: Icons.today_rounded,
+                  isHighlighted: true,
+                  isRedHighlighted: true,
+                  isLocked: _isLocked('daily_challenge'),
+                  unlockHint: _lockHint('daily_challenge'),
+                  onTap: () => _closeSheetAndNavigate(
+                    ctx,
+                    const DailyChallengeScreen(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+              _GameModeCard(
+                title: 'Daily Briefing',
+                subtitle: 'Daily quiz challenge — same for all pilots',
+                icon: Icons.assignment_rounded,
+                isHighlighted: true,
+                isRedHighlighted: true,
+                isLocked: _isLocked('daily_briefing'),
+                unlockHint: _lockHint('daily_briefing'),
+                onTap: () => _closeSheetAndNavigate(
+                  ctx,
+                  const DailyBriefingScreen(),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
               // ── FLIGHT DECK — globe & flying modes ──
               const _SectionLabel(
                 icon: Icons.flight_takeoff_rounded,
@@ -438,23 +492,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
               ),
               const SizedBox(height: 10),
-              // Daily modes in red
-              if (_dailyScrambleEnabled) ...[
-                _GameModeCard(
-                  title: 'Daily Scramble',
-                  subtitle: "Today's challenge — compete for glory",
-                  icon: Icons.today_rounded,
-                  isHighlighted: true,
-                  isRedHighlighted: true,
-                  isLocked: _isLocked('daily_challenge'),
-                  unlockHint: _lockHint('daily_challenge'),
-                  onTap: () => _closeSheetAndNavigate(
-                    ctx,
-                    const DailyChallengeScreen(),
-                  ),
-                ),
-                const SizedBox(height: 10),
-              ],
               _GameModeCard(
                 title: 'Free Flight',
                 subtitle: 'Explore the world at your own pace',
@@ -506,16 +543,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
               const SizedBox(height: 12),
               _GameModeCard(
-                title: 'Daily Briefing',
-                subtitle: 'Daily quiz challenge — same for all pilots',
-                icon: Icons.assignment_rounded,
-                isHighlighted: true,
-                isRedHighlighted: true,
-                isLocked: _isLocked('daily_briefing'),
-                unlockHint: _lockHint('daily_briefing'),
+                title: 'Triangulation',
+                subtitle: 'Hunt hidden capitals by compass bearing',
+                icon: Icons.explore,
                 onTap: () => _closeSheetAndNavigate(
                   ctx,
-                  const DailyBriefingScreen(),
+                  const TriangulationSetupScreen(),
                 ),
               ),
               const SizedBox(height: 10),

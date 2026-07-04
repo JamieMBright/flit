@@ -1445,15 +1445,7 @@ class FlitGame extends FlameGame
     }
 
     // Compute initial bearing from plane to waymarker (great-circle).
-    final lat1 = _worldPosition.y * deg2rad;
-    final lng1 = _worldPosition.x * deg2rad;
-    final lat2 = _waymarker!.y * deg2rad;
-    final lng2 = _waymarker!.x * deg2rad;
-    final dLng = lng2 - lng1;
-
-    final y = sin(dLng) * cos(lat2);
-    final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLng);
-    final targetBearing = atan2(y, x);
+    final targetBearing = initialBearingRad(_worldPosition, _waymarker!);
 
     final currentBearing = _heading + pi / 2;
 
@@ -1811,15 +1803,5 @@ class FlitGame extends FlameGame
   }
 
   /// Great-circle angular distance between two (lng, lat) points, in degrees.
-  double _greatCircleDistDeg(Vector2 a, Vector2 b) {
-    final lat1 = a.y * deg2rad;
-    final lat2 = b.y * deg2rad;
-    final dLat = (b.y - a.y) * deg2rad;
-    final dLng = (b.x - a.x) * deg2rad;
-
-    final h = sin(dLat / 2) * sin(dLat / 2) +
-        cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
-    final c = 2 * atan2(sqrt(h), sqrt(1 - h));
-    return c * rad2deg;
-  }
+  double _greatCircleDistDeg(Vector2 a, Vector2 b) => greatCircleDistDeg(a, b);
 }

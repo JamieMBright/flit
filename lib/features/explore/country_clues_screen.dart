@@ -1,11 +1,9 @@
-import 'dart:math' as math;
-
 import 'package:flag/flag.dart';
-import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/country_outline_painter.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/services/clue_report_service.dart';
 import '../../game/clues/clue_types.dart';
@@ -1321,80 +1319,24 @@ class _FlagWidget extends StatelessWidget {
 
 enum _OutlineQuality { good, fair, poor }
 
-class _OutlinePainter extends CustomPainter {
-  _OutlinePainter(this.polygons, {this.quality = _OutlineQuality.good});
-
-  final List<List<Vector2>> polygons;
-  final _OutlineQuality quality;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (polygons.isEmpty || size.isEmpty) return;
-
-    final firstPt = polygons.first.first;
-    var minX = firstPt.x;
-    var maxX = firstPt.x;
-    var minY = firstPt.y;
-    var maxY = firstPt.y;
-    for (final poly in polygons) {
-      for (final p in poly) {
-        minX = math.min(minX, p.x);
-        maxX = math.max(maxX, p.x);
-        minY = math.min(minY, p.y);
-        maxY = math.max(maxY, p.y);
-      }
-    }
-
-    final rangeX = maxX - minX;
-    final rangeY = maxY - minY;
-    if (rangeX == 0 || rangeY == 0) return;
-
-    const padding = 2.0;
-    final drawW = size.width - padding * 2;
-    final drawH = size.height - padding * 2;
-    final scale = math.min(drawW / rangeX, drawH / rangeY);
-    final offsetX = padding + (drawW - rangeX * scale) / 2;
-    final offsetY = padding + (drawH - rangeY * scale) / 2;
-
-    final path = Path();
-    for (final poly in polygons) {
-      for (var i = 0; i < poly.length; i++) {
-        final x = offsetX + (poly[i].x - minX) * scale;
-        final y = offsetY + (maxY - poly[i].y) * scale;
-        if (i == 0) {
-          path.moveTo(x, y);
-        } else {
-          path.lineTo(x, y);
-        }
-      }
-      path.close();
-    }
-
-    final fillColor = quality == _OutlineQuality.good
-        ? FlitColors.landMass.withOpacity(0.5)
-        : quality == _OutlineQuality.fair
-            ? FlitColors.warning.withOpacity(0.25)
-            : FlitColors.error.withOpacity(0.2);
-
-    final strokeColor = quality == _OutlineQuality.good
-        ? FlitColors.accent
-        : quality == _OutlineQuality.fair
-            ? FlitColors.warning
-            : FlitColors.error;
-
-    canvas.drawPath(path, Paint()..color = fillColor);
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = strokeColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_OutlinePainter old) =>
-      polygons != old.polygons || quality != old.quality;
+/// Thin wrapper mapping outline quality to colours; the actual silhouette
+/// drawing lives in the shared [CountryOutlinePainter].
+class _OutlinePainter extends CountryOutlinePainter {
+  _OutlinePainter(
+    super.polygons, {
+    _OutlineQuality quality = _OutlineQuality.good,
+  }) : super(
+          fillColor: quality == _OutlineQuality.good
+              ? FlitColors.landMass.withOpacity(0.5)
+              : quality == _OutlineQuality.fair
+                  ? FlitColors.warning.withOpacity(0.25)
+                  : FlitColors.error.withOpacity(0.2),
+          strokeColor: quality == _OutlineQuality.good
+              ? FlitColors.accent
+              : quality == _OutlineQuality.fair
+                  ? FlitColors.warning
+                  : FlitColors.error,
+        );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

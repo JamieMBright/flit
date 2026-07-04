@@ -49,6 +49,13 @@ const List<ModeRequirement> modeRequirements = [
   ModeRequirement(modeId: 'training_sortie', displayName: 'Training Sortie'),
   ModeRequirement(modeId: 'uncharted', displayName: 'Uncharted'),
   ModeRequirement(modeId: 'flight_school', displayName: 'Flight School'),
+  ModeRequirement(modeId: 'triangulation', displayName: 'Triangulation'),
+  ModeRequirement(
+    modeId: 'daily_triangulation',
+    displayName: 'Daily Triangulation',
+    requiredLevel: 3,
+    requiredMissionId: 'hint_strategy',
+  ),
   ModeRequirement(
     modeId: 'daily_briefing',
     displayName: 'Daily Briefing',
