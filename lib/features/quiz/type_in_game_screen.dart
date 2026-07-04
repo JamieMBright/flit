@@ -420,11 +420,21 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
 
                         const SizedBox(height: 16),
 
-                        // Feedback animation
-                        if (_showFeedback) _buildFeedback(),
+                        // Feedback animation. Keyed (with the input below)
+                        // because it toggles while the answer field is
+                        // focused — unkeyed, its removal would re-inflate
+                        // the TextField and dismiss the keyboard.
+                        if (_showFeedback)
+                          KeyedSubtree(
+                            key: const ValueKey('quiz-feedback'),
+                            child: _buildFeedback(),
+                          ),
 
                         // Text input
-                        _buildTextInput(),
+                        KeyedSubtree(
+                          key: const ValueKey('quiz-answer-input'),
+                          child: _buildTextInput(),
+                        ),
                         const SizedBox(height: 8),
 
                         // Action buttons
