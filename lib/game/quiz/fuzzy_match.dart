@@ -4,7 +4,6 @@
 /// an alias lookup table for common alternative names and misspellings.
 library;
 
-import '../data/country_aliases.dart';
 import 'alias_service.dart';
 
 /// Result of a fuzzy match attempt.
