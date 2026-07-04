@@ -115,6 +115,9 @@ class CompassPainter extends CustomPainter {
             color: FlitColors.textSecondary.withOpacity(0.7),
             fontSize: circleR * 0.16,
             fontWeight: FontWeight.w600,
+            // Roboto ships with MaterialApp on every platform; naming it
+            // keeps TextPainter output consistent (and real in goldens).
+            fontFamily: 'Roboto',
           ),
         ),
         textDirection: TextDirection.ltr,

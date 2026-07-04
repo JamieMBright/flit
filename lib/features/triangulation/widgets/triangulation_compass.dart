@@ -143,19 +143,28 @@ class TriangulationCompass extends StatelessWidget {
               ),
               for (var i = 0; i < markers.length; i++)
                 Positioned(
-                  left: positions[i].dx - boxWidth / 2,
+                  left: positions[i].dx - sizes[i].width / 2,
                   top: positions[i].dy - sizes[i].height / 2,
-                  width: boxWidth,
-                  child: _InfoBoxFrame(
-                    borderColor: markers[i].isGuess
-                        ? FlitColors.error
-                        : FlitColors.cardBorder,
-                    textColor: markers[i].isGuess
-                        ? FlitColors.error
-                        : FlitColors.textPrimary,
-                    visuals: markers[i].visuals,
-                    lines: markers[i].lines,
-                  ),
+                  width: sizes[i].width,
+                  // No text to hold → no card: just the bare visual(s) at
+                  // the arrow tip (e.g. flags-only expert mode).
+                  child: markers[i].lines.isEmpty
+                      ? Wrap(
+                          spacing: 4,
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: markers[i].visuals,
+                        )
+                      : _InfoBoxFrame(
+                          borderColor: markers[i].isGuess
+                              ? FlitColors.error
+                              : FlitColors.cardBorder,
+                          textColor: markers[i].isGuess
+                              ? FlitColors.error
+                              : FlitColors.textPrimary,
+                          visuals: markers[i].visuals,
+                          lines: markers[i].lines,
+                        ),
                 ),
             ],
           );
@@ -245,6 +254,15 @@ class TriangulationCompass extends StatelessWidget {
   /// paddings and text metrics. Kept deliberately slightly generous so the
   /// collision layout leaves breathing room.
   Size _estimateBoxSize(_MarkerContent marker, double boxWidth) {
+    // Markers with no text render frameless (bare visuals), so their size
+    // is just the visuals' footprint — the collision layout then packs
+    // them much tighter.
+    if (marker.lines.isEmpty) {
+      var width = 0.0;
+      if (marker.hasFlag) width += 33;
+      if (marker.hasOutline) width += 40 + (marker.hasFlag ? 4 : 0);
+      return Size(math.max(width, 24), marker.hasOutline ? 30 : 22);
+    }
     final innerWidth = boxWidth - 12; // horizontal padding
     var height = 10.0; // vertical padding
     if (marker.visuals.isNotEmpty) {
