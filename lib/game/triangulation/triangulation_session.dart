@@ -112,6 +112,7 @@ class TriangulationRoundState {
 class TriangulationSession {
   TriangulationSession(this.config) {
     final usedTargets = <String>{};
+    final usedAnchors = <String>{};
     for (var i = 0; i < config.rounds; i++) {
       final round = TriangulationRound.generate(
         seed: config.seed + i * 7919,
@@ -119,8 +120,10 @@ class TriangulationSession {
         markerCount: config.markerCount,
         requireStats: config.requiresStats,
         excludedTargetCodes: Set.unmodifiable(usedTargets),
+        excludedAnchorCodes: Set.unmodifiable(usedAnchors),
       );
       usedTargets.add(round.targetCountryCode);
+      usedAnchors.addAll(round.clues.map((c) => c.countryCode));
       rounds.add(TriangulationRoundState(round));
     }
   }

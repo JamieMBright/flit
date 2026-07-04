@@ -157,6 +157,22 @@ void main() {
       }
     });
 
+    test('clue anchors never repeat across rounds of one game', () {
+      // 5 rounds x 5 markers = 25 anchors — the pool comfortably covers
+      // this, so no marker country should appear in two rounds.
+      final session = TriangulationSession(
+        const TriangulationConfig(seed: 20260704, rounds: 5),
+      );
+      final seen = <String>{};
+      for (final state in session.rounds) {
+        for (final clue in state.round.clues) {
+          expect(seen.contains(clue.countryCode), isFalse,
+              reason: '${clue.countryCode} appeared in two rounds');
+          seen.add(clue.countryCode);
+        }
+      }
+    });
+
     test('rounds have distinct targets', () {
       final daily = DailyTriangulation.forDate(DateTime.utc(2026, 7, 4));
       final session = TriangulationSession(daily.toConfig());

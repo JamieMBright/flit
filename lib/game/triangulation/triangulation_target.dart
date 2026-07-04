@@ -139,13 +139,15 @@ class TriangulationRound {
   ///
   /// [requireStats] filters clue anchors to countries with leader/language
   /// stats so enabled labels always have text. [excludedTargetCodes] prevents
-  /// target repeats across a multi-round game.
+  /// target repeats and [excludedAnchorCodes] prevents clue markers from
+  /// reappearing across a multi-round game.
   factory TriangulationRound.generate({
     required int seed,
     required GameDifficulty difficulty,
     int markerCount = 5,
     bool requireStats = false,
     Set<String> excludedTargetCodes = const {},
+    Set<String> excludedAnchorCodes = const {},
   }) {
     final rng = Random(seed);
 
@@ -171,6 +173,11 @@ class TriangulationRound {
               (Clue.getAllCountryStats(c.code)['language'] ?? '').isNotEmpty)
           .toList();
     }
+    // Keep earlier rounds' markers out of this round — unless that would
+    // leave too few candidates, in which case reuse beats a broken round.
+    final fresh =
+        anchors.where((c) => !excludedAnchorCodes.contains(c.code)).toList();
+    if (fresh.length >= markerCount) anchors = fresh;
     anchors.shuffle(rng);
 
     // Greedily spread markers around the compass: prefer anchors whose
