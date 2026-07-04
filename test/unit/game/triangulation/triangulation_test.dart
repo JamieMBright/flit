@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flit/core/services/game_settings.dart';
 import 'package:flit/core/utils/math_utils.dart';
+import 'package:flit/game/clues/clue_types.dart';
 import 'package:flit/game/map/country_data.dart';
 import 'package:flit/game/triangulation/daily_triangulation.dart';
 import 'package:flit/game/triangulation/triangulation_scoring.dart';
@@ -58,15 +59,82 @@ void main() {
       final paris = Vector2(2.3522, 48.8566);
       expect(greatCircleKm(london, paris), closeTo(343, 15));
     });
+
+    test('rhumb bearing matches cardinal directions', () {
+      expect(rhumbBearingDeg(Vector2(0, 0), Vector2(0, 10)), closeTo(0, 0.01));
+      expect(rhumbBearingDeg(Vector2(0, 0), Vector2(10, 0)), closeTo(90, 0.01));
+      expect(
+        rhumbBearingDeg(Vector2(0, 10), Vector2(0, 0)),
+        closeTo(180, 0.01),
+      );
+      expect(
+        rhumbBearingDeg(Vector2(10, 0), Vector2(0, 0)),
+        closeTo(270, 0.01),
+      );
+    });
+
+    test('Colombo→Mexico City rhumb bearing reads west, not north', () {
+      // Great-circle initial bearing here crosses near the pole (~N),
+      // which broke map intuition in-game; the rhumb bearing is the
+      // flat-map direction players expect.
+      final colombo = Vector2(79.86, 6.93);
+      final mexicoCity = Vector2(-99.13, 19.43);
+      final rhumb = rhumbBearingDeg(colombo, mexicoCity);
+      expect(rhumb, greaterThan(250));
+      expect(rhumb, lessThan(300));
+      // Sanity: the great-circle bearing really is the unintuitive one.
+      final greatCircle = initialBearingDeg(colombo, mexicoCity);
+      expect(greatCircle < 45 || greatCircle > 315, isTrue);
+    });
   });
 
   group('daily determinism', () {
-    test('same date yields identical seed and theme', () {
+    test('same date yields identical seed, theme, target, difficulty', () {
       final a = DailyTriangulation.forDate(DateTime.utc(2026, 7, 4));
       final b = DailyTriangulation.forDate(DateTime.utc(2026, 7, 4));
       expect(a.seed, b.seed);
       expect(a.seed, 20260704);
       expect(a.theme.title, b.theme.title);
+      expect(a.theme.targetType, b.theme.targetType);
+      expect(a.difficulty, b.difficulty);
+      expect(a.difficultyPercent, b.difficultyPercent);
+      expect(a.difficultyPercent, inInclusiveRange(0, 100));
+      expect(a.difficultyLabelText, isNotEmpty);
+    });
+
+    test('label-free (expert) themes report higher difficulty', () {
+      final date = DateTime.utc(2026, 7, 4);
+      final base = DailyTriangulation.forDate(date);
+      const labelled = DailyTriangulationTheme(
+        title: 'T',
+        description: 'd',
+        targetType: TriTargetType.capital,
+        clueTypes: {ClueType.flag},
+        labelTypes: {TriLabel.capital},
+      );
+      const expert = DailyTriangulationTheme(
+        title: 'T',
+        description: 'd',
+        targetType: TriTargetType.capital,
+        clueTypes: {ClueType.flag},
+        labelTypes: {},
+      );
+      final withLabels = DailyTriangulation(
+        date: date,
+        seed: base.seed,
+        theme: labelled,
+        difficulty: GameDifficulty.normal,
+      );
+      final withoutLabels = DailyTriangulation(
+        date: date,
+        seed: base.seed,
+        theme: expert,
+        difficulty: GameDifficulty.normal,
+      );
+      expect(
+        withoutLabels.difficultyPercent,
+        greaterThan(withLabels.difficultyPercent),
+      );
     });
 
     test('same seed yields identical targets, clues, and bearings', () {
@@ -116,6 +184,14 @@ void main() {
         expect(clue.countryCode, isNot(round.targetCountryCode));
         expect(clue.bearingFromTargetDeg, inInclusiveRange(0, 360));
         expect(clue.distanceFromTargetKm, greaterThan(0));
+        // Arrows use flat-map (rhumb) bearings, not great-circle.
+        expect(
+          clue.bearingFromTargetDeg,
+          closeTo(
+            rhumbBearingDeg(round.targetCapitalLngLat, clue.capitalLngLat),
+            1e-9,
+          ),
+        );
       }
       expect(
         round.clues.map((c) => c.countryCode).toSet().length,
@@ -226,6 +302,34 @@ void main() {
       expect(session.currentRound.solved, isTrue);
       expect(session.currentRound.score, greaterThan(0));
       expect(session.isFinished, isTrue);
+    });
+
+    test('country-target days score full marks for the country name', () {
+      // Same seed, same timing: solving a capital-target game via the
+      // capital must equal solving a country-target game via the country
+      // (no ×0.7 discount on country days).
+      final capitalGame = TriangulationSession(
+        const TriangulationConfig(seed: 99, rounds: 1),
+      );
+      final countryGame = TriangulationSession(
+        const TriangulationConfig(
+          seed: 99,
+          rounds: 1,
+          targetType: TriTargetType.country,
+        ),
+      );
+      capitalGame.submitGuess(
+        capitalGame.currentRound.round.targetCountryCode,
+        viaCapital: true,
+        elapsedMs: 4000,
+      );
+      countryGame.submitGuess(
+        countryGame.currentRound.round.targetCountryCode,
+        viaCapital: false,
+        elapsedMs: 4000,
+      );
+      expect(countryGame.currentRound.score, capitalGame.currentRound.score);
+      expect(countryGame.currentRound.score, greaterThan(0));
     });
 
     test('wrong guesses add compass markers and expire after 5', () {

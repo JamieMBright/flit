@@ -54,6 +54,7 @@ const List<int> _markerOptions = [3, 4, 5, 6];
 class _TriangulationSetupScreenState extends State<TriangulationSetupScreen> {
   final Set<ClueType> _clueTypes = {ClueType.flag};
   final Set<TriLabel> _labelTypes = {TriLabel.capital};
+  TriTargetType _targetType = TriTargetType.capital;
   int _rounds = 3;
   int _markers = 5;
 
@@ -83,6 +84,7 @@ class _TriangulationSetupScreenState extends State<TriangulationSetupScreen> {
       clueTypes: Set.unmodifiable(_clueTypes),
       labelTypes: Set.unmodifiable(_labelTypes),
       difficulty: GameSettings.instance.difficulty,
+      targetType: _targetType,
     );
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
@@ -125,6 +127,10 @@ class _TriangulationSetupScreenState extends State<TriangulationSetupScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildHeader(),
+                      const SizedBox(height: 20),
+                      _sectionLabel('TARGET', Icons.my_location),
+                      const SizedBox(height: 10),
+                      _buildTargetSelector(),
                       const SizedBox(height: 20),
                       _sectionLabel('ROUNDS', Icons.repeat),
                       const SizedBox(height: 10),
@@ -250,6 +256,66 @@ class _TriangulationSetupScreenState extends State<TriangulationSetupScreen> {
             ),
           ),
         ],
+      );
+
+  Widget _buildTargetSelector() => Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: TriTargetType.values.map((type) {
+            final isSelected = _targetType == type;
+            return GestureDetector(
+              onTap: () => setState(() => _targetType = type),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? FlitColors.accent.withOpacity(0.2)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color:
+                        isSelected ? FlitColors.accent : FlitColors.cardBorder,
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      type == TriTargetType.capital
+                          ? Icons.location_city_rounded
+                          : Icons.public,
+                      size: 16,
+                      color:
+                          isSelected ? FlitColors.accent : FlitColors.textMuted,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      type.displayName,
+                      style: TextStyle(
+                        color: isSelected
+                            ? FlitColors.accent
+                            : FlitColors.textMuted,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
       );
 
   Widget _numberSelector(

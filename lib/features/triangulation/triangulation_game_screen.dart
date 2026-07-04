@@ -15,6 +15,7 @@ import '../../game/quiz/fuzzy_match.dart';
 import '../../game/triangulation/daily_triangulation.dart';
 import '../../game/triangulation/triangulation_session.dart';
 import '../../game/triangulation/triangulation_share.dart';
+import '../../game/triangulation/triangulation_target.dart';
 import 'widgets/triangulation_compass.dart';
 
 /// The Triangulation gameplay screen: compass + guess input, round results
@@ -53,8 +54,11 @@ class _GuessCandidate {
 class _TriangulationGameScreenState extends State<TriangulationGameScreen> {
   late final TriangulationSession _session;
   late final FuzzyMatcher _countryMatcher;
-  late final FuzzyMatcher _capitalMatcher;
+  FuzzyMatcher? _capitalMatcher;
   late final List<_GuessCandidate> _candidates;
+
+  bool get _isCapitalTarget =>
+      widget.config.targetType == TriTargetType.capital;
 
   final Stopwatch _stopwatch = Stopwatch();
   Timer? _ticker;
@@ -74,17 +78,22 @@ class _TriangulationGameScreenState extends State<TriangulationGameScreen> {
         .where((c) => CountryData.getCapital(c.code) != null)
         .toList();
     _countryMatcher = FuzzyMatcher({for (final c in eligible) c.code: c.name});
-    _capitalMatcher = FuzzyMatcher({
-      for (final c in eligible) c.code: CountryData.getCapital(c.code)!.name,
-    });
+    // On country-target days capitals are not answer candidates at all —
+    // only country names count.
+    if (_isCapitalTarget) {
+      _capitalMatcher = FuzzyMatcher({
+        for (final c in eligible) c.code: CountryData.getCapital(c.code)!.name,
+      });
+    }
     _candidates = [
       for (final c in eligible) ...[
         _GuessCandidate(code: c.code, display: c.name, viaCapital: false),
-        _GuessCandidate(
-          code: c.code,
-          display: CountryData.getCapital(c.code)!.name,
-          viaCapital: true,
-        ),
+        if (_isCapitalTarget)
+          _GuessCandidate(
+            code: c.code,
+            display: CountryData.getCapital(c.code)!.name,
+            viaCapital: true,
+          ),
       ],
     ];
 
@@ -127,9 +136,10 @@ class _TriangulationGameScreenState extends State<TriangulationGameScreen> {
   void _submitTyped(String input) {
     if (input.trim().isEmpty) return;
     // Prefer capital matches (full points), then country names; both
-    // matchers are typo-tolerant with alias support.
+    // matchers are typo-tolerant with alias support. On country-target
+    // days there is no capital matcher — only country names resolve.
     final capitalMatch =
-        _capitalMatcher.bestMatch(input, excludeCodes: _guessedCodes);
+        _capitalMatcher?.bestMatch(input, excludeCodes: _guessedCodes);
     final countryMatch =
         _countryMatcher.bestMatch(input, excludeCodes: _guessedCodes);
     _GuessCandidate? chosen;
@@ -149,7 +159,11 @@ class _TriangulationGameScreenState extends State<TriangulationGameScreen> {
       );
     }
     if (chosen == null) {
-      setState(() => _feedback = 'No country or capital matches "$input"');
+      setState(
+        () => _feedback = _isCapitalTarget
+            ? 'No country or capital matches "$input"'
+            : 'No country matches "$input"',
+      );
       return;
     }
     _submitCandidate(chosen);
@@ -220,11 +234,13 @@ class _TriangulationGameScreenState extends State<TriangulationGameScreen> {
         session: _session,
         shareText: _shareText,
         isDaily: widget.daily != null,
+        isCapitalTarget: _isCapitalTarget,
       );
     } else if (_showingRoundResult) {
       body = _RoundResultView(
         state: _session.currentRound,
         isLastRound: _session.isLastRound,
+        isCapitalTarget: _isCapitalTarget,
         onContinue: _continueFromResult,
       );
     } else {
@@ -270,10 +286,13 @@ class _TriangulationGameScreenState extends State<TriangulationGameScreen> {
                   wrongGuesses: state.wrongGuesses,
                   clueTypes: widget.config.clueTypes,
                   labelTypes: widget.config.labelTypes,
+                  centerLabel: _isCapitalTarget ? 'CAPITAL' : 'COUNTRY',
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Arrows point from the hidden capital toward each place',
+                  'Arrows point from the hidden '
+                  '${_isCapitalTarget ? 'capital' : 'country'} '
+                  'toward each place',
                   style: TextStyle(
                     color: FlitColors.textMuted.withOpacity(0.8),
                     fontSize: 11,
@@ -338,7 +357,9 @@ class _TriangulationGameScreenState extends State<TriangulationGameScreen> {
                   textInputAction: TextInputAction.send,
                   style: const TextStyle(color: FlitColors.textPrimary),
                   decoration: InputDecoration(
-                    hintText: 'Capital (full pts) or country (×0.7)…',
+                    hintText: _isCapitalTarget
+                        ? 'Capital (full pts) or country (×0.7)…'
+                        : 'Name the country…',
                     hintStyle: const TextStyle(
                       color: FlitColors.textMuted,
                       fontSize: 13,
@@ -476,11 +497,13 @@ class _RoundResultView extends StatelessWidget {
   const _RoundResultView({
     required this.state,
     required this.isLastRound,
+    required this.isCapitalTarget,
     required this.onContinue,
   });
 
   final TriangulationRoundState state;
   final bool isLastRound;
+  final bool isCapitalTarget;
   final VoidCallback onContinue;
 
   @override
@@ -522,8 +545,11 @@ class _RoundResultView extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Lead with whatever the player was hunting.
                         Text(
-                          round.targetCapitalName,
+                          isCapitalTarget
+                              ? round.targetCapitalName
+                              : round.targetCountryName,
                           style: const TextStyle(
                             color: FlitColors.textPrimary,
                             fontSize: 20,
@@ -531,7 +557,9 @@ class _RoundResultView extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          round.targetCountryName,
+                          isCapitalTarget
+                              ? round.targetCountryName
+                              : round.targetCapitalName,
                           style: const TextStyle(
                             color: FlitColors.textSecondary,
                             fontSize: 14,
@@ -553,12 +581,59 @@ class _RoundResultView extends StatelessWidget {
                         painter: _ResultMapPainter(
                           targetLngLat: round.targetCapitalLngLat,
                           guesses: state.wrongGuesses,
+                          clues: round.clues,
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
+                // Map legend.
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.star, color: FlitColors.gold, size: 13),
+                    const SizedBox(width: 3),
+                    const Text(
+                      'answer',
+                      style: TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Icon(
+                      Icons.circle_outlined,
+                      color: FlitColors.accent,
+                      size: 11,
+                    ),
+                    const SizedBox(width: 3),
+                    const Text(
+                      'clues',
+                      style: TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                    if (state.wrongGuesses.isNotEmpty) ...[
+                      const SizedBox(width: 12),
+                      const Icon(
+                        Icons.circle,
+                        color: FlitColors.error,
+                        size: 11,
+                      ),
+                      const SizedBox(width: 3),
+                      const Text(
+                        'your guesses',
+                        style: TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 8),
                 if (state.wrongGuesses.isNotEmpty)
                   Column(
                     children: [
@@ -641,13 +716,19 @@ class _RoundResultView extends StatelessWidget {
   }
 }
 
-/// Equirectangular world map with the target capital (gold star) and each
-/// wrong guess (red dot), auto-framed around the action.
+/// Equirectangular world map with the target capital (gold star), each
+/// wrong guess (red dot), and the round's original clue anchors (accent
+/// ringed dots) so the reveal shows the full triangulation picture.
 class _ResultMapPainter extends CustomPainter {
-  _ResultMapPainter({required this.targetLngLat, required this.guesses});
+  _ResultMapPainter({
+    required this.targetLngLat,
+    required this.guesses,
+    required this.clues,
+  });
 
   final Vector2 targetLngLat;
   final List<TriangulationGuess> guesses;
+  final List<TriangulationClue> clues;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -680,8 +761,35 @@ class _ResultMapPainter extends CustomPainter {
       }
     }
 
-    // Guess dots + connector lines toward the target.
     final target = project(targetLngLat.x, targetLngLat.y);
+
+    // Original clue anchors: accent ringed dots with a faint line to the
+    // target, so the reveal shows what the arrows were pointing at.
+    for (final clue in clues) {
+      final pos = project(clue.capitalLngLat.x, clue.capitalLngLat.y);
+      canvas.drawLine(
+        pos,
+        target,
+        Paint()
+          ..color = FlitColors.textSecondary.withOpacity(0.3)
+          ..strokeWidth = 0.8,
+      );
+      canvas.drawCircle(
+        pos,
+        3,
+        Paint()..color = FlitColors.backgroundDark,
+      );
+      canvas.drawCircle(
+        pos,
+        3,
+        Paint()
+          ..color = FlitColors.accent
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.6,
+      );
+    }
+
+    // Guess dots + connector lines toward the target.
     for (final g in guesses) {
       final pos = project(g.capitalLngLat.x, g.capitalLngLat.y);
       canvas.drawLine(
@@ -717,7 +825,9 @@ class _ResultMapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ResultMapPainter old) =>
-      targetLngLat != old.targetLngLat || guesses.length != old.guesses.length;
+      targetLngLat != old.targetLngLat ||
+      guesses.length != old.guesses.length ||
+      clues.length != old.clues.length;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -729,11 +839,13 @@ class _SummaryView extends StatelessWidget {
     required this.session,
     required this.shareText,
     required this.isDaily,
+    required this.isCapitalTarget,
   });
 
   final TriangulationSession session;
   final String shareText;
   final bool isDaily;
+  final bool isCapitalTarget;
 
   @override
   Widget build(BuildContext context) {
@@ -859,7 +971,9 @@ class _SummaryView extends StatelessWidget {
           SizedBox(
             width: 110,
             child: Text(
-              state.round.targetCapitalName,
+              isCapitalTarget
+                  ? state.round.targetCapitalName
+                  : state.round.targetCountryName,
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(

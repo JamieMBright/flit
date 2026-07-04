@@ -17,6 +17,7 @@ class TriangulationConfig {
     this.clueTypes = const {ClueType.flag},
     this.labelTypes = const {TriLabel.capital},
     this.difficulty = GameDifficulty.normal,
+    this.targetType = TriTargetType.capital,
     this.isDaily = false,
   });
 
@@ -24,6 +25,11 @@ class TriangulationConfig {
   final int rounds;
   final int guessesPerRound;
   final int markerCount;
+
+  /// What the player is hunting. Capital days: capital = full points,
+  /// country = ×0.7. Country days: only country names are answer
+  /// candidates (the UI offers no capital entries).
+  final TriTargetType targetType;
 
   /// Visual clue types shown in each marker's info box
   /// (flag / outline / borders / capital supported).
@@ -170,8 +176,9 @@ class TriangulationSession {
       viaCapital: viaCapital,
       isCorrect: isCorrect,
       distanceKm: distanceKm,
+      // Rhumb bearing, matching the clue arrows' flat-map convention.
       bearingFromTargetDeg:
-          initialBearingDeg(round.targetCapitalLngLat, capitalLngLat),
+          rhumbBearingDeg(round.targetCapitalLngLat, capitalLngLat),
       penalty: isCorrect
           ? 0
           : triProximityPenalty(distanceKm, isNeighbor: isNeighbor),
@@ -187,7 +194,10 @@ class TriangulationSession {
     if (state.isOver) {
       state.score = computeTriangulationScore(
         solved: state.solved,
-        solvedAsCountry: state.solvedAsCountry,
+        // The ×0.7 country-name discount only exists on capital days;
+        // on country days the country name IS the asked-for answer.
+        solvedAsCountry:
+            state.solvedAsCountry && config.targetType == TriTargetType.capital,
         timeMs: state.elapsedMs,
         wrongGuessPenalties: state.wrongGuesses.map((g) => g.penalty).toList(),
         targetCountryCode: round.targetCountryCode,

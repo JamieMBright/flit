@@ -5,7 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/daily_result.dart';
+import '../../game/clues/clue_types.dart';
+import '../../game/data/country_difficulty.dart';
 import '../../game/triangulation/daily_triangulation.dart';
+import '../../game/triangulation/triangulation_target.dart';
 import 'triangulation_game_screen.dart';
 
 /// Lobby for the Daily Triangulation: shows today's theme and rules, and
@@ -82,6 +85,8 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
                     children: [
                       _buildHeader(),
                       const SizedBox(height: 16),
+                      _buildBrief(),
+                      const SizedBox(height: 16),
                       _buildRules(),
                       const SizedBox(height: 24),
                       if (played) _buildResult() else _buildPlayButton(),
@@ -145,13 +150,27 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 10),
-            const Text(
-              'Same puzzle for every pilot.\n'
-              'Your guesses make it yours.',
-              style: TextStyle(
+            const SizedBox(height: 8),
+            Text(
+              _daily.theme.description,
+              style: const TextStyle(
                 color: FlitColors.textSecondary,
                 fontSize: 13,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+            _DifficultyIndicator(
+              percent: _daily.difficultyPercent,
+              label: _daily.difficultyLabelText,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Same puzzle for every pilot. Your guesses make it yours.',
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 12,
                 height: 1.4,
               ),
               textAlign: TextAlign.center,
@@ -160,40 +179,178 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
         ),
       );
 
-  Widget _buildRules() => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: FlitColors.cardBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: FlitColors.cardBorder),
-        ),
-        child: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _RuleRow(
-              icon: Icons.explore,
-              text: 'Each arrow points from the hidden capital toward a '
-                  'known place — cross-reference them to close in.',
+  /// Scramble-style brief: what you're hunting and exactly which clue
+  /// visuals/labels today's markers carry.
+  Widget _buildBrief() {
+    final theme = _daily.theme;
+    final isCapital = theme.targetType == TriTargetType.capital;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: FlitColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'TARGET',
+            style: TextStyle(
+              color: FlitColors.textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
             ),
-            _RuleRow(
-              icon: Icons.replay,
-              text: '3 hidden capitals, 5 guesses each. Wrong guesses join '
-                  'the compass in red.',
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _BriefChip(
+                icon: isCapital ? Icons.location_city_rounded : Icons.public,
+                label: theme.targetType.displayName,
+                color: FlitColors.error,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  isCapital
+                      ? 'Capital = full pts, country = ×0.7'
+                      : 'Answer with the country name',
+                  style: const TextStyle(
+                    color: FlitColors.textMuted,
+                    fontSize: 11.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'ACTIVE CLUES',
+            style: TextStyle(
+              color: FlitColors.textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
             ),
-            _RuleRow(
-              icon: Icons.timer_outlined,
-              text: 'Full marks inside 10 seconds, decaying to 60s. Wild '
-                  'guesses cost more than near misses.',
-            ),
-            _RuleRow(
-              icon: Icons.star_outline,
-              text: 'Name the capital for full points — the country alone '
-                  'scores ×0.7.',
-            ),
-          ],
-        ),
-      );
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final type in theme.clueTypes)
+                _BriefChip(
+                  icon: _clueIcon(type),
+                  label: _clueLabel(type),
+                  color: FlitColors.accent,
+                ),
+              if (theme.labelTypes.isEmpty)
+                const _BriefChip(
+                  icon: Icons.visibility_off_rounded,
+                  label: 'No labels — expert!',
+                  color: FlitColors.warning,
+                )
+              else
+                for (final label in theme.labelTypes)
+                  _BriefChip(
+                    icon: _labelIcon(label),
+                    label: '${label.displayName} label',
+                    color: FlitColors.gold,
+                  ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static IconData _clueIcon(ClueType type) {
+    switch (type) {
+      case ClueType.flag:
+        return Icons.flag_rounded;
+      case ClueType.outline:
+        return Icons.crop_square_rounded;
+      case ClueType.borders:
+        return Icons.border_all_rounded;
+      case ClueType.capital:
+        return Icons.location_city_rounded;
+      default:
+        return Icons.help_outline_rounded;
+    }
+  }
+
+  static String _clueLabel(ClueType type) {
+    switch (type) {
+      case ClueType.flag:
+        return 'Flags';
+      case ClueType.outline:
+        return 'Outlines';
+      case ClueType.borders:
+        return 'Borders';
+      case ClueType.capital:
+        return 'Capitals';
+      default:
+        return type.name;
+    }
+  }
+
+  static IconData _labelIcon(TriLabel label) {
+    switch (label) {
+      case TriLabel.country:
+        return Icons.public;
+      case TriLabel.capital:
+        return Icons.location_city_rounded;
+      case TriLabel.leader:
+        return Icons.person_rounded;
+      case TriLabel.language:
+        return Icons.translate_rounded;
+    }
+  }
+
+  Widget _buildRules() {
+    final isCapital = _daily.theme.targetType == TriTargetType.capital;
+    final what = isCapital ? 'capitals' : 'countries';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: FlitColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _RuleRow(
+            icon: Icons.explore,
+            text: 'Each arrow points from the hidden target toward a '
+                'known place — cross-reference them to close in.',
+          ),
+          _RuleRow(
+            icon: Icons.replay,
+            text: '3 hidden $what, 5 guesses each. Wrong guesses join '
+                'the compass in red.',
+          ),
+          const _RuleRow(
+            icon: Icons.timer_outlined,
+            text: 'Full marks inside 10 seconds, decaying to 60s. Wild '
+                'guesses cost more than near misses.',
+          ),
+          _RuleRow(
+            icon: Icons.star_outline,
+            text: isCapital
+                ? 'Name the capital for full points — the country alone '
+                    'scores ×0.7.'
+                : 'Only country names count today — capitals are not '
+                    'accepted.',
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildPlayButton() => SizedBox(
         width: double.infinity,
@@ -300,6 +457,94 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
           ],
         ),
       );
+}
+
+/// Small icon+label pill used in the daily brief (same visual language as
+/// the Daily Scramble's clue chips).
+class _BriefChip extends StatelessWidget {
+  const _BriefChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withOpacity(0.35)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 14),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+/// Difficulty pill matching the Daily Scramble's (label + percent on the
+/// shared green→red band scale).
+class _DifficultyIndicator extends StatelessWidget {
+  const _DifficultyIndicator({required this.percent, required this.label});
+
+  final int percent;
+  final String label;
+
+  static const List<Color> _gradientColors = [
+    Color(0xFF4CAF50), // green — Clear Skies
+    Color(0xFF8BC34A), // light green — Tailwind
+    Color(0xFFFFEB3B), // yellow — Fair Weather
+    Color(0xFFFFC107), // amber — Crosswinds
+    Color(0xFFFF9800), // orange — Turbulence
+    Color(0xFFFF5722), // deep orange — Storm Front
+    Color(0xFFF44336), // red — Cat-5 Headwind
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final index = difficultyBandIndex(percent / 100.0);
+    final color = _gradientColors[index.clamp(0, _gradientColors.length - 1)];
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.speed_rounded, color: color, size: 14),
+          const SizedBox(width: 6),
+          Text(
+            '$label  $percent%',
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _RuleRow extends StatelessWidget {

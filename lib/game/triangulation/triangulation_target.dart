@@ -8,6 +8,23 @@ import '../clues/clue_types.dart';
 import '../data/country_difficulty.dart';
 import '../map/country_data.dart';
 
+/// What the player is hunting: the hidden capital city or the country
+/// itself. Bearings are capital-anchored in both modes; this changes what
+/// counts as the answer and how the game talks about the target.
+enum TriTargetType { capital, country }
+
+/// Display metadata for a [TriTargetType].
+extension TriTargetTypeMeta on TriTargetType {
+  String get displayName {
+    switch (this) {
+      case TriTargetType.capital:
+        return 'Capital City';
+      case TriTargetType.country:
+        return 'Country';
+    }
+  }
+}
+
 /// Label types that can accompany a clue marker on the compass.
 enum TriLabel { country, capital, leader, language }
 
@@ -46,8 +63,8 @@ class TriangulationClue {
   /// Capital coordinates as (lng, lat) degrees.
   final Vector2 capitalLngLat;
 
-  /// Compass bearing (0 = N, clockwise) from the hidden target's capital
-  /// to this clue's capital.
+  /// Rhumb-line compass bearing (0 = N, clockwise) from the hidden
+  /// target's capital to this clue's capital — the flat-map direction.
   final double bearingFromTargetDeg;
 
   /// Great-circle distance from the hidden target's capital, in km.
@@ -164,8 +181,10 @@ class TriangulationRound {
     for (final c in anchors) {
       if (clues.length >= markerCount) break;
       final capital = CountryData.getCapital(c.code)!;
-      final bearing =
-          initialBearingDeg(targetCapital.location, capital.location);
+      // Rhumb-line bearing: the flat-map direction players expect (a
+      // great-circle initial bearing to a far anchor can point over the
+      // pole — Colombo→Mexico City would read "north").
+      final bearing = rhumbBearingDeg(targetCapital.location, capital.location);
       final clue = TriangulationClue(
         countryCode: c.code,
         countryName: c.name,
