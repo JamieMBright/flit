@@ -22,6 +22,11 @@ import 'compass_painter.dart';
 /// box back to its arrow tip. Sized by its parent; always renders square
 /// via [AspectRatio]. All placement is fractional (no absolute positioning)
 /// so it scales across phone/tablet/web.
+///
+/// Dense configs (3+ text lines per marker) collapse each box to its
+/// primary label; the full, untruncated content moves to a tap-to-open
+/// [TriangulationClueDetailCard] hosted by the parent screen via
+/// [onClueTap] / [selectedClueIndex].
 class TriangulationCompass extends StatelessWidget {
   const TriangulationCompass({
     super.key,
@@ -31,6 +36,8 @@ class TriangulationCompass extends StatelessWidget {
     required this.labelTypes,
     this.centerLabel = 'CAPITAL',
     this.showClueDistances = false,
+    this.selectedClueIndex,
+    this.onClueTap,
   });
 
   final List<TriangulationClue> clues;
@@ -38,6 +45,13 @@ class TriangulationCompass extends StatelessWidget {
   final Set<ClueType> clueTypes;
   final Set<TriLabel> labelTypes;
   final String centerLabel;
+
+  /// Which clue marker is currently inspected (gold highlight), if any.
+  final int? selectedClueIndex;
+
+  /// Called with the clue index when a marker with collapsed or truncated
+  /// content is tapped. Null disables tap handling entirely.
+  final ValueChanged<int>? onClueTap;
 
   /// When true (the distance hint was bought), each starting clue's box
   /// also shows its distance from the hidden target. Wrong-guess markers
@@ -152,30 +166,46 @@ class TriangulationCompass extends StatelessWidget {
                   left: positions[i].dx - sizes[i].width / 2,
                   top: positions[i].dy - sizes[i].height / 2,
                   width: sizes[i].width,
-                  // No text to hold → no card: just the bare visual(s) at
-                  // the arrow tip (e.g. flags-only expert mode).
-                  child: markers[i].lines.isEmpty
-                      ? Wrap(
-                          spacing: 4,
-                          alignment: WrapAlignment.center,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: markers[i].visuals,
-                        )
-                      : _InfoBoxFrame(
-                          borderColor: markers[i].isGuess
-                              ? FlitColors.error
-                              : FlitColors.cardBorder,
-                          textColor: markers[i].isGuess
-                              ? FlitColors.error
-                              : FlitColors.textPrimary,
-                          visuals: markers[i].visuals,
-                          lines: markers[i].lines,
-                        ),
+                  child: _markerChild(markers[i], clueIndex: i),
                 ),
             ],
           );
         },
       ),
+    );
+  }
+
+  /// The rendered widget for one marker: bare visuals when frameless, a
+  /// framed info box otherwise, wrapped in a tap target when the marker
+  /// has more content than its box shows.
+  Widget _markerChild(_MarkerContent marker, {required int clueIndex}) {
+    final selected = !marker.isGuess && clueIndex == selectedClueIndex;
+    // No text to hold → no card: just the bare visual(s) at the arrow
+    // tip (e.g. flags-only expert mode).
+    final Widget child = marker.displayLines.isEmpty
+        ? Wrap(
+            spacing: 4,
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: marker.visuals,
+          )
+        : _InfoBoxFrame(
+            borderColor: marker.isGuess
+                ? FlitColors.error
+                : selected
+                    ? FlitColors.gold
+                    : FlitColors.cardBorder,
+            textColor:
+                marker.isGuess ? FlitColors.error : FlitColors.textPrimary,
+            visuals: marker.visuals,
+            lines: marker.displayLines,
+            showMore: marker.hasMore,
+          );
+    if (marker.isGuess || !marker.hasMore || onClueTap == null) return child;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onClueTap!(clueIndex),
+      child: child,
     );
   }
 
@@ -218,17 +248,23 @@ class TriangulationCompass extends StatelessWidget {
         !labelTypes.contains(TriLabel.capital)) {
       lines.add(clue.capitalName);
     }
+    var bordersTruncated = false;
     if (clueTypes.contains(ClueType.borders)) {
       final neighbors = Clue.getNeighbors(clue.countryCode);
       if (neighbors.isNotEmpty) {
+        bordersTruncated = neighbors.length > 3;
         final shown = neighbors.take(3).join(', ');
-        lines.add(
-          neighbors.length > 3 ? 'Borders: $shown…' : 'Borders: $shown',
-        );
+        lines.add(bordersTruncated ? 'Borders: $shown…' : 'Borders: $shown');
       }
     }
+
+    // Dense configs collapse to the primary label so the compass stays
+    // readable — the rest moves to the tap-to-open detail card. The bought
+    // distance line always stays visible.
+    final compact = lines.length > 2;
+    final displayLines = compact ? [lines.first] : List.of(lines);
     if (showClueDistances) {
-      lines.add(formatKmAway(clue.distanceFromTargetKm));
+      displayLines.add(formatKmAway(clue.distanceFromTargetKm));
     }
 
     return _MarkerContent(
@@ -237,7 +273,8 @@ class TriangulationCompass extends StatelessWidget {
       visuals: visuals,
       hasFlag: clueTypes.contains(ClueType.flag),
       hasOutline: hasOutline,
-      lines: lines,
+      displayLines: displayLines,
+      hasMore: compact || bordersTruncated,
     );
   }
 
@@ -248,7 +285,7 @@ class TriangulationCompass extends StatelessWidget {
         visuals: [_MarkerFlag(code: guess.countryCode)],
         hasFlag: true,
         hasOutline: false,
-        lines: [
+        displayLines: [
           if (guess.viaCapital && guess.capitalName.isNotEmpty)
             guess.capitalName
           else
@@ -257,6 +294,7 @@ class TriangulationCompass extends StatelessWidget {
           // bearing it's the core triangulation feedback loop.
           formatKmAway(guess.distanceKm),
         ],
+        hasMore: false,
       );
 
   // ── Layout ─────────────────────────────────────────────────────────────
@@ -268,7 +306,7 @@ class TriangulationCompass extends StatelessWidget {
     // Markers with no text render frameless (bare visuals), so their size
     // is just the visuals' footprint — the collision layout then packs
     // them much tighter.
-    if (marker.lines.isEmpty) {
+    if (marker.displayLines.isEmpty) {
       var width = 0.0;
       if (marker.hasFlag) width += 33;
       if (marker.hasOutline) width += 40 + (marker.hasFlag ? 4 : 0);
@@ -283,11 +321,12 @@ class TriangulationCompass extends StatelessWidget {
         height += 24;
       }
     }
-    for (final line in marker.lines) {
+    for (final line in marker.displayLines) {
       const charWidth = 6.2; // ~10.5px semi-bold
       final rows = ((line.length * charWidth) / innerWidth).ceil().clamp(1, 2);
       height += rows * 13.0 + 2;
     }
+    if (marker.hasMore) height += 12; // "more" dots row
     return Size(boxWidth, height);
   }
 
@@ -359,9 +398,10 @@ class TriangulationCompass extends StatelessWidget {
           positions[i] += outward * (minRadius - dist + 1);
         }
 
-        // Soft bounds: prefer staying inside the square, but allow a small
+        // Soft bounds: prefer staying inside the square, but allow a tiny
         // overflow (the Stack doesn't clip) rather than re-overlapping.
-        final slack = side * 0.05;
+        // Kept tight so boxes never get clipped by the screen edge.
+        final slack = side * 0.02;
         final minX = halfW - slack;
         final maxX = side - halfW + slack;
         final minY = halfH - slack;
@@ -390,7 +430,8 @@ class _MarkerContent {
     required this.visuals,
     required this.hasFlag,
     required this.hasOutline,
-    required this.lines,
+    required this.displayLines,
+    required this.hasMore,
   });
 
   final double bearingDeg;
@@ -398,7 +439,14 @@ class _MarkerContent {
   final List<Widget> visuals;
   final bool hasFlag;
   final bool hasOutline;
-  final List<String> lines;
+
+  /// Text lines actually shown in the on-compass box (collapsed for
+  /// dense configs).
+  final List<String> displayLines;
+
+  /// True when tapping opens the detail card (content was collapsed or
+  /// a borders list was truncated).
+  final bool hasMore;
 }
 
 /// Thin lines tying each arrow tip to its info box (drawn beneath the
@@ -445,12 +493,16 @@ class _InfoBoxFrame extends StatelessWidget {
     required this.textColor,
     required this.visuals,
     required this.lines,
+    this.showMore = false,
   });
 
   final Color borderColor;
   final Color textColor;
   final List<Widget> visuals;
   final List<String> lines;
+
+  /// Renders a muted "more" dots row — the tap-for-details affordance.
+  final bool showMore;
 
   @override
   Widget build(BuildContext context) {
@@ -488,6 +540,12 @@ class _InfoBoxFrame extends StatelessWidget {
                 ),
               ),
             ),
+          if (showMore)
+            Icon(
+              Icons.more_horiz_rounded,
+              size: 12,
+              color: FlitColors.textMuted.withOpacity(0.8),
+            ),
         ],
       ),
     );
@@ -524,6 +582,156 @@ class _MarkerFlag extends StatelessWidget {
           )
         : code;
     return Text(emoji, style: const TextStyle(fontSize: 16));
+  }
+}
+
+/// Full, untruncated info for one tapped clue marker, shown beneath the
+/// compass. Only reveals content the round's clue/label config already
+/// enables — inspecting a marker never leaks extra information (e.g. no
+/// country name on label-free expert themes).
+class TriangulationClueDetailCard extends StatelessWidget {
+  const TriangulationClueDetailCard({
+    super.key,
+    required this.clue,
+    required this.clueTypes,
+    required this.labelTypes,
+    this.showDistance = false,
+    this.onClose,
+  });
+
+  final TriangulationClue clue;
+  final Set<ClueType> clueTypes;
+  final Set<TriLabel> labelTypes;
+  final bool showDistance;
+  final VoidCallback? onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <(String, String)>[];
+    for (final label in TriLabel.values) {
+      if (label == TriLabel.country) continue; // shown as the title
+      if (!labelTypes.contains(label)) continue;
+      final text = clue.labelText(label);
+      if (text != null) rows.add((label.displayName, text));
+    }
+    if (clueTypes.contains(ClueType.capital) &&
+        !labelTypes.contains(TriLabel.capital)) {
+      rows.add((TriLabel.capital.displayName, clue.capitalName));
+    }
+    if (clueTypes.contains(ClueType.borders)) {
+      final neighbors = Clue.getNeighbors(clue.countryCode);
+      if (neighbors.isNotEmpty) rows.add(('Borders', neighbors.join(', ')));
+    }
+    final title =
+        labelTypes.contains(TriLabel.country) ? clue.countryName : null;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: FlitColors.gold.withOpacity(0.6)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    if (clueTypes.contains(ClueType.flag)) ...[
+                      _MarkerFlag(code: clue.countryCode),
+                      const SizedBox(width: 8),
+                    ],
+                    if (clueTypes.contains(ClueType.outline)) ...[
+                      SizedBox(
+                        width: 40,
+                        height: 30,
+                        child: CustomPaint(
+                          painter: CountryOutlinePainter(
+                            CountryData.getCountry(clue.countryCode)
+                                    ?.polygons ??
+                                const [],
+                            fillColor: FlitColors.landMass.withOpacity(0.5),
+                            strokeColor: FlitColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    if (title != null)
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            color: FlitColors.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                for (final (label, value) in rows)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '$label  ',
+                            style: const TextStyle(
+                              color: FlitColors.textMuted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          TextSpan(
+                            text: value,
+                            style: const TextStyle(
+                              color: FlitColors.textPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (showDistance)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      formatKmAway(clue.distanceFromTargetKm),
+                      style: const TextStyle(
+                        color: FlitColors.gold,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (onClose != null)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onClose,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 16,
+                  color: FlitColors.textMuted.withOpacity(0.9),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 

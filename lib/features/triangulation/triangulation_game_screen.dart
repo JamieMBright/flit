@@ -13,6 +13,7 @@ import '../../core/utils/haptics.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/daily_result.dart';
 import '../../data/providers/account_provider.dart';
+import '../../game/clues/clue_types.dart';
 import '../../game/map/country_data.dart';
 import '../../game/quiz/fuzzy_match.dart';
 import '../../game/triangulation/daily_triangulation.dart';
@@ -69,6 +70,20 @@ class _TriangulationGameScreenState
   bool get _isCapitalTarget =>
       widget.config.targetType == TriTargetType.capital;
 
+  /// Whether this config produces markers with tap-to-open detail cards
+  /// (collapsed dense boxes, or borders lists that may be truncated).
+  bool get _hasInspectableMarkers {
+    final types = widget.config.clueTypes;
+    final labels = widget.config.labelTypes;
+    var lines = labels.length;
+    if (types.contains(ClueType.capital) &&
+        !labels.contains(TriLabel.capital)) {
+      lines++;
+    }
+    if (types.contains(ClueType.borders)) lines++;
+    return lines > 2 || types.contains(ClueType.borders);
+  }
+
   final Stopwatch _stopwatch = Stopwatch();
   Timer? _ticker;
   final TextEditingController _inputController = TextEditingController();
@@ -77,6 +92,9 @@ class _TriangulationGameScreenState
   bool _showingRoundResult = false;
   bool _finished = false;
   String? _feedback;
+
+  /// Clue marker currently expanded into the detail card, if any.
+  int? _inspectedClueIndex;
 
   @override
   void initState() {
@@ -226,7 +244,10 @@ class _TriangulationGameScreenState
     _stopwatch
       ..reset()
       ..start();
-    setState(() => _showingRoundResult = false);
+    setState(() {
+      _showingRoundResult = false;
+      _inspectedClueIndex = null;
+    });
   }
 
   Future<void> _recordDailyResult() async {
@@ -330,17 +351,35 @@ class _TriangulationGameScreenState
                   labelTypes: widget.config.labelTypes,
                   centerLabel: _isCapitalTarget ? 'CAPITAL' : 'COUNTRY',
                   showClueDistances: state.hintUsed,
+                  selectedClueIndex: _inspectedClueIndex,
+                  onClueTap: (i) => setState(
+                    () => _inspectedClueIndex =
+                        _inspectedClueIndex == i ? null : i,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Arrows point from the hidden '
                   '${_isCapitalTarget ? 'capital' : 'country'} '
-                  'toward each place',
+                  'toward each place'
+                  '${_hasInspectableMarkers ? ' · tap a marker for details' : ''}',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     color: FlitColors.textMuted.withOpacity(0.8),
                     fontSize: 11,
                   ),
                 ),
+                if (_inspectedClueIndex != null &&
+                    _inspectedClueIndex! < state.round.clues.length) ...[
+                  const SizedBox(height: 8),
+                  TriangulationClueDetailCard(
+                    clue: state.round.clues[_inspectedClueIndex!],
+                    clueTypes: widget.config.clueTypes,
+                    labelTypes: widget.config.labelTypes,
+                    showDistance: state.hintUsed,
+                    onClose: () => setState(() => _inspectedClueIndex = null),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 if (!state.hintUsed)
                   OutlinedButton.icon(
@@ -566,7 +605,7 @@ class _StatusBar extends StatelessWidget {
 // Round result: answer revealed on a map
 // ─────────────────────────────────────────────────────────────────────────
 
-class _RoundResultView extends StatelessWidget {
+class _RoundResultView extends StatefulWidget {
   const _RoundResultView({
     required this.state,
     required this.isLastRound,
@@ -580,7 +619,38 @@ class _RoundResultView extends StatelessWidget {
   final VoidCallback onContinue;
 
   @override
+  State<_RoundResultView> createState() => _RoundResultViewState();
+}
+
+class _RoundResultViewState extends State<_RoundResultView> {
+  /// Drives the reveal map's pinch-zoom/pan; the current zoom feeds back
+  /// into the painter so markers keep a constant on-screen size.
+  final TransformationController _mapController = TransformationController();
+  double _mapZoom = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController.addListener(_onMapTransform);
+  }
+
+  void _onMapTransform() {
+    final zoom = _mapController.value.getMaxScaleOnAxis();
+    if ((zoom - _mapZoom).abs() > 0.01) setState(() => _mapZoom = zoom);
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final state = widget.state;
+    final isLastRound = widget.isLastRound;
+    final isCapitalTarget = widget.isCapitalTarget;
+    final onContinue = widget.onContinue;
     final round = state.round;
     return Column(
       children: [
@@ -644,17 +714,24 @@ class _RoundResultView extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 // The reveal: world map with the target and every guess.
+                // Pinch to zoom / drag to pan for a closer look at
+                // clustered markers.
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     color: FlitColors.backgroundMid,
                     child: AspectRatio(
                       aspectRatio: 2,
-                      child: CustomPaint(
-                        painter: _ResultMapPainter(
-                          targetLngLat: round.targetCapitalLngLat,
-                          guesses: state.wrongGuesses,
-                          clues: round.clues,
+                      child: InteractiveViewer(
+                        transformationController: _mapController,
+                        maxScale: 12,
+                        child: CustomPaint(
+                          painter: _ResultMapPainter(
+                            targetLngLat: round.targetCapitalLngLat,
+                            guesses: state.wrongGuesses,
+                            clues: round.clues,
+                            zoom: _mapZoom,
+                          ),
                         ),
                       ),
                     ),
@@ -705,6 +782,14 @@ class _RoundResultView extends StatelessWidget {
                       ),
                     ],
                   ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'pinch to zoom · drag to pan',
+                  style: TextStyle(
+                    color: FlitColors.textMuted.withOpacity(0.7),
+                    fontSize: 10,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 if (state.wrongGuesses.isNotEmpty)
@@ -803,24 +888,31 @@ class _RoundResultView extends StatelessWidget {
 /// Equirectangular world map with the target capital (gold star), each
 /// wrong guess (red dot), and the round's original clue anchors (accent
 /// ringed dots) so the reveal shows the full triangulation picture.
+///
+/// [zoom] is the InteractiveViewer's current scale; markers and line
+/// widths are divided by it so they keep a constant on-screen size while
+/// the map itself zooms.
 class _ResultMapPainter extends CustomPainter {
   _ResultMapPainter({
     required this.targetLngLat,
     required this.guesses,
     required this.clues,
+    this.zoom = 1,
   });
 
   final Vector2 targetLngLat;
   final List<TriangulationGuess> guesses;
   final List<TriangulationClue> clues;
+  final double zoom;
 
   @override
   void paint(Canvas canvas, Size size) {
+    final z = zoom.clamp(1.0, 100.0);
     final landPaint = Paint()..color = FlitColors.landMass.withOpacity(0.45);
     final borderPaint = Paint()
       ..color = FlitColors.border.withOpacity(0.6)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.6;
+      ..strokeWidth = 0.6 / z;
 
     Offset project(double lng, double lat) => Offset(
           (lng + 180) / 360 * size.width,
@@ -856,20 +948,20 @@ class _ResultMapPainter extends CustomPainter {
         target,
         Paint()
           ..color = FlitColors.textSecondary.withOpacity(0.3)
-          ..strokeWidth = 0.8,
+          ..strokeWidth = 0.8 / z,
       );
       canvas.drawCircle(
         pos,
-        3,
+        3 / z,
         Paint()..color = FlitColors.backgroundDark,
       );
       canvas.drawCircle(
         pos,
-        3,
+        3 / z,
         Paint()
           ..color = FlitColors.accent
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.6,
+          ..strokeWidth = 1.6 / z,
       );
     }
 
@@ -881,13 +973,13 @@ class _ResultMapPainter extends CustomPainter {
         target,
         Paint()
           ..color = FlitColors.error.withOpacity(0.5)
-          ..strokeWidth = 1,
+          ..strokeWidth = 1 / z,
       );
-      canvas.drawCircle(pos, 3.5, Paint()..color = FlitColors.error);
+      canvas.drawCircle(pos, 3.5 / z, Paint()..color = FlitColors.error);
     }
 
     // Target star.
-    _drawStar(canvas, target, 7, Paint()..color = FlitColors.gold);
+    _drawStar(canvas, target, 7 / z, Paint()..color = FlitColors.gold);
   }
 
   void _drawStar(Canvas canvas, Offset center, double r, Paint paint) {
@@ -911,7 +1003,8 @@ class _ResultMapPainter extends CustomPainter {
   bool shouldRepaint(_ResultMapPainter old) =>
       targetLngLat != old.targetLngLat ||
       guesses.length != old.guesses.length ||
-      clues.length != old.clues.length;
+      clues.length != old.clues.length ||
+      zoom != old.zoom;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
