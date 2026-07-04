@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flit/core/services/game_settings.dart';
 import 'package:flit/core/utils/math_utils.dart';
 import 'package:flit/game/clues/clue_types.dart';
+import 'package:flit/game/data/country_difficulty.dart';
 import 'package:flit/game/map/country_data.dart';
 import 'package:flit/game/triangulation/daily_triangulation.dart';
 import 'package:flit/game/triangulation/triangulation_scoring.dart';
@@ -303,6 +304,29 @@ void main() {
       expect(viaCountry, (viaCapital * 0.7).round());
     });
 
+    test('distance hint costs exactly its penalty', () {
+      final without = computeTriangulationScore(
+        solved: true,
+        solvedAsCountry: false,
+        timeMs: 5000,
+        wrongGuessPenalties: const [],
+        targetCountryCode: 'FR',
+      );
+      final withHint = computeTriangulationScore(
+        solved: true,
+        solvedAsCountry: false,
+        timeMs: 5000,
+        wrongGuessPenalties: const [],
+        targetCountryCode: 'FR',
+        hintUsed: true,
+      );
+      expect(withHint, lessThan(without));
+      expect(
+        without - withHint,
+        (triDistanceHintPenalty * difficultyMultiplier('FR')).round(),
+      );
+    });
+
     test('expired round scores 0', () {
       final score = computeTriangulationScore(
         solved: false,
@@ -371,6 +395,32 @@ void main() {
       );
       expect(countryGame.currentRound.score, capitalGame.currentRound.score);
       expect(countryGame.currentRound.score, greaterThan(0));
+    });
+
+    test('distance hint is per-round state and charged in scoring', () {
+      final session = TriangulationSession(
+        const TriangulationConfig(seed: 99, rounds: 1),
+      );
+      expect(session.currentRound.hintUsed, isFalse);
+      session.useDistanceHint();
+      expect(session.currentRound.hintUsed, isTrue);
+      session.submitGuess(
+        session.currentRound.round.targetCountryCode,
+        viaCapital: true,
+        elapsedMs: 4000,
+      );
+      final noHint = TriangulationSession(
+        const TriangulationConfig(seed: 99, rounds: 1),
+      );
+      noHint.submitGuess(
+        noHint.currentRound.round.targetCountryCode,
+        viaCapital: true,
+        elapsedMs: 4000,
+      );
+      expect(
+        session.currentRound.score,
+        lessThan(noHint.currentRound.score),
+      );
     });
 
     test('wrong guesses add compass markers and expire after 5', () {

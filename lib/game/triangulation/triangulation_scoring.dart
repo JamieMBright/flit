@@ -29,6 +29,11 @@ const int triWrongGuessDistanceMax = 2300;
 /// instead of the capital.
 const double triCountryAnswerMultiplier = 0.7;
 
+/// Cost of the one distance hint per round (reveals how far each starting
+/// clue is from the hidden target). Wrong-guess distances are always shown
+/// free — only the up-front reveal of the original clues costs score.
+const int triDistanceHintPenalty = 1000;
+
 /// Penalty for one wrong guess, based on how far the guessed capital is
 /// from the target capital. Direct neighbours are softened by half.
 int triProximityPenalty(double distanceKm, {bool isNeighbor = false}) {
@@ -50,7 +55,7 @@ int triTimePenalty(int timeMs) {
 /// Final round score.
 ///
 /// Expired (unsolved) rounds score 0. Otherwise:
-///   raw   = base − timePenalty − Σ proximityPenalties
+///   raw   = base − timePenalty − Σ proximityPenalties − hint
 ///   score = raw × difficultyMultiplier(target) × (0.7 if solved by country)
 int computeTriangulationScore({
   required bool solved,
@@ -58,10 +63,13 @@ int computeTriangulationScore({
   required int timeMs,
   required List<int> wrongGuessPenalties,
   required String targetCountryCode,
+  bool hintUsed = false,
 }) {
   if (!solved) return 0;
   final proximityTotal = wrongGuessPenalties.fold<int>(0, (sum, p) => sum + p);
-  final raw = triBaseScore - triTimePenalty(timeMs) - proximityTotal;
+  final hintPenalty = hintUsed ? triDistanceHintPenalty : 0;
+  final raw =
+      triBaseScore - triTimePenalty(timeMs) - proximityTotal - hintPenalty;
   if (raw <= 0) return 0;
   var score = raw * difficultyMultiplier(targetCountryCode);
   if (solvedAsCountry) score *= triCountryAnswerMultiplier;

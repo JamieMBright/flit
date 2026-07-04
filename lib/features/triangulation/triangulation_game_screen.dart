@@ -17,6 +17,7 @@ import '../../game/map/country_data.dart';
 import '../../game/quiz/fuzzy_match.dart';
 import '../../game/triangulation/daily_triangulation.dart';
 import '../../game/triangulation/triangulation_session.dart';
+import '../../game/triangulation/triangulation_scoring.dart';
 import '../../game/triangulation/triangulation_share.dart';
 import '../../game/triangulation/triangulation_target.dart';
 import 'widgets/triangulation_compass.dart';
@@ -177,6 +178,14 @@ class _TriangulationGameScreenState
     _submitCandidate(chosen);
   }
 
+  void _useDistanceHint() {
+    if (_session.currentRound.isOver || _session.currentRound.hintUsed) {
+      return;
+    }
+    hapticLight();
+    setState(() => _session.useDistanceHint());
+  }
+
   void _submitCandidate(_GuessCandidate candidate) {
     if (_session.currentRound.isOver) return;
     final guess = _session.submitGuess(
@@ -320,6 +329,7 @@ class _TriangulationGameScreenState
                   clueTypes: widget.config.clueTypes,
                   labelTypes: widget.config.labelTypes,
                   centerLabel: _isCapitalTarget ? 'CAPITAL' : 'COUNTRY',
+                  showClueDistances: state.hintUsed,
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -331,6 +341,36 @@ class _TriangulationGameScreenState
                     fontSize: 11,
                   ),
                 ),
+                const SizedBox(height: 8),
+                if (!state.hintUsed)
+                  OutlinedButton.icon(
+                    onPressed: _useDistanceHint,
+                    icon: const Icon(
+                      Icons.straighten_rounded,
+                      size: 16,
+                      color: FlitColors.gold,
+                    ),
+                    label: Text(
+                      'Reveal clue distances  −${triDistanceHintPenalty} pts',
+                      style: const TextStyle(
+                        color: FlitColors.gold,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: FlitColors.gold.withOpacity(0.5),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -710,6 +750,17 @@ class _RoundResultView extends StatelessWidget {
                     child: Text(
                       'Solved by country name (×0.7)',
                       style: TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                if (state.hintUsed)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Distance hint used (−$triDistanceHintPenalty)',
+                      style: const TextStyle(
                         color: FlitColors.textMuted,
                         fontSize: 12,
                       ),

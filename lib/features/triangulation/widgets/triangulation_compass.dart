@@ -30,6 +30,7 @@ class TriangulationCompass extends StatelessWidget {
     required this.clueTypes,
     required this.labelTypes,
     this.centerLabel = 'CAPITAL',
+    this.showClueDistances = false,
   });
 
   final List<TriangulationClue> clues;
@@ -37,6 +38,11 @@ class TriangulationCompass extends StatelessWidget {
   final Set<ClueType> clueTypes;
   final Set<TriLabel> labelTypes;
   final String centerLabel;
+
+  /// When true (the distance hint was bought), each starting clue's box
+  /// also shows its distance from the hidden target. Wrong-guess markers
+  /// always show their distance — that feedback is free.
+  final bool showClueDistances;
 
   static const double _circleFraction = 0.15;
   static const double _arrowEndFraction = 0.28;
@@ -221,6 +227,9 @@ class TriangulationCompass extends StatelessWidget {
         );
       }
     }
+    if (showClueDistances) {
+      lines.add(formatKmAway(clue.distanceFromTargetKm));
+    }
 
     return _MarkerContent(
       bearingDeg: clue.bearingFromTargetDeg,
@@ -232,8 +241,7 @@ class TriangulationCompass extends StatelessWidget {
     );
   }
 
-  /// Wrong guess: red-tinted, flag + guessed name only (no distance —
-  /// bearing plus distance would give the answer away).
+  /// Wrong guess: red-tinted, flag + guessed name + free distance.
   _MarkerContent _guessContent(TriangulationGuess guess) => _MarkerContent(
         bearingDeg: guess.bearingFromTargetDeg,
         isGuess: true,
@@ -245,6 +253,9 @@ class TriangulationCompass extends StatelessWidget {
             guess.capitalName
           else
             guess.countryName,
+          // Distance feedback is free on every guess — combined with the
+          // bearing it's the core triangulation feedback loop.
+          formatKmAway(guess.distanceKm),
         ],
       );
 
@@ -514,4 +525,16 @@ class _MarkerFlag extends StatelessWidget {
         : code;
     return Text(emoji, style: const TextStyle(fontSize: 16));
   }
+}
+
+/// '1,234 km away' formatting shared by clue and guess markers.
+String formatKmAway(double km) {
+  final rounded = km.round().toString();
+  final buf = StringBuffer();
+  for (var i = 0; i < rounded.length; i++) {
+    final fromEnd = rounded.length - i;
+    buf.write(rounded[i]);
+    if (fromEnd > 1 && fromEnd % 3 == 1) buf.write(',');
+  }
+  return '$buf km away';
 }
