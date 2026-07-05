@@ -126,9 +126,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     super.dispose();
   }
 
+  bool get _isCombined => _currentMode == LeaderboardMode.dailyCombined;
+
   void _onModeChanged() {
     if (!_modeTabController.indexIsChanging) return;
     _currentMode = LeaderboardMode.values[_modeTabController.index];
+    // The combined board is a per-day concept — force the Today timeframe.
+    if (_isCombined) _timeframe = TimeframeTab.today;
     _loadData();
   }
 
@@ -171,6 +175,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   Future<void> _loadPlayerRank() async {
     final userId = _userId;
     if (userId == null) return;
+    // Rank is score-row based; the combined board hides the banner instead.
+    if (_isCombined) return;
 
     final rank = await LeaderboardService.instance.fetchPlayerRank(
       userId,
@@ -205,6 +211,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   /// Returns [_entries] sorted according to [_sort].
   List<LeaderboardEntry> get _sortedEntries {
+    // Combined entries arrive pre-ranked by efficiency; sort chips are
+    // hidden in that mode, so keep the service order.
+    if (_isCombined) return _entries;
     final sorted = List<LeaderboardEntry>.from(_entries);
     switch (_sort) {
       case LeaderboardSort.score:
@@ -263,20 +272,29 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               Tab(text: 'TRAINING'),
               Tab(text: 'BRIEFING'),
               Tab(text: 'TRIANGULATION'),
+              Tab(text: 'COMBINED'),
             ],
           ),
         ),
         body: MenuContentWrapper(
           child: Column(
             children: [
-              // Sub-tab chips: Today | Last Month | All Time
+              // Sub-tab chips: Today | Last Month | All Time.
+              // Combined is a per-day board, so only Today applies there.
               _TimeframeChips(
-                  selected: _timeframe, onChanged: _onTimeframeChanged),
-              // Sort chips: Score | Proficiency | Time
-              _SortChips(selected: _sort, onChanged: _onSortChanged),
+                selected: _timeframe,
+                onChanged: _onTimeframeChanged,
+                onlyToday: _isCombined,
+              ),
+              // Sort chips: Score | Proficiency | Time (combined is always
+              // ranked by efficiency, so no sort options).
+              if (!_isCombined)
+                _SortChips(selected: _sort, onChanged: _onSortChanged),
               const Divider(color: FlitColors.cardBorder, height: 1),
               // Player rank banner (score-based; hidden when not sorting by score)
-              if (_playerRank != null && _sort == LeaderboardSort.score)
+              if (!_isCombined &&
+                  _playerRank != null &&
+                  _sort == LeaderboardSort.score)
                 _PlayerRankBanner(entry: _playerRank!),
               // Leaderboard list
               Expanded(
@@ -308,6 +326,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                                     isEmbargoed: embargoed,
                                     sort: _sort,
                                     proficiencyPct: _computeProficiencyPct(e),
+                                    isCombined: _isCombined,
                                   );
                                 },
                               ),
@@ -323,10 +342,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 // =============================================================================
 
 class _TimeframeChips extends StatelessWidget {
-  const _TimeframeChips({required this.selected, required this.onChanged});
+  const _TimeframeChips({
+    required this.selected,
+    required this.onChanged,
+    this.onlyToday = false,
+  });
 
   final TimeframeTab selected;
   final ValueChanged<TimeframeTab> onChanged;
+
+  /// When true only the Today chip is shown (combined board is per-day).
+  final bool onlyToday;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -334,31 +360,32 @@ class _TimeframeChips extends StatelessWidget {
         color: FlitColors.backgroundMid,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: TimeframeTab.values
-              .map(
-                (tab) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ChoiceChip(
-                    label: Text(tab.displayName),
-                    selected: tab == selected,
-                    onSelected: (_) => onChanged(tab),
-                    selectedColor: FlitColors.accent,
-                    backgroundColor: FlitColors.cardBackground,
-                    labelStyle: TextStyle(
-                      color: tab == selected
-                          ? FlitColors.textPrimary
-                          : FlitColors.textSecondary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+          children:
+              (onlyToday ? const [TimeframeTab.today] : TimeframeTab.values)
+                  .map(
+                    (tab) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: ChoiceChip(
+                        label: Text(tab.displayName),
+                        selected: tab == selected,
+                        onSelected: (_) => onChanged(tab),
+                        selectedColor: FlitColors.accent,
+                        backgroundColor: FlitColors.cardBackground,
+                        labelStyle: TextStyle(
+                          color: tab == selected
+                              ? FlitColors.textPrimary
+                              : FlitColors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        side: BorderSide.none,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                     ),
-                    side: BorderSide.none,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
+                  )
+                  .toList(),
         ),
       );
 }
@@ -518,6 +545,7 @@ class _LeaderboardRow extends StatelessWidget {
     this.isEmbargoed = false,
     this.sort = LeaderboardSort.score,
     this.proficiencyPct,
+    this.isCombined = false,
   });
 
   final LeaderboardEntry entry;
@@ -536,6 +564,10 @@ class _LeaderboardRow extends StatelessWidget {
   /// Proficiency percentage (0–100) computed from round details; null if
   /// round details are unavailable for this entry.
   final int? proficiencyPct;
+
+  /// When true this row belongs to the combined daily board: the entry's
+  /// score holds efficiency basis points and a per-mode breakdown is shown.
+  final bool isCombined;
 
   @override
   Widget build(BuildContext context) {
@@ -642,60 +674,81 @@ class _LeaderboardRow extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           // Tappable emoji result — painted circles + difficulty %.
-          GestureDetector(
-            onTap: () => _showClueBreakdown(context),
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              child: entry.roundEmojis != null && entry.roundEmojis!.isNotEmpty
-                  ? Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children:
-                              _splitEmojis(entry.roundEmojis!).map((emoji) {
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 1.5,
-                              ),
-                              child: Container(
-                                width: 10,
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: _emojiToColor(emoji),
+          // Hidden on the combined board (no per-round data there).
+          if (!isCombined)
+            GestureDetector(
+              onTap: () => _showClueBreakdown(context),
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: entry.roundEmojis != null &&
+                        entry.roundEmojis!.isNotEmpty
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children:
+                                _splitEmojis(entry.roundEmojis!).map((emoji) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 1.5,
                                 ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        if (_difficultyPct != null) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            '$_difficultyPct%',
-                            style: TextStyle(
-                              color: _difficultyColor,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                            ),
+                                child: Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: _emojiToColor(emoji),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
                           ),
+                          if (_difficultyPct != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              '$_difficultyPct%',
+                              style: TextStyle(
+                                color: _difficultyColor,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
-                    )
-                  : const Icon(
-                      Icons.info_outline,
-                      size: 16,
-                      color: FlitColors.textMuted,
-                    ),
+                      )
+                    : const Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: FlitColors.textMuted,
+                      ),
+              ),
             ),
-          ),
           const SizedBox(width: 6),
           // Metric column — primary value depends on sort mode.
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              if (sort == LeaderboardSort.proficiency) ...[
+              if (isCombined) ...[
+                Text(
+                  _formatCombinedPct(entry.score),
+                  style: TextStyle(
+                    color: isCurrentPlayer
+                        ? FlitColors.accent
+                        : FlitColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  _combinedBreakdown(entry.combinedEfficiencyBps),
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 9,
+                  ),
+                ),
+              ] else if (sort == LeaderboardSort.proficiency) ...[
                 Text(
                   proficiencyPct != null ? '$proficiencyPct%' : '—',
                   style: TextStyle(
@@ -2169,6 +2222,22 @@ class _ErrorState extends StatelessWidget {
 // =============================================================================
 // Helpers
 // =============================================================================
+
+/// Format combined efficiency basis points as a percentage
+/// (e.g. 8740 → "87.4%").
+String _formatCombinedPct(int bps) => '${(bps / 100).toStringAsFixed(1)}%';
+
+/// Compact per-mode efficiency breakdown for the combined board,
+/// e.g. "S 92% · B 74% · T —" (em-dash = mode unplayed).
+String _combinedBreakdown(Map<String, int>? bps) {
+  String part(String label, String region) {
+    final v = bps?[region];
+    return v == null ? '$label —' : '$label ${(v / 100).round()}%';
+  }
+
+  return '${part('S', 'daily')} · ${part('B', 'briefing')} · '
+      '${part('T', 'daily_triangulation')}';
+}
 
 /// Format a number with comma-separated thousands (e.g. 9150 → "9,150").
 String _formatLeaderboardNum(int n) {
