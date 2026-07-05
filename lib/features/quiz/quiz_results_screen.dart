@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/report_capture.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
+import '../../core/widgets/mission_report_card.dart';
 import '../../core/widgets/reveal_map.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/leaderboard_service.dart';
@@ -69,6 +71,10 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
   late Animation<double> _fadeIn;
   late Animation<double> _slideUp;
   final GlobalKey<InkBurstOverlayState> _inkBurstKey = GlobalKey();
+
+  /// Wraps the report-card preview for PNG capture.
+  final GlobalKey _reportKey = GlobalKey();
+  bool _savingImage = false;
 
   @override
   void initState() {
@@ -289,6 +295,11 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
 
                             // Detailed breakdown
                             _buildBreakdown(summary),
+                            const SizedBox(height: 16),
+
+                            // Downloadable mission report — captured
+                            // exactly as shown.
+                            _buildReportCard(summary),
                             const SizedBox(height: 24),
                           ],
                         ),
@@ -313,13 +324,12 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
 
   // ── Reveal map ──────────────────────────────────────────────────────────
 
-  /// World reveal map of the whole quiz: gold stars for answers found,
-  /// red stars for missed ones, red dots (with connector lines) where the
-  /// player's wrong tap landed. Only rendered for country-based regions —
-  /// US states / UK counties codes don't resolve to world capitals, and
-  /// type-in wrong answers carry no location, so absent data degrades
-  /// gracefully to stars only.
-  List<Widget> _buildRevealMap(QuizSummary summary) {
+  /// Builds the star/dot marker layers shared by the full [RevealMap] (with
+  /// legend) and the [RevealMapThumbnail] embedded in the mission report
+  /// card, so both stay in sync from one source of truth.
+  ({List<RevealStar> stars, List<RevealDot> dots}) _revealLayers(
+    QuizSummary summary,
+  ) {
     final stars = <RevealStar>[];
     final dots = <RevealDot>[];
     for (final r in summary.results) {
@@ -334,16 +344,27 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
         if (guess != null) dots.add(RevealDot(guess, lineTo: target));
       }
     }
-    if (stars.isEmpty) return const [];
+    return (stars: stars, dots: dots);
+  }
+
+  /// World reveal map of the whole quiz: gold stars for answers found,
+  /// red stars for missed ones, red dots (with connector lines) where the
+  /// player's wrong tap landed. Only rendered for country-based regions —
+  /// US states / UK counties codes don't resolve to world capitals, and
+  /// type-in wrong answers carry no location, so absent data degrades
+  /// gracefully to stars only.
+  List<Widget> _buildRevealMap(QuizSummary summary) {
+    final layers = _revealLayers(summary);
+    if (layers.stars.isEmpty) return const [];
     return [
       RevealMap(
-        stars: stars,
-        dots: dots,
+        stars: layers.stars,
+        dots: layers.dots,
         legendItems: [
           const RevealLegendItem(Icons.star, FlitColors.gold, 'correct'),
-          if (stars.any((s) => s.color == FlitColors.error))
+          if (layers.stars.any((s) => s.color == FlitColors.error))
             const RevealLegendItem(Icons.star, FlitColors.error, 'missed'),
-          if (dots.isNotEmpty)
+          if (layers.dots.isNotEmpty)
             const RevealLegendItem(
               Icons.circle,
               FlitColors.error,
@@ -353,6 +374,70 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
       ),
       const SizedBox(height: 16),
     ];
+  }
+
+  // ── Mission report card + save image ────────────────────────────────────
+
+  /// True for the Daily Flight Briefing — the one-attempt-per-day quiz.
+  /// The report card omits the reveal map for these so a shared image
+  /// never spoils the day's answers for other players.
+  bool get _isDailyBriefing => widget.dailyBriefingDateKey != null;
+
+  String get _fallbackShareText {
+    final summary = widget.summary;
+    final label =
+        _isDailyBriefing ? 'Daily Briefing' : summary.mode.displayName;
+    return 'Flit $label — Grade ${summary.grade}\n'
+        '${summary.correctCount}/${summary.totalQuestions} correct · '
+        '${summary.totalScore} pts · ${summary.elapsedFormatted}\n'
+        'jamiembright.github.io/flit';
+  }
+
+  Future<void> _saveImage() async {
+    if (_savingImage) return;
+    setState(() => _savingImage = true);
+    try {
+      final png = await captureReportPng(_reportKey);
+      if (png == null || !mounted) return;
+      await shareReportImage(
+        context,
+        png: png,
+        filename: _isDailyBriefing
+            ? 'flit-briefing.png'
+            : 'flit-quiz-${widget.summary.mode.name}.png',
+        fallbackText: _fallbackShareText,
+      );
+    } finally {
+      if (mounted) setState(() => _savingImage = false);
+    }
+  }
+
+  Widget _buildReportCard(QuizSummary summary) {
+    final layers = _revealLayers(summary);
+    return RepaintBoundary(
+      key: _reportKey,
+      child: MissionReportCard(
+        modeTitle: _isDailyBriefing
+            ? 'DAILY BRIEFING'
+            : summary.mode.displayName.toUpperCase(),
+        subtitle: '${summary.correctCount}/${summary.totalQuestions} correct',
+        score: summary.totalScore,
+        stats: [
+          ReportStat(
+            'CORRECT',
+            '${summary.correctCount}/${summary.totalQuestions}',
+          ),
+          ReportStat('TIME', summary.elapsedFormatted),
+          if (_coinsEarned > 0) ReportStat('COINS', '+$_coinsEarned'),
+        ],
+        // Spoiler rule: the Daily Briefing is one-attempt-per-day, so the
+        // downloadable card never includes the answer map for it. Other
+        // quiz variants (Flight School practice, H2H) can show it freely.
+        map: !_isDailyBriefing && layers.stars.isNotEmpty
+            ? RevealMapThumbnail(stars: layers.stars, dots: layers.dots)
+            : null,
+      ),
+    );
   }
 
   // ── Grade badge ─────────────────────────────────────────────────────────
@@ -640,8 +725,6 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
 
   // ── Bottom bar ──────────────────────────────────────────────────────────
 
-  bool get _isDailyBriefing => widget.dailyBriefingDateKey != null;
-
   Widget _buildBottomBar() {
     // Daily briefings are one-attempt-per-day — show a single DONE button
     // instead of PLAY AGAIN / CHANGE MODE.
@@ -657,33 +740,75 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
           color: FlitColors.backgroundMid,
           border: Border(top: BorderSide(color: FlitColors.cardBorder)),
         ),
-        child: SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: FlitColors.success,
-              foregroundColor: FlitColors.textPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 4,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.check_circle, size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'DONE',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildSaveImageButton(),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FlitColors.success,
+                  foregroundColor: FlitColors.textPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  elevation: 4,
                 ),
-              ],
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.check_circle, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'DONE',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  /// SAVE IMAGE button — mirrors the reference implementation's accent
+  /// button with a busy spinner while the report card is being captured.
+  Widget _buildSaveImageButton() => SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: ElevatedButton.icon(
+          onPressed: _savingImage ? null : _saveImage,
+          icon: _savingImage
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: FlitColors.textPrimary,
+                  ),
+                )
+              : const Icon(Icons.image_outlined, size: 18),
+          label: const Text(
+            'SAVE IMAGE',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: FlitColors.accent,
+            foregroundColor: FlitColors.textPrimary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
         ),
@@ -695,66 +820,73 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
           color: FlitColors.backgroundMid,
           border: Border(top: BorderSide(color: FlitColors.cardBorder)),
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Back to setup
-            Expanded(
-              child: SizedBox(
-                height: 50,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pushReplacement(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const FlightSchoolScreen(),
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: FlitColors.textSecondary,
-                    side: const BorderSide(color: FlitColors.cardBorder),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'CHANGE MODE',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700, letterSpacing: 1),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Play again
-            Expanded(
-              flex: 2,
-              child: SizedBox(
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FlitColors.accent,
-                    foregroundColor: FlitColors.textPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 4,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.replay, size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        'PLAY AGAIN',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1,
+            _buildSaveImageButton(),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                // Back to setup
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pushReplacement(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const FlightSchoolScreen(),
                         ),
                       ),
-                    ],
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: FlitColors.textSecondary,
+                        side: const BorderSide(color: FlitColors.cardBorder),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'CHANGE MODE',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, letterSpacing: 1),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                // Play again
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: FlitColors.accent,
+                        foregroundColor: FlitColors.textPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.replay, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'PLAY AGAIN',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

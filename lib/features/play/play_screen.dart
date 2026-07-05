@@ -12,6 +12,8 @@ import '../../core/utils/haptics.dart';
 import '../../core/services/error_service.dart';
 import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/report_capture.dart';
+import '../../core/widgets/mission_report_card.dart';
 import '../../core/widgets/reveal_map.dart';
 import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
@@ -1378,6 +1380,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         roundResults: _roundResults,
         fuelDepleted: fuelDepleted,
         freeFlightCoinsEarned: _freeFlightCoinsEarned,
+        isDailyChallenge: widget.isDailyChallenge,
+        isFreeFlight: widget.isFreeFlight,
         dailyResult: dailyResultForDialog,
         onShare: dailyResultForDialog != null
             ? () {
@@ -2428,7 +2432,7 @@ class _ScoreBreakdown extends StatelessWidget {
   }
 }
 
-class _ResultDialog extends ConsumerWidget {
+class _ResultDialog extends ConsumerStatefulWidget {
   const _ResultDialog({
     required this.session,
     this.onPlayAgain,
@@ -2440,6 +2444,8 @@ class _ResultDialog extends ConsumerWidget {
     this.coinReward = 0,
     this.roundResults = const [],
     this.fuelDepleted = false,
+    this.isDailyChallenge = false,
+    this.isFreeFlight = false,
     this.dailyResult,
     this.onShare,
     this.freeFlightCoinsEarned = 0,
@@ -2456,6 +2462,14 @@ class _ResultDialog extends ConsumerWidget {
   final List<_RoundResult> roundResults;
   final bool fuelDepleted;
 
+  /// Mirrors [PlayScreen.isDailyChallenge] — drives the mission report's
+  /// mode title and its spoiler rule (no reveal map for dailies).
+  final bool isDailyChallenge;
+
+  /// Mirrors [PlayScreen.isFreeFlight] — drives the mission report's mode
+  /// title.
+  final bool isFreeFlight;
+
   /// Non-null when this is a daily challenge result.
   final DailyResult? dailyResult;
 
@@ -2465,13 +2479,33 @@ class _ResultDialog extends ConsumerWidget {
   /// Coins earned from free flight per-clue rewards this session.
   final int freeFlightCoinsEarned;
 
-  /// World map of the whole run: a star per round's target (gold =
-  /// found, red = missed) and the flown trail per round. Skipped when no
-  /// target resolves (e.g. empty codes from unseen rounds only).
-  List<Widget> _buildRevealMap() {
+  @override
+  ConsumerState<_ResultDialog> createState() => _ResultDialogState();
+}
+
+class _ResultDialogState extends ConsumerState<_ResultDialog> {
+  /// Wraps the report-card preview for PNG capture.
+  final GlobalKey _reportKey = GlobalKey();
+  bool _savingImage = false;
+
+  bool get _isMultiRound => widget.totalRounds > 1;
+
+  /// Mode title for the mission report card, mirroring the mode naming
+  /// used across the rest of the app (home screen tiles, leaderboard).
+  String get _modeTitle {
+    if (widget.isDailyChallenge) return 'DAILY SCRAMBLE';
+    if (widget.challengeFriendName != null) return 'DOGFIGHT';
+    if (widget.isFreeFlight) return 'FREE FLIGHT';
+    return 'TRAINING SORTIE';
+  }
+
+  /// Builds the star/path marker layers shared by the full [RevealMap]
+  /// (with legend) and the [RevealMapThumbnail] embedded in the mission
+  /// report card, so both stay in sync from one source of truth.
+  ({List<RevealStar> stars, List<RevealPath> paths}) _revealLayers() {
     final stars = <RevealStar>[];
     final paths = <RevealPath>[];
-    for (final r in roundResults) {
+    for (final r in widget.roundResults) {
       final target = CountryData.getCapital(r.countryCode)?.location;
       if (target != null) {
         stars.add(
@@ -2483,17 +2517,25 @@ class _ResultDialog extends ConsumerWidget {
       }
       if (r.path.length >= 2) paths.add(RevealPath(r.path));
     }
-    if (stars.isEmpty) return const [];
+    return (stars: stars, paths: paths);
+  }
+
+  /// World map of the whole run: a star per round's target (gold =
+  /// found, red = missed) and the flown trail per round. Skipped when no
+  /// target resolves (e.g. empty codes from unseen rounds only).
+  List<Widget> _buildRevealMap() {
+    final layers = _revealLayers();
+    if (layers.stars.isEmpty) return const [];
     return [
       const SizedBox(height: 16),
       RevealMap(
-        stars: stars,
-        paths: paths,
+        stars: layers.stars,
+        paths: layers.paths,
         legendItems: [
           const RevealLegendItem(Icons.star, FlitColors.gold, 'found'),
-          if (stars.any((s) => s.color == FlitColors.error))
+          if (layers.stars.any((s) => s.color == FlitColors.error))
             const RevealLegendItem(Icons.star, FlitColors.error, 'missed'),
-          if (paths.isNotEmpty)
+          if (layers.paths.isNotEmpty)
             const RevealLegendItem(
               Icons.timeline,
               FlitColors.accent,
@@ -2502,6 +2544,69 @@ class _ResultDialog extends ConsumerWidget {
         ],
       ),
     ];
+  }
+
+  String get _fallbackShareText {
+    final displayTime =
+        _isMultiRound ? widget.cumulativeTime : widget.session.elapsed;
+    final score = _isMultiRound ? widget.totalScore : widget.session.score;
+    return 'Flit $_modeTitle\n'
+        'Score: $score · ${_formatTime(displayTime)}\n'
+        'jamiembright.github.io/flit';
+  }
+
+  Future<void> _saveImage() async {
+    if (_savingImage) return;
+    setState(() => _savingImage = true);
+    try {
+      final png = await captureReportPng(_reportKey);
+      if (png == null || !mounted) return;
+      await shareReportImage(
+        context,
+        png: png,
+        filename: 'flit-flight-report.png',
+        fallbackText: widget.dailyResult?.toShareText() ?? _fallbackShareText,
+      );
+    } finally {
+      if (mounted) setState(() => _savingImage = false);
+    }
+  }
+
+  Widget _buildReportCard() {
+    final layers = _revealLayers();
+    final displayTime =
+        _isMultiRound ? widget.cumulativeTime : widget.session.elapsed;
+    final foundCount = widget.roundResults.where((r) => r.completed).length;
+    final coins = widget.coinReward > 0
+        ? widget.coinReward
+        : widget.freeFlightCoinsEarned;
+    return RepaintBoundary(
+      key: _reportKey,
+      child: MissionReportCard(
+        modeTitle: _modeTitle,
+        subtitle: [
+          if (widget.challengeFriendName != null)
+            'vs ${widget.challengeFriendName}',
+          if (!_isMultiRound) widget.session.targetName,
+        ].join(' · '),
+        score: _isMultiRound ? widget.totalScore : widget.session.score,
+        stats: [
+          ReportStat(
+            'ROUNDS',
+            '$foundCount/'
+                '${widget.roundResults.isNotEmpty ? widget.roundResults.length : widget.totalRounds}',
+          ),
+          ReportStat('TIME', _formatTime(displayTime)),
+          if (coins > 0) ReportStat('COINS', '+$coins'),
+        ],
+        // Spoiler rule: the daily challenge is one-attempt-per-day, so the
+        // downloadable card never includes the answer map for it. Other
+        // session types (training, free flight, dogfight) can show it.
+        map: !widget.isDailyChallenge && layers.stars.isNotEmpty
+            ? RevealMapThumbnail(stars: layers.stars, paths: layers.paths)
+            : null,
+      ),
+    );
   }
 
   static String _formatTime(Duration d) {
@@ -2536,10 +2641,20 @@ class _ResultDialog extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final session = widget.session;
+    final challengeFriendName = widget.challengeFriendName;
+    final totalScore = widget.totalScore;
+    final coinReward = widget.coinReward;
+    final roundResults = widget.roundResults;
+    final dailyResult = widget.dailyResult;
+    final onShare = widget.onShare;
+    final onExit = widget.onExit;
+    final onPlayAgain = widget.onPlayAgain;
+    final freeFlightCoinsEarned = widget.freeFlightCoinsEarned;
     final isChallenge = challengeFriendName != null;
-    final isMultiRound = totalRounds > 1;
-    final displayTime = isMultiRound ? cumulativeTime : session.elapsed;
+    final isMultiRound = _isMultiRound;
+    final displayTime = isMultiRound ? widget.cumulativeTime : session.elapsed;
     final totalSeconds = displayTime.inMilliseconds / 1000;
 
     // Calculate gold breakdown for display.
@@ -2561,304 +2676,347 @@ class _ResultDialog extends ConsumerWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.flight_land,
-                color: FlitColors.success,
-                size: 44,
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'LANDED',
-                style: TextStyle(
-                  color: FlitColors.textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 3,
+          // Wrapped in a scrollable so the (now taller) content — including
+          // the mission report card below — scrolls instead of overflowing
+          // on shorter screens, while still shrinking to fit small content.
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.flight_land,
+                  color: FlitColors.success,
+                  size: 44,
                 ),
-              ),
-              if (!isMultiRound) ...[
-                const SizedBox(height: 8),
-                Text(
-                  session.targetName,
-                  style: const TextStyle(
-                    color: FlitColors.accent,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-              if (isChallenge) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'vs $challengeFriendName — Total: ${totalSeconds.toStringAsFixed(2)}s',
-                  style: const TextStyle(
-                    color: FlitColors.gold,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              if (!isChallenge) ...[
-                const SizedBox(height: 16),
-                Text(
-                  _formatTime(displayTime),
-                  style: const TextStyle(
-                    color: FlitColors.textPrimary,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ],
-              const SizedBox(height: 6),
-              Text(
-                isMultiRound
-                    ? 'Total Score: $totalScore'
-                    : 'Score: ${session.score}',
-                style: const TextStyle(
-                  color: FlitColors.textSecondary,
-                  fontSize: 14,
-                ),
-              ),
-              // Single-round score breakdown.
-              if (!isMultiRound &&
-                  roundResults.isNotEmpty &&
-                  roundResults.first.completed) ...[
-                const SizedBox(height: 8),
-                _ScoreBreakdown(result: roundResults.first),
-              ],
-              // Flight reveal map: each round's target starred (gold =
-              // found, red = missed) with the flown trail — the same
-              // post-round reveal as Triangulation.
-              ..._buildRevealMap(),
-              // Per-round summary table for multi-round modes.
-              if (isMultiRound && roundResults.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                const Divider(color: FlitColors.cardBorder, height: 1),
                 const SizedBox(height: 12),
                 const Text(
-                  'ROUND SUMMARY',
+                  'LANDED',
                   style: TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 3,
+                  ),
+                ),
+                if (!isMultiRound) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    session.targetName,
+                    style: const TextStyle(
+                      color: FlitColors.accent,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+                if (isChallenge) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'vs $challengeFriendName — Total: ${totalSeconds.toStringAsFixed(2)}s',
+                    style: const TextStyle(
+                      color: FlitColors.gold,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                if (!isChallenge) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    _formatTime(displayTime),
+                    style: const TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Text(
+                  isMultiRound
+                      ? 'Total Score: $totalScore'
+                      : 'Score: ${session.score}',
+                  style: const TextStyle(
                     color: FlitColors.textSecondary,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5,
+                    fontSize: 14,
                   ),
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Tap a round for score breakdown',
-                  style: TextStyle(color: FlitColors.textMuted, fontSize: 9),
-                ),
-                const SizedBox(height: 8),
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    padding: EdgeInsets.zero,
-                    itemCount: roundResults.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 6),
-                    itemBuilder: (_, i) {
-                      return _RoundBreakdownRow(
-                        index: i,
-                        result: roundResults[i],
-                        clueIcon: _clueIcon(roundResults[i].clueType),
-                        formatTime: _formatTime,
-                      );
-                    },
+                // Single-round score breakdown.
+                if (!isMultiRound &&
+                    roundResults.isNotEmpty &&
+                    roundResults.first.completed) ...[
+                  const SizedBox(height: 8),
+                  _ScoreBreakdown(result: roundResults.first),
+                ],
+                // Flight reveal map: each round's target starred (gold =
+                // found, red = missed) with the flown trail — the same
+                // post-round reveal as Triangulation.
+                ..._buildRevealMap(),
+                // Per-round summary table for multi-round modes.
+                if (isMultiRound && roundResults.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  const Divider(color: FlitColors.cardBorder, height: 1),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'ROUND SUMMARY',
+                    style: TextStyle(
+                      color: FlitColors.textSecondary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                const Divider(color: FlitColors.cardBorder, height: 1),
-              ],
-              if (coinReward > 0) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Tap a round for score breakdown',
+                    style: TextStyle(color: FlitColors.textMuted, fontSize: 9),
                   ),
-                  decoration: BoxDecoration(
-                    color: FlitColors.gold.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: FlitColors.gold.withOpacity(0.4)),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      itemCount: roundResults.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 6),
+                      itemBuilder: (_, i) {
+                        return _RoundBreakdownRow(
+                          index: i,
+                          result: roundResults[i],
+                          clueIcon: _clueIcon(roundResults[i].clueType),
+                          formatTime: _formatTime,
+                        );
+                      },
+                    ),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Total earned
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.monetization_on,
-                            color: FlitColors.gold,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '+$totalEarned coins',
-                            style: const TextStyle(
+                  const SizedBox(height: 8),
+                  const Divider(color: FlitColors.cardBorder, height: 1),
+                ],
+                if (coinReward > 0) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: FlitColors.gold.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border:
+                          Border.all(color: FlitColors.gold.withOpacity(0.4)),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Total earned
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.monetization_on,
                               color: FlitColors.gold,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                              size: 18,
                             ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '+$totalEarned coins',
+                              style: const TextStyle(
+                                color: FlitColors.gold,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Breakdown
+                        if (licenseBonus > 0) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '$coinReward base + $licenseBonus bonus '
+                            '(License +$licenseBoostPct%, Level +$levelBoostPct%)',
+                            style: TextStyle(
+                              color: FlitColors.gold.withOpacity(0.7),
+                              fontSize: 10,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ],
-                      ),
-                      // Breakdown
-                      if (licenseBonus > 0) ...[
-                        const SizedBox(height: 4),
+                      ],
+                    ),
+                  ),
+                ],
+                // Free flight per-clue earnings display.
+                if (freeFlightCoinsEarned > 0) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: FlitColors.gold.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border:
+                          Border.all(color: FlitColors.gold.withOpacity(0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.monetization_on,
+                          color: FlitColors.gold,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 6),
                         Text(
-                          '$coinReward base + $licenseBonus bonus '
-                          '(License +$licenseBoostPct%, Level +$levelBoostPct%)',
-                          style: TextStyle(
-                            color: FlitColors.gold.withOpacity(0.7),
-                            fontSize: 10,
+                          '+$freeFlightCoinsEarned coins (free flight)',
+                          style: const TextStyle(
+                            color: FlitColors.gold,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
-                    ],
-                  ),
-                ),
-              ],
-              // Free flight per-clue earnings display.
-              if (freeFlightCoinsEarned > 0) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: FlitColors.gold.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: FlitColors.gold.withOpacity(0.4)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.monetization_on,
-                        color: FlitColors.gold,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '+$freeFlightCoinsEarned coins (free flight)',
-                        style: const TextStyle(
-                          color: FlitColors.gold,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              // Daily challenge result circles (painted, not emoji — reliable
-              // across all platforms).
-              if (dailyResult != null) ...[
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: dailyResult!.rounds.map((r) {
-                    final color = !r.completed
-                        ? FlitColors.error
-                        : r.hintsUsed == 0
-                            ? FlitColors.success
-                            : r.hintsUsed <= 2
-                                ? FlitColors.gold
-                                : r.hintsUsed <= 4
-                                    ? FlitColors.accent
-                                    : FlitColors.error;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'No hints = green, 1-2 = yellow, 3+ = orange, missed = red',
-                  style: TextStyle(color: FlitColors.textMuted, fontSize: 9),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  TextButton(
-                    onPressed: onExit,
-                    child: const Text(
-                      'EXIT',
-                      style: TextStyle(color: FlitColors.textMuted),
                     ),
                   ),
-                  if (onShare != null)
-                    OutlinedButton.icon(
-                      onPressed: onShare,
-                      icon: const Icon(
-                        Icons.share,
-                        color: FlitColors.accent,
-                        size: 18,
-                      ),
-                      label: const Text(
-                        'SHARE',
-                        style: TextStyle(
-                          color: FlitColors.accent,
-                          letterSpacing: 1,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: FlitColors.accent),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  if (!isChallenge && onPlayAgain != null)
-                    ElevatedButton(
-                      onPressed: onPlayAgain,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: FlitColors.accent,
-                        foregroundColor: FlitColors.textPrimary,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 28,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'PLAY AGAIN',
-                        style: TextStyle(
-                          letterSpacing: 1,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
                 ],
-              ),
-            ],
+                // Daily challenge result circles (painted, not emoji — reliable
+                // across all platforms).
+                if (dailyResult != null) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: dailyResult.rounds.map((r) {
+                      final color = !r.completed
+                          ? FlitColors.error
+                          : r.hintsUsed == 0
+                              ? FlitColors.success
+                              : r.hintsUsed <= 2
+                                  ? FlitColors.gold
+                                  : r.hintsUsed <= 4
+                                      ? FlitColors.accent
+                                      : FlitColors.error;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'No hints = green, 1-2 = yellow, 3+ = orange, missed = red',
+                    style: TextStyle(color: FlitColors.textMuted, fontSize: 9),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                const SizedBox(height: 16),
+                // Downloadable mission report — captured exactly as shown.
+                _buildReportCard(),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: _savingImage ? null : _saveImage,
+                    icon: _savingImage
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: FlitColors.textPrimary,
+                            ),
+                          )
+                        : const Icon(Icons.image_outlined, size: 18),
+                    label: const Text(
+                      'SAVE IMAGE',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FlitColors.accent,
+                      foregroundColor: FlitColors.textPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton(
+                      onPressed: onExit,
+                      child: const Text(
+                        'EXIT',
+                        style: TextStyle(color: FlitColors.textMuted),
+                      ),
+                    ),
+                    if (onShare != null)
+                      OutlinedButton.icon(
+                        onPressed: onShare,
+                        icon: const Icon(
+                          Icons.share,
+                          color: FlitColors.accent,
+                          size: 18,
+                        ),
+                        label: const Text(
+                          'SHARE',
+                          style: TextStyle(
+                            color: FlitColors.accent,
+                            letterSpacing: 1,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: FlitColors.accent),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    if (!isChallenge && onPlayAgain != null)
+                      ElevatedButton(
+                        onPressed: onPlayAgain,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: FlitColors.accent,
+                          foregroundColor: FlitColors.textPrimary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'PLAY AGAIN',
+                          style: TextStyle(
+                            letterSpacing: 1,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
