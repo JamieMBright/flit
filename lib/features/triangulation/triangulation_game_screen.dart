@@ -7,7 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/haptics.dart';
+import '../../core/utils/report_capture.dart';
 import '../../core/widgets/country_flag.dart';
+import '../../core/widgets/mission_report_card.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/widgets/reveal_map.dart';
 import '../../data/models/daily_result.dart';
@@ -295,6 +297,7 @@ class _TriangulationGameScreenState
         session: _session,
         shareText: _shareText,
         isDaily: widget.daily != null,
+        dayNumber: widget.daily?.dayNumber,
         isCapitalTarget: _isCapitalTarget,
         coinsEarned: _session.solvedRounds > 0 ? widget.coinReward : 0,
       );
@@ -793,12 +796,13 @@ class _RoundResultView extends StatelessWidget {
 // Final summary + share
 // ─────────────────────────────────────────────────────────────────────────
 
-class _SummaryView extends StatelessWidget {
+class _SummaryView extends StatefulWidget {
   const _SummaryView({
     required this.session,
     required this.shareText,
     required this.isDaily,
     required this.isCapitalTarget,
+    this.dayNumber,
     this.coinsEarned = 0,
   });
 
@@ -806,7 +810,65 @@ class _SummaryView extends StatelessWidget {
   final String shareText;
   final bool isDaily;
   final bool isCapitalTarget;
+  final int? dayNumber;
   final int coinsEarned;
+
+  @override
+  State<_SummaryView> createState() => _SummaryViewState();
+}
+
+class _SummaryViewState extends State<_SummaryView> {
+  /// Wraps the report-card preview for PNG capture.
+  final GlobalKey _reportKey = GlobalKey();
+  bool _savingImage = false;
+
+  TriangulationSession get session => widget.session;
+  bool get isDaily => widget.isDaily;
+  bool get isCapitalTarget => widget.isCapitalTarget;
+  String get shareText => widget.shareText;
+  int get coinsEarned => widget.coinsEarned;
+
+  Future<void> _saveImage() async {
+    if (_savingImage) return;
+    setState(() => _savingImage = true);
+    try {
+      final png = await captureReportPng(_reportKey);
+      if (png == null || !mounted) return;
+      await shareReportImage(
+        context,
+        png: png,
+        filename: isDaily
+            ? 'flit-triangulation-day${widget.dayNumber ?? 0}.png'
+            : 'flit-triangulation.png',
+        fallbackText: shareText,
+      );
+    } finally {
+      if (mounted) setState(() => _savingImage = false);
+    }
+  }
+
+  Widget _buildReportCard() {
+    return RepaintBoundary(
+      key: _reportKey,
+      child: MissionReportCard(
+        modeTitle: isDaily ? 'DAILY TRIANGULATION' : 'TRIANGULATION',
+        subtitle: [
+          if (widget.dayNumber != null) 'Day ${widget.dayNumber}',
+          '${isCapitalTarget ? 'capital' : 'country'} targets',
+        ].join(' · '),
+        score: session.totalScore,
+        emojiGrid: triangulationEmojiGrid(session),
+        stats: [
+          ReportStat(
+            'SOLVED',
+            '${session.solvedRounds}/${session.rounds.length}',
+          ),
+          ReportStat('TIME', DailyResult.formatTime(session.totalTimeMs)),
+          if (coinsEarned > 0) ReportStat('COINS', '+$coinsEarned'),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -870,6 +932,9 @@ class _SummaryView extends StatelessWidget {
                     ],
                   ),
                 ],
+                const SizedBox(height: 18),
+                // Downloadable mission report — captured exactly as shown.
+                _buildReportCard(),
               ],
             ),
           ),
@@ -878,38 +943,79 @@ class _SummaryView extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              if (isDaily)
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: shareText));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Result copied — paste to share!'),
+              Row(
+                children: [
+                  if (isDaily) ...[
+                    Expanded(
+                      child: SizedBox(
+                        height: 52,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: shareText));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Result copied — paste to share!'),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.share, size: 18),
+                          label: const Text(
+                            'SHARE',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: FlitColors.gold,
+                            foregroundColor: FlitColors.backgroundDark,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.share),
-                    label: const Text(
-                      'SHARE RESULT',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 2,
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: FlitColors.gold,
-                      foregroundColor: FlitColors.backgroundDark,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                    const SizedBox(width: 10),
+                  ],
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        onPressed: _savingImage ? null : _saveImage,
+                        icon: _savingImage
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: FlitColors.backgroundDark,
+                                ),
+                              )
+                            : const Icon(Icons.image_outlined, size: 18),
+                        label: const Text(
+                          'SAVE IMAGE',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: FlitColors.accent,
+                          foregroundColor: FlitColors.textPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              if (isDaily) const SizedBox(height: 10),
+                ],
+              ),
+              const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
                 height: 52,

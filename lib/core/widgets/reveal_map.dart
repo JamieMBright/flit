@@ -92,6 +92,45 @@ class RevealMap extends StatefulWidget {
   State<RevealMap> createState() => _RevealMapState();
 }
 
+/// Static, non-interactive variant of [RevealMap] for embedding in
+/// captured artifacts (e.g. the downloadable mission report). Same
+/// painter, no gestures, no legend.
+class RevealMapThumbnail extends StatelessWidget {
+  const RevealMapThumbnail({
+    super.key,
+    this.stars = const [],
+    this.dots = const [],
+    this.paths = const [],
+  });
+
+  final List<RevealStar> stars;
+  final List<RevealDot> dots;
+  final List<RevealPath> paths;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        color: FlitColors.backgroundMid,
+        child: AspectRatio(
+          aspectRatio: 2,
+          child: CustomPaint(
+            painter: _RevealMapPainter(
+              targetLngLat: null,
+              clueLngLats: const [],
+              guessLngLats: const [],
+              stars: stars,
+              dots: dots,
+              paths: paths,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _RevealMapState extends State<RevealMap> {
   /// Drives pinch-zoom/pan; the current zoom feeds back into the painter
   /// so markers keep a constant on-screen size.

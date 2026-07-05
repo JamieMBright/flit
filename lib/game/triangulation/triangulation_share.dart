@@ -32,6 +32,11 @@ String buildTriangulationShareText(
       'Time: $time';
 }
 
+/// Just the emoji grid rows (no header/score) — used by the downloadable
+/// image report alongside the full text share.
+String triangulationEmojiGrid(TriangulationSession session) =>
+    session.rounds.map(_roundRow).join('\n');
+
 String _roundRow(TriangulationRoundState state) {
   final squares = StringBuffer();
   for (final guess in state.guesses) {
