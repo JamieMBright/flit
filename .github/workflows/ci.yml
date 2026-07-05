@@ -220,6 +220,10 @@ jobs:
         run: |
           if [ ! -d android ]; then
             flutter create --platform=android . --project-name=flit
+            # share_plus >=12 ships Kotlin 2.x plugin code; the Flutter
+            # 3.29 template pins Kotlin 1.8.22, which cannot read it and
+            # fails compileReleaseKotlin. Bump the generated pin.
+            sed -i 's/id("org.jetbrains.kotlin.android") version "[^"]*"/id("org.jetbrains.kotlin.android") version "2.1.20"/' android/settings.gradle.kts
           fi
 
       - name: Get dependencies
