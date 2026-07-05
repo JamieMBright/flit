@@ -44,8 +44,7 @@ class RevealPath {
   final Color color;
 
   /// Dashed rendering — used for the faint "optimal route" overlay so it
-  /// reads as a reference line, not a flown trail. Dashed paths also skip
-  /// the take-off dot.
+  /// reads as a reference line, not a flown trail.
   final bool dashed;
 }
 
@@ -67,6 +66,8 @@ class RevealMap extends StatefulWidget {
     this.stars = const [],
     this.dots = const [],
     this.paths = const [],
+    this.startLngLat,
+    this.finishLngLat,
     this.legendItems,
     this.showLegend = true,
   });
@@ -91,6 +92,10 @@ class RevealMap extends StatefulWidget {
   /// Polyline layers, drawn beneath the markers.
   final List<RevealPath> paths;
 
+  /// Session start (accent dot) and finish (checkered flag) markers.
+  final Vector2? startLngLat;
+  final Vector2? finishLngLat;
+
   /// Custom legend; when null the classic answer/clues/guesses legend is
   /// derived from whichever of the simple layers are present.
   final List<RevealLegendItem>? legendItems;
@@ -110,11 +115,15 @@ class RevealMapThumbnail extends StatelessWidget {
     this.stars = const [],
     this.dots = const [],
     this.paths = const [],
+    this.startLngLat,
+    this.finishLngLat,
   });
 
   final List<RevealStar> stars;
   final List<RevealDot> dots;
   final List<RevealPath> paths;
+  final Vector2? startLngLat;
+  final Vector2? finishLngLat;
 
   @override
   Widget build(BuildContext context) {
@@ -132,6 +141,8 @@ class RevealMapThumbnail extends StatelessWidget {
               stars: stars,
               dots: dots,
               paths: paths,
+              startLngLat: startLngLat,
+              finishLngLat: finishLngLat,
             ),
           ),
         ),
@@ -201,6 +212,8 @@ class _RevealMapState extends State<RevealMap> {
                     stars: widget.stars,
                     dots: widget.dots,
                     paths: widget.paths,
+                    startLngLat: widget.startLngLat,
+                    finishLngLat: widget.finishLngLat,
                     zoom: _zoom,
                   ),
                 ),
@@ -257,6 +270,8 @@ class _RevealMapPainter extends CustomPainter {
     required this.stars,
     required this.dots,
     required this.paths,
+    this.startLngLat,
+    this.finishLngLat,
     this.zoom = 1,
   });
 
@@ -266,6 +281,8 @@ class _RevealMapPainter extends CustomPainter {
   final List<RevealStar> stars;
   final List<RevealDot> dots;
   final List<RevealPath> paths;
+  final Vector2? startLngLat;
+  final Vector2? finishLngLat;
   final double zoom;
 
   @override
@@ -333,12 +350,21 @@ class _RevealMapPainter extends CustomPainter {
           ..strokeWidth = 1.2 / z
           ..strokeCap = StrokeCap.round,
       );
-      if (!path.dashed) {
-        // Take-off dot so the trail's direction reads at a glance.
-        final start =
-            project(normLng(path.points.first.x), path.points.first.y);
-        canvas.drawCircle(start, 2.5 / z, Paint()..color = path.color);
-      }
+    }
+
+    // Session start dot and checkered finish flag — one each, not per
+    // trail (per-trail take-off dots looked like duplicate target stars).
+    if (startLngLat != null) {
+      final pos = project(normLng(startLngLat!.x), startLngLat!.y);
+      canvas.drawCircle(pos, 4 / z, Paint()..color = Colors.white);
+      canvas.drawCircle(pos, 2.6 / z, Paint()..color = FlitColors.accent);
+    }
+    if (finishLngLat != null) {
+      _drawCheckeredFlag(
+        canvas,
+        project(normLng(finishLngLat!.x), finishLngLat!.y),
+        z,
+      );
     }
 
     final target =
@@ -408,6 +434,35 @@ class _RevealMapPainter extends CustomPainter {
     if (target != null) {
       _drawStar(canvas, target, 7 / z, Paint()..color = FlitColors.gold);
     }
+  }
+
+  /// Mini checkered flag: pole rising from the finish point with a 3×2
+  /// black/white checked banner.
+  void _drawCheckeredFlag(Canvas canvas, Offset pos, double z) {
+    final poleTop = pos - Offset(0, 10 / z);
+    canvas.drawLine(
+      pos,
+      poleTop,
+      Paint()
+        ..color = Colors.white
+        ..strokeWidth = 1.2 / z
+        ..strokeCap = StrokeCap.round,
+    );
+    final cell = 2.6 / z;
+    for (var col = 0; col < 3; col++) {
+      for (var row = 0; row < 2; row++) {
+        canvas.drawRect(
+          Rect.fromLTWH(
+            poleTop.dx + col * cell,
+            poleTop.dy + row * cell,
+            cell,
+            cell,
+          ),
+          Paint()..color = (col + row).isEven ? Colors.black : Colors.white,
+        );
+      }
+    }
+    canvas.drawCircle(pos, 1.6 / z, Paint()..color = Colors.white);
   }
 
   /// Converts [source] into a dashed copy by walking its metrics.
