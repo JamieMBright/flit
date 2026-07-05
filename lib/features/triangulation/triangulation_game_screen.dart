@@ -12,9 +12,11 @@ import '../../core/widgets/country_flag.dart';
 import '../../core/widgets/mission_report_card.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/widgets/reveal_map.dart';
+import '../../core/widgets/consumable_widgets.dart';
 import '../../data/models/daily_result.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/clues/clue_types.dart';
+import '../../game/economy/supply_drop.dart';
 import '../../game/map/country_data.dart';
 import '../../game/quiz/fuzzy_match.dart';
 import '../../game/triangulation/daily_triangulation.dart';
@@ -239,6 +241,19 @@ class _TriangulationGameScreenState
         _showingRoundResult = false;
         _finished = true;
       });
+      // Rare supply drop: Recon's strong-performance gate is solving
+      // >= 60% of the day's rounds. Deterministic — no re-rolls.
+      final dropped = ref.read(accountProvider.notifier).rollSupplyDrop(
+            mode: 'daily_triangulation',
+            score: _session.totalScore,
+            strongPerformance: SupplyDrop.isStrong(
+              score: _session.solvedRounds,
+              maxScore: _session.rounds.length,
+            ),
+          );
+      if (dropped != null && mounted) {
+        await showSupplyDropDialog(context, dropped);
+      }
       return;
     }
     _session.advanceRound();

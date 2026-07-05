@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/consumable_widgets.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/seasonal_theme.dart';
@@ -356,6 +357,13 @@ class _FreeFlightSetupScreenState extends ConsumerState<FreeFlightSetupScreen> {
               ),
             ],
           ),
+          // Active boost indicators (Gold Surge / XP Surge / Polish).
+          if (account.activeEffects
+              .activeAt(DateTime.now().toUtc())
+              .isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ActiveEffectsRow(effects: account.activeEffects),
+          ],
           const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
@@ -408,16 +416,46 @@ class _FreeFlightSetupScreenState extends ConsumerState<FreeFlightSetupScreen> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
-                    child: const Text(
-                      'REFUEL · ${FuelTank.instantRefuelCoinCost}c',
-                      style: TextStyle(
+                    child: Text(
+                      'FULL · ${notifier.instantRefuelCost}c',
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      final ok = notifier.topUpFuelWithCoins();
+                      if (!ok) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Not enough coins'),
+                            backgroundColor: FlitColors.error,
+                          ),
+                        );
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: FlitColors.textSecondary,
+                      side: BorderSide(
+                        color: FlitColors.cardBorder.withValues(alpha: 0.9),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    child: Text(
+                      '+25% · ${notifier.fuelTopUpCost}c',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton(
                     onPressed: account.refuelCanisters > 0
@@ -579,7 +617,7 @@ class _FreeFlightSetupScreenState extends ConsumerState<FreeFlightSetupScreen> {
                 Text(
                   _selectedRounds == 0
                       ? 'START FREE FLIGHT'
-                      : 'START FREE FLIGHT (\u00D7${_selectedRounds})',
+                      : 'START FREE FLIGHT (\u00D7$_selectedRounds)',
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w900,

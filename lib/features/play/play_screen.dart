@@ -18,6 +18,7 @@ import '../../core/widgets/mission_report_card.dart';
 import '../../core/widgets/reveal_map.dart';
 import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
+import '../../core/widgets/consumable_widgets.dart';
 import '../../core/widgets/settings_sheet.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/models/daily_result.dart';
@@ -29,6 +30,7 @@ import '../../data/services/challenge_service.dart';
 import '../challenge/challenge_result_screen.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/data/country_difficulty.dart';
+import '../../game/economy/supply_drop.dart';
 import '../../game/flit_game.dart';
 import '../../game/map/country_data.dart';
 import '../../game/map/descent_map_view.dart';
@@ -40,6 +42,7 @@ import '../../game/ui/ink_burst_overlay.dart';
 import '../campaign/coach_overlay.dart';
 import '../campaign/mission_dialog.dart';
 import '../campaign/tutorial_overlay.dart';
+import 'out_of_fuel_dialog.dart';
 
 final _log = GameLog.instance;
 
@@ -291,6 +294,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
   /// Total coins earned from free flight clues this session.
   int _freeFlightCoinsEarned = 0;
+
+  /// Whether the out-of-fuel popup has been shown since the last refuel —
+  /// re-armed when the player refuels from the dialog.
+  bool _outOfFuelDialogShown = false;
 
   /// Whether this is a free flight session (earns per-clue coins).
   bool get _isFreeFlightEarning =>
@@ -1074,17 +1081,30 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   void _awardFreeFlightClue() {
     if (!_isFreeFlightEarning) return;
     final config = _economyConfig ?? EconomyConfig.defaults();
-    final earned = ref.read(accountProvider.notifier).awardFreeFlightClue(
-          perClueReward: config.earnings.freeFlightPerClueReward,
-          dailyCap: config.earnings.freeFlightDailyCap,
-          promoMultiplier: config.earningsMultiplier,
-          // Fuel gates FREE-FLIGHT farming earnings only — never daily
-          // modes, rated sorties, or H2H (see FuelTank policy docs).
-          gateFuel: widget.isFreeFlight && widget.challengeId == null,
-        );
+    final gateFuel = widget.isFreeFlight && widget.challengeId == null;
+    final notifier = ref.read(accountProvider.notifier);
+    final earned = notifier.awardFreeFlightClue(
+      perClueReward: config.earnings.freeFlightPerClueReward,
+      dailyCap: config.earnings.freeFlightDailyCap,
+      promoMultiplier: config.earningsMultiplier,
+      // Fuel gates FREE-FLIGHT farming earnings only — never daily
+      // modes, rated sorties, or H2H (see FuelTank policy docs).
+      gateFuel: gateFuel,
+    );
     if (earned > 0) {
       _freeFlightCoinsEarned += earned;
       AudioManager.instance.playSfx(SfxType.coinCollect);
+    } else if (gateFuel &&
+        !notifier.canEarnFreeFlightCoins &&
+        !_outOfFuelDialogShown &&
+        mounted) {
+      // The tank just ran dry mid-session: explain WHY earnings paused,
+      // show the regen wait, and offer one-tap refuel options.
+      _outOfFuelDialogShown = true;
+      showOutOfFuelDialog(context).then((refuelled) {
+        // Re-arm the popup if they refuelled and later run dry again.
+        if (refuelled) _outOfFuelDialogShown = false;
+      });
     }
   }
 
@@ -1285,6 +1305,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     // Report the finished run (Standard Sortie submits rated runs here).
     widget.onRoundResults?.call(roundDetails, _totalScore, false);
 
+    // Personal best must be sampled BEFORE recordGameCompletion updates it
+    // (drives the supply-drop "strong performance" gate).
+    final previousBest = ref.read(accountProvider).currentPlayer.bestScore ?? 0;
+
     // Record game completion last — this calls flush() which persists all
     // pending dirty state including the daily callbacks above.
     await ref.read(accountProvider.notifier).recordGameCompletion(
@@ -1304,6 +1328,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           consecutiveCorrect: clueStats.streak,
         );
     if (!mounted) return;
+
+    // Rare supply drop (any mode): a strong performance — >= 60% of the
+    // mode's max score or a new personal best — has a small deterministic
+    // chance to drop a consumable (see SupplyDrop). Endless free flight
+    // has no max score, so only a personal best qualifies there.
+    final dropMode = widget.scoreRegion ??
+        (widget.isDailyChallenge ? 'daily' : widget.region.name);
+    final dropMaxScore = widget.isEndless ? 0 : widget.totalRounds * 10000;
+    final supplyDrop = ref.read(accountProvider.notifier).rollSupplyDrop(
+          mode: dropMode,
+          score: _totalScore,
+          strongPerformance: SupplyDrop.isStrong(
+                score: _totalScore,
+                maxScore: dropMaxScore,
+              ) ||
+              (_totalScore > 0 && _totalScore > previousBest),
+        );
 
     // Campaign mission completion — show coach tip, then farewell, then results.
     if (widget.campaignMission != null) {
@@ -1326,7 +1367,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         final tipShown =
             _coachOverlayKey.currentState?.showTip('correctAnswer') ?? false;
 
-        final showDialogs = () {
+        void showDialogs() {
           if (!mounted) return;
           final farewellText =
               '${mission.coach.farewell}\n\n${mission.coach.nextCoachTeaser}';
@@ -1347,7 +1388,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               );
             },
           );
-        };
+        }
 
         if (tipShown) {
           // Let the player read the coach's final tip before showing dialogs.
@@ -1357,6 +1398,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           );
         } else {
           showDialogs();
+        }
+        if (supplyDrop != null) {
+          showSupplyDropDialog(context, supplyDrop);
         }
       }
       return;
@@ -1445,6 +1489,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         // so no separate "send" action is needed.
       ),
     );
+
+    // Celebrate the supply drop on top of the result dialog — the player
+    // dismisses the "SUPPLY DROP" toast to reveal their results.
+    if (supplyDrop != null) {
+      showSupplyDropDialog(context, supplyDrop);
+    }
   }
 
   void _requestExit() {
@@ -2020,6 +2070,21 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                 fuelLevel: _game.fuelEnabled ? _game.fuel : null,
                 maxFuel: _game.maxFuel,
                 onSkipClue: widget.isFreeFlight ? _skipClue : null,
+              ),
+
+            // Active boost chips (Gold Surge / XP Surge / Polish) — shown
+            // where earnings happen so a running timer is never invisible.
+            if (_gameReady && _isFreeFlightEarning)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 108,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: ActiveEffectsRow(
+                    effects: ref.watch(accountProvider).activeEffects,
+                    compact: true,
+                  ),
+                ),
               ),
 
             // Ink-burst success animation overlay

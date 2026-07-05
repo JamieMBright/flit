@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flit/data/models/avatar_config.dart';
 import 'package:flit/data/models/season.dart';
 import 'package:flit/data/providers/account_provider.dart';
+import 'package:flit/game/economy/consumables.dart';
 import 'package:flit/game/economy/fuel_tank.dart';
 import 'package:flit/game/economy/license_heat.dart';
 
@@ -146,10 +147,12 @@ void main() {
       }
       final coinsBefore = notifier.state.currentPlayer.coins;
 
+      // Pricing scales with the player's tank capacity (item repricing).
+      final expectedCost = notifier.instantRefuelCost;
       expect(notifier.refuelWithCoins(), isTrue);
       expect(
         notifier.state.currentPlayer.coins,
-        coinsBefore - FuelTank.instantRefuelCoinCost,
+        coinsBefore - expectedCost,
       );
       expect(notifier.canEarnFreeFlightCoins, isTrue);
       notifier.dispose();
@@ -161,6 +164,7 @@ void main() {
 
       expect(notifier.buyRefuelCanisters(2), isTrue);
       expect(notifier.state.refuelCanisters, 2);
+      // 2x is not a discounted bundle size — full per-unit price.
       expect(
         notifier.state.currentPlayer.coins,
         coinsBefore - 2 * FuelTank.canisterCoinCost,
@@ -183,6 +187,107 @@ void main() {
         notifier.state.license.copyWith(fuelBoost: 20),
       );
       expect(notifier.fuelCapacity, 120.0);
+      notifier.dispose();
+    });
+  });
+
+  group('Consumables', () {
+    AccountNotifier fundedNotifier({int coins = 10000}) {
+      final notifier = AccountNotifier();
+      notifier.switchAccount(
+        notifier.state.currentPlayer.copyWith(id: 'u1', username: 'pilot'),
+      );
+      notifier.addCoins(coins, applyBoost: false, source: 'test_grant');
+      return notifier;
+    }
+
+    test('buyConsumable charges bundle pricing (3x = 10% off per unit)', () {
+      final notifier = fundedNotifier();
+      final before = notifier.state.currentPlayer.coins;
+
+      expect(notifier.buyConsumable(ConsumableType.goldSurge, 3), isTrue);
+      expect(notifier.consumableCount(ConsumableType.goldSurge), 3);
+      expect(
+        notifier.state.currentPlayer.coins,
+        before -
+            ConsumablePricing.bundleCost(
+              ConsumableType.goldSurge.baseCost,
+              3,
+            ),
+      );
+      notifier.dispose();
+    });
+
+    test('buyConsumable fails when unaffordable', () {
+      final notifier = fundedNotifier(coins: 10);
+      expect(notifier.buyConsumable(ConsumableType.licensePolish, 1), isFalse);
+      expect(notifier.consumableCount(ConsumableType.licensePolish), 0);
+      notifier.dispose();
+    });
+
+    test('activateConsumable consumes one and starts the timed effect', () {
+      final notifier = fundedNotifier();
+      final now = DateTime.now().toUtc();
+
+      expect(notifier.activateConsumable(ConsumableType.xpSurge), isFalse);
+      notifier.grantConsumable(ConsumableType.xpSurge);
+      expect(notifier.activateConsumable(ConsumableType.xpSurge), isTrue);
+      expect(notifier.consumableCount(ConsumableType.xpSurge), 0);
+      expect(
+        notifier.state.activeEffects.isActive(ConsumableType.xpSurge, now),
+        isTrue,
+      );
+      notifier.dispose();
+    });
+
+    test('Gold Surge doubles boosted coin earnings', () {
+      final notifier = fundedNotifier();
+      final baseline = notifier.totalGoldMultiplier;
+
+      notifier.grantConsumable(ConsumableType.goldSurge);
+      notifier.activateConsumable(ConsumableType.goldSurge);
+      expect(notifier.totalGoldMultiplier, closeTo(baseline * 2, 1e-9));
+      notifier.dispose();
+    });
+
+    test('XP Surge doubles XP gains', () {
+      final notifier = fundedNotifier();
+      notifier.grantConsumable(ConsumableType.xpSurge);
+      notifier.activateConsumable(ConsumableType.xpSurge);
+
+      final xpBefore = notifier.state.currentPlayer.xp;
+      notifier.addXp(10);
+      expect(notifier.state.currentPlayer.xp, xpBefore + 20);
+      notifier.dispose();
+    });
+
+    test('License Polish adds +3 to effective stats (stacks with HOT)', () {
+      final notifier = fundedNotifier();
+      final before = notifier.effectiveClueChance;
+      final capacityBefore = notifier.fuelCapacity;
+
+      notifier.grantConsumable(ConsumableType.licensePolish);
+      notifier.activateConsumable(ConsumableType.licensePolish);
+      expect(notifier.effectiveClueChance, before + licensePolishStatBonus);
+      // Capacity grows with the polished fuelBoost (+3 points = +3 units
+      // on a base tank).
+      expect(notifier.fuelCapacity, greaterThan(capacityBefore));
+      notifier.dispose();
+    });
+
+    test('rollSupplyDrop grants and persists the dropped item', () {
+      final notifier = fundedNotifier();
+      // Find a score that deterministically drops for this user/mode/date.
+      ConsumableType? dropped;
+      for (var score = 0; score < 10000 && dropped == null; score++) {
+        dropped = notifier.rollSupplyDrop(
+          mode: 'test_mode',
+          score: score,
+          strongPerformance: true,
+        );
+      }
+      expect(dropped, isNotNull);
+      expect(notifier.consumableCount(dropped!), greaterThanOrEqualTo(1));
       notifier.dispose();
     });
   });

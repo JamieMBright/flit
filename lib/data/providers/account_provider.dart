@@ -6,8 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/services/game_settings.dart';
+import '../../game/economy/consumables.dart';
 import '../../game/economy/fuel_tank.dart';
 import '../../game/economy/license_heat.dart';
+import '../../game/economy/supply_drop.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/uncharted_progress.dart';
@@ -46,6 +48,8 @@ class AccountState {
     this.campaignProgress = const {},
     this.fuelTank = const FuelTank(),
     this.refuelCanisters = 0,
+    this.consumables = const ConsumableInventory(),
+    this.activeEffects = const ActiveEffects(),
     this.trophyCase = const TrophyCase(),
   })  : avatar = avatar ?? const AvatarConfig(),
         license = license ?? PilotLicense.random();
@@ -119,6 +123,13 @@ class AccountState {
   /// Owned refuel-canister items (each = one instant full refuel).
   final int refuelCanisters;
 
+  /// Owned timed consumables (License Polish, Gold Surge, XP Surge).
+  /// See lib/game/economy/consumables.dart.
+  final ConsumableInventory consumables;
+
+  /// Active timed-effect expiries — persisted so boosts survive restarts.
+  final ActiveEffects activeEffects;
+
   /// End-of-season trophy snapshots (see lib/data/models/season.dart).
   final TrophyCase trophyCase;
 
@@ -191,6 +202,8 @@ class AccountState {
     Map<String, CampaignMissionResult>? campaignProgress,
     FuelTank? fuelTank,
     int? refuelCanisters,
+    ConsumableInventory? consumables,
+    ActiveEffects? activeEffects,
     TrophyCase? trophyCase,
   }) =>
       AccountState(
@@ -221,6 +234,8 @@ class AccountState {
         campaignProgress: campaignProgress ?? this.campaignProgress,
         fuelTank: fuelTank ?? this.fuelTank,
         refuelCanisters: refuelCanisters ?? this.refuelCanisters,
+        consumables: consumables ?? this.consumables,
+        activeEffects: activeEffects ?? this.activeEffects,
         trophyCase: trophyCase ?? this.trophyCase,
       );
 }
@@ -478,6 +493,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
       campaignProgress: snapshot.toCampaignProgress(),
       fuelTank: snapshot.toFuelTank(),
       refuelCanisters: snapshot.refuelCanisters,
+      consumables: snapshot.toConsumableInventory(),
+      activeEffects: snapshot.toActiveEffects(),
       trophyCase: snapshot.toTrophyCase(),
     );
 
@@ -742,6 +759,8 @@ class AccountNotifier extends StateNotifier<AccountState> {
       licenseEconomyExtras: {
         'fuel': state.fuelTank.toJson(),
         'refuel_canisters': state.refuelCanisters,
+        'consumables': state.consumables.toJson(),
+        'active_effects': state.activeEffects.toJson(),
         'trophy_case': state.trophyCase.toJson(),
       },
     );
@@ -887,10 +906,15 @@ class AccountNotifier extends StateNotifier<AccountState> {
   // Meta fuel tank (free-flight earn gating only)
   // ---------------------------------------------------------------------------
 
-  /// Current tank capacity — license fuelBoost (plus hot pump) enlarges it.
-  double get fuelCapacity => FuelTank.capacityFor(
-        state.license.effectiveFuelBoost(DateTime.now().toUtc()),
-      );
+  /// Current tank capacity — license fuelBoost (plus hot pump and any
+  /// active License Polish) enlarges it.
+  double get fuelCapacity {
+    final now = DateTime.now().toUtc();
+    return FuelTank.capacityFor(
+      state.license.effectiveFuelBoost(now) +
+          state.activeEffects.licenseStatBonus(now),
+    );
+  }
 
   /// Current fuel units (includes regeneration since the last write).
   double get currentFuel => state.fuelTank
@@ -900,14 +924,33 @@ class AccountNotifier extends StateNotifier<AccountState> {
   bool get canEarnFreeFlightCoins =>
       state.fuelTank.canEarn(DateTime.now().toUtc(), capacity: fuelCapacity);
 
+  /// Coin cost of an instant FULL refuel right now — scales with the
+  /// player's licensed tank capacity (bigger tanks cost more to fill).
+  int get instantRefuelCost => FuelTank.instantRefuelCost(fuelCapacity);
+
+  /// Coin cost of the cheap partial top-up (25% of capacity).
+  int get fuelTopUpCost => FuelTank.topUpCost(fuelCapacity);
+
   /// Instantly refill the tank for coins. Returns false when unaffordable.
   bool refuelWithCoins() {
-    if (!spendCoins(FuelTank.instantRefuelCoinCost, source: 'fuel_refuel')) {
+    if (!spendCoins(instantRefuelCost, source: 'fuel_refuel')) {
       return false;
     }
     state = state.copyWith(
       fuelTank: state.fuelTank
           .refillFull(DateTime.now().toUtc(), capacity: fuelCapacity),
+    );
+    _syncAccountState();
+    return true;
+  }
+
+  /// Cheap partial option: +25% of capacity for a quarter of the full
+  /// price. Returns false when unaffordable.
+  bool topUpFuelWithCoins() {
+    if (!spendCoins(fuelTopUpCost, source: 'fuel_top_up')) return false;
+    state = state.copyWith(
+      fuelTank:
+          state.fuelTank.topUp(DateTime.now().toUtc(), capacity: fuelCapacity),
     );
     _syncAccountState();
     return true;
@@ -925,14 +968,74 @@ class AccountNotifier extends StateNotifier<AccountState> {
     return true;
   }
 
-  /// Buy refuel canisters from the shop. Returns false when unaffordable.
-  bool buyRefuelCanisters(int count) {
+  /// Buy refuel canisters from the shop with bundle pricing (1x full
+  /// price, 3x/5x discounted per unit). Returns false when unaffordable.
+  bool buyRefuelCanisters(int count) =>
+      buyConsumable(ConsumableType.refuelCanister, count);
+
+  // ---------------------------------------------------------------------------
+  // Consumables (supplies) — see lib/game/economy/consumables.dart
+  // ---------------------------------------------------------------------------
+
+  /// Buy [count] of [type] with bundle pricing. Returns false when
+  /// unaffordable or [count] is invalid.
+  bool buyConsumable(ConsumableType type, int count) {
     if (count <= 0) return false;
-    final cost = FuelTank.canisterCoinCost * count;
-    if (!spendCoins(cost, source: 'refuel_canister_purchase')) return false;
-    state = state.copyWith(refuelCanisters: state.refuelCanisters + count);
+    final cost = ConsumablePricing.bundleCost(type.baseCost, count);
+    if (!spendCoins(cost, source: '${type.id}_purchase')) return false;
+    state = type == ConsumableType.refuelCanister
+        ? state.copyWith(refuelCanisters: state.refuelCanisters + count)
+        : state.copyWith(consumables: state.consumables.grant(type, count));
     _syncAccountState();
     return true;
+  }
+
+  /// Grant a consumable without spending coins (supply drops, daily
+  /// champion rewards).
+  void grantConsumable(ConsumableType type, [int count = 1]) {
+    if (count <= 0) return;
+    state = type == ConsumableType.refuelCanister
+        ? state.copyWith(refuelCanisters: state.refuelCanisters + count)
+        : state.copyWith(consumables: state.consumables.grant(type, count));
+    _syncAccountState();
+  }
+
+  /// Count of [type] currently owned.
+  int consumableCount(ConsumableType type) =>
+      type == ConsumableType.refuelCanister
+          ? state.refuelCanisters
+          : state.consumables.of(type);
+
+  /// Activate one owned consumable. Canisters refill the tank; timed
+  /// items start (or extend) their effect. Returns false when none owned.
+  bool activateConsumable(ConsumableType type) {
+    if (type == ConsumableType.refuelCanister) return useRefuelCanister();
+    final remaining = state.consumables.consume(type);
+    if (remaining == null) return false;
+    state = state.copyWith(
+      consumables: remaining,
+      activeEffects: state.activeEffects.activate(type, DateTime.now().toUtc()),
+    );
+    _syncAccountState();
+    return true;
+  }
+
+  /// Deterministic post-game supply drop roll (see SupplyDrop). Grants and
+  /// persists the item when one drops; returns it for the celebration UI.
+  ConsumableType? rollSupplyDrop({
+    required String mode,
+    required int score,
+    required bool strongPerformance,
+  }) {
+    final dropped = SupplyDrop.roll(
+      userId: state.currentPlayer.id,
+      mode: mode,
+      dateKey: AccountState._todayStr(),
+      score: score,
+      strongPerformance: strongPerformance,
+    );
+    if (dropped != null) grantConsumable(dropped);
+    return dropped;
   }
 
   // ---------------------------------------------------------------------------
@@ -1119,10 +1222,12 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _syncAccountState();
   }
 
-  /// Add XP and handle level ups
+  /// Add XP and handle level ups. An active XP Surge doubles the gain.
   void addXp(int amount) {
+    final boosted =
+        amount * state.activeEffects.xpMultiplier(DateTime.now().toUtc());
     var player = state.currentPlayer;
-    var newXp = player.xp + amount;
+    var newXp = player.xp + boosted;
     var newLevel = player.level;
 
     while (newXp >= newLevel * 100) {
@@ -1719,9 +1824,15 @@ class AccountNotifier extends StateNotifier<AccountState> {
   }
 
   /// Get current coin boost multiplier from pilot license (for applying to
-  /// earnings). Includes the hot-pump bonus while the license is HOT.
-  double get coinBoostMultiplier =>
-      1.0 + state.license.effectiveCoinBoost(DateTime.now().toUtc()) / 100.0;
+  /// earnings). Includes the hot-pump bonus while the license is HOT plus
+  /// any active License Polish (+3 flat, additive with HOT).
+  double get coinBoostMultiplier {
+    final now = DateTime.now().toUtc();
+    return 1.0 +
+        (state.license.effectiveCoinBoost(now) +
+                state.activeEffects.licenseStatBonus(now)) /
+            100.0;
+  }
 
   /// Get current level-based gold multiplier.
   ///
@@ -1730,19 +1841,32 @@ class AccountNotifier extends StateNotifier<AccountState> {
   double get levelGoldMultiplier =>
       1.0 + (state.currentPlayer.level - 1) * 0.005;
 
-  /// Combined total gold multiplier (license + level).
-  double get totalGoldMultiplier => coinBoostMultiplier * levelGoldMultiplier;
+  /// Combined total gold multiplier (license + level + Gold Surge).
+  double get totalGoldMultiplier =>
+      coinBoostMultiplier *
+      levelGoldMultiplier *
+      state.activeEffects.coinMultiplier(DateTime.now().toUtc());
 
   /// Get current fuel boost multiplier (for solo play). Includes the
-  /// hot-pump bonus. Used by BOOST-AFFECTED modes only (dailies, free
-  /// flight) — rated play uses RatedLoadout.standard instead.
-  double get fuelBoostMultiplier =>
-      1.0 + state.license.effectiveFuelBoost(DateTime.now().toUtc()) / 100.0;
+  /// hot-pump bonus and any active License Polish. Used by BOOST-AFFECTED
+  /// modes only (dailies, free flight) — rated play uses
+  /// RatedLoadout.standard instead.
+  double get fuelBoostMultiplier {
+    final now = DateTime.now().toUtc();
+    return 1.0 +
+        (state.license.effectiveFuelBoost(now) +
+                state.activeEffects.licenseStatBonus(now)) /
+            100.0;
+  }
 
-  /// Effective clue chance including the hot-pump bonus. Boost-affected
-  /// modes only — H2H/sortie sessions omit clue-chance to stay in sync.
-  int get effectiveClueChance =>
-      state.license.effectiveClueChance(DateTime.now().toUtc());
+  /// Effective clue chance including the hot-pump bonus and any active
+  /// License Polish. Boost-affected modes only — H2H/sortie sessions omit
+  /// clue-chance to stay in sync.
+  int get effectiveClueChance {
+    final now = DateTime.now().toUtc();
+    return state.license.effectiveClueChance(now) +
+        state.activeEffects.licenseStatBonus(now);
+  }
 }
 
 /// Account provider
