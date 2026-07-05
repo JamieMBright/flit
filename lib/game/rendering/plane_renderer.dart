@@ -130,15 +130,44 @@ class PlaneRenderer {
     );
   }
 
-  /// Draw a path with watercolour wash layers — the primary way to fill
-  /// large surfaces (wings, fuselage, tail) in the watercolour style.
+  /// Draw a path as a SOLID, readable mass with subtle watercolour texture.
+  ///
+  /// The plane silhouette must read at a glance, so this paints an opaque base
+  /// first (no grey bleed-through, no soft external halo — the old washFill
+  /// offset+blurred translucent layers *outside* the path, which read as a
+  /// white wet-edge glow on light fuselages). Pigment variation is then layered
+  /// clipped *inside* the shape so it stays a crisp silhouette while keeping
+  /// the hand-painted feel.
   static void _wash(
     Canvas canvas,
     Path path,
     Color color, {
     String seed = '',
   }) {
-    WatercolorStyle.washFill(canvas, path, color, seed: seed);
+    // Opaque base — the solid pigment that makes the shape read.
+    canvas.drawPath(path, Paint()..color = color);
+
+    // Internal pigment variation, clipped so it never spills past the edge.
+    canvas.save();
+    canvas.clipPath(path);
+    final rng = Random(seed.hashCode);
+    for (var i = 0; i < 3; i++) {
+      final dx = (rng.nextDouble() - 0.5) * 1.4;
+      final dy = (rng.nextDouble() - 0.5) * 1.4;
+      final tint = i.isEven
+          ? WatercolorStyle.darken(color, 0.13)
+          : WatercolorStyle.lighten(color, 0.16);
+      canvas.save();
+      canvas.translate(dx, dy);
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = tint.withOpacity(0.14)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.1),
+      );
+      canvas.restore();
+    }
+    canvas.restore();
   }
 
   /// Draws a soft ambient-occlusion shadow where a wing meets the fuselage.
@@ -158,6 +187,50 @@ class PlaneRenderer {
         Rect.fromCircle(center: center, radius: radius),
       );
     canvas.drawCircle(center, radius, paint);
+  }
+
+  /// Draws a spinning propeller at the nose tip: a faint translucent spin-disc
+  /// (the motion blur of the arc), two thin blade strokes, and a small solid
+  /// spinner hub. Replaces the old opaque grey "mushroom cap" nose ellipse so
+  /// the nose reads as a real prop, not a blob. Shared by all propeller planes.
+  static void _drawNoseProp(
+    Canvas canvas, {
+    required double cx,
+    required double noseY,
+    required double propAngle,
+    required Color hubColor,
+    double radius = 7.0,
+  }) {
+    const yScale = 0.5; // slight top-down foreshortening of the disc
+    // Faint spin-disc — the translucent arc the blades sweep.
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(cx, noseY),
+        width: radius * 2,
+        height: radius * 2 * yScale,
+      ),
+      Paint()..color = const Color(0xFFEDEDED).withOpacity(0.14),
+    );
+    // Two thin blade strokes.
+    final blade = Paint()
+      ..color = const Color(0xFF3A3A3A).withOpacity(0.75)
+      ..strokeWidth = 1.4
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 2; i++) {
+      final a = propAngle + i * pi;
+      canvas.drawLine(
+        Offset(cx + cos(a) * radius, noseY + sin(a) * radius * yScale),
+        Offset(cx - cos(a) * radius, noseY - sin(a) * radius * yScale),
+        blade,
+      );
+    }
+    // Small spinner hub at the centre.
+    canvas.drawCircle(Offset(cx, noseY), 1.8, Paint()..color = hubColor);
+    canvas.drawCircle(
+      Offset(cx - 0.4, noseY - 0.5),
+      0.7,
+      Paint()..color = WatercolorStyle.lighten(hubColor, 0.6),
+    );
   }
 
   // ─── Dispatch ───────────────────────────────────────────────────────
@@ -364,37 +437,6 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = bankSin * 4.0;
     final bodyShift = bankSin * 1.5;
-
-    // --- Propeller (behind everything) ---
-    // Oval disc + blades simulate a slightly top-down camera angle.
-    final propDiscPaint = Paint()
-      ..color = FlitColors.planeBody.withOpacity(0.15)
-      ..style = PaintingStyle.fill;
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset(bodyShift, -17), width: 16, height: 9),
-      propDiscPaint,
-    );
-
-    final bladePaint = Paint()
-      ..color = const Color(0xFF666666).withOpacity(0.8)
-      ..strokeWidth = 2.0
-      ..strokeCap = StrokeCap.round;
-    const bladeLen = 7.0;
-    const bladeYScale = 0.55; // foreshorten vertical for top-down perspective
-    for (var i = 0; i < 2; i++) {
-      final a = propAngle + i * pi;
-      canvas.drawLine(
-        Offset(
-          bodyShift + cos(a) * bladeLen,
-          -17 + sin(a) * bladeLen * bladeYScale,
-        ),
-        Offset(
-          bodyShift - cos(a) * bladeLen,
-          -17 - sin(a) * bladeLen * bladeYScale,
-        ),
-        bladePaint,
-      );
-    }
 
     // --- Lower wing (visible peeking out behind/below upper wing) ---
     final leftSpan =
@@ -692,16 +734,16 @@ class PlaneRenderer {
       ..close();
     canvas.drawPath(highlightStreak, highlightPaint);
 
-    // Accent stripe
-    final stripe = Path()
-      ..moveTo(-3 + bodyShift, -4)
-      ..lineTo(3 + bodyShift, -4)
-      ..lineTo(3 + bodyShift, 2)
-      ..lineTo(-3 + bodyShift, 2)
-      ..close();
-    canvas.drawPath(stripe, accentPaint);
+    // Fuselage roundel — a small circular insignia (purposeful mark that
+    // replaces the old meaningless mid-body accent square).
+    canvas.drawCircle(Offset(bodyShift, -1), 2.4, accentPaint);
+    canvas.drawCircle(
+      Offset(bodyShift, -1),
+      1.1,
+      Paint()..color = primary,
+    );
 
-    // Cockpit
+    // Cockpit canopy
     canvas.drawOval(
       Rect.fromCenter(center: Offset(bodyShift, -9), width: 5, height: 6),
       Paint()..color = const Color(0xFF4A90B8),
@@ -714,25 +756,22 @@ class PlaneRenderer {
       ),
       Paint()..color = const Color(0xFF8CC8E8),
     );
-
-    // Engine / nose cone
-    canvas.drawCircle(
-      Offset(bodyShift, -16),
-      3.0,
-      Paint()..color = const Color(0xFF888888),
-    );
-    canvas.drawCircle(
-      Offset(bodyShift, -16),
-      1.5,
-      Paint()..color = const Color(0xFF555555),
-    );
     canvas.restore(); // End body roll transform
 
-    // Wing tip navigation lights
-    canvas.drawCircle(Offset(-leftSpan + 1, 3.5 + leftDip), 1.8, accentPaint);
+    // Spinning propeller at the nose (thin disc + blades + spinner hub).
+    _drawNoseProp(
+      canvas,
+      cx: bodyShift,
+      noseY: -16,
+      propAngle: propAngle,
+      hubColor: _darken(detail, 0.1),
+    );
+
+    // Wing tip navigation lights (small — was oversized).
+    canvas.drawCircle(Offset(-leftSpan + 1, 3.5 + leftDip), 0.8, accentPaint);
     canvas.drawCircle(
       Offset(rightSpan - 1, 3.5 + rightDip),
-      1.8,
+      0.8,
       Paint()..color = FlitColors.success,
     );
   }
@@ -912,10 +951,13 @@ class PlaneRenderer {
     final wingDip = -bankSin * 3.0;
 
     // Swept delta wings — inner (turning) wing darkens, outer stays lit.
+    // The golden jet uses its rich primary gold for the wings (not the pale
+    // detail) so they read as a solid precious-metal mass.
+    final wingBase = planeId == 'plane_golden_jet' ? primary : detail;
     final leftWingColor =
-        shade > 0 ? detail : Color.lerp(detail, Colors.black, 0.3)!;
+        shade > 0 ? wingBase : Color.lerp(wingBase, Colors.black, 0.3)!;
     final rightWingColor =
-        shade < 0 ? detail : Color.lerp(detail, Colors.black, 0.3)!;
+        shade < 0 ? wingBase : Color.lerp(wingBase, Colors.black, 0.3)!;
 
     final leftSpan =
         dynamicWingSpan * 0.8 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
@@ -989,6 +1031,29 @@ class PlaneRenderer {
       ..close();
     _wash(canvas, fuselagePath, primary, seed: planeId);
 
+    // Legendary gold gradient — polished sheen from a bright highlight edge to a
+    // richer bronze underside so the golden jet reads as precious metal, not
+    // flat paint.
+    if (planeId == 'plane_golden_jet') {
+      canvas.save();
+      canvas.clipPath(fuselagePath);
+      final sheen = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _lighten(primary, 0.55),
+            primary,
+            _darken(primary, 0.30),
+          ],
+          stops: const [0.0, 0.5, 1.0],
+        ).createShader(
+          Rect.fromLTRB(bodyShift - 3, -18, bodyShift + 3, 15),
+        );
+      canvas.drawPath(fuselagePath, sheen);
+      canvas.restore();
+    }
+
     // Sketch outline on fuselage
     final fuselageSketchPaint = Paint()
       ..color = _darken(primary, 0.40).withOpacity(0.48)
@@ -1048,14 +1113,61 @@ class PlaneRenderer {
       );
     }
 
-    // Accent stripe
-    canvas.drawLine(
-      Offset(bodyShift - 1, -12),
-      Offset(bodyShift - 1, 8),
-      Paint()
-        ..color = secondary
-        ..strokeWidth = 2.0,
-    );
+    if (planeId == 'plane_rocket') {
+      // Porthole window — a purposeful mark (replaces the old blank white bar).
+      canvas.drawCircle(
+        Offset(bodyShift, -3),
+        2.4,
+        Paint()..color = const Color(0xFF2A2A2A),
+      );
+      canvas.drawCircle(
+        Offset(bodyShift, -3),
+        2.4,
+        Paint()
+          ..color = detail // orange rim
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0,
+      );
+      canvas.drawCircle(
+        Offset(bodyShift, -3),
+        1.5,
+        Paint()..color = const Color(0xFF7EC8E3),
+      );
+      canvas.drawCircle(
+        Offset(bodyShift - 0.5, -3.5),
+        0.6,
+        Paint()..color = Colors.white.withOpacity(0.8),
+      );
+    } else if (planeId == 'plane_golden_jet') {
+      // Gold shine streaks — legendary sheen down the polished fuselage.
+      canvas.drawLine(
+        Offset(bodyShift - 1.3, -12),
+        Offset(bodyShift - 1.6, 10),
+        Paint()
+          ..color = _lighten(detail, 0.7).withOpacity(0.85)
+          ..strokeWidth = 1.4
+          ..strokeCap = StrokeCap.round,
+      );
+      canvas.drawLine(
+        Offset(bodyShift + 1.4, -10),
+        Offset(bodyShift + 1.2, 6),
+        Paint()
+          ..color = Colors.white.withOpacity(0.5)
+          ..strokeWidth = 0.7
+          ..strokeCap = StrokeCap.round,
+      );
+    } else {
+      // Centred racing stripe (was off-centre — combined with the canopy it
+      // read as a stray letter "P").
+      canvas.drawLine(
+        Offset(bodyShift, -13),
+        Offset(bodyShift, 9),
+        Paint()
+          ..color = secondary
+          ..strokeWidth = 1.6
+          ..strokeCap = StrokeCap.round,
+      );
+    }
     canvas.restore(); // End body roll transform
   }
 
@@ -1095,10 +1207,14 @@ class PlaneRenderer {
         -leftSpan,
         2 + wingDip,
       )
-      // W-shaped trailing edge — B-2's signature shape
-      ..lineTo(-leftSpan + 4, 5 + wingDip) // outer trailing edge
-      ..lineTo(-leftSpan * 0.5, 3 + wingDip * 0.5) // inner notch of W
-      ..lineTo(bodyShift, 7) // center trailing edge
+      // Double-W sawtooth trailing edge — the B-2's signature serrated rear.
+      // Deep alternating teeth (aft peaks / forward notches) so the serration
+      // reads clearly at small size, not as a flat trailing edge.
+      ..lineTo(-leftSpan * 0.90, 9.5 + wingDip) // outer tooth (aft)
+      ..lineTo(-leftSpan * 0.68, 3.5 + wingDip * 0.7) // notch (forward)
+      ..lineTo(-leftSpan * 0.46, 10.5 + wingDip * 0.5) // mid tooth (aft)
+      ..lineTo(-leftSpan * 0.24, 4.0 + wingDip * 0.3) // notch (forward)
+      ..lineTo(bodyShift, 13) // centre spike (deepest aft point)
       ..close();
     _wash(canvas, leftWing, leftWingColor, seed: planeId);
 
@@ -1120,9 +1236,11 @@ class PlaneRenderer {
         rightSpan,
         2 - wingDip,
       )
-      ..lineTo(rightSpan - 4, 5 - wingDip)
-      ..lineTo(rightSpan * 0.5, 3 - wingDip * 0.5)
-      ..lineTo(bodyShift, 7)
+      ..lineTo(rightSpan * 0.90, 9.5 - wingDip) // outer tooth (aft)
+      ..lineTo(rightSpan * 0.68, 3.5 - wingDip * 0.7) // notch (forward)
+      ..lineTo(rightSpan * 0.46, 10.5 - wingDip * 0.5) // mid tooth (aft)
+      ..lineTo(rightSpan * 0.24, 4.0 - wingDip * 0.3) // notch (forward)
+      ..lineTo(bodyShift, 13) // centre spike (deepest aft point)
       ..close();
     _wash(canvas, rightWing, rightWingColor, seed: planeId);
 
@@ -1140,29 +1258,30 @@ class PlaneRenderer {
     canvas.scale(rollScale, 1.0);
     canvas.translate(-bodyShift, 0);
 
-    // Center body blended into wing — B-2 has no distinct fuselage
+    // Center body blended into wing — B-2 has no distinct fuselage, tapering
+    // to the aft centre spike so the serrated planform stays continuous.
     final centerBody = Path()
       ..moveTo(bodyShift - 5, -8)
-      ..quadraticBezierTo(bodyShift - 4, 0, bodyShift - 3, 6)
-      ..lineTo(bodyShift + 3, 6)
-      ..quadraticBezierTo(bodyShift + 4, 0, bodyShift + 5, -8)
+      ..quadraticBezierTo(bodyShift - 4.5, 2, bodyShift - 2.5, 12)
+      ..lineTo(bodyShift + 2.5, 12)
+      ..quadraticBezierTo(bodyShift + 4.5, 2, bodyShift + 5, -8)
       ..close();
     _wash(canvas, centerBody, detail, seed: planeId);
     _pencilOutline(centerBody, canvas, detail, strokeWidth: 0.8, opacity: 0.40);
 
-    // Exhaust slots on trailing edge (flush with wing, not protruding)
+    // Exhaust slots set into the trailing edge (flush, not protruding)
     final exhaustPaint = Paint()
       ..color = const Color(0xFF222222)
       ..strokeWidth = 2.0
       ..strokeCap = StrokeCap.round;
     canvas.drawLine(
-      Offset(bodyShift - 2.5, 6),
-      Offset(bodyShift - 1, 6),
+      Offset(bodyShift - 2.5, 8),
+      Offset(bodyShift - 1, 8),
       exhaustPaint,
     );
     canvas.drawLine(
-      Offset(bodyShift + 1, 6),
-      Offset(bodyShift + 2.5, 6),
+      Offset(bodyShift + 1, 8),
+      Offset(bodyShift + 2.5, 8),
       exhaustPaint,
     );
 
@@ -1200,37 +1319,10 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = -bankSin * 3.0;
 
+    // Crimson RED wings (Fokker Dr.I fabric) — the Baron's signature. Slight
+    // darkening toward the secondary shade on the inner (banking) wing.
     final wingColor =
-        shade < 0 ? detail : Color.lerp(detail, Colors.black, 0.2)!;
-
-    // --- Propeller (oval for top-down perspective) ---
-    final propDiscPaint = Paint()
-      ..color = primary.withOpacity(0.15)
-      ..style = PaintingStyle.fill;
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset(bodyShift, -17), width: 14, height: 8),
-      propDiscPaint,
-    );
-    final bladePaint = Paint()
-      ..color = const Color(0xFF444444).withOpacity(0.8)
-      ..strokeWidth = 1.8
-      ..strokeCap = StrokeCap.round;
-    const bladeLen = 6.0;
-    const bladeYScale = 0.55; // foreshorten for perspective
-    for (var i = 0; i < 2; i++) {
-      final a = propAngle + i * pi;
-      canvas.drawLine(
-        Offset(
-          bodyShift + cos(a) * bladeLen,
-          -17 + sin(a) * bladeLen * bladeYScale,
-        ),
-        Offset(
-          bodyShift - cos(a) * bladeLen,
-          -17 - sin(a) * bladeLen * bladeYScale,
-        ),
-        bladePaint,
-      );
-    }
+        shade < 0 ? primary : Color.lerp(primary, secondary, 0.4)!;
 
     // --- Three stacked wings (Fokker Dr.I: all EQUAL span, rounded tips) ---
     // The real Dr.I had equal-span wings — this was its distinctive feature
@@ -1356,24 +1448,6 @@ class PlaneRenderer {
       canvas.drawLine(Offset(x, -4), Offset(x, 8 + wingDip * 0.5), strutPaint);
     }
 
-    // Rotary engine cowling — Le Rhône 9J visible as circular housing
-    canvas.drawCircle(
-      Offset(bodyShift, -16),
-      3.5,
-      Paint()..color = const Color(0xFF555555),
-    );
-    canvas.drawCircle(
-      Offset(bodyShift, -16),
-      2.0,
-      Paint()..color = const Color(0xFF444444),
-    );
-    // Cowling highlight
-    canvas.drawCircle(
-      Offset(bodyShift - 0.5, -16.5),
-      1.0,
-      Paint()..color = const Color(0xFF777777),
-    );
-
     // Open cockpit (leather-rimmed)
     canvas.drawOval(
       Rect.fromCenter(center: Offset(bodyShift, -8), width: 5, height: 6),
@@ -1390,22 +1464,38 @@ class PlaneRenderer {
       strokeWidth: 0.8,
     );
 
-    // Red Baron Iron Cross emblem
+    // Iron Cross roundel — BLACK cross on a WHITE disc so it reads against the
+    // crimson fuselage (was dark-red-on-red and invisible).
+    canvas.drawCircle(
+      Offset(bodyShift, 0),
+      3.4,
+      Paint()..color = const Color(0xFFF2F2F2),
+    );
+    final crossPaint = Paint()
+      ..color = detail // near-black
+      ..strokeWidth = 1.7
+      ..strokeCap = StrokeCap.butt;
     canvas.drawLine(
       Offset(bodyShift - 3, 0),
       Offset(bodyShift + 3, 0),
-      Paint()
-        ..color = secondary
-        ..strokeWidth = 2.5,
+      crossPaint,
     );
     canvas.drawLine(
       Offset(bodyShift, -3),
       Offset(bodyShift, 3),
-      Paint()
-        ..color = secondary
-        ..strokeWidth = 2.5,
+      crossPaint,
     );
     canvas.restore(); // End body roll transform
+
+    // Spinning propeller at the nose.
+    _drawNoseProp(
+      canvas,
+      cx: bodyShift,
+      noseY: -16,
+      propAngle: propAngle,
+      hubColor: const Color(0xFF555555),
+      radius: 6.0,
+    );
   }
 
   // ─── Concorde ──────────────────────────────────────────────────────
@@ -1434,9 +1524,10 @@ class PlaneRenderer {
     final rightWingColor =
         shade < 0 ? primary : Color.lerp(primary, Colors.grey, 0.2)!;
 
-    // Ogival (ogee) delta wings — Concorde's signature double-curve leading edge
+    // Ogival (ogee) delta wings — Concorde's signature double-curve leading
+    // edge. Narrow + long: a slim, deeply-swept delta (not a broad manta).
     final leftSpan =
-        dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
+        dynamicWingSpan * 0.72 * (1.0 - bankSin.abs() * 0.15) + bankSin * 1.0;
     final leftWing = Path()
       ..moveTo(bodyShift - 2, -18)
       // First ogee curve: gentle sweep near root
@@ -1461,7 +1552,7 @@ class PlaneRenderer {
     _wingJointAO(canvas, Offset(bodyShift - 2, -4), radius: 5.5);
 
     final rightSpan =
-        dynamicWingSpan * 0.9 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
+        dynamicWingSpan * 0.72 * (1.0 - bankSin.abs() * 0.15) - bankSin * 1.0;
     final rightWing = Path()
       ..moveTo(bodyShift + 2, -18)
       ..quadraticBezierTo(
@@ -1537,37 +1628,37 @@ class PlaneRenderer {
     }
     canvas.restore(); // End body roll transform
 
-    // Four Olympus engines in two close nacelle pairs (signature Concorde layout)
+    // Four Olympus engines as rectangular nacelle boxes slung UNDER the wing
+    // trailing edge, each ATTACHED by a short pylon (were floating on the wing).
     final enginePaint = Paint()..color = const Color(0xFF555555);
-    final intakePaint = Paint()..color = const Color(0xFF444444);
-    for (var x in [-leftSpan * 0.42, -leftSpan * 0.52]) {
-      final ey = 8 + wingDip * 0.5;
+    final exhaustPaint = Paint()..color = const Color(0xFF2E2E2E);
+    final pylonPaint = Paint()
+      ..color = _darken(primary, 0.25)
+      ..strokeWidth = 1.4;
+
+    void drawNacelle(double x, double ey) {
+      // Pylon fairing joining the nacelle to the wing above it.
+      canvas.drawLine(Offset(x, ey - 5), Offset(x, ey - 1), pylonPaint);
+      // Nacelle box.
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset(x, ey), width: 3, height: 5),
-          const Radius.circular(1.5),
+          Rect.fromCenter(center: Offset(x, ey), width: 3.4, height: 6),
+          const Radius.circular(1.2),
         ),
         enginePaint,
       );
-      // Rectangular intake ramp (Concorde had distinctive box intakes)
+      // Dark exhaust at the aft end.
       canvas.drawRect(
-        Rect.fromCenter(center: Offset(x, ey - 2.5), width: 3.5, height: 1.5),
-        intakePaint,
+        Rect.fromCenter(center: Offset(x, ey + 2.6), width: 3.4, height: 1.4),
+        exhaustPaint,
       );
     }
-    for (var x in [rightSpan * 0.42, rightSpan * 0.52]) {
-      final ey = 8 - wingDip * 0.5;
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset(x, ey), width: 3, height: 5),
-          const Radius.circular(1.5),
-        ),
-        enginePaint,
-      );
-      canvas.drawRect(
-        Rect.fromCenter(center: Offset(x, ey - 2.5), width: 3.5, height: 1.5),
-        intakePaint,
-      );
+
+    for (var x in [-leftSpan * 0.34, -leftSpan * 0.56]) {
+      drawNacelle(x, 11 + wingDip * 0.5);
+    }
+    for (var x in [rightSpan * 0.34, rightSpan * 0.56]) {
+      drawNacelle(x, 11 - wingDip * 0.5);
     }
   }
 
@@ -1589,85 +1680,9 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs();
     final wingDip = bankSin * 4.0;
 
-    // Hull-shaped floats with step (real seaplanes have boat-hull shaped pontoons)
-    final pontoonPaint = Paint()..color = detail;
-    final lx = -dynamicWingSpan * 0.5;
-    final ly = 12 + wingDip;
-
-    // Left float — hull shape with step break for water release
-    final leftFloat = Path()
-      ..moveTo(lx, ly - 9) // bow (pointed nose)
-      ..quadraticBezierTo(lx + 3.5, ly - 7, lx + 3.5, ly - 2) // hull curve
-      ..lineTo(lx + 3, ly) // step break (abrupt change)
-      ..lineTo(lx + 2.5, ly + 6) // aft section (narrower after step)
-      ..quadraticBezierTo(lx, ly + 8, lx - 2.5, ly + 6) // stern
-      ..lineTo(lx - 3, ly) // step on other side
-      ..lineTo(lx - 3.5, ly - 2)
-      ..quadraticBezierTo(lx - 3.5, ly - 7, lx, ly - 9) // back to bow
-      ..close();
-    _wash(canvas, leftFloat, pontoonPaint.color, seed: planeId);
-    _pencilOutline(leftFloat, canvas, detail, strokeWidth: 0.9, opacity: 0.45);
-    // Step line indicator
-    canvas.drawLine(
-      Offset(lx - 3, ly),
-      Offset(lx + 3, ly),
-      Paint()
-        ..color = _darken(detail, 0.2).withOpacity(0.4)
-        ..strokeWidth = 0.7,
-    );
-
-    final rx = dynamicWingSpan * 0.5;
-    final ry = 12 - wingDip;
-
-    // Right float — mirror of left
-    final rightFloat = Path()
-      ..moveTo(rx, ry - 9)
-      ..quadraticBezierTo(rx + 3.5, ry - 7, rx + 3.5, ry - 2)
-      ..lineTo(rx + 3, ry)
-      ..lineTo(rx + 2.5, ry + 6)
-      ..quadraticBezierTo(rx, ry + 8, rx - 2.5, ry + 6)
-      ..lineTo(rx - 3, ry)
-      ..lineTo(rx - 3.5, ry - 2)
-      ..quadraticBezierTo(rx - 3.5, ry - 7, rx, ry - 9)
-      ..close();
-    _wash(canvas, rightFloat, pontoonPaint.color, seed: planeId);
-    _pencilOutline(rightFloat, canvas, detail, strokeWidth: 0.9, opacity: 0.45);
-    canvas.drawLine(
-      Offset(rx - 3, ry),
-      Offset(rx + 3, ry),
-      Paint()
-        ..color = _darken(detail, 0.2).withOpacity(0.4)
-        ..strokeWidth = 0.7,
-    );
-
-    // V-struts connecting floats to fuselage (realistic bracing)
-    final strutPaint = Paint()
-      ..color = secondary
-      ..strokeWidth = 1.5;
-    // Left struts (V-brace pattern)
-    canvas.drawLine(
-      Offset(lx + 1, ly - 6),
-      Offset(bodyShift - 3, 2 + wingDip * 0.3),
-      strutPaint,
-    );
-    canvas.drawLine(
-      Offset(lx - 1, ly - 6),
-      Offset(bodyShift - 4, 6 + wingDip * 0.5),
-      strutPaint,
-    );
-    // Right struts
-    canvas.drawLine(
-      Offset(rx - 1, ry - 6),
-      Offset(bodyShift + 3, 2 - wingDip * 0.3),
-      strutPaint,
-    );
-    canvas.drawLine(
-      Offset(rx + 1, ry - 6),
-      Offset(bodyShift + 4, 6 - wingDip * 0.5),
-      strutPaint,
-    );
-
-    // Delegate to bi-plane for the main body
+    // Draw the main body FIRST so the floats and their bracing struts sit
+    // clearly in front of the wings. Drawn underneath, the wings painted over
+    // the struts and the pontoons looked detached.
     _renderBiPlane(
       canvas,
       bankCos,
@@ -1677,6 +1692,69 @@ class PlaneRenderer {
       propAngle,
       planeId,
     );
+
+    final lx = -dynamicWingSpan * 0.5;
+    final rx = dynamicWingSpan * 0.5;
+    // Floats slung low, well below the wing, so the struts have a clear span.
+    final ly = 17 + wingDip;
+    final ry = 17 - wingDip;
+
+    // Bold bracing struts — dark, drawn before the pontoon bodies so each float
+    // reads as hung from two visible legs up to the fuselage belly.
+    final strutColor = _darken(secondary, 0.2);
+    void drawFloatStruts(double fx, double fy, double dip) {
+      final strut = Paint()
+        ..color = strutColor
+        ..strokeWidth = 1.8
+        ..strokeCap = StrokeCap.round;
+      final bellyX = bodyShift + (fx < 0 ? -2.5 : 2.5);
+      // Two splayed legs from the float deck up to the fuselage belly.
+      canvas.drawLine(
+          Offset(fx - 2, fy - 8), Offset(bellyX, 4 + dip * 0.4), strut);
+      canvas.drawLine(
+          Offset(fx + 2, fy - 8), Offset(bellyX, 8 + dip * 0.4), strut);
+      // Horizontal deck brace tying the two legs together at the float top.
+      canvas.drawLine(
+          Offset(fx - 2.5, fy - 8),
+          Offset(fx + 2.5, fy - 8),
+          Paint()
+            ..color = strutColor
+            ..strokeWidth = 1.4);
+    }
+
+    drawFloatStruts(lx, ly, wingDip);
+    drawFloatStruts(rx, ry, -wingDip);
+
+    // Hull-shaped floats with a planing step (boat-hull pontoons).
+    Path hullFloat(double fx, double fy) => Path()
+      ..moveTo(fx, fy - 9) // bow (pointed nose)
+      ..quadraticBezierTo(fx + 3.5, fy - 7, fx + 3.5, fy - 2) // hull curve
+      ..lineTo(fx + 3, fy) // step break
+      ..lineTo(fx + 2.5, fy + 6) // aft section (narrower after step)
+      ..quadraticBezierTo(fx, fy + 8, fx - 2.5, fy + 6) // stern
+      ..lineTo(fx - 3, fy) // step on other side
+      ..lineTo(fx - 3.5, fy - 2)
+      ..quadraticBezierTo(fx - 3.5, fy - 7, fx, fy - 9) // back to bow
+      ..close();
+
+    for (final f in [
+      [lx, ly],
+      [rx, ry],
+    ]) {
+      final fx = f[0];
+      final fy = f[1];
+      final float = hullFloat(fx, fy);
+      _wash(canvas, float, detail, seed: planeId);
+      _pencilOutline(float, canvas, detail, strokeWidth: 0.9, opacity: 0.45);
+      // Planing-step line.
+      canvas.drawLine(
+        Offset(fx - 3, fy),
+        Offset(fx + 3, fy),
+        Paint()
+          ..color = _darken(detail, 0.2).withOpacity(0.4)
+          ..strokeWidth = 0.7,
+      );
+    }
   }
 
   // ─── Airliner (Padraigaer, Presidential) ────────────────────────────
@@ -2132,11 +2210,11 @@ class PlaneRenderer {
       canvas.drawCircle(Offset(x, ey - 4), 2.0, engineNose);
     }
 
-    // Navigation lights
+    // Navigation lights (small — shared wingtip-light sizing).
     final navRed = Paint()..color = const Color(0xFFCC3333);
     final navGreen = Paint()..color = FlitColors.success;
-    canvas.drawCircle(Offset(-leftSpan + 2, 6 + wingDip), 1.5, navRed);
-    canvas.drawCircle(Offset(rightSpan - 2, 6 - wingDip), 1.5, navGreen);
+    canvas.drawCircle(Offset(-leftSpan + 2, 6 + wingDip), 0.8, navRed);
+    canvas.drawCircle(Offset(rightSpan - 2, 6 - wingDip), 0.8, navGreen);
   }
 
   // ─── Platinum Eagle ────────────────────────────────────────────────
@@ -2301,32 +2379,26 @@ class PlaneRenderer {
       ..strokeJoin = StrokeJoin.round;
     _sketchPath(fuselagePath, canvas, fuselageSketchPaint, rng, wobble: 0.42);
 
-    // Hooked beak (eagles have a distinctive curved raptor beak)
+    // Compact hooked beak — a short, wide gold triangle at the head front
+    // (was a thin tall spike that read as an antenna).
     final beakPath = Path()
-      ..moveTo(bodyShift, -16)
-      ..quadraticBezierTo(bodyShift + 1, -18, bodyShift, -20) // beak tip
-      ..quadraticBezierTo(bodyShift - 0.5, -18, bodyShift, -16)
+      ..moveTo(bodyShift - 2, -14.5)
+      ..lineTo(bodyShift, -18.5) // beak tip (short, not a spire)
+      ..lineTo(bodyShift + 2, -14.5)
+      ..quadraticBezierTo(bodyShift, -13.5, bodyShift - 2, -14.5)
       ..close();
     _wash(canvas, beakPath, const Color(0xFFDAA520), seed: planeId);
-    _pencilOutline(beakPath, canvas, const Color(0xFFDAA520), strokeWidth: 0.7);
+    _pencilOutline(beakPath, canvas, const Color(0xFFC8901A), strokeWidth: 0.7);
 
-    // Eagle eye (fierce, forward-facing)
-    canvas.drawCircle(
-      Offset(bodyShift + 1.5, -11),
-      2.2,
-      Paint()..color = const Color(0xFFDAA520), // golden iris
-    );
-    canvas.drawCircle(
-      Offset(bodyShift + 1.5, -11),
-      1.0,
-      Paint()..color = const Color(0xFF1A1A1A), // pupil
-    );
-    // Eye highlight
-    canvas.drawCircle(
-      Offset(bodyShift + 1.0, -11.5),
-      0.5,
-      Paint()..color = Colors.white.withOpacity(0.6),
-    );
+    // TWO small top-down eye dots on the sides of the head (no iris rings
+    // or glints — big forward eyes read as an owl face from above).
+    for (final ex in [-1.9, 1.9]) {
+      canvas.drawCircle(
+        Offset(bodyShift + ex, -12),
+        0.8,
+        Paint()..color = const Color(0xFF1A1A1A),
+      );
+    }
 
     // Platinum shimmer highlights along body
     for (var i = 0; i < 4; i++) {
@@ -2949,99 +3021,102 @@ class PlaneRenderer {
     final detail = _detail(colorScheme, 0xFFFFFFFF); // white/snow
 
     final bodyShift = bankSin * 1.5;
-    final wingDip = -bankSin * 3.5;
+    final cx = bodyShift;
 
-    final leftColor =
-        bankSin > 0 ? secondary : Color.lerp(secondary, Colors.black, 0.2)!;
-    final rightColor =
-        bankSin < 0 ? secondary : Color.lerp(secondary, Colors.black, 0.2)!;
+    // SIDE PROFILE. The sleigh's length runs along the travel axis (Y, nose =
+    // −Y = up), so it stays narrow — never stretched into wide "wings" (that
+    // top-down throne read was the whole bug). Iconic cues: a big scroll curl
+    // at the front, a seat tub, a curled runner blade below, a gift sack aft.
 
-    // --- Runners (skis): two narrow gold blades running front-to-back, each
-    // with the iconic upward scroll at the front. Drawn close beside the body,
-    // NOT spread wide like wings. ---
+    // --- Body group (mild horizontal roll only — side view barely squishes) ---
+    canvas.save();
+    final rollScale = 0.78 + bankCos.abs() * 0.22;
+    canvas.translate(cx, 0);
+    canvas.scale(rollScale, 1.0);
+    canvas.translate(-cx, 0);
+
+    // Slight 3/4 side view: the sleigh sits low with its length across the
+    // frame — a flat keel at the BOTTOM, a prow sweeping UP and curling at the
+    // front (right), an open seat with a tall back at the rear (left), and a
+    // single sled runner beneath the keel. A bottom runner reads as a sled base
+    // (the "insect" bug came from runners spread L+R like wings — avoided here).
+    //
+    // Tilt the whole side profile so the prow points up-track: the same
+    // diagonal trick the witch broom uses, so the sleigh reads as gliding
+    // forward rather than standing on its tail.
+    canvas.translate(cx, 0);
+    canvas.rotate(-0.55);
+    canvas.translate(-cx, 0);
+
+    // --- Sled runner (gold): bold blade under the keel, curling up at the front.
     final runnerStroke = Paint()
+      ..color = secondary
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2
+      ..strokeWidth = 2.8
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
-
-    void drawRunner(double sideX, Color c) {
-      final x = bodyShift + sideX;
-      final s = sideX < 0 ? -1.0 : 1.0;
-      final dip = s * wingDip * 0.25;
-      final path = Path()
-        ..moveTo(x, 13 + dip) // rear of the blade
-        ..lineTo(x, -9 + dip) // forward along the blade
-        ..quadraticBezierTo(
-          x, -14 + dip, // up to the front
-          x + s * 3.5, -13.5 + dip, // curl up and outward (ski tip)
-        )
-        ..quadraticBezierTo(
-          x + s * 5.2, -13.1 + dip,
-          x + s * 4.2, -11.3 + dip, // small scroll back
-        );
-      runnerStroke.color = c;
-      canvas.drawPath(path, runnerStroke);
-    }
-
-    drawRunner(-5.5, leftColor);
-    drawRunner(5.5, rightColor);
-
-    // --- Body group (roll-foreshortens with bankCos) ---
-    canvas.save();
-    final rollScale = 0.55 + bankCos.abs() * 0.45;
-    canvas.translate(bodyShift, 0);
-    canvas.scale(rollScale, 1.0);
-    canvas.translate(-bodyShift, 0);
-
-    // Sleigh body — tapers to a curved prow at the front (top).
-    final bodyPath = Path()
-      ..moveTo(bodyShift, -14) // prow tip
-      ..quadraticBezierTo(bodyShift + 5, -10, bodyShift + 5, -2) // right side
-      ..lineTo(bodyShift + 4, 10) // right rear
-      ..quadraticBezierTo(bodyShift, 12, bodyShift - 4, 10) // rear curve
-      ..lineTo(bodyShift - 5, -2) // left rear side
-      ..quadraticBezierTo(bodyShift - 5, -10, bodyShift, -14)
-      ..close();
-    _wash(canvas, bodyPath, primary, seed: planeId);
-    _pencilOutline(bodyPath, canvas, primary, strokeWidth: 1.0);
-    _crossHatch(
-      canvas,
-      Rect.fromLTRB(bodyShift - 5, -14, bodyShift + 5, 10),
-      primary,
-      spacing: 5.0,
-      opacity: 0.08,
-    );
-
-    // Gold trim lines along the sleigh sides.
-    final trimPaint = Paint()
-      ..color = secondary.withOpacity(0.85)
-      ..strokeWidth = 1.2
+    final runner = Path()
+      ..moveTo(cx - 7, 12) // rear tip
+      ..lineTo(cx + 4, 12) // along the bottom to the front
+      ..quadraticBezierTo(cx + 7.5, 12, cx + 7.5, 8) // curl up at the front
+      ..quadraticBezierTo(cx + 7.5, 5.5, cx + 4.5, 6.5); // scroll back
+    canvas.drawPath(runner, runnerStroke);
+    // Two stanchions from the runner up to the keel.
+    final strutPaint = Paint()
+      ..color = _darken(secondary, 0.12)
+      ..strokeWidth = 1.5
       ..strokeCap = StrokeCap.round;
-    canvas.drawLine(
-        Offset(bodyShift - 4, -10), Offset(bodyShift - 3.5, 8), trimPaint);
-    canvas.drawLine(
-        Offset(bodyShift + 4, -10), Offset(bodyShift + 3.5, 8), trimPaint);
+    canvas.drawLine(Offset(cx - 5, 12), Offset(cx - 5, 9), strutPaint);
+    canvas.drawLine(Offset(cx + 2, 12), Offset(cx + 2, 9), strutPaint);
 
-    // Gift sack (bulging oval at the rear / tail).
+    // Gift sack (white, tied with gold) piled in the open seat — drawn
+    // first so the dash and seat-back overlap its base.
     final sackPath = Path()
       ..addOval(
-        Rect.fromCenter(center: Offset(bodyShift, 12), width: 10, height: 8),
+        Rect.fromCenter(center: Offset(cx - 1, -2), width: 9, height: 9),
       );
     _wash(canvas, sackPath, detail, seed: planeId);
-    _pencilOutline(sackPath, canvas, detail, strokeWidth: 0.9);
-    // Tie-off knot on the sack.
-    canvas.drawCircle(
-      Offset(bodyShift, 7.5),
-      1.4,
-      Paint()..color = secondary,
-    );
+    _pencilOutline(sackPath, canvas, _darken(detail, 0.15), strokeWidth: 0.9);
+    canvas.drawCircle(Offset(cx + 1.5, -5.5), 1.1, Paint()..color = secondary);
 
-    // Gold prow highlight (bright point at nose).
-    canvas.drawCircle(
-      Offset(bodyShift, -14),
-      1.6,
-      Paint()..color = secondary,
+    // --- Sleigh body (red): classic profile — keel bottom, LOW front dash
+    // ending in a small scroll curl, open seat holding the sack, and a TALL
+    // curved seat-back at the rear. ---
+    final body = Path()
+      ..moveTo(cx - 6, 9) // rear-bottom of keel
+      ..lineTo(cx + 3, 9) // keel bottom to the front
+      ..quadraticBezierTo(cx + 6.5, 8, cx + 6, 3) // front riser
+      ..quadraticBezierTo(cx + 5.5, 0, cx + 8, -2) // sweep to the prow tip
+      ..quadraticBezierTo(cx + 9.5, -3.5, cx + 7, -4.5) // small scroll over
+      ..quadraticBezierTo(cx + 5.5, -4.5, cx + 5, -2) // scroll inner
+      ..quadraticBezierTo(cx + 3.5, 1, cx + 1, 1.5) // dash slopes to seat
+      ..lineTo(cx - 3, 1.5) // seat pan
+      ..quadraticBezierTo(cx - 4.5, 1, cx - 5, -5) // seat-back inner edge
+      ..quadraticBezierTo(cx - 5.2, -7.5, cx - 7, -7) // rounded back top
+      ..quadraticBezierTo(cx - 7.5, -3, cx - 6, 9) // tall outer back edge
+      ..close();
+    _wash(canvas, body, primary, seed: planeId);
+    _pencilOutline(body, canvas, _darken(primary, 0.2), strokeWidth: 1.1);
+
+    // Gold trim: prow scroll + seat-back top edge.
+    final trimStroke = Paint()
+      ..color = secondary
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.3
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(
+      Path()
+        ..moveTo(cx + 6, 3)
+        ..quadraticBezierTo(cx + 5.5, 0, cx + 8, -2)
+        ..quadraticBezierTo(cx + 9.5, -3.5, cx + 7, -4.5),
+      trimStroke,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(cx - 5, -5)
+        ..quadraticBezierTo(cx - 5.2, -7.5, cx - 7, -7),
+      trimStroke,
     );
 
     canvas.restore();
@@ -3065,105 +3140,96 @@ class PlaneRenderer {
   ) {
     final primary = _primary(colorScheme, 0xFF1A0A2E); // near-black purple
     final secondary = _secondary(colorScheme, 0xFFFF6600); // orange bristles
-    final detail = _detail(colorScheme, 0xFF6B21A8); // purple witch/wisp
+    final detail = _detail(colorScheme, 0xFF6B21A8); // purple witch
 
     final bodyShift = bankSin * 1.5;
-    final dynamicWingSpan = wingSpan * bankCos.abs() * 1.0;
-    final wingDip = -bankSin * 2.5;
+    final cx = bodyShift;
 
-    // --- Bristle fan (spread behind the broom like wings) ---
-    // Fan rendered as a series of individual bristle lines spreading left/right.
-    const bristleRootY = 8.0; // where shaft ends / bristles begin
+    // A single DIAGONAL broomstick: the shaft runs from the nose (top, tilted
+    // slightly right) back to a bristle fan at the rear (bottom-left). A small
+    // witch rides astride it. No floating smoke worm — the shaft + bristle fan
+    // are the whole silhouette.
+    final tipX = cx + 5.0; // nose end of the shaft (leans right)
+    const tipY = -19.0;
+    final rootX = cx - 4.0; // bristle root (rear)
+    const rootY = 9.0;
+
+    // Body group (mild roll only — the broom is a side-on line).
+    canvas.save();
+    final rollScale = 0.72 + bankCos.abs() * 0.28;
+    canvas.translate(cx, 0);
+    canvas.scale(rollScale, 1.0);
+    canvas.translate(-cx, 0);
+
+    // --- Bristle fan at the rear (spreads from the root, pointing down-rear) ---
     const bristleCount = 7;
+    const fanCentre = 2.05; // radians: down-and-left (rearward)
+    const fanSpread = 0.85;
     for (var i = 0; i < bristleCount; i++) {
       final t = i / (bristleCount - 1); // 0..1
-      final side = (t - 0.5) * 2.0; // -1..1 (left to right)
-      final xTip = side * (dynamicWingSpan * 0.9) + bodyShift;
-      final yTip = bristleRootY + 8.0 + side.abs() * 2.0 + wingDip * side * 0.5;
-      // Darken outer bristles on the descending (banking) side.
+      final ang = fanCentre + (t - 0.5) * fanSpread;
+      final len = 11.0 - (t - 0.5).abs() * 3.0;
       final bristleColor =
-          (side * bankSin > 0.1) ? _darken(secondary, 0.25) : secondary;
+          (i < bristleCount / 2) ? secondary : _darken(secondary, 0.18);
       canvas.drawLine(
-        Offset(bodyShift, bristleRootY),
-        Offset(xTip, yTip),
+        Offset(rootX, rootY),
+        Offset(rootX + cos(ang) * len, rootY + sin(ang) * len),
         Paint()
           ..color = bristleColor
-          ..strokeWidth = 1.2
+          ..strokeWidth = 1.4
           ..strokeCap = StrokeCap.round,
       );
     }
-    // Bristle binding band (band of secondary colour at the root of the fan).
+    // Binding band where the bristles are lashed to the shaft.
+    canvas.drawCircle(
+      Offset(rootX, rootY),
+      2.4,
+      Paint()..color = _darken(secondary, 0.15),
+    );
+
+    // --- Broom shaft (single tapered diagonal stick) ---
+    final shaftPaint = Paint()
+      ..color = primary
+      ..strokeWidth = 2.6
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(tipX, tipY), Offset(rootX, rootY), shaftPaint);
+    // Slim highlight along the shaft (a little polished-wood sheen).
     canvas.drawLine(
-      Offset(bodyShift - 3, bristleRootY - 0.5),
-      Offset(bodyShift + 3, bristleRootY - 0.5),
+      Offset(tipX - 0.6, tipY + 1),
+      Offset(rootX - 0.6, rootY - 1),
       Paint()
-        ..color = _darken(secondary, 0.15)
-        ..strokeWidth = 3.0
+        ..color = _lighten(primary, 0.5).withOpacity(0.4)
+        ..strokeWidth = 0.7
         ..strokeCap = StrokeCap.round,
     );
 
-    // --- Body group ---
-    canvas.save();
-    final rollScale = 0.55 + bankCos.abs() * 0.45;
-    canvas.translate(bodyShift, 0);
-    canvas.scale(rollScale, 1.0);
-    canvas.translate(-bodyShift, 0);
-
-    // Broom handle (long slim shaft, nose = top, tapers to a point).
-    final handlePath = Path()
-      ..moveTo(bodyShift, -20) // tip of handle
-      ..lineTo(bodyShift + 1.5, -15)
-      ..lineTo(bodyShift + 2.0, bristleRootY)
-      ..lineTo(bodyShift - 2.0, bristleRootY)
-      ..lineTo(bodyShift - 1.5, -15)
-      ..close();
-    _wash(canvas, handlePath, primary, seed: planeId);
-    _pencilOutline(handlePath, canvas, primary, strokeWidth: 1.0);
-    // Wood-grain lines along the handle.
-    final grainPaint = Paint()
-      ..color = _lighten(primary, 0.25).withOpacity(0.4)
-      ..strokeWidth = 0.5;
-    for (var y = -16.0; y < bristleRootY; y += 4.0) {
-      canvas.drawLine(Offset(bodyShift - 1.5, y),
-          Offset(bodyShift + 1.5, y + 1.0), grainPaint);
-    }
-
-    // Seated witch silhouette — small oval body + conical hat above handle.
-    // Body (sits astride the broom at mid-handle).
+    // --- Witch riding astride the shaft (small hatted silhouette) ---
+    final midX = (tipX + rootX) / 2 + 1.5;
+    const midY = -5.0;
+    // Cloaked body.
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(bodyShift, -4), width: 6, height: 9),
+      Rect.fromCenter(center: Offset(midX, midY), width: 6, height: 8),
       Paint()..color = detail,
     );
-    // Hat brim.
+    // Head.
+    canvas.drawCircle(
+      Offset(midX + 0.5, midY - 4),
+      1.8,
+      Paint()..color = _lighten(detail, 0.4),
+    );
+    // Witch hat — brim + bent cone.
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(bodyShift, -9.5), width: 8, height: 2),
+      Rect.fromCenter(
+          center: Offset(midX + 0.5, midY - 5.4), width: 7, height: 2),
       Paint()..color = primary,
     );
-    // Hat cone.
     final hatPath = Path()
-      ..moveTo(bodyShift, -18)
-      ..lineTo(bodyShift - 3.5, -9.5)
-      ..lineTo(bodyShift + 3.5, -9.5)
+      ..moveTo(midX - 2.6, midY - 5.6)
+      ..lineTo(midX + 2.6, midY - 5.6)
+      ..lineTo(midX + 3.6, midY - 12) // tip bends to the side
+      ..quadraticBezierTo(midX + 2, midY - 9, midX, midY - 6)
       ..close();
     _wash(canvas, hatPath, primary, seed: planeId);
-
-    // Trailing wisp / smoke (curvy line behind the bristles in detail colour).
-    final wispPaint = Paint()
-      ..color = detail.withOpacity(0.55)
-      ..strokeWidth = 1.5
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    final wispPath = Path()
-      ..moveTo(bodyShift, bristleRootY + 10)
-      ..cubicTo(
-        bodyShift + 4,
-        bristleRootY + 13,
-        bodyShift - 4,
-        bristleRootY + 16,
-        bodyShift + 2,
-        bristleRootY + 19,
-      );
-    canvas.drawPath(wispPath, wispPaint);
 
     canvas.restore();
   }
@@ -3196,30 +3262,40 @@ class PlaneRenderer {
     final rightColor =
         bankSin < 0 ? secondary : Color.lerp(secondary, Colors.black, 0.2)!;
 
-    // --- Side wheels (drawn as arcs extending L/R like "wing stubs") ---
-    // Left wheel.
-    final leftWheel = Path()
-      ..addOval(
-        Rect.fromCenter(
-          center: Offset(-dynamicWingSpan * 0.6 + bodyShift, 6 + wingDip),
-          width: dynamicWingSpan * 0.55,
-          height: 5,
-        ),
-      );
-    _wash(canvas, leftWheel, leftColor, seed: planeId);
-    _pencilOutline(leftWheel, canvas, leftColor, strokeWidth: 0.9);
+    // --- Carriage wheels: round spoked wheels ATTACHED to the body by visible
+    // axles (were flat ovals floating out at the sides). ---
+    const wheelR = 4.2;
+    final axlePaint = Paint()
+      ..color = _darken(secondary, 0.35)
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round;
+    void drawWheel(double s, Color rim) {
+      final wx = s * (dynamicWingSpan * 0.5) + bodyShift;
+      final wy = 9 + s * wingDip * 0.4;
+      // Axle from the lower body flank to the hub.
+      canvas.drawLine(Offset(bodyShift + s * 5, 8), Offset(wx, wy), axlePaint);
+      // Tyre (dark rim for contrast).
+      canvas.drawCircle(
+          Offset(wx, wy), wheelR, Paint()..color = _darken(rim, 0.3));
+      canvas.drawCircle(Offset(wx, wy), wheelR - 1.1, Paint()..color = rim);
+      // Spokes.
+      final spoke = Paint()
+        ..color = _darken(rim, 0.35)
+        ..strokeWidth = 0.7;
+      for (var k = 0; k < 4; k++) {
+        final a = k * pi / 4;
+        canvas.drawLine(
+          Offset(wx - cos(a) * (wheelR - 1.2), wy - sin(a) * (wheelR - 1.2)),
+          Offset(wx + cos(a) * (wheelR - 1.2), wy + sin(a) * (wheelR - 1.2)),
+          spoke,
+        );
+      }
+      // Hub.
+      canvas.drawCircle(Offset(wx, wy), 1.2, Paint()..color = detail);
+    }
 
-    // Right wheel.
-    final rightWheel = Path()
-      ..addOval(
-        Rect.fromCenter(
-          center: Offset(dynamicWingSpan * 0.6 + bodyShift, 6 - wingDip),
-          width: dynamicWingSpan * 0.55,
-          height: 5,
-        ),
-      );
-    _wash(canvas, rightWheel, rightColor, seed: planeId);
-    _pencilOutline(rightWheel, canvas, rightColor, strokeWidth: 0.9);
+    drawWheel(-1, leftColor);
+    drawWheel(1, rightColor);
 
     // --- Body group ---
     canvas.save();
@@ -3319,52 +3395,6 @@ class PlaneRenderer {
     final detail = _detail(colorScheme, 0xFFFFFFFF); // white feathers
 
     final bodyShift = bankSin * 1.5;
-    final dynamicWingSpan = wingSpan * bankCos.abs() * 1.05;
-    final wingDip = -bankSin * 3.0;
-
-    final leftColor =
-        bankSin > 0 ? primary : Color.lerp(primary, Colors.black, 0.2)!;
-    final rightColor =
-        bankSin < 0 ? primary : Color.lerp(primary, Colors.black, 0.2)!;
-
-    // --- Fletching fins (left + right, like wings near the rear) ---
-    // Left fletching — a teardrop feather shape.
-    final leftFletch = Path()
-      ..moveTo(bodyShift, 10) // root at shaft
-      ..quadraticBezierTo(
-        bodyShift - dynamicWingSpan * 0.5,
-        6 + wingDip,
-        -dynamicWingSpan * 0.85 + bodyShift,
-        12 + wingDip,
-      )
-      ..quadraticBezierTo(
-        bodyShift - dynamicWingSpan * 0.4,
-        16 + wingDip * 0.5,
-        bodyShift,
-        18,
-      )
-      ..close();
-    _wash(canvas, leftFletch, leftColor, seed: planeId);
-    _pencilOutline(leftFletch, canvas, leftColor, strokeWidth: 0.9);
-
-    // Right fletching.
-    final rightFletch = Path()
-      ..moveTo(bodyShift, 10)
-      ..quadraticBezierTo(
-        bodyShift + dynamicWingSpan * 0.5,
-        6 - wingDip,
-        dynamicWingSpan * 0.85 + bodyShift,
-        12 - wingDip,
-      )
-      ..quadraticBezierTo(
-        bodyShift + dynamicWingSpan * 0.4,
-        16 - wingDip * 0.5,
-        bodyShift,
-        18,
-      )
-      ..close();
-    _wash(canvas, rightFletch, rightColor, seed: planeId);
-    _pencilOutline(rightFletch, canvas, rightColor, strokeWidth: 0.9);
 
     // --- Body group ---
     canvas.save();
@@ -3410,26 +3440,31 @@ class PlaneRenderer {
       strokeWidth: 1.0,
     );
 
-    // Feather quill lines on the fletching (detail white stripes).
-    final quillPaint = Paint()
-      ..color = detail.withOpacity(0.65)
-      ..strokeWidth = 0.7
-      ..strokeCap = StrokeCap.round;
-    for (var i = 0; i < 4; i++) {
-      final t = i / 3.0;
-      final x = bodyShift - 2.5 + t * 2.5;
+    // Tail fletching: two angled feather vanes on the shaft axis at the rear.
+    // Swept back like real arrow feathers — pink barbs with a white rib — so
+    // the tail reads as fletching, not stray marks.
+    for (final sign in [-1.0, 1.0]) {
+      final vane = Path()
+        ..moveTo(bodyShift + sign * 1.4, 9) // upper attach on the shaft
+        ..lineTo(bodyShift + sign * 7.5, 13) // outer leading barb
+        ..lineTo(bodyShift + sign * 6.2, 20) // outer trailing barb
+        ..lineTo(bodyShift + sign * 1.4, 18) // lower attach on the shaft
+        ..close();
+      _wash(canvas, vane, primary, seed: planeId);
+      _pencilOutline(vane, canvas, _darken(primary, 0.3), strokeWidth: 0.8);
+      // White quill rib down the centre of each vane.
       canvas.drawLine(
-          Offset(x, 10 + t * 4), Offset(x - 2.5, 16 + t * 2), quillPaint);
-      canvas.drawLine(
-          Offset(x, 10 + t * 4), Offset(x + 2.5, 16 + t * 2), quillPaint);
+        Offset(bodyShift + sign * 1.6, 11),
+        Offset(bodyShift + sign * 6.4, 16.5),
+        Paint()
+          ..color = detail.withOpacity(0.9)
+          ..strokeWidth = 0.8
+          ..strokeCap = StrokeCap.round,
+      );
     }
-
-    // Petal trail (small dots/hearts streaming behind the arrow).
-    final petalPaint = Paint()..color = secondary.withOpacity(0.45);
-    for (final dy in [22.0, 26.0, 30.0]) {
-      canvas.drawCircle(
-          Offset(bodyShift + (dy - 26) * 0.4, dy), 1.2, petalPaint);
-    }
+    // Nock at the very tail of the shaft.
+    canvas.drawCircle(
+        Offset(bodyShift, 19), 1.6, Paint()..color = _darken(primary, 0.35));
 
     canvas.restore();
   }
@@ -3458,76 +3493,55 @@ class PlaneRenderer {
     final dynamicWingSpan = wingSpan * bankCos.abs() * 1.1;
     final wingDip = -bankSin * 3.5;
 
-    // --- 4-Leaf clover rotor (four heart-leaf blades around the hub) ---
-    // Each blade is a pair of overlapping circles forming a heart-leaf,
-    // arranged top/bottom/left/right. Banking compresses L/R span.
-    // Top blade (forward, −Y).
-    final topBlade = Path()
-      ..addOval(Rect.fromCenter(
-          center: Offset(bodyShift - 2.5, -dynamicWingSpan * 0.35),
-          width: 7,
-          height: 8))
-      ..addOval(Rect.fromCenter(
-          center: Offset(bodyShift + 2.5, -dynamicWingSpan * 0.35),
-          width: 7,
-          height: 8));
-    final leftBladeDx = -dynamicWingSpan * 0.6;
-    final leftBlade = Path()
-      ..addOval(Rect.fromCenter(
-          center: Offset(bodyShift + leftBladeDx, wingDip * 0.5 - 2.5),
-          width: 8,
-          height: 7))
-      ..addOval(Rect.fromCenter(
-          center: Offset(bodyShift + leftBladeDx, wingDip * 0.5 + 2.5),
-          width: 8,
-          height: 7));
-    final rightBladeDx = dynamicWingSpan * 0.6;
-    final rightBlade = Path()
-      ..addOval(Rect.fromCenter(
-          center: Offset(bodyShift + rightBladeDx, -wingDip * 0.5 - 2.5),
-          width: 8,
-          height: 7))
-      ..addOval(Rect.fromCenter(
-          center: Offset(bodyShift + rightBladeDx, -wingDip * 0.5 + 2.5),
-          width: 8,
-          height: 7));
-    final bottomBlade = Path()
-      ..addOval(Rect.fromCenter(
-          center: Offset(bodyShift - 2.5, dynamicWingSpan * 0.35),
-          width: 7,
-          height: 8))
-      ..addOval(Rect.fromCenter(
-          center: Offset(bodyShift + 2.5, dynamicWingSpan * 0.35),
-          width: 7,
-          height: 8));
+    // --- 4-leaf clover rotor: four heart-lobes whose points all MEET at a
+    // central hub over the pod, arranged in an X so they read as one clover
+    // (was four detached green blobs). Banking darkens the descending side. ---
+    final cx = bodyShift;
+    final r = dynamicWingSpan * 0.30; // leaf-centre distance from the hub
+    const lobe = 9.0; // lobe diameter
+    const off = 2.6; // half-gap between a leaf's two lobes
 
-    final leftBladeColor =
-        bankSin > 0 ? primary : Color.lerp(primary, Colors.black, 0.2)!;
-    final rightBladeColor =
-        bankSin < 0 ? primary : Color.lerp(primary, Colors.black, 0.2)!;
-
-    _wash(canvas, topBlade, primary, seed: planeId);
-    _pencilOutline(topBlade, canvas, primary, strokeWidth: 0.9);
-    _wash(canvas, leftBlade, leftBladeColor, seed: planeId);
-    _pencilOutline(leftBlade, canvas, leftBladeColor, strokeWidth: 0.9);
-    _wash(canvas, rightBlade, rightBladeColor, seed: planeId);
-    _pencilOutline(rightBlade, canvas, rightBladeColor, strokeWidth: 0.9);
-    _wash(canvas, bottomBlade, primary, seed: planeId);
-    _pencilOutline(bottomBlade, canvas, primary, strokeWidth: 0.9);
-
-    // Clover stem connecting blades to hub (small lines).
+    // Green stems radiating from the hub out under each leaf.
     final stemPaint = Paint()
-      ..color = _darken(primary, 0.25)
-      ..strokeWidth = 1.2
+      ..color = _darken(primary, 0.28)
+      ..strokeWidth = 1.6
       ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(bodyShift, 0),
-        Offset(bodyShift, -dynamicWingSpan * 0.22), stemPaint);
-    canvas.drawLine(Offset(bodyShift, 0),
-        Offset(bodyShift + leftBladeDx * 0.45, wingDip * 0.25), stemPaint);
-    canvas.drawLine(Offset(bodyShift, 0),
-        Offset(bodyShift + rightBladeDx * 0.45, -wingDip * 0.25), stemPaint);
-    canvas.drawLine(Offset(bodyShift, 0),
-        Offset(bodyShift, dynamicWingSpan * 0.22), stemPaint);
+
+    // Draw order: stems first, then lobes on top so they fuse at the hub.
+    Path leafAt(double ang) {
+      final lx = cx + cos(ang) * r;
+      final ly = sin(ang) * r + wingDip * cos(ang) * 0.3;
+      final px = -sin(ang); // perpendicular for the twin lobes
+      final py = cos(ang);
+      return Path()
+        ..addOval(Rect.fromCenter(
+            center: Offset(lx + px * off, ly + py * off),
+            width: lobe,
+            height: lobe))
+        ..addOval(Rect.fromCenter(
+            center: Offset(lx - px * off, ly - py * off),
+            width: lobe,
+            height: lobe));
+    }
+
+    // X arrangement (diagonals) keeps the tail boom clear at the bottom.
+    const angles = [pi / 4, 3 * pi / 4, 5 * pi / 4, 7 * pi / 4];
+    for (final ang in angles) {
+      canvas.drawLine(
+        Offset(cx, 0),
+        Offset(cx + cos(ang) * r * 0.7, sin(ang) * r * 0.7),
+        stemPaint,
+      );
+    }
+    for (final ang in angles) {
+      final leafX = cos(ang);
+      final leafColor = (leafX * bankSin > 0.05)
+          ? Color.lerp(primary, Colors.black, 0.22)!
+          : primary;
+      final leaf = leafAt(ang);
+      _wash(canvas, leaf, leafColor, seed: planeId);
+      _pencilOutline(leaf, canvas, leafColor, strokeWidth: 0.9);
+    }
 
     // --- Body group (cockpit) ---
     canvas.save();

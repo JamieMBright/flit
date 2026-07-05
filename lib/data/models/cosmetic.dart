@@ -321,9 +321,11 @@ abstract class CosmeticCatalog {
       requiredLevel: 7,
       description: 'A mighty heavy bomber. Low and slow, but goes forever.',
       colorScheme: {
-        'primary': 0xFF2F2F2F,
-        'secondary': 0xFF3B3B3B,
-        'detail': 0xFFCC3333,
+        // Dark navy night-ops palette — reads as a night bomber, not a
+        // red-winged biplane, against both dark and light terrain.
+        'primary': 0xFF25324E,
+        'secondary': 0xFF16203A,
+        'detail': 0xFF7A8DB0,
       },
       wingSpan: 36.0,
       handling: 0.7,
