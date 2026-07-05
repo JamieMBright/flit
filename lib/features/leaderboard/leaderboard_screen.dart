@@ -97,6 +97,24 @@ class LeaderboardScreen extends StatefulWidget {
 
 class _LeaderboardScreenState extends State<LeaderboardScreen>
     with SingleTickerProviderStateMixin {
+  /// Boards shown as tabs, in display order. Training Flight is
+  /// deliberately absent from the global boards.
+  static const List<LeaderboardMode> _tabModes = [
+    LeaderboardMode.dailyScramble,
+    LeaderboardMode.dailyTriangulation,
+    LeaderboardMode.flightBriefing,
+    LeaderboardMode.dailyCombined,
+  ];
+
+  /// Short tab labels (displayName is too long for the tab bar).
+  static String _tabLabel(LeaderboardMode mode) => switch (mode) {
+        LeaderboardMode.dailyScramble => 'SCRAMBLE',
+        LeaderboardMode.dailyTriangulation => 'TRIANGULATION',
+        LeaderboardMode.flightBriefing => 'BRIEFING',
+        LeaderboardMode.dailyCombined => 'COMBINED',
+        LeaderboardMode.trainingFlight => 'TRAINING',
+      };
+
   late final TabController _modeTabController;
   LeaderboardMode _currentMode = LeaderboardMode.dailyScramble;
   TimeframeTab _timeframe = TimeframeTab.today;
@@ -112,7 +130,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   void initState() {
     super.initState();
     _modeTabController = TabController(
-      length: LeaderboardMode.values.length,
+      length: _tabModes.length,
       vsync: this,
     );
     _modeTabController.addListener(_onModeChanged);
@@ -130,7 +148,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   void _onModeChanged() {
     if (!_modeTabController.indexIsChanging) return;
-    _currentMode = LeaderboardMode.values[_modeTabController.index];
+    _currentMode = _tabModes[_modeTabController.index];
     // The combined board is a per-day concept — force the Today timeframe.
     if (_isCombined) _timeframe = TimeframeTab.today;
     _loadData();
@@ -267,12 +285,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             ),
             isScrollable: true,
             tabAlignment: TabAlignment.center,
-            tabs: const [
-              Tab(text: 'SCRAMBLE'),
-              Tab(text: 'TRAINING'),
-              Tab(text: 'BRIEFING'),
-              Tab(text: 'TRIANGULATION'),
-              Tab(text: 'COMBINED'),
+            tabs: [
+              for (final mode in _tabModes) Tab(text: _tabLabel(mode)),
             ],
           ),
         ),
