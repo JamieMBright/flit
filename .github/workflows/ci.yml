@@ -10,6 +10,8 @@ name: CI & Deploy
 # try again later" — tests stay green; just re-run by pushing to main.
 # Hosted runners can also be reclaimed mid-job (exit 143 / "runner has
 # received a shutdown signal"); that's infra churn, not code — re-run.
+# The in-job Pages retry absorbs one flake; a double flake still fails
+# the run and needs a fresh push.
 on:
   push:
     branches: [main]
