@@ -2503,9 +2503,16 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
   /// Builds the star/path marker layers shared by the full [RevealMap]
   /// (with legend) and the [RevealMapThumbnail] embedded in the mission
   /// report card, so both stay in sync from one source of truth.
-  ({List<RevealStar> stars, List<RevealPath> paths}) _revealLayers() {
+  ({
+    List<RevealStar> stars,
+    List<RevealPath> paths,
+    Vector2? start,
+    Vector2? finish,
+  }) _revealLayers() {
     final stars = <RevealStar>[];
     final paths = <RevealPath>[];
+    Vector2? start;
+    Vector2? finish;
     for (final r in widget.roundResults) {
       final target = CountryData.getCapital(r.countryCode)?.location;
       if (target != null) {
@@ -2517,6 +2524,8 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
         );
       }
       if (r.path.length >= 2) {
+        start ??= r.path.first;
+        finish = r.path.last;
         paths.add(RevealPath(r.path));
         // Faint gold dashed reference line: the great-circle (shortest)
         // route from where this round started to its target, so the
@@ -2532,7 +2541,7 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
         }
       }
     }
-    return (stars: stars, paths: paths);
+    return (stars: stars, paths: paths, start: start, finish: finish);
   }
 
   /// World map of the whole run: a star per round's target (gold =
@@ -2546,6 +2555,8 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
       RevealMap(
         stars: layers.stars,
         paths: layers.paths,
+        startLngLat: layers.start,
+        finishLngLat: layers.finish,
         legendItems: [
           const RevealLegendItem(Icons.star, FlitColors.gold, 'found'),
           if (layers.stars.any((s) => s.color == FlitColors.error))
@@ -2560,6 +2571,16 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
               Icons.linear_scale,
               FlitColors.gold,
               'shortest route',
+            ),
+            const RevealLegendItem(
+              Icons.circle,
+              FlitColors.accent,
+              'start',
+            ),
+            const RevealLegendItem(
+              Icons.sports_score,
+              Colors.white,
+              'finish',
             ),
           ],
         ],
@@ -2667,7 +2688,12 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
         // downloadable card never includes the answer map for it. Other
         // session types (training, free flight, dogfight) can show it.
         map: !widget.isDailyChallenge && layers.stars.isNotEmpty
-            ? RevealMapThumbnail(stars: layers.stars, paths: layers.paths)
+            ? RevealMapThumbnail(
+                stars: layers.stars,
+                paths: layers.paths,
+                startLngLat: layers.start,
+                finishLngLat: layers.finish,
+              )
             : null,
       ),
     );
