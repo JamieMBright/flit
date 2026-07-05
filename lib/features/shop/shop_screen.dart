@@ -5,10 +5,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
+import '../../core/widgets/rating_tier_chip.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/economy_config.dart';
+import '../../data/models/rating_tier.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/economy_config_service.dart';
+import '../../data/services/matchmaking_service.dart';
+import '../../data/services/shop_rotation.dart';
+import '../../data/services/sortie_service.dart';
+import '../../game/economy/fuel_tank.dart';
 import '../../game/rendering/plane_renderer.dart';
 import '../../game/rendering/watercolor_style.dart';
 
@@ -16,7 +22,8 @@ import '../../game/rendering/watercolor_style.dart';
 class ShopScreen extends ConsumerStatefulWidget {
   const ShopScreen({super.key, this.initialTabIndex = 0});
 
-  /// Which tab to show initially: 0 = Planes, 1 = Contrails, 2 = Companions, 3 = Gold.
+  /// Which tab to show initially: 0 = Weekly, 1 = Planes, 2 = Contrails,
+  /// 3 = Companions, 4 = Gold & Supplies.
   final int initialTabIndex;
 
   @override
@@ -28,13 +35,17 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
   late TabController _tabController;
   EconomyConfig _economyConfig = EconomyConfig.defaults();
 
+  /// The player's Standard Sortie rating — prestige cosmetics are gated by
+  /// BOTH rating tier and coins. Null until fetched.
+  RatingInfo? _sortieRating;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 4,
+      length: 5,
       vsync: this,
-      initialIndex: widget.initialTabIndex.clamp(0, 3),
+      initialIndex: widget.initialTabIndex.clamp(0, 4),
     );
     // Pull latest server state so purchases made via RPC are reflected.
     ref.read(accountProvider.notifier).refreshFromServer();
@@ -42,6 +53,20 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
     EconomyConfigService.instance.getConfig().then((config) {
       if (mounted) setState(() => _economyConfig = config);
     });
+    // Fetch the sortie rating for prestige tier gating.
+    final player = ref.read(accountProvider).currentPlayer;
+    if (player.id.isNotEmpty) {
+      MatchmakingService.instance
+          .fetchRating(
+        userId: player.id,
+        gameMode: SortieService.gameMode,
+        fallbackLevel: player.level,
+        fallbackBestScore: player.bestScore ?? 0,
+      )
+          .then((info) {
+        if (mounted) setState(() => _sortieRating = info);
+      });
+    }
   }
 
   @override
@@ -100,6 +125,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
             fontSize: 14,
           ),
           tabs: const [
+            Tab(text: 'Weekly'),
             Tab(text: 'Planes'),
             Tab(text: 'Contrails'),
             Tab(text: 'Companions'),
@@ -145,6 +171,12 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
+                  _WeeklyShopTab(
+                    ownedIds: ownedIds,
+                    coins: coins,
+                    sortieRating: _sortieRating,
+                    onPurchase: _purchaseWeeklyOffer,
+                  ),
                   Column(
                     children: [
                       _MysteryPlaneButton(
@@ -192,7 +224,11 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
                     onEquip: _equipCompanion,
                     economyConfig: _economyConfig,
                   ),
-                  _GoldShopTab(economyConfig: _economyConfig),
+                  _GoldShopTab(
+                    economyConfig: _economyConfig,
+                    refuelCanisters: account.refuelCanisters,
+                    onBuyCanisters: _buyCanisters,
+                  ),
                 ],
               ),
             ),
@@ -202,7 +238,35 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
     );
   }
 
+  /// Whether the player's Standard Sortie tier satisfies a prestige item's
+  /// requirement. Tier-gated items need a REAL (non-provisional) rating —
+  /// money must never buy the flex.
+  bool _meetsTierRequirement(String cosmeticId) {
+    final required = ShopRotation.prestigeTierRequirements[cosmeticId];
+    if (required == null) return true;
+    final rating = _sortieRating;
+    if (rating == null || rating.provisional) return false;
+    return RatingTier.fromRating(rating.rating).index >= required.index;
+  }
+
+  void _showTierLockedSnack(String cosmeticId) {
+    final required = ShopRotation.prestigeTierRequirements[cosmeticId];
+    if (required == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Requires ${required.displayName} rating in Standard Sortie',
+        ),
+        backgroundColor: FlitColors.backgroundMid,
+      ),
+    );
+  }
+
   void _purchaseItem(Cosmetic item) {
+    if (!_meetsTierRequirement(item.id)) {
+      _showTierLockedSnack(item.id);
+      return;
+    }
     final category = _categoryForType(item.type);
     final price = _economyConfig.effectivePrice(
       item.id,
@@ -219,6 +283,39 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
         ),
       );
     }
+  }
+
+  void _purchaseWeeklyOffer(ShopOffer offer) {
+    if (!_meetsTierRequirement(offer.cosmetic.id)) {
+      _showTierLockedSnack(offer.cosmetic.id);
+      return;
+    }
+    final success = ref
+        .read(accountProvider.notifier)
+        .purchaseCosmetic(offer.cosmetic.id, offer.price);
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Purchased ${offer.cosmetic.name}!'),
+          backgroundColor: FlitColors.success,
+        ),
+      );
+      setState(() {});
+    }
+  }
+
+  void _buyCanisters(int count) {
+    final ok = ref.read(accountProvider.notifier).buyRefuelCanisters(count);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Bought $count refuel canister${count == 1 ? '' : 's'}!'
+              : 'Not enough coins',
+        ),
+        backgroundColor: ok ? FlitColors.success : FlitColors.error,
+      ),
+    );
   }
 
   void _equipPlane(String id) {
@@ -304,53 +401,504 @@ abstract final class _SaleColors {
 // =============================================================================
 
 class _GoldShopTab extends StatelessWidget {
-  const _GoldShopTab({required this.economyConfig});
+  const _GoldShopTab({
+    required this.economyConfig,
+    required this.refuelCanisters,
+    required this.onBuyCanisters,
+  });
 
   final EconomyConfig economyConfig;
+
+  /// Refuel canisters the player currently owns.
+  final int refuelCanisters;
+
+  /// Called with the number of canisters to buy.
+  final void Function(int count) onBuyCanisters;
 
   @override
   Widget build(BuildContext context) {
     final configPkgs = economyConfig.effectiveGoldPackages;
-    return ListView.builder(
+    // Layout: supplies header, canister card, gold header, packages.
+    return ListView(
       padding: const EdgeInsets.all(16),
-      itemCount: configPkgs.length + 1, // +1 for header
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return const Padding(
-            padding: EdgeInsets.only(bottom: 16),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.monetization_on,
-                  color: FlitColors.warning,
-                  size: 48,
+      children: [
+        _SuppliesSection(
+          refuelCanisters: refuelCanisters,
+          onBuyCanisters: onBuyCanisters,
+        ),
+        const SizedBox(height: 20),
+        const Padding(
+          padding: EdgeInsets.only(bottom: 16),
+          child: Column(
+            children: [
+              Icon(
+                Icons.monetization_on,
+                color: FlitColors.warning,
+                size: 48,
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Buy Gold',
+                style: TextStyle(
+                  color: FlitColors.textPrimary,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
                 ),
-                SizedBox(height: 8),
-                Text(
-                  'Buy Gold',
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Get coins to unlock planes and contrails',
+                style: TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 14,
+                ),
+              ),
+              SizedBox(height: 8),
+            ],
+          ),
+        ),
+        for (final pkg in configPkgs) _GoldPackageCard(package: pkg),
+      ],
+    );
+  }
+}
+
+// =============================================================================
+// Supplies (refuel canisters) — coin sink for the free-flight fuel tank
+// =============================================================================
+
+class _SuppliesSection extends StatelessWidget {
+  const _SuppliesSection({
+    required this.refuelCanisters,
+    required this.onBuyCanisters,
+  });
+
+  final int refuelCanisters;
+  final void Function(int count) onBuyCanisters;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: FlitColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.local_gas_station,
+                color: FlitColors.accent,
+                size: 24,
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'REFUEL CANISTERS',
                   style: TextStyle(
                     color: FlitColors.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Get coins to unlock planes and contrails',
-                  style: TextStyle(
-                    color: FlitColors.textSecondary,
                     fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.5,
                   ),
                 ),
-                SizedBox(height: 8),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: FlitColors.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Owned: $refuelCanisters',
+                  style: const TextStyle(
+                    color: FlitColors.accent,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'One canister = one instant full tank for free-flight earning. '
+            'Cheaper than refuelling on the spot.',
+            style: TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 12,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _CanisterBuyButton(
+                  label: 'BUY 1',
+                  cost: FuelTank.canisterCoinCost,
+                  onTap: () => onBuyCanisters(1),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _CanisterBuyButton(
+                  label: 'BUY 5',
+                  cost: FuelTank.canisterCoinCost * 5,
+                  onTap: () => onBuyCanisters(5),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CanisterBuyButton extends StatelessWidget {
+  const _CanisterBuyButton({
+    required this.label,
+    required this.cost,
+    required this.onTap,
+  });
+
+  final String label;
+  final int cost;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: onTap,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: FlitColors.accent,
+        foregroundColor: FlitColors.textPrimary,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.monetization_on, size: 14, color: FlitColors.gold),
+          const SizedBox(width: 2),
+          Text(
+            '$cost',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Weekly rotating shop — deterministic ISO-week rotation (ShopRotation)
+// =============================================================================
+
+class _WeeklyShopTab extends StatelessWidget {
+  const _WeeklyShopTab({
+    required this.ownedIds,
+    required this.coins,
+    required this.sortieRating,
+    required this.onPurchase,
+  });
+
+  final Set<String> ownedIds;
+  final int coins;
+  final RatingInfo? sortieRating;
+  final void Function(ShopOffer offer) onPurchase;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now().toUtc();
+    final offers = ShopRotation.weeklyOffers(now);
+    final end = ShopRotation.rotationEnd(now);
+    final remaining = end.difference(now);
+    final days = remaining.inDays;
+    final hours = remaining.inHours % 24;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Rotation countdown header.
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: FlitColors.cardBackground,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: FlitColors.cardBorder),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.storefront, color: FlitColors.gold, size: 28),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "THIS WEEK'S HANGAR",
+                      style: TextStyle(
+                        color: FlitColors.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Same lineup for every pilot. New stock every Monday.',
+                      style: TextStyle(
+                        color: FlitColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: FlitColors.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  days > 0 ? '${days}d ${hours}h' : '${remaining.inHours}h',
+                  style: const TextStyle(
+                    color: FlitColors.accent,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        for (final offer in offers)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _WeeklyOfferCard(
+              offer: offer,
+              owned: ownedIds.contains(offer.cosmetic.id),
+              coins: coins,
+              sortieRating: sortieRating,
+              onPurchase: () => onPurchase(offer),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _WeeklyOfferCard extends StatelessWidget {
+  const _WeeklyOfferCard({
+    required this.offer,
+    required this.owned,
+    required this.coins,
+    required this.sortieRating,
+    required this.onPurchase,
+  });
+
+  final ShopOffer offer;
+  final bool owned;
+  final int coins;
+  final RatingInfo? sortieRating;
+  final VoidCallback onPurchase;
+
+  bool get _tierMet {
+    final required = offer.requiredTier;
+    if (required == null) return true;
+    final rating = sortieRating;
+    if (rating == null || rating.provisional) return false;
+    return RatingTier.fromRating(rating.rating).index >= required.index;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = offer.cosmetic;
+    final rarity = _rarityColor(item.rarity);
+    final affordable = coins >= offer.price;
+    final buyable = !owned && affordable && _tierMet;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: offer.discountPct > 0
+              ? _SaleColors.border
+              : rarity.withValues(alpha: 0.5),
+          width: offer.discountPct > 0 ? 2 : 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Rarity swatch.
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: rarity.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              switch (item.type) {
+                CosmeticType.plane => Icons.flight,
+                CosmeticType.contrail => Icons.gesture,
+                CosmeticType.coPilot => Icons.pets,
+                _ => Icons.card_giftcard,
+              },
+              color: rarity,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        item.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _rarityLabel(item.rarity),
+                      style: TextStyle(
+                        color: rarity,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    if (offer.discountPct > 0) ...[
+                      Text(
+                        '${item.price}',
+                        style: const TextStyle(
+                          color: _SaleColors.strikethroughText,
+                          fontSize: 12,
+                          decoration: TextDecoration.lineThrough,
+                          decorationColor: _SaleColors.strikethroughLine,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    const Icon(
+                      Icons.monetization_on,
+                      color: FlitColors.gold,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      '${offer.price}',
+                      style: TextStyle(
+                        color: offer.discountPct > 0
+                            ? FlitColors.success
+                            : FlitColors.gold,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    if (offer.discountPct > 0) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        '-${offer.discountPct}%',
+                        style: const TextStyle(
+                          color: FlitColors.success,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (offer.requiredTier != null) ...[
+                  const SizedBox(height: 5),
+                  RatingTierChip(
+                    rating: offer.requiredTier!.minRating,
+                    showRating: false,
+                    compact: true,
+                  ),
+                ],
               ],
             ),
-          );
-        }
-
-        final pkg = configPkgs[index - 1];
-        return _GoldPackageCard(package: pkg);
-      },
+          ),
+          const SizedBox(width: 8),
+          if (owned)
+            const Text(
+              'OWNED',
+              style: TextStyle(
+                color: FlitColors.success,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1,
+              ),
+            )
+          else
+            ElevatedButton(
+              onPressed: buyable ? onPurchase : (_tierMet ? null : onPurchase),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    buyable ? FlitColors.accent : FlitColors.backgroundLight,
+                foregroundColor: FlitColors.textPrimary,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                !_tierMet
+                    ? 'LOCKED'
+                    : affordable
+                        ? 'BUY'
+                        : 'TOO PRICY',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

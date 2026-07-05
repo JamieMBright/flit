@@ -116,6 +116,13 @@ class LicenseHeat {
     return cost;
   }
 
+  /// UTC day key (YYYY-MM-DD) used for the daily reroll cost ladder.
+  static String utcDayKey(DateTime now) {
+    final utc = now.toUtc();
+    return '${utc.year}-${utc.month.toString().padLeft(2, '0')}-'
+        '${utc.day.toString().padLeft(2, '0')}';
+  }
+
   /// Whether a performance of [score] out of [maxScore] qualifies for a pump.
   static bool qualifiesForPump({required int score, required int maxScore}) {
     if (maxScore <= 0) return false;

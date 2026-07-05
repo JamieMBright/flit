@@ -8,6 +8,7 @@ import '../../core/theme/flit_colors.dart';
 import '../../core/utils/web_download.dart';
 import '../../core/widgets/country_flag.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
+import '../../core/widgets/rating_tier_chip.dart';
 import '../../core/widgets/settings_sheet.dart';
 import '../../core/widgets/sync_status_indicator.dart';
 import '../../core/utils/profanity_filter.dart';
@@ -16,6 +17,8 @@ import '../../data/models/player.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/account_management_service.dart';
 import '../../data/services/auth_service.dart';
+import '../../data/services/matchmaking_service.dart';
+import '../../data/services/sortie_service.dart';
 import '../auth/login_screen.dart';
 import '../avatar/avatar_editor_screen.dart';
 import '../avatar/avatar_widget.dart';
@@ -41,12 +44,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   int? _bestTrainingScore;
   Duration? _bestTrainingTime;
 
+  /// Standard Sortie rating for the tier chip (null until fetched).
+  RatingInfo? _sortieRating;
+
   @override
   void initState() {
     super.initState();
     // Pull latest server state so profile stats are always current.
     ref.read(accountProvider.notifier).refreshFromServer();
     _loadBestScores();
+    _loadSortieRating();
+  }
+
+  Future<void> _loadSortieRating() async {
+    final player = ref.read(accountProvider).currentPlayer;
+    if (player.id.isEmpty) return;
+    final info = await MatchmakingService.instance.fetchRating(
+      userId: player.id,
+      gameMode: SortieService.gameMode,
+      fallbackLevel: player.level,
+      fallbackBestScore: player.bestScore ?? 0,
+    );
+    if (mounted) setState(() => _sortieRating = info);
   }
 
   Future<void> _loadBestScores() async {
@@ -703,7 +722,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: Column(
             children: [
               // Avatar and name
-              _ProfileHeader(player: player, avatarConfig: avatarConfig),
+              _ProfileHeader(
+                player: player,
+                avatarConfig: avatarConfig,
+                sortieRating: _sortieRating,
+              ),
               const SizedBox(height: 24),
               // Level progress
               _LevelProgress(player: player),
@@ -773,10 +796,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 }
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.player, required this.avatarConfig});
+  const _ProfileHeader({
+    required this.player,
+    required this.avatarConfig,
+    this.sortieRating,
+  });
 
   final Player player;
   final AvatarConfig avatarConfig;
+
+  /// Standard Sortie rating (rated-play tier chip); null while loading.
+  final RatingInfo? sortieRating;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -800,6 +830,14 @@ class _ProfileHeader extends StatelessWidget {
             style:
                 const TextStyle(color: FlitColors.textSecondary, fontSize: 14),
           ),
+          if (sortieRating != null) ...[
+            const SizedBox(height: 8),
+            // Rated tier (Standard Sortie).
+            RatingTierChip(
+              rating: sortieRating!.rating,
+              provisional: sortieRating!.provisional,
+            ),
+          ],
         ],
       );
 }

@@ -8,6 +8,7 @@ import '../../data/models/cosmetic.dart';
 import '../../data/models/seasonal_theme.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/clues/clue_types.dart';
+import '../../game/economy/fuel_tank.dart';
 import '../../game/map/region.dart';
 import '../guide/gameplay_guide_screen.dart';
 import 'play_screen.dart';
@@ -141,8 +142,10 @@ class _FreeFlightSetupScreenState extends ConsumerState<FreeFlightSetupScreen> {
           planeWingSpan: plane?.wingSpan,
           equippedPlaneId: SeasonalTheme.resolvePlaneShapeId(fallback: planeId),
           companionType: companion,
+          // Free flight is boost-affected: license multipliers (incl. the
+          // hot-license bonus) and plane stats all apply.
           fuelBoostMultiplier: fuelBoost,
-          clueChance: license.clueChance,
+          clueChance: ref.read(accountProvider.notifier).effectiveClueChance,
           preferredClueType: license.preferredClueType,
           enabledClueTypes: enabledClueTypeNames,
           enableFuel: false,
@@ -209,6 +212,10 @@ class _FreeFlightSetupScreenState extends ConsumerState<FreeFlightSetupScreen> {
                     children: [
                       // Header
                       _buildHeader(),
+                      const SizedBox(height: 12),
+
+                      // Earning fuel tank
+                      _buildFuelCard(),
                       const SizedBox(height: 20),
 
                       // Round count
@@ -292,6 +299,153 @@ class _FreeFlightSetupScreenState extends ConsumerState<FreeFlightSetupScreen> {
           ],
         ),
       );
+
+  /// Earning fuel tank: free-flight coin earning consumes tank fuel; when
+  /// empty, earnings pause until it regenerates (or is refueled with coins
+  /// or a canister). Flying is NEVER blocked by fuel.
+  Widget _buildFuelCard() {
+    final account = ref.watch(accountProvider);
+    final notifier = ref.read(accountProvider.notifier);
+    final now = DateTime.now().toUtc();
+    final capacity = notifier.fuelCapacity;
+    final fuel = account.fuelTank.currentFuel(now, capacity: capacity);
+    final fraction = account.fuelTank.fraction(now, capacity: capacity);
+    final canEarn = account.fuelTank.canEarn(now, capacity: capacity);
+    final isFull = fuel >= capacity - 0.5;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: canEarn
+              ? FlitColors.cardBorder
+              : FlitColors.warning.withValues(alpha: 0.6),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.local_gas_station,
+                color: canEarn ? FlitColors.gold : FlitColors.warning,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'EARNING FUEL',
+                  style: TextStyle(
+                    color: FlitColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+              Text(
+                '${fuel.floor()} / ${capacity.round()}',
+                style: const TextStyle(
+                  color: FlitColors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: SizedBox(
+              height: 8,
+              child: LinearProgressIndicator(
+                value: fraction,
+                backgroundColor: FlitColors.backgroundDark,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  canEarn ? FlitColors.gold : FlitColors.warning,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            canEarn
+                ? 'Each coin find burns ${FuelTank.fuelPerClue.round()} fuel. '
+                    'Empty tank = earnings paused (you can always keep '
+                    'flying). Regenerates over time.'
+                : 'Tank empty — coin earnings paused until it regenerates. '
+                    'Flying is never blocked.',
+            style: TextStyle(
+              color: canEarn ? FlitColors.textSecondary : FlitColors.warning,
+              fontSize: 11,
+              height: 1.35,
+            ),
+          ),
+          if (!isFull) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      final ok = notifier.refuelWithCoins();
+                      if (!ok) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Not enough coins'),
+                            backgroundColor: FlitColors.error,
+                          ),
+                        );
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: FlitColors.gold,
+                      side: BorderSide(
+                        color: FlitColors.gold.withValues(alpha: 0.6),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    child: const Text(
+                      'REFUEL · ${FuelTank.instantRefuelCoinCost}c',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: account.refuelCanisters > 0
+                        ? () => notifier.useRefuelCanister()
+                        : null,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: FlitColors.accent,
+                      side: BorderSide(
+                        color: FlitColors.accent.withValues(alpha: 0.6),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    child: Text(
+                      'CANISTER (${account.refuelCanisters})',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   Widget _buildInfoChip(IconData icon, String label) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

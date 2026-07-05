@@ -10,6 +10,7 @@ import '../../core/theme/rarity_colors.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
+import '../../game/economy/license_heat.dart';
 import '../avatar/avatar_widget.dart';
 import '../shop/shop_screen.dart';
 
@@ -105,8 +106,14 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
     return cost;
   }
 
-  /// Total cost for a paid reroll (base cost + lock costs).
-  int get _totalCost => PilotLicense.rerollAllCost + _lockOnlyCost;
+  /// Escalating base cost for the next PAID reroll: 100 -> 200 -> 400 ->
+  /// 800 (cap) within a day, reset at UTC midnight. The daily free reroll
+  /// always comes first (see the free reroll button).
+  int get _paidBaseCost =>
+      _license.heat.nextPaidRerollCost(LicenseHeat.utcDayKey(DateTime.now()));
+
+  /// Total cost for a paid reroll (escalating base cost + lock costs).
+  int get _totalCost => _paidBaseCost + _lockOnlyCost;
 
   bool _canAfford(int coins) => coins >= _totalCost;
 
@@ -139,13 +146,27 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
     // Roll the new license locally and persist it. If updateLicense throws,
     // refund the coins so the player is not charged for a failed reroll.
     try {
-      final avatarLuck = ref.read(avatarProvider).luckBonus;
-      final newLicense = PilotLicense.reroll(
+      // Pity guarantees improving odds: each consecutive bad roll adds an
+      // advantage roll on top of the avatar's luck.
+      final avatarLuck =
+          ref.read(avatarProvider).luckBonus + _license.heat.pityLuckBonus;
+      var newLicense = PilotLicense.reroll(
         _license,
         lockedStats: _lockedStats,
         lockType: _lockClueType,
         luckBonus: avatarLuck,
       );
+      // Reroll economy bookkeeping: advance the daily paid-cost ladder,
+      // update pity, and roll the factory-hot proc (a reroll can arrive
+      // already pumped).
+      final now = DateTime.now().toUtc();
+      final newHeat = _license.heat
+          .recordPaidReroll(LicenseHeat.utcDayKey(now))
+          .recordRollOutcome(
+            improved: newLicense.totalBoost > _license.totalBoost,
+          )
+          .rollFactoryHot(now);
+      newLicense = newLicense.copyWith(heat: newHeat);
       // Persist the rerolled license to the account provider.
       ref.read(accountProvider.notifier).updateLicense(newLicense);
       setState(() {
@@ -179,7 +200,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
           GestureDetector(
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => const ShopScreen(initialTabIndex: 3),
+                builder: (_) => const ShopScreen(initialTabIndex: 4),
               ),
             ),
             child: Container(
@@ -217,7 +238,9 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
           child: Column(
             children: [
               _buildLicenseCard(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
+              _buildHeatBanner(),
+              const SizedBox(height: 12),
               _buildLockSection(coins),
               const SizedBox(height: 24),
               _buildFreeRerollButton(),
@@ -237,10 +260,94 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
   // License card (credit-card aspect ratio)
   // ---------------------------------------------------------------------------
 
+  /// Hot-license status: pump countdown while HOT, pity/factory-hot odds
+  /// otherwise. Base stats are permanent — only the pump is time-limited.
+  Widget _buildHeatBanner() {
+    final now = DateTime.now().toUtc();
+    final heat = _license.heat;
+
+    if (_license.isHot(now)) {
+      final remaining = heat.hotRemaining(now);
+      final hours = remaining.inHours;
+      final label = hours >= 1
+          ? '${hours}h ${remaining.inMinutes % 60}m left'
+          : '${remaining.inMinutes}m left';
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: FlitColors.accent.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: FlitColors.accent.withValues(alpha: 0.6)),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.local_fire_department,
+              color: FlitColors.accent,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'LICENSE HOT — +${LicenseHeat.hotStatBonus} all stats · '
+                '$label',
+                style: const TextStyle(
+                  color: FlitColors.accent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final pity = heat.pityCount;
+    final showPity = pity >= LicenseHeat.pityDisplayThreshold;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: FlitColors.cardBorder),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            showPity ? Icons.trending_up : Icons.local_fire_department,
+            color: showPity ? FlitColors.success : FlitColors.textMuted,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              showPity
+                  ? 'Pity $pity: +$pity luck next roll · '
+                      '${(heat.factoryHotChance * 100).round()}% chance '
+                      'the next roll lands HOT'
+                  : 'Post a big Daily or Sortie score to pump your license '
+                      'HOT: +${LicenseHeat.hotStatBonus} all stats for 72h',
+              style: TextStyle(
+                color: showPity ? FlitColors.success : FlitColors.textSecondary,
+                fontSize: 11,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLicenseCard() {
     final rarity = _license.rarityTier;
     final rarityColor = colorForRarity(rarity);
     final isPerfect = rarity == 'Perfect';
+    final isHot = _license.isHot(DateTime.now().toUtc());
 
     return _AnimBuilder(
       animation: _shimmerController,
@@ -274,6 +381,13 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
                     blurRadius: 12,
                     spreadRadius: 1,
                   ),
+                  // Hot pump: visible warm glow while the license is HOT.
+                  if (isHot)
+                    const BoxShadow(
+                      color: Color(0x66E87A5A),
+                      blurRadius: 22,
+                      spreadRadius: 3,
+                    ),
                 ],
               ),
               padding: const EdgeInsets.all(14),
@@ -1052,7 +1166,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
                     child: GestureDetector(
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => const ShopScreen(initialTabIndex: 3),
+                          builder: (_) => const ShopScreen(initialTabIndex: 4),
                         ),
                       ),
                       child: const Text(

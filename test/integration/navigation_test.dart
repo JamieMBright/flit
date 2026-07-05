@@ -74,8 +74,12 @@ void main() {
       await TestHarness.takeScreenshot(tester, 'launch_free_flight');
 
       // The bottom CTA reflects the selected round count. Default is 5 → tap
-      // the "10" round chip and assert the CTA updates.
+      // the "10" round chip and assert the CTA updates. The earning-fuel
+      // card above the selector can push it below the fold on the test
+      // viewport, so scroll it into view first.
       expect(find.textContaining('×5'), findsWidgets);
+      await tester.ensureVisible(find.text('10').first);
+      await TestHarness.settle(tester, frames: 4);
       await tester.tap(find.text('10').first);
       await TestHarness.settle(tester, frames: 8);
       expect(find.textContaining('×10'), findsWidgets);
