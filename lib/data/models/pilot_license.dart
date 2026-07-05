@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import '../../game/economy/license_heat.dart';
+
 /// Valid clue types a pilot can specialize in.
 const List<String> clueTypes = [
   'flag',
@@ -14,6 +16,10 @@ const List<String> clueTypes = [
 /// Each license has three boost percentages (1-25) and a preferred clue type.
 /// Higher stat values are exponentially rarer, making a perfect license
 /// extraordinarily unlikely.
+///
+/// Base stats are PERMANENT — they never decay. On top of them sits the
+/// [heat] state: big performances pump the license HOT for ~72h, adding
+/// [LicenseHeat.hotStatBonus] to every stat (see `effectiveCoinBoost` etc.).
 class PilotLicense {
   const PilotLicense({
     required this.coinBoost,
@@ -21,6 +27,7 @@ class PilotLicense {
     required this.fuelBoost,
     required this.preferredClueType,
     this.nationality,
+    this.heat = const LicenseHeat(),
   });
 
   /// Bonus coin percentage earned per game (1-25).
@@ -39,6 +46,26 @@ class PilotLicense {
   /// Player's nationality as ISO 3166-1 alpha-2 code (e.g. 'GB', 'US', 'JP').
   /// null means not set.
   final String? nationality;
+
+  /// Hot-license pump state + reroll pity/escalation counters.
+  /// Persisted alongside the stats inside `license_data` JSONB.
+  final LicenseHeat heat;
+
+  // ---------------------------------------------------------------------------
+  // Effective (hot-adjusted) stats
+  // ---------------------------------------------------------------------------
+
+  /// Whether the license is currently pumped HOT.
+  bool isHot(DateTime now) => heat.isHot(now);
+
+  /// Coin boost including the hot pump bonus.
+  int effectiveCoinBoost(DateTime now) => coinBoost + heat.statBonus(now);
+
+  /// Clue chance including the hot pump bonus.
+  int effectiveClueChance(DateTime now) => clueChance + heat.statBonus(now);
+
+  /// Fuel boost including the hot pump bonus.
+  int effectiveFuelBoost(DateTime now) => fuelBoost + heat.statBonus(now);
 
   // ---------------------------------------------------------------------------
   // Reroll costs (in coins)
@@ -173,6 +200,7 @@ class PilotLicense {
       preferredClueType:
           lockType ? current.preferredClueType : rollClueType(rng),
       nationality: current.nationality, // Preserve across rerolls
+      heat: current.heat, // Heat/pity state survives rerolls too
     );
   }
 
@@ -224,6 +252,7 @@ class PilotLicense {
     int? fuelBoost,
     String? preferredClueType,
     String? nationality,
+    LicenseHeat? heat,
   }) =>
       PilotLicense(
         coinBoost: coinBoost ?? this.coinBoost,
@@ -231,6 +260,7 @@ class PilotLicense {
         fuelBoost: fuelBoost ?? this.fuelBoost,
         preferredClueType: preferredClueType ?? this.preferredClueType,
         nationality: nationality ?? this.nationality,
+        heat: heat ?? this.heat,
       );
 
   // ---------------------------------------------------------------------------
@@ -243,6 +273,7 @@ class PilotLicense {
         'fuel_boost': fuelBoost,
         'preferred_clue_type': preferredClueType,
         'nationality': nationality,
+        'heat': heat.toJson(),
       };
 
   factory PilotLicense.fromJson(Map<String, dynamic> json) => PilotLicense(
@@ -251,5 +282,10 @@ class PilotLicense {
         fuelBoost: json['fuel_boost'] as int,
         preferredClueType: json['preferred_clue_type'] as String,
         nationality: json['nationality'] as String?,
+        heat: LicenseHeat.fromJson(
+          json['heat'] is Map
+              ? Map<String, dynamic>.from(json['heat'] as Map)
+              : null,
+        ),
       );
 }

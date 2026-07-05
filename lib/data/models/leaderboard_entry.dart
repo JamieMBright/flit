@@ -150,6 +150,9 @@ enum LeaderboardMode {
 
   /// Combined daily board: normalized efficiency across all three dailies.
   dailyCombined,
+
+  /// Standard Sortie: rated, boost-normalized 5-round runs.
+  standardSortie,
 }
 
 extension LeaderboardModeExtension on LeaderboardMode {
@@ -165,6 +168,8 @@ extension LeaderboardModeExtension on LeaderboardMode {
         return 'RECON';
       case LeaderboardMode.dailyCombined:
         return 'COMBINED';
+      case LeaderboardMode.standardSortie:
+        return 'STANDARD SORTIE';
     }
   }
 
@@ -174,13 +179,15 @@ extension LeaderboardModeExtension on LeaderboardMode {
       case LeaderboardMode.dailyScramble:
         return 'daily';
       case LeaderboardMode.trainingFlight:
-        return null; // neq 'daily' and neq 'briefing'
+        return null; // neq daily/briefing/daily_triangulation/sortie
       case LeaderboardMode.flightBriefing:
         return 'briefing';
       case LeaderboardMode.dailyTriangulation:
         return 'daily_triangulation';
       case LeaderboardMode.dailyCombined:
         return null; // Spans all three daily regions.
+      case LeaderboardMode.standardSortie:
+        return 'sortie';
     }
   }
 }

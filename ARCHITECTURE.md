@@ -873,7 +873,12 @@ sequenceDiagram
 | Equipped items | `AccountState.equippedPlaneId` etc. | `account_state.equipped_*` | Debounced 2s upsert |
 | Daily streak | `AccountState.dailyStreakData` | `account_state.daily_streak_data` (JSONB) | Debounced 2s upsert |
 | Last daily result | `AccountState.lastDailyResult` | `account_state.last_daily_result` (JSONB) | Debounced 2s upsert |
-| Game scores | Transient (PlayScreen) | `scores` table | Immediate INSERT |
+| Pilot license + heat/pity | `AccountState.license` (`PilotLicense.heat`) | `account_state.license_data` (JSONB, client-owned schema) | Debounced 2s upsert |
+| Earning fuel tank | `AccountState.fuelTank` | `account_state.license_data.fuel` (JSONB) | Debounced 2s upsert |
+| Refuel canisters | `AccountState.refuelCanisters` | `account_state.license_data.refuel_canisters` | Debounced 2s upsert |
+| Season trophy case | `AccountState.trophyCase` | `account_state.license_data.trophy_case` (JSONB) | Debounced 2s upsert |
+| Game scores | Transient (PlayScreen) | `scores` table (`region` = mode bucket, incl. `sortie`) | Immediate INSERT |
+| Sortie rated runs | Transient (SortieScreen) | `sortie_runs` table + `player_ratings` via `apply_sortie_rating` RPC | Immediate INSERT + RPC |
 | Active game session | `GameSession` (local) | Nowhere (ephemeral) | Not persisted |
 | Challenges | Fetched on demand | `challenges` table | Immediate INSERT/UPDATE |
 | Friend list | Fetched on demand | `friendships` table | Immediate INSERT/UPDATE |

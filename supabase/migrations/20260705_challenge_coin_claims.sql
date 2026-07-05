@@ -11,8 +11,8 @@
 -- once, so re-opening the result screen (or opening it on a second device)
 -- can never double-credit.
 --
--- NOT APPLIED AUTOMATICALLY — apply manually to the production database.
--- Until applied, the client claim call fails silently and behaviour is
+-- APPLIED TO PRODUCTION 2026-07-05.
+-- Where not applied, the client claim call fails silently and behaviour is
 -- unchanged (rewards stay display-only).
 
 ALTER TABLE public.challenges

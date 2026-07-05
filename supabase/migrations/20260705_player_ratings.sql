@@ -10,9 +10,9 @@
 -- (1000 + level * 50 + best_score / 20, clamped to [800, 2000]) — mirrors
 -- MatchmakingService.estimateElo / Elo.coldStartRating on the client.
 --
--- NOT APPLIED AUTOMATICALLY — apply manually to the production database.
--- Until applied, the client falls back to the estimated (provisional) rating
--- and the rating RPC call silently no-ops.
+-- APPLIED TO PRODUCTION 2026-07-05.
+-- Where not applied, the client falls back to the estimated (provisional)
+-- rating and the rating RPC call silently no-ops.
 
 CREATE TABLE IF NOT EXISTS public.player_ratings (
   user_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,

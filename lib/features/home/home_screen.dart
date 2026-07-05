@@ -30,6 +30,7 @@ import '../play/free_flight_setup_screen.dart';
 import '../profile/profile_screen.dart';
 import '../quiz/daily_briefing_screen.dart';
 import '../quiz/flight_school_screen.dart';
+import '../sortie/sortie_screen.dart';
 import '../quiz/uncharted_setup_screen.dart';
 import '../triangulation/daily_triangulation_screen.dart';
 import '../triangulation/triangulation_setup_screen.dart';
@@ -505,6 +506,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ctx,
                   const FreeFlightSetupScreen(region: GameRegion.world),
                 ),
+              ),
+              const SizedBox(height: 10),
+              _GameModeCard(
+                title: 'Standard Sortie',
+                subtitle: 'Rated 5-round run — earn your wings',
+                icon: Icons.military_tech,
+                isHighlighted: true,
+                onTap: () => _closeSheetAndNavigate(ctx, const SortieScreen()),
               ),
               const SizedBox(height: 10),
               _GameModeCard(
