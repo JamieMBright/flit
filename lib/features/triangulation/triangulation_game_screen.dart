@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flag/flag.dart';
 import 'package:flame/components.dart' show Vector2;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/haptics.dart';
+import '../../core/widgets/country_flag.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/daily_result.dart';
 import '../../data/providers/account_provider.dart';
@@ -681,18 +681,12 @@ class _RoundResultViewState extends State<_RoundResultView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (round.targetCountryCode.length == 2 &&
-                        !round.targetCountryCode.startsWith('X'))
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: Flag.fromString(
-                          round.targetCountryCode,
-                          height: 30,
-                          width: 45,
-                          fit: BoxFit.contain,
-                          borderRadius: 4,
-                        ),
-                      ),
+                    CountryFlag(
+                      code: round.targetCountryCode,
+                      height: 30,
+                      width: 45,
+                      borderRadius: 4,
+                    ),
                     const SizedBox(width: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

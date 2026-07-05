@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 
-import 'package:flag/flag.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/flit_colors.dart';
+import '../../../core/widgets/country_flag.dart';
 import '../../../core/widgets/country_outline_painter.dart';
 import '../../../game/clues/clue_types.dart';
 import '../../../game/map/country_data.dart';
@@ -559,30 +559,7 @@ class _MarkerFlag extends StatelessWidget {
   final String code;
 
   @override
-  Widget build(BuildContext context) {
-    if (code.length == 2 && !code.startsWith('X')) {
-      try {
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(3),
-          child: Flag.fromString(
-            code,
-            height: 22,
-            width: 33,
-            fit: BoxFit.contain,
-            borderRadius: 3,
-          ),
-        );
-      } catch (_) {
-        // fall through to emoji
-      }
-    }
-    final emoji = code.length == 2
-        ? String.fromCharCodes(
-            code.toUpperCase().codeUnits.map((c) => c + 127397),
-          )
-        : code;
-    return Text(emoji, style: const TextStyle(fontSize: 16));
-  }
+  Widget build(BuildContext context) => CountryFlag(code: code);
 }
 
 /// Full, untruncated info for one tapped clue marker, shown beneath the

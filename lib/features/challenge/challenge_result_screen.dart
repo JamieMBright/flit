@@ -1,8 +1,8 @@
-import 'package:flag/flag.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/country_flag.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/challenge.dart';
 import '../../data/models/cosmetic.dart';
@@ -395,18 +395,14 @@ class _PilotCard extends StatelessWidget {
             const SizedBox(height: 8),
             // Flag
             if (info.nationality != null) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(3),
-                child: SizedBox(
-                  width: 36,
+              SizedBox(
+                width: 36,
+                height: 24,
+                child: CountryFlag(
+                  code: info.nationality!,
                   height: 24,
-                  child: Flag.fromString(
-                    info.nationality!,
-                    height: 24,
-                    width: 36,
-                    fit: BoxFit.cover,
-                    borderRadius: 3,
-                  ),
+                  width: 36,
+                  borderRadius: 3,
                 ),
               ),
               const SizedBox(height: 6),

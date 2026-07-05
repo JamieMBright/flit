@@ -1,8 +1,8 @@
-import 'package:flag/flag.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/country_flag.dart';
 import '../../core/widgets/country_outline_painter.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/services/clue_report_service.dart';
@@ -29,9 +29,6 @@ class CountryCluesScreen extends StatefulWidget {
 class _CountryCluesScreenState extends State<CountryCluesScreen> {
   String _search = '';
   final TextEditingController _searchCtl = TextEditingController();
-
-  /// Codes known to be unsupported by the flag SVG package.
-  static const _unsupportedFlagCodes = {'XC', 'XS', 'AN', 'CS', 'TP'};
 
   /// Continental/international regions (for the Regions tab).
   static const _continentalRegions = <({String label, GameRegion region})>[
@@ -176,10 +173,7 @@ class _CountryCluesScreenState extends State<CountryCluesScreen> {
                 child: TabBarView(
                   children: [
                     // All World tab
-                    _CountriesTab(
-                      countries: _filteredCountries,
-                      unsupportedFlags: _unsupportedFlagCodes,
-                    ),
+                    _CountriesTab(countries: _filteredCountries),
 
                     // Regions tab (continental with filter)
                     _FilteredRegionalTab(
@@ -218,13 +212,9 @@ class _CountryCluesScreenState extends State<CountryCluesScreen> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _CountriesTab extends StatelessWidget {
-  const _CountriesTab({
-    required this.countries,
-    required this.unsupportedFlags,
-  });
+  const _CountriesTab({required this.countries});
 
   final List<CountryShape> countries;
-  final Set<String> unsupportedFlags;
 
   @override
   Widget build(BuildContext context) {
@@ -268,12 +258,8 @@ class _CountriesTab extends StatelessWidget {
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: countries.length,
-            itemBuilder: (context, index) => _CountryClueCard(
-              country: countries[index],
-              isUnsupportedFlag: unsupportedFlags.contains(
-                countries[index].code,
-              ),
-            ),
+            itemBuilder: (context, index) =>
+                _CountryClueCard(country: countries[index]),
           ),
         ),
       ],
@@ -778,13 +764,9 @@ class _RegionalClueCardState extends State<_RegionalClueCard> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _CountryClueCard extends StatefulWidget {
-  const _CountryClueCard({
-    required this.country,
-    required this.isUnsupportedFlag,
-  });
+  const _CountryClueCard({required this.country});
 
   final CountryShape country;
-  final bool isUnsupportedFlag;
 
   @override
   State<_CountryClueCard> createState() => _CountryClueCardState();
@@ -819,10 +801,7 @@ class _CountryClueCardState extends State<_CountryClueCard> {
                 child: Row(
                   children: [
                     // Flag
-                    _FlagWidget(
-                      code: c.code,
-                      isUnsupported: widget.isUnsupportedFlag,
-                    ),
+                    _FlagWidget(code: c.code),
                     const SizedBox(width: 10),
 
                     // Outline
@@ -1243,74 +1222,13 @@ class _DetailRow extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _FlagWidget extends StatelessWidget {
-  const _FlagWidget({required this.code, required this.isUnsupported});
+  const _FlagWidget({required this.code});
 
   final String code;
-  final bool isUnsupported;
 
   @override
-  Widget build(BuildContext context) {
-    if (code.length != 2 || isUnsupported) {
-      return _emojiFallback();
-    }
-    try {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(4),
-        child: Flag.fromString(
-          code,
-          height: 32,
-          width: 48,
-          fit: BoxFit.contain,
-          borderRadius: 4,
-        ),
-      );
-    } catch (_) {
-      return _emojiFallback();
-    }
-  }
-
-  Widget _emojiFallback() {
-    // Standard ISO codes can produce regional indicator emoji; custom codes
-    // (XC, XS, etc.) produce unrecognisable symbols so show a map icon instead.
-    if (code.length == 2 && !code.startsWith('X')) {
-      final codeUnits = code.toUpperCase().codeUnits;
-      final emoji = String.fromCharCodes(codeUnits.map((c) => c + 127397));
-      return Container(
-        width: 48,
-        height: 32,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: FlitColors.backgroundMid,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(emoji, style: const TextStyle(fontSize: 20)),
-      );
-    }
-    return Container(
-      width: 48,
-      height: 32,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: FlitColors.backgroundMid,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: FlitColors.cardBorder),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.flag, color: FlitColors.textMuted, size: 14),
-          Text(
-            code,
-            style: const TextStyle(
-              color: FlitColors.textMuted,
-              fontSize: 8,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      CountryFlag(code: code, height: 32, width: 48, borderRadius: 4);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

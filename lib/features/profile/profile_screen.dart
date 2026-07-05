@@ -1,4 +1,3 @@
-import 'package:flag/flag.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/web_download.dart';
+import '../../core/widgets/country_flag.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/widgets/settings_sheet.dart';
 import '../../core/widgets/sync_status_indicator.dart';
@@ -1252,18 +1252,14 @@ class _NationalitySection extends StatelessWidget {
             child: Row(
               children: [
                 if (nationality != null) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: SizedBox(
-                      width: 32,
+                  SizedBox(
+                    width: 32,
+                    height: 22,
+                    child: CountryFlag(
+                      code: nationality!,
                       height: 22,
-                      child: Flag.fromString(
-                        nationality!,
-                        height: 22,
-                        width: 32,
-                        fit: BoxFit.cover,
-                        borderRadius: 4,
-                      ),
+                      width: 32,
+                      borderRadius: 4,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1434,18 +1430,14 @@ class _NationalityPickerSheetState extends State<_NationalityPickerSheet> {
                 final country = _filtered[index];
                 final isSelected = country.code == widget.currentCode;
                 return ListTile(
-                  leading: ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
-                    child: SizedBox(
-                      width: 32,
+                  leading: SizedBox(
+                    width: 32,
+                    height: 22,
+                    child: CountryFlag(
+                      code: country.code,
                       height: 22,
-                      child: Flag.fromString(
-                        country.code,
-                        height: 22,
-                        width: 32,
-                        fit: BoxFit.cover,
-                        borderRadius: 3,
-                      ),
+                      width: 32,
+                      borderRadius: 3,
                     ),
                   ),
                   title: Text(
