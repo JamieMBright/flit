@@ -252,6 +252,126 @@ abstract class RegionCameraPresets {
     fovOverride: 45.0,
   );
 
+  /// Mexico: centered on the central highlands.
+  static const CameraPreset _mexicoPreset = CameraPreset(
+    centerLat: 23.5,
+    centerLng: -102.5,
+    altitudeDistance: 2.2,
+    maxBoundsLat: 14.0,
+    maxBoundsLng: 20.0,
+    fovOverride: 50.0,
+  );
+
+  /// South Korea: centered between Daejeon and the east coast.
+  static const CameraPreset _southKoreaPreset = CameraPreset(
+    centerLat: 36.3,
+    centerLng: 127.8,
+    altitudeDistance: 1.4,
+    maxBoundsLat: 6.0,
+    maxBoundsLng: 7.0,
+    fovOverride: 45.0,
+  );
+
+  /// Netherlands: centered on the Veluwe.
+  static const CameraPreset _netherlandsPreset = CameraPreset(
+    centerLat: 52.2,
+    centerLng: 5.3,
+    altitudeDistance: 1.3,
+    maxBoundsLat: 4.0,
+    maxBoundsLng: 5.0,
+    fovOverride: 45.0,
+  );
+
+  /// Poland: centered near Łódź in the middle of the country.
+  static const CameraPreset _polandPreset = CameraPreset(
+    centerLat: 52.0,
+    centerLng: 19.3,
+    altitudeDistance: 1.4,
+    maxBoundsLat: 7.0,
+    maxBoundsLng: 8.0,
+    fovOverride: 45.0,
+  );
+
+  /// Argentina: centered on the northern Patagonian steppe (tall country).
+  static const CameraPreset _argentinaPreset = CameraPreset(
+    centerLat: -38.5,
+    centerLng: -65.0,
+    altitudeDistance: 2.4,
+    maxBoundsLat: 24.0,
+    maxBoundsLng: 18.0,
+    fovOverride: 50.0,
+  );
+
+  /// Sweden: centered on the mid-north (tall country).
+  static const CameraPreset _swedenPreset = CameraPreset(
+    centerLat: 62.2,
+    centerLng: 17.0,
+    altitudeDistance: 1.9,
+    maxBoundsLat: 12.0,
+    maxBoundsLng: 12.0,
+    fovOverride: 48.0,
+  );
+
+  /// Switzerland: centered on the central Alps.
+  static const CameraPreset _switzerlandPreset = CameraPreset(
+    centerLat: 46.8,
+    centerLng: 8.2,
+    altitudeDistance: 1.2,
+    maxBoundsLat: 3.5,
+    maxBoundsLng: 4.5,
+    fovOverride: 45.0,
+  );
+
+  /// Austria: centered on the Salzkammergut.
+  static const CameraPreset _austriaPreset = CameraPreset(
+    centerLat: 47.6,
+    centerLng: 13.3,
+    altitudeDistance: 1.3,
+    maxBoundsLat: 4.0,
+    maxBoundsLng: 6.5,
+    fovOverride: 45.0,
+  );
+
+  /// Portugal: centered mid-country near the Serra da Estrela.
+  static const CameraPreset _portugalPreset = CameraPreset(
+    centerLat: 39.6,
+    centerLng: -8.0,
+    altitudeDistance: 1.4,
+    maxBoundsLat: 5.0,
+    maxBoundsLng: 5.0,
+    fovOverride: 45.0,
+  );
+
+  /// Greece: centered on the Aegean; bounds reach Crete and Rhodes.
+  static const CameraPreset _greecePreset = CameraPreset(
+    centerLat: 38.4,
+    centerLng: 24.0,
+    altitudeDistance: 1.5,
+    maxBoundsLat: 8.0,
+    maxBoundsLng: 9.0,
+    fovOverride: 45.0,
+  );
+
+  /// South Africa: centered on the Karoo plateau.
+  static const CameraPreset _southAfricaPreset = CameraPreset(
+    centerLat: -28.5,
+    centerLng: 24.7,
+    altitudeDistance: 2.0,
+    maxBoundsLat: 12.0,
+    maxBoundsLng: 14.0,
+    fovOverride: 48.0,
+  );
+
+  /// Indonesia: centered on the Java Sea (very wide archipelago).
+  static const CameraPreset _indonesiaPreset = CameraPreset(
+    centerLat: -2.5,
+    centerLng: 118.0,
+    altitudeDistance: 2.6,
+    maxBoundsLat: 14.0,
+    maxBoundsLng: 30.0,
+    fovOverride: 50.0,
+  );
+
   // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
@@ -299,6 +419,30 @@ abstract class RegionCameraPresets {
         return _indiaPreset;
       case GameRegion.newZealand:
         return _newZealandPreset;
+      case GameRegion.mexico:
+        return _mexicoPreset;
+      case GameRegion.southKorea:
+        return _southKoreaPreset;
+      case GameRegion.netherlands:
+        return _netherlandsPreset;
+      case GameRegion.poland:
+        return _polandPreset;
+      case GameRegion.argentina:
+        return _argentinaPreset;
+      case GameRegion.sweden:
+        return _swedenPreset;
+      case GameRegion.switzerland:
+        return _switzerlandPreset;
+      case GameRegion.austria:
+        return _austriaPreset;
+      case GameRegion.portugal:
+        return _portugalPreset;
+      case GameRegion.greece:
+        return _greecePreset;
+      case GameRegion.southAfrica:
+        return _southAfricaPreset;
+      case GameRegion.indonesia:
+        return _indonesiaPreset;
     }
   }
 

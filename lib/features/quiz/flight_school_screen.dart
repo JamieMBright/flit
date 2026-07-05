@@ -328,6 +328,17 @@ class _LevelCard extends StatelessWidget {
     'museum': Icons.museum,
     'forest': Icons.forest,
     'temple_hindu': Icons.temple_hindu,
+    'local_fire_department': Icons.local_fire_department,
+    'location_city': Icons.location_city,
+    'wind_power': Icons.wind_power,
+    'church': Icons.church,
+    'sports_soccer': Icons.sports_soccer,
+    'ac_unit': Icons.ac_unit,
+    'downhill_skiing': Icons.downhill_skiing,
+    'piano': Icons.piano,
+    'sailing': Icons.sailing,
+    'pets': Icons.pets,
+    'waves': Icons.waves,
   };
 
   @override

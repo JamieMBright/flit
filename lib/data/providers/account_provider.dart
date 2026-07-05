@@ -1509,11 +1509,17 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _syncAccountState();
   }
 
-  /// Total luck for reroll advantage: avatar rarity + pity counter.
+  /// Total luck for reroll advantage: avatar rarity + pity counter,
+  /// capped so stacked bonuses can't trivialise top-tier licenses.
   ///
-  /// Pity guarantees improving odds after consecutive bad rolls.
-  int get _rerollLuck =>
-      state.avatar.luckBonus + state.license.heat.pityLuckBonus;
+  /// Avatar luck counts only OWNED parts (an equipped look that survived an
+  /// account reset grants nothing). Pity guarantees improving odds after
+  /// consecutive bad rolls.
+  int get _rerollLuck => math.min(
+        8,
+        state.avatar.luckBonusFor(state.ownedAvatarParts) +
+            state.license.heat.pityLuckBonus,
+      );
 
   /// Roll a replacement license and apply the reroll economy on top:
   /// pity bookkeeping (bad roll = +1 pity, improvement resets) and the

@@ -8,7 +8,7 @@ void main() {
   group('GameRegion enum', () {
     test('has all expected enum values', () {
       const values = GameRegion.values;
-      expect(values.length, equals(20));
+      expect(values.length, equals(32));
       expect(values, contains(GameRegion.world));
       expect(values, contains(GameRegion.usStates));
       expect(values, contains(GameRegion.ukCounties));
@@ -29,6 +29,18 @@ void main() {
       expect(values, contains(GameRegion.brazil));
       expect(values, contains(GameRegion.india));
       expect(values, contains(GameRegion.newZealand));
+      expect(values, contains(GameRegion.mexico));
+      expect(values, contains(GameRegion.southKorea));
+      expect(values, contains(GameRegion.netherlands));
+      expect(values, contains(GameRegion.poland));
+      expect(values, contains(GameRegion.argentina));
+      expect(values, contains(GameRegion.sweden));
+      expect(values, contains(GameRegion.switzerland));
+      expect(values, contains(GameRegion.austria));
+      expect(values, contains(GameRegion.portugal));
+      expect(values, contains(GameRegion.greece));
+      expect(values, contains(GameRegion.southAfrica));
+      expect(values, contains(GameRegion.indonesia));
     });
 
     test('each region has a non-empty displayName', () {
@@ -130,6 +142,18 @@ void main() {
       expect(RegionalData.getAreas(GameRegion.brazil).length, 27);
       expect(RegionalData.getAreas(GameRegion.india).length, 34);
       expect(RegionalData.getAreas(GameRegion.newZealand).length, 16);
+      expect(RegionalData.getAreas(GameRegion.mexico).length, 32);
+      expect(RegionalData.getAreas(GameRegion.southKorea).length, 17);
+      expect(RegionalData.getAreas(GameRegion.netherlands).length, 12);
+      expect(RegionalData.getAreas(GameRegion.poland).length, 16);
+      expect(RegionalData.getAreas(GameRegion.argentina).length, 24);
+      expect(RegionalData.getAreas(GameRegion.sweden).length, 21);
+      expect(RegionalData.getAreas(GameRegion.switzerland).length, 26);
+      expect(RegionalData.getAreas(GameRegion.austria).length, 9);
+      expect(RegionalData.getAreas(GameRegion.portugal).length, 18);
+      expect(RegionalData.getAreas(GameRegion.greece).length, 13);
+      expect(RegionalData.getAreas(GameRegion.southAfrica).length, 9);
+      expect(RegionalData.getAreas(GameRegion.indonesia).length, 33);
     });
 
     test('world returns areas (countries)', () {
@@ -610,6 +634,103 @@ void main() {
         sumLo: 27,
         sumHi: 31,
         islands: <String>{},
+      ),
+      (
+        region: GameRegion.mexico,
+        minArea: 0.05, // Mexico City is ~0.12 sq deg
+        sumLo: 168,
+        sumHi: 181,
+        islands: <String>{},
+      ),
+      (
+        region: GameRegion.southKorea,
+        minArea: 0.005, // Gwangju is ~0.013 sq deg
+        sumLo: 9.3,
+        sumHi: 10.3,
+        islands: {'Jeju'},
+      ),
+      (
+        region: GameRegion.netherlands,
+        minArea: 0.08, // Utrecht is ~0.18 sq deg
+        sumLo: 4.6,
+        sumHi: 5.2,
+        islands: <String>{},
+      ),
+      (
+        region: GameRegion.poland,
+        minArea: 0.5, // Opole is ~1.17 sq deg
+        sumLo: 39,
+        sumHi: 43,
+        islands: <String>{},
+      ),
+      (
+        region: GameRegion.argentina,
+        minArea: 0.015, // Buenos Aires City is ~0.037 sq deg
+        sumLo: 269,
+        sumHi: 288,
+        islands: {'Tierra del Fuego'},
+      ),
+      (
+        region: GameRegion.sweden,
+        minArea: 0.2, // Blekinge is ~0.44 sq deg
+        sumLo: 75,
+        sumHi: 82,
+        islands: {'Gotland'},
+      ),
+      (
+        region: GameRegion.switzerland,
+        minArea: 0.002, // Basel-Stadt is ~0.005 sq deg
+        sumLo: 4.6,
+        sumHi: 5.1,
+        islands: <String>{},
+      ),
+      (
+        region: GameRegion.austria,
+        minArea: 0.02, // Vienna is ~0.05 sq deg
+        sumLo: 9.6,
+        sumHi: 10.5,
+        islands: <String>{},
+      ),
+      (
+        region: GameRegion.portugal,
+        minArea: 0.1, // Viana do Castelo is ~0.24 sq deg
+        sumLo: 8.8,
+        sumHi: 9.7,
+        islands: <String>{},
+      ),
+      (
+        region: GameRegion.greece,
+        minArea: 0.1, // Ionian Islands are ~0.22 sq deg
+        sumLo: 12.9,
+        sumHi: 14.2,
+        islands: {
+          'Crete',
+          'Ionian Islands',
+          'North Aegean',
+          'South Aegean',
+        },
+      ),
+      (
+        region: GameRegion.southAfrica,
+        minArea: 0.8, // Gauteng is ~1.65 sq deg
+        sumLo: 108,
+        sumHi: 119,
+        islands: <String>{},
+      ),
+      (
+        region: GameRegion.indonesia,
+        minArea: 0.03, // Jakarta is ~0.06 sq deg
+        sumLo: 145,
+        sumHi: 158,
+        islands: {
+          'Bali',
+          'Bangka Belitung',
+          'East Nusa Tenggara',
+          'Maluku',
+          'North Maluku',
+          'Riau Islands',
+          'West Nusa Tenggara',
+        },
       ),
     ];
 
