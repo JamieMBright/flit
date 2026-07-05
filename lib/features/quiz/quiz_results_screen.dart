@@ -5,11 +5,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/report_capture.dart';
+import '../../core/widgets/consumable_widgets.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/widgets/mission_report_card.dart';
 import '../../data/models/daily_result.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/leaderboard_service.dart';
+import '../../game/economy/supply_drop.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/quiz_category.dart';
@@ -91,6 +93,7 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
     _animController.forward();
     _saveFlightSchoolProgress();
     _saveDailyBriefingScore();
+    _rollSupplyDrop();
 
     // Fire celebration burst for good results (grade A or S).
     final grade = widget.summary.grade;
@@ -115,6 +118,30 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
             );
           });
         }
+      });
+    }
+  }
+
+  /// Rare supply drop (any mode): quizzes count answer accuracy as the
+  /// "strong performance" gate (>= 60% correct). Deterministic per
+  /// (user, mode, date, score) — reopening this screen can't re-roll.
+  void _rollSupplyDrop() {
+    // H2H rounds resolve rewards through the challenge flow instead.
+    if (widget.challengeId != null) return;
+    final summary = widget.summary;
+    final dropped = ref.read(accountProvider.notifier).rollSupplyDrop(
+          mode: _isDailyBriefing
+              ? 'briefing'
+              : 'flight_school_${widget.flightSchoolLevelId ?? 'quiz'}',
+          score: summary.totalScore,
+          strongPerformance: SupplyDrop.isStrong(
+            score: summary.correctCount,
+            maxScore: summary.totalQuestions,
+          ),
+        );
+    if (dropped != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showSupplyDropDialog(context, dropped);
       });
     }
   }

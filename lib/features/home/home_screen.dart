@@ -9,6 +9,7 @@ import '../../core/utils/haptics.dart';
 import '../../data/providers/account_provider.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/theme/flit_theme.dart';
+import '../../core/widgets/consumable_widgets.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/theme/rarity_colors.dart';
 import '../../data/models/challenge.dart';
@@ -73,6 +74,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     )..repeat();
     _loadFeatureFlags();
     _checkMaintenanceMode();
+    _checkDailyChampionRewards();
+  }
+
+  /// Claim any daily-champion rewards owed for yesterday's boards
+  /// (Scramble, Recon, Briefing). Server-side idempotent; degrades
+  /// silently when the claim RPC isn't deployed.
+  Future<void> _checkDailyChampionRewards() async {
+    final notifier = ref.read(accountProvider.notifier);
+    if (!mounted) return;
+    await checkAndCelebrateDailyChampion(context, notifier);
   }
 
   Future<void> _checkMaintenanceMode() async {
@@ -1311,6 +1322,16 @@ class _HangarCard extends ConsumerWidget {
                         ),
                       ],
                     ),
+                    // Active consumable boosts (Gold/XP Surge, Polish).
+                    if (account.activeEffects
+                        .activeAt(DateTime.now().toUtc())
+                        .isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      ActiveEffectsRow(
+                        effects: account.activeEffects,
+                        compact: true,
+                      ),
+                    ],
                     const SizedBox(height: 3),
                     Text(
                       isHot

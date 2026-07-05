@@ -7,8 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/consumable_widgets.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/leaderboard_service.dart';
+import '../../game/economy/supply_drop.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/uncharted_map_widget.dart';
 import '../../game/quiz/uncharted_session.dart';
@@ -595,6 +597,7 @@ class _UnchartedResultsScreenState
     _saveProgress();
     _saveScoreToLeaderboard();
     _loadAllTimeStats();
+    _rollSupplyDrop();
 
     // Fire celebration burst for good results (grade B or better).
     final pct = widget.revealedCount / widget.totalCount;
@@ -620,6 +623,26 @@ class _UnchartedResultsScreenState
             );
           });
         }
+      });
+    }
+  }
+
+  /// Rare supply drop: Uncharted's strong-performance gate is revealing
+  /// >= 60% of the region without giving up. Deterministic per
+  /// (user, mode, date, score) — reopening this screen can't re-roll.
+  void _rollSupplyDrop() {
+    final dropped = ref.read(accountProvider.notifier).rollSupplyDrop(
+          mode: 'uncharted_${widget.region.name}_${widget.mode.name}',
+          score: widget.score,
+          strongPerformance: !widget.givenUp &&
+              SupplyDrop.isStrong(
+                score: widget.revealedCount,
+                maxScore: widget.totalCount,
+              ),
+        );
+    if (dropped != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showSupplyDropDialog(context, dropped);
       });
     }
   }

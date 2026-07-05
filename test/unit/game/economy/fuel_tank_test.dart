@@ -107,7 +107,7 @@ void main() {
     test('canister is cheaper than the instant refuel', () {
       expect(
         FuelTank.canisterCoinCost,
-        lessThan(FuelTank.instantRefuelCoinCost),
+        lessThan(FuelTank.instantRefuelCost(FuelTank.baseCapacity)),
       );
     });
   });

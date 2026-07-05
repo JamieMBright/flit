@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/services/error_service.dart';
 
+import '../../game/economy/consumables.dart';
 import '../../game/economy/fuel_tank.dart';
 import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/uncharted_progress.dart';
@@ -1175,6 +1176,24 @@ class UserPreferencesSnapshot {
   /// Owned refuel canisters persisted inside license_data.
   int get refuelCanisters =>
       (_licenseData?['refuel_canisters'] as num?)?.toInt() ?? 0;
+
+  /// Owned timed consumables persisted inside license_data
+  /// (`consumables` key).
+  ConsumableInventory toConsumableInventory() {
+    final json = _licenseData?['consumables'];
+    return ConsumableInventory.fromJson(
+      json is Map ? Map<String, dynamic>.from(json) : null,
+    );
+  }
+
+  /// Active timed-effect expiries persisted inside license_data
+  /// (`active_effects` key) — timed boosts survive restarts.
+  ActiveEffects toActiveEffects() {
+    final json = _licenseData?['active_effects'];
+    return ActiveEffects.fromJson(
+      json is Map ? Map<String, dynamic>.from(json) : null,
+    );
+  }
 
   /// Season trophy case persisted inside license_data.
   TrophyCase toTrophyCase() {

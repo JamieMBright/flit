@@ -2,15 +2,18 @@ import 'dart:math' as math;
 
 import 'package:characters/characters.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/consumable_widgets.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/widgets/rating_tier_chip.dart';
 import '../../core/theme/rarity_colors.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/models/leaderboard_entry.dart';
 import '../../data/models/pilot_license.dart';
+import '../../data/providers/account_provider.dart';
 import '../../data/models/player_report.dart';
 import '../../data/services/leaderboard_service.dart';
 import '../../data/services/matchmaking_service.dart';
@@ -140,6 +143,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
     _modeTabController.addListener(_onModeChanged);
     _loadData();
+    _checkDailyChampionRewards();
+  }
+
+  /// Champion rewards are also claimable from the leaderboard view (the
+  /// service guards to one check per UTC day per session).
+  Future<void> _checkDailyChampionRewards() async {
+    if (!mounted) return;
+    final notifier = ProviderScope.containerOf(context, listen: false)
+        .read(accountProvider.notifier);
+    await checkAndCelebrateDailyChampion(context, notifier);
   }
 
   @override

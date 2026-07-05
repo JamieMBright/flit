@@ -146,6 +146,14 @@ abstract class CosmeticCatalog {
   // Pricing follows gacha progression: early planes are ~4 games apart,
   // mid-tier stretches to ~20-40 games, and legendaries are aspirational
   // long-term goals (hundreds of games).
+  //
+  // Level gating (owner spec): unlocks are SPREAD along the level curve —
+  // no two planes unlock at the same level, and item unlocks interleave
+  // with the Flight School region ladder (region.dart, levels 3-19) so
+  // nearly every early/mid-game level-up has something new. Plane ladder:
+  // L2 jet, L4 rocket, L6 warbird, L8 night raider, L10 concorde,
+  // L12 shuttle, L14 stealth, L16 presidential — prices ascend with level.
+  // Covered by test/unit/data/cosmetic_test.dart (unlock ladder tests).
   // ---------------------------------------------------------------
   static const List<Cosmetic> planes = [
     // --- Common (sorted by price) ---
@@ -245,7 +253,7 @@ abstract class CosmeticCatalog {
       type: CosmeticType.plane,
       price: 1200,
       rarity: CosmeticRarity.rare,
-      requiredLevel: 3,
+      requiredLevel: 2,
       description: 'Fast and sharp. Burns fuel like water.',
       colorScheme: {
         'primary': 0xFFC0C0C0,
@@ -281,7 +289,7 @@ abstract class CosmeticCatalog {
       type: CosmeticType.plane,
       price: 1800,
       rarity: CosmeticRarity.rare,
-      requiredLevel: 5,
+      requiredLevel: 4,
       description:
           'Blazing speed. Turns like a bus. Drinks fuel for breakfast.',
       colorScheme: {
@@ -300,7 +308,7 @@ abstract class CosmeticCatalog {
       type: CosmeticType.plane,
       price: 2500,
       rarity: CosmeticRarity.rare,
-      requiredLevel: 5,
+      requiredLevel: 6,
       description: 'A legendary WWII fighter. Agile and fast.',
       colorScheme: {
         'primary': 0xFF556B2F,
@@ -318,7 +326,7 @@ abstract class CosmeticCatalog {
       type: CosmeticType.plane,
       price: 3500,
       rarity: CosmeticRarity.rare,
-      requiredLevel: 7,
+      requiredLevel: 8,
       description: 'A mighty heavy bomber. Low and slow, but goes forever.',
       colorScheme: {
         // Dark navy night-ops palette — reads as a night bomber, not a
@@ -338,7 +346,7 @@ abstract class CosmeticCatalog {
       type: CosmeticType.plane,
       price: 5000,
       rarity: CosmeticRarity.rare,
-      requiredLevel: 8,
+      requiredLevel: 10,
       description: 'Supersonic nostalgia. Mach 2 in style.',
       colorScheme: {
         'primary': 0xFFF5F5F5,
@@ -376,7 +384,7 @@ abstract class CosmeticCatalog {
       type: CosmeticType.plane,
       price: 6000,
       rarity: CosmeticRarity.rare,
-      requiredLevel: 8,
+      requiredLevel: 12,
       description:
           'Orbital velocity. Steers like a brick. Fuel gauge is decorative.',
       colorScheme: {
@@ -397,7 +405,7 @@ abstract class CosmeticCatalog {
       type: CosmeticType.plane,
       price: 8000,
       rarity: CosmeticRarity.epic,
-      requiredLevel: 10,
+      requiredLevel: 14,
       description: 'Dark and mysterious. Silent but deadly efficient.',
       colorScheme: {
         'primary': 0xFF2A2A2A,
@@ -415,7 +423,7 @@ abstract class CosmeticCatalog {
       type: CosmeticType.plane,
       price: 12000,
       rarity: CosmeticRarity.epic,
-      requiredLevel: 10,
+      requiredLevel: 16,
       description: 'Presidential luxury. Smooth, fast, and fuel-efficient.',
       colorScheme: {
         'primary': 0xFFF5F5F5,
@@ -505,7 +513,7 @@ abstract class CosmeticCatalog {
       type: CosmeticType.coPilot,
       price: 500,
       rarity: CosmeticRarity.common,
-      requiredLevel: 3,
+      requiredLevel: 5,
       description: 'A tiny, plucky bird. Small but full of heart.',
     ),
     Cosmetic(
@@ -514,7 +522,7 @@ abstract class CosmeticCatalog {
       type: CosmeticType.coPilot,
       price: 2000,
       rarity: CosmeticRarity.common,
-      requiredLevel: 10,
+      requiredLevel: 9,
       description: 'A small, nimble companion for your journey.',
     ),
     Cosmetic(

@@ -34,12 +34,30 @@ class FuelTank {
   /// Fuel consumed per free-flight coin find.
   static const double fuelPerClue = 10.0;
 
-  /// Coin price of an instant full refuel.
-  static const int instantRefuelCoinCost = 25;
+  /// Coin price of an instant full refuel of a BASE tank. Bigger licensed
+  /// tanks cost proportionally more to fill instantly — see
+  /// [instantRefuelCost]. Priced as a real decision (owner spec: ~60-80
+  /// for a base tank), not a trivial tap.
+  static const int baseInstantRefuelCost = 70;
+
+  /// Fraction of capacity restored by the cheap "top-up" option.
+  static const double topUpFraction = 0.25;
 
   /// Coin price of one refuel canister in the shop (cheaper than an
-  /// instant refuel — the reward for planning ahead).
-  static const int canisterCoinCost = 20;
+  /// instant refuel — the reward for planning ahead). Bundles of 3/5
+  /// discount per unit (see ConsumablePricing).
+  static const int canisterCoinCost = 50;
+
+  /// Coin cost of an instant FULL refuel for a tank of [capacity] units.
+  /// Scales linearly with capacity: base tank (100u) = 70 coins, a +30%
+  /// licensed tank = 91 coins.
+  static int instantRefuelCost(double capacity) =>
+      (baseInstantRefuelCost * capacity / baseCapacity).ceil();
+
+  /// Coin cost of the partial "top-up 25%" option for a tank of
+  /// [capacity] units — a quarter of the full price, rounded up.
+  static int topUpCost(double capacity) =>
+      (instantRefuelCost(capacity) * topUpFraction).ceil();
 
   // ---------------------------------------------------------------------------
   // Capacity
@@ -106,6 +124,15 @@ class FuelTank {
   /// Instantly refill to [capacity] at [now].
   FuelTank refillFull(DateTime now, {double capacity = baseCapacity}) =>
       FuelTank(storedFuel: capacity, updatedAt: now.toUtc());
+
+  /// Add [topUpFraction] of [capacity] instantly at [now] (clamped).
+  FuelTank topUp(DateTime now, {double capacity = baseCapacity}) {
+    final current = currentFuel(now, capacity: capacity);
+    return FuelTank(
+      storedFuel: (current + capacity * topUpFraction).clamp(0.0, capacity),
+      updatedAt: now.toUtc(),
+    );
+  }
 
   // ---------------------------------------------------------------------------
   // Serialisation

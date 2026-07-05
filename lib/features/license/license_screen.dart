@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/aviation_rank.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/consumable_widgets.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/theme/rarity_colors.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
+import '../../game/economy/consumables.dart';
 import '../../game/economy/license_heat.dart';
 import '../avatar/avatar_widget.dart';
 import '../shop/shop_screen.dart';
@@ -207,7 +209,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
           GestureDetector(
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => const ShopScreen(initialTabIndex: 4),
+                builder: (_) => const ShopScreen(initialTabIndex: 5),
               ),
             ),
             child: Container(
@@ -248,6 +250,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
               const SizedBox(height: 12),
               _buildHeatBanner(),
               const SizedBox(height: 12),
+              _buildSuppliesRow(),
               _buildLockSection(coins),
               const SizedBox(height: 24),
               _buildFreeRerollButton(),
@@ -346,6 +349,111 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Supplies row — owned consumables + active timed effects
+  // ---------------------------------------------------------------------------
+
+  /// Owned consumables with one-tap activation, plus timer chips for any
+  /// effects already running. Hidden entirely when the player has nothing
+  /// (no clutter for new pilots).
+  Widget _buildSuppliesRow() {
+    final account = ref.watch(accountProvider);
+    final notifier = ref.read(accountProvider.notifier);
+    final now = DateTime.now().toUtc();
+    final activeTypes = account.activeEffects.activeAt(now);
+    final timedTypes = [
+      for (final t in ConsumableType.values)
+        if (t.isTimed) t,
+    ];
+    final ownedTimed = [
+      for (final t in timedTypes)
+        if (account.consumables.of(t) > 0) t,
+    ];
+    if (ownedTimed.isEmpty && activeTypes.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: FlitColors.cardBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'SUPPLIES',
+              style: TextStyle(
+                color: FlitColors.textSecondary,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+              ),
+            ),
+            if (activeTypes.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              ActiveEffectsRow(effects: account.activeEffects),
+            ],
+            if (ownedTimed.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  for (final type in ownedTimed)
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        final ok = notifier.activateConsumable(type);
+                        if (ok && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${type.displayName} active — '
+                                '${type.effectLabel}',
+                              ),
+                              backgroundColor: FlitColors.success,
+                            ),
+                          );
+                        }
+                      },
+                      icon: Icon(
+                        consumableIcon(type),
+                        size: 14,
+                        color: consumableColor(type),
+                      ),
+                      label: Text(
+                        'USE ${type.displayName.toUpperCase()} '
+                        '(${account.consumables.of(type)})',
+                        style: TextStyle(
+                          color: consumableColor(type),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        side: BorderSide(
+                          color: consumableColor(type).withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -1175,7 +1283,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
                     child: GestureDetector(
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => const ShopScreen(initialTabIndex: 4),
+                          builder: (_) => const ShopScreen(initialTabIndex: 5),
                         ),
                       ),
                       child: const Text(

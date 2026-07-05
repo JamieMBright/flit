@@ -876,7 +876,10 @@ sequenceDiagram
 | Pilot license + heat/pity | `AccountState.license` (`PilotLicense.heat`) | `account_state.license_data` (JSONB, client-owned schema) | Debounced 2s upsert |
 | Earning fuel tank | `AccountState.fuelTank` | `account_state.license_data.fuel` (JSONB) | Debounced 2s upsert |
 | Refuel canisters | `AccountState.refuelCanisters` | `account_state.license_data.refuel_canisters` | Debounced 2s upsert |
+| Consumable inventory (Polish/Surges) | `AccountState.consumables` | `account_state.license_data.consumables` (JSONB) | Debounced 2s upsert |
+| Active timed effects (expiry timestamps) | `AccountState.activeEffects` | `account_state.license_data.active_effects` (JSONB) | Debounced 2s upsert |
 | Season trophy case | `AccountState.trophyCase` | `account_state.license_data.trophy_case` (JSONB) | Debounced 2s upsert |
+| Daily champion claims | Fetched via `claim_daily_champion` RPC | `daily_champion_claims` table (PK `game_mode, challenge_date`) | Idempotent RPC on app open / leaderboard view |
 | Game scores | Transient (PlayScreen) | `scores` table (`region` = mode bucket, incl. `sortie`) | Immediate INSERT |
 | Sortie rated runs | Transient (SortieScreen) | `sortie_runs` table + `player_ratings` via `apply_sortie_rating` RPC | Immediate INSERT + RPC |
 | Active game session | `GameSession` (local) | Nowhere (ephemeral) | Not persisted |
