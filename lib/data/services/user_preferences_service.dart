@@ -142,6 +142,28 @@ class _PendingWriteQueue {
     await _persist(entries);
   }
 
+  /// Drop queued writes for [table] enqueued before [cutoff].
+  ///
+  /// Used when the server row turns out to be fresher than local state
+  /// (another device, or a server-side reset): replaying those stale
+  /// upserts would push the outdated values back to the server.
+  Future<void> purgeTableOlderThan(String table, DateTime cutoff) async {
+    final entries = _loadAll();
+    final cutoffMs = cutoff.millisecondsSinceEpoch;
+    final kept = entries.where((e) {
+      if (e['table'] != table) return true;
+      final ts = e['timestamp'] as int? ?? 0;
+      return ts >= cutoffMs;
+    }).toList();
+    if (kept.length != entries.length) {
+      debugPrint(
+        '[PendingWriteQueue] purged ${entries.length - kept.length} stale '
+        '$table write(s) older than $cutoff (server is fresher)',
+      );
+      await _persist(kept);
+    }
+  }
+
   /// Remove all entries from the queue.
   Future<void> clear() async {
     if (_prefsAvailable) {
@@ -226,6 +248,12 @@ class UserPreferencesService {
   static const _kLocalProfile = 'crash_safe_profile';
   static const _kLocalSettings = 'crash_safe_settings';
   static const _kLocalAccountState = 'crash_safe_account_state';
+
+  /// Client-only field stamped into crash-safe caches recording when the
+  /// cache was written. Stripped before any merge/upsert — never sent to
+  /// Supabase. Lets _recoverLocalCache detect that the server row changed
+  /// after the cache was written (other device / server-side reset).
+  static const _kCachedAtField = '_cached_at';
 
   // Dirty flags — only the changed tables are written.
   bool _profileDirty = false;
@@ -752,6 +780,13 @@ class UserPreferencesService {
   /// storage on the next launch.
   void _cacheLocally(String key, Map<String, dynamic> payload) {
     try {
+      // Stamp when this cache was written (without mutating the pending
+      // write map) so _recoverLocalCache can tell whether a server row is
+      // fresher — e.g. after a server-side account reset.
+      final stamped = {
+        ...payload,
+        _kCachedAtField: DateTime.now().toUtc().toIso8601String(),
+      };
       if (_localPrefs == null) {
         // Eagerly initialise if the queue hasn't been set up yet. The
         // getInstance() Future resolves almost instantly on iOS/Android
@@ -759,14 +794,14 @@ class UserPreferencesService {
         SharedPreferences.getInstance().then((prefs) {
           _localPrefs = prefs;
           try {
-            prefs.setString(key, jsonEncode(payload));
+            prefs.setString(key, jsonEncode(stamped));
           } catch (_) {}
         }).catchError((_) {
           // Binding not initialised (e.g. in unit tests) — silently skip.
         });
         return;
       }
-      _localPrefs!.setString(key, jsonEncode(payload));
+      _localPrefs!.setString(key, jsonEncode(stamped));
     } catch (_) {}
   }
 
@@ -803,6 +838,36 @@ class UserPreferencesService {
       final localData = jsonDecode(cached) as Map<String, dynamic>;
       // Verify the cached data is for the same user.
       if (localData[userIdField] != userId) {
+        _clearLocalCache(key);
+        return serverData;
+      }
+
+      // Server-authority check: if the server row was updated meaningfully
+      // AFTER this cache was written, someone else changed the account on
+      // the server side (another device, or an admin/server reset). The
+      // server must win outright — otherwise a server-side reset could
+      // never take effect (max(server, local) would resurrect the old
+      // values and the flush would push them back up). The skew margin
+      // covers device/server clock drift.
+      final cachedAtRaw = localData.remove(_kCachedAtField);
+      final cachedAt =
+          cachedAtRaw is String ? DateTime.tryParse(cachedAtRaw) : null;
+      final serverUpdatedRaw = serverData?['updated_at'];
+      final serverUpdated = serverUpdatedRaw is String
+          ? DateTime.tryParse(serverUpdatedRaw)
+          : null;
+      // An unstamped cache predates this app version; its age is unknowable,
+      // so when a server row exists the server wins (worst case: one
+      // debounce-window of progress from a pre-update crash is lost, once).
+      final serverIsFresher = cachedAt == null
+          ? serverUpdated != null
+          : serverUpdated != null &&
+              serverUpdated.isAfter(cachedAt.add(const Duration(minutes: 2)));
+      if (serverIsFresher) {
+        debugPrint(
+          '[UserPreferencesService] server $key is fresher than local cache '
+          '($serverUpdated > $cachedAt) — server wins, cache dropped',
+        );
         _clearLocalCache(key);
         return serverData;
       }

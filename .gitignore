@@ -86,3 +86,6 @@ key.properties
 
 # Runtime error logs (written by fetch-errors.yml — must not be committed to public repo)
 logs/
+
+# Claude Code session worktrees (agent isolation)
+.claude/worktrees/
