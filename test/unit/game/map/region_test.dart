@@ -8,7 +8,7 @@ void main() {
   group('GameRegion enum', () {
     test('has all expected enum values', () {
       const values = GameRegion.values;
-      expect(values.length, equals(11));
+      expect(values.length, equals(20));
       expect(values, contains(GameRegion.world));
       expect(values, contains(GameRegion.usStates));
       expect(values, contains(GameRegion.ukCounties));
@@ -20,6 +20,15 @@ void main() {
       expect(values, contains(GameRegion.asia));
       expect(values, contains(GameRegion.latinAmerica));
       expect(values, contains(GameRegion.oceania));
+      expect(values, contains(GameRegion.australia));
+      expect(values, contains(GameRegion.france));
+      expect(values, contains(GameRegion.germany));
+      expect(values, contains(GameRegion.japan));
+      expect(values, contains(GameRegion.spain));
+      expect(values, contains(GameRegion.italy));
+      expect(values, contains(GameRegion.brazil));
+      expect(values, contains(GameRegion.india));
+      expect(values, contains(GameRegion.newZealand));
     });
 
     test('each region has a non-empty displayName', () {
@@ -109,6 +118,18 @@ void main() {
     test('caribbean returns non-empty areas', () {
       final areas = RegionalData.getAreas(GameRegion.caribbean);
       expect(areas, isNotEmpty);
+    });
+
+    test('new country maps return the expected division counts', () {
+      expect(RegionalData.getAreas(GameRegion.australia).length, 8);
+      expect(RegionalData.getAreas(GameRegion.france).length, 13);
+      expect(RegionalData.getAreas(GameRegion.germany).length, 16);
+      expect(RegionalData.getAreas(GameRegion.japan).length, 47);
+      expect(RegionalData.getAreas(GameRegion.spain).length, 16);
+      expect(RegionalData.getAreas(GameRegion.italy).length, 20);
+      expect(RegionalData.getAreas(GameRegion.brazil).length, 27);
+      expect(RegionalData.getAreas(GameRegion.india).length, 34);
+      expect(RegionalData.getAreas(GameRegion.newZealand).length, 16);
     });
 
     test('world returns areas (countries)', () {
@@ -404,6 +425,259 @@ void main() {
         );
       }
     });
+  });
+
+  group('Region tessellation sanity', () {
+    // Signed shoelace area over all rings, in square degrees. Interior
+    // holes are wound opposite to exteriors so they subtract correctly.
+    double areaSqDeg(RegionalArea area) {
+      final rings = area.polygons ?? [area.points];
+      var total = 0.0;
+      for (final ring in rings) {
+        var signed = 0.0;
+        for (var i = 0; i < ring.length; i++) {
+          final a = ring[i];
+          final b = ring[(i + 1) % ring.length];
+          signed += a.x * b.y - b.x * a.y;
+        }
+        total += signed / 2;
+      }
+      return total.abs();
+    }
+
+    Set<String> vertexKeys(RegionalArea area) => {
+          for (final p in area.points) '${p.x},${p.y}',
+        };
+
+    test('every Ireland county has a plausible area', () {
+      final areas = RegionalData.getAreas(GameRegion.ireland);
+      for (final area in areas) {
+        // Smallest real county (Louth, 826 km2) is ~0.11 sq deg; anything
+        // below 0.05 means the polygon regressed to a city-sized blob.
+        expect(
+          areaSqDeg(area),
+          greaterThan(0.05),
+          reason: 'County ${area.name} is implausibly small — polygon data '
+              'may have regressed to non-tessellating captures',
+        );
+      }
+    });
+
+    test('Ireland counties sum to the area of the island', () {
+      final areas = RegionalData.getAreas(GameRegion.ireland);
+      final sum = areas.map(areaSqDeg).reduce((a, b) => a + b);
+      // Island of Ireland is ~11.3 sq deg in equirectangular terms. A sum
+      // far below means gaps/undersized counties; far above means overlaps.
+      expect(sum, greaterThan(10.0));
+      expect(sum, lessThan(12.5));
+    });
+
+    test('every Ireland county shares border vertices with a neighbour', () {
+      final areas = RegionalData.getAreas(GameRegion.ireland);
+      final keys = areas.map(vertexKeys).toList();
+      for (var i = 0; i < areas.length; i++) {
+        var shared = 0;
+        for (var j = 0; j < areas.length && shared < 2; j++) {
+          if (i == j) continue;
+          shared = keys[i].intersection(keys[j]).length;
+        }
+        // Tessellating data shares exact vertex coordinates along county
+        // borders. No Irish county is an island, so all must share >= 2.
+        expect(
+          shared,
+          greaterThanOrEqualTo(2),
+          reason: 'County ${areas[i].name} shares no border vertices with '
+              'any neighbour — polygons no longer tessellate',
+        );
+      }
+    });
+
+    test('UK counties sum to the area of Great Britain + NI', () {
+      final areas = RegionalData.getAreas(GameRegion.ukCounties);
+      final sum = areas.map(areaSqDeg).reduce((a, b) => a + b);
+      // UK admin areas total ~33.5 sq deg equirectangular.
+      expect(sum, greaterThan(30.0));
+      expect(sum, lessThan(37.0));
+    });
+
+    test('mainland UK counties share border vertices with a neighbour', () {
+      final areas = RegionalData.getAreas(GameRegion.ukCounties);
+      // Genuine islands with no land border to another area.
+      const islands = {
+        'Isle of Wight',
+        'Isle of Anglesey',
+        'Orkney Islands',
+        'Shetland Islands',
+        'Eilean Siar',
+      };
+      final keys = areas.map(vertexKeys).toList();
+      for (var i = 0; i < areas.length; i++) {
+        if (islands.contains(areas[i].name)) continue;
+        var shared = 0;
+        for (var j = 0; j < areas.length && shared < 2; j++) {
+          if (i == j) continue;
+          shared = keys[i].intersection(keys[j]).length;
+        }
+        expect(
+          shared,
+          greaterThanOrEqualTo(2),
+          reason: 'County ${areas[i].name} shares no border vertices with '
+              'any neighbour — polygons no longer tessellate',
+        );
+      }
+    });
+
+    test('grossly undersized regression check: County Dublin', () {
+      final areas = RegionalData.getAreas(GameRegion.ireland);
+      final dublin = areas.firstWhere((a) => a.name == 'Dublin');
+      // County Dublin is ~922 km2 (~0.12 sq deg). The old broken data was
+      // a city-sized blob of ~0.01 sq deg.
+      expect(areaSqDeg(dublin), greaterThan(0.08));
+    });
+
+    // ── New country maps (same NE 10m shared-arc pipeline) ────────────────
+    // Per-region sanity: every division has a plausible minimum area, the
+    // divisions sum to the country's equirectangular area (no gaps, no
+    // overlaps), and every non-island division shares exact border
+    // vertices with a neighbour (tessellation). Bounds derive from the
+    // generated data ±~5%; `islands` lists divisions with no land border.
+    final tessellationCases = <({
+      GameRegion region,
+      double minArea,
+      double sumLo,
+      double sumHi,
+      Set<String> islands,
+    })>[
+      (
+        region: GameRegion.australia,
+        minArea: 0.15, // ACT is ~0.22 sq deg
+        sumLo: 660,
+        sumHi: 730,
+        islands: {'Tasmania'},
+      ),
+      (
+        region: GameRegion.france,
+        minArea: 0.5, // Corse is ~0.95 sq deg
+        sumLo: 61,
+        sumHi: 68,
+        islands: {'Corse'},
+      ),
+      (
+        region: GameRegion.germany,
+        minArea: 0.03, // Bremen is ~0.05 sq deg
+        sumLo: 43,
+        sumHi: 48,
+        islands: <String>{},
+      ),
+      (
+        region: GameRegion.japan,
+        minArea: 0.1, // Kagawa is ~0.18 sq deg
+        sumLo: 36,
+        sumHi: 41,
+        islands: {'Hokkaido', 'Okinawa'},
+      ),
+      (
+        region: GameRegion.spain,
+        minArea: 0.3, // Balearic Islands are ~0.54 sq deg
+        sumLo: 50,
+        sumHi: 56,
+        islands: {'Balearic Islands'},
+      ),
+      (
+        region: GameRegion.italy,
+        minArea: 0.2, // Aosta Valley is ~0.38 sq deg
+        sumLo: 31,
+        sumHi: 35,
+        islands: {'Sicily', 'Sardinia'},
+      ),
+      (
+        region: GameRegion.brazil,
+        minArea: 0.3, // Distrito Federal is ~0.49 sq deg
+        sumLo: 670,
+        sumHi: 740,
+        islands: <String>{},
+      ),
+      (
+        region: GameRegion.india,
+        minArea: 0.005, // Chandigarh is ~0.01 sq deg
+        sumLo: 264,
+        sumHi: 292,
+        islands: <String>{},
+      ),
+      (
+        region: GameRegion.newZealand,
+        minArea: 0.02, // Nelson is ~0.04 sq deg
+        sumLo: 27,
+        sumHi: 31,
+        islands: <String>{},
+      ),
+    ];
+
+    for (final c in tessellationCases) {
+      test('${c.region.name}: divisions have plausible areas and sum', () {
+        final areas = RegionalData.getAreas(c.region);
+        for (final area in areas) {
+          expect(
+            areaSqDeg(area),
+            greaterThan(c.minArea),
+            reason: '${c.region.name}/${area.name} is implausibly small — '
+                'polygon data may have regressed',
+          );
+        }
+        final sum = areas.map(areaSqDeg).reduce((a, b) => a + b);
+        expect(
+          sum,
+          greaterThan(c.sumLo),
+          reason: '${c.region.name} area sum too low — gaps or undersized '
+              'divisions',
+        );
+        expect(
+          sum,
+          lessThan(c.sumHi),
+          reason: '${c.region.name} area sum too high — overlapping '
+              'divisions',
+        );
+      });
+
+      test('${c.region.name}: non-island divisions share border vertices', () {
+        final areas = RegionalData.getAreas(c.region);
+        final keys = areas.map(vertexKeys).toList();
+        for (var i = 0; i < areas.length; i++) {
+          if (c.islands.contains(areas[i].name)) continue;
+          var shared = 0;
+          for (var j = 0; j < areas.length && shared < 2; j++) {
+            if (i == j) continue;
+            shared = keys[i].intersection(keys[j]).length;
+          }
+          expect(
+            shared,
+            greaterThanOrEqualTo(2),
+            reason: '${c.region.name}/${areas[i].name} shares no border '
+                'vertices with any neighbour — polygons no longer '
+                'tessellate',
+          );
+        }
+      });
+
+      test('${c.region.name}: codes unique, metadata complete', () {
+        final areas = RegionalData.getAreas(c.region);
+        final codes = areas.map((a) => a.code).toSet();
+        expect(codes.length, areas.length,
+            reason: 'duplicate area codes in ${c.region.name}');
+        for (final area in areas) {
+          expect(area.code, isNotEmpty);
+          expect(area.name, isNotEmpty);
+          expect(area.capital, isNotNull);
+          expect(area.capital, isNotEmpty,
+              reason: '${c.region.name}/${area.name} missing capital');
+          expect(area.population, isNotNull);
+          expect(area.population, greaterThan(0));
+          expect(area.funFact, isNotNull);
+          expect(area.funFact, isNotEmpty,
+              reason: '${c.region.name}/${area.name} missing funFact');
+        }
+      });
+    }
   });
 
   group('RegionalData.getRandomArea', () {

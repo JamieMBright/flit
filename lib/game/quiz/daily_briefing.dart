@@ -77,15 +77,26 @@ class DailyBriefing {
   /// Weighted region rotation, keyed by [FlightSchoolLevel.id].
   ///
   /// Europe and US States dominate; Africa/Asia/Latin America form the
-  /// "world tour" tier; the niche five (UK, Ireland, Canada, Oceania,
-  /// Caribbean) get weight 1 each — 5/33 of days, roughly 1 day in 7
-  /// combined.
+  /// "world tour" tier; the major-market country maps (Australia, France,
+  /// Germany) get a modest weight; everything else — including the niche
+  /// five (UK, Ireland, Canada, Oceania, Caribbean) and the remaining
+  /// country maps (Japan, Spain, Italy, Brazil, India, New Zealand) —
+  /// appears at weight 1 so no single obscure region dominates.
   static const Map<String, int> _levelWeights = {
     'europe': 8,
     'us_states': 8,
     'africa': 4,
     'asia': 4,
     'latin_america': 4,
+    'australia': 3,
+    'france': 3,
+    'germany': 2,
+    'japan': 1,
+    'spain': 1,
+    'italy': 1,
+    'brazil': 1,
+    'india': 1,
+    'new_zealand': 1,
     'uk_counties': 1,
     'ireland': 1,
     'canada': 1,

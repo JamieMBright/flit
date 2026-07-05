@@ -162,6 +162,96 @@ abstract class RegionCameraPresets {
     fovOverride: 50.0,
   );
 
+  /// Australia: centered on the outback interior.
+  static const CameraPreset _australiaPreset = CameraPreset(
+    centerLat: -26.0,
+    centerLng: 134.0,
+    altitudeDistance: 2.2,
+    maxBoundsLat: 20.0,
+    maxBoundsLng: 25.0,
+    fovOverride: 50.0,
+  );
+
+  /// France: centered on the middle of the Hexagone.
+  static const CameraPreset _francePreset = CameraPreset(
+    centerLat: 46.5,
+    centerLng: 2.5,
+    altitudeDistance: 1.5,
+    maxBoundsLat: 8.0,
+    maxBoundsLng: 10.0,
+    fovOverride: 45.0,
+  );
+
+  /// Germany: centered near the geographic middle (Thuringia).
+  static const CameraPreset _germanyPreset = CameraPreset(
+    centerLat: 51.2,
+    centerLng: 10.5,
+    altitudeDistance: 1.4,
+    maxBoundsLat: 7.0,
+    maxBoundsLng: 8.0,
+    fovOverride: 45.0,
+  );
+
+  /// Japan: centered on central Honshu; bounds reach Okinawa and Hokkaido.
+  static const CameraPreset _japanPreset = CameraPreset(
+    centerLat: 36.0,
+    centerLng: 137.0,
+    altitudeDistance: 1.9,
+    maxBoundsLat: 14.0,
+    maxBoundsLng: 16.0,
+    fovOverride: 48.0,
+  );
+
+  /// Spain: centered on the Meseta; bounds reach the Balearics.
+  static const CameraPreset _spainPreset = CameraPreset(
+    centerLat: 40.0,
+    centerLng: -3.5,
+    altitudeDistance: 1.5,
+    maxBoundsLat: 8.0,
+    maxBoundsLng: 10.0,
+    fovOverride: 45.0,
+  );
+
+  /// Italy: centered mid-peninsula; bounds cover Sicily and Sardinia.
+  static const CameraPreset _italyPreset = CameraPreset(
+    centerLat: 42.0,
+    centerLng: 12.5,
+    altitudeDistance: 1.5,
+    maxBoundsLat: 8.0,
+    maxBoundsLng: 9.0,
+    fovOverride: 45.0,
+  );
+
+  /// Brazil: centered on the central plateau.
+  static const CameraPreset _brazilPreset = CameraPreset(
+    centerLat: -14.0,
+    centerLng: -54.0,
+    altitudeDistance: 2.4,
+    maxBoundsLat: 24.0,
+    maxBoundsLng: 24.0,
+    fovOverride: 50.0,
+  );
+
+  /// India: centered on the middle of the subcontinent.
+  static const CameraPreset _indiaPreset = CameraPreset(
+    centerLat: 22.0,
+    centerLng: 82.0,
+    altitudeDistance: 2.2,
+    maxBoundsLat: 18.0,
+    maxBoundsLng: 18.0,
+    fovOverride: 50.0,
+  );
+
+  /// New Zealand: centered on Cook Strait.
+  static const CameraPreset _newZealandPreset = CameraPreset(
+    centerLat: -41.0,
+    centerLng: 172.5,
+    altitudeDistance: 1.7,
+    maxBoundsLat: 9.0,
+    maxBoundsLng: 9.0,
+    fovOverride: 45.0,
+  );
+
   // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
@@ -191,6 +281,24 @@ abstract class RegionCameraPresets {
         return _latinAmericaPreset;
       case GameRegion.oceania:
         return _oceaniaPreset;
+      case GameRegion.australia:
+        return _australiaPreset;
+      case GameRegion.france:
+        return _francePreset;
+      case GameRegion.germany:
+        return _germanyPreset;
+      case GameRegion.japan:
+        return _japanPreset;
+      case GameRegion.spain:
+        return _spainPreset;
+      case GameRegion.italy:
+        return _italyPreset;
+      case GameRegion.brazil:
+        return _brazilPreset;
+      case GameRegion.india:
+        return _indiaPreset;
+      case GameRegion.newZealand:
+        return _newZealandPreset;
     }
   }
 

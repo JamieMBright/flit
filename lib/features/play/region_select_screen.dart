@@ -37,6 +37,24 @@ class RegionSelectScreen extends ConsumerWidget {
         return 2000;
       case GameRegion.oceania:
         return 2500;
+      case GameRegion.australia:
+        return 500;
+      case GameRegion.france:
+        return 500;
+      case GameRegion.germany:
+        return 750;
+      case GameRegion.spain:
+        return 1000;
+      case GameRegion.italy:
+        return 1000;
+      case GameRegion.japan:
+        return 1500;
+      case GameRegion.brazil:
+        return 1500;
+      case GameRegion.india:
+        return 2000;
+      case GameRegion.newZealand:
+        return 2000;
     }
   }
 
@@ -473,6 +491,24 @@ class _RegionCard extends StatelessWidget {
         return Icons.festival;
       case GameRegion.oceania:
         return Icons.beach_access;
+      case GameRegion.australia:
+        return Icons.wb_sunny;
+      case GameRegion.france:
+        return Icons.wine_bar;
+      case GameRegion.germany:
+        return Icons.account_balance;
+      case GameRegion.japan:
+        return Icons.temple_buddhist;
+      case GameRegion.spain:
+        return Icons.festival;
+      case GameRegion.italy:
+        return Icons.museum;
+      case GameRegion.brazil:
+        return Icons.forest;
+      case GameRegion.india:
+        return Icons.temple_hindu;
+      case GameRegion.newZealand:
+        return Icons.landscape;
     }
   }
 }

@@ -522,6 +522,18 @@ class QuizQuestionGenerator {
       case GameRegion.caribbean:
         return _caribbeanField(areaCode, field);
       case GameRegion.world:
+      // The newer sub-national regions quiz on name + capital only (the
+      // data lives directly on RegionalArea); they have no per-division
+      // trivia files, so all rich-clue lookups return null.
+      case GameRegion.australia:
+      case GameRegion.france:
+      case GameRegion.germany:
+      case GameRegion.japan:
+      case GameRegion.spain:
+      case GameRegion.italy:
+      case GameRegion.brazil:
+      case GameRegion.india:
+      case GameRegion.newZealand:
         return null;
     }
   }
