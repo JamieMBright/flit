@@ -360,10 +360,16 @@ class ChallengeService {
 
         // Early victory: complete as soon as one player clinches enough wins
         // (e.g. 3 wins in best-of-5). Also complete if all rounds are done.
+        // Compare against the challenge's actual round count, not the flight
+        // constant — quiz challenges are single-round, so checking against
+        // totalRounds (5) would mean they never complete.
         if (!challenge.isComplete) {
           final completedRounds =
               challenge.rounds.where((r) => r.isComplete).length;
-          if (completedRounds < Challenge.totalRounds) return null;
+          if (challenge.rounds.isEmpty ||
+              completedRounds < challenge.rounds.length) {
+            return null;
+          }
         }
 
         // Determine winner.
@@ -407,6 +413,33 @@ class ChallengeService {
       }
     }
     return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Claim coins
+  // ---------------------------------------------------------------------------
+
+  /// Claim the coin reward for a completed challenge.
+  ///
+  /// Calls the `claim_challenge_coins` RPC, which atomically marks the
+  /// current player's share as claimed and returns the coin amount. Returns
+  /// null if the reward was already claimed, the challenge isn't completed,
+  /// or the RPC isn't deployed yet (safe no-op in all failure cases — the
+  /// caller should only credit coins when this returns a positive value).
+  Future<int?> claimChallengeCoins(String challengeId) async {
+    if (_userId == null) return null;
+    try {
+      final result = await _client.rpc<dynamic>(
+        'claim_challenge_coins',
+        params: {'p_challenge_id': challengeId},
+      );
+      final coins = result is int ? result : int.tryParse('$result');
+      if (coins == null || coins <= 0) return null;
+      return coins;
+    } catch (e) {
+      debugPrint('[ChallengeService] claimChallengeCoins failed: $e');
+      return null;
+    }
   }
 
   // ---------------------------------------------------------------------------

@@ -42,7 +42,7 @@ String _rankTitle(int level) {
 
 /// Challenge result screen showing match outcome, pilot licenses, per-round
 /// time comparisons, coins earned, and rematch / play again actions.
-class ChallengeResultScreen extends ConsumerWidget {
+class ChallengeResultScreen extends ConsumerStatefulWidget {
   const ChallengeResultScreen({
     super.key,
     required this.challenge,
@@ -71,7 +71,40 @@ class ChallengeResultScreen extends ConsumerWidget {
   final VoidCallback? onPlayAgain;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ChallengeResultScreen> createState() =>
+      _ChallengeResultScreenState();
+}
+
+class _ChallengeResultScreenState extends ConsumerState<ChallengeResultScreen> {
+  Challenge get challenge => widget.challenge;
+  bool get isChallenger => widget.isChallenger;
+
+  @override
+  void initState() {
+    super.initState();
+    _claimCoins();
+  }
+
+  /// Credit the coin reward to the player's balance.
+  ///
+  /// The `claim_challenge_coins` RPC atomically marks this player's share as
+  /// claimed server-side, so re-opening the screen (or a second device) can
+  /// never double-credit. If the RPC isn't deployed the claim silently
+  /// no-ops and the reward stays display-only.
+  Future<void> _claimCoins() async {
+    final coins =
+        await ChallengeService.instance.claimChallengeCoins(challenge.id);
+    if (coins != null && coins > 0 && mounted) {
+      ref.read(accountProvider.notifier).addCoins(
+            coins,
+            applyBoost: false,
+            source: 'challenge_reward',
+          );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDraw = challenge.winnerId == null;
     final youWon = !isDraw &&
         ((isChallenger && challenge.winnerId == challenge.challengerId) ||
@@ -90,7 +123,7 @@ class ChallengeResultScreen extends ConsumerWidget {
     final equippedPlaneId = account.equippedPlaneId;
     final equippedPlane = CosmeticCatalog.getById(equippedPlaneId);
 
-    final yourInfo = yourPilotInfo ??
+    final yourInfo = widget.yourPilotInfo ??
         PilotInfo(
           name: 'You',
           level: account.currentPlayer.level,
@@ -99,7 +132,8 @@ class ChallengeResultScreen extends ConsumerWidget {
           rankTitle: _rankTitle(account.currentPlayer.level),
         );
 
-    final opponentInfo = opponentPilotInfo ?? PilotInfo(name: opponentName);
+    final opponentInfo =
+        widget.opponentPilotInfo ?? PilotInfo(name: opponentName);
 
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
@@ -163,13 +197,13 @@ class ChallengeResultScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               // Actions
               _ResultActions(
-                onRematch: onRematch ??
+                onRematch: widget.onRematch ??
                     () {
                       _handleRematch(context, ref);
                     },
                 onHome: () =>
                     Navigator.of(context).popUntil((route) => route.isFirst),
-                onPlayAgain: onPlayAgain,
+                onPlayAgain: widget.onPlayAgain,
               ),
             ],
           ),

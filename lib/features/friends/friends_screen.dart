@@ -477,8 +477,19 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       challengeId,
     );
     if (!mounted) return;
+    if (challenge == null) {
+      // Never launch without seeds — playing random rounds against a seeded
+      // opponent would silently desync the match.
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not load challenge — check your connection'),
+          backgroundColor: FlitColors.error,
+        ),
+      );
+      return;
+    }
 
-    final seeds = challenge?.rounds.map((r) => r.seed).toList();
+    final seeds = challenge.rounds.map((r) => r.seed).toList();
 
     final planeId = ref.read(equippedPlaneIdProvider);
     final plane = CosmeticCatalog.getById(planeId);
@@ -532,7 +543,16 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     final challenge = await ChallengeService.instance.fetchChallenge(
       challengeId,
     );
-    if (!mounted || challenge == null) return;
+    if (!mounted) return;
+    if (challenge == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not load challenge — check your connection'),
+          backgroundColor: FlitColors.error,
+        ),
+      );
+      return;
+    }
 
     final seed = challenge.rounds.isNotEmpty ? challenge.rounds.first.seed : 42;
     final category = challenge.quizCategory ?? QuizCategory.mixed;

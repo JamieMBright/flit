@@ -501,6 +501,47 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- Coin-claim tracking (see migrations/20260705_challenge_coin_claims.sql).
+-- Each player's coin share is claimed exactly once via claim_challenge_coins.
+ALTER TABLE public.challenges
+  ADD COLUMN IF NOT EXISTS challenger_claimed_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS challenged_claimed_at TIMESTAMPTZ;
+
+CREATE OR REPLACE FUNCTION public.claim_challenge_coins(p_challenge_id UUID)
+RETURNS INT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_coins INT;
+BEGIN
+  UPDATE public.challenges
+  SET challenger_claimed_at = NOW()
+  WHERE id = p_challenge_id
+    AND status = 'completed'
+    AND challenger_id = auth.uid()
+    AND challenger_claimed_at IS NULL
+  RETURNING challenger_coins INTO v_coins;
+
+  IF v_coins IS NOT NULL THEN
+    RETURN v_coins;
+  END IF;
+
+  UPDATE public.challenges
+  SET challenged_claimed_at = NOW()
+  WHERE id = p_challenge_id
+    AND status = 'completed'
+    AND challenged_id = auth.uid()
+    AND challenged_claimed_at IS NULL
+  RETURNING challenged_coins INTO v_coins;
+
+  RETURN COALESCE(v_coins, 0);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.claim_challenge_coins(UUID) TO authenticated;
+
 
 -- ---------------------------------------------------------------------------
 -- 8. MATCHMAKING_POOL — async challengerless matchmaking
