@@ -841,7 +841,7 @@ class _LeaderboardRow extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => _PilotCardSheet(entry: entry),
+      builder: (_) => _PilotCardSheet(entry: entry, isCombined: isCombined),
     );
   }
 
@@ -906,9 +906,14 @@ class _LeaderboardRow extends StatelessWidget {
 // =============================================================================
 
 class _PilotCardSheet extends StatefulWidget {
-  const _PilotCardSheet({required this.entry});
+  const _PilotCardSheet({required this.entry, this.isCombined = false});
 
   final LeaderboardEntry entry;
+
+  /// True when the entry comes from the combined daily board, where
+  /// [LeaderboardEntry.score] holds efficiency basis points, not a raw
+  /// score — the SCORE stat is formatted as a percentage instead.
+  final bool isCombined;
 
   @override
   State<_PilotCardSheet> createState() => _PilotCardSheetState();
@@ -994,7 +999,15 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
               children: [
                 _StatColumn(label: 'RANK', value: '#${entry.rank}'),
                 Container(width: 1, height: 32, color: FlitColors.cardBorder),
-                _StatColumn(label: 'SCORE', value: '${entry.score}'),
+                // Combined-board scores are efficiency basis points, not raw
+                // points — show them as the percentage the board displays.
+                if (widget.isCombined)
+                  _StatColumn(
+                    label: 'EFFICIENCY',
+                    value: _formatCombinedPct(entry.score),
+                  )
+                else
+                  _StatColumn(label: 'SCORE', value: '${entry.score}'),
                 Container(width: 1, height: 32, color: FlitColors.cardBorder),
                 _StatColumn(label: 'TIME', value: _formatTime(entry.time)),
               ],
@@ -1034,9 +1047,12 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
                   'No round data',
                   style: TextStyle(color: FlitColors.textMuted, fontSize: 12),
                 ),
-          // Milestone progression
-          const SizedBox(height: 16),
-          _MilestoneBar(score: entry.score),
+          // Milestone progression (score-based — meaningless for the
+          // combined board's basis points, so hidden there).
+          if (!widget.isCombined) ...[
+            const SizedBox(height: 16),
+            _MilestoneBar(score: entry.score),
+          ],
           // Report button
           const SizedBox(height: 8),
           TextButton.icon(

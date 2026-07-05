@@ -33,6 +33,25 @@ class MatchResult {
   final String? poolEntryId;
 }
 
+/// A player's rating for one game mode.
+class RatingInfo {
+  const RatingInfo({
+    required this.rating,
+    required this.provisional,
+    this.gamesPlayed = 0,
+  });
+
+  /// The ELO rating.
+  final int rating;
+
+  /// True when the rating is an estimate (no `player_ratings` row yet, or
+  /// the ratings table isn't deployed) rather than a real tracked rating.
+  final bool provisional;
+
+  /// Rated games played in this mode (0 when provisional).
+  final int gamesPlayed;
+}
+
 /// Service for async challengerless matchmaking.
 ///
 /// Players submit completed rounds into a matchmaking pool. The system pairs
@@ -64,6 +83,42 @@ class MatchmakingService {
   /// This provides a rough skill bracket without requiring a full ELO system.
   static int estimateElo({required int level, int bestScore = 0}) {
     return 1000 + (level * 50) + (bestScore ~/ 20);
+  }
+
+  /// Fetch a player's real per-mode rating from `player_ratings`.
+  ///
+  /// Falls back to [estimateElo] (marked provisional) when the player has no
+  /// rating row yet or the table/RPC isn't deployed — the caller can label
+  /// the value accordingly and everything degrades to today's behaviour.
+  Future<RatingInfo> fetchRating({
+    required String userId,
+    required String gameMode,
+    int fallbackLevel = 1,
+    int fallbackBestScore = 0,
+  }) async {
+    try {
+      final row = await _client
+          .from('player_ratings')
+          .select('rating, games_played')
+          .eq('user_id', userId)
+          .eq('game_mode', gameMode)
+          .maybeSingle();
+      final rating = row?['rating'] as int?;
+      if (rating != null) {
+        return RatingInfo(
+          rating: rating,
+          provisional: false,
+          gamesPlayed: row?['games_played'] as int? ?? 0,
+        );
+      }
+    } catch (e) {
+      // Table not deployed yet or transient failure — provisional fallback.
+      debugPrint('[MatchmakingService] fetchRating failed: $e');
+    }
+    return RatingInfo(
+      rating: estimateElo(level: fallbackLevel, bestScore: fallbackBestScore),
+      provisional: true,
+    );
   }
 
   /// Calculate the ELO band width based on pool size.
@@ -184,6 +239,15 @@ class MatchmakingService {
       final matchedSeed = match['seed'] as String;
       final matchedRounds = match['rounds'] as List;
 
+      // 2b. Atomically claim the opponent's entry BEFORE creating the
+      //     challenge so two concurrent searchers can never both match the
+      //     same pool row. tri-state: true = claimed, false = lost the race,
+      //     null = RPC not deployed (fall back to the legacy blind update).
+      final claimed = await _tryClaimPoolEntry(matchedEntryId, null);
+      if (claimed == false) {
+        return const MatchResult(matched: false);
+      }
+
       // 3. Fetch the matched player's profile for their name.
       final profile = await _client
           .from('profiles')
@@ -252,12 +316,19 @@ class MatchmakingService {
         }).eq('id', myEntryId);
       }
 
-      // Mark the opponent's entry (RLS allows update when matched_at IS NULL).
-      await _client.from('matchmaking_pool').update({
-        'matched_at': now,
-        'matched_with': _userId,
-        'challenge_id': challengeId,
-      }).eq('id', matchedEntryId);
+      // Mark the opponent's entry. When the atomic claim succeeded, a second
+      // RPC call attaches the challenge id to the row we already claimed.
+      // When the RPC isn't deployed (claimed == null), use the legacy blind
+      // update (RLS allows update when matched_at IS NULL).
+      if (claimed == true) {
+        await _tryClaimPoolEntry(matchedEntryId, challengeId);
+      } else {
+        await _client.from('matchmaking_pool').update({
+          'matched_at': now,
+          'matched_with': _userId,
+          'challenge_id': challengeId,
+        }).eq('id', matchedEntryId);
+      }
 
       // 6. Auto-friend both players (fire-and-forget, ignore if already friends).
       _autoFriend(matchedUserId);
@@ -461,6 +532,31 @@ class MatchmakingService {
   // ---------------------------------------------------------------------------
   // Internal helpers
   // ---------------------------------------------------------------------------
+
+  /// Atomically claim (or attach a challenge to) a pool entry via the
+  /// `match_pool_entry` RPC.
+  ///
+  /// Returns true when the claim/attach succeeded, false when the entry was
+  /// already claimed by someone else, and null when the RPC isn't deployed —
+  /// callers treat null as "use the legacy non-atomic path".
+  Future<bool?> _tryClaimPoolEntry(String entryId, String? challengeId) async {
+    try {
+      final result = await _client.rpc<dynamic>(
+        'match_pool_entry',
+        params: {
+          'p_entry_id': entryId,
+          'p_challenge_id': challengeId,
+        },
+      );
+      return result == true;
+    } catch (e) {
+      debugPrint(
+        '[MatchmakingService] match_pool_entry RPC unavailable, '
+        'falling back to legacy update: $e',
+      );
+      return null;
+    }
+  }
 
   /// Stable FNV-1a hash that produces the same int on all platforms.
   ///

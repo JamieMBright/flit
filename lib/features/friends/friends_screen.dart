@@ -19,6 +19,7 @@ import '../../data/services/friends_service.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_session.dart';
 import '../avatar/avatar_widget.dart';
+import '../challenge/challenge_result_screen.dart';
 import '../guide/gameplay_guide_screen.dart';
 import '../play/play_screen.dart';
 import '../quiz/quiz_game_screen.dart';
@@ -56,6 +57,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   /// Per-friend challenge status derived from all active challenges.
   Map<String, _FriendChallengeInfo> _challengeInfoMap = {};
 
+  /// Recently completed challenges (most recent first).
+  List<Challenge> _recentChallenges = [];
+
   @override
   void initState() {
     super.initState();
@@ -90,6 +94,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       FriendsService.instance.fetchPendingRequests(),
       ChallengeService.instance.fetchAllActiveChallenges(),
       FriendsService.instance.fetchSentRequests(),
+      ChallengeService.instance.fetchRecentChallenges(limit: 10),
     ]);
 
     final friends = results[0] as List<Friend>;
@@ -110,6 +115,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           String? displayName,
           String? avatarUrl,
         })>;
+    final recentChallenges = results[4] as List<Challenge>;
 
     // Load H2H records for all friends in parallel.
     final h2hEntries = await Future.wait(
@@ -149,6 +155,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       _pendingRequests = pending;
       _sentRequests = sentRequests;
       _challengeInfoMap = infoMap;
+      _recentChallenges = recentChallenges;
       _loading = false;
     });
   }
@@ -309,10 +316,96 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                   }
                 }
               },
+              onDeclineChallenge: () {
+                final info = _challengeInfoMap[friend.playerId];
+                if (info != null) _declineIncomingChallenge(info.challenge);
+              },
             ),
+        ],
+        // Recent completed results — tap to view (and claim any unclaimed
+        // coins on the result screen).
+        if (_recentChallenges.isNotEmpty) ...[
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(
+              'RECENT RESULTS',
+              style: TextStyle(
+                color: FlitColors.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          for (final challenge in _recentChallenges)
+            _RecentResultTile(
+              challenge: challenge,
+              onTap: () => _openChallengeResult(challenge),
+            ),
+          const SizedBox(height: 8),
         ],
       ],
     );
+  }
+
+  /// Open the full result screen for a completed challenge.
+  void _openChallengeResult(Challenge challenge) {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChallengeResultScreen(
+          challenge: challenge,
+          isChallenger: challenge.challengerId == userId,
+        ),
+      ),
+    );
+  }
+
+  /// Decline an incoming pending challenge (with confirmation).
+  Future<void> _declineIncomingChallenge(Challenge challenge) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Decline challenge?',
+          style: TextStyle(color: FlitColors.textPrimary, fontSize: 18),
+        ),
+        content: Text(
+          'Decline the challenge from ${challenge.challengerName}?',
+          style: const TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: FlitColors.textMuted),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text(
+              'Decline',
+              style: TextStyle(color: FlitColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final ok = await ChallengeService.instance.declineChallenge(challenge.id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? 'Challenge declined' : 'Failed to decline'),
+        backgroundColor: ok ? FlitColors.textMuted : FlitColors.error,
+      ),
+    );
+    if (ok) _loadData();
   }
 
   // ---------------------------------------------------------------------------
@@ -1282,6 +1375,7 @@ class _FriendTile extends StatefulWidget {
     required this.onChallenge,
     required this.onViewProfile,
     required this.onPlayChallenge,
+    required this.onDeclineChallenge,
   });
 
   final Friend friend;
@@ -1290,6 +1384,7 @@ class _FriendTile extends StatefulWidget {
   final VoidCallback onChallenge;
   final VoidCallback onViewProfile;
   final VoidCallback onPlayChallenge;
+  final VoidCallback onDeclineChallenge;
 
   @override
   State<_FriendTile> createState() => _FriendTileState();
@@ -1503,6 +1598,7 @@ class _FriendTileState extends State<_FriendTile> {
                     info: widget.challengeInfo,
                     onChallenge: widget.onChallenge,
                     onPlay: widget.onPlayChallenge,
+                    onDecline: widget.onDeclineChallenge,
                   ),
                 ],
               ),
@@ -1905,11 +2001,15 @@ class _ChallengeStatusBadge extends StatelessWidget {
     this.info,
     required this.onChallenge,
     required this.onPlay,
+    this.onDecline,
   });
 
   final _FriendChallengeInfo? info;
   final VoidCallback onChallenge;
   final VoidCallback onPlay;
+
+  /// Shown as a small dismiss affordance on incoming pending challenges.
+  final VoidCallback? onDecline;
 
   /// Whether the active challenge is a quiz (Flight School) mode.
   bool get _isQuizChallenge =>
@@ -1937,11 +2037,42 @@ class _ChallengeStatusBadge extends StatelessWidget {
           onTap: onPlay,
         );
       case _FriendChallengeStatus.received:
-        badge = _tappableBadge(
-          label: 'CHALLENGE',
-          icon: _modeIcon,
-          color: FlitColors.accent,
-          onTap: onPlay,
+        // Incoming pending challenge: play it, or decline via the small "x".
+        badge = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _tappableBadge(
+              label: 'CHALLENGE',
+              icon: _modeIcon,
+              color: FlitColors.accent,
+              onTap: onPlay,
+            ),
+            if (onDecline != null) ...[
+              const SizedBox(width: 4),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onDecline,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: FlitColors.error.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: FlitColors.error.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: FlitColors.error,
+                      size: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
         );
       case _FriendChallengeStatus.theirTurn:
         badge = _staticBadge(label: 'THEIR TURN', color: FlitColors.gold);
@@ -2030,6 +2161,139 @@ class _ChallengeStatusBadge extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Recent result tile (compact completed-challenge row)
+// =============================================================================
+
+class _RecentResultTile extends StatelessWidget {
+  const _RecentResultTile({required this.challenge, required this.onTap});
+
+  final Challenge challenge;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    final isChallenger = challenge.challengerId == userId;
+    final opponentName =
+        isChallenger ? challenge.challengedName : challenge.challengerName;
+
+    final isDraw = challenge.winnerId == null;
+    final won = !isDraw && challenge.winnerId == userId;
+    final resultLabel = isDraw ? 'DRAW' : (won ? 'WIN' : 'LOSS');
+    final resultColor = isDraw
+        ? FlitColors.textSecondary
+        : (won ? FlitColors.success : FlitColors.error);
+
+    final isQuiz = challenge.gameMode == ChallengeGameMode.quiz;
+
+    // Quiz: single-round score comparison. Flight: round wins.
+    String scoreLabel;
+    if (isQuiz && challenge.rounds.isNotEmpty) {
+      final round = challenge.rounds.first;
+      final myScore =
+          isChallenger ? round.challengerScore : round.challengedScore;
+      final theirScore =
+          isChallenger ? round.challengedScore : round.challengerScore;
+      scoreLabel = '${myScore ?? '-'} – ${theirScore ?? '-'}';
+    } else {
+      final myWins =
+          isChallenger ? challenge.challengerWins : challenge.challengedWins;
+      final theirWins =
+          isChallenger ? challenge.challengedWins : challenge.challengerWins;
+      scoreLabel = '$myWins – $theirWins';
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      decoration: BoxDecoration(
+        color: FlitColors.cardBackground,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: FlitColors.cardBorder),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Icon(
+                  isQuiz ? Icons.quiz_rounded : Icons.flight_takeoff,
+                  color: FlitColors.textMuted,
+                  size: 18,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'vs $opponentName',
+                        style: const TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        isQuiz ? 'Flight School' : 'Dogfight',
+                        style: const TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  scoreLabel,
+                  style: const TextStyle(
+                    color: FlitColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: resultColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
+                    border:
+                        Border.all(color: resultColor.withValues(alpha: 0.35)),
+                  ),
+                  child: Text(
+                    resultLabel,
+                    style: TextStyle(
+                      color: resultColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.chevron_right,
+                  color: FlitColors.textMuted,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

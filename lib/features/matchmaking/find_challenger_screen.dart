@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
@@ -59,6 +60,10 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
   late final AnimationController _pulseController;
   bool _cancelling = false;
 
+  /// The player's real per-mode rating (provisional estimate until the
+  /// ratings table returns a row).
+  RatingInfo? _rating;
+
   @override
   void initState() {
     super.initState();
@@ -67,6 +72,35 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
     _loadPoolEntries();
+    _loadRating();
+  }
+
+  /// Fetch the real rating from player_ratings, falling back to the
+  /// estimated (provisional) rating when no row exists yet.
+  Future<void> _loadRating() async {
+    final player = ref.read(accountProvider).currentPlayer;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+    final rating = await MatchmakingService.instance.fetchRating(
+      userId: userId,
+      gameMode: 'flight',
+      fallbackLevel: player.level,
+      fallbackBestScore: player.bestScore ?? 0,
+    );
+    if (!mounted) return;
+    setState(() => _rating = rating);
+  }
+
+  /// The rating to use for pool submission and band matching — the real
+  /// rating when present, the estimate otherwise.
+  int _currentElo() {
+    final rating = _rating;
+    if (rating != null) return rating.rating;
+    final player = ref.read(accountProvider).currentPlayer;
+    return MatchmakingService.estimateElo(
+      level: player.level,
+      bestScore: player.bestScore ?? 0,
+    );
   }
 
   @override
@@ -92,11 +126,8 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
     final account = ref.read(accountProvider);
     final player = account.currentPlayer;
 
-    // Estimate ELO from player stats.
-    final elo = MatchmakingService.estimateElo(
-      level: player.level,
-      bestScore: player.bestScore ?? 0,
-    );
+    // Real per-mode rating when tracked, estimate otherwise.
+    final elo = _currentElo();
 
     final playerName = player.name;
 
@@ -171,10 +202,7 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
     // Phase 2: Actively search for a new opponent.
     final account = ref.read(accountProvider);
     final player = account.currentPlayer;
-    final elo = MatchmakingService.estimateElo(
-      level: player.level,
-      bestScore: player.bestScore ?? 0,
-    );
+    final elo = _currentElo();
 
     final result = await MatchmakingService.instance.findMatch(
       eloRating: elo,
@@ -308,10 +336,8 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
   Widget build(BuildContext context) {
     final account = ref.watch(accountProvider);
     final player = account.currentPlayer;
-    final elo = MatchmakingService.estimateElo(
-      level: player.level,
-      bestScore: player.bestScore ?? 0,
-    );
+    final elo = _currentElo();
+    final provisional = _rating?.provisional ?? true;
 
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
@@ -348,7 +374,8 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
               children: [
                 const SizedBox(height: 24),
                 // Player ELO card
-                _EloCard(elo: elo, level: player.level),
+                _EloCard(
+                    elo: elo, level: player.level, provisional: provisional),
                 const SizedBox(height: 24),
                 // Main action area
                 Expanded(child: _buildStateContent()),
@@ -411,10 +438,17 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
 // =============================================================================
 
 class _EloCard extends StatelessWidget {
-  const _EloCard({required this.elo, required this.level});
+  const _EloCard({
+    required this.elo,
+    required this.level,
+    this.provisional = false,
+  });
 
   final int elo;
   final int level;
+
+  /// True when the rating is an estimate rather than a tracked rating.
+  final bool provisional;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -454,13 +488,38 @@ class _EloCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    '$elo ELO',
-                    style: const TextStyle(
-                      color: FlitColors.textPrimary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        '$elo ELO',
+                        style: const TextStyle(
+                          color: FlitColors.textPrimary,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      if (provisional) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: FlitColors.textMuted.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'provisional',
+                            style: TextStyle(
+                              color: FlitColors.textMuted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),

@@ -15,6 +15,7 @@ import '../../data/services/app_config_service.dart';
 import '../../data/services/challenge_service.dart';
 import '../../data/services/feature_flag_service.dart';
 import '../../data/services/friends_service.dart';
+import '../../data/services/matchmaking_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../admin/admin_screen.dart';
 import '../daily/daily_challenge_screen.dart';
@@ -1335,14 +1336,21 @@ class _FriendsMenuTileState extends State<_FriendsMenuTile>
 
   Future<void> _fetchNotifications() async {
     try {
-      final results = await Future.wait([
+      final results = await Future.wait<dynamic>([
         FriendsService.instance.fetchPendingRequests(),
         ChallengeService.instance.fetchPendingChallenges(),
         ChallengeService.instance.fetchAllActiveChallenges(),
+        ChallengeService.instance.fetchPendingH2HChallenges(),
+        MatchmakingService.instance.checkForExistingMatches(),
       ]);
       if (!mounted) return;
       final pendingFriends = (results[0] as List).length;
       final pendingChallenges = (results[1] as List).length;
+      final pendingH2H = (results[3] as List).length;
+
+      // A passive matchmaking match found while the player was away.
+      final passiveMatch = results[4] as MatchResult;
+      final passiveMatchCount = passiveMatch.matched ? 1 : 0;
 
       // Count in-progress challenges where it's the user's turn.
       final userId = Supabase.instance.client.auth.currentUser?.id;
@@ -1360,7 +1368,11 @@ class _FriendsMenuTileState extends State<_FriendsMenuTile>
         }
       }
 
-      final total = pendingFriends + pendingChallenges + yourTurnCount;
+      final total = pendingFriends +
+          pendingChallenges +
+          pendingH2H +
+          yourTurnCount +
+          passiveMatchCount;
       setState(() => _notificationCount = total);
       if (total > 0 && !_glowController.isAnimating) {
         _glowController.repeat(reverse: true);

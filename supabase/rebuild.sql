@@ -465,10 +465,11 @@ CREATE TABLE IF NOT EXISTS public.challenges (
   status           TEXT NOT NULL DEFAULT 'pending'
                      CHECK (status IN ('pending', 'in_progress', 'completed', 'expired', 'declined')),
   game_mode        TEXT NOT NULL DEFAULT 'flight'
-                     CHECK (game_mode IN ('flight', 'quiz')),
+                     CHECK (game_mode IN ('flight', 'quiz', 'recon', 'scramble')),
   quiz_category    TEXT,
   quiz_mode        TEXT,
   rounds           JSONB NOT NULL DEFAULT '[]',
+  rounds_config    JSONB,
   winner_id        UUID REFERENCES auth.users(id),
   challenger_coins INT NOT NULL DEFAULT 0,
   challenged_coins INT NOT NULL DEFAULT 0,
@@ -542,6 +543,212 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.claim_challenge_coins(UUID) TO authenticated;
 
+-- Mode-agnostic columns (see migrations/20260705_challenge_modes.sql).
+ALTER TABLE public.challenges
+  ADD COLUMN IF NOT EXISTS rounds_config JSONB;
+
+-- Atomic round submission (see migrations/20260705_challenge_modes.sql).
+-- Merges p_result into rounds[p_round_number - 1] under a row lock so two
+-- players submitting concurrently can never drop each other's results.
+CREATE OR REPLACE FUNCTION public.submit_challenge_round(
+  p_challenge_id UUID,
+  p_round_number INT,
+  p_is_challenger BOOLEAN,
+  p_result JSONB
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_rounds JSONB;
+  v_round JSONB;
+  v_merged JSONB;
+  v_idx INT;
+BEGIN
+  SELECT rounds INTO v_rounds
+  FROM public.challenges
+  WHERE id = p_challenge_id
+    AND ((p_is_challenger AND challenger_id = auth.uid())
+      OR (NOT p_is_challenger AND challenged_id = auth.uid()))
+  FOR UPDATE;
+
+  IF v_rounds IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  v_idx := p_round_number - 1;
+  IF v_idx < 0 OR v_idx >= jsonb_array_length(v_rounds) THEN
+    RETURN FALSE;
+  END IF;
+
+  v_round := v_rounds -> v_idx;
+  v_merged := p_result;
+
+  -- Shared round metadata: first submitter wins.
+  IF v_round ? 'clue_type' THEN
+    v_merged := v_merged - 'clue_type';
+  END IF;
+  IF v_round ? 'country_name' THEN
+    v_merged := v_merged - 'country_name';
+  END IF;
+
+  v_rounds := jsonb_set(v_rounds, ARRAY[v_idx::text], v_round || v_merged);
+
+  UPDATE public.challenges
+  SET rounds = v_rounds,
+      status = CASE WHEN status = 'pending' THEN 'in_progress' ELSE status END
+  WHERE id = p_challenge_id;
+
+  RETURN TRUE;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.submit_challenge_round(UUID, INT, BOOLEAN, JSONB) TO authenticated;
+
+
+-- ---------------------------------------------------------------------------
+-- 7b. PLAYER_RATINGS — per-mode ELO ratings
+-- (see migrations/20260705_player_ratings.sql)
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS public.player_ratings (
+  user_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  game_mode    TEXT NOT NULL,
+  rating       INT NOT NULL DEFAULT 1000,
+  games_played INT NOT NULL DEFAULT 0,
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, game_mode)
+);
+
+CREATE INDEX IF NOT EXISTS idx_player_ratings_mode_rating
+  ON public.player_ratings (game_mode, rating DESC);
+
+ALTER TABLE public.player_ratings ENABLE ROW LEVEL SECURITY;
+
+-- Public read; no write policies — writes happen only via SECURITY DEFINER RPC.
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'player_ratings' AND policyname = 'Ratings are publicly readable'
+  ) THEN
+    CREATE POLICY "Ratings are publicly readable"
+      ON public.player_ratings FOR SELECT USING (true);
+  END IF;
+END $$;
+
+-- Idempotency marker for apply_challenge_rating.
+ALTER TABLE public.challenges
+  ADD COLUMN IF NOT EXISTS rating_applied_at TIMESTAMPTZ;
+
+-- Fetch (or cold-start) a player's rating row for a mode. Cold start mirrors
+-- the client's Elo.coldStartRating: 1000 + level*50 + best_score/20, [800,2000].
+CREATE OR REPLACE FUNCTION public._get_or_seed_rating(p_user_id UUID, p_game_mode TEXT)
+RETURNS INT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_rating INT;
+  v_level INT;
+  v_best INT;
+BEGIN
+  SELECT rating INTO v_rating
+  FROM public.player_ratings
+  WHERE user_id = p_user_id AND game_mode = p_game_mode;
+
+  IF v_rating IS NOT NULL THEN
+    RETURN v_rating;
+  END IF;
+
+  SELECT COALESCE(level, 1), COALESCE(best_score, 0)
+  INTO v_level, v_best
+  FROM public.profiles
+  WHERE id = p_user_id;
+
+  v_rating := LEAST(2000, GREATEST(800,
+    1000 + COALESCE(v_level, 1) * 50 + COALESCE(v_best, 0) / 20));
+
+  INSERT INTO public.player_ratings (user_id, game_mode, rating, games_played)
+  VALUES (p_user_id, p_game_mode, v_rating, 0)
+  ON CONFLICT (user_id, game_mode) DO NOTHING;
+
+  SELECT rating INTO v_rating
+  FROM public.player_ratings
+  WHERE user_id = p_user_id AND game_mode = p_game_mode;
+
+  RETURN v_rating;
+END;
+$$;
+
+-- Apply the ELO rating change for a completed challenge (K = 32, draws 0.5).
+-- Idempotent via rating_applied_at + row lock; callable by either participant.
+CREATE OR REPLACE FUNCTION public.apply_challenge_rating(p_challenge_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_challenger UUID;
+  v_challenged UUID;
+  v_winner UUID;
+  v_mode TEXT;
+  v_r_challenger INT;
+  v_r_challenged INT;
+  v_score_challenger NUMERIC;
+  v_expected NUMERIC;
+  v_delta INT;
+BEGIN
+  SELECT challenger_id, challenged_id, winner_id, COALESCE(game_mode, 'flight')
+  INTO v_challenger, v_challenged, v_winner, v_mode
+  FROM public.challenges
+  WHERE id = p_challenge_id
+    AND status = 'completed'
+    AND rating_applied_at IS NULL
+    AND (challenger_id = auth.uid() OR challenged_id = auth.uid())
+  FOR UPDATE;
+
+  IF v_challenger IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  v_r_challenger := public._get_or_seed_rating(v_challenger, v_mode);
+  v_r_challenged := public._get_or_seed_rating(v_challenged, v_mode);
+
+  v_score_challenger := CASE
+    WHEN v_winner = v_challenger THEN 1
+    WHEN v_winner = v_challenged THEN 0
+    ELSE 0.5
+  END;
+
+  v_expected := 1 / (1 + power(10, (v_r_challenged - v_r_challenger) / 400.0));
+  v_delta := round(32 * (v_score_challenger - v_expected));
+
+  UPDATE public.player_ratings
+  SET rating = rating + v_delta,
+      games_played = games_played + 1,
+      updated_at = NOW()
+  WHERE user_id = v_challenger AND game_mode = v_mode;
+
+  UPDATE public.player_ratings
+  SET rating = rating - v_delta,
+      games_played = games_played + 1,
+      updated_at = NOW()
+  WHERE user_id = v_challenged AND game_mode = v_mode;
+
+  UPDATE public.challenges
+  SET rating_applied_at = NOW()
+  WHERE id = p_challenge_id;
+
+  RETURN TRUE;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.apply_challenge_rating(UUID) TO authenticated;
+
 
 -- ---------------------------------------------------------------------------
 -- 8. MATCHMAKING_POOL — async challengerless matchmaking
@@ -552,7 +759,7 @@ CREATE TABLE IF NOT EXISTS public.matchmaking_pool (
   user_id           UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   region            TEXT NOT NULL DEFAULT 'world',
   game_mode         TEXT NOT NULL DEFAULT 'flight'
-                      CHECK (game_mode IN ('flight', 'quiz')),
+                      CHECK (game_mode IN ('flight', 'quiz', 'recon', 'scramble')),
   seed              TEXT NOT NULL,
   rounds            JSONB NOT NULL DEFAULT '[]',
   elo_rating        INT NOT NULL,
@@ -608,6 +815,38 @@ DO $$ BEGIN
       USING (true);
   END IF;
 END $$;
+
+-- Atomic pool claim (see migrations/20260705_challenge_modes.sql). The
+-- matched_at IS NULL guard means two concurrent searchers race on the row
+-- lock and only one claim succeeds. A second call by the same claimer with a
+-- non-null p_challenge_id attaches the challenge id to the claimed row.
+CREATE OR REPLACE FUNCTION public.match_pool_entry(
+  p_entry_id UUID,
+  p_challenge_id UUID
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_id UUID;
+BEGIN
+  UPDATE public.matchmaking_pool
+  SET matched_at = COALESCE(matched_at, NOW()),
+      matched_with = auth.uid(),
+      challenge_id = COALESCE(p_challenge_id, challenge_id)
+  WHERE id = p_entry_id
+    AND user_id <> auth.uid()
+    AND (matched_at IS NULL
+      OR (matched_with = auth.uid() AND challenge_id IS NULL))
+  RETURNING id INTO v_id;
+
+  RETURN v_id IS NOT NULL;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.match_pool_entry(UUID, UUID) TO authenticated;
 
 
 -- ---------------------------------------------------------------------------
@@ -1782,6 +2021,48 @@ DO $$ BEGIN
       USING (auth.uid() = challenger_id OR auth.uid() = challenged_id);
   END IF;
 END $$;
+
+-- H2H coin-claim tracking (see migrations/20260705_h2h_coin_claims.sql).
+-- Reward constants live client-side; the RPC returns TRUE exactly once per
+-- player per completed challenge and the client credits the coins.
+ALTER TABLE public.h2h_challenges
+  ADD COLUMN IF NOT EXISTS challenger_claimed_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS challenged_claimed_at TIMESTAMPTZ;
+
+CREATE OR REPLACE FUNCTION public.claim_h2h_coins(p_challenge_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_claimed BOOLEAN;
+BEGIN
+  UPDATE public.h2h_challenges
+  SET challenger_claimed_at = NOW()
+  WHERE id = p_challenge_id
+    AND status = 'completed'
+    AND challenger_id = auth.uid()
+    AND challenger_claimed_at IS NULL
+  RETURNING TRUE INTO v_claimed;
+
+  IF v_claimed THEN
+    RETURN TRUE;
+  END IF;
+
+  UPDATE public.h2h_challenges
+  SET challenged_claimed_at = NOW()
+  WHERE id = p_challenge_id
+    AND status = 'completed'
+    AND challenged_id = auth.uid()
+    AND challenged_claimed_at IS NULL
+  RETURNING TRUE INTO v_claimed;
+
+  RETURN COALESCE(v_claimed, FALSE);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.claim_h2h_coins(UUID) TO authenticated;
 
 -- Daily Flight Briefing scores
 CREATE TABLE IF NOT EXISTS public.daily_briefing_scores (
