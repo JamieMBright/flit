@@ -15,6 +15,11 @@ class Friend {
     this.status = FriendshipStatus.accepted,
     this.isOnline = false,
     this.lastSeen,
+    this.level = 1,
+    this.gamesPlayed = 0,
+    this.bestScore = 0,
+    this.bestStreak = 0,
+    this.licenseData,
   });
 
   final String id;
@@ -26,6 +31,17 @@ class Friend {
   final FriendshipStatus status;
   final bool isOnline;
   final DateTime? lastSeen;
+
+  /// Public profile stats (profiles table) for the enriched profile view.
+  final int level;
+  final int gamesPlayed;
+  final int bestScore;
+
+  /// Longest streak of consecutive correct answers ever achieved.
+  final int bestStreak;
+
+  /// Raw pilot-license JSON from account_state.license_data, if fetched.
+  final Map<String, dynamic>? licenseData;
 
   String get name => displayName ?? username;
 
@@ -39,6 +55,11 @@ class Friend {
         'status': status.name,
         'is_online': isOnline,
         'last_seen': lastSeen?.toIso8601String(),
+        'level': level,
+        'games_played': gamesPlayed,
+        'best_score': bestScore,
+        'best_streak': bestStreak,
+        if (licenseData != null) 'license_data': licenseData,
       };
 
   factory Friend.fromJson(Map<String, dynamic> json) => Friend(
@@ -59,6 +80,11 @@ class Friend {
         lastSeen: json['last_seen'] != null
             ? DateTime.parse(json['last_seen'] as String)
             : null,
+        level: json['level'] as int? ?? 1,
+        gamesPlayed: json['games_played'] as int? ?? 0,
+        bestScore: json['best_score'] as int? ?? 0,
+        bestStreak: json['best_streak'] as int? ?? 0,
+        licenseData: json['license_data'] as Map<String, dynamic>?,
       );
 }
 

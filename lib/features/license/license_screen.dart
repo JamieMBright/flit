@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/aviation_rank.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/theme/rarity_colors.dart';
@@ -36,17 +37,6 @@ Color _statColor(int value) {
 }
 
 /// Aviation rank title for player level (mirrors profile_screen).
-String _aviationRankTitle(int level) {
-  if (level >= 50) return 'Air Marshal';
-  if (level >= 40) return 'Wing Commander';
-  if (level >= 30) return 'Squadron Leader';
-  if (level >= 20) return 'Flight Lieutenant';
-  if (level >= 15) return 'Captain';
-  if (level >= 10) return 'First Officer';
-  if (level >= 5) return 'Pilot Officer';
-  if (level >= 3) return 'Cadet';
-  return 'Trainee';
-}
 
 // =============================================================================
 // LicenseScreen
@@ -328,7 +318,7 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
     final avatarConfig = ref.watch(avatarProvider);
     final equippedPlaneId = ref.watch(equippedPlaneIdProvider);
     final equippedPlane = CosmeticCatalog.getById(equippedPlaneId);
-    final rank = _aviationRankTitle(player.level);
+    final rank = aviationRank(player.level).title;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

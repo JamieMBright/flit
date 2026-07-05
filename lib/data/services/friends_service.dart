@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/avatar_config.dart';
 import '../models/friend.dart';
 import 'ttl_cache.dart';
 
@@ -251,18 +252,22 @@ class FriendsService {
     if (cached != null) return cached;
 
     try {
-      // Fetch friendships where current user is either party and status is accepted.
+      // Fetch friendships where current user is either party and status is
+      // accepted, with the public profile stats for the profile sheet.
+      const profileCols =
+          'id, username, display_name, avatar_url, level, games_played, '
+          'best_score, best_streak';
       final data = await _client
           .from('friendships')
           .select(
             'id, requester_id, addressee_id, status, created_at, '
-            'requester:profiles!fk_friendships_requester_profiles(id, username, display_name, avatar_url), '
-            'addressee:profiles!fk_friendships_addressee_profiles(id, username, display_name, avatar_url)',
+            'requester:profiles!fk_friendships_requester_profiles($profileCols), '
+            'addressee:profiles!fk_friendships_addressee_profiles($profileCols)',
           )
           .eq('status', 'accepted')
           .or('requester_id.eq.$_userId,addressee_id.eq.$_userId');
 
-      final result = data.map<Friend>((row) {
+      var result = data.map<Friend>((row) {
         // The "friend" is whichever party isn't the current user.
         final isRequester = row['requester_id'] == _userId;
         final profile = (isRequester ? row['addressee'] : row['requester'])
@@ -274,14 +279,68 @@ class FriendsService {
           displayName: profile['display_name'] as String?,
           avatarUrl: profile['avatar_url'] as String?,
           status: FriendshipStatus.accepted,
+          level: profile['level'] as int? ?? 1,
+          gamesPlayed: profile['games_played'] as int? ?? 0,
+          bestScore: profile['best_score'] as int? ?? 0,
+          bestStreak: profile['best_streak'] as int? ?? 0,
         );
       }).toList();
 
+      result = await _attachAccountState(result);
       _friendsCache.set(cacheKey, result);
       return result;
     } catch (e) {
       debugPrint('[FriendsService] fetchFriends failed: $e');
       return [];
+    }
+  }
+
+  /// Batch-fetch avatar configs and license data from account_state (both
+  /// publicly readable, same pattern the leaderboard uses) so friends show
+  /// their real composed avatar and pilot license instead of fallbacks.
+  Future<List<Friend>> _attachAccountState(List<Friend> friends) async {
+    if (friends.isEmpty) return friends;
+    try {
+      final ids = friends.map((f) => f.playerId).toSet().toList();
+      final rows = await _client
+          .from('account_state')
+          .select('user_id, avatar_config, license_data')
+          .inFilter('user_id', ids);
+      final byId = {
+        for (final row in rows) row['user_id'] as String: row,
+      };
+      return [
+        for (final f in friends)
+          () {
+            final row = byId[f.playerId];
+            if (row == null) return f;
+            final avatarJson = row['avatar_config'];
+            final licenseJson = row['license_data'];
+            return Friend(
+              id: f.id,
+              playerId: f.playerId,
+              username: f.username,
+              displayName: f.displayName,
+              avatarUrl: f.avatarUrl,
+              avatarConfig: avatarJson is Map<String, dynamic>
+                  ? AvatarConfig.fromJson(avatarJson)
+                  : null,
+              status: f.status,
+              isOnline: f.isOnline,
+              lastSeen: f.lastSeen,
+              level: f.level,
+              gamesPlayed: f.gamesPlayed,
+              bestScore: f.bestScore,
+              bestStreak: f.bestStreak,
+              licenseData:
+                  licenseJson is Map<String, dynamic> ? licenseJson : null,
+            );
+          }(),
+      ];
+    } catch (e) {
+      // Enrichment is best-effort — the base friend list still works.
+      debugPrint('[FriendsService] account_state enrichment failed: $e');
+      return friends;
     }
   }
 

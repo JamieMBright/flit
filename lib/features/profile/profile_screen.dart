@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/utils/aviation_rank.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/web_download.dart';
 import '../../core/widgets/country_flag.dart';
@@ -24,33 +25,6 @@ import '../../data/services/leaderboard_service.dart';
 import '../../game/data/country_difficulty.dart';
 
 /// Aviation rank title and icon for player level.
-({String title, IconData icon}) _aviationRank(int level) {
-  if (level >= 50) {
-    return (title: 'Air Marshal', icon: Icons.stars);
-  }
-  if (level >= 40) {
-    return (title: 'Wing Commander', icon: Icons.military_tech);
-  }
-  if (level >= 30) {
-    return (title: 'Squadron Leader', icon: Icons.shield);
-  }
-  if (level >= 20) {
-    return (title: 'Flight Lieutenant', icon: Icons.workspace_premium);
-  }
-  if (level >= 15) {
-    return (title: 'Captain', icon: Icons.anchor);
-  }
-  if (level >= 10) {
-    return (title: 'First Officer', icon: Icons.flight);
-  }
-  if (level >= 5) {
-    return (title: 'Pilot Officer', icon: Icons.flight_takeoff);
-  }
-  if (level >= 3) {
-    return (title: 'Cadet', icon: Icons.school);
-  }
-  return (title: 'Trainee', icon: Icons.person);
-}
 
 /// Profile screen showing player stats and settings.
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -852,13 +826,13 @@ class _LevelProgress extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      _aviationRank(player.level).icon,
+                      aviationRank(player.level).icon,
                       color: FlitColors.gold,
                       size: 20,
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      _aviationRank(player.level).title,
+                      aviationRank(player.level).title,
                       style: const TextStyle(
                         color: FlitColors.gold,
                         fontSize: 14,
