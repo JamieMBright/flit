@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:math' as math;
 
-import 'package:flame/components.dart' show Vector2;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +9,7 @@ import '../../core/theme/flit_colors.dart';
 import '../../core/utils/haptics.dart';
 import '../../core/widgets/country_flag.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
+import '../../core/widgets/reveal_map.dart';
 import '../../data/models/daily_result.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/clues/clue_types.dart';
@@ -614,7 +613,7 @@ class _StatusBar extends StatelessWidget {
 // Round result: answer revealed on a map
 // ─────────────────────────────────────────────────────────────────────────
 
-class _RoundResultView extends StatefulWidget {
+class _RoundResultView extends StatelessWidget {
   const _RoundResultView({
     required this.state,
     required this.isLastRound,
@@ -628,38 +627,7 @@ class _RoundResultView extends StatefulWidget {
   final VoidCallback onContinue;
 
   @override
-  State<_RoundResultView> createState() => _RoundResultViewState();
-}
-
-class _RoundResultViewState extends State<_RoundResultView> {
-  /// Drives the reveal map's pinch-zoom/pan; the current zoom feeds back
-  /// into the painter so markers keep a constant on-screen size.
-  final TransformationController _mapController = TransformationController();
-  double _mapZoom = 1;
-
-  @override
-  void initState() {
-    super.initState();
-    _mapController.addListener(_onMapTransform);
-  }
-
-  void _onMapTransform() {
-    final zoom = _mapController.value.getMaxScaleOnAxis();
-    if ((zoom - _mapZoom).abs() > 0.01) setState(() => _mapZoom = zoom);
-  }
-
-  @override
-  void dispose() {
-    _mapController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final state = widget.state;
-    final isLastRound = widget.isLastRound;
-    final isCapitalTarget = widget.isCapitalTarget;
-    final onContinue = widget.onContinue;
     final round = state.round;
     return Column(
       children: [
@@ -716,83 +684,16 @@ class _RoundResultViewState extends State<_RoundResultView> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // The reveal: world map with the target and every guess.
-                // Pinch to zoom / drag to pan for a closer look at
-                // clustered markers.
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    color: FlitColors.backgroundMid,
-                    child: AspectRatio(
-                      aspectRatio: 2,
-                      child: InteractiveViewer(
-                        transformationController: _mapController,
-                        maxScale: 12,
-                        child: CustomPaint(
-                          painter: _ResultMapPainter(
-                            targetLngLat: round.targetCapitalLngLat,
-                            guesses: state.wrongGuesses,
-                            clues: round.clues,
-                            zoom: _mapZoom,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Map legend.
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.star, color: FlitColors.gold, size: 13),
-                    const SizedBox(width: 3),
-                    const Text(
-                      'answer',
-                      style: TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 11,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Icon(
-                      Icons.circle_outlined,
-                      color: FlitColors.accent,
-                      size: 11,
-                    ),
-                    const SizedBox(width: 3),
-                    const Text(
-                      'clues',
-                      style: TextStyle(
-                        color: FlitColors.textMuted,
-                        fontSize: 11,
-                      ),
-                    ),
-                    if (state.wrongGuesses.isNotEmpty) ...[
-                      const SizedBox(width: 12),
-                      const Icon(
-                        Icons.circle,
-                        color: FlitColors.error,
-                        size: 11,
-                      ),
-                      const SizedBox(width: 3),
-                      const Text(
-                        'your guesses',
-                        style: TextStyle(
-                          color: FlitColors.textMuted,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
+                // The reveal: shared world map with the target, the
+                // original clue anchors, and every wrong guess.
+                RevealMap(
+                  targetLngLat: round.targetCapitalLngLat,
+                  clueLngLats: [
+                    for (final c in round.clues) c.capitalLngLat,
                   ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'pinch to zoom · drag to pan',
-                  style: TextStyle(
-                    color: FlitColors.textMuted.withOpacity(0.7),
-                    fontSize: 10,
-                  ),
+                  guessLngLats: [
+                    for (final g in state.wrongGuesses) g.capitalLngLat,
+                  ],
                 ),
                 const SizedBox(height: 8),
                 if (state.wrongGuesses.isNotEmpty)
@@ -886,128 +787,6 @@ class _RoundResultViewState extends State<_RoundResultView> {
       ],
     );
   }
-}
-
-/// Equirectangular world map with the target capital (gold star), each
-/// wrong guess (red dot), and the round's original clue anchors (accent
-/// ringed dots) so the reveal shows the full triangulation picture.
-///
-/// [zoom] is the InteractiveViewer's current scale; markers and line
-/// widths are divided by it so they keep a constant on-screen size while
-/// the map itself zooms.
-class _ResultMapPainter extends CustomPainter {
-  _ResultMapPainter({
-    required this.targetLngLat,
-    required this.guesses,
-    required this.clues,
-    this.zoom = 1,
-  });
-
-  final Vector2 targetLngLat;
-  final List<TriangulationGuess> guesses;
-  final List<TriangulationClue> clues;
-  final double zoom;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final z = zoom.clamp(1.0, 100.0);
-    final landPaint = Paint()..color = FlitColors.landMass.withOpacity(0.45);
-    final borderPaint = Paint()
-      ..color = FlitColors.border.withOpacity(0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.6 / z;
-
-    Offset project(double lng, double lat) => Offset(
-          (lng + 180) / 360 * size.width,
-          (90 - lat) / 180 * size.height,
-        );
-
-    for (final country in CountryData.countries) {
-      for (final poly in country.polygons) {
-        if (poly.length < 3) continue;
-        final path = Path();
-        for (var i = 0; i < poly.length; i++) {
-          final pt = project(poly[i].x, poly[i].y);
-          if (i == 0) {
-            path.moveTo(pt.dx, pt.dy);
-          } else {
-            path.lineTo(pt.dx, pt.dy);
-          }
-        }
-        path.close();
-        canvas.drawPath(path, landPaint);
-        canvas.drawPath(path, borderPaint);
-      }
-    }
-
-    final target = project(targetLngLat.x, targetLngLat.y);
-
-    // Original clue anchors: accent ringed dots with a faint line to the
-    // target, so the reveal shows what the arrows were pointing at.
-    for (final clue in clues) {
-      final pos = project(clue.capitalLngLat.x, clue.capitalLngLat.y);
-      canvas.drawLine(
-        pos,
-        target,
-        Paint()
-          ..color = FlitColors.textSecondary.withOpacity(0.3)
-          ..strokeWidth = 0.8 / z,
-      );
-      canvas.drawCircle(
-        pos,
-        3 / z,
-        Paint()..color = FlitColors.backgroundDark,
-      );
-      canvas.drawCircle(
-        pos,
-        3 / z,
-        Paint()
-          ..color = FlitColors.accent
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.6 / z,
-      );
-    }
-
-    // Guess dots + connector lines toward the target.
-    for (final g in guesses) {
-      final pos = project(g.capitalLngLat.x, g.capitalLngLat.y);
-      canvas.drawLine(
-        pos,
-        target,
-        Paint()
-          ..color = FlitColors.error.withOpacity(0.5)
-          ..strokeWidth = 1 / z,
-      );
-      canvas.drawCircle(pos, 3.5 / z, Paint()..color = FlitColors.error);
-    }
-
-    // Target star.
-    _drawStar(canvas, target, 7 / z, Paint()..color = FlitColors.gold);
-  }
-
-  void _drawStar(Canvas canvas, Offset center, double r, Paint paint) {
-    final path = Path();
-    for (var i = 0; i < 10; i++) {
-      final radius = i.isEven ? r : r * 0.45;
-      final angle = -math.pi / 2 + i * math.pi / 5;
-      final pt =
-          center + Offset(math.cos(angle) * radius, math.sin(angle) * radius);
-      if (i == 0) {
-        path.moveTo(pt.dx, pt.dy);
-      } else {
-        path.lineTo(pt.dx, pt.dy);
-      }
-    }
-    path.close();
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(_ResultMapPainter old) =>
-      targetLngLat != old.targetLngLat ||
-      guesses.length != old.guesses.length ||
-      clues.length != old.clues.length ||
-      zoom != old.zoom;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
