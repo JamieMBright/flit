@@ -10,6 +10,16 @@ class ReportStat {
   final String value;
 }
 
+/// One per-round performance row: coloured emoji + label + value
+/// (e.g. 🟢  France  94%).
+class ReportRow {
+  const ReportRow(this.emoji, this.label, this.value);
+
+  final String emoji;
+  final String label;
+  final String value;
+}
+
 /// The downloadable end-of-game summary card — a branded, image-ready
 /// "mission report" that goes beyond the plain emoji share text.
 ///
@@ -25,6 +35,7 @@ class MissionReportCard extends StatelessWidget {
     this.subtitle,
     required this.score,
     this.emojiGrid,
+    this.rows = const [],
     this.stats = const [],
     this.map,
     this.footnote,
@@ -34,6 +45,12 @@ class MissionReportCard extends StatelessWidget {
   final String? subtitle;
   final int score;
   final String? emojiGrid;
+
+  /// Per-round performance rows (coloured emoji + label + value), the
+  /// classic per-clue breakdown players share. Long sessions are capped
+  /// with a "+N more" row.
+  final List<ReportRow> rows;
+
   final List<ReportStat> stats;
 
   /// Mini reveal map (e.g. [RevealMapThumbnail]); omit for daily modes.
@@ -144,6 +161,61 @@ class MissionReportCard extends StatelessWidget {
                 ),
             ],
           ),
+          if (rows.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: FlitColors.cardBackground.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                children: [
+                  for (final row in rows.take(_maxRows))
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 1.5),
+                      child: Row(
+                        children: [
+                          Text(row.emoji, style: const TextStyle(fontSize: 11)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              row.label,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: FlitColors.textSecondary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            row.value,
+                            style: const TextStyle(
+                              color: FlitColors.textPrimary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (rows.length > _maxRows)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        '+${rows.length - _maxRows} more',
+                        style: const TextStyle(
+                          color: FlitColors.textMuted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
           if (map != null) ...[
             const SizedBox(height: 12),
             map!,
@@ -210,6 +282,10 @@ class MissionReportCard extends StatelessWidget {
       ),
     );
   }
+
+  /// Rows shown before collapsing to "+N more" (keeps long free-flight
+  /// sessions from producing a poster-sized card).
+  static const int _maxRows = 10;
 
   static String _formatScore(int score) {
     final s = score.toString();
