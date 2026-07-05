@@ -82,13 +82,16 @@ void main() {
       await TestHarness.pumpRealScreen(tester, const LeaderboardScreen());
       expect(find.byType(LeaderboardScreen), findsOneWidget);
       expect(find.text('Leaderboard'), findsWidgets);
-      // Real mode tabs.
+      // Real mode tabs (Training is deliberately absent from the
+      // global boards; order: Scramble, Triangulation, Briefing,
+      // Combined).
       expect(find.text('SCRAMBLE'), findsOneWidget);
-      expect(find.text('TRAINING'), findsOneWidget);
+      expect(find.text('TRIANGULATION'), findsOneWidget);
+      expect(find.text('TRAINING'), findsNothing);
       await TestHarness.takeScreenshot(tester, 'menu_leaderboard');
 
-      // Tap the TRAINING tab — real TabController switch.
-      await tester.tap(find.text('TRAINING'));
+      // Tap the TRIANGULATION tab — real TabController switch.
+      await tester.tap(find.text('TRIANGULATION'));
       await TestHarness.settle(tester, frames: 8);
       expect(find.byType(LeaderboardScreen), findsOneWidget);
     });
