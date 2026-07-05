@@ -3,7 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/aviation_rank.dart';
+import '../../core/widgets/country_flag.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
+import '../../data/models/pilot_license.dart';
+import '../../data/services/leaderboard_service.dart';
 import '../../data/models/challenge.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/seasonal_theme.dart';
@@ -2089,12 +2093,24 @@ class _FriendProfileSheetState extends State<_FriendProfileSheet> {
   bool _loadingHistory = false;
   int? _expandedMatchIndex;
 
+  /// Best scores per mode for this friend (daily / training), fetched
+  /// from the public scores table.
+  Map<String, Map<String, int>?>? _bestScores;
+
   @override
   void initState() {
     super.initState();
     if (widget.h2h != null && widget.h2h!.totalChallenges > 0) {
       _loadMatchHistory();
     }
+    _loadBestScores();
+  }
+
+  Future<void> _loadBestScores() async {
+    final scores = await LeaderboardService.instance
+        .fetchBestScoresByMode(widget.friend.playerId);
+    if (!mounted) return;
+    setState(() => _bestScores = scores);
   }
 
   Future<void> _loadMatchHistory() async {
@@ -2107,6 +2123,161 @@ class _FriendProfileSheetState extends State<_FriendProfileSheet> {
       _matchHistory = history;
       _loadingHistory = false;
     });
+  }
+
+  /// Rank + pilot-license chips under the friend's name.
+  Widget _buildRankAndLicense(Friend friend) {
+    final rank = aviationRank(friend.level);
+    PilotLicense? license;
+    if (friend.licenseData != null) {
+      try {
+        license = PilotLicense.fromJson(friend.licenseData!);
+      } catch (_) {
+        // Malformed license data — just skip the badge.
+      }
+    }
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      alignment: WrapAlignment.center,
+      children: [
+        _profileChip(
+          icon: rank.icon,
+          color: FlitColors.gold,
+          label: '${rank.title} \u00b7 Lv.${friend.level}',
+        ),
+        if (license != null)
+          _profileChip(
+            icon: Icons.badge_outlined,
+            color: _licenseTierColor(license.rarityTier),
+            label: '${license.rarityTier} license',
+          ),
+        if (license?.nationality != null && license!.nationality!.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: FlitColors.cardBackground,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: FlitColors.cardBorder),
+            ),
+            child: CountryFlag(
+              code: license.nationality!,
+              height: 14,
+              width: 21,
+              borderRadius: 2,
+            ),
+          ),
+      ],
+    );
+  }
+
+  static Color _licenseTierColor(String tier) {
+    switch (tier) {
+      case 'Perfect':
+        return const Color(0xFFB388FF);
+      case 'Diamond':
+        return const Color(0xFF80DEEA);
+      case 'Gold':
+        return FlitColors.gold;
+      case 'Silver':
+        return const Color(0xFFB0BEC5);
+      default:
+        return const Color(0xFFCD7F32); // bronze
+    }
+  }
+
+  Widget _profileChip({
+    required IconData icon,
+    required Color color,
+    required String label,
+  }) =>
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.5)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 13),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      );
+
+  /// Career stats + per-mode best scores (public profile data).
+  Widget _buildProfileStats(Friend friend) {
+    String fmt(int v) => v > 0 ? _formatScore(v) : '\u2014';
+    final daily = _bestScores?['daily']?['score'];
+    final training = _bestScores?['training']?['score'];
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: FlitColors.backgroundMid,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _MiniStat(
+                'Flights',
+                '${friend.gamesPlayed}',
+                FlitColors.textPrimary,
+              ),
+              _MiniStat(
+                'Best Score',
+                fmt(friend.bestScore),
+                FlitColors.gold,
+              ),
+              _MiniStat(
+                'Best Streak',
+                '${friend.bestStreak}',
+                FlitColors.accent,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _MiniStat(
+                'Daily Best',
+                daily != null ? _formatScore(daily) : '\u2014',
+                FlitColors.textSecondary,
+              ),
+              _MiniStat(
+                'Training Best',
+                training != null ? _formatScore(training) : '\u2014',
+                FlitColors.textSecondary,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _formatScore(int score) {
+    final s = score.toString();
+    final buf = StringBuffer();
+    for (var i = 0; i < s.length; i++) {
+      final fromEnd = s.length - i;
+      buf.write(s[i]);
+      if (fromEnd > 1 && fromEnd % 3 == 1) buf.write(',');
+    }
+    return buf.toString();
   }
 
   @override
@@ -2158,6 +2329,10 @@ class _FriendProfileSheetState extends State<_FriendProfileSheet> {
                 fontSize: 14,
               ),
             ),
+            const SizedBox(height: 8),
+            _buildRankAndLicense(friend),
+            const SizedBox(height: 16),
+            _buildProfileStats(friend),
             const SizedBox(height: 16),
             // ── Head-to-head summary stats ──
             if (h2h != null && h2h.totalChallenges > 0) ...[
