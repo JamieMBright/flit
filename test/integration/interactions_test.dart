@@ -83,15 +83,15 @@ void main() {
       expect(find.byType(LeaderboardScreen), findsOneWidget);
       expect(find.text('Leaderboard'), findsWidgets);
       // Real mode tabs (Training is deliberately absent from the
-      // global boards; order: Scramble, Triangulation, Briefing,
+      // global boards; order: Scramble, Recon, Briefing,
       // Combined).
       expect(find.text('SCRAMBLE'), findsOneWidget);
-      expect(find.text('TRIANGULATION'), findsOneWidget);
+      expect(find.text('RECON'), findsOneWidget);
       expect(find.text('TRAINING'), findsNothing);
       await TestHarness.takeScreenshot(tester, 'menu_leaderboard');
 
-      // Tap the TRIANGULATION tab — real TabController switch.
-      await tester.tap(find.text('TRIANGULATION'));
+      // Tap the RECON tab — real TabController switch.
+      await tester.tap(find.text('RECON'));
       await TestHarness.settle(tester, frames: 8);
       expect(find.byType(LeaderboardScreen), findsOneWidget);
     });

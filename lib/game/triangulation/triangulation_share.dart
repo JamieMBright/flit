@@ -10,7 +10,7 @@ import 'triangulation_session.dart';
 ///
 /// ```
 ///      🛫 🧭 🛬
-/// Flit Triangulation #128  2/3
+/// Flit Recon #128  2/3
 /// 🟩✅
 /// 🟥🟨🟩✅
 /// 🟥🟥🟧🟨🟥❌
@@ -25,7 +25,7 @@ String buildTriangulationShareText(
   final score = DailyResult.formatScore(session.totalScore);
   final time = DailyResult.formatTime(session.totalTimeMs);
   return '     \u{1F6EB} \u{1F9ED} \u{1F6EC}\n'
-      'Flit Triangulation #$dayNumber  '
+      'Flit Recon #$dayNumber  '
       '${session.solvedRounds}/${session.rounds.length}\n'
       '$rows\n'
       'Score: $score pts\n'

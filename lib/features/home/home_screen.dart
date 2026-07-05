@@ -433,7 +433,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
               const SizedBox(height: 12),
               _GameModeCard(
-                title: 'Daily Triangulation',
+                title: 'Daily Recon',
                 subtitle: 'Track the hidden capital by its bearings',
                 icon: Icons.explore_rounded,
                 isHighlighted: true,
@@ -547,7 +547,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
               const SizedBox(height: 12),
               _GameModeCard(
-                title: 'Triangulation',
+                title: 'Recon',
                 subtitle: 'Hunt hidden capitals by compass bearing',
                 icon: Icons.explore,
                 onTap: () => _closeSheetAndNavigate(

@@ -25,9 +25,15 @@ import 'quiz_session.dart';
 ///   instead be a nickname/landmark "flavour" clue. Obscure categories
 ///   (stateFlower, stateBird, motto, sportsTeam, celebrity, filmSetting,
 ///   flagDescription) never appear — they stay in Flight School practice.
-/// - Difficulty is always easy (labels on); challenge comes from per-question
-///   [QuizQuestion.labelFree] "stretch" questions at the end of the set —
-///   2 for easy regions, 1 for mid-tier, 0 for hard regions.
+/// - Label policy: [QuizCategory.stateName] questions are ALWAYS
+///   [QuizQuestion.labelFree] — a visible label literally answers "tap the
+///   state by name", so name questions are the blind ones by definition.
+///   Capital / nickname / landmark questions keep labels ON: the label
+///   doesn't reveal which area matches the clue.
+/// - Difficulty stays humane via the tier mix: easy regions (tier < 9) get
+///   3 labeled capital + 3 blind name questions; mid (9–14) get 4 labeled
+///   capital/flavour + 2 blind; hard (>= 15) get 5 labeled + 1 blind. The
+///   blind questions always sit at the end of the set.
 class DailyBriefing {
   const DailyBriefing({
     required this.dateKey,
@@ -151,20 +157,28 @@ class DailyBriefing {
     return flightSchoolLevels.first;
   }
 
-  /// Number of label-free "stretch" questions for a region tier
-  /// ([FlightSchoolLevel.requiredLevel]). Hard regions stay fully labeled.
+  /// Number of blind (label-free) name questions for a region tier
+  /// ([FlightSchoolLevel.requiredLevel]).
+  ///
+  /// Name questions are always blind — a visible label answers the question
+  /// — so this is also how many [QuizCategory.stateName] questions appear.
+  /// Easy regions can carry more blind questions; hard regions lean on
+  /// labeled capital/flavour clues to keep difficulty humane:
+  /// tier < 9 → 3 blind, tier 9–14 → 2 blind, tier >= 15 → 1 blind.
   static int labelFreeCountForTier(int requiredLevel) {
-    if (requiredLevel >= 15) return 0;
-    if (requiredLevel >= 9) return 1;
-    return 2;
+    if (requiredLevel >= 15) return 1;
+    if (requiredLevel >= 9) return 2;
+    return 3;
   }
 
   /// Build today's [questionCount] questions for [level].
   ///
-  /// Seeded-samples distinct areas from the region (no duplicate answers),
-  /// mixes name and capital clues (2–4 capitals), optionally swaps one
-  /// question for a nickname/landmark flavour clue on well-known regions,
-  /// and marks the trailing stretch questions label-free.
+  /// Seeded-samples distinct areas from the region (no duplicate answers).
+  /// The plan is tier-mixed: labeled capital clues first (one may be swapped
+  /// for a nickname/landmark flavour clue on well-known regions), then the
+  /// blind [QuizCategory.stateName] questions at the end of the set.
+  /// Label policy: stateName questions are ALWAYS labelFree; capital and
+  /// flavour questions never are.
   static List<QuizQuestion> _buildQuestions(
     FlightSchoolLevel level,
     Random rng,
@@ -177,20 +191,27 @@ class DailyBriefing {
     final remaining = List.of(RegionalData.getAreas(level.region))
       ..shuffle(rng);
 
-    // Category plan: mostly names and capitals — 2 to 4 capital clues per day.
-    final capitalCount = 2 + rng.nextInt(3);
-    final plan = List<QuizCategory>.generate(
-      questionCount,
-      (i) => i < capitalCount ? QuizCategory.capital : QuizCategory.stateName,
-    )..shuffle(rng);
+    // Tier mix: labeled capital clues up front, blind name questions last.
+    final blindCount = labelFreeCountForTier(level.requiredLevel);
+    final labeledCount = questionCount - blindCount;
+    final plan = List<QuizCategory>.filled(
+      labeledCount,
+      QuizCategory.capital,
+      growable: true,
+    );
 
-    // Flavour: well-known regions may swap ONE question for a nickname or
-    // landmark clue (roughly every other day).
+    // Flavour: well-known regions may swap ONE labeled question for a
+    // nickname or landmark clue (roughly every other day).
     if (level.requiredLevel <= _flavourMaxTier && rng.nextBool()) {
       final flavour =
           rng.nextBool() ? QuizCategory.nickname : QuizCategory.landmark;
-      plan[rng.nextInt(questionCount)] = flavour;
+      plan[rng.nextInt(labeledCount)] = flavour;
     }
+
+    // Blind slots: tap-the-named-area questions with labels hidden.
+    plan.addAll(
+      List<QuizCategory>.filled(blindCount, QuizCategory.stateName),
+    );
 
     final questions = <QuizQuestion>[];
     for (final category in plan) {
@@ -205,7 +226,25 @@ class DailyBriefing {
           break;
         }
       }
-      // Fallback: a plain name question always works for any area.
+      // Fallback for a labeled slot with no candidate: try a capital clue
+      // first so the slot stays labeled (a name fallback would have to be
+      // blind, unbalancing the tier mix).
+      if (question == null &&
+          category != QuizCategory.capital &&
+          category != QuizCategory.stateName) {
+        for (var i = 0; i < remaining.length; i++) {
+          final candidate = generator.generateForArea(
+            remaining[i],
+            QuizCategory.capital,
+          );
+          if (candidate != null) {
+            question = candidate;
+            remaining.removeAt(i);
+            break;
+          }
+        }
+      }
+      // Last resort: a plain name question always works for any area.
       if (question == null && remaining.isNotEmpty) {
         question = generator.generateForArea(
           remaining.removeAt(0),
@@ -215,14 +254,15 @@ class DailyBriefing {
       if (question != null) questions.add(question);
     }
 
-    // Mark the trailing stretch questions label-free.
-    final blindCount = labelFreeCountForTier(level.requiredLevel);
-    for (var i = 0; i < questions.length; i++) {
-      if (i >= questions.length - blindCount) {
-        questions[i] = questions[i].copyWith(labelFree: true);
-      }
-    }
-    return questions;
+    // Label policy: name questions are ALWAYS blind (a label answers the
+    // question); capital/flavour clues keep labels on. Stable partition so
+    // any fallback name question also lands at the end of the set.
+    return [
+      for (final q in questions)
+        if (q.category != QuizCategory.stateName) q.copyWith(labelFree: false),
+      for (final q in questions)
+        if (q.category == QuizCategory.stateName) q.copyWith(labelFree: true),
+    ];
   }
 
   // ---------------------------------------------------------------------------

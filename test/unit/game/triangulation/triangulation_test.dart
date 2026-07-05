@@ -474,7 +474,7 @@ void main() {
         elapsedMs: 4000,
       );
       final text = buildTriangulationShareText(session, dayNumber: 12);
-      expect(text, contains('Flit Triangulation #12'));
+      expect(text, contains('Flit Recon #12'));
       expect(text, contains('1/1'));
       expect(text, contains('✅'));
       expect(text, isNot(contains(round.targetCapitalName)));

@@ -137,8 +137,45 @@ void main() {
     });
   });
 
-  group('DailyBriefing label-free stretch questions', () {
-    test('counts match the region tier and sit at the end of the set', () {
+  group('DailyBriefing label policy', () {
+    test('stateName questions are ALWAYS labelFree', () {
+      // The whole game of a name question is finding the area — a visible
+      // label would answer it outright.
+      for (final date in dates(120)) {
+        final briefing = DailyBriefing.forDate(date);
+        for (final q in briefing.questions) {
+          if (q.category == QuizCategory.stateName) {
+            expect(
+              q.labelFree,
+              isTrue,
+              reason: 'labeled stateName question ("${q.clueText}") on '
+                  '${briefing.dateKey}',
+            );
+          }
+        }
+      }
+    });
+
+    test('capital and flavour questions are NEVER labelFree', () {
+      // Labels don't reveal which area has a given capital / nickname /
+      // landmark, so those questions keep labels on.
+      for (final date in dates(120)) {
+        final briefing = DailyBriefing.forDate(date);
+        for (final q in briefing.questions) {
+          if (q.category != QuizCategory.stateName) {
+            expect(
+              q.labelFree,
+              isFalse,
+              reason: 'label-free ${q.category} question on '
+                  '${briefing.dateKey}',
+            );
+          }
+        }
+      }
+    });
+
+    test('blind counts match the region tier and sit at the end of the set',
+        () {
       for (final date in dates(120)) {
         final briefing = DailyBriefing.forDate(date);
         final expected = DailyBriefing.labelFreeCountForTier(
@@ -162,14 +199,36 @@ void main() {
       }
     });
 
-    test('tier thresholds: <9 gets 2, 9-14 gets 1, >=15 gets 0', () {
-      expect(DailyBriefing.labelFreeCountForTier(1), 2);
-      expect(DailyBriefing.labelFreeCountForTier(5), 2);
-      expect(DailyBriefing.labelFreeCountForTier(7), 2);
-      expect(DailyBriefing.labelFreeCountForTier(9), 1);
-      expect(DailyBriefing.labelFreeCountForTier(13), 1);
-      expect(DailyBriefing.labelFreeCountForTier(15), 0);
-      expect(DailyBriefing.labelFreeCountForTier(20), 0);
+    test('tier mix: easy 3 labeled + 3 blind, mid 4 + 2, hard 5 + 1', () {
+      expect(DailyBriefing.labelFreeCountForTier(1), 3);
+      expect(DailyBriefing.labelFreeCountForTier(5), 3);
+      expect(DailyBriefing.labelFreeCountForTier(7), 3);
+      expect(DailyBriefing.labelFreeCountForTier(9), 2);
+      expect(DailyBriefing.labelFreeCountForTier(13), 2);
+      expect(DailyBriefing.labelFreeCountForTier(15), 1);
+      expect(DailyBriefing.labelFreeCountForTier(20), 1);
+    });
+
+    test('labeled questions are capital or flavour clues', () {
+      for (final date in dates(120)) {
+        final briefing = DailyBriefing.forDate(date);
+        final labeled = briefing.questions.where((q) => !q.labelFree).toList();
+        expect(
+          labeled.length,
+          DailyBriefing.questionCount -
+              DailyBriefing.labelFreeCountForTier(
+                briefing.level.requiredLevel,
+              ),
+          reason: 'wrong labeled count on ${briefing.dateKey}',
+        );
+        for (final q in labeled) {
+          expect(
+            q.category == QuizCategory.capital || flavour.contains(q.category),
+            isTrue,
+            reason: 'labeled ${q.category} question on ${briefing.dateKey}',
+          );
+        }
+      }
     });
   });
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -6,13 +7,13 @@ import '../../core/theme/flit_colors.dart';
 import '../../core/utils/report_capture.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/widgets/mission_report_card.dart';
-import '../../core/widgets/reveal_map.dart';
+import '../../data/models/daily_result.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/leaderboard_service.dart';
-import '../../game/map/country_data.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/quiz_category.dart';
+import '../../game/quiz/quiz_result_map.dart';
 import '../../game/quiz/quiz_session.dart';
 import '../../game/ui/ink_burst_overlay.dart';
 import 'flight_school_screen.dart';
@@ -292,10 +293,11 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
                             _buildStatsGrid(summary),
                             const SizedBox(height: 16),
 
-                            // Reveal map: every question's answer starred,
-                            // wrong picks dotted — same reveal as
-                            // Triangulation.
-                            ..._buildRevealMap(summary),
+                            // Region result map: the quiz's own map with
+                            // areas tinted by outcome (green found / red
+                            // missed). Suppressed for the daily briefing —
+                            // spoilers.
+                            ..._buildResultMap(summary),
 
                             // Detailed breakdown
                             _buildBreakdown(summary),
@@ -326,75 +328,144 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
     );
   }
 
-  // ── Reveal map ──────────────────────────────────────────────────────────
+  // ── Region result map ───────────────────────────────────────────────────
 
-  /// Builds the star/dot marker layers shared by the full [RevealMap] (with
-  /// legend) and the [RevealMapThumbnail] embedded in the mission report
-  /// card, so both stay in sync from one source of truth.
-  ({List<RevealStar> stars, List<RevealDot> dots}) _revealLayers(
+  /// Splits the quiz results into found vs missed answer codes.
+  ///
+  /// Quiz answer codes are region-scoped (US state / UK county / ISO codes
+  /// depending on the region) so they must be drawn on the quiz's own
+  /// region map — NEVER resolved against world country data, where 'TN'
+  /// (Tennessee) would land on Tunisia.
+  ({Set<String> correct, Set<String> missed}) _outcomeCodes(
     QuizSummary summary,
   ) {
-    final stars = <RevealStar>[];
-    final dots = <RevealDot>[];
+    final correct = <String>{};
+    final missed = <String>{};
     for (final r in summary.results) {
-      final target = CountryData.getCapital(r.correctCode)?.location;
-      if (target == null) continue; // non-country code (states, counties)
-      stars.add(
-        RevealStar(target,
-            color: r.correct ? FlitColors.gold : FlitColors.error),
-      );
-      if (!r.correct) {
-        final guess = CountryData.getCapital(r.answerCode)?.location;
-        if (guess != null) dots.add(RevealDot(guess, lineTo: target));
-      }
+      (r.correct ? correct : missed).add(r.correctCode);
     }
-    return (stars: stars, dots: dots);
+    // A question answered wrong first but solved later counts as found.
+    missed.removeAll(correct);
+    return (correct: correct, missed: missed);
   }
 
-  /// World reveal map of the whole quiz: gold stars for answers found,
-  /// red stars for missed ones, red dots (with connector lines) where the
-  /// player's wrong tap landed. Only rendered for country-based regions —
-  /// US states / UK counties codes don't resolve to world capitals, and
-  /// type-in wrong answers carry no location, so absent data degrades
-  /// gracefully to stars only.
-  List<Widget> _buildRevealMap(QuizSummary summary) {
-    final layers = _revealLayers(summary);
-    if (layers.stars.isEmpty) return const [];
+  /// The quiz's own region map with areas tinted by outcome: green for
+  /// answers found, red for missed ones, neutral elsewhere. Shown for
+  /// Flight School practice / H2H only — the daily briefing suppresses it
+  /// so results screens (and screenshots of them) never spoil the day's
+  /// answers for other players.
+  List<Widget> _buildResultMap(QuizSummary summary) {
+    if (_isDailyBriefing) return const [];
+    final region = widget.region;
+    if (region == null) return const [];
+    final outcomes = _outcomeCodes(summary);
+    if (outcomes.correct.isEmpty && outcomes.missed.isEmpty) return const [];
     return [
-      RevealMap(
-        stars: layers.stars,
-        dots: layers.dots,
-        legendItems: [
-          const RevealLegendItem(Icons.star, FlitColors.gold, 'correct'),
-          if (layers.stars.any((s) => s.color == FlitColors.error))
-            const RevealLegendItem(Icons.star, FlitColors.error, 'missed'),
-          if (layers.dots.isNotEmpty)
-            const RevealLegendItem(
-              Icons.circle,
-              FlitColors.error,
-              'your pick',
+      Container(
+        decoration: BoxDecoration(
+          color: FlitColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: FlitColors.cardBorder),
+        ),
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: QuizResultMap(
+                region: region,
+                correctCodes: outcomes.correct,
+                missedCodes: outcomes.missed,
+              ),
             ),
-        ],
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildLegendItem(FlitColors.success, 'found'),
+                if (outcomes.missed.isNotEmpty) ...[
+                  const SizedBox(width: 16),
+                  _buildLegendItem(FlitColors.error, 'missed'),
+                ],
+              ],
+            ),
+          ],
+        ),
       ),
       const SizedBox(height: 16),
     ];
   }
 
+  Widget _buildLegendItem(Color color, String label) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.square_rounded, color: color, size: 12),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: FlitColors.textSecondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      );
+
   // ── Mission report card + save image ────────────────────────────────────
 
   /// True for the Daily Flight Briefing — the one-attempt-per-day quiz.
-  /// The report card omits the reveal map for these so a shared image
+  /// The report card omits the result map for these so a shared image
   /// never spoils the day's answers for other players.
   bool get _isDailyBriefing => widget.dailyBriefingDateKey != null;
 
-  String get _fallbackShareText {
+  /// Display name of the region played (e.g. "Europe", "US States").
+  String get _regionName {
+    final levelId = widget.flightSchoolLevelId;
+    if (levelId != null) {
+      for (final level in flightSchoolLevels) {
+        if (level.id == levelId) return level.name;
+      }
+    }
+    return widget.region?.displayName ?? 'World';
+  }
+
+  /// Classic spoiler-free emoji share text for the Daily Briefing —
+  /// one coloured circle per question (green clean, yellow/orange hints,
+  /// red missed), same pattern as the Scramble and Triangulation dailies.
+  ///
+  /// ```
+  ///      🛫 🗺️ 🛬
+  /// Flit Daily Briefing — Europe
+  /// 🟢🟢🟡🟢🔴🟢
+  /// Score: 8,420 pts
+  /// Time: 1m42s
+  /// jamiembright.github.io/flit
+  /// ```
+  String get _briefingShareText {
     final summary = widget.summary;
-    final label =
-        _isDailyBriefing ? 'Daily Briefing' : summary.mode.displayName;
-    return 'Flit $label — Grade ${summary.grade}\n'
+    return '     \u{1F6EB} \u{1F5FA}\u{FE0F} \u{1F6EC}\n'
+        'Flit Daily Briefing — $_regionName\n'
+        '${summary.emojiRow}\n'
+        'Score: ${DailyResult.formatScore(summary.totalScore)} pts\n'
+        'Time: ${DailyResult.formatTime(summary.elapsedMs)}\n'
+        'jamiembright.github.io/flit';
+  }
+
+  String get _fallbackShareText {
+    if (_isDailyBriefing) return _briefingShareText;
+    final summary = widget.summary;
+    return 'Flit ${summary.mode.displayName} — Grade ${summary.grade}\n'
         '${summary.correctCount}/${summary.totalQuestions} correct · '
         '${summary.totalScore} pts · ${summary.elapsedFormatted}\n'
         'jamiembright.github.io/flit';
+  }
+
+  void _copyShareText() {
+    Clipboard.setData(ClipboardData(text: _briefingShareText));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Result copied — paste to share!')),
+    );
   }
 
   Future<void> _saveImage() async {
@@ -417,15 +488,22 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
   }
 
   Widget _buildReportCard(QuizSummary summary) {
-    final layers = _revealLayers(summary);
+    final outcomes = _outcomeCodes(summary);
+    final region = widget.region;
     return RepaintBoundary(
       key: _reportKey,
       child: MissionReportCard(
         modeTitle: _isDailyBriefing
             ? 'DAILY BRIEFING'
             : summary.mode.displayName.toUpperCase(),
-        subtitle: '${summary.correctCount}/${summary.totalQuestions} correct',
+        subtitle: _isDailyBriefing
+            ? '$_regionName · ${summary.correctCount}/${summary.totalQuestions} correct'
+            : '${summary.correctCount}/${summary.totalQuestions} correct',
         score: summary.totalScore,
+        // Spoiler-free per-question outcome row — the same emoji as the
+        // text share. Only for the short curated daily set; a full-region
+        // practice sweep would overflow the card.
+        emojiGrid: _isDailyBriefing ? summary.emojiRow : null,
         stats: [
           ReportStat(
             'CORRECT',
@@ -436,9 +514,21 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
         ],
         // Spoiler rule: the Daily Briefing is one-attempt-per-day, so the
         // downloadable card never includes the answer map for it. Other
-        // quiz variants (Flight School practice, H2H) can show it freely.
-        map: !_isDailyBriefing && layers.stars.isNotEmpty
-            ? RevealMapThumbnail(stars: layers.stars, dots: layers.dots)
+        // quiz variants (Flight School practice, H2H) show the quiz's own
+        // REGION map tinted by outcome — never the world map, where
+        // region-scoped codes collide with ISO country codes.
+        map: !_isDailyBriefing &&
+                region != null &&
+                (outcomes.correct.isNotEmpty || outcomes.missed.isNotEmpty)
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: QuizResultMap(
+                  region: region,
+                  correctCodes: outcomes.correct,
+                  missedCodes: outcomes.missed,
+                  height: 140,
+                ),
+              )
             : null,
       ),
     );
@@ -747,7 +837,15 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildSaveImageButton(),
+            // SHARE (emoji text) + SAVE IMAGE side by side — same summary
+            // layout as the Triangulation daily.
+            Row(
+              children: [
+                Expanded(child: _buildShareButton()),
+                const SizedBox(width: 10),
+                Expanded(child: _buildSaveImageButton()),
+              ],
+            ),
             const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
@@ -780,6 +878,31 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
               ),
             ),
           ],
+        ),
+      );
+
+  /// SHARE button — copies the spoiler-free emoji share text to the
+  /// clipboard, matching the Triangulation daily's gold share action.
+  Widget _buildShareButton() => SizedBox(
+        height: 50,
+        child: ElevatedButton.icon(
+          onPressed: _copyShareText,
+          icon: const Icon(Icons.share, size: 18),
+          label: const Text(
+            'SHARE',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: FlitColors.gold,
+            foregroundColor: FlitColors.backgroundDark,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
         ),
       );
 

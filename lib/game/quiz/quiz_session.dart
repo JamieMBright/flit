@@ -90,6 +90,7 @@ class QuizAnswerResult {
     required this.correctCode,
     required this.elapsedMs,
     this.hintUsed = false,
+    this.hintCount = 0,
   });
 
   final bool correct;
@@ -100,6 +101,9 @@ class QuizAnswerResult {
   final String correctCode;
   final int elapsedMs;
   final bool hintUsed;
+
+  /// Number of hints taken on this question before the answer was submitted.
+  final int hintCount;
 }
 
 /// Progressive hint levels used in the hint system.
@@ -675,6 +679,7 @@ class QuizSession {
         correctCode: question.answerCode,
         elapsedMs: elapsed,
         hintUsed: hintUsed,
+        hintCount: _currentHintLevel,
       );
       _results.add(result);
       _currentIndex++;
@@ -701,6 +706,7 @@ class QuizSession {
         correctCode: question.answerCode,
         elapsedMs: elapsed,
         hintUsed: hintUsed,
+        hintCount: _currentHintLevel,
       );
       _results.add(result);
       _totalScore = max(0, _totalScore - penalty);
@@ -865,6 +871,32 @@ class QuizSummary {
     final accuracyBonus = (accuracy * 20).round();
     return diffBonus + accuracyBonus;
   }
+
+  /// Outcome emoji for one question slot — the classic per-round share
+  /// colours, mirroring the Daily Scramble's `DailyRoundResult.emoji`
+  /// thresholds:
+  /// 🟢 correct with no hints, 🟡 correct with ≤2 hints, 🟠 correct with
+  /// more than 2 hints, 🔴 wrong / never answered.
+  String questionEmoji(int questionIndex) {
+    QuizAnswerResult? correctResult;
+    for (final r in results) {
+      if (r.questionIndex == questionIndex && r.correct) {
+        correctResult = r;
+        break;
+      }
+    }
+    if (correctResult == null) return '\u{1F534}'; // red: wrong / missed
+    if (correctResult.hintCount == 0) return '\u{1F7E2}'; // green
+    if (correctResult.hintCount <= 2) return '\u{1F7E1}'; // yellow
+    return '\u{1F7E0}'; // orange: leaned hard on hints
+  }
+
+  /// Spoiler-free emoji row for the whole session — one circle per
+  /// question, in play order. Used by the share text and the mission
+  /// report card.
+  String get emojiRow => [
+        for (var i = 0; i < totalQuestions; i++) questionEmoji(i),
+      ].join();
 
   /// Grade based on accuracy and speed.
   String get grade {

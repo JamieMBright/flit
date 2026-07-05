@@ -162,7 +162,7 @@ extension LeaderboardModeExtension on LeaderboardMode {
       case LeaderboardMode.flightBriefing:
         return 'FLIGHT BRIEFING';
       case LeaderboardMode.dailyTriangulation:
-        return 'TRIANGULATION';
+        return 'RECON';
       case LeaderboardMode.dailyCombined:
         return 'COMBINED';
     }
