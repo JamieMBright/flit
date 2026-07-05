@@ -136,6 +136,7 @@ class QuizQuestion {
     required this.clueText,
     required this.answerCode,
     required this.answerName,
+    this.labelFree = false,
   });
 
   /// The category this question belongs to.
@@ -149,6 +150,20 @@ class QuizQuestion {
 
   /// The correct state name for display (e.g. 'California').
   final String answerName;
+
+  /// When true, map labels are hidden for this question even if the
+  /// difficulty would normally show them. Used by the Daily Briefing's
+  /// "stretch" questions; defaults to false everywhere else (practice,
+  /// H2H, type-in, Uncharted are unaffected).
+  final bool labelFree;
+
+  QuizQuestion copyWith({bool? labelFree}) => QuizQuestion(
+        category: category,
+        clueText: clueText,
+        answerCode: answerCode,
+        answerName: answerName,
+        labelFree: labelFree ?? this.labelFree,
+      );
 }
 
 /// Non-mixed categories available for each region with rich clue data.
@@ -290,6 +305,14 @@ class QuizQuestionGenerator {
     questions.shuffle(_random);
     return questions;
   }
+
+  /// Generate a single question for [area] in the given [category].
+  ///
+  /// Returns null when the region lacks clue data for that category
+  /// (e.g. no capital recorded, no nickname). Used by the Daily Briefing
+  /// to build a small curated question list instead of a full-region sweep.
+  QuizQuestion? generateForArea(RegionalArea area, QuizCategory category) =>
+      _generateForArea(area, {category}, null);
 
   /// Generate a single question for an area from the given category set.
   QuizQuestion? _generateForArea(

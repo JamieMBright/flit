@@ -169,7 +169,11 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
         'score': summary.totalScore,
         'time_ms': summary.elapsedMs,
         'level_id': widget.flightSchoolLevelId ?? '',
-        'category': summary.categories.map((c) => c.name).join(','),
+        // A curated daily set can mix categories (names + capitals +
+        // flavour); record it as 'mixed' rather than a joined list.
+        'category': summary.categories.length == 1
+            ? summary.categories.first.name
+            : 'mixed',
         'difficulty': summary.difficulty.name,
         'mode': summary.mode.name,
       }, onConflict: 'user_id,date_key');
