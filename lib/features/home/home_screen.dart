@@ -10,7 +10,9 @@ import '../../data/providers/account_provider.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/theme/flit_theme.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
+import '../../core/theme/rarity_colors.dart';
 import '../../data/models/challenge.dart';
+import '../../data/models/cosmetic.dart';
 import '../../data/services/app_config_service.dart';
 import '../../data/services/challenge_service.dart';
 import '../../data/services/feature_flag_service.dart';
@@ -23,6 +25,7 @@ import '../explore/country_clues_screen.dart';
 import '../friends/friends_screen.dart';
 import '../guide/gameplay_guide_screen.dart';
 import '../leaderboard/leaderboard_screen.dart';
+import '../license/license_screen.dart';
 import '../matchmaking/find_challenger_screen.dart';
 import '../play/practice_screen.dart';
 import '../../game/map/region.dart';
@@ -270,6 +273,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Pilot hangar card — license + equipped plane front and centre so
+          // boosting (hot pump, rerolls, plane upgrades) is always one tap away.
+          _HangarCard(
+              onTap: () => _navigateSafely(context, const LicenseScreen())),
+          const SizedBox(height: 10),
           // Daily streak stats card
           const _DailyStreakCard(),
           const SizedBox(height: 10),
@@ -1163,6 +1171,210 @@ class _GlobeBackgroundPainter extends CustomPainter {
 }
 
 // ─── Daily streak card ─────────────────────────────────────────────────────
+
+/// Pilot hangar card: the equipped plane and license are the two things a
+/// player invests in, so they anchor the home screen. Shows effective license
+/// stats (hot bonus included), a HOT countdown when pumped, and a nudge to go
+/// pump it when cold. Tapping opens the license screen (stats + reroll).
+class _HangarCard extends ConsumerWidget {
+  const _HangarCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  String _formatHotRemaining(Duration d) {
+    if (d.inHours >= 48) return '${d.inDays}d ${d.inHours % 24}h';
+    if (d.inHours >= 1) return '${d.inHours}h ${d.inMinutes % 60}m';
+    return '${d.inMinutes}m';
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final account = ref.watch(accountProvider);
+    final license = account.license;
+    final now = DateTime.now();
+    final isHot = license.isHot(now);
+    final rarityColor = colorForRarity(license.rarityTier);
+    final equippedPlane = CosmeticCatalog.getById(account.equippedPlaneId);
+    const hotColor = Color(0xFFFF8A3D);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: FlitColors.cardBackground.withOpacity(0.85),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isHot
+                  ? hotColor.withOpacity(0.8)
+                  : rarityColor.withOpacity(0.5),
+              width: isHot ? 1.5 : 1,
+            ),
+            boxShadow: isHot
+                ? [
+                    BoxShadow(
+                      color: hotColor.withOpacity(0.25),
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            children: [
+              // Equipped plane preview — same painter the shop/license use.
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: FlitColors.backgroundMid,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: FlitColors.cardBorder.withOpacity(0.5),
+                  ),
+                ),
+                child: CustomPaint(
+                  size: const Size(52, 52),
+                  painter: PlanePainter(
+                    planeId: account.equippedPlaneId,
+                    colorScheme: equippedPlane?.colorScheme,
+                    wingSpan: equippedPlane?.wingSpan ?? 26.0,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '${license.rarityTier.toUpperCase()} LICENSE',
+                            style: TextStyle(
+                              color: rarityColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isHot) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: hotColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '\u{1F525} HOT',
+                              style: TextStyle(
+                                color: hotColor,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        _HangarStat(
+                          icon: Icons.monetization_on_rounded,
+                          value: license.effectiveCoinBoost(now),
+                          boosted: isHot,
+                        ),
+                        const SizedBox(width: 10),
+                        _HangarStat(
+                          icon: Icons.travel_explore_rounded,
+                          value: license.effectiveClueChance(now),
+                          boosted: isHot,
+                        ),
+                        const SizedBox(width: 10),
+                        _HangarStat(
+                          icon: Icons.local_gas_station_rounded,
+                          value: license.effectiveFuelBoost(now),
+                          boosted: isHot,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      isHot
+                          ? 'Pumped — ${_formatHotRemaining(license.heat.hotRemaining(now))} left'
+                          : 'Cold — ace a daily or sortie to pump it',
+                      style: TextStyle(
+                        color: isHot ? hotColor : FlitColors.textMuted,
+                        fontSize: 10.5,
+                        fontWeight: isHot ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: FlitColors.textMuted.withOpacity(0.7),
+                size: 22,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One compact effective-stat readout on the hangar card. Orange when the
+/// hot pump is adding its bonus, so the boost is visibly "on".
+class _HangarStat extends StatelessWidget {
+  const _HangarStat({
+    required this.icon,
+    required this.value,
+    required this.boosted,
+  });
+
+  final IconData icon;
+  final int value;
+  final bool boosted;
+
+  @override
+  Widget build(BuildContext context) {
+    const hotColor = Color(0xFFFF8A3D);
+    final color = boosted ? hotColor : FlitColors.textSecondary;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color, size: 13),
+        const SizedBox(width: 3),
+        Text(
+          '+$value',
+          style: TextStyle(
+            color: color,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _DailyStreakCard extends ConsumerWidget {
   const _DailyStreakCard();
