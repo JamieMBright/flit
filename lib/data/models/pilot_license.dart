@@ -100,15 +100,17 @@ class PilotLicense {
 
   /// Weighted stat roll table.
   ///
-  /// Distribution:
-  ///   1-5  : ~50 %  (common)
+  /// Distribution (394 entries):
+  ///   1-5  : ~51 %  (common)
   ///   6-10 : ~25 %  (uncommon)
   ///   11-15: ~15 %  (rare)
-  ///   16-20: ~8  %  (epic)
-  ///   21-24: ~1.75% (legendary — 0.44% each)
+  ///   16-20: ~6.6%  (epic — 18-20 deliberately rarer than 16-17)
+  ///   21-24: ~1.8%  (legendary)
   ///   25   : ~0.25% (perfect)
   ///
-  /// Implemented as a 400-entry lookup table for O(1) rolls.
+  /// Top-end weights were trimmed after playtesting showed high licenses
+  /// came too easily — the license is the game's long-term chase.
+  /// Implemented as a lookup table for O(1) rolls.
   static final List<int> _weightTable = [
     for (var i = 0; i < 40; i++) 1,
     for (var i = 0; i < 40; i++) 2,
@@ -127,9 +129,9 @@ class PilotLicense {
     for (var i = 0; i < 12; i++) 15,
     for (var i = 0; i < 7; i++) 16,
     for (var i = 0; i < 7; i++) 17,
-    for (var i = 0; i < 6; i++) 18,
-    for (var i = 0; i < 6; i++) 19,
-    for (var i = 0; i < 6; i++) 20,
+    for (var i = 0; i < 4; i++) 18,
+    for (var i = 0; i < 4; i++) 19,
+    for (var i = 0; i < 4; i++) 20,
     for (var i = 0; i < 2; i++) 21,
     for (var i = 0; i < 2; i++) 22,
     for (var i = 0; i < 2; i++) 23,

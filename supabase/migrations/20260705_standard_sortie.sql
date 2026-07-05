@@ -18,9 +18,9 @@
 -- Depends on: 20260705_player_ratings.sql (player_ratings table +
 -- _get_or_seed_rating helper), already APPLIED TO PRODUCTION 2026-07-05.
 --
--- NOT YET APPLIED. Until applied, the client degrades silently: runs are
--- kept locally/in the scores table, ratings show as provisional, and the
--- insert/RPC calls no-op (see lib/data/services/sortie_service.dart).
+-- APPLIED TO PRODUCTION 2026-07-05. Where not applied, the client degrades
+-- silently: runs are kept locally/in the scores table, ratings show as
+-- provisional, and the insert/RPC calls no-op (see sortie_service.dart).
 
 CREATE TABLE IF NOT EXISTS public.sortie_runs (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),

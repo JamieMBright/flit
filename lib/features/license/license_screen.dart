@@ -147,9 +147,16 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
     // refund the coins so the player is not charged for a failed reroll.
     try {
       // Pity guarantees improving odds: each consecutive bad roll adds an
-      // advantage roll on top of the avatar's luck.
-      final avatarLuck =
-          ref.read(avatarProvider).luckBonus + _license.heat.pityLuckBonus;
+      // advantage roll on top of the avatar's luck. Avatar luck counts only
+      // OWNED parts, and total luck is capped so stacked bonuses can't
+      // trivialise top-tier licenses.
+      final avatarLuck = math.min(
+        8,
+        ref.read(avatarProvider).luckBonusFor(
+                  ref.read(accountProvider).ownedAvatarParts,
+                ) +
+            _license.heat.pityLuckBonus,
+      );
       var newLicense = PilotLicense.reroll(
         _license,
         lockedStats: _lockedStats,
@@ -1121,10 +1128,12 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
                     ),
             ),
           ),
-          // Avatar luck bonus indicator
+          // Avatar luck bonus indicator (owned parts only — an equipped look
+          // without ownership grants no reroll advantage).
           Builder(
             builder: (context) {
-              final luck = ref.watch(avatarProvider).luckBonus;
+              final ownedParts = ref.watch(accountProvider).ownedAvatarParts;
+              final luck = ref.watch(avatarProvider).luckBonusFor(ownedParts);
               final rarity = ref.watch(avatarProvider).rarityTier;
               if (luck <= 0) return const SizedBox.shrink();
               return Padding(

@@ -648,6 +648,35 @@ class AvatarConfig {
     return 0;
   }
 
+  /// [totalCost] counting only parts the player actually OWNS (free parts
+  /// always count). An equipped-but-unowned part still renders — cosmetics
+  /// survive things like an account reset — but it must not grant perks.
+  /// Part ids follow the avatar editor's `<slot>_<enumName>` scheme.
+  int ownedCost(Set<String> ownedPartIds) {
+    int owned(int price, String id) =>
+        price == 0 || ownedPartIds.contains(id) ? price : 0;
+    return owned(stylePrice(style), 'style_${style.name}') +
+        owned(eyesPrice(eyes), 'eyes_${eyes.name}') +
+        owned(eyebrowsPrice(eyebrows), 'eyebrows_${eyebrows.name}') +
+        owned(mouthPrice(mouth), 'mouth_${mouth.name}') +
+        owned(hairPrice(hair), 'hair_${hair.name}') +
+        owned(hairColorPrice(hairColor), 'hairColor_${hairColor.name}') +
+        owned(glassesPrice(glasses), 'glasses_${glasses.name}') +
+        owned(earringsPrice(earrings), 'earrings_${earrings.name}') +
+        owned(companionPrice(companion), 'companion_${companion.name}');
+  }
+
+  /// [luckBonus] computed from [ownedCost] — reroll advantage only counts
+  /// avatar parts the player actually owns.
+  int luckBonusFor(Set<String> ownedPartIds) {
+    final cost = ownedCost(ownedPartIds);
+    if (cost >= 15000) return 5;
+    if (cost >= 5000) return 3;
+    if (cost >= 1000) return 2;
+    if (cost >= 1) return 1;
+    return 0;
+  }
+
   // ---------------------------------------------------------------------------
   // Serialisation
   // ---------------------------------------------------------------------------
