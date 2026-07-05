@@ -126,10 +126,12 @@ jobs:
 
       - name: Increase swap space
         run: |
-          # GitHub runners already have a swapfile; resize it for dart2js
+          # GitHub runners already have a swapfile; resize it for dart2js.
+          # 12G: dart2js peaked past 8G-swap capacity once country_data.dart
+          # grew to ~75k polygon points, killing the runner (exit 143).
           sudo swapoff /swapfile || true
           sudo rm -f /swapfile
-          sudo fallocate -l 8G /swapfile
+          sudo fallocate -l 12G /swapfile
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
           sudo swapon /swapfile
