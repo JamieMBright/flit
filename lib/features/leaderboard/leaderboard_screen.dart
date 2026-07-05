@@ -109,7 +109,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   /// Short tab labels (displayName is too long for the tab bar).
   static String _tabLabel(LeaderboardMode mode) => switch (mode) {
         LeaderboardMode.dailyScramble => 'SCRAMBLE',
-        LeaderboardMode.dailyTriangulation => 'TRIANGULATION',
+        LeaderboardMode.dailyTriangulation => 'RECON',
         LeaderboardMode.flightBriefing => 'BRIEFING',
         LeaderboardMode.dailyCombined => 'COMBINED',
         LeaderboardMode.trainingFlight => 'TRAINING',
@@ -2242,7 +2242,7 @@ class _ErrorState extends StatelessWidget {
 String _formatCombinedPct(int bps) => '${(bps / 100).toStringAsFixed(1)}%';
 
 /// Compact per-mode efficiency breakdown for the combined board,
-/// e.g. "S 92% · B 74% · T —" (em-dash = mode unplayed).
+/// e.g. "S 92% · B 74% · R —" (em-dash = mode unplayed).
 String _combinedBreakdown(Map<String, int>? bps) {
   String part(String label, String region) {
     final v = bps?[region];
@@ -2250,7 +2250,7 @@ String _combinedBreakdown(Map<String, int>? bps) {
   }
 
   return '${part('S', 'daily')} · ${part('B', 'briefing')} · '
-      '${part('T', 'daily_triangulation')}';
+      '${part('R', 'daily_triangulation')}';
 }
 
 /// Format a number with comma-separated thousands (e.g. 9150 → "9,150").

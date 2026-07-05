@@ -100,7 +100,7 @@ class _TriangulationSetupScreenState extends State<TriangulationSetupScreen> {
       appBar: AppBar(
         backgroundColor: FlitColors.backgroundMid,
         title: const Text(
-          'Triangulation',
+          'Recon',
           style: TextStyle(color: FlitColors.textPrimary),
         ),
         centerTitle: true,
@@ -219,7 +219,7 @@ class _TriangulationSetupScreenState extends State<TriangulationSetupScreen> {
             ),
             const SizedBox(height: 14),
             const Text(
-              'TRIANGULATION',
+              'RECON',
               style: TextStyle(
                 color: FlitColors.textPrimary,
                 fontSize: 22,
@@ -438,7 +438,7 @@ class _TriangulationSetupScreenState extends State<TriangulationSetupScreen> {
               elevation: 4,
             ),
             child: Text(
-              'START TRIANGULATION (×$_rounds)',
+              'START RECON (×$_rounds)',
               style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w900,

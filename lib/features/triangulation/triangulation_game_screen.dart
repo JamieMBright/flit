@@ -317,7 +317,7 @@ class _TriangulationGameScreenState
       appBar: AppBar(
         backgroundColor: FlitColors.backgroundMid,
         title: Text(
-          widget.daily != null ? 'Daily Triangulation' : 'Triangulation',
+          widget.daily != null ? 'Daily Recon' : 'Recon',
           style: const TextStyle(color: FlitColors.textPrimary),
         ),
         centerTitle: true,
@@ -640,7 +640,7 @@ class _RoundResultView extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  state.solved ? 'TRIANGULATED!' : 'TARGET LOST',
+                  state.solved ? 'TARGET LOCATED!' : 'TARGET LOST',
                   style: TextStyle(
                     color: state.solved ? FlitColors.success : FlitColors.error,
                     fontSize: 22,
@@ -838,8 +838,8 @@ class _SummaryViewState extends State<_SummaryView> {
         context,
         png: png,
         filename: isDaily
-            ? 'flit-triangulation-day${widget.dayNumber ?? 0}.png'
-            : 'flit-triangulation.png',
+            ? 'flit-recon-day${widget.dayNumber ?? 0}.png'
+            : 'flit-recon.png',
         fallbackText: shareText,
       );
     } finally {
@@ -851,7 +851,7 @@ class _SummaryViewState extends State<_SummaryView> {
     return RepaintBoundary(
       key: _reportKey,
       child: MissionReportCard(
-        modeTitle: isDaily ? 'DAILY TRIANGULATION' : 'TRIANGULATION',
+        modeTitle: isDaily ? 'DAILY RECON' : 'RECON',
         subtitle: [
           if (widget.dayNumber != null) 'Day ${widget.dayNumber}',
           '${isCapitalTarget ? 'capital' : 'country'} targets',
@@ -883,7 +883,7 @@ class _SummaryViewState extends State<_SummaryView> {
                 const SizedBox(height: 10),
                 Text(
                   '${session.solvedRounds}/${session.rounds.length} '
-                  'TRIANGULATED',
+                  'TARGETS FOUND',
                   style: const TextStyle(
                     color: FlitColors.textPrimary,
                     fontSize: 20,

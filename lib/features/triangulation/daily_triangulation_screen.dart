@@ -13,7 +13,7 @@ import '../../game/triangulation/daily_triangulation.dart';
 import '../../game/triangulation/triangulation_target.dart';
 import 'triangulation_game_screen.dart';
 
-/// Lobby for the Daily Triangulation: shows today's theme and rules, and
+/// Lobby for the Daily Recon: shows today's theme and rules, and
 /// either the play button or (once played) the result with share.
 class DailyTriangulationScreen extends StatefulWidget {
   const DailyTriangulationScreen({super.key});
@@ -90,7 +90,7 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
       appBar: AppBar(
         backgroundColor: FlitColors.backgroundMid,
         title: const Text(
-          'Daily Triangulation',
+          'Daily Recon',
           style: TextStyle(color: FlitColors.textPrimary),
         ),
         centerTitle: true,
@@ -145,7 +145,7 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
             ),
             const SizedBox(height: 14),
             Text(
-              'TRIANGULATION #${_daily.dayNumber}',
+              'RECON #${_daily.dayNumber}',
               style: const TextStyle(
                 color: FlitColors.textPrimary,
                 fontSize: 22,
@@ -393,7 +393,7 @@ class _DailyTriangulationScreenState extends State<DailyTriangulationScreen> {
           onPressed: _play,
           icon: const Icon(Icons.flight_takeoff, size: 22),
           label: const Text(
-            'START TRIANGULATION',
+            'START RECON',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w900,
