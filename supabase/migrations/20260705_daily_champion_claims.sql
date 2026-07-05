@@ -7,7 +7,7 @@
 -- (mode, day) board pays out exactly once, so re-opening the app or a
 -- second device can never double-grant.
 --
--- NOT YET APPLIED TO PRODUCTION.
+-- APPLIED TO PRODUCTION 2026-07-05.
 -- Degrade path: the client (ChampionService.claimDailyChampion) wraps the
 -- RPC in try/catch and treats ANY error — including "function does not
 -- exist" before this migration ships — as "no reward", silently. Behaviour
