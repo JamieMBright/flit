@@ -73,3 +73,33 @@ double flatMapBearingDeg(Vector2 from, Vector2 to) {
   final deg = atan2(dLng, dPsi) * rad2deg;
   return (deg % 360 + 360) % 360;
 }
+
+/// Points along the great-circle (shortest) route from [from] to [to],
+/// as (lng, lat) degrees — spherical linear interpolation on the unit
+/// sphere. Used to draw the "optimal route" overlay on reveal maps; the
+/// polyline may cross the antimeridian (renderers split it there).
+List<Vector2> greatCirclePoints(Vector2 from, Vector2 to, {int samples = 48}) {
+  Vector3 toXyz(Vector2 lngLat) {
+    final lng = lngLat.x * deg2rad;
+    final lat = lngLat.y * deg2rad;
+    return Vector3(cos(lat) * cos(lng), cos(lat) * sin(lng), sin(lat));
+  }
+
+  final a = toXyz(from);
+  final b = toXyz(to);
+  final angle = acos(a.dot(b).clamp(-1.0, 1.0));
+  if (angle < 1e-6) return [from.clone(), to.clone()];
+
+  final sinAngle = sin(angle);
+  return [
+    for (var i = 0; i <= samples; i++)
+      () {
+        final t = i / samples;
+        final w1 = sin((1 - t) * angle) / sinAngle;
+        final w2 = sin(t * angle) / sinAngle;
+        final p = a * w1 + b * w2;
+        return Vector2(
+            atan2(p.y, p.x) * rad2deg, asin(p.z.clamp(-1.0, 1.0)) * rad2deg);
+      }(),
+  ];
+}

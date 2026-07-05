@@ -34,10 +34,19 @@ class RevealDot {
 
 /// A polyline layer (e.g. the flown path in the flight modes).
 class RevealPath {
-  const RevealPath(this.points, {this.color = FlitColors.accent});
+  const RevealPath(
+    this.points, {
+    this.color = FlitColors.accent,
+    this.dashed = false,
+  });
 
   final List<Vector2> points;
   final Color color;
+
+  /// Dashed rendering — used for the faint "optimal route" overlay so it
+  /// reads as a reference line, not a flown trail. Dashed paths also skip
+  /// the take-off dot.
+  final bool dashed;
 }
 
 /// One legend entry below the map.
@@ -303,7 +312,7 @@ class _RevealMapPainter extends CustomPainter {
     // a streak across the whole map.
     for (final path in paths) {
       if (path.points.length < 2) continue;
-      final p = Path();
+      var p = Path();
       double? prevLng;
       for (var i = 0; i < path.points.length; i++) {
         final lng = normLng(path.points[i].x);
@@ -315,17 +324,21 @@ class _RevealMapPainter extends CustomPainter {
         }
         prevLng = lng;
       }
+      if (path.dashed) p = _dashPath(p, dash: 4 / z, gap: 3.5 / z);
       canvas.drawPath(
         p,
         Paint()
-          ..color = path.color.withOpacity(0.7)
+          ..color = path.color.withOpacity(path.dashed ? 0.55 : 0.7)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.2 / z
           ..strokeCap = StrokeCap.round,
       );
-      // Take-off dot so the trail's direction reads at a glance.
-      final start = project(normLng(path.points.first.x), path.points.first.y);
-      canvas.drawCircle(start, 2.5 / z, Paint()..color = path.color);
+      if (!path.dashed) {
+        // Take-off dot so the trail's direction reads at a glance.
+        final start =
+            project(normLng(path.points.first.x), path.points.first.y);
+        canvas.drawCircle(start, 2.5 / z, Paint()..color = path.color);
+      }
     }
 
     final target =
@@ -395,6 +408,21 @@ class _RevealMapPainter extends CustomPainter {
     if (target != null) {
       _drawStar(canvas, target, 7 / z, Paint()..color = FlitColors.gold);
     }
+  }
+
+  /// Converts [source] into a dashed copy by walking its metrics.
+  static Path _dashPath(Path source,
+      {required double dash, required double gap}) {
+    final dest = Path();
+    for (final metric in source.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final end = (distance + dash).clamp(0.0, metric.length);
+        dest.addPath(metric.extractPath(distance, end), Offset.zero);
+        distance = end + gap;
+      }
+    }
+    return dest;
   }
 
   void _drawStar(Canvas canvas, Offset center, double r, Paint paint) {

@@ -12,6 +12,7 @@ import '../../core/utils/haptics.dart';
 import '../../core/services/error_service.dart';
 import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/math_utils.dart';
 import '../../core/utils/report_capture.dart';
 import '../../core/widgets/mission_report_card.dart';
 import '../../core/widgets/reveal_map.dart';
@@ -2515,7 +2516,21 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
           ),
         );
       }
-      if (r.path.length >= 2) paths.add(RevealPath(r.path));
+      if (r.path.length >= 2) {
+        paths.add(RevealPath(r.path));
+        // Faint gold dashed reference line: the great-circle (shortest)
+        // route from where this round started to its target, so the
+        // player can compare their trail against the optimal course.
+        if (target != null) {
+          paths.add(
+            RevealPath(
+              greatCirclePoints(r.path.first, target),
+              color: FlitColors.gold,
+              dashed: true,
+            ),
+          );
+        }
+      }
     }
     return (stars: stars, paths: paths);
   }
@@ -2535,12 +2550,18 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
           const RevealLegendItem(Icons.star, FlitColors.gold, 'found'),
           if (layers.stars.any((s) => s.color == FlitColors.error))
             const RevealLegendItem(Icons.star, FlitColors.error, 'missed'),
-          if (layers.paths.isNotEmpty)
+          if (layers.paths.isNotEmpty) ...[
             const RevealLegendItem(
               Icons.timeline,
               FlitColors.accent,
               'your flight',
             ),
+            const RevealLegendItem(
+              Icons.linear_scale,
+              FlitColors.gold,
+              'shortest route',
+            ),
+          ],
         ],
       ),
     ];
