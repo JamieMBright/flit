@@ -14,23 +14,77 @@ import '../../game/map/country_data.dart';
 /// Pinch-zoomable and pannable; marker and line sizes counter-scale with
 /// zoom so they keep a constant on-screen size. Includes the legend and
 /// gesture hint so every mode presents results identically.
+/// One star marker on the reveal map — an answer/target location.
+class RevealStar {
+  const RevealStar(this.lngLat, {this.color = FlitColors.gold});
+
+  final Vector2 lngLat;
+  final Color color;
+}
+
+/// One dot marker, optionally tied by a connector line to a location
+/// (e.g. a wrong guess pointing at its own question's answer).
+class RevealDot {
+  const RevealDot(this.lngLat, {this.color = FlitColors.error, this.lineTo});
+
+  final Vector2 lngLat;
+  final Color color;
+  final Vector2? lineTo;
+}
+
+/// A polyline layer (e.g. the flown path in the flight modes).
+class RevealPath {
+  const RevealPath(this.points, {this.color = FlitColors.accent});
+
+  final List<Vector2> points;
+  final Color color;
+}
+
+/// One legend entry below the map.
+class RevealLegendItem {
+  const RevealLegendItem(this.icon, this.color, this.label);
+
+  final IconData icon;
+  final Color color;
+  final String label;
+}
+
 class RevealMap extends StatefulWidget {
   const RevealMap({
     super.key,
-    required this.targetLngLat,
+    this.targetLngLat,
     this.clueLngLats = const [],
     this.guessLngLats = const [],
+    this.stars = const [],
+    this.dots = const [],
+    this.paths = const [],
+    this.legendItems,
     this.showLegend = true,
   });
 
-  /// The answer location as (lng, lat) degrees.
-  final Vector2 targetLngLat;
+  /// The single answer location as (lng, lat) degrees — Triangulation's
+  /// classic shape. [guessLngLats] connect to it. Modes with several
+  /// targets use [stars]/[dots] instead.
+  final Vector2? targetLngLat;
 
   /// Original clue anchor locations, if the mode has them.
   final List<Vector2> clueLngLats;
 
-  /// Wrong-guess locations.
+  /// Wrong-guess locations (connected to [targetLngLat]).
   final List<Vector2> guessLngLats;
+
+  /// Additional star markers (multi-target modes).
+  final List<RevealStar> stars;
+
+  /// Additional dot markers with optional per-dot connector lines.
+  final List<RevealDot> dots;
+
+  /// Polyline layers, drawn beneath the markers.
+  final List<RevealPath> paths;
+
+  /// Custom legend; when null the classic answer/clues/guesses legend is
+  /// derived from whichever of the simple layers are present.
+  final List<RevealLegendItem>? legendItems;
 
   final bool showLegend;
 
@@ -61,6 +115,23 @@ class _RevealMapState extends State<RevealMap> {
     super.dispose();
   }
 
+  List<RevealLegendItem> _defaultLegend() => [
+        if (widget.targetLngLat != null || widget.stars.isNotEmpty)
+          const RevealLegendItem(Icons.star, FlitColors.gold, 'answer'),
+        if (widget.clueLngLats.isNotEmpty)
+          const RevealLegendItem(
+            Icons.circle_outlined,
+            FlitColors.accent,
+            'clues',
+          ),
+        if (widget.guessLngLats.isNotEmpty || widget.dots.isNotEmpty)
+          const RevealLegendItem(
+            Icons.circle,
+            FlitColors.error,
+            'your guesses',
+          ),
+      ];
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -79,6 +150,9 @@ class _RevealMapState extends State<RevealMap> {
                     targetLngLat: widget.targetLngLat,
                     clueLngLats: widget.clueLngLats,
                     guessLngLats: widget.guessLngLats,
+                    stars: widget.stars,
+                    dots: widget.dots,
+                    paths: widget.paths,
                     zoom: _zoom,
                   ),
                 ),
@@ -88,37 +162,26 @@ class _RevealMapState extends State<RevealMap> {
         ),
         if (widget.showLegend) ...[
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12,
+            runSpacing: 2,
             children: [
-              const Icon(Icons.star, color: FlitColors.gold, size: 13),
-              const SizedBox(width: 3),
-              const Text(
-                'answer',
-                style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
-              ),
-              if (widget.clueLngLats.isNotEmpty) ...[
-                const SizedBox(width: 12),
-                const Icon(
-                  Icons.circle_outlined,
-                  color: FlitColors.accent,
-                  size: 11,
+              for (final item in widget.legendItems ?? _defaultLegend())
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(item.icon, color: item.color, size: 12),
+                    const SizedBox(width: 3),
+                    Text(
+                      item.label,
+                      style: const TextStyle(
+                        color: FlitColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 3),
-                const Text(
-                  'clues',
-                  style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
-                ),
-              ],
-              if (widget.guessLngLats.isNotEmpty) ...[
-                const SizedBox(width: 12),
-                const Icon(Icons.circle, color: FlitColors.error, size: 11),
-                const SizedBox(width: 3),
-                const Text(
-                  'your guesses',
-                  style: TextStyle(color: FlitColors.textMuted, fontSize: 11),
-                ),
-              ],
             ],
           ),
           const SizedBox(height: 2),
@@ -143,12 +206,18 @@ class _RevealMapPainter extends CustomPainter {
     required this.targetLngLat,
     required this.clueLngLats,
     required this.guessLngLats,
+    required this.stars,
+    required this.dots,
+    required this.paths,
     this.zoom = 1,
   });
 
-  final Vector2 targetLngLat;
+  final Vector2? targetLngLat;
   final List<Vector2> clueLngLats;
   final List<Vector2> guessLngLats;
+  final List<RevealStar> stars;
+  final List<RevealDot> dots;
+  final List<RevealPath> paths;
   final double zoom;
 
   @override
@@ -183,18 +252,43 @@ class _RevealMapPainter extends CustomPainter {
       }
     }
 
-    final target = project(targetLngLat.x, targetLngLat.y);
+    // Polyline layers (flight trails) beneath all markers.
+    for (final path in paths) {
+      if (path.points.length < 2) continue;
+      final p = Path();
+      for (var i = 0; i < path.points.length; i++) {
+        final pt = project(path.points[i].x, path.points[i].y);
+        if (i == 0) {
+          p.moveTo(pt.dx, pt.dy);
+        } else {
+          p.lineTo(pt.dx, pt.dy);
+        }
+      }
+      canvas.drawPath(
+        p,
+        Paint()
+          ..color = path.color.withOpacity(0.7)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2 / z
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+
+    final target =
+        targetLngLat == null ? null : project(targetLngLat!.x, targetLngLat!.y);
 
     // Clue anchors: accent-ringed dots with a faint line to the answer.
     for (final clue in clueLngLats) {
       final pos = project(clue.x, clue.y);
-      canvas.drawLine(
-        pos,
-        target,
-        Paint()
-          ..color = FlitColors.textSecondary.withOpacity(0.3)
-          ..strokeWidth = 0.8 / z,
-      );
+      if (target != null) {
+        canvas.drawLine(
+          pos,
+          target,
+          Paint()
+            ..color = FlitColors.textSecondary.withOpacity(0.3)
+            ..strokeWidth = 0.8 / z,
+        );
+      }
       canvas.drawCircle(pos, 3 / z, Paint()..color = FlitColors.backgroundDark);
       canvas.drawCircle(
         pos,
@@ -206,20 +300,47 @@ class _RevealMapPainter extends CustomPainter {
       );
     }
 
-    // Guess dots + connector lines toward the answer.
+    // Guess dots + connector lines toward the single answer.
     for (final g in guessLngLats) {
       final pos = project(g.x, g.y);
-      canvas.drawLine(
-        pos,
-        target,
-        Paint()
-          ..color = FlitColors.error.withOpacity(0.5)
-          ..strokeWidth = 1 / z,
-      );
+      if (target != null) {
+        canvas.drawLine(
+          pos,
+          target,
+          Paint()
+            ..color = FlitColors.error.withOpacity(0.5)
+            ..strokeWidth = 1 / z,
+        );
+      }
       canvas.drawCircle(pos, 3.5 / z, Paint()..color = FlitColors.error);
     }
 
-    _drawStar(canvas, target, 7 / z, Paint()..color = FlitColors.gold);
+    // Free-form dots (multi-target modes), each with its own connector.
+    for (final dot in dots) {
+      final pos = project(dot.lngLat.x, dot.lngLat.y);
+      if (dot.lineTo != null) {
+        canvas.drawLine(
+          pos,
+          project(dot.lineTo!.x, dot.lineTo!.y),
+          Paint()
+            ..color = dot.color.withOpacity(0.5)
+            ..strokeWidth = 1 / z,
+        );
+      }
+      canvas.drawCircle(pos, 3.5 / z, Paint()..color = dot.color);
+    }
+
+    for (final star in stars) {
+      _drawStar(
+        canvas,
+        project(star.lngLat.x, star.lngLat.y),
+        6 / z,
+        Paint()..color = star.color,
+      );
+    }
+    if (target != null) {
+      _drawStar(canvas, target, 7 / z, Paint()..color = FlitColors.gold);
+    }
   }
 
   void _drawStar(Canvas canvas, Offset center, double r, Paint paint) {
@@ -244,5 +365,8 @@ class _RevealMapPainter extends CustomPainter {
       targetLngLat != old.targetLngLat ||
       guessLngLats.length != old.guessLngLats.length ||
       clueLngLats.length != old.clueLngLats.length ||
+      stars.length != old.stars.length ||
+      dots.length != old.dots.length ||
+      paths.length != old.paths.length ||
       zoom != old.zoom;
 }
