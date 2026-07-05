@@ -519,6 +519,17 @@ class PlaneRenderer {
 
     // Left wing pencil outline
     _pencilOutline(leftWing, canvas, leftWingColor, strokeWidth: 1.0);
+    // Crisp solid edge so the wing reads as one bounded, solid mass even when
+    // its colour sits close to the background (the soft wet-edge alone let
+    // low-contrast wings — prop, warbird — look ghosted).
+    canvas.drawPath(
+      leftWing,
+      Paint()
+        ..color = _darken(leftWingColor, 0.42)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.9
+        ..strokeJoin = StrokeJoin.round,
+    );
 
     // Ambient occlusion at left wing root
     _wingJointAO(canvas, Offset(-4, 1 + leftDip * 0.2), radius: 5.0);
@@ -624,6 +635,15 @@ class PlaneRenderer {
 
     // Right wing pencil outline
     _pencilOutline(rightWing, canvas, rightWingColor, strokeWidth: 1.0);
+    // Crisp solid edge — see the left-wing note; keeps the wing a solid mass.
+    canvas.drawPath(
+      rightWing,
+      Paint()
+        ..color = _darken(rightWingColor, 0.42)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.9
+        ..strokeJoin = StrokeJoin.round,
+    );
 
     // Ambient occlusion at right wing root
     _wingJointAO(canvas, Offset(4, 1 + rightDip * 0.2), radius: 5.0);
@@ -2400,14 +2420,17 @@ class PlaneRenderer {
       );
     }
 
-    // Platinum shimmer highlights along body
-    for (var i = 0; i < 4; i++) {
-      canvas.drawCircle(
-        Offset(bodyShift - 1.5 + i * 2.0, -4 + i * 3.5),
-        1.0,
-        Paint()..color = detail.withOpacity(0.5),
-      );
-    }
+    // Platinum sheen — a slim highlight down the body's centreline. (The old
+    // version drifted four dots diagonally off the narrow body, so they landed
+    // on the wings/background and read as stray marks.)
+    canvas.drawLine(
+      Offset(bodyShift - 0.8, -8),
+      Offset(bodyShift - 1.2, 8),
+      Paint()
+        ..color = detail.withOpacity(0.5)
+        ..strokeWidth = 1.2
+        ..strokeCap = StrokeCap.round,
+    );
 
     canvas.restore(); // End body roll transform
   }
@@ -3326,12 +3349,24 @@ class PlaneRenderer {
       )
       ..close();
     _wash(canvas, bodyPath, primary, seed: planeId);
-    _pencilOutline(bodyPath, canvas, primary, strokeWidth: 1.1);
+    // Crisp darker-rose edge so the pastel egg reads against the sky/ground
+    // instead of washing out (outlining in its own pale pink gave no contrast).
+    final eggEdge = _darken(primary, 0.42);
+    _pencilOutline(bodyPath, canvas, eggEdge, strokeWidth: 1.1);
+    canvas.drawPath(
+      bodyPath,
+      Paint()
+        ..color = eggEdge
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.1
+        ..strokeJoin = StrokeJoin.round,
+    );
 
-    // Decorative horizontal bands (painted-egg style).
+    // Decorative horizontal bands (painted-egg style) — a saturated accent so
+    // the shell reads as a decorated egg, not a flat blob.
     final bandPaint = Paint()
-      ..color = detail.withOpacity(0.80)
-      ..strokeWidth = 2.2
+      ..color = _darken(detail, 0.15)
+      ..strokeWidth = 2.4
       ..strokeCap = StrokeCap.round;
     for (final y in [-8.0, -1.0, 6.0]) {
       // Clip bands to stay inside the egg outline — approximate with short lines.
@@ -3403,29 +3438,52 @@ class PlaneRenderer {
     canvas.scale(rollScale, 1.0);
     canvas.translate(-bodyShift, 0);
 
-    // Arrow shaft (slim rectangle along the centreline).
+    // Slim arrow shaft along the centreline. Deliberately thin: with a bare
+    // vertical column the whole sprite mis-read badly, so the silhouette is
+    // carried by the big heart, the white cupid wings, and the fletching.
     final shaftPath = Path()
       ..addRRect(
         RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset(bodyShift, 2), width: 4, height: 34),
-          const Radius.circular(2),
+          Rect.fromCenter(center: Offset(bodyShift, 3), width: 2.6, height: 32),
+          const Radius.circular(1.3),
         ),
       );
     _wash(canvas, shaftPath, primary, seed: planeId);
     _pencilOutline(shaftPath, canvas, primary, strokeWidth: 0.8);
 
-    // Heart-shaped arrowhead at the front/top.
-    // Drawn as two overlapping circles + a triangle point below.
+    // White cupid wings just behind the heart — the plane-like cross shape
+    // is what makes this read as a flying love-arrow.
+    for (final sign in [-1.0, 1.0]) {
+      final wing = Path()
+        ..moveTo(bodyShift + sign * 1.2, -7.5) // root, upper
+        ..quadraticBezierTo(
+          bodyShift + sign * 9, -11, // swept leading edge
+          bodyShift + sign * 13.5, -8.5, // wingtip
+        )
+        // Three feather scallops back to the root.
+        ..quadraticBezierTo(
+            bodyShift + sign * 11.5, -5.5, bodyShift + sign * 9.5, -5.8)
+        ..quadraticBezierTo(
+            bodyShift + sign * 7.6, -3.6, bodyShift + sign * 5.6, -4.0)
+        ..quadraticBezierTo(
+            bodyShift + sign * 3.4, -2.2, bodyShift + sign * 1.2, -2.8)
+        ..close();
+      _wash(canvas, wing, detail, seed: planeId);
+      _pencilOutline(wing, canvas, _darken(detail, 0.25), strokeWidth: 0.8);
+    }
+
+    // Big heart arrowhead at the front — two lobes + point, oversized so the
+    // heart (not the shaft) dominates the silhouette.
     final heartLeft = Path()
       ..addOval(Rect.fromCenter(
-          center: Offset(bodyShift - 2.8, -16), width: 5.6, height: 5.6));
+          center: Offset(bodyShift - 3.6, -17.5), width: 7.4, height: 7.4));
     final heartRight = Path()
       ..addOval(Rect.fromCenter(
-          center: Offset(bodyShift + 2.8, -16), width: 5.6, height: 5.6));
+          center: Offset(bodyShift + 3.6, -17.5), width: 7.4, height: 7.4));
     final heartPoint = Path()
-      ..moveTo(bodyShift - 5, -14.5)
-      ..lineTo(bodyShift, -10)
-      ..lineTo(bodyShift + 5, -14.5)
+      ..moveTo(bodyShift - 6.6, -15.4)
+      ..lineTo(bodyShift, -9.5)
+      ..lineTo(bodyShift + 6.6, -15.4)
       ..close();
     for (final p in [heartLeft, heartRight, heartPoint]) {
       _wash(canvas, p, secondary, seed: planeId);
@@ -3440,31 +3498,27 @@ class PlaneRenderer {
       strokeWidth: 1.0,
     );
 
-    // Tail fletching: two angled feather vanes on the shaft axis at the rear.
-    // Swept back like real arrow feathers — pink barbs with a white rib — so
-    // the tail reads as fletching, not stray marks.
+    // Tail fletching: classic crossed feather vanes — thin, long, swept, and
+    // flush to the shaft (no blob shapes, no nock dot).
     for (final sign in [-1.0, 1.0]) {
       final vane = Path()
-        ..moveTo(bodyShift + sign * 1.4, 9) // upper attach on the shaft
-        ..lineTo(bodyShift + sign * 7.5, 13) // outer leading barb
-        ..lineTo(bodyShift + sign * 6.2, 20) // outer trailing barb
-        ..lineTo(bodyShift + sign * 1.4, 18) // lower attach on the shaft
+        ..moveTo(bodyShift + sign * 0.9, 10) // upper attach on the shaft
+        ..lineTo(bodyShift + sign * 6.8, 14.5) // outer leading barb
+        ..lineTo(bodyShift + sign * 5.4, 19.5) // outer trailing barb
+        ..lineTo(bodyShift + sign * 0.9, 17) // lower attach on the shaft
         ..close();
-      _wash(canvas, vane, primary, seed: planeId);
-      _pencilOutline(vane, canvas, _darken(primary, 0.3), strokeWidth: 0.8);
+      _wash(canvas, vane, secondary, seed: planeId);
+      _pencilOutline(vane, canvas, _darken(secondary, 0.25), strokeWidth: 0.8);
       // White quill rib down the centre of each vane.
       canvas.drawLine(
-        Offset(bodyShift + sign * 1.6, 11),
-        Offset(bodyShift + sign * 6.4, 16.5),
+        Offset(bodyShift + sign * 1.1, 12),
+        Offset(bodyShift + sign * 5.8, 16.5),
         Paint()
           ..color = detail.withOpacity(0.9)
-          ..strokeWidth = 0.8
+          ..strokeWidth = 0.7
           ..strokeCap = StrokeCap.round,
       );
     }
-    // Nock at the very tail of the shaft.
-    canvas.drawCircle(
-        Offset(bodyShift, 19), 1.6, Paint()..color = _darken(primary, 0.35));
 
     canvas.restore();
   }

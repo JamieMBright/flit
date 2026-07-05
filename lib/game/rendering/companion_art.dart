@@ -321,19 +321,20 @@ class CompanionArt {
       Paint()..color = _lighten(brown, 0.14).withOpacity(0.8),
     );
 
-    // Head — merges into the body, slightly forward.
+    // Head — merges into the body, slightly forward. Top-down a bird's head
+    // is much smaller than its body; ~half the body radius keeps it birdlike.
     final head = Path()
       ..addOval(Rect.fromCircle(
-        center: const Offset(0, -s * 0.44),
-        radius: s * 0.36,
+        center: const Offset(0, -s * 0.52),
+        radius: s * 0.24,
       ));
     _fill(canvas, head, _lighten(brown, 0.08));
 
     // Beak pokes out BEYOND the head, along flight direction.
-    _beak(canvas, s * 0.09, -s * 0.70, -s * 0.94, const Color(0xFFE8962A));
+    _beak(canvas, s * 0.08, -s * 0.68, -s * 0.90, const Color(0xFFE8962A));
 
     // Two tiny side eyes.
-    _eyeDots(canvas, s * 0.16, -s * 0.52, s * 0.05);
+    _eyeDots(canvas, s * 0.11, -s * 0.56, s * 0.04);
   }
 
   // ─── Sparrow — swept-wing barn swallow ──────────────────────────────
@@ -558,33 +559,33 @@ class CompanionArt {
       ));
     _fill(canvas, body, darkBrown, outlineWidth: 1.1);
 
-    // White head + neck, extending forward of the wings.
+    // White head + neck, extending forward of the wings — slim from above.
     final head = Path()
-      ..moveTo(-s * 0.20, -s * 0.28)
-      ..quadraticBezierTo(-s * 0.24, -s * 0.62, -s * 0.13, -s * 0.76)
-      ..quadraticBezierTo(0, -s * 0.84, s * 0.13, -s * 0.76)
-      ..quadraticBezierTo(s * 0.24, -s * 0.62, s * 0.20, -s * 0.28)
-      ..quadraticBezierTo(0, -s * 0.20, -s * 0.20, -s * 0.28)
+      ..moveTo(-s * 0.15, -s * 0.30)
+      ..quadraticBezierTo(-s * 0.18, -s * 0.58, -s * 0.10, -s * 0.70)
+      ..quadraticBezierTo(0, -s * 0.77, s * 0.10, -s * 0.70)
+      ..quadraticBezierTo(s * 0.18, -s * 0.58, s * 0.15, -s * 0.30)
+      ..quadraticBezierTo(0, -s * 0.23, -s * 0.15, -s * 0.30)
       ..close();
     _fill(canvas, head, white, outlineDarken: 0.22);
 
     // Gold hooked beak, tip curling beyond the head.
     final beak = Path()
-      ..moveTo(-s * 0.08, -s * 0.74)
-      ..quadraticBezierTo(-s * 0.06, -s * 0.90, 0, -s * 1.00)
-      ..quadraticBezierTo(s * 0.07, -s * 0.92, s * 0.08, -s * 0.74)
-      ..quadraticBezierTo(0, -s * 0.80, -s * 0.08, -s * 0.74)
+      ..moveTo(-s * 0.07, -s * 0.68)
+      ..quadraticBezierTo(-s * 0.05, -s * 0.84, 0, -s * 0.94)
+      ..quadraticBezierTo(s * 0.06, -s * 0.86, s * 0.07, -s * 0.68)
+      ..quadraticBezierTo(0, -s * 0.74, -s * 0.07, -s * 0.68)
       ..close();
     _fill(canvas, beak, gold, outlineWidth: 0.8);
     // Darker hook tip.
     canvas.drawCircle(
-      const Offset(0, -s * 0.99),
+      const Offset(0, -s * 0.93),
       s * 0.035,
       Paint()..color = const Color(0xFF8A6212),
     );
 
     // Two small top-down eyes.
-    _eyeDots(canvas, s * 0.11, -s * 0.62, s * 0.045);
+    _eyeDots(canvas, s * 0.08, -s * 0.58, s * 0.04);
   }
 
   // ─── Parrot — scarlet macaw ─────────────────────────────────────────
@@ -702,33 +703,34 @@ class CompanionArt {
       ));
     _fill(canvas, body, scarlet);
 
-    // Oversized head (macaw cue #1).
+    // Large-for-a-bird head (macaw cue #1) — but still clearly smaller than
+    // the body so the top-down proportions stay birdlike.
     final head = Path()
       ..addOval(Rect.fromCircle(
-        center: const Offset(0, -s * 0.52),
-        radius: s * 0.40,
+        center: const Offset(0, -s * 0.56),
+        radius: s * 0.28,
       ));
     _fill(canvas, head, _lighten(scarlet, 0.04));
 
     // Big black hooked beak, extending well beyond the head (cue #2).
     final beak = Path()
-      ..moveTo(-s * 0.13, -s * 0.82)
-      ..quadraticBezierTo(-s * 0.12, -s * 1.06, 0, -s * 1.18)
-      ..quadraticBezierTo(s * 0.11, -s * 1.08, s * 0.13, -s * 0.82)
-      ..quadraticBezierTo(0, -s * 0.90, -s * 0.13, -s * 0.82)
+      ..moveTo(-s * 0.11, -s * 0.78)
+      ..quadraticBezierTo(-s * 0.10, -s * 0.98, 0, -s * 1.08)
+      ..quadraticBezierTo(s * 0.09, -s * 1.00, s * 0.11, -s * 0.78)
+      ..quadraticBezierTo(0, -s * 0.85, -s * 0.11, -s * 0.78)
       ..close();
     _fill(canvas, beak, const Color(0xFF26221E), outlineDarken: 0.0);
     // Pale cere line where beak meets head.
     canvas.drawLine(
-      const Offset(-s * 0.11, -s * 0.83),
-      const Offset(s * 0.11, -s * 0.83),
+      const Offset(-s * 0.09, -s * 0.79),
+      const Offset(s * 0.09, -s * 0.79),
       Paint()
         ..color = const Color(0xFFE8DFD2).withOpacity(0.7)
         ..strokeWidth = 1.0,
     );
 
     // Side eyes.
-    _eyeDots(canvas, s * 0.17, -s * 0.60, s * 0.05);
+    _eyeDots(canvas, s * 0.12, -s * 0.60, s * 0.04);
   }
 
   // ─── Phoenix — mythical fire bird ───────────────────────────────────
