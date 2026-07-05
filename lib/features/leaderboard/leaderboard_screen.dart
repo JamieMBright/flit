@@ -111,7 +111,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   @override
   void initState() {
     super.initState();
-    _modeTabController = TabController(length: 3, vsync: this);
+    _modeTabController = TabController(
+      length: LeaderboardMode.values.length,
+      vsync: this,
+    );
     _modeTabController.addListener(_onModeChanged);
     _loadData();
   }
@@ -253,10 +256,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
+            isScrollable: true,
+            tabAlignment: TabAlignment.center,
             tabs: const [
               Tab(text: 'SCRAMBLE'),
               Tab(text: 'TRAINING'),
               Tab(text: 'BRIEFING'),
+              Tab(text: 'TRIANGULATION'),
             ],
           ),
         ),

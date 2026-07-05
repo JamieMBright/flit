@@ -130,7 +130,12 @@ extension GameModeTabExtension on GameModeTab {
 }
 
 /// Top-level leaderboard mode tab.
-enum LeaderboardMode { dailyScramble, trainingFlight, flightBriefing }
+enum LeaderboardMode {
+  dailyScramble,
+  trainingFlight,
+  flightBriefing,
+  dailyTriangulation,
+}
 
 extension LeaderboardModeExtension on LeaderboardMode {
   String get displayName {
@@ -141,6 +146,8 @@ extension LeaderboardModeExtension on LeaderboardMode {
         return 'TRAINING FLIGHT';
       case LeaderboardMode.flightBriefing:
         return 'FLIGHT BRIEFING';
+      case LeaderboardMode.dailyTriangulation:
+        return 'TRIANGULATION';
     }
   }
 
@@ -153,6 +160,8 @@ extension LeaderboardModeExtension on LeaderboardMode {
         return null; // neq 'daily' and neq 'briefing'
       case LeaderboardMode.flightBriefing:
         return 'briefing';
+      case LeaderboardMode.dailyTriangulation:
+        return 'daily_triangulation';
     }
   }
 }

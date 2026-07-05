@@ -252,17 +252,29 @@ class _RevealMapPainter extends CustomPainter {
       }
     }
 
-    // Polyline layers (flight trails) beneath all markers.
+    // Longitudes from a live flight can drift outside [-180, 180).
+    double normLng(double lng) {
+      var v = (lng + 180) % 360;
+      if (v < 0) v += 360;
+      return v - 180;
+    }
+
+    // Polyline layers (flight trails) beneath all markers. Segments that
+    // cross the antimeridian break into a new subpath instead of drawing
+    // a streak across the whole map.
     for (final path in paths) {
       if (path.points.length < 2) continue;
       final p = Path();
+      double? prevLng;
       for (var i = 0; i < path.points.length; i++) {
-        final pt = project(path.points[i].x, path.points[i].y);
-        if (i == 0) {
+        final lng = normLng(path.points[i].x);
+        final pt = project(lng, path.points[i].y);
+        if (i == 0 || (lng - prevLng!).abs() > 180) {
           p.moveTo(pt.dx, pt.dy);
         } else {
           p.lineTo(pt.dx, pt.dy);
         }
+        prevLng = lng;
       }
       canvas.drawPath(
         p,
@@ -272,6 +284,9 @@ class _RevealMapPainter extends CustomPainter {
           ..strokeWidth = 1.2 / z
           ..strokeCap = StrokeCap.round,
       );
+      // Take-off dot so the trail's direction reads at a glance.
+      final start = project(normLng(path.points.first.x), path.points.first.y);
+      canvas.drawCircle(start, 2.5 / z, Paint()..color = path.color);
     }
 
     final target =
