@@ -635,6 +635,17 @@ abstract class CosmeticCatalog {
 
     // --- Legendary / Premium ---
     Cosmetic(
+      id: 'contrail_ace',
+      name: 'Ace Vapour',
+      type: CosmeticType.contrail,
+      price: 15000,
+      rarity: CosmeticRarity.legendary,
+      description:
+          'Crimson ribbons reserved for proven Aces. Requires Ace rating '
+          'in Standard Sortie — money alone cannot buy this trail.',
+      colorScheme: {'primary': 0xFFE0524D, 'secondary': 0xFFFFD700},
+    ),
+    Cosmetic(
       id: 'contrail_aurora',
       name: 'Aurora Trail',
       type: CosmeticType.contrail,
