@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/services/game_settings.dart';
+import '../../game/economy/fuel_tank.dart';
+import '../../game/economy/license_heat.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/uncharted_progress.dart';
@@ -16,6 +18,7 @@ import '../models/daily_result.dart';
 import '../models/daily_streak.dart';
 import '../models/pilot_license.dart';
 import '../models/player.dart';
+import '../models/season.dart';
 import '../models/social_title.dart';
 import '../services/leaderboard_service.dart';
 import '../services/user_preferences_service.dart';
@@ -41,6 +44,9 @@ class AccountState {
     this.flightSchoolProgress = const {},
     this.unchartedProgress = const {},
     this.campaignProgress = const {},
+    this.fuelTank = const FuelTank(),
+    this.refuelCanisters = 0,
+    this.trophyCase = const TrophyCase(),
   })  : avatar = avatar ?? const AvatarConfig(),
         license = license ?? PilotLicense.random();
 
@@ -105,6 +111,16 @@ class AccountState {
 
   /// Campaign mission progress keyed by mission ID.
   final Map<String, CampaignMissionResult> campaignProgress;
+
+  /// Meta fuel tank — gates free-flight coin EARNING only (never flight,
+  /// daily entry, or rated play). See lib/game/economy/fuel_tank.dart.
+  final FuelTank fuelTank;
+
+  /// Owned refuel-canister items (each = one instant full refuel).
+  final int refuelCanisters;
+
+  /// End-of-season trophy snapshots (see lib/data/models/season.dart).
+  final TrophyCase trophyCase;
 
   /// Set of completed campaign mission IDs.
   Set<String> get completedMissionIds => campaignProgress.keys.toSet();
@@ -173,6 +189,9 @@ class AccountState {
     Map<String, FlightSchoolProgress>? flightSchoolProgress,
     Map<String, UnchartedProgress>? unchartedProgress,
     Map<String, CampaignMissionResult>? campaignProgress,
+    FuelTank? fuelTank,
+    int? refuelCanisters,
+    TrophyCase? trophyCase,
   }) =>
       AccountState(
         currentPlayer: currentPlayer ?? this.currentPlayer,
@@ -200,6 +219,9 @@ class AccountState {
         flightSchoolProgress: flightSchoolProgress ?? this.flightSchoolProgress,
         unchartedProgress: unchartedProgress ?? this.unchartedProgress,
         campaignProgress: campaignProgress ?? this.campaignProgress,
+        fuelTank: fuelTank ?? this.fuelTank,
+        refuelCanisters: refuelCanisters ?? this.refuelCanisters,
+        trophyCase: trophyCase ?? this.trophyCase,
       );
 }
 
@@ -454,6 +476,9 @@ class AccountNotifier extends StateNotifier<AccountState> {
       flightSchoolProgress: snapshot.toFlightSchoolProgress(),
       unchartedProgress: snapshot.toUnchartedProgress(),
       campaignProgress: snapshot.toCampaignProgress(),
+      fuelTank: snapshot.toFuelTank(),
+      refuelCanisters: snapshot.refuelCanisters,
+      trophyCase: snapshot.toTrophyCase(),
     );
 
     // Mark Supabase data as loaded — enables writes. Must happen AFTER
@@ -712,6 +737,13 @@ class AccountNotifier extends StateNotifier<AccountState> {
       campaignProgress: state.campaignProgress.map(
         (k, v) => MapEntry(k, v.toJson()),
       ),
+      // Economy state without dedicated columns rides inside the
+      // client-owned license_data JSONB.
+      licenseEconomyExtras: {
+        'fuel': state.fuelTank.toJson(),
+        'refuel_canisters': state.refuelCanisters,
+        'trophy_case': state.trophyCase.toJson(),
+      },
     );
   }
 
@@ -805,10 +837,16 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// Returns the actual coins awarded (0 if daily cap reached). Resets
   /// the daily counter when the date changes. Applies license/level boost
   /// and active promo earnings multiplier.
+  ///
+  /// When [gateFuel] is true (free-flight farming sessions ONLY — never
+  /// dailies, rated sorties, or H2H), each find consumes meta-tank fuel and
+  /// an empty tank pauses earnings. The flight itself is never blocked —
+  /// the tank regenerates over time or can be refueled with coins/canisters.
   int awardFreeFlightClue({
     required int perClueReward,
     required int dailyCap,
     double promoMultiplier = 1.0,
+    bool gateFuel = false,
   }) {
     final todayStr = AccountState._todayStr();
 
@@ -820,6 +858,12 @@ class AccountNotifier extends StateNotifier<AccountState> {
 
     if (coinsToday >= dailyCap) return 0;
 
+    // Fuel gate: out of fuel = earnings paused (flight continues).
+    final now = DateTime.now().toUtc();
+    if (gateFuel && !state.fuelTank.canEarn(now, capacity: fuelCapacity)) {
+      return 0;
+    }
+
     // Clamp so we never exceed the daily cap.
     final baseReward = (perClueReward * promoMultiplier).round();
     final capped = baseReward.clamp(0, dailyCap - coinsToday);
@@ -830,9 +874,95 @@ class AccountNotifier extends StateNotifier<AccountState> {
     state = state.copyWith(
       freeFlightCoinsToday: coinsToday + capped,
       freeFlightCoinDate: todayStr,
+      fuelTank: gateFuel
+          ? state.fuelTank
+              .consume(now, FuelTank.fuelPerClue, capacity: fuelCapacity)
+          : state.fuelTank,
     );
     _syncAccountState();
     return earned;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Meta fuel tank (free-flight earn gating only)
+  // ---------------------------------------------------------------------------
+
+  /// Current tank capacity — license fuelBoost (plus hot pump) enlarges it.
+  double get fuelCapacity => FuelTank.capacityFor(
+        state.license.effectiveFuelBoost(DateTime.now().toUtc()),
+      );
+
+  /// Current fuel units (includes regeneration since the last write).
+  double get currentFuel => state.fuelTank
+      .currentFuel(DateTime.now().toUtc(), capacity: fuelCapacity);
+
+  /// Whether free-flight finds currently earn coins.
+  bool get canEarnFreeFlightCoins =>
+      state.fuelTank.canEarn(DateTime.now().toUtc(), capacity: fuelCapacity);
+
+  /// Instantly refill the tank for coins. Returns false when unaffordable.
+  bool refuelWithCoins() {
+    if (!spendCoins(FuelTank.instantRefuelCoinCost, source: 'fuel_refuel')) {
+      return false;
+    }
+    state = state.copyWith(
+      fuelTank: state.fuelTank
+          .refillFull(DateTime.now().toUtc(), capacity: fuelCapacity),
+    );
+    _syncAccountState();
+    return true;
+  }
+
+  /// Spend one owned refuel canister for an instant full refuel.
+  bool useRefuelCanister() {
+    if (state.refuelCanisters <= 0) return false;
+    state = state.copyWith(
+      refuelCanisters: state.refuelCanisters - 1,
+      fuelTank: state.fuelTank
+          .refillFull(DateTime.now().toUtc(), capacity: fuelCapacity),
+    );
+    _syncAccountState();
+    return true;
+  }
+
+  /// Buy refuel canisters from the shop. Returns false when unaffordable.
+  bool buyRefuelCanisters(int count) {
+    if (count <= 0) return false;
+    final cost = FuelTank.canisterCoinCost * count;
+    if (!spendCoins(cost, source: 'refuel_canister_purchase')) return false;
+    state = state.copyWith(refuelCanisters: state.refuelCanisters + count);
+    _syncAccountState();
+    return true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Hot license (pump)
+  // ---------------------------------------------------------------------------
+
+  /// Pump the license HOT if [score] qualifies (>= 60% of [maxScore]).
+  ///
+  /// Call after big daily/sortie performances. Returns true when the pump
+  /// triggered/extended. Base stats are permanent — only the temporary hot
+  /// bonus is time-limited.
+  bool pumpLicenseFromPerformance({
+    required int score,
+    required int maxScore,
+  }) {
+    if (!LicenseHeat.qualifiesForPump(score: score, maxScore: maxScore)) {
+      return false;
+    }
+    final now = DateTime.now().toUtc();
+    state = state.copyWith(
+      license: state.license.copyWith(heat: state.license.heat.pump(now)),
+    );
+    _syncAccountState();
+    return true;
+  }
+
+  /// Record an end-of-season trophy snapshot (idempotent per season+mode).
+  void recordSeasonTrophy(Trophy trophy) {
+    state = state.copyWith(trophyCase: state.trophyCase.record(trophy));
+    _syncAccountState();
   }
 
   /// Unlock a region with coins. Deducts the cost and marks the region
@@ -1379,28 +1509,70 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _syncAccountState();
   }
 
+  /// Total luck for reroll advantage: avatar rarity + pity counter.
+  ///
+  /// Pity guarantees improving odds after consecutive bad rolls.
+  int get _rerollLuck =>
+      state.avatar.luckBonus + state.license.heat.pityLuckBonus;
+
+  /// Roll a replacement license and apply the reroll economy on top:
+  /// pity bookkeeping (bad roll = +1 pity, improvement resets) and the
+  /// factory-hot proc (a reroll can arrive already pumped).
+  PilotLicense _rollWithEconomy({
+    required Set<String> lockedStats,
+    required bool lockType,
+    required bool paid,
+  }) {
+    final old = state.license;
+    final rolled = PilotLicense.reroll(
+      old,
+      lockedStats: lockedStats,
+      lockType: lockType,
+      luckBonus: _rerollLuck,
+    );
+    final now = DateTime.now().toUtc();
+    var heat = old.heat;
+    if (paid) heat = heat.recordPaidReroll(AccountState._todayStr());
+    heat = heat.recordRollOutcome(improved: rolled.totalBoost > old.totalBoost);
+    heat = heat.rollFactoryHot(now);
+    return rolled.copyWith(heat: heat);
+  }
+
+  /// Cost of the next PAID reroll: escalates within the day
+  /// (100 -> 200 -> 400 -> 800, reset at UTC midnight), plus the usual
+  /// lock surcharges. The daily free reroll (see [useFreeReroll]) always
+  /// comes first and stays free.
+  int paidRerollCost({
+    Set<String> lockedStats = const {},
+    bool lockType = false,
+  }) {
+    var cost = state.license.heat.nextPaidRerollCost(AccountState._todayStr());
+    if (lockedStats.length == 1) {
+      cost += PilotLicense.lockOneCost - PilotLicense.rerollAllCost;
+    }
+    if (lockedStats.length == 2) {
+      cost += PilotLicense.lockTwoCost - PilotLicense.rerollAllCost;
+    }
+    if (lockType) cost += PilotLicense.lockTypeCost;
+    return cost;
+  }
+
   /// Reroll the pilot license. Returns true if affordable.
   ///
-  /// The avatar's [luckBonus] is automatically applied — rarer avatars
-  /// grant advantage rolls for better licence stats.
+  /// The avatar's [luckBonus] plus any pity bonus is automatically applied —
+  /// rarer avatars and unlucky streaks grant advantage rolls.
   bool rerollLicense({
     Set<String> lockedStats = const {},
     bool lockType = false,
   }) {
-    // Calculate cost
-    var cost = PilotLicense.rerollAllCost;
-    if (lockedStats.length == 1) cost = PilotLicense.lockOneCost;
-    if (lockedStats.length == 2) cost = PilotLicense.lockTwoCost;
-    if (lockType) cost += PilotLicense.lockTypeCost;
-
+    final cost = paidRerollCost(lockedStats: lockedStats, lockType: lockType);
     if (!spendCoins(cost, source: 'license_reroll')) return false;
 
     state = state.copyWith(
-      license: PilotLicense.reroll(
-        state.license,
+      license: _rollWithEconomy(
         lockedStats: lockedStats,
         lockType: lockType,
-        luckBonus: state.avatar.luckBonus,
+        paid: true,
       ),
     );
     _syncAccountState();
@@ -1428,11 +1600,10 @@ class AccountNotifier extends StateNotifier<AccountState> {
     final todayStr = AccountState._todayStr();
 
     state = state.copyWith(
-      license: PilotLicense.reroll(
-        state.license,
+      license: _rollWithEconomy(
         lockedStats: lockedStats,
         lockType: lockType,
-        luckBonus: state.avatar.luckBonus,
+        paid: false,
       ),
       lastFreeRerollDate: todayStr,
     );
@@ -1530,11 +1701,10 @@ class AccountNotifier extends StateNotifier<AccountState> {
     // We use a special suffix to distinguish "completed" from "reroll used".
     final todayStr = AccountState._todayStr();
     state = state.copyWith(
-      license: PilotLicense.reroll(
-        state.license,
+      license: _rollWithEconomy(
         lockedStats: lockedStats,
         lockType: lockType,
-        luckBonus: state.avatar.luckBonus,
+        paid: false,
       ),
       lastDailyChallengeDate: '${todayStr}_used',
     );
@@ -1542,8 +1712,10 @@ class AccountNotifier extends StateNotifier<AccountState> {
     return true;
   }
 
-  /// Get current coin boost multiplier from pilot license (for applying to earnings).
-  double get coinBoostMultiplier => 1.0 + state.license.coinBoost / 100.0;
+  /// Get current coin boost multiplier from pilot license (for applying to
+  /// earnings). Includes the hot-pump bonus while the license is HOT.
+  double get coinBoostMultiplier =>
+      1.0 + state.license.effectiveCoinBoost(DateTime.now().toUtc()) / 100.0;
 
   /// Get current level-based gold multiplier.
   ///
@@ -1555,8 +1727,16 @@ class AccountNotifier extends StateNotifier<AccountState> {
   /// Combined total gold multiplier (license + level).
   double get totalGoldMultiplier => coinBoostMultiplier * levelGoldMultiplier;
 
-  /// Get current fuel boost multiplier (for solo play speed).
-  double get fuelBoostMultiplier => 1.0 + state.license.fuelBoost / 100.0;
+  /// Get current fuel boost multiplier (for solo play). Includes the
+  /// hot-pump bonus. Used by BOOST-AFFECTED modes only (dailies, free
+  /// flight) — rated play uses RatedLoadout.standard instead.
+  double get fuelBoostMultiplier =>
+      1.0 + state.license.effectiveFuelBoost(DateTime.now().toUtc()) / 100.0;
+
+  /// Effective clue chance including the hot-pump bonus. Boost-affected
+  /// modes only — H2H/sortie sessions omit clue-chance to stay in sync.
+  int get effectiveClueChance =>
+      state.license.effectiveClueChance(DateTime.now().toUtc());
 }
 
 /// Account provider

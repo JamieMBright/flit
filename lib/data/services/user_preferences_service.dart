@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/services/error_service.dart';
 
+import '../../game/economy/fuel_tank.dart';
 import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/uncharted_progress.dart';
 import '../../game/tutorial/campaign_mission.dart';
@@ -15,6 +16,7 @@ import '../models/daily_result.dart';
 import '../models/daily_streak.dart';
 import '../models/pilot_license.dart';
 import '../models/player.dart';
+import '../models/season.dart';
 import 'leaderboard_service.dart';
 
 // ---------------------------------------------------------------------------
@@ -424,6 +426,11 @@ class UserPreferencesService {
   }
 
   /// Mark account state as dirty and queue a write.
+  ///
+  /// [licenseEconomyExtras] is merged into the `license_data` JSONB blob —
+  /// the license_data schema is client-owned, so economy state that has no
+  /// dedicated column (fuel tank, refuel canisters, trophy case) rides
+  /// inside it without requiring a migration.
   void saveAccountState({
     required AvatarConfig avatar,
     required PilotLicense license,
@@ -442,13 +449,14 @@ class UserPreferencesService {
     Map<String, FlightSchoolProgress> flightSchoolProgress = const {},
     Map<String, UnchartedProgress> unchartedProgress = const {},
     Map<String, dynamic> campaignProgress = const {},
+    Map<String, dynamic> licenseEconomyExtras = const {},
   }) {
     _accountStateWriteVersion++;
     _accountStateDirty = true;
     _pendingAccountState = {
       'user_id': _userId,
       'avatar_config': avatar.toJson(),
-      'license_data': license.toJson(),
+      'license_data': {...license.toJson(), ...licenseEconomyExtras},
       'unlocked_regions': unlockedRegions.toList(),
       'owned_avatar_parts': ownedAvatarParts.toList(),
       'owned_cosmetics': ownedCosmetics.toList(),
@@ -1080,6 +1088,33 @@ class UserPreferencesSnapshot {
     // license_data key is missing or empty — first time after account_state
     // row was created. Generate a new license for this new player.
     return PilotLicense.random();
+  }
+
+  /// The raw `license_data` JSONB map (client-owned schema), or null.
+  Map<String, dynamic>? get _licenseData {
+    final data = accountState;
+    if (data == null) return null;
+    final json = data['license_data'];
+    if (json is Map) return Map<String, dynamic>.from(json);
+    return null;
+  }
+
+  /// Meta fuel tank persisted inside license_data (`fuel` key).
+  FuelTank toFuelTank() {
+    final json = _licenseData?['fuel'];
+    return FuelTank.fromJson(
+      json is Map ? Map<String, dynamic>.from(json) : null,
+    );
+  }
+
+  /// Owned refuel canisters persisted inside license_data.
+  int get refuelCanisters =>
+      (_licenseData?['refuel_canisters'] as num?)?.toInt() ?? 0;
+
+  /// Season trophy case persisted inside license_data.
+  TrophyCase toTrophyCase() {
+    final json = _licenseData?['trophy_case'];
+    return TrophyCase.fromJson(json is List ? json : null);
   }
 
   Set<String> get unlockedRegions {
