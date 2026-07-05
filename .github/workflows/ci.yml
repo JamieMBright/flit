@@ -8,6 +8,8 @@ name: CI & Deploy
 #
 # Pages deploys occasionally fail with a transient "Deployment failed,
 # try again later" — tests stay green; just re-run by pushing to main.
+# Hosted runners can also be reclaimed mid-job (exit 143 / "runner has
+# received a shutdown signal"); that's infra churn, not code — re-run.
 on:
   push:
     branches: [main]
