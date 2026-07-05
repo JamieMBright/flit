@@ -12,6 +12,7 @@ import '../../core/utils/haptics.dart';
 import '../../core/services/error_service.dart';
 import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/reveal_map.dart';
 import '../../core/utils/game_log.dart';
 import '../../core/utils/web_error_bridge.dart';
 import '../../core/widgets/settings_sheet.dart';
@@ -26,6 +27,7 @@ import '../challenge/challenge_result_screen.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/data/country_difficulty.dart';
 import '../../game/flit_game.dart';
+import '../../game/map/country_data.dart';
 import '../../game/map/descent_map_view.dart';
 import '../../game/map/region.dart';
 import '../../game/session/game_session.dart';
@@ -223,6 +225,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
   /// Per-round results for the summary screen.
   final List<_RoundResult> _roundResults = [];
+
+  /// Snapshot of this round's flight trail, downsampled for the reveal
+  /// map (the session's full path can hold thousands of frames).
+  List<Vector2> _takeRoundPath() {
+    final full = _session?.flightPath ?? const <Vector2>[];
+    if (full.length <= 120) return List.of(full);
+    final stride = (full.length / 120).ceil();
+    return [
+      for (var i = 0; i < full.length; i += stride) full[i],
+      full.last,
+    ];
+  }
+
   late final Random _sessionSeedRandom;
 
   /// Country codes already used in this daily challenge (prevents duplicates).
@@ -889,6 +904,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           fuelFraction: fuelFrac,
           useTimeScoring: true,
           timePenalty: _session!.timePenalty,
+          path: _takeRoundPath(),
         ),
       );
     }
@@ -1108,6 +1124,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           fuelFraction: fuelFrac,
           useTimeScoring: true,
           timePenalty: _session!.timePenalty,
+          path: _takeRoundPath(),
         ),
       );
     }
@@ -1563,6 +1580,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           rawScore: 0,
           hintsUsed: _hintTier,
           completed: false,
+          path: _takeRoundPath(),
         ),
       );
     }
@@ -2131,6 +2149,7 @@ class _RoundResult {
     this.fuelFraction = 1.0,
     this.useTimeScoring = false,
     this.timePenalty,
+    this.path = const <Vector2>[],
   });
 
   final String countryName;
@@ -2158,6 +2177,10 @@ class _RoundResult {
 
   /// Time penalty from [GameSession.timePenalty] (null if fuel-based).
   final int? timePenalty;
+
+  /// Downsampled flight trail flown during this round (lng/lat), for the
+  /// end-of-game reveal map.
+  final List<Vector2> path;
 
   /// Hint penalty computed from [hintsUsed] and tier penalties.
   int get hintPenalty {
@@ -2442,6 +2465,45 @@ class _ResultDialog extends ConsumerWidget {
   /// Coins earned from free flight per-clue rewards this session.
   final int freeFlightCoinsEarned;
 
+  /// World map of the whole run: a star per round's target (gold =
+  /// found, red = missed) and the flown trail per round. Skipped when no
+  /// target resolves (e.g. empty codes from unseen rounds only).
+  List<Widget> _buildRevealMap() {
+    final stars = <RevealStar>[];
+    final paths = <RevealPath>[];
+    for (final r in roundResults) {
+      final target = CountryData.getCapital(r.countryCode)?.location;
+      if (target != null) {
+        stars.add(
+          RevealStar(
+            target,
+            color: r.completed ? FlitColors.gold : FlitColors.error,
+          ),
+        );
+      }
+      if (r.path.length >= 2) paths.add(RevealPath(r.path));
+    }
+    if (stars.isEmpty) return const [];
+    return [
+      const SizedBox(height: 16),
+      RevealMap(
+        stars: stars,
+        paths: paths,
+        legendItems: [
+          const RevealLegendItem(Icons.star, FlitColors.gold, 'found'),
+          if (stars.any((s) => s.color == FlitColors.error))
+            const RevealLegendItem(Icons.star, FlitColors.error, 'missed'),
+          if (paths.isNotEmpty)
+            const RevealLegendItem(
+              Icons.timeline,
+              FlitColors.accent,
+              'your flight',
+            ),
+        ],
+      ),
+    ];
+  }
+
   static String _formatTime(Duration d) {
     final m = d.inMinutes;
     final s = d.inSeconds % 60;
@@ -2569,6 +2631,10 @@ class _ResultDialog extends ConsumerWidget {
                 const SizedBox(height: 8),
                 _ScoreBreakdown(result: roundResults.first),
               ],
+              // Flight reveal map: each round's target starred (gold =
+              // found, red = missed) with the flown trail — the same
+              // post-round reveal as Triangulation.
+              ..._buildRevealMap(),
               // Per-round summary table for multi-round modes.
               if (isMultiRound && roundResults.isNotEmpty) ...[
                 const SizedBox(height: 16),

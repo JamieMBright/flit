@@ -4,8 +4,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
+import '../../core/widgets/reveal_map.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/leaderboard_service.dart';
+import '../../game/map/country_data.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/quiz_category.dart';
@@ -280,6 +282,11 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
                             _buildStatsGrid(summary),
                             const SizedBox(height: 16),
 
+                            // Reveal map: every question's answer starred,
+                            // wrong picks dotted — same reveal as
+                            // Triangulation.
+                            ..._buildRevealMap(summary),
+
                             // Detailed breakdown
                             _buildBreakdown(summary),
                             const SizedBox(height: 24),
@@ -302,6 +309,50 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
         ),
       ),
     );
+  }
+
+  // ── Reveal map ──────────────────────────────────────────────────────────
+
+  /// World reveal map of the whole quiz: gold stars for answers found,
+  /// red stars for missed ones, red dots (with connector lines) where the
+  /// player's wrong tap landed. Only rendered for country-based regions —
+  /// US states / UK counties codes don't resolve to world capitals, and
+  /// type-in wrong answers carry no location, so absent data degrades
+  /// gracefully to stars only.
+  List<Widget> _buildRevealMap(QuizSummary summary) {
+    final stars = <RevealStar>[];
+    final dots = <RevealDot>[];
+    for (final r in summary.results) {
+      final target = CountryData.getCapital(r.correctCode)?.location;
+      if (target == null) continue; // non-country code (states, counties)
+      stars.add(
+        RevealStar(target,
+            color: r.correct ? FlitColors.gold : FlitColors.error),
+      );
+      if (!r.correct) {
+        final guess = CountryData.getCapital(r.answerCode)?.location;
+        if (guess != null) dots.add(RevealDot(guess, lineTo: target));
+      }
+    }
+    if (stars.isEmpty) return const [];
+    return [
+      RevealMap(
+        stars: stars,
+        dots: dots,
+        legendItems: [
+          const RevealLegendItem(Icons.star, FlitColors.gold, 'correct'),
+          if (stars.any((s) => s.color == FlitColors.error))
+            const RevealLegendItem(Icons.star, FlitColors.error, 'missed'),
+          if (dots.isNotEmpty)
+            const RevealLegendItem(
+              Icons.circle,
+              FlitColors.error,
+              'your pick',
+            ),
+        ],
+      ),
+      const SizedBox(height: 16),
+    ];
   }
 
   // ── Grade badge ─────────────────────────────────────────────────────────
