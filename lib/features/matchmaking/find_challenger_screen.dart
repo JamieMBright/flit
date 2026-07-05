@@ -10,6 +10,7 @@ import '../../data/models/seasonal_theme.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/challenge_service.dart';
 import '../../data/services/matchmaking_service.dart';
+import '../../game/economy/rated_loadout.dart';
 import '../guide/gameplay_guide_screen.dart';
 import '../play/play_screen.dart';
 
@@ -289,8 +290,6 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
     final plane = CosmeticCatalog.getById(planeId);
     final account = ref.read(accountProvider);
     final companion = account.avatar.companion;
-    final fuelBoost = ref.read(accountProvider.notifier).fuelBoostMultiplier;
-    final license = account.license;
     final contrailId = account.equippedContrailId;
     final contrail = CosmeticCatalog.getById(contrailId);
     final contrailPrimary = contrail?.colorScheme?['primary'];
@@ -310,13 +309,15 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
           planeWingSpan: plane?.wingSpan,
           equippedPlaneId: SeasonalTheme.resolvePlaneShapeId(fallback: planeId),
           companionType: companion,
-          fuelBoostMultiplier: fuelBoost,
-          clueChance: license.clueChance,
-          preferredClueType: license.preferredClueType,
+          // RATED NORMALIZATION (owner ruling): matchmade H2H flies the
+          // standard loadout — no plane stats, no license multipliers.
+          // Money never buys rating; cosmetics above still show.
+          fuelBoostMultiplier: RatedLoadout.standard.fuelBoostMultiplier,
+          clueChance: 0,
           enableFuel: true,
-          planeHandling: plane?.handling ?? 1.0,
-          planeSpeed: plane?.speed ?? 1.0,
-          planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
+          planeHandling: RatedLoadout.standard.planeHandling,
+          planeSpeed: RatedLoadout.standard.planeSpeed,
+          planeFuelEfficiency: RatedLoadout.standard.planeFuelEfficiency,
           contrailPrimaryColor:
               contrailPrimary != null ? Color(contrailPrimary) : null,
           contrailSecondaryColor:

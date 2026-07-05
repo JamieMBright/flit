@@ -79,6 +79,8 @@ class PlayScreen extends ConsumerStatefulWidget {
     this.dailySeed,
     this.challengeSeeds,
     this.campaignMission,
+    this.scoreRegion,
+    this.onRoundResults,
   });
 
   /// The region to play in.
@@ -172,6 +174,20 @@ class PlayScreen extends ConsumerStatefulWidget {
   /// Campaign mission being played (null for non-campaign games).
   /// When set, enables coach overlay and records campaign progress on completion.
   final CampaignMission? campaignMission;
+
+  /// Override for the `region` column written to the scores table (e.g.
+  /// 'sortie' so rated runs get their own leaderboard bucket). Defaults to
+  /// 'daily' for daily challenges, else the play region name.
+  final String? scoreRegion;
+
+  /// Called once when the run finishes (landing OR abort) with the
+  /// serialized per-round details, the total score, and whether the run
+  /// was aborted. Used by Standard Sortie to submit rated runs.
+  final void Function(
+    List<Map<String, dynamic>> roundDetails,
+    int totalScore,
+    bool aborted,
+  )? onRoundResults;
 
   @override
   ConsumerState<PlayScreen> createState() => _PlayScreenState();
@@ -1062,6 +1078,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           perClueReward: config.earnings.freeFlightPerClueReward,
           dailyCap: config.earnings.freeFlightDailyCap,
           promoMultiplier: config.earningsMultiplier,
+          // Fuel gates FREE-FLIGHT farming earnings only — never daily
+          // modes, rated sorties, or H2H (see FuelTank policy docs).
+          gateFuel: widget.isFreeFlight && widget.challengeId == null,
         );
     if (earned > 0) {
       _freeFlightCoinsEarned += earned;
@@ -1263,6 +1282,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     // Compute per-clue-type correct counts and best streak.
     final clueStats = _computeClueStats();
 
+    // Report the finished run (Standard Sortie submits rated runs here).
+    widget.onRoundResults?.call(roundDetails, _totalScore, false);
+
     // Record game completion last — this calls flush() which persists all
     // pending dirty state including the daily callbacks above.
     await ref.read(accountProvider.notifier).recordGameCompletion(
@@ -1270,7 +1292,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           score: _totalScore,
           roundsCompleted: _currentRound,
           coinReward: widget.coinReward,
-          region: widget.isDailyChallenge ? 'daily' : widget.region.name,
+          region: widget.scoreRegion ??
+              (widget.isDailyChallenge ? 'daily' : widget.region.name),
           roundEmojis: roundEmojis,
           roundDetails: roundDetails,
           flagsCorrect: clueStats.flags,
@@ -1685,6 +1708,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       widget.onDailyComplete?.call(dailyResult);
     }
 
+    // Report the aborted run (Standard Sortie still submits — an abort
+    // counts, mirroring the daily-mode anti-abuse rule).
+    widget.onRoundResults?.call(roundDetails, _totalScore, true);
+
     // Record stats as a completed game (abort counts as a game played).
     // The flush() inside recordGameCompletion() will write both the profile
     // stats AND the daily streak data marked dirty by the callbacks above.
@@ -1693,7 +1720,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           score: _totalScore,
           roundsCompleted: _currentRound,
           coinReward: 0, // No coin reward for aborted games.
-          region: widget.isDailyChallenge ? 'daily' : widget.region.name,
+          region: widget.scoreRegion ??
+              (widget.isDailyChallenge ? 'daily' : widget.region.name),
           roundEmojis: roundEmojis,
           roundDetails: roundDetails,
           flagsCorrect: clueStats.flags,

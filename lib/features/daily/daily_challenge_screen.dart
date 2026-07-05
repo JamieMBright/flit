@@ -179,8 +179,10 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           planeWingSpan: plane?.wingSpan,
           equippedPlaneId: SeasonalTheme.resolvePlaneShapeId(fallback: planeId),
           companionType: companion,
+          // Daily modes ARE boost-affected (owner ruling): plane stats,
+          // license multipliers, and the hot-license bonus all apply.
           fuelBoostMultiplier: fuelBoost,
-          clueChance: license.clueChance,
+          clueChance: ref.read(accountProvider.notifier).effectiveClueChance,
           preferredClueType: license.preferredClueType,
           enabledClueTypes: _challenge.enabledClueTypes,
           enableFuel: false,
@@ -195,7 +197,13 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           dailyTheme: _challenge.title,
           dailySeed: _challenge.seed,
           onComplete: (totalScore) {
-            ref.read(accountProvider.notifier).recordDailyChallengeCompletion();
+            final notifier = ref.read(accountProvider.notifier);
+            notifier.recordDailyChallengeCompletion();
+            // Big daily performances pump the license HOT for ~72h.
+            notifier.pumpLicenseFromPerformance(
+              score: totalScore,
+              maxScore: 5 * 10000,
+            );
           },
           onDailyComplete: (result) {
             ref.read(accountProvider.notifier).recordDailyResult(result);

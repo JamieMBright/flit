@@ -16,6 +16,7 @@ import '../../data/providers/account_provider.dart';
 import '../../data/services/challenge_service.dart';
 import '../../data/services/feature_flag_service.dart';
 import '../../data/services/friends_service.dart';
+import '../../game/economy/rated_loadout.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_session.dart';
 import '../avatar/avatar_widget.dart';
@@ -588,8 +589,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     final plane = CosmeticCatalog.getById(planeId);
     final account = ref.read(accountProvider);
     final companion = account.avatar.companion;
-    final fuelBoost = ref.read(accountProvider.notifier).fuelBoostMultiplier;
-    final license = account.license;
     final contrailId = ref.read(accountProvider).equippedContrailId;
     final contrail = CosmeticCatalog.getById(contrailId);
     final contrailPrimary = contrail?.colorScheme?['primary'];
@@ -610,13 +609,15 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           planeWingSpan: plane?.wingSpan,
           equippedPlaneId: SeasonalTheme.resolvePlaneShapeId(fallback: planeId),
           companionType: companion,
-          fuelBoostMultiplier: fuelBoost,
-          clueChance: license.clueChance,
-          preferredClueType: license.preferredClueType,
+          // RATED NORMALIZATION (owner ruling): H2H flies the standard
+          // loadout — no plane stats, no license multipliers. Money never
+          // buys rating; cosmetics above still show.
+          fuelBoostMultiplier: RatedLoadout.standard.fuelBoostMultiplier,
+          clueChance: 0,
           enableFuel: true,
-          planeHandling: plane?.handling ?? 1.0,
-          planeSpeed: plane?.speed ?? 1.0,
-          planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
+          planeHandling: RatedLoadout.standard.planeHandling,
+          planeSpeed: RatedLoadout.standard.planeSpeed,
+          planeFuelEfficiency: RatedLoadout.standard.planeFuelEfficiency,
           contrailPrimaryColor:
               contrailPrimary != null ? Color(contrailPrimary) : null,
           contrailSecondaryColor:

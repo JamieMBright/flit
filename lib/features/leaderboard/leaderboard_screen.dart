@@ -104,6 +104,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     LeaderboardMode.dailyTriangulation,
     LeaderboardMode.flightBriefing,
     LeaderboardMode.dailyCombined,
+    LeaderboardMode.standardSortie,
   ];
 
   /// Short tab labels (displayName is too long for the tab bar).
@@ -113,6 +114,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         LeaderboardMode.flightBriefing => 'BRIEFING',
         LeaderboardMode.dailyCombined => 'COMBINED',
         LeaderboardMode.trainingFlight => 'TRAINING',
+        LeaderboardMode.standardSortie => 'SORTIE',
       };
 
   late final TabController _modeTabController;

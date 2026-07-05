@@ -564,15 +564,18 @@ class LeaderboardService {
       case LeaderboardMode.dailyTriangulation:
         return query.eq('region', 'daily_triangulation');
       case LeaderboardMode.trainingFlight:
-        // Exclude every daily/quiz region so those runs don't pollute
-        // the flight boards.
+        // Exclude every daily/quiz/rated region so those runs don't
+        // pollute the flight boards.
         return query
             .neq('region', 'daily')
             .neq('region', 'briefing')
-            .neq('region', 'daily_triangulation');
+            .neq('region', 'daily_triangulation')
+            .neq('region', 'sortie');
       case LeaderboardMode.dailyCombined:
         // Combined pool: every row from the three daily regions.
         return query.inFilter('region', kCombinedDailyRegions);
+      case LeaderboardMode.standardSortie:
+        return query.eq('region', 'sortie');
     }
   }
 
@@ -626,12 +629,16 @@ class LeaderboardService {
           filtered = query
               .neq('region', 'daily')
               .neq('region', 'briefing')
-              .neq('region', 'daily_triangulation');
+              .neq('region', 'daily_triangulation')
+              .neq('region', 'sortie');
           break;
         case LeaderboardMode.dailyCombined:
           // Handled by fetchCombinedDailyLeaderboard above; kept for
           // exhaustiveness.
           filtered = query.inFilter('region', kCombinedDailyRegions);
+          break;
+        case LeaderboardMode.standardSortie:
+          filtered = query.eq('region', 'sortie');
           break;
       }
 
