@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -32,11 +33,19 @@ class ChallengeService {
   ///
   /// For quiz challenges, [quizCategory] and [quizMode] specify the quiz
   /// configuration that both players will use.
+  ///
+  /// [gameModeName] overrides the mode string stored in the database so
+  /// future modes ('recon', 'scramble', ...) can create challenges without a
+  /// new enum value; [roundsConfig] is an optional per-round configuration
+  /// blob stored opaquely alongside the rounds (its length also drives the
+  /// round count for generic modes). Flight/quiz behaviour is unchanged.
   Future<String?> createChallenge({
     required String challengedId,
     required String challengedName,
     required String challengerName,
     ChallengeGameMode gameMode = ChallengeGameMode.flight,
+    String? gameModeName,
+    List<Map<String, dynamic>>? roundsConfig,
     QuizCategory? quizCategory,
     QuizMode? quizMode,
   }) async {
@@ -44,8 +53,9 @@ class ChallengeService {
     try {
       final rng = Random();
       // For quiz challenges we use a single round; for flight, best-of-5.
-      final roundCount =
-          gameMode == ChallengeGameMode.quiz ? 1 : Challenge.totalRounds;
+      // Generic modes with a rounds_config drive the count from the config.
+      final roundCount = roundsConfig?.length ??
+          (gameMode == ChallengeGameMode.quiz ? 1 : Challenge.totalRounds);
 
       // Generate deterministic seeds for each round.
       final rounds = List.generate(
@@ -62,10 +72,13 @@ class ChallengeService {
         'challenged_id': challengedId,
         'challenged_name': challengedName,
         'status': 'pending',
-        'game_mode': gameMode.dbName,
+        'game_mode': gameModeName ?? gameMode.dbName,
         'rounds': rounds,
       };
 
+      if (roundsConfig != null) {
+        insertData['rounds_config'] = roundsConfig;
+      }
       if (quizCategory != null) {
         insertData['quiz_category'] = quizCategory.name;
       }
@@ -198,9 +211,10 @@ class ChallengeService {
   /// [clueTypeName] and [countryName] are recorded once per round (by the
   /// first player to submit) so the match history can display clue context.
   ///
-  /// The method reads the current rounds JSONB, updates the appropriate field,
-  /// and writes it back. Retries up to [_maxRetries] times with exponential
-  /// backoff (1s, 2s, 4s) on failure.
+  /// Prefers the atomic `submit_challenge_round` RPC (row-level jsonb merge
+  /// under a lock, so concurrent submissions can't drop each other). When the
+  /// RPC isn't deployed, falls back to the legacy read-modify-write, which
+  /// retries up to [_maxRetries] times with exponential backoff (1s, 2s, 4s).
   Future<bool> submitRoundResult({
     required String challengeId,
     required int roundIndex,
@@ -211,6 +225,22 @@ class ChallengeService {
     String? countryName,
   }) async {
     if (_userId == null) return false;
+
+    // Atomic path: server-side merge under row lock.
+    final rpcOk = await _submitRoundViaRpc(
+      challengeId: challengeId,
+      roundNumber: roundIndex + 1,
+      playerFields: {
+        'time_ms': timeMs,
+        if (score != null) 'score': score,
+        if (hintsUsed != null) 'hints_used': hintsUsed,
+      },
+      sharedFields: {
+        if (clueTypeName != null) 'clue_type': clueTypeName,
+        if (countryName != null) 'country_name': countryName,
+      },
+    );
+    if (rpcOk) return true;
 
     for (var attempt = 0; attempt <= _maxRetries; attempt++) {
       try {
@@ -280,7 +310,9 @@ class ChallengeService {
   /// Submit the result of a quiz round.
   ///
   /// Quiz challenges are single-round: both players play the same category
-  /// with the same seed, and the higher score wins.
+  /// with the same seed, and the higher score wins. Prefers the atomic
+  /// `submit_challenge_round` RPC, falling back to read-modify-write when
+  /// the RPC isn't deployed.
   Future<bool> submitQuizRoundResult({
     required String challengeId,
     required int score,
@@ -289,6 +321,20 @@ class ChallengeService {
     required int wrongCount,
   }) async {
     if (_userId == null) return false;
+
+    // Atomic path: server-side merge under row lock (quiz uses round 0).
+    final rpcOk = await _submitRoundViaRpc(
+      challengeId: challengeId,
+      roundNumber: 1,
+      playerFields: {
+        'time_ms': timeMs,
+        'score': score,
+        'quiz_correct': correctCount,
+        'quiz_wrong': wrongCount,
+      },
+      sharedFields: const {},
+    );
+    if (rpcOk) return true;
 
     for (var attempt = 0; attempt <= _maxRetries; attempt++) {
       try {
@@ -334,6 +380,54 @@ class ChallengeService {
     return false;
   }
 
+  /// Try to submit a round via the atomic `submit_challenge_round` RPC.
+  ///
+  /// [playerFields] are suffix-keyed values ('time_ms', 'score', ...) that
+  /// get prefixed with challenger_/challenged_ for the calling player;
+  /// [sharedFields] (clue metadata) are written first-submitter-wins by the
+  /// RPC. Returns false on any failure — including the RPC not being
+  /// deployed — so callers can fall back to the legacy read-modify-write.
+  Future<bool> _submitRoundViaRpc({
+    required String challengeId,
+    required int roundNumber,
+    required Map<String, dynamic> playerFields,
+    required Map<String, dynamic> sharedFields,
+  }) async {
+    try {
+      // One light read to learn which side we're on.
+      final row = await _client
+          .from('challenges')
+          .select('challenger_id')
+          .eq('id', challengeId)
+          .single();
+      final isChallenger = row['challenger_id'] == _userId;
+      final prefix = isChallenger ? 'challenger' : 'challenged';
+
+      final result = <String, dynamic>{
+        for (final entry in playerFields.entries)
+          '${prefix}_${entry.key}': entry.value,
+        ...sharedFields,
+      };
+
+      final ok = await _client.rpc<dynamic>(
+        'submit_challenge_round',
+        params: {
+          'p_challenge_id': challengeId,
+          'p_round_number': roundNumber,
+          'p_is_challenger': isChallenger,
+          'p_result': result,
+        },
+      );
+      return ok == true;
+    } catch (e) {
+      debugPrint(
+        '[ChallengeService] submit_challenge_round RPC unavailable, '
+        'falling back to read-modify-write: $e',
+      );
+      return false;
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Complete challenge
   // ---------------------------------------------------------------------------
@@ -360,10 +454,16 @@ class ChallengeService {
 
         // Early victory: complete as soon as one player clinches enough wins
         // (e.g. 3 wins in best-of-5). Also complete if all rounds are done.
+        // Compare against the challenge's actual round count, not the flight
+        // constant — quiz challenges are single-round, so checking against
+        // totalRounds (5) would mean they never complete.
         if (!challenge.isComplete) {
           final completedRounds =
               challenge.rounds.where((r) => r.isComplete).length;
-          if (completedRounds < Challenge.totalRounds) return null;
+          if (challenge.rounds.isEmpty ||
+              completedRounds < challenge.rounds.length) {
+            return null;
+          }
         }
 
         // Determine winner.
@@ -395,6 +495,11 @@ class ChallengeService {
           'completed_at': DateTime.now().toUtc().toIso8601String(),
         }).eq('id', challengeId);
 
+        // Apply the per-mode ELO rating change. Fire-and-forget: the RPC is
+        // idempotent (rating_applied_at guard) and silently no-ops when it
+        // isn't deployed, so completion never blocks on it.
+        unawaited(_applyChallengeRating(challengeId));
+
         return challenge;
       } catch (e) {
         debugPrint(
@@ -407,6 +512,72 @@ class ChallengeService {
       }
     }
     return null;
+  }
+
+  /// Fire the `apply_challenge_rating` RPC for a just-completed challenge.
+  ///
+  /// Safe to call multiple times / from both players — the RPC is idempotent.
+  /// Silently no-ops when the ratings migration hasn't been applied yet.
+  Future<void> _applyChallengeRating(String challengeId) async {
+    try {
+      await _client.rpc<dynamic>(
+        'apply_challenge_rating',
+        params: {'p_challenge_id': challengeId},
+      );
+    } catch (e) {
+      debugPrint(
+        '[ChallengeService] apply_challenge_rating unavailable (non-critical): '
+        '$e',
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Claim coins
+  // ---------------------------------------------------------------------------
+
+  /// Claim the coin reward for a completed challenge.
+  ///
+  /// Calls the `claim_challenge_coins` RPC, which atomically marks the
+  /// current player's share as claimed and returns the coin amount. Returns
+  /// null if the reward was already claimed, the challenge isn't completed,
+  /// or the RPC isn't deployed yet (safe no-op in all failure cases — the
+  /// caller should only credit coins when this returns a positive value).
+  Future<int?> claimChallengeCoins(String challengeId) async {
+    if (_userId == null) return null;
+    try {
+      final result = await _client.rpc<dynamic>(
+        'claim_challenge_coins',
+        params: {'p_challenge_id': challengeId},
+      );
+      final coins = result is int ? result : int.tryParse('$result');
+      if (coins == null || coins <= 0) return null;
+      return coins;
+    } catch (e) {
+      debugPrint('[ChallengeService] claimChallengeCoins failed: $e');
+      return null;
+    }
+  }
+
+  /// Claim the coin reward for a completed H2H (best-of-3) challenge.
+  ///
+  /// Calls the `claim_h2h_coins` RPC, which atomically marks the current
+  /// player's share as claimed and returns true exactly once. The reward
+  /// amount is computed client-side from [H2HChallenge] constants. Returns
+  /// false when already claimed, not completed, or the RPC isn't deployed
+  /// (safe no-op — callers must only credit coins on true).
+  Future<bool> claimH2HCoins(String challengeId) async {
+    if (_userId == null) return false;
+    try {
+      final result = await _client.rpc<dynamic>(
+        'claim_h2h_coins',
+        params: {'p_challenge_id': challengeId},
+      );
+      return result == true;
+    } catch (e) {
+      debugPrint('[ChallengeService] claimH2HCoins failed: $e');
+      return false;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -744,6 +915,10 @@ class ChallengeService {
       gameMode: ChallengeGameMode.fromDb(
         row['game_mode'] as String? ?? 'flight',
       ),
+      rawGameMode: row['game_mode'] as String? ?? 'flight',
+      roundsConfig: (row['rounds_config'] as List?)
+          ?.map((c) => Map<String, dynamic>.from(c as Map))
+          .toList(),
       rounds: rounds,
       quizCategory: quizCatStr != null
           ? QuizCategory.values.firstWhere(

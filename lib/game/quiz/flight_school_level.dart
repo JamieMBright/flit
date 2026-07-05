@@ -164,6 +164,40 @@ const List<FlightSchoolLevel> flightSchoolLevels = [
   ),
 
   // ── Tier 2: Purchasable early ──
+  // The newer sub-national regions (Australia, France, Germany, Japan,
+  // Spain, Italy, Brazil, India, New Zealand) quiz on the universal
+  // categories only — name + capital — because their clue data lives
+  // directly on RegionalArea with no per-division trivia files.
+  FlightSchoolLevel(
+    id: 'australia',
+    name: 'Australia',
+    subtitle: 'States & Territories',
+    region: GameRegion.australia,
+    requiredLevel: 3,
+    unlockCost: 300,
+    areaCount: 8,
+    icon: 'wb_sunny',
+    availableCategories: [
+      QuizCategory.stateName,
+      QuizCategory.capital,
+      QuizCategory.mixed,
+    ],
+  ),
+  FlightSchoolLevel(
+    id: 'france',
+    name: 'France',
+    subtitle: '13 Régions',
+    region: GameRegion.france,
+    requiredLevel: 4,
+    unlockCost: 300,
+    areaCount: 13,
+    icon: 'wine_bar',
+    availableCategories: [
+      QuizCategory.stateName,
+      QuizCategory.capital,
+      QuizCategory.mixed,
+    ],
+  ),
   FlightSchoolLevel(
     id: 'us_states',
     name: 'United States',
@@ -191,6 +225,52 @@ const List<FlightSchoolLevel> flightSchoolLevels = [
       QuizCategory.landmark,
       QuizCategory.flagDescription,
       QuizCategory.celebrity,
+      QuizCategory.mixed,
+    ],
+  ),
+
+  FlightSchoolLevel(
+    id: 'germany',
+    name: 'Germany',
+    subtitle: '16 Länder',
+    region: GameRegion.germany,
+    requiredLevel: 6,
+    unlockCost: 500,
+    areaCount: 16,
+    icon: 'account_balance',
+    availableCategories: [
+      QuizCategory.stateName,
+      QuizCategory.capital,
+      QuizCategory.mixed,
+    ],
+  ),
+  FlightSchoolLevel(
+    id: 'spain',
+    name: 'Spain',
+    subtitle: 'Autonomous Communities',
+    region: GameRegion.spain,
+    requiredLevel: 8,
+    unlockCost: 500,
+    areaCount: 16,
+    icon: 'festival',
+    availableCategories: [
+      QuizCategory.stateName,
+      QuizCategory.capital,
+      QuizCategory.mixed,
+    ],
+  ),
+  FlightSchoolLevel(
+    id: 'italy',
+    name: 'Italy',
+    subtitle: '20 Regions',
+    region: GameRegion.italy,
+    requiredLevel: 8,
+    unlockCost: 500,
+    areaCount: 20,
+    icon: 'museum',
+    availableCategories: [
+      QuizCategory.stateName,
+      QuizCategory.capital,
       QuizCategory.mixed,
     ],
   ),
@@ -235,7 +315,38 @@ const List<FlightSchoolLevel> flightSchoolLevels = [
     ],
   ),
 
+  FlightSchoolLevel(
+    id: 'japan',
+    name: 'Japan',
+    subtitle: '47 Prefectures',
+    region: GameRegion.japan,
+    requiredLevel: 12,
+    unlockCost: 750,
+    areaCount: 47,
+    icon: 'temple_buddhist',
+    availableCategories: [
+      QuizCategory.stateName,
+      QuizCategory.capital,
+      QuizCategory.mixed,
+    ],
+  ),
+
   // ── Tier 4: Advanced (higher level or purchase) ──
+  FlightSchoolLevel(
+    id: 'brazil',
+    name: 'Brazil',
+    subtitle: '27 States',
+    region: GameRegion.brazil,
+    requiredLevel: 14,
+    unlockCost: 1000,
+    areaCount: 27,
+    icon: 'forest',
+    availableCategories: [
+      QuizCategory.stateName,
+      QuizCategory.capital,
+      QuizCategory.mixed,
+    ],
+  ),
   FlightSchoolLevel(
     id: 'uk_counties',
     name: 'United Kingdom',
@@ -297,7 +408,38 @@ const List<FlightSchoolLevel> flightSchoolLevels = [
     ],
   ),
 
+  FlightSchoolLevel(
+    id: 'india',
+    name: 'India',
+    subtitle: 'States & Territories',
+    region: GameRegion.india,
+    requiredLevel: 16,
+    unlockCost: 1000,
+    areaCount: 34,
+    icon: 'temple_hindu',
+    availableCategories: [
+      QuizCategory.stateName,
+      QuizCategory.capital,
+      QuizCategory.mixed,
+    ],
+  ),
+
   // ── Tier 5: Expert ──
+  FlightSchoolLevel(
+    id: 'new_zealand',
+    name: 'New Zealand',
+    subtitle: '16 Regions',
+    region: GameRegion.newZealand,
+    requiredLevel: 18,
+    unlockCost: 1500,
+    areaCount: 16,
+    icon: 'landscape',
+    availableCategories: [
+      QuizCategory.stateName,
+      QuizCategory.capital,
+      QuizCategory.mixed,
+    ],
+  ),
   FlightSchoolLevel(
     id: 'oceania',
     name: 'Oceania',

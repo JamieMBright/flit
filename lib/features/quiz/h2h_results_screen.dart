@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/h2h_challenge.dart';
+import '../../data/providers/account_provider.dart';
+import '../../data/services/challenge_service.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_difficulty.dart';
 import 'flight_school_screen.dart';
@@ -11,22 +15,26 @@ import 'h2h_challenge_screen.dart';
 /// Results screen for a completed H2H Flight School challenge.
 ///
 /// Shows all 3 rounds side-by-side with scores, highlights round winners,
-/// and displays the overall winner with a celebration effect.
-class H2HResultsScreen extends StatefulWidget {
+/// and displays the overall winner with a celebration effect. Also credits
+/// the coin reward exactly once via the `claim_h2h_coins` RPC.
+class H2HResultsScreen extends ConsumerStatefulWidget {
   const H2HResultsScreen({super.key, required this.challenge});
 
   final H2HChallenge challenge;
 
   @override
-  State<H2HResultsScreen> createState() => _H2HResultsScreenState();
+  ConsumerState<H2HResultsScreen> createState() => _H2HResultsScreenState();
 }
 
-class _H2HResultsScreenState extends State<H2HResultsScreen>
+class _H2HResultsScreenState extends ConsumerState<H2HResultsScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _fadeIn;
   late Animation<double> _slideUp;
   late Animation<double> _scaleIn;
+
+  /// Coins credited by this visit's claim; null until (and unless) claimed.
+  int? _coinsEarned;
 
   @override
   void initState() {
@@ -46,6 +54,46 @@ class _H2HResultsScreenState extends State<H2HResultsScreen>
       ),
     );
     _animController.forward();
+    _claimCoins();
+  }
+
+  /// Credit the H2H coin reward to the player's balance.
+  ///
+  /// The `claim_h2h_coins` RPC atomically marks this player's share as
+  /// claimed server-side and returns true exactly once, so re-opening the
+  /// screen (or a second device) can never double-credit. If the RPC isn't
+  /// deployed the claim silently no-ops and rewards stay display-only.
+  Future<void> _claimCoins() async {
+    final challenge = widget.challenge;
+    if (!challenge.isComplete) return;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId != challenge.challengerId && userId != challenge.challengedId) {
+      return;
+    }
+
+    final claimed = await ChallengeService.instance.claimH2HCoins(challenge.id);
+    if (!claimed || !mounted) return;
+
+    final isChallenger = userId == challenge.challengerId;
+    final roundWins =
+        isChallenger ? challenge.challengerWins : challenge.challengedWins;
+    final isDraw = challenge.winnerId == null;
+    final isWinner = challenge.winnerId == userId;
+
+    var coins = H2HChallenge.participationCoins +
+        roundWins * H2HChallenge.roundWinCoins;
+    if (isWinner) {
+      coins += H2HChallenge.winnerCoins;
+    } else if (!isDraw) {
+      coins += H2HChallenge.loserCoins;
+    }
+
+    ref.read(accountProvider.notifier).addCoins(
+          coins,
+          applyBoost: false,
+          source: 'h2h_challenge_reward',
+        );
+    setState(() => _coinsEarned = coins);
   }
 
   @override
@@ -139,6 +187,44 @@ class _H2HResultsScreenState extends State<H2HResultsScreen>
                             ),
                           ),
                         ),
+
+                        // Coins credited by this visit's claim.
+                        if (_coinsEarned != null) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: FlitColors.warning.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color:
+                                    FlitColors.warning.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.monetization_on,
+                                  color: FlitColors.warning,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '+$_coinsEarned coins earned',
+                                  style: const TextStyle(
+                                    color: FlitColors.warning,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 28),
 
                         // Round details

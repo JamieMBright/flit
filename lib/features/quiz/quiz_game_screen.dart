@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/utils/haptics.dart';
 import '../../data/services/challenge_service.dart';
+import '../challenge/challenge_result_screen.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_difficulty.dart';
 import '../../game/quiz/quiz_map_widget.dart';
@@ -12,6 +14,7 @@ import '../../game/quiz/quiz_region_map_widget.dart';
 import '../../game/quiz/quiz_session.dart';
 import '../../game/map/region.dart';
 import '../../game/ui/ink_burst_overlay.dart';
+import 'h2h_results_screen.dart';
 import 'quiz_results_screen.dart';
 
 /// Main quiz game screen for Flight School.
@@ -111,6 +114,15 @@ class _QuizGameScreenState extends State<QuizGameScreen>
       case GameRegion.ireland:
       case GameRegion.ukCounties:
       case GameRegion.canadianProvinces:
+      case GameRegion.australia:
+      case GameRegion.france:
+      case GameRegion.germany:
+      case GameRegion.japan:
+      case GameRegion.spain:
+      case GameRegion.italy:
+      case GameRegion.brazil:
+      case GameRegion.india:
+      case GameRegion.newZealand:
         return false;
     }
   }
@@ -293,11 +305,22 @@ class _QuizGameScreenState extends State<QuizGameScreen>
           correctCount: summary.correctCount,
           wrongCount: summary.wrongCount,
         );
-        await ChallengeService.instance.tryCompleteH2HChallenge(
+        final completedH2H =
+            await ChallengeService.instance.tryCompleteH2HChallenge(
           widget.challengeId!,
         );
+        // Both players done — show the head-to-head result instead of the
+        // solo summary (mirrors the flight-mode dogfight flow).
+        if (completedH2H != null && mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(
+              builder: (_) => H2HResultsScreen(challenge: completedH2H),
+            ),
+          );
+          return;
+        }
       } else {
-        // Legacy single-round quiz challenge.
+        // Single-round quiz challenge (challenges table, game_mode 'quiz').
         await ChallengeService.instance.submitQuizRoundResult(
           challengeId: widget.challengeId!,
           score: summary.totalScore,
@@ -305,9 +328,28 @@ class _QuizGameScreenState extends State<QuizGameScreen>
           correctCount: summary.correctCount,
           wrongCount: summary.wrongCount,
         );
-        await ChallengeService.instance.tryCompleteChallenge(
+        final completed = await ChallengeService.instance.tryCompleteChallenge(
           widget.challengeId!,
         );
+        if (completed != null) {
+          // Both players done — fetch the final state (with winner + coins)
+          // and show the challenge result screen, matching flight mode.
+          final finalChallenge = await ChallengeService.instance.fetchChallenge(
+            widget.challengeId!,
+          );
+          final userId = Supabase.instance.client.auth.currentUser?.id;
+          if (finalChallenge != null && userId != null && mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute<void>(
+                builder: (_) => ChallengeResultScreen(
+                  challenge: finalChallenge,
+                  isChallenger: finalChallenge.challengerId == userId,
+                ),
+              ),
+            );
+            return;
+          }
+        }
       }
     }
 

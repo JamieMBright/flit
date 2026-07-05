@@ -70,6 +70,15 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
       case GameRegion.ireland:
       case GameRegion.ukCounties:
       case GameRegion.canadianProvinces:
+      case GameRegion.australia:
+      case GameRegion.france:
+      case GameRegion.germany:
+      case GameRegion.japan:
+      case GameRegion.spain:
+      case GameRegion.italy:
+      case GameRegion.brazil:
+      case GameRegion.india:
+      case GameRegion.newZealand:
         return false;
     }
   }

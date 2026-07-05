@@ -207,6 +207,8 @@ class Challenge {
     required this.status,
     required this.rounds,
     this.gameMode = ChallengeGameMode.flight,
+    String? rawGameMode,
+    this.roundsConfig,
     this.quizCategory,
     this.quizMode,
     this.winnerId,
@@ -214,7 +216,7 @@ class Challenge {
     this.challengedCoins = 0,
     this.createdAt,
     this.completedAt,
-  });
+  }) : _rawGameMode = rawGameMode;
 
   final String id;
   final String challengerId;
@@ -225,7 +227,23 @@ class Challenge {
   final List<ChallengeRound> rounds;
 
   /// The game mode for this challenge.
+  ///
+  /// Unknown DB modes fall back to [ChallengeGameMode.flight] here — use
+  /// [rawGameMode] when the exact mode string matters.
   final ChallengeGameMode gameMode;
+
+  /// Backing field for [rawGameMode]; null when constructed without an
+  /// explicit mode string.
+  final String? _rawGameMode;
+
+  /// The raw game mode string as stored in the database. Preserves future
+  /// modes ('recon', 'scramble', ...) that the [ChallengeGameMode] enum
+  /// doesn't know about yet, so they round-trip losslessly.
+  String get rawGameMode => _rawGameMode ?? gameMode.dbName;
+
+  /// Optional per-round configuration blob (mode-specific: level, category,
+  /// difficulty, ...). Round-tripped opaquely; null for flight/quiz.
+  final List<Map<String, dynamic>>? roundsConfig;
 
   /// For quiz challenges: the quiz category both players play.
   final QuizCategory? quizCategory;
@@ -270,8 +288,9 @@ class Challenge {
         'challenged_id': challengedId,
         'challenged_name': challengedName,
         'status': status.dbName,
-        'game_mode': gameMode.dbName,
+        'game_mode': rawGameMode,
         'rounds': rounds.map((r) => r.toJson()).toList(),
+        if (roundsConfig != null) 'rounds_config': roundsConfig,
         if (quizCategory != null) 'quiz_category': quizCategory!.name,
         if (quizMode != null) 'quiz_mode': quizMode!.name,
         'winner_id': winnerId,
@@ -294,6 +313,10 @@ class Challenge {
       gameMode: ChallengeGameMode.fromDb(
         json['game_mode'] as String? ?? 'flight',
       ),
+      rawGameMode: json['game_mode'] as String? ?? 'flight',
+      roundsConfig: (json['rounds_config'] as List?)
+          ?.map((c) => Map<String, dynamic>.from(c as Map))
+          .toList(),
       rounds: (json['rounds'] as List)
           .map((r) => ChallengeRound.fromJson(r as Map<String, dynamic>))
           .toList(),

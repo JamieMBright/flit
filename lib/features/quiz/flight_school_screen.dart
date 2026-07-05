@@ -322,6 +322,12 @@ class _LevelCard extends StatelessWidget {
     'grass': Icons.grass,
     'landscape': Icons.landscape,
     'beach_access': Icons.beach_access,
+    'wb_sunny': Icons.wb_sunny,
+    'wine_bar': Icons.wine_bar,
+    'account_balance': Icons.account_balance,
+    'museum': Icons.museum,
+    'forest': Icons.forest,
+    'temple_hindu': Icons.temple_hindu,
   };
 
   @override
