@@ -79,6 +79,18 @@ class _TypeInGameScreenState extends State<TypeInGameScreen>
       case GameRegion.brazil:
       case GameRegion.india:
       case GameRegion.newZealand:
+      case GameRegion.mexico:
+      case GameRegion.southKorea:
+      case GameRegion.netherlands:
+      case GameRegion.poland:
+      case GameRegion.argentina:
+      case GameRegion.sweden:
+      case GameRegion.switzerland:
+      case GameRegion.austria:
+      case GameRegion.portugal:
+      case GameRegion.greece:
+      case GameRegion.southAfrica:
+      case GameRegion.indonesia:
         return false;
     }
   }

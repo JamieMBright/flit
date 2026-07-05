@@ -78,10 +78,10 @@ class DailyBriefing {
   ///
   /// Europe and US States dominate; Africa/Asia/Latin America form the
   /// "world tour" tier; the major-market country maps (Australia, France,
-  /// Germany) get a modest weight; everything else — including the niche
-  /// five (UK, Ireland, Canada, Oceania, Caribbean) and the remaining
-  /// country maps (Japan, Spain, Italy, Brazil, India, New Zealand) —
-  /// appears at weight 1 so no single obscure region dominates.
+  /// Germany, Mexico) get a modest weight; everything else — including the
+  /// niche five (UK, Ireland, Canada, Oceania, Caribbean) and the remaining
+  /// country maps — appears at weight 1 so no single obscure region
+  /// dominates.
   static const Map<String, int> _levelWeights = {
     'europe': 8,
     'us_states': 8,
@@ -91,12 +91,24 @@ class DailyBriefing {
     'australia': 3,
     'france': 3,
     'germany': 2,
+    'mexico': 2,
     'japan': 1,
     'spain': 1,
     'italy': 1,
     'brazil': 1,
     'india': 1,
     'new_zealand': 1,
+    'south_korea': 1,
+    'netherlands': 1,
+    'poland': 1,
+    'argentina': 1,
+    'sweden': 1,
+    'switzerland': 1,
+    'austria': 1,
+    'portugal': 1,
+    'greece': 1,
+    'south_africa': 1,
+    'indonesia': 1,
     'uk_counties': 1,
     'ireland': 1,
     'canada': 1,
