@@ -143,6 +143,7 @@ class QuizSession {
     required this.region,
     this.difficulty = QuizDifficulty.medium,
     this.excludePercent = 0.0,
+    this.presetQuestions,
     int? seed,
   })  : _generator = QuizQuestionGenerator(
             region: region, difficulty: difficulty, seed: seed),
@@ -169,6 +170,12 @@ class QuizSession {
   /// Fraction of areas to exclude (0.0 = none, 0.5 = 50%).
   /// Only effective in easy mode.
   final double excludePercent;
+
+  /// Pre-built question list (e.g. the Daily Briefing's curated six).
+  /// When non-null, [start] uses it verbatim — order, categories, and
+  /// labelFree flags are already deterministic — instead of generating a
+  /// full-region question sweep.
+  final List<QuizQuestion>? presetQuestions;
 
   final QuizQuestionGenerator _generator;
   final Random _random;
@@ -283,6 +290,14 @@ class QuizSession {
 
   /// Initialize and start the quiz.
   void start() {
+    if (presetQuestions != null) {
+      // Curated question list (Daily Briefing): use as-is. No exclusion —
+      // every player must face the identical set.
+      _questions = List.of(presetQuestions!);
+      _startTime = DateTime.now();
+      return;
+    }
+
     // When in mixed mode, pass the difficulty-filtered pool so easy mode
     // excludes hard categories (sportsTeam, celebrity, filmSetting, etc.).
     final allowedPool = categories.contains(QuizCategory.mixed)

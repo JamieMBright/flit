@@ -12,9 +12,10 @@ import 'quiz_game_screen.dart';
 
 /// Daily Flight Briefing screen.
 ///
-/// Shows today's deterministically generated quiz settings (level, category,
-/// difficulty, mode) and lets the player start the briefing. Players who have
-/// already completed today's briefing see a "CLEARED" badge and their score.
+/// Shows today's deterministically generated mission (region, curated
+/// six-question set, label rules) and lets the player start the briefing.
+/// Players who have already completed today's briefing see a "CLEARED" badge
+/// and their score.
 ///
 /// After completing the quiz, the score is submitted to the
 /// `daily_briefing_scores` table.
@@ -88,12 +89,13 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen>
       MaterialPageRoute<QuizSummary>(
         builder: (_) => QuizGameScreen(
           mode: _briefing.mode,
-          categories: {_briefing.category},
+          categories: _briefing.categories,
           region: _briefing.level.region,
           difficulty: _briefing.difficulty,
           seed: _briefing.seed,
           flightSchoolLevelId: _briefing.level.id,
           dailyBriefingDateKey: _briefing.dateKey,
+          presetQuestions: _briefing.questions,
         ),
       ),
     )
@@ -261,23 +263,25 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen>
           const SizedBox(height: 14),
           _buildParameter(
             'INTEL TYPE',
-            _briefing.category.displayName,
-            _briefing.category.description,
-            _categoryIcon(_briefing.category),
+            _briefing.intelTypeLabel,
+            'Tap the right area on the map',
+            _briefing.categories.length == 1
+                ? _categoryIcon(_briefing.categories.first)
+                : Icons.shuffle,
+          ),
+          const SizedBox(height: 14),
+          _buildParameter(
+            'TARGETS',
+            '${DailyBriefing.questionCount} targets',
+            _briefing.estimatedDuration,
+            Icons.checklist,
           ),
           const SizedBox(height: 14),
           _buildParameter(
             'ALTITUDE',
             _briefing.difficulty.displayName,
-            _briefing.difficulty.description,
+            _briefing.labelSummary,
             _difficultyIcon(_briefing.difficulty),
-          ),
-          const SizedBox(height: 14),
-          _buildParameter(
-            'MISSION TYPE',
-            _briefing.mode.displayName,
-            _briefing.estimatedDuration,
-            _modeIcon(_briefing.mode),
           ),
         ],
       ),
@@ -579,19 +583,6 @@ class _DailyBriefingScreenState extends State<DailyBriefingScreen>
         return Icons.cloud_queue;
       case QuizDifficulty.hard:
         return Icons.thunderstorm;
-    }
-  }
-
-  IconData _modeIcon(QuizMode mode) {
-    switch (mode) {
-      case QuizMode.allStates:
-        return Icons.checklist;
-      case QuizMode.timeTrial:
-        return Icons.timer;
-      case QuizMode.rapidFire:
-        return Icons.bolt;
-      case QuizMode.typeIn:
-        return Icons.keyboard;
     }
   }
 }

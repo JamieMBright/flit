@@ -36,6 +36,7 @@ class QuizGameScreen extends StatefulWidget {
     this.excludePercent = 0.0,
     this.h2hRoundIndex,
     this.dailyBriefingDateKey,
+    this.presetQuestions,
   });
 
   final QuizMode mode;
@@ -65,6 +66,10 @@ class QuizGameScreen extends StatefulWidget {
   /// When non-null, this quiz is a Daily Flight Briefing. The value is the
   /// date key (YYYY-MM-DD) used for score submission.
   final String? dailyBriefingDateKey;
+
+  /// Pre-built question list (Daily Briefing's curated set). When non-null,
+  /// the session uses it verbatim instead of generating a full-region sweep.
+  final List<QuizQuestion>? presetQuestions;
 
   @override
   State<QuizGameScreen> createState() => _QuizGameScreenState();
@@ -135,6 +140,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
       region: widget.region,
       difficulty: widget.difficulty,
       excludePercent: widget.excludePercent,
+      presetQuestions: widget.presetQuestions,
       seed: widget.seed,
     );
 
@@ -382,6 +388,10 @@ class _QuizGameScreenState extends State<QuizGameScreen>
   Widget build(BuildContext context) {
     final question = _session.currentQuestion;
     final remaining = _session.remainingMs;
+    // Per-question label blindness: labelFree "stretch" questions (Daily
+    // Briefing) hide labels even when the difficulty/user toggle shows them.
+    final labelFree = !_exploringMap && (question?.labelFree ?? false);
+    final showLabels = _exploringMap || (_showLabels && !labelFree);
 
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
@@ -412,7 +422,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                                 onStateTapped:
                                     _exploringMap ? (_) {} : _handleStateTapped,
                                 highlightCode: _highlightCode,
-                                showLabels: _exploringMap || _showLabels,
+                                showLabels: showLabels,
                                 eliminatedCodes: _exploringMap
                                     ? const {}
                                     : _session.eliminatedCodes,
@@ -429,7 +439,7 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                                 onStateTapped:
                                     _exploringMap ? (_) {} : _handleStateTapped,
                                 highlightCode: _highlightCode,
-                                showLabels: _exploringMap || _showLabels,
+                                showLabels: showLabels,
                                 eliminatedCodes: _exploringMap
                                     ? const {}
                                     : _session.eliminatedCodes,
@@ -456,48 +466,50 @@ class _QuizGameScreenState extends State<QuizGameScreen>
                           child: _buildStrikesIndicator(),
                         ),
 
-                      // Label toggle button
-                      Positioned(
-                        bottom: 8,
-                        left: 8,
-                        child: GestureDetector(
-                          onTap: () =>
-                              setState(() => _showLabels = !_showLabels),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: FlitColors.backgroundMid
-                                  .withValues(alpha: 0.85),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: FlitColors.cardBorder,
-                                width: 0.5,
+                      // Label toggle button (hidden on label-free stretch
+                      // questions — the flag overrides the toggle).
+                      if (!labelFree)
+                        Positioned(
+                          bottom: 8,
+                          left: 8,
+                          child: GestureDetector(
+                            onTap: () =>
+                                setState(() => _showLabels = !_showLabels),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
                               ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _showLabels ? Icons.label : Icons.label_off,
-                                  color: FlitColors.textSecondary,
-                                  size: 16,
+                              decoration: BoxDecoration(
+                                color: FlitColors.backgroundMid
+                                    .withValues(alpha: 0.85),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: FlitColors.cardBorder,
+                                  width: 0.5,
                                 ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _showLabels ? 'Names' : 'Names',
-                                  style: const TextStyle(
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _showLabels ? Icons.label : Icons.label_off,
                                     color: FlitColors.textSecondary,
-                                    fontSize: 11,
+                                    size: 16,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _showLabels ? 'Names' : 'Names',
+                                    style: const TextStyle(
+                                      color: FlitColors.textSecondary,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
