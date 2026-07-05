@@ -560,10 +560,11 @@ class LeaderboardService {
         return query.eq('region', 'daily');
       case LeaderboardMode.flightBriefing:
         return query.eq('region', 'briefing');
+      case LeaderboardMode.dailyTriangulation:
+        return query.eq('region', 'daily_triangulation');
       case LeaderboardMode.trainingFlight:
-        // Exclude every daily/quiz region so those runs don't pollute the
-        // flight boards ('daily_triangulation' rows are recorded for
-        // history/anti-cheat; they get their own board when one ships).
+        // Exclude every daily/quiz region so those runs don't pollute
+        // the flight boards.
         return query
             .neq('region', 'daily')
             .neq('region', 'briefing')
@@ -606,6 +607,9 @@ class LeaderboardService {
           break;
         case LeaderboardMode.flightBriefing:
           filtered = query.eq('region', 'briefing');
+          break;
+        case LeaderboardMode.dailyTriangulation:
+          filtered = query.eq('region', 'daily_triangulation');
           break;
         case LeaderboardMode.trainingFlight:
           filtered = query
