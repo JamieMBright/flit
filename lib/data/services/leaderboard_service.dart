@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/leaderboard_entry.dart';
 import '../models/daily_challenge.dart';
+import 'combined_daily_scoring.dart';
 import 'ttl_cache.dart';
 
 /// Service that fetches real leaderboard data from Supabase.
@@ -569,6 +570,9 @@ class LeaderboardService {
             .neq('region', 'daily')
             .neq('region', 'briefing')
             .neq('region', 'daily_triangulation');
+      case LeaderboardMode.dailyCombined:
+        // Combined pool: every row from the three daily regions.
+        return query.inFilter('region', kCombinedDailyRegions);
     }
   }
 
@@ -588,6 +592,13 @@ class LeaderboardService {
         (isDailyScramble
             ? LeaderboardMode.dailyScramble
             : LeaderboardMode.trainingFlight);
+
+    // The combined board is a per-day concept with its own normalization —
+    // delegate regardless of timeframe.
+    if (effectiveMode == LeaderboardMode.dailyCombined) {
+      return fetchCombinedDailyLeaderboard(limit: limit);
+    }
+
     final cacheKey = 'mode_${effectiveMode.name}_${timeframe.name}_$limit';
     final cached = _boardCache.get(cacheKey);
     if (cached != null) return cached;
@@ -616,6 +627,11 @@ class LeaderboardService {
               .neq('region', 'daily')
               .neq('region', 'briefing')
               .neq('region', 'daily_triangulation');
+          break;
+        case LeaderboardMode.dailyCombined:
+          // Handled by fetchCombinedDailyLeaderboard above; kept for
+          // exhaustiveness.
+          filtered = query.inFilter('region', kCombinedDailyRegions);
           break;
       }
 
@@ -695,6 +711,107 @@ class LeaderboardService {
       return entries;
     } catch (e) {
       debugPrint('[LeaderboardService] fetchModeLeaderboard failed: $e');
+      rethrow;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Combined daily leaderboard (normalized efficiency across all 3 dailies)
+  // ---------------------------------------------------------------------------
+
+  /// Fetch the combined daily leaderboard for the given UTC day (today by
+  /// default).
+  ///
+  /// For each daily mode (Scramble `daily`, Briefing `briefing`,
+  /// Triangulation `daily_triangulation`), a user's efficiency is their best
+  /// score that day divided by the day's top score in that mode. The
+  /// combined score is the mean of the three efficiencies (unplayed = 0%),
+  /// see [computeCombinedDailyScores].
+  ///
+  /// Returned entries carry the combined efficiency in basis points as
+  /// [LeaderboardEntry.score] and the per-mode breakdown in
+  /// [LeaderboardEntry.combinedEfficiencyBps].
+  Future<List<LeaderboardEntry>> fetchCombinedDailyLeaderboard({
+    DateTime? dayUtc,
+    int limit = 50,
+  }) async {
+    final day = (dayUtc ?? DateTime.now()).toUtc();
+    final startOfDay = DateTime.utc(day.year, day.month, day.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+
+    final cacheKey = 'combined_${startOfDay.toIso8601String()}_$limit';
+    final cached = _boardCache.get(cacheKey);
+    if (cached != null) return cached;
+
+    try {
+      // Single query for every daily-region score in the UTC day; grouping
+      // and normalization happen client-side.
+      final data = await _client
+          .from('scores')
+          .select('score, region, user_id')
+          .inFilter('region', kCombinedDailyRegions)
+          .gte('created_at', startOfDay.toIso8601String())
+          .lt('created_at', endOfDay.toIso8601String())
+          .order('created_at', ascending: true)
+          .limit(5000);
+
+      final combined = computeCombinedDailyScores(
+        data.map(
+          (r) => CombinedScoreRow(
+            userId: r['user_id'] as String,
+            region: r['region'] as String? ?? '',
+            score: r['score'] as int? ?? 0,
+          ),
+        ),
+      ).take(limit).toList();
+
+      // 2-step: batch-fetch profiles for the ranked users.
+      final userIds = combined.map((c) => c.userId).toList();
+      final profiles = await _fetchProfiles(userIds);
+
+      final entries = combined
+          .map(
+            (c) => LeaderboardEntry(
+              rank: c.rank,
+              playerId: c.userId,
+              playerName:
+                  profiles[c.userId]?['username'] as String? ?? 'Unknown',
+              time: Duration.zero,
+              score: c.combinedBps,
+              avatarUrl: profiles[c.userId]?['avatar_url'] as String?,
+              level: profiles[c.userId]?['level'] as int?,
+              combinedEfficiencyBps: c.modeEfficiencyBps,
+            ),
+          )
+          .toList();
+
+      // Batch-fetch equipped plane IDs and avatar configs.
+      if (entries.isNotEmpty) {
+        final results = await Future.wait([
+          _fetchPlaneIds(userIds),
+          _fetchAvatarConfigs(userIds),
+        ]);
+        final planeMap = results[0] as Map<String, String>;
+        final avatarMap = results[1] as Map<String, Map<String, dynamic>>;
+        for (var i = 0; i < entries.length; i++) {
+          final pid = entries[i].playerId;
+          final planeId = planeMap[pid];
+          final avatarCfg = avatarMap[pid];
+          if (planeId != null || avatarCfg != null) {
+            entries[i] = entries[i].copyWith(
+              equippedPlaneId: planeId,
+              avatarConfigJson: avatarCfg,
+            );
+          }
+        }
+      }
+
+      _boardCache.set(cacheKey, entries);
+      return entries;
+    } catch (e) {
+      debugPrint(
+        '[LeaderboardService] fetchCombinedDailyLeaderboard failed: $e',
+      );
       rethrow;
     }
   }

@@ -14,6 +14,7 @@ class LeaderboardEntry {
     this.roundDetails,
     this.equippedPlaneId,
     this.level,
+    this.combinedEfficiencyBps,
   });
 
   final int rank;
@@ -38,6 +39,12 @@ class LeaderboardEntry {
   final String? equippedPlaneId;
   final int? level;
 
+  /// Combined-daily breakdown: `scores.region` → efficiency basis points
+  /// (0–10000, 8740 = 87.40%). Only set on entries returned by
+  /// `fetchCombinedDailyLeaderboard`, where [score] holds the combined
+  /// efficiency in basis points. A missing region key means unplayed (0%).
+  final Map<String, int>? combinedEfficiencyBps;
+
   LeaderboardEntry copyWith({
     int? rank,
     String? equippedPlaneId,
@@ -57,6 +64,7 @@ class LeaderboardEntry {
         roundDetails: roundDetails,
         equippedPlaneId: equippedPlaneId ?? this.equippedPlaneId,
         level: level,
+        combinedEfficiencyBps: combinedEfficiencyBps,
       );
 
   Map<String, dynamic> toJson() => {
@@ -73,6 +81,7 @@ class LeaderboardEntry {
         'round_details': roundDetails,
         'equipped_plane_id': equippedPlaneId,
         'level': level,
+        'combined_efficiency_bps': combinedEfficiencyBps,
       };
 
   factory LeaderboardEntry.fromJson(Map<String, dynamic> json) =>
@@ -92,6 +101,9 @@ class LeaderboardEntry {
         roundDetails: json['round_details'] as List<dynamic>?,
         equippedPlaneId: json['equipped_plane_id'] as String?,
         level: json['level'] as int?,
+        combinedEfficiencyBps:
+            (json['combined_efficiency_bps'] as Map<String, dynamic>?)
+                ?.map((k, v) => MapEntry(k, v as int)),
       );
 }
 
@@ -135,6 +147,9 @@ enum LeaderboardMode {
   trainingFlight,
   flightBriefing,
   dailyTriangulation,
+
+  /// Combined daily board: normalized efficiency across all three dailies.
+  dailyCombined,
 }
 
 extension LeaderboardModeExtension on LeaderboardMode {
@@ -148,6 +163,8 @@ extension LeaderboardModeExtension on LeaderboardMode {
         return 'FLIGHT BRIEFING';
       case LeaderboardMode.dailyTriangulation:
         return 'TRIANGULATION';
+      case LeaderboardMode.dailyCombined:
+        return 'COMBINED';
     }
   }
 
@@ -162,6 +179,8 @@ extension LeaderboardModeExtension on LeaderboardMode {
         return 'briefing';
       case LeaderboardMode.dailyTriangulation:
         return 'daily_triangulation';
+      case LeaderboardMode.dailyCombined:
+        return null; // Spans all three daily regions.
     }
   }
 }
