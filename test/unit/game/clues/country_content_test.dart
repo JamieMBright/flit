@@ -1,5 +1,7 @@
+import 'package:flag/flag.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:flit/core/widgets/country_flag.dart';
 import 'package:flit/game/clues/clue_types.dart';
 import 'package:flit/game/map/country_data.dart';
 
@@ -53,6 +55,56 @@ void main() {
       }
     }
     expect(incomplete, isEmpty, reason: 'Empty stat fields: $incomplete');
+  });
+
+  test('every playable country has a real flag rendering path', () {
+    // Either the flag package ships the SVG, or we bundle our own
+    // (assets/images/flags/). The emoji fallback is a safety net, not an
+    // acceptable steady state for a playable country.
+    final unrenderable = [
+      for (final c in playable)
+        if (!Flag.flagsCode.contains(c.code.toLowerCase()) &&
+            !CountryFlag.bundledCodes.contains(c.code.toUpperCase()))
+          '${c.code} (${c.name})',
+    ];
+    expect(unrenderable, isEmpty,
+        reason: 'Countries with no flag asset: $unrenderable');
+  });
+
+  test('every playable country outline has enough detail for its size', () {
+    // Guards against crude placeholder polygons: a country spanning more
+    // than 3 degrees must have a properly detailed outline, and nothing
+    // playable may be missing polygons entirely.
+    final crude = <String>[];
+    for (final c in playable) {
+      final info = CountryData.getCountry(c.code);
+      final polys = info?.polygons ?? const [];
+      final points = polys.fold<int>(0, (s, p) => s + p.length);
+      if (points < 4) {
+        crude.add('${c.code} (no outline)');
+        continue;
+      }
+      // Judge detail against the largest single landmass, not the full
+      // bbox — an atoll nation spans a huge box of tiny, honest specks.
+      var mainSpan = 0.0;
+      for (final poly in polys) {
+        final lngs = poly.map((v) => v.x);
+        final lats = poly.map((v) => v.y);
+        final span = [
+          lngs.reduce((a, b) => a > b ? a : b) -
+              lngs.reduce((a, b) => a < b ? a : b),
+          lats.reduce((a, b) => a > b ? a : b) -
+              lats.reduce((a, b) => a < b ? a : b),
+        ].reduce((a, b) => a > b ? a : b);
+        if (span > mainSpan) mainSpan = span;
+      }
+      if (mainSpan > 3 && points < 60) {
+        crude.add(
+          '${c.code} ($points pts over ${mainSpan.toStringAsFixed(1)}°)',
+        );
+      }
+    }
+    expect(crude, isEmpty, reason: 'Crude/missing outlines: $crude');
   });
 
   test('spot-check known facts stay sane', () {

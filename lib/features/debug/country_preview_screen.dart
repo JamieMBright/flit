@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
-import 'package:flag/flag.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/country_flag.dart';
 import '../../game/map/country_data.dart';
 
 /// Issue types that can be flagged on a country's data.
@@ -687,10 +687,7 @@ class _CountryCardState extends State<_CountryCard> {
                 child: Row(
                   children: [
                     // Flag
-                    _FlagPreview(
-                      code: c.code,
-                      isUnsupported: widget.isUnsupportedFlag,
-                    ),
+                    _FlagPreview(code: c.code),
                     const SizedBox(width: 12),
 
                     // Outline
@@ -971,46 +968,13 @@ class _CountryCardState extends State<_CountryCard> {
 
 /// Renders an SVG flag or falls back to emoji.
 class _FlagPreview extends StatelessWidget {
-  const _FlagPreview({required this.code, required this.isUnsupported});
+  const _FlagPreview({required this.code});
 
   final String code;
-  final bool isUnsupported;
 
   @override
-  Widget build(BuildContext context) {
-    if (code.length != 2 || isUnsupported) {
-      return _emojiFallback();
-    }
-    try {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(4),
-        child: Flag.fromString(
-          code,
-          height: 40,
-          width: 60,
-          fit: BoxFit.contain,
-          borderRadius: 4,
-        ),
-      );
-    } catch (_) {
-      return _emojiFallback();
-    }
-  }
-
-  Widget _emojiFallback() {
-    final codeUnits = code.toUpperCase().codeUnits;
-    final emoji = String.fromCharCodes(codeUnits.map((c) => c + 127397));
-    return Container(
-      width: 60,
-      height: 40,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: FlitColors.backgroundMid,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(emoji, style: const TextStyle(fontSize: 24)),
-    );
-  }
+  Widget build(BuildContext context) =>
+      CountryFlag(code: code, height: 40, width: 60, borderRadius: 4);
 }
 
 /// Renders country outline polygons.

@@ -1,10 +1,10 @@
 import 'dart:math' as math;
 
-import 'package:flag/flag.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/widgets/country_flag.dart';
 import '../../core/widgets/country_outline_painter.dart';
 import '../clues/clue_types.dart';
 import '../flit_game.dart';
@@ -280,9 +280,11 @@ class _ClueCard extends StatelessWidget {
             const SizedBox(height: 4),
             // Clue content
             if (clue.type == ClueType.flag)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: _buildFlagWidget(clue.targetCountryCode),
+              CountryFlag(
+                code: clue.targetCountryCode,
+                height: 56,
+                width: 84,
+                borderRadius: 4,
               )
             else if (clue.type == ClueType.outline)
               _CountryOutline(
@@ -307,59 +309,6 @@ class _ClueCard extends StatelessWidget {
           ],
         ),
       );
-
-  /// Builds a flag widget with error handling for unsupported country codes.
-  /// Falls back to the flag emoji text if the SVG flag can't be rendered.
-  Widget _buildFlagWidget(String countryCode) {
-    // Codes known to be unsupported or problematic in the flag package v7.
-    // Note: XK, EH, BQ, SX, CW, MF, BL, SS are now supported in flag v7.
-    const unsupportedCodes = {
-      'XC', // Northern Cyprus (custom code, no SVG)
-      'XS', // Somaliland (custom code, no SVG)
-      'AN', // Netherlands Antilles (dissolved)
-      'CS', // Serbia and Montenegro (dissolved)
-      'TP', // East Timor (old code, use TL)
-    };
-
-    final code = countryCode.toUpperCase();
-    if (code.length != 2 || unsupportedCodes.contains(code)) {
-      return _flagEmojiFallback(countryCode);
-    }
-
-    // Wrap in a Builder + try/catch for construction errors, and an
-    // _ErrorBoundary for render-time errors from the flag SVG package.
-    try {
-      final flagWidget = Flag.fromString(
-        countryCode,
-        height: 56,
-        width: 84,
-        fit: BoxFit.contain,
-        borderRadius: 4,
-      );
-      return _FlagErrorBoundary(
-        fallback: _flagEmojiFallback(countryCode),
-        child: flagWidget,
-      );
-    } catch (_) {
-      return _flagEmojiFallback(countryCode);
-    }
-  }
-
-  Widget _flagEmojiFallback(String countryCode) {
-    // Convert 2-letter code to regional indicator emoji
-    final codeUnits = countryCode.toUpperCase().codeUnits;
-    final emoji = String.fromCharCodes(codeUnits.map((c) => c + 127397));
-    return Container(
-      height: 56,
-      width: 84,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: FlitColors.backgroundMid,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(emoji, style: const TextStyle(fontSize: 36)),
-    );
-  }
 
   String _clueTypeLabel(ClueType type) {
     switch (type) {
@@ -971,52 +920,5 @@ class _FuelGauge extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-/// Catches render-time errors from the flag SVG package and shows [fallback].
-class _FlagErrorBoundary extends StatefulWidget {
-  const _FlagErrorBoundary({required this.child, required this.fallback});
-
-  final Widget child;
-  final Widget fallback;
-
-  @override
-  State<_FlagErrorBoundary> createState() => _FlagErrorBoundaryState();
-}
-
-class _FlagErrorBoundaryState extends State<_FlagErrorBoundary> {
-  bool _hasError = false;
-
-  @override
-  Widget build(BuildContext context) {
-    if (_hasError) return widget.fallback;
-
-    // Wrap child so that layout/render errors trigger the fallback.
-    return _ErrorCatcher(
-      onError: () {
-        if (mounted) setState(() => _hasError = true);
-      },
-      child: widget.child,
-    );
-  }
-}
-
-class _ErrorCatcher extends StatelessWidget {
-  const _ErrorCatcher({required this.onError, required this.child});
-
-  final VoidCallback onError;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    // If the child throws during build, catch it here.
-    try {
-      return child;
-    } catch (_) {
-      // Schedule the error callback after the current frame.
-      WidgetsBinding.instance.addPostFrameCallback((_) => onError());
-      return const SizedBox.shrink();
-    }
   }
 }
