@@ -18,6 +18,7 @@ import 'package:flit/features/play/practice_screen.dart';
 import 'package:flit/features/quiz/daily_briefing_screen.dart';
 import 'package:flit/features/quiz/flight_school_screen.dart';
 import 'package:flit/features/quiz/uncharted_setup_screen.dart';
+import 'package:flit/features/sortie/sortie_screen.dart';
 import 'package:flit/game/map/region.dart';
 
 import 'helpers/test_harness.dart';
@@ -83,6 +84,26 @@ void main() {
       await tester.tap(find.text('10').first);
       await TestHarness.settle(tester, frames: 8);
       expect(find.textContaining('×10'), findsWidgets);
+    });
+
+    testWidgets(
+        'Standard Sortie renders the rated header, policy note, and CTA',
+        (tester) async {
+      await TestHarness.pumpRealScreen(tester, const SortieScreen());
+      expect(find.byType(SortieScreen), findsOneWidget);
+      expect(find.text('STANDARD SORTIE'), findsOneWidget);
+      // The rated-normalization policy is surfaced to players.
+      expect(
+        find.text('Rated: standard loadout for everyone — pure skill'),
+        findsOneWidget,
+      );
+      expect(find.text('FLY RATED SORTIE'), findsOneWidget);
+      // Dead Supabase → empty board message renders (graceful degrade).
+      expect(
+        find.textContaining('No rated runs yet'),
+        findsOneWidget,
+      );
+      await TestHarness.takeScreenshot(tester, 'launch_sortie');
     });
 
     testWidgets('Practice (Training Sortie) renders and a clue toggle flips',
