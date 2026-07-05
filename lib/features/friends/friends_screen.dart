@@ -6,6 +6,7 @@ import '../../core/theme/flit_colors.dart';
 import '../../core/utils/aviation_rank.dart';
 import '../../core/widgets/country_flag.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
+import '../../core/widgets/rating_tier_chip.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/services/leaderboard_service.dart';
 import '../../data/models/challenge.dart';
@@ -16,6 +17,8 @@ import '../../data/providers/account_provider.dart';
 import '../../data/services/challenge_service.dart';
 import '../../data/services/feature_flag_service.dart';
 import '../../data/services/friends_service.dart';
+import '../../data/services/matchmaking_service.dart';
+import '../../data/services/sortie_service.dart';
 import '../../game/economy/rated_loadout.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_session.dart';
@@ -2382,6 +2385,9 @@ class _FriendProfileSheetState extends State<_FriendProfileSheet> {
   /// from the public scores table.
   Map<String, Map<String, int>?>? _bestScores;
 
+  /// Friend's Standard Sortie rating for the rated tier chip.
+  RatingInfo? _sortieRating;
+
   @override
   void initState() {
     super.initState();
@@ -2389,6 +2395,17 @@ class _FriendProfileSheetState extends State<_FriendProfileSheet> {
       _loadMatchHistory();
     }
     _loadBestScores();
+    _loadSortieRating();
+  }
+
+  Future<void> _loadSortieRating() async {
+    final info = await MatchmakingService.instance.fetchRating(
+      userId: widget.friend.playerId,
+      gameMode: SortieService.gameMode,
+      fallbackLevel: widget.friend.level,
+    );
+    if (!mounted) return;
+    setState(() => _sortieRating = info);
   }
 
   Future<void> _loadBestScores() async {
@@ -2431,6 +2448,12 @@ class _FriendProfileSheetState extends State<_FriendProfileSheet> {
           color: FlitColors.gold,
           label: '${rank.title} \u00b7 Lv.${friend.level}',
         ),
+        // Rated tier (Standard Sortie).
+        if (_sortieRating != null)
+          RatingTierChip(
+            rating: _sortieRating!.rating,
+            provisional: _sortieRating!.provisional,
+          ),
         if (license != null)
           _profileChip(
             icon: Icons.badge_outlined,

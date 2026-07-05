@@ -6,13 +6,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
+import '../../core/widgets/rating_tier_chip.dart';
 import '../../core/theme/rarity_colors.dart';
 import '../../data/models/avatar_config.dart';
 import '../../data/models/leaderboard_entry.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/models/player_report.dart';
 import '../../data/services/leaderboard_service.dart';
+import '../../data/services/matchmaking_service.dart';
 import '../../data/services/report_service.dart';
+import '../../data/services/sortie_service.dart';
 import '../../game/clues/clue_types.dart';
 import '../../game/data/country_difficulty.dart';
 import '../avatar/avatar_widget.dart';
@@ -924,6 +927,10 @@ class _PilotCardSheet extends StatefulWidget {
 class _PilotCardSheetState extends State<_PilotCardSheet>
     with SingleTickerProviderStateMixin {
   PilotLicense? _license;
+
+  /// The pilot's Standard Sortie rating (rated tier chip). Null while
+  /// loading or when the ratings table isn't deployed.
+  RatingInfo? _sortieRating;
   late AnimationController _shimmerController;
 
   @override
@@ -934,6 +941,16 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
       duration: const Duration(seconds: 2),
     )..repeat();
     _fetchLicense();
+    _fetchSortieRating();
+  }
+
+  Future<void> _fetchSortieRating() async {
+    final info = await MatchmakingService.instance.fetchRating(
+      userId: widget.entry.playerId,
+      gameMode: SortieService.gameMode,
+      fallbackLevel: widget.entry.level ?? 1,
+    );
+    if (mounted) setState(() => _sortieRating = info);
   }
 
   @override
@@ -987,6 +1004,14 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
           ),
           // Credit-card style license (matches LicenseScreen rendering)
           _buildLicenseCard(entry, planeId, level, avatarConfig),
+          // Rated tier (Standard Sortie)
+          if (_sortieRating != null) ...[
+            const SizedBox(height: 12),
+            RatingTierChip(
+              rating: _sortieRating!.rating,
+              provisional: _sortieRating!.provisional,
+            ),
+          ],
           // Stats row
           const SizedBox(height: 16),
           Container(
