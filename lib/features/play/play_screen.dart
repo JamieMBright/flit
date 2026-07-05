@@ -2593,6 +2593,46 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
     }
   }
 
+  /// Round-performance emoji: the classic daily-share colours (hints
+  /// used → green/yellow/orange, failed → red).
+  static String _roundEmoji(_RoundResult r) {
+    if (!r.completed) return '\u{1F534}';
+    if (r.hintsUsed == 0) return '\u{1F7E2}';
+    if (r.hintsUsed <= 2) return '\u{1F7E1}';
+    if (r.hintsUsed <= 4) return '\u{1F7E0}';
+    return '\u{1F534}';
+  }
+
+  /// Difficulty-weighted max score for a round (proficiency denominator).
+  static int _roundMax(_RoundResult r) => r.countryCode.isEmpty
+      ? 10000
+      : (10000 * difficultyMultiplier(r.countryCode)).round();
+
+  /// Per-clue rows for the report card: emoji + country + efficiency.
+  /// The daily challenge hides country names (a shared card must not
+  /// spoil the day's answers) — rounds are numbered instead.
+  List<ReportRow> _reportRows() => [
+        for (final (i, r) in widget.roundResults.indexed)
+          ReportRow(
+            _roundEmoji(r),
+            widget.isDailyChallenge ? 'Round ${i + 1}' : r.countryName,
+            '${(r.score / _roundMax(r) * 100).clamp(0, 100).round()}%',
+          ),
+      ];
+
+  /// Overall efficiency: total score over difficulty-weighted maximum,
+  /// mirroring DailyResult.proficiencyPercent.
+  int get _overallEfficiency {
+    var max = 0;
+    var total = 0;
+    for (final r in widget.roundResults) {
+      max += _roundMax(r);
+      total += r.score;
+    }
+    if (max == 0) return 0;
+    return (total / max * 100).clamp(0, 100).round();
+  }
+
   Widget _buildReportCard() {
     final layers = _revealLayers();
     final displayTime =
@@ -2611,12 +2651,15 @@ class _ResultDialogState extends ConsumerState<_ResultDialog> {
           if (!_isMultiRound) widget.session.targetName,
         ].join(' · '),
         score: _isMultiRound ? widget.totalScore : widget.session.score,
+        rows: _reportRows(),
         stats: [
           ReportStat(
             'ROUNDS',
             '$foundCount/'
                 '${widget.roundResults.isNotEmpty ? widget.roundResults.length : widget.totalRounds}',
           ),
+          if (widget.roundResults.isNotEmpty)
+            ReportStat('EFFICIENCY', '$_overallEfficiency%'),
           ReportStat('TIME', _formatTime(displayTime)),
           if (coins > 0) ReportStat('COINS', '+$coins'),
         ],
