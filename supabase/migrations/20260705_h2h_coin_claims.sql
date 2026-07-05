@@ -5,9 +5,9 @@
 -- it returns TRUE exactly once per player per completed challenge, and the
 -- client computes + credits the coin amount when it gets TRUE.
 --
--- NOT APPLIED AUTOMATICALLY — apply manually to the production database.
--- Until applied, the client claim call fails silently and H2H rewards stay
--- display-only (previous behaviour).
+-- APPLIED TO PRODUCTION 2026-07-05.
+-- Where not applied, the client claim call fails silently and H2H rewards
+-- stay display-only (previous behaviour).
 
 ALTER TABLE public.h2h_challenges
   ADD COLUMN IF NOT EXISTS challenger_claimed_at TIMESTAMPTZ,

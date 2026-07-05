@@ -12,11 +12,19 @@
 -- 4. match_pool_entry(): atomically claim a matchmaking pool row so two
 --    searchers can never both match the same entry.
 --
--- NOT APPLIED AUTOMATICALLY — apply manually to the production database.
+-- APPLIED TO PRODUCTION 2026-07-05.
 -- The client feature-detects both RPCs and falls back to the previous
 -- read-modify-write behaviour when they are missing.
 
--- --- 1. game_mode CHECK constraints -----------------------------------------
+-- --- 1. game_mode column + CHECK constraints ---------------------------------
+
+-- game_mode did not previously exist on either table in production; add it
+-- with the historical default so existing rows are labelled as flight games.
+ALTER TABLE public.challenges
+  ADD COLUMN IF NOT EXISTS game_mode TEXT NOT NULL DEFAULT 'flight';
+
+ALTER TABLE public.matchmaking_pool
+  ADD COLUMN IF NOT EXISTS game_mode TEXT NOT NULL DEFAULT 'flight';
 
 DO $$
 DECLARE
