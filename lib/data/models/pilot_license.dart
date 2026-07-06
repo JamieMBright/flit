@@ -98,43 +98,46 @@ class PilotLicense {
   // Random generation
   // ---------------------------------------------------------------------------
 
-  /// Weighted stat roll table.
+  /// Weighted stat roll table (steep — the license is a long-term chase).
   ///
-  /// Distribution (394 entries):
-  ///   1-5  : ~51 %  (common)
-  ///   6-10 : ~25 %  (uncommon)
-  ///   11-15: ~15 %  (rare)
-  ///   16-20: ~6.6%  (epic — 18-20 deliberately rarer than 16-17)
-  ///   21-24: ~1.8%  (legendary)
-  ///   25   : ~0.25% (perfect)
+  /// Approx per-stat probability (denominator 950):
+  ///   1-5  : ~65 %   (common — the overwhelming majority of rolls)
+  ///   6-10 : ~25 %   (uncommon)
+  ///   11-15: ~7 %    (rare)
+  ///   16-19: ~1.9 %  (epic)
+  ///   20-22: ~0.7 %  (legendary — a single 20+ stat is a ~1% tail event)
+  ///   23-24: ~0.2 %  (near-mythical)
+  ///   25   : ~0.1 %  (perfect — roughly 1 in 950 per stat draw)
   ///
-  /// Top-end weights were trimmed after playtesting showed high licenses
-  /// came too easily — the license is the game's long-term chase.
-  /// Implemented as a lookup table for O(1) rolls.
+  /// Steepened hard after playtesting showed a 23/25 landing by the third
+  /// reroll — good outcomes must be RARE and slow so rerolling stays a
+  /// meaningful (spend-encouraging) grind rather than solved in a few tries.
+  /// Combined with stat-locking + hot-pump + pity, a top-tier license is a
+  /// genuine long game. Implemented as a lookup table for O(1) rolls.
   static final List<int> _weightTable = [
-    for (var i = 0; i < 40; i++) 1,
-    for (var i = 0; i < 40; i++) 2,
-    for (var i = 0; i < 40; i++) 3,
-    for (var i = 0; i < 40; i++) 4,
-    for (var i = 0; i < 40; i++) 5,
-    for (var i = 0; i < 20; i++) 6,
-    for (var i = 0; i < 20; i++) 7,
-    for (var i = 0; i < 20; i++) 8,
-    for (var i = 0; i < 20; i++) 9,
-    for (var i = 0; i < 20; i++) 10,
-    for (var i = 0; i < 12; i++) 11,
-    for (var i = 0; i < 12; i++) 12,
-    for (var i = 0; i < 12; i++) 13,
-    for (var i = 0; i < 12; i++) 14,
-    for (var i = 0; i < 12; i++) 15,
-    for (var i = 0; i < 7; i++) 16,
-    for (var i = 0; i < 7; i++) 17,
+    for (var i = 0; i < 140; i++) 1,
+    for (var i = 0; i < 135; i++) 2,
+    for (var i = 0; i < 125; i++) 3,
+    for (var i = 0; i < 115; i++) 4,
+    for (var i = 0; i < 105; i++) 5,
+    for (var i = 0; i < 65; i++) 6,
+    for (var i = 0; i < 55; i++) 7,
+    for (var i = 0; i < 45; i++) 8,
+    for (var i = 0; i < 38; i++) 9,
+    for (var i = 0; i < 32; i++) 10,
+    for (var i = 0; i < 20; i++) 11,
+    for (var i = 0; i < 16; i++) 12,
+    for (var i = 0; i < 13; i++) 13,
+    for (var i = 0; i < 10; i++) 14,
+    for (var i = 0; i < 8; i++) 15,
+    for (var i = 0; i < 6; i++) 16,
+    for (var i = 0; i < 5; i++) 17,
     for (var i = 0; i < 4; i++) 18,
-    for (var i = 0; i < 4; i++) 19,
-    for (var i = 0; i < 4; i++) 20,
+    for (var i = 0; i < 3; i++) 19,
+    for (var i = 0; i < 3; i++) 20,
     for (var i = 0; i < 2; i++) 21,
     for (var i = 0; i < 2; i++) 22,
-    for (var i = 0; i < 2; i++) 23,
+    23,
     24,
     25,
   ];
