@@ -179,6 +179,11 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
     final contrail = CosmeticCatalog.getById(contrailId);
     final contrailPrimary = contrail?.colorScheme?['primary'];
     final contrailSecondary = contrail?.colorScheme?['secondary'];
+    final physics = LoadoutPhysics.combined(
+      plane: plane,
+      contrail: contrail,
+      companion: companion,
+    );
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => PlayScreen(
@@ -198,9 +203,10 @@ class _DailyChallengeScreenState extends ConsumerState<DailyChallengeScreen> {
           preferredClueType: license.preferredClueType,
           enabledClueTypes: _challenge.enabledClueTypes,
           enableFuel: false,
-          planeHandling: plane?.handling ?? 1.0,
-          planeSpeed: plane?.speed ?? 1.0,
-          planeFuelEfficiency: plane?.fuelEfficiency ?? 1.0,
+          // Plane × contrail × companion physics (unrated → boosts apply).
+          planeHandling: physics.handling,
+          planeSpeed: physics.speed,
+          planeFuelEfficiency: physics.fuelEfficiency,
           contrailPrimaryColor:
               contrailPrimary != null ? Color(contrailPrimary) : null,
           contrailSecondaryColor:

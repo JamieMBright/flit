@@ -314,6 +314,100 @@ enum AvatarCompanion {
   charizard,
 }
 
+/// Resolve the [AvatarCompanion] for a shop cosmetic id like
+/// `'companion_eagle'`. Unknown ids (including `'companion_none'`) map to
+/// [AvatarCompanion.none].
+AvatarCompanion companionFromCosmeticId(String id) =>
+    AvatarCompanion.values.firstWhere(
+      (c) => 'companion_${c.name}' == id,
+      orElse: () => AvatarCompanion.none,
+    );
+
+/// The distinct gameplay perk a companion grants.
+///
+/// Owner spec: companions must alter PROPER stats — and each one a DIFFERENT
+/// stat — rather than every companion sharing the old fuel-fetch behaviour.
+/// Multiplier stats ([coinBonus], [speed], [handling], [fuelEfficiency]) sit
+/// around 1.0 (1.08 = +8%); [clueChanceBonus] is additive percentage points.
+/// Effects scale with the companion's price/rarity — Charizard is strongest.
+///
+/// The in-round fuel-fetch flourish still fires for any non-none companion
+/// (see CompanionRenderer) and the avatar reroll-luck contribution is
+/// unchanged; this record is the NEW headline stat layered on top.
+///
+/// Like the equipped plane, contrail, and licence stats, companion boosts are
+/// EXCLUDED in rated play (Standard Sortie / H2H): coin/xp ride the
+/// `applyBoost: false` payout path, clue-chance is omitted, and the physics
+/// stats are replaced by RatedLoadout.standard at the rated launch sites.
+class CompanionStats {
+  const CompanionStats({
+    this.coinBonus = 1.0,
+    this.speed = 1.0,
+    this.handling = 1.0,
+    this.fuelEfficiency = 1.0,
+    this.clueChanceBonus = 0,
+  });
+
+  /// Coin-earning multiplier (1.08 = +8% coins).
+  final double coinBonus;
+
+  /// Movement-speed multiplier (1.05 = +5% speed).
+  final double speed;
+
+  /// Turn-rate (handling) multiplier (1.09 = +9% turn rate).
+  final double handling;
+
+  /// Fuel-economy multiplier (1.04 = +4% fuel economy — less burn).
+  final double fuelEfficiency;
+
+  /// Additive bonus to clue chance, in percentage points.
+  final int clueChanceBonus;
+
+  /// Whether this companion grants any non-neutral effect.
+  bool get hasEffect =>
+      coinBonus != 1.0 ||
+      speed != 1.0 ||
+      handling != 1.0 ||
+      fuelEfficiency != 1.0 ||
+      clueChanceBonus != 0;
+
+  /// Short perk line for shop / picker / hangar cards, e.g. "+8% coins".
+  /// Each companion emphasises exactly one stat, so this reads cleanly.
+  /// Returns null for [AvatarCompanion.none].
+  String? get perkLabel {
+    int pct(double m) => ((m - 1.0) * 100).round();
+    if (coinBonus != 1.0) return '+${pct(coinBonus)}% coins';
+    if (speed != 1.0) return '+${pct(speed)}% speed';
+    if (handling != 1.0) return '+${pct(handling)}% turn rate';
+    if (fuelEfficiency != 1.0) return '+${pct(fuelEfficiency)}% fuel economy';
+    if (clueChanceBonus != 0) return '+$clueChanceBonus% clue chance';
+    return null;
+  }
+}
+
+/// Per-companion stat table. Each companion emphasises a DIFFERENT stat and
+/// the magnitudes climb with price/rarity so higher-tier companions feel
+/// meaningfully stronger (Charizard, the 75k legendary, is the strongest).
+extension AvatarCompanionStats on AvatarCompanion {
+  CompanionStats get stats => switch (this) {
+        AvatarCompanion.none => const CompanionStats(),
+        // Tiny, light flyer — sips fuel.
+        AvatarCompanion.pidgey => const CompanionStats(fuelEfficiency: 1.04),
+        // Nimble and quick — a touch more speed.
+        AvatarCompanion.sparrow => const CompanionStats(speed: 1.05),
+        // Keen eyes spot more clues.
+        AvatarCompanion.eagle => const CompanionStats(clueChanceBonus: 6),
+        // Tropical treasure-hunter — richer coin hauls.
+        AvatarCompanion.parrot => const CompanionStats(coinBonus: 1.08),
+        // Agile firebird — tighter turns.
+        AvatarCompanion.phoenix => const CompanionStats(handling: 1.09),
+        // Fierce and powerful — serious speed.
+        AvatarCompanion.dragon => const CompanionStats(speed: 1.12),
+        // The ultimate flame dragon — the best coin earner in the game.
+        AvatarCompanion.charizard => const CompanionStats(coinBonus: 1.15),
+      };
+}
+
 /// Configuration that fully describes a player avatar.
 ///
 /// Each field corresponds to a DiceBear customisation option.

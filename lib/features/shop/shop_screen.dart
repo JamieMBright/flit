@@ -1980,6 +1980,25 @@ class _CosmeticGrid extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
+              if (companionFromCosmeticId(item.id).stats.perkLabel != null) ...[
+                Row(
+                  children: [
+                    const Icon(Icons.auto_awesome,
+                        size: 14, color: FlitColors.success),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        companionFromCosmeticId(item.id).stats.perkLabel!,
+                        style: const TextStyle(
+                          color: FlitColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+              ],
               const Row(
                 children: [
                   Icon(Icons.local_gas_station,
@@ -2325,6 +2344,16 @@ class _CosmeticCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                   ],
+                  // Contrail boost (functional contrails carry one perk)
+                  if (item.type == CosmeticType.contrail &&
+                      item.perkLabel != null) ...[
+                    _PerkRow(
+                      icon: Icons.bolt,
+                      label: item.perkLabel!,
+                      color: FlitColors.accent,
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                   // Companion perks (only for non-none companions)
                   if (item.type == CosmeticType.coPilot &&
                       item.id != 'companion_none')
@@ -2557,8 +2586,9 @@ class _AttrBar extends StatelessWidget {
 // =============================================================================
 // Companion Perks  (compact perk list for companion cards)
 //
-// These are the companion's REAL mechanics — never leave the player
-// guessing what a companion does:
+// Each companion's HEADLINE is now its distinct proper stat (owner spec:
+// companions alter real stats, each a different one — see
+// AvatarCompanion.stats). The two supporting mechanics remain:
 // 1. In-round auto fuel fetch: when the round fuel gauge drops below 20%
 //    the companion flies off and returns +12.5% fuel (CompanionRenderer).
 // 2. Reroll luck: a companion's coin value counts toward avatar rarity,
@@ -2573,16 +2603,18 @@ class _CompanionPerks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final perk = companionFromCosmeticId(item.id).stats.perkLabel;
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _PerkRow(
-            icon: Icons.local_gas_station,
-            label: 'Fetches +12.5% fuel when low',
-            color: FlitColors.warning,
-          ),
+          if (perk != null)
+            _PerkRow(
+              icon: Icons.auto_awesome,
+              label: perk,
+              color: FlitColors.success,
+            ),
           _PerkRow(
             icon: Icons.casino,
             label: '+${item.price} avatar value (reroll luck)',

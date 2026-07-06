@@ -1327,6 +1327,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           score: _totalScore,
           roundsCompleted: _currentRound,
           coinReward: widget.coinReward,
+          // Daily challenge coins are a fixed guaranteed lump — exclude the
+          // Gold/XP Surge multiplier so a Surge only ever doubles active grind.
+          fixedReward: widget.isDailyChallenge,
           region: widget.scoreRegion ??
               (widget.isDailyChallenge ? 'daily' : widget.region.name),
           roundEmojis: roundEmojis,

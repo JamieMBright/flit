@@ -51,19 +51,23 @@ extension ConsumableTypeInfo on ConsumableType {
         ConsumableType.xpSurge => 'xp_surge',
       };
 
+  /// Human-facing ITEM name (owner spec: supplies read as collectible items,
+  /// e.g. "Log Book", with the effect in [effectLabel] — not "Double XP" as
+  /// the title). The stable persistence [id] is unchanged, so these strings
+  /// can be reworded freely without breaking saved inventories.
   String get displayName => switch (this) {
         ConsumableType.refuelCanister => 'Refuel Canister',
         ConsumableType.licensePolish => 'License Polish',
-        ConsumableType.goldSurge => 'Gold Surge',
-        ConsumableType.xpSurge => 'XP Surge',
+        ConsumableType.goldSurge => 'Gold Rush',
+        ConsumableType.xpSurge => 'Log Book',
       };
 
   /// One-line effect description for shop cards and drop toasts.
   String get effectLabel => switch (this) {
         ConsumableType.refuelCanister => 'Instant full earning tank',
         ConsumableType.licensePolish => '+3 all license stats for 24h',
-        ConsumableType.goldSurge => '2x coin earnings for 60 min',
-        ConsumableType.xpSurge => '2x XP for 60 min',
+        ConsumableType.goldSurge => 'Doubles coins earned for 60 min',
+        ConsumableType.xpSurge => 'Doubles XP earned for 60 min',
       };
 
   /// Base per-unit coin price (bundles discount from this).

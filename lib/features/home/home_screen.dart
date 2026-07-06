@@ -14,6 +14,7 @@ import '../../core/widgets/daily_ad_reward_card.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/theme/rarity_colors.dart';
 import '../../data/models/challenge.dart';
+import '../../data/models/avatar_config.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/services/app_config_service.dart';
 import '../../data/services/challenge_service.dart';
@@ -1374,6 +1375,47 @@ class _HangarCard extends ConsumerWidget {
                           boosted: isHot,
                         ),
                       ],
+                    ),
+                    // Equipped contrail + companion boosts (unrated loadout
+                    // perks — normalised away in rated play).
+                    Builder(
+                      builder: (_) {
+                        final contrail = CosmeticCatalog.getById(
+                          account.equippedContrailId,
+                        );
+                        final companionPerk =
+                            account.avatar.companion.stats.perkLabel;
+                        final perks = <String>[
+                          if (contrail?.perkLabel != null) contrail!.perkLabel!,
+                          if (companionPerk != null) companionPerk,
+                        ];
+                        if (perks.isEmpty) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 3),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.bolt,
+                                size: 12,
+                                color: FlitColors.accent,
+                              ),
+                              const SizedBox(width: 3),
+                              Expanded(
+                                child: Text(
+                                  perks.join('  ·  '),
+                                  style: const TextStyle(
+                                    color: FlitColors.accent,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                     // Active consumable boosts (Gold/XP Surge, Polish).
                     if (account.activeEffects

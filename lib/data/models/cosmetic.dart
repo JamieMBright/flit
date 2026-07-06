@@ -1,3 +1,5 @@
+import 'avatar_config.dart';
+
 /// Type of cosmetic item.
 enum CosmeticType {
   plane,
@@ -63,6 +65,34 @@ class Cosmetic {
   /// Fuel efficiency multiplier (planes only). Higher = less fuel consumed.
   /// 1.0 = baseline. Range: 0.6 (gas guzzler) to 1.4 (economical).
   final double fuelEfficiency;
+
+  /// Whether this cosmetic grants any non-neutral gameplay boost.
+  bool get hasBoost => handling != 1.0 || speed != 1.0 || fuelEfficiency != 1.0;
+
+  /// Short human-readable perk line for shop / hangar cards, e.g.
+  /// "+6% turn rate" or "+8% fuel economy". Returns null when the item is
+  /// perfectly neutral. For planes (which carry several stats at once) the
+  /// single strongest deviation from 1.0 is surfaced; contrails carry
+  /// exactly one boost so this reads cleanly for them.
+  String? get perkLabel {
+    int pct(double m) => ((m - 1.0) * 100).round();
+    String sign(int p) => p >= 0 ? '+$p%' : '$p%';
+    final entries = <(String, double)>[
+      ('turn rate', handling),
+      ('speed', speed),
+      ('fuel economy', fuelEfficiency),
+    ];
+    // Pick the stat with the largest absolute deviation from neutral.
+    (String, double)? best;
+    for (final e in entries) {
+      if (e.$2 == 1.0) continue;
+      if (best == null || (e.$2 - 1.0).abs() > (best.$2 - 1.0).abs()) {
+        best = e;
+      }
+    }
+    if (best == null) return null;
+    return '${sign(pct(best.$2))} ${best.$1}';
+  }
 
   Cosmetic copyWith({bool? isOwned, bool? isEquipped}) => Cosmetic(
         id: id,
@@ -131,6 +161,55 @@ class Cosmetic {
         speed: (json['speed'] as num?)?.toDouble() ?? 1.0,
         fuelEfficiency: (json['fuel_efficiency'] as num?)?.toDouble() ?? 1.0,
       );
+}
+
+/// Combined equipped-loadout physics multipliers for UNRATED play.
+///
+/// Stacks the equipped plane, contrail, and companion contributions
+/// multiplicatively for turn rate, speed, and fuel economy. This is the
+/// single place those three sources are combined so every unrated launch
+/// site (daily, free flight, practice) stays consistent.
+///
+/// RATED play (Standard Sortie / H2H) never uses this — those launch sites
+/// substitute `RatedLoadout.standard` (all 1.0), which is exactly why plane,
+/// contrail, AND companion physics boosts are all normalised away in rated.
+class LoadoutPhysics {
+  const LoadoutPhysics({
+    required this.handling,
+    required this.speed,
+    required this.fuelEfficiency,
+  });
+
+  /// Turn-rate multiplier (plane × contrail × companion).
+  final double handling;
+
+  /// Speed multiplier (plane × contrail × companion).
+  final double speed;
+
+  /// Fuel-economy multiplier (plane × contrail × companion).
+  final double fuelEfficiency;
+
+  /// Neutral loadout (no boosts).
+  static const LoadoutPhysics neutral =
+      LoadoutPhysics(handling: 1.0, speed: 1.0, fuelEfficiency: 1.0);
+
+  /// Combine the equipped [plane], [contrail], and [companion] into a single
+  /// set of physics multipliers. Any null cosmetic contributes 1.0.
+  static LoadoutPhysics combined({
+    Cosmetic? plane,
+    Cosmetic? contrail,
+    AvatarCompanion companion = AvatarCompanion.none,
+  }) {
+    final c = companion.stats;
+    return LoadoutPhysics(
+      handling:
+          (plane?.handling ?? 1.0) * (contrail?.handling ?? 1.0) * c.handling,
+      speed: (plane?.speed ?? 1.0) * (contrail?.speed ?? 1.0) * c.speed,
+      fuelEfficiency: (plane?.fuelEfficiency ?? 1.0) *
+          (contrail?.fuelEfficiency ?? 1.0) *
+          c.fuelEfficiency,
+    );
+  }
 }
 
 /// Catalog of all available cosmetics.
@@ -576,6 +655,18 @@ abstract class CosmeticCatalog {
 
   // ---------------------------------------------------------------
   // Contrails
+  //
+  // Contrails are FUNCTIONAL, not just cosmetic. Each trail grants ONE
+  // modest gameplay boost drawn from {speed, handling, fuelEfficiency}
+  // (reusing the same multiplier fields as planes). Boosts are small and
+  // balanced (5%–12%), scaling loosely with rarity/price, and every trail
+  // emphasises a DIFFERENT stat so the choice is meaningful. The free
+  // default trail is perfectly neutral (all 1.0).
+  //
+  // These boosts stack multiplicatively on top of the equipped plane's
+  // stats in UNRATED play (campaign, dailies, free flight). RATED modes
+  // (Standard Sortie / H2H) normalise them away — see RatedLoadout.standard
+  // — so competitive play stays boost-neutral, exactly like license stats.
   // ---------------------------------------------------------------
   static const List<Cosmetic> contrails = [
     // --- Free / Common ---
@@ -598,6 +689,7 @@ abstract class CosmeticCatalog {
       rarity: CosmeticRarity.common,
       description: 'Leave a colorful streak!',
       colorScheme: {'primary': 0xFFFF0000, 'secondary': 0xFF00FF00},
+      handling: 1.06,
     ),
     Cosmetic(
       id: 'contrail_fire',
@@ -607,6 +699,7 @@ abstract class CosmeticCatalog {
       rarity: CosmeticRarity.common,
       description: 'Blazing hot contrails.',
       colorScheme: {'primary': 0xFFFF4500, 'secondary': 0xFFFFD700},
+      speed: 1.06,
     ),
 
     // --- Rare ---
@@ -619,6 +712,7 @@ abstract class CosmeticCatalog {
       description: 'Glittering magical dust.',
       requiredLevel: 3,
       colorScheme: {'primary': 0xFFFFD700, 'secondary': 0xFFFFF8DC},
+      fuelEfficiency: 1.08,
     ),
     Cosmetic(
       id: 'contrail_neon',
@@ -629,6 +723,7 @@ abstract class CosmeticCatalog {
       description: 'Bright neon colors.',
       requiredLevel: 7,
       colorScheme: {'primary': 0xFF00FF7F, 'secondary': 0xFF00CED1},
+      handling: 1.09,
     ),
 
     // --- Epic / Premium ---
@@ -641,6 +736,7 @@ abstract class CosmeticCatalog {
       isPremium: true,
       description: 'A trail of golden particles in your wake.',
       colorScheme: {'primary': 0xFFD4A944, 'secondary': 0xFFF0D060},
+      speed: 1.10,
     ),
 
     // --- Legendary / Premium ---
@@ -654,6 +750,7 @@ abstract class CosmeticCatalog {
           'Crimson ribbons reserved for proven Aces. Requires Ace rating '
           'in Standard Sortie — money alone cannot buy this trail.',
       colorScheme: {'primary': 0xFFE0524D, 'secondary': 0xFFFFD700},
+      handling: 1.12,
     ),
     Cosmetic(
       id: 'contrail_aurora',
@@ -664,6 +761,7 @@ abstract class CosmeticCatalog {
       isPremium: true,
       description: 'The northern lights follow you across the sky.',
       colorScheme: {'primary': 0xFF00FF7F, 'secondary': 0xFF9B30FF},
+      fuelEfficiency: 1.12,
     ),
     Cosmetic(
       id: 'contrail_chemtrails',
@@ -675,6 +773,7 @@ abstract class CosmeticCatalog {
       description:
           'Toxic green poison gas contrails. For the conspiracy-minded pilot.',
       colorScheme: {'primary': 0xFF00FF00, 'secondary': 0xFF7FFF00},
+      speed: 1.12,
     ),
   ];
 
