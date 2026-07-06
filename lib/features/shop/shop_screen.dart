@@ -11,6 +11,7 @@ import '../../data/models/economy_config.dart';
 import '../../data/models/rating_tier.dart';
 import '../../data/providers/account_provider.dart';
 import '../../core/widgets/consumable_widgets.dart';
+import '../../core/widgets/daily_ad_reward_card.dart';
 import '../../data/services/economy_config_service.dart';
 import '../../data/services/matchmaking_service.dart';
 import '../../data/services/shop_rotation.dart';
@@ -569,6 +570,9 @@ class _SuppliesTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
+        // Opt-in daily rewarded-ad drop — coins or a random supply. Hides
+        // itself when unavailable / premium / already claimed today.
+        const DailyAdRewardCard(),
         for (final type in ConsumableType.values)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),

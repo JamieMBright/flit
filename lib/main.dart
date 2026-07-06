@@ -17,6 +17,7 @@ import 'core/utils/game_log.dart';
 import 'core/utils/web_error_bridge.dart';
 import 'core/utils/web_flush_bridge.dart';
 import 'core/widgets/error_overlay_manager.dart';
+import 'data/services/ad_service.dart';
 import 'data/services/user_preferences_service.dart';
 import 'game/data/country_difficulty.dart';
 import 'game/quiz/alias_service.dart';
@@ -73,6 +74,10 @@ Future<void> main() async {
 
   // Load runtime country alias overrides (for fuzzy matching).
   await AliasService.instance.load();
+
+  // Hydrate ad daily-cap / frequency-cap bookkeeping (mobile only; no-op on
+  // web). Placeholder ads only — no real ad SDK is wired. See docs/ADS.md.
+  await AdService.instance.ensureLoaded();
 
   // Initialize Supabase (auth session auto-restores from local storage).
   _log.info('app', 'Initializing Supabase...');

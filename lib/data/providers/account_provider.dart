@@ -977,6 +977,19 @@ class AccountNotifier extends StateNotifier<AccountState> {
     return true;
   }
 
+  /// Instantly refill the tank for free — no coins, no canister spent.
+  ///
+  /// Reward path for the "watch an ad for a free refuel" rewarded placement
+  /// (AdService gates the daily cap; this only applies the grant). Mirrors
+  /// [refuelWithCoins] but skips [spendCoins].
+  void grantFreeRefuel() {
+    state = state.copyWith(
+      fuelTank: state.fuelTank
+          .refillFull(DateTime.now().toUtc(), capacity: fuelCapacity),
+    );
+    _syncAccountState();
+  }
+
   /// Buy refuel canisters from the shop with bundle pricing (1x full
   /// price, 3x/5x discounted per unit). Returns false when unaffordable.
   bool buyRefuelCanisters(int count) =>

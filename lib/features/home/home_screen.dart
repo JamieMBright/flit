@@ -10,6 +10,7 @@ import '../../data/providers/account_provider.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/theme/flit_theme.dart';
 import '../../core/widgets/consumable_widgets.dart';
+import '../../core/widgets/daily_ad_reward_card.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../core/theme/rarity_colors.dart';
 import '../../data/models/challenge.dart';
@@ -295,6 +296,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           // Daily streak stats card
           const _DailyStreakCard(),
           const SizedBox(height: 10),
+          // Opt-in daily rewarded-ad drop (hides itself when unavailable /
+          // premium / already claimed today).
+          const DailyAdRewardCard(),
           // Primary play affordance. Until Basic Training is complete, the
           // main button routes straight into the funnel (with a 0/3 → 3/3
           // wing-notch indicator); the full mode sheet stays reachable via
