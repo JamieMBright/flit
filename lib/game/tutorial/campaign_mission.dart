@@ -66,6 +66,20 @@ class CampaignMission {
   /// Fixed starting heading (radians, 0 = east, π/2 = north). When null,
   /// the game picks a random heading.
   final double? startHeading;
+
+  /// The single country code this mission targets on the given 1-based
+  /// [round]. When [targetCountryCodes] lists multiple countries they are
+  /// presented strictly IN ORDER — round 1 → codes[0], round 2 → codes[1],
+  /// … — wrapping if there are more rounds than codes. This guarantees the
+  /// on-screen target matches the coach's scripted, ordered narration (e.g.
+  /// Training Flight: France on round 1, Spain on round 2). Returns null when
+  /// the mission has no ordered targets, in which case the session falls back
+  /// to difficulty-filtered random selection.
+  String? targetCodeForRound(int round) {
+    final codes = targetCountryCodes;
+    if (codes == null || codes.isEmpty) return null;
+    return codes[(round - 1) % codes.length];
+  }
 }
 
 /// Result of completing a campaign mission.

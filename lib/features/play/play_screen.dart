@@ -666,12 +666,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
               mission.startLng != null)
           ? Vector2(mission.startLng!, mission.startLat!)
           : null;
+      // Present ordered targets one country per round (round 1 → codes[0],
+      // round 2 → codes[1], …) so the on-screen clue always matches the
+      // coach's scripted, ordered narration. Passing a single-element list
+      // makes GameSession.seeded's pool exactly that country, so the round
+      // is deterministic. Missions without ordered targets pass null and
+      // fall back to difficulty-filtered random selection.
+      final roundCode = mission.targetCodeForRound(_currentRound);
       return GameSession.seeded(
         roundSeed,
         allowedClueTypes: widget.enabledClueTypes,
         preferredClueType: widget.preferredClueType,
         maxDifficulty: mission.maxDifficulty,
-        targetCountryCodes: mission.targetCountryCodes,
+        targetCountryCodes: roundCode != null ? [roundCode] : null,
         overrideStartPosition: overrideStart,
       );
     }
