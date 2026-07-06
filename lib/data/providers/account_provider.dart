@@ -15,6 +15,7 @@ import '../../game/quiz/flight_school_level.dart';
 import '../../game/quiz/uncharted_progress.dart';
 import '../../game/tutorial/campaign_mission.dart';
 import '../../game/tutorial/mode_requirements.dart';
+import '../../game/tutorial/training_missions.dart';
 import '../models/avatar_config.dart';
 import '../models/daily_result.dart';
 import '../models/daily_streak.dart';
@@ -135,6 +136,14 @@ class AccountState {
 
   /// Set of completed campaign mission IDs.
   Set<String> get completedMissionIds => campaignProgress.keys.toSet();
+
+  /// Whether all three Basic Training missions are complete.
+  bool get basicTrainingComplete =>
+      basicTrainingMissionIds.every(campaignProgress.containsKey);
+
+  /// How many of the three Basic Training missions are complete (0-3).
+  int get basicTrainingCompletedCount =>
+      basicTrainingMissionIds.where(campaignProgress.containsKey).length;
 
   /// Check whether a game mode is unlocked for the current player.
   bool isGameModeUnlocked(String modeId) {
@@ -1121,8 +1130,58 @@ class AccountNotifier extends StateNotifier<AccountState> {
       addCoins(coinReward, source: 'campaign_mission');
     }
 
+    _promoteIfBasicTrainingComplete();
     _syncAccountState();
     return result;
+  }
+
+  /// Wings earned: completing all three Basic Training missions guarantees
+  /// Level 2 (which unlocks every base mode). The promotion goes through the
+  /// normal XP path — the pilot is topped up to the next level threshold —
+  /// so streaks, profile sync, and rank display all behave as usual.
+  void _promoteIfBasicTrainingComplete() {
+    final player = state.currentPlayer;
+    if (player.level >= 2) return;
+    if (!state.basicTrainingComplete) return;
+    addXp(player.xpForNextLevel - player.xp);
+  }
+
+  /// Record a Basic/Advanced Training mission as complete.
+  ///
+  /// Non-flight training missions (recon, briefing, sortie, license, shop,
+  /// challenge) call this; flight-kind missions are recorded automatically
+  /// by PlayScreen through [completeCampaignMission]. Progress persists in
+  /// `campaign_progress` alongside campaign missions, so
+  /// [AccountState.completedMissionIds] (and every mode gate built on it)
+  /// picks the mission up with no new storage.
+  ///
+  /// Returns the stored result, or null for an unknown mission ID.
+  CampaignMissionResult? completeTrainingMission(
+    String missionId, {
+    int score = 0,
+  }) {
+    final mission = getTrainingMission(missionId);
+    if (mission == null) return null;
+    return completeCampaignMission(
+      missionId: mission.id,
+      score: score,
+      rounds: 1,
+      xpReward: mission.xpReward,
+      coinReward: mission.coinReward,
+    );
+  }
+
+  /// Objective hook for Advanced Training missions that complete from
+  /// elsewhere in the app (finishing a rated sortie, opening the license
+  /// hangar or shop, sending/accepting a challenge).
+  ///
+  /// No-ops until Basic Training is finished (the Advanced track isn't
+  /// available before then) and after the mission is already complete, so
+  /// call sites can invoke it unconditionally.
+  void completeTrainingObjective(String missionId) {
+    if (!state.basicTrainingComplete) return;
+    if (state.campaignProgress.containsKey(missionId)) return;
+    completeTrainingMission(missionId);
   }
 
   /// Check whether a game mode is unlocked for the current player.

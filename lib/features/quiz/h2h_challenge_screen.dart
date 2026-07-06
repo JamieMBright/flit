@@ -307,6 +307,10 @@ class _CreateChallengeTabState extends ConsumerState<_CreateChallengeTab> {
     if (!mounted) return;
 
     if (challengeId != null) {
+      // Advanced Training: sending an H2H challenge completes Wingman Duel.
+      ref.read(accountProvider.notifier).completeTrainingObjective(
+            'adv_challenge',
+          );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: FlitColors.success,

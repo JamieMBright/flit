@@ -40,6 +40,7 @@ class QuizGameScreen extends StatefulWidget {
     this.h2hRoundIndex,
     this.dailyBriefingDateKey,
     this.presetQuestions,
+    this.onSessionComplete,
   });
 
   final QuizMode mode;
@@ -73,6 +74,10 @@ class QuizGameScreen extends StatefulWidget {
   /// Pre-built question list (Daily Briefing's curated set). When non-null,
   /// the session uses it verbatim instead of generating a full-region sweep.
   final List<QuizQuestion>? presetQuestions;
+
+  /// Called once when the quiz session finishes, before the results screen
+  /// is shown. Used by Basic Training to record mission completion.
+  final void Function(QuizSummary summary)? onSessionComplete;
 
   @override
   State<QuizGameScreen> createState() => _QuizGameScreenState();
@@ -300,8 +305,21 @@ class _QuizGameScreenState extends State<QuizGameScreen>
     });
   }
 
+  /// Guards [QuizGameScreen.onSessionComplete] so it fires exactly once.
+  bool _sessionCompleteReported = false;
+
+  /// True when the player quit or revealed the map instead of finishing.
+  bool _sessionAborted = false;
+
   Future<void> _navigateToResults() async {
     if (!mounted) return;
+
+    // Report completion to the caller (Basic Training) exactly once —
+    // never for quit/reveal aborts, which force-finish the session.
+    if (!_sessionCompleteReported && !_sessionAborted) {
+      _sessionCompleteReported = true;
+      widget.onSessionComplete?.call(_session.summary);
+    }
 
     // Submit results to challenge system if this is an H2H quiz.
     if (widget.challengeId != null) {
@@ -420,9 +438,11 @@ class _QuizGameScreenState extends State<QuizGameScreen>
       ),
     ).then((choice) {
       if (choice == 'quit') {
+        _sessionAborted = true;
         _session.finish();
         _navigateToResults();
       } else if (choice == 'reveal') {
+        _sessionAborted = true;
         _session.finish();
         _timer?.cancel();
         // Mark all areas as correct (revealed) for map display.

@@ -145,6 +145,21 @@ void main() {
       await TestHarness.takeScreenshot(tester, 'launch_flight_school');
     });
 
+    testWidgets('Flight School is Basic Training for fresh pilots',
+        (tester) async {
+      await TestHarness.pumpRealScreen(
+        tester,
+        const FlightSchoolScreen(),
+        basicTrainingComplete: false,
+      );
+      // Level-1 pilots land on the Basic Training surface instead of the
+      // regional quiz ladder.
+      expect(find.text('BASIC TRAINING'), findsWidgets);
+      expect(find.text('Training Flight'), findsOneWidget);
+      expect(find.text('Choose your training region'), findsNothing);
+      await TestHarness.takeScreenshot(tester, 'launch_basic_training');
+    });
+
     testWidgets('Uncharted setup renders and the mode chip toggles selection',
         (tester) async {
       await TestHarness.pumpRealScreen(tester, const UnchartedSetupScreen());

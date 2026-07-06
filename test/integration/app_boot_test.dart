@@ -73,6 +73,43 @@ void main() {
       expect(find.text('Uncharted'), findsOneWidget);
     });
 
+    testWidgets('fresh pilot sees the Basic Training funnel button',
+        (tester) async {
+      await TestHarness.pumpRealScreen(
+        tester,
+        const HomeScreen(),
+        basicTrainingComplete: false,
+      );
+      // The primary affordance routes into Basic Training with the 0/3
+      // wing indicator; the normal PLAY button is not shown.
+      expect(find.text('BASIC TRAINING'), findsOneWidget);
+      expect(find.text('Earn your wings — 0/3 missions'), findsOneWidget);
+      expect(find.text('VIEW ALL MODES'), findsOneWidget);
+      expect(find.text('PLAY'), findsNothing);
+    });
+
+    testWidgets('fresh pilot mode sheet shows locked modes with reasons',
+        (tester) async {
+      await TestHarness.pumpRealScreen(
+        tester,
+        const HomeScreen(),
+        basicTrainingComplete: false,
+      );
+      await tester.tap(find.text('VIEW ALL MODES'));
+      await TestHarness.settle(tester, frames: 12);
+      // The sheet leads with the Basic Training card, and locked cards
+      // carry the exact unlock reasons from mode_requirements.dart.
+      expect(find.text('Basic Training'), findsOneWidget);
+      expect(
+        find.text('Complete Basic Training: Training Recon'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Reach Level 2 — finish Basic Training'),
+        findsWidgets,
+      );
+    });
+
     testWidgets('screenshot helper does not throw on host runner',
         (tester) async {
       await TestHarness.pumpRealScreen(tester, const HomeScreen());

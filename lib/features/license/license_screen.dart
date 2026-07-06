@@ -75,6 +75,13 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat();
+    // Advanced Training: visiting the hangar completes License Check.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(accountProvider.notifier).completeTrainingObjective(
+            'adv_license',
+          );
+    });
   }
 
   @override

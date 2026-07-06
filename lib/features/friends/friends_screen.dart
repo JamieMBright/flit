@@ -14,6 +14,7 @@ import '../../data/models/cosmetic.dart';
 import '../../data/models/seasonal_theme.dart';
 import '../../data/models/friend.dart';
 import '../../data/providers/account_provider.dart';
+import '../../game/tutorial/mode_requirements.dart';
 import '../../data/services/challenge_service.dart';
 import '../../data/services/feature_flag_service.dart';
 import '../../data/services/friends_service.dart';
@@ -518,6 +519,23 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   // ---------------------------------------------------------------------------
 
   void _challengeFriend(Friend friend) {
+    // Same gate (and reason) as the Dogfight card on the mode sheet —
+    // mode_requirements.dart is the single source of truth.
+    final account = ref.read(accountProvider);
+    final req = getModeRequirement('dogfight');
+    if (req != null &&
+        !req.isUnlocked(
+          account.currentPlayer.level,
+          account.completedMissionIds,
+        )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(req.unlockHint(account.currentPlayer.level)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
     showDialog<ChallengeGameMode>(
       context: context,
       builder: (dialogContext) => _ChallengeModePicker(friendName: friend.name),
@@ -556,6 +574,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       );
       return;
     }
+
+    // Advanced Training: throwing the gauntlet completes Wingman Duel.
+    ref.read(accountProvider.notifier).completeTrainingObjective(
+          'adv_challenge',
+        );
 
     if (gameMode == ChallengeGameMode.quiz) {
       _launchQuizChallengeGameplay(friend.name, challengeId);

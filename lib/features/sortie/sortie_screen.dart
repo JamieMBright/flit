@@ -125,6 +125,9 @@ class _SortieScreenState extends ConsumerState<SortieScreen> {
     final notifier = ref.read(accountProvider.notifier);
     final player = ref.read(accountProvider).currentPlayer;
 
+    // Advanced Training: flying a rated sortie completes First Sortie.
+    notifier.completeTrainingObjective('adv_rated_sortie');
+
     // Big sortie performances pump the license HOT (dailies do this too).
     notifier.pumpLicenseFromPerformance(
       score: totalScore,
