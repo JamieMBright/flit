@@ -11,6 +11,7 @@ import '../../core/widgets/mission_report_card.dart';
 import '../../data/models/daily_result.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/leaderboard_service.dart';
+import '../../data/services/score_submitter.dart';
 import '../../game/economy/supply_drop.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/flight_school_level.dart';
@@ -207,7 +208,8 @@ class _QuizResultsScreenState extends ConsumerState<QuizResultsScreen>
       }, onConflict: 'user_id,date_key');
 
       // 2. Shared scores table with region = 'briefing' for the leaderboard.
-      await client.from('scores').insert({
+      //    Server-authoritative submit_score RPC (with direct-insert fallback).
+      await ScoreSubmitter.submit(client, {
         'user_id': userId,
         'score': summary.totalScore,
         'time_ms': summary.elapsedMs,
