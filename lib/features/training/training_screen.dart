@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,15 +5,13 @@ import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/map/region.dart';
-import '../../game/quiz/quiz_category.dart';
-import '../../game/quiz/quiz_difficulty.dart';
-import '../../game/quiz/quiz_session.dart';
 import '../../game/tutorial/training_missions.dart';
 import '../campaign/coach_portrait.dart';
+import '../campaign/coached_intro_screen.dart';
 import '../friends/friends_screen.dart';
 import '../license/license_screen.dart';
 import '../play/play_screen.dart';
-import '../quiz/quiz_game_screen.dart';
+import '../quiz/briefing_tutorial_screen.dart';
 import '../shop/shop_screen.dart';
 import '../sortie/sortie_screen.dart';
 import '../triangulation/recon_tutorial_screen.dart';
@@ -128,6 +124,21 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     final start = await _showBriefing(mission);
     if (start != true || !mounted) return;
 
+    // Advanced Training missions open with a short coach-led walkthrough that
+    // teaches the system this mission introduces (rated play, hints, the
+    // license, fuel, the shop, or challenges) BEFORE handing the pilot to the
+    // real activity — mirroring the guided thinking of the Basic Training
+    // lessons rather than dropping them in cold. Basic missions have their own
+    // dedicated guided flow, so they skip this.
+    if (!mission.isBasic) {
+      final proceed = await Navigator.of(context).push<bool>(
+        MaterialPageRoute<bool>(
+          builder: (_) => _advancedIntroFor(mission),
+        ),
+      );
+      if (proceed != true || !mounted) return;
+    }
+
     switch (mission.kind) {
       case TrainingMissionKind.flight:
         final flight = mission.flightMission!;
@@ -157,18 +168,17 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           ),
         );
       case TrainingMissionKind.briefing:
+        // Fully guided, forgiving Briefing lesson (find the country Lotfia
+        // names, over Egypt and its neighbours) rather than a timed quiz.
+        // Completion is recorded through the same campaign path, so Daily
+        // Briefing still unlocks and Basic Training still progresses toward
+        // the pilot's wings.
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) => QuizGameScreen(
-              mode: QuizMode.allStates,
-              categories: const {QuizCategory.capital},
-              region: GameRegion.europe,
-              difficulty: QuizDifficulty.easy,
-              presetQuestions: _buildTrainingBriefingQuestions(),
-              onSessionComplete: (summary) => ref
+            builder: (_) => BriefingTutorialScreen(
+              onComplete: (totalScore) => ref
                   .read(accountProvider.notifier)
-                  .completeTrainingMission(mission.id,
-                      score: summary.totalScore),
+                  .completeTrainingMission(mission.id, score: totalScore),
             ),
           ),
         );
@@ -203,25 +213,243 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     await _maybeCelebrateWings(wasBasicsDone);
   }
 
-  /// Three easy, deterministic tap-the-country questions on Europe —
-  /// capital clues with labels on, mirroring the Daily Briefing format.
-  static List<QuizQuestion> _buildTrainingBriefingQuestions() {
-    const seed = 947001; // Fixed: the same gentle first briefing for everyone.
-    final generator =
-        QuizQuestionGenerator(region: GameRegion.europe, seed: seed);
-    final rng = Random(seed);
-    final areas = List.of(RegionalData.getAreas(GameRegion.europe))
-      ..shuffle(rng);
-
-    final questions = <QuizQuestion>[];
-    for (final area in areas) {
-      final question = generator.generateForArea(area, QuizCategory.capital);
-      if (question != null) {
-        questions.add(question.copyWith(labelFree: false));
-        if (questions.length == 3) break;
-      }
+  /// The short, coach-led walkthrough shown before an Advanced Training
+  /// activity. Each mission's beats teach the system it introduces, in the
+  /// coach's own voice, then the pilot presses through to the real screen.
+  CoachedIntroScreen _advancedIntroFor(TrainingMission mission) {
+    switch (mission.id) {
+      case 'adv_rated_sortie':
+        return CoachedIntroScreen(
+          coach: mission.coach,
+          title: mission.title,
+          launchLabel: 'FLY THE SORTIE',
+          beats: const [
+            CoachIntroBeat(
+              icon: Icons.military_tech_rounded,
+              headline: 'RATED PLAY',
+              message: 'The Standard Sortie is rated flying — five rounds, one '
+                  'score that counts. This is where a pilot earns their rank.',
+              points: [
+                'Five rated rounds flown back to back',
+                'Your best run is remembered — every sortie is on the record',
+              ],
+            ),
+            CoachIntroBeat(
+              icon: Icons.leaderboard_rounded,
+              headline: 'THE TIER LADDER',
+              message:
+                  'Your score sorts you onto a tier ladder — climb from the '
+                  'lower ranks toward Ace as your scores rise.',
+              points: [
+                'Higher scores lift you into higher tiers',
+                'The ladder remembers you between sorties',
+              ],
+            ),
+            CoachIntroBeat(
+              icon: Icons.balance_rounded,
+              headline: 'A FAIR FIELD',
+              message:
+                  'Rated sorties normalise boosts so rank reflects skill, not '
+                  'your inventory. Post a score — the result matters less than '
+                  'the wheels leaving the ground.',
+              points: [
+                'Consumable boosts are levelled out in rated play',
+                'One run is all you need to join the ladder',
+              ],
+            ),
+          ],
+        );
+      case 'adv_hint_school':
+        return CoachedIntroScreen(
+          coach: mission.coach,
+          title: mission.title,
+          launchLabel: 'START THE FLIGHT',
+          beats: const [
+            CoachIntroBeat(
+              icon: Icons.style_rounded,
+              headline: 'CLUE TYPES',
+              message:
+                  'Each clue names the country a different way. Cycle between '
+                  'them and cross-reference before you commit.',
+              points: [
+                'Flag — the colours and emblem of the nation',
+                'Capital — the city at its heart',
+                'Borders — the neighbours that surround it',
+              ],
+            ),
+            CoachIntroBeat(
+              icon: Icons.lightbulb_rounded,
+              headline: 'HINT COSTS',
+              message:
+                  'When you are truly stuck, buy a hint — but each one costs '
+                  'more than the last. Ask early, or not at all.',
+              points: [
+                '−500, then −1,000, −1,500…',
+                'Up to −2,500 for a full auto-navigate',
+              ],
+            ),
+            CoachIntroBeat(
+              icon: Icons.flag_rounded,
+              headline: 'YOUR TARGET',
+              message: 'One country waits: a red flag with a green pentagram, '
+                  'capital Rabat. Cross-reference your clues and find it.',
+              points: ['Spend a hint if you must — that is what this is for'],
+            ),
+          ],
+        );
+      case 'adv_license':
+        return CoachedIntroScreen(
+          coach: mission.coach,
+          title: mission.title,
+          launchLabel: 'OPEN THE HANGAR',
+          beats: const [
+            CoachIntroBeat(
+              icon: Icons.badge_rounded,
+              headline: 'YOUR PILOT LICENSE',
+              message:
+                  'Your License is a living record — stats that grow as you '
+                  'fly. Everything you do is written into it.',
+              points: ['Study it often; it is the measure of your progress'],
+            ),
+            CoachIntroBeat(
+              icon: Icons.local_fire_department_rounded,
+              headline: 'HEAT & PITY',
+              message:
+                  'Heat builds as you play and raises your luck. Pity is your '
+                  'safety net — it guarantees a reward when fortune stalls.',
+              points: [
+                'Heat rises the more you fly, improving your odds',
+                'Pity ensures a dry streak still pays out eventually',
+              ],
+            ),
+            CoachIntroBeat(
+              icon: Icons.refresh_rounded,
+              headline: 'THE FREE REROLL',
+              message:
+                  'One reroll is free every single day. Never let it go to '
+                  'waste — open the hangar and see it for yourself.',
+              points: ['Resets daily — a free spin of fortune, always'],
+            ),
+          ],
+        );
+      case 'adv_fuel_run':
+        return CoachedIntroScreen(
+          coach: mission.coach,
+          title: mission.title,
+          launchLabel: 'START THE RUN',
+          beats: const [
+            CoachIntroBeat(
+              icon: Icons.local_gas_station_rounded,
+              headline: 'A REAL TANK',
+              message:
+                  'This flight has fuel, and it drains. Every wasted turn is '
+                  'fuel you will not get back — fly straight lines.',
+              points: [
+                'Two island targets to reach before the tank runs dry',
+                'Bank hard only when you must',
+              ],
+            ),
+            CoachIntroBeat(
+              icon: Icons.emoji_events_rounded,
+              headline: 'LAND WITH FUEL',
+              message:
+                  'The fuel left in your tank when you land pays a bonus — up '
+                  'to 5,000 points. Efficiency is rewarded.',
+              points: ['Reach both targets, then land with a margin to spare'],
+            ),
+            CoachIntroBeat(
+              icon: Icons.flight_rounded,
+              headline: 'OR FLY FREE',
+              message:
+                  'And remember Free Flight: no tank, no pressure — just coins '
+                  'for every country you find, at your own pace.',
+              points: ['Free Flight is the calm way to farm coins and learn'],
+            ),
+          ],
+        );
+      case 'adv_shop':
+        return CoachedIntroScreen(
+          coach: mission.coach,
+          title: mission.title,
+          launchLabel: 'BROWSE THE SHOP',
+          beats: const [
+            CoachIntroBeat(
+              icon: Icons.storefront_rounded,
+              headline: 'THE SUPPLY SHOP',
+              message:
+                  'The Supply Shop stocks consumables — the tools that carry '
+                  'you through the toughest days aloft.',
+              points: ['Hints, boosts and supplies, all bought with coins'],
+            ),
+            CoachIntroBeat(
+              icon: Icons.calendar_month_rounded,
+              headline: 'THE WEEKLY HANGAR',
+              message:
+                  'The hangar rotates every week — fresh stock and limited '
+                  'offers worth planning your coins around.',
+              points: ['New supplies each week; check in before they rotate'],
+            ),
+            CoachIntroBeat(
+              icon: Icons.savings_rounded,
+              headline: 'SPEND WISELY',
+              message:
+                  'Know what your coins can buy before you need it. Come, let '
+                  'us walk the shelves together.',
+              points: ['Plan your purchases; every coin should earn its keep'],
+            ),
+          ],
+        );
+      case 'adv_challenge':
+        return CoachedIntroScreen(
+          coach: mission.coach,
+          title: mission.title,
+          launchLabel: 'FIND YOUR RIVAL',
+          beats: const [
+            CoachIntroBeat(
+              icon: Icons.sports_mma_rounded,
+              headline: 'HEAD TO HEAD',
+              message:
+                  'A duel is you against one rival — the same targets, and the '
+                  'higher score takes it. Simple, and fierce.',
+              points: ['Same challenge for both pilots; best score wins'],
+            ),
+            CoachIntroBeat(
+              icon: Icons.send_rounded,
+              headline: 'THROW THE GAUNTLET',
+              message:
+                  'Open Friends and send a challenge — or accept one already '
+                  'waiting for you. Either counts.',
+              points: [
+                'Send a fresh challenge to a friend',
+                'Or answer a duel someone has sent you',
+              ],
+            ),
+            CoachIntroBeat(
+              icon: Icons.timer_rounded,
+              headline: 'THE DUEL IS LIVE',
+              message:
+                  'The duel counts from the moment the gauntlet is thrown. '
+                  'Let us go and find your rival.',
+              points: ['One rival is all you need — go and challenge them'],
+            ),
+          ],
+        );
+      default:
+        // Fallback: a single-beat intro from the mission's own description,
+        // so any future advanced mission still opens coached rather than cold.
+        return CoachedIntroScreen(
+          coach: mission.coach,
+          title: mission.title,
+          launchLabel: 'BEGIN',
+          beats: [
+            CoachIntroBeat(
+              icon: Icons.school_rounded,
+              headline: mission.subtitle.toUpperCase(),
+              message: mission.description,
+            ),
+          ],
+        );
     }
-    return questions;
   }
 
   /// Show the WINGS EARNED celebration when the third Basic Training

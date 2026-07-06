@@ -169,6 +169,39 @@ const Coach trainingCoachSaintExuperyRecon = Coach(
   imageAsset: 'assets/images/coaches/Antoine de Saint-Exupery.PNG',
 );
 
+/// Basic Training briefing instructor — Lotfia El Nadi, Egypt's first woman
+/// pilot. Her briefing lesson (Training Briefing) is a fully guided
+/// tap-the-country walkthrough themed on her own region — Egypt and its
+/// North-African / Middle-Eastern neighbours — so her copy teaches the
+/// briefing mechanic ("I name a country, you find it and tap it") from
+/// first principles.
+const Coach trainingCoachLotfiaBriefing = Coach(
+  id: 'lotfia_briefing',
+  name: 'Lotfia El Nadi',
+  nationality: 'Egyptian',
+  countryCode: 'EG',
+  title: 'Briefing Instructor',
+  bio: 'First woman in Africa and the Arab world to earn a pilot\'s licence, '
+      'secretly enrolling in flight school in Cairo in 1933.',
+  introduction:
+      'I am Lotfia El Nadi — the first woman in Africa and the Arab world to '
+      'earn her wings, over the skies of Egypt. A Briefing is the simplest '
+      'thing a pilot does: I name a country, you find it on the map and tap '
+      'it. We will practise over my own home — Egypt and its neighbours. '
+      'Come, I will name them for you one at a time.',
+  greeting: 'You found every country I named, calm and precise. That is a '
+      'briefing flown well.',
+  farewell: 'This reminds me of my first flights out of Cairo — the Nile a '
+      'silver ribbon, the desert stretching to Libya and Sudan, the Red Sea '
+      'shining toward Arabia. You read my homeland today the way I once did '
+      'from the cockpit. Your Daily Briefing clearance is through — the '
+      'morning board is yours.',
+  nextCoachTeaser:
+      'That was the last of your three Basic Training missions. Fly, recon, '
+      'briefing — all flown. You have earned your wings, pilot.',
+  imageAsset: 'assets/images/coaches/Lotfia el nadi.PNG',
+);
+
 /// Advanced Training hints instructor — Saint-Exupéry, teasing the license
 /// lesson next in the Advanced track.
 const Coach trainingCoachSaintExupery = Coach(
@@ -324,14 +357,15 @@ const List<TrainingMission> basicTrainingMissions = [
     id: trainingBriefingMissionId,
     order: 3,
     title: 'Training Briefing',
-    subtitle: 'Tap the map, answer the briefing',
+    subtitle: 'Find the country I name',
     description:
-        'Every pilot starts the day with a briefing. I\'ll read you three '
-        'short questions about Europe — you answer by tapping the right '
-        'country on the map. Quick, calm, precise. That is how briefings '
-        'are done.',
-    objective: 'Answer a 3-question map quiz',
-    coach: coachLotfia,
+        'A briefing is the simplest thing a pilot does: I name a country, '
+        'you find it on the map and tap it. I will walk you through it over '
+        'my own home — Egypt and its neighbours. We will do the first one '
+        'together, then you will find Libya and Sudan yourself. Gentle and '
+        'guided, no timer — just learning to read the map.',
+    objective: 'Learn briefing — tap Egypt & its neighbours',
+    coach: trainingCoachLotfiaBriefing,
     kind: TrainingMissionKind.briefing,
     isBasic: true,
     xpReward: 40,
