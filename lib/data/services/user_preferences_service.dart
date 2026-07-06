@@ -19,6 +19,7 @@ import '../models/pilot_license.dart';
 import '../models/player.dart';
 import '../models/season.dart';
 import 'leaderboard_service.dart';
+import 'score_submitter.dart';
 
 // ---------------------------------------------------------------------------
 // Offline write queue
@@ -563,7 +564,10 @@ class UserPreferencesService {
     }
 
     try {
-      await client.from('scores').insert(data);
+      // Prefer the server-authoritative submit_score RPC (enforces
+      // auth.uid() = user_id + server-side bounds). Falls back to a direct
+      // INSERT when the RPC isn't migrated yet. See ScoreSubmitter.
+      await ScoreSubmitter.submit(client, data);
       // New score is live — stale leaderboard caches must go.
       LeaderboardService.instance.invalidateCache();
     } catch (e) {
@@ -675,7 +679,13 @@ class UserPreferencesService {
 
       try {
         if (op == 'insert') {
-          await client.from(table).insert(data);
+          // Route queued score inserts through the server-authoritative RPC
+          // (with direct-insert fallback) just like the live path.
+          if (table == 'scores') {
+            await ScoreSubmitter.submit(client, data);
+          } else {
+            await client.from(table).insert(data);
+          }
         } else {
           await client.from(table).upsert(data);
         }

@@ -10,6 +10,7 @@ import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/consumable_widgets.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/services/leaderboard_service.dart';
+import '../../data/services/score_submitter.dart';
 import '../../game/economy/supply_drop.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/uncharted_map_widget.dart';
@@ -670,7 +671,7 @@ class _UnchartedResultsScreenState
     if (userId == null) return;
 
     try {
-      await Supabase.instance.client.from('scores').insert({
+      await ScoreSubmitter.submit(Supabase.instance.client, {
         'user_id': userId,
         'score': widget.score,
         'time_ms': widget.elapsedMs,
