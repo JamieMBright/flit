@@ -390,8 +390,12 @@ class GameSettings extends ChangeNotifier {
       case MapStyle.voyager:
         return 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png$langSuffix';
       case MapStyle.topo:
-        // OpenTopoMap doesn't support language parameter.
-        return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+        // OpenTopoMap's public tile servers rate-limit / 403 under app load,
+        // which flooded descent mode with failed-tile errors and made the mode
+        // unusable. Point "Topo" at CARTO's CDN-backed Voyager raster tiles
+        // (reliable at app volume, permissive usage) instead — a terrain-ish
+        // labelled basemap that actually loads.
+        return 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png$langSuffix';
     }
   }
 

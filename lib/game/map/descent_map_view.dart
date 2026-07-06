@@ -88,9 +88,30 @@ class _DescentMapViewState extends State<DescentMapView> {
   /// screen-up, placing the plane (which is behind the center in the heading
   /// direction) at ~80% screen height. Rotation pivots around the map center,
   /// keeping the plane visually fixed.
+  /// Web Mercator is only defined within ~±85.05°; latlong2's [LatLng]
+  /// asserts within ±90°. The plane-tracking offset below can push the
+  /// computed centre past those limits at low zoom / high latitude, which
+  /// threw "Null check operator used on a null value" deep in flutter_map and
+  /// aborted the whole flight (blocking training). Clamp defensively.
+  static const double _maxMercatorLat = 85.0;
+
+  LatLng _safeLatLng(double lat, double lng) {
+    final safeLat =
+        (lat.isNaN ? 0.0 : lat).clamp(-_maxMercatorLat, _maxMercatorLat);
+    var safeLng = lng.isNaN ? 0.0 : lng;
+    // Wrap longitude into [-180, 180].
+    while (safeLng > 180.0) {
+      safeLng -= 360.0;
+    }
+    while (safeLng < -180.0) {
+      safeLng += 360.0;
+    }
+    return LatLng(safeLat.toDouble(), safeLng);
+  }
+
   LatLng _effectiveCenter() {
     if (!widget.trackPlane) {
-      return LatLng(widget.centerLat, widget.centerLng);
+      return _safeLatLng(widget.centerLat, widget.centerLng);
     }
 
     final latRad = widget.centerLat * math.pi / 180.0;
@@ -106,7 +127,7 @@ class _DescentMapViewState extends State<DescentMapView> {
     final dLat = offsetDeg * math.cos(widget.heading);
     final dLng = offsetDeg * math.sin(widget.heading) / cosLat;
 
-    return LatLng(widget.centerLat + dLat, widget.centerLng + dLng);
+    return _safeLatLng(widget.centerLat + dLat, widget.centerLng + dLng);
   }
 
   @override
@@ -125,20 +146,29 @@ class _DescentMapViewState extends State<DescentMapView> {
     final zoomDelta = (zoom - _lastZoom).abs();
     final rotDelta = (rotation - _lastRotation).abs();
 
-    // At zoom 7, 0.001° ≈ 111m — visually smooth at flight speed but
-    // reduces expensive mapController.move() calls by ~10x.
-    final needsMove = latDelta > 0.001 || lngDelta > 0.001 || zoomDelta > 0.05;
-    final needsRotate = rotDelta > 0.5;
+    // Finer thresholds than before so tracking reads as continuous glide
+    // rather than discrete ~111m hops (the old 0.001° step looked jerky),
+    // while still coalescing sub-pixel frames to keep web framerate up.
+    final needsMove =
+        latDelta > 0.0003 || lngDelta > 0.0003 || zoomDelta > 0.02;
+    final needsRotate = rotDelta > 0.25;
 
-    if (needsMove) {
-      _mapController.move(center, zoom);
-      _lastLat = center.latitude;
-      _lastLng = center.longitude;
-      _lastZoom = zoom;
-    }
-    if (needsRotate) {
-      _mapController.rotate(rotation);
-      _lastRotation = rotation;
+    // flutter_map's MapController can transiently throw a null-check on web
+    // when the camera isn't fully attached (e.g. mid-rebuild). These camera
+    // pushes are best-effort visuals — never let one abort the flight.
+    try {
+      if (needsMove) {
+        _mapController.move(center, zoom);
+        _lastLat = center.latitude;
+        _lastLng = center.longitude;
+        _lastZoom = zoom;
+      }
+      if (needsRotate) {
+        _mapController.rotate(rotation);
+        _lastRotation = rotation;
+      }
+    } catch (_) {
+      // Ignore — the next frame will re-push the camera.
     }
   }
 
@@ -149,46 +179,59 @@ class _DescentMapViewState extends State<DescentMapView> {
         _widgetHeight = constraints.maxHeight;
         final center = _effectiveCenter();
         return IgnorePointer(
-          child: FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: center,
-              initialZoom: _zoom,
-              initialRotation: _rotation,
-              // Disable all user interaction — game controls the camera
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.none,
+          // Solid ocean-toned backdrop so any missing/slow tiles read as sea
+          // rather than a black void — and the mode stays usable offline.
+          child: Container(
+            color: const Color(0xFF0B1A2A),
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: center,
+                initialZoom: _zoom,
+                initialRotation: _rotation,
+                // Disable all user interaction — game controls the camera
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.none,
+                ),
+                onMapReady: () {
+                  _mapReady = true;
+                  _lastLat = center.latitude;
+                  _lastLng = center.longitude;
+                  _lastZoom = _zoom;
+                  _lastRotation = _rotation;
+                },
               ),
-              onMapReady: () {
-                _mapReady = true;
-                _lastLat = center.latitude;
-                _lastLng = center.longitude;
-                _lastZoom = _zoom;
-                _lastRotation = _rotation;
-              },
+              children: [
+                // Map tiles (style selected in settings) — capped at zoom 12
+                // to reduce tile requests and improve performance at descent.
+                TileLayer(
+                  urlTemplate: widget.tileUrl,
+                  userAgentPackageName: 'com.jamiembright.flit',
+                  maxZoom: 12,
+                  subdomains: const ['a', 'b', 'c', 'd'],
+                  // Missing tiles are cosmetic (the ocean-toned backdrop shows
+                  // through): swallow load failures so a flaky tile server can't
+                  // flood telemetry or bubble an error into the flight. Evict the
+                  // failed tile so flutter_map retries it later instead of holding
+                  // a broken image.
+                  errorTileCallback: (tile, error, stackTrace) {},
+                  evictErrorTileStrategy: EvictErrorTileStrategy.notVisible,
+                  // On web, the browser cache handles tile storage.
+                ),
+
+                // No plane marker — the game's existing plane sprite stays visible
+                // on the Canvas overlay at its fixed screen position (50%, 80%).
+
+                // Basemap attribution (OSM data; CARTO/OSM tiles).
+                const RichAttributionWidget(
+                  alignment: AttributionAlignment.bottomLeft,
+                  attributions: [
+                    TextSourceAttribution(
+                        '© OpenStreetMap contributors, © CARTO'),
+                  ],
+                ),
+              ],
             ),
-            children: [
-              // Map tiles (style selected in settings) — capped at zoom 12
-              // to reduce tile requests and improve performance at descent.
-              TileLayer(
-                urlTemplate: widget.tileUrl,
-                userAgentPackageName: 'com.jamiembright.flit',
-                maxZoom: 12,
-                subdomains: const ['a', 'b', 'c'],
-                // On web, the browser cache handles tile storage.
-              ),
-
-              // No plane marker — the game's existing plane sprite stays visible
-              // on the Canvas overlay at its fixed screen position (50%, 80%).
-
-              // OSM attribution (required by tile usage policy)
-              const RichAttributionWidget(
-                alignment: AttributionAlignment.bottomLeft,
-                attributions: [
-                  TextSourceAttribution('OpenStreetMap contributors'),
-                ],
-              ),
-            ],
           ),
         );
       },
