@@ -218,15 +218,11 @@ jobs:
           key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-${{ runner.os }}-
 
-      - name: Ensure android platform files exist
-        run: |
-          if [ ! -d android ]; then
-            flutter create --platform=android . --project-name=flit
-            # share_plus >=12 ships Kotlin 2.x plugin code; the Flutter
-            # 3.29 template pins Kotlin 1.8.22, which cannot read it and
-            # fails compileReleaseKotlin. Bump the generated pin.
-            sed -i 's/id("org.jetbrains.kotlin.android") version "[^"]*"/id("org.jetbrains.kotlin.android") version "2.1.20"/' android/settings.gradle.kts
-          fi
+      # The android/ project is now committed to the repo (real org
+      # com.jamiembright, INTERNET permission, portrait lock, adaptive icons,
+      # key.properties-based release signing with a debug fallback). The Kotlin
+      # android plugin is pinned to 2.1.20 in android/settings.gradle.kts (needed
+      # for share_plus 12), so no post-generate `flutter create`/sed is required.
 
       - name: Get dependencies
         run: flutter pub get
@@ -241,12 +237,37 @@ jobs:
           fi
           flutter build apk --release $DART_DEFINES
 
+      # AAB is the Play Store upload format. Built without key.properties in CI,
+      # so it is debug-signed — the release engineer re-signs / lets Play sign
+      # with the real upload key. APK stays for quick sideload/testing.
+      - name: Build App Bundle (AAB)
+        env:
+          VERCEL_ERRORS_API_KEY: ${{ secrets.VERCEL_ERRORS_API_KEY }}
+        run: |
+          DART_DEFINES=""
+          if [ -n "$VERCEL_ERRORS_API_KEY" ]; then
+            DART_DEFINES="--dart-define=VERCEL_ERRORS_API_KEY=$VERCEL_ERRORS_API_KEY"
+          fi
+          flutter build appbundle --release $DART_DEFINES
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-build
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 7
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-appbundle
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 7
+
+  # NOTE: No iOS build job — GitHub-hosted macOS runners are not provisioned for
+  # this repo. The committed ios/ project is store-configured (bundle id
+  # com.jamiembright.flit, portrait lock, ITSAppUsesNonExemptEncryption=false),
+  # but archiving/signing an .ipa must be done on macOS with Apple credentials.
 
   # ── Deploy to GitHub Pages ──
   deploy:
