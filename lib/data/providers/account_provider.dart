@@ -1009,11 +1009,23 @@ class AccountNotifier extends StateNotifier<AccountState> {
   int addCoins(
     int amount, {
     bool applyBoost = true,
+    bool applySurge = true,
     String source = 'coins_earned',
   }) {
     var earned = amount;
     if (applyBoost) {
-      earned = (amount * totalGoldMultiplier).round();
+      // Fixed lump payouts must NOT be multiplied by the Gold Surge consumable
+      // (that would make popping a Surge before a guaranteed payout a
+      // perpetual no-brainer). Licence coinBoost, level bonus, and companion
+      // coin bonus still apply — only the Surge multiplier is withheld. Two
+      // paths reach here: callers pass `applySurge: false` (daily puzzles, via
+      // recordGameCompletion), and Flight-School/Briefing + campaign grants
+      // are detected by [source] so the out-of-scope screens that grant them
+      // need no changes. Active grind (free-flight clues, ordinary
+      // game-completion coins) keeps the full Surge.
+      final surge = applySurge && !_isFixedLumpSource(source);
+      earned = (amount * (surge ? totalGoldMultiplier : nonSurgeGoldMultiplier))
+          .round();
     }
     state = state.copyWith(
       currentPlayer: state.currentPlayer.copyWith(
@@ -1024,6 +1036,17 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _syncProfile();
     return earned;
   }
+
+  /// Coin sources that are GUARANTEED fixed lump payouts (Flight School /
+  /// Briefing completion, campaign missions). The Gold Surge multiplier is
+  /// withheld from these so a Surge can only ever double ACTIVE grind.
+  static const Set<String> _fixedLumpCoinSources = {
+    'flight_school',
+    'campaign_mission',
+  };
+
+  bool _isFixedLumpSource(String source) =>
+      _fixedLumpCoinSources.contains(source);
 
   /// Spend coins from current account.
   /// Returns true if successful, false if insufficient funds or invalid amount.
@@ -1077,6 +1100,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     bool gateFuel = false,
   }) {
     final todayStr = AccountState._todayStr();
+    final now = DateTime.now().toUtc();
 
     // Reset counter if it's a new day.
     var coinsToday = state.freeFlightCoinsToday;
@@ -1084,17 +1108,36 @@ class AccountNotifier extends StateNotifier<AccountState> {
       coinsToday = 0;
     }
 
-    if (coinsToday >= dailyCap) return 0;
+    // Gold Surge lifts the free-flight daily cap so a FOCUSED grind can
+    // actually profit — but FUEL is the real limiter, which keeps it a tight
+    // gamble rather than free money.
+    //
+    // Break-even math (base rates: 15 coins/clue, 10 fuel/clue, 100u tank,
+    // 25u/hr regen, Surge = 2x coins, 60-min window, 150-coin cost):
+    //   A full base tank = 10 clues; regen adds ~2.5 clues/hr → ~12 clues in
+    //   the surge hour without buying fuel. The Surge's MARGINAL bonus is the
+    //   doubled half = 15 coins/clue, so ~12 × 15 ≈ 180 coins of surge bonus
+    //   vs the 150 cost — a wafer-thin profit that only lands with an
+    //   uninterrupted active hour and a burned tank. Grinding further means
+    //   buying fuel (~70 coins/refill for 10 more clues = 150 surge bonus),
+    //   a real spend that drives refuel demand. Idle/casual play never
+    //   recoups the 150 — exactly the tight gamble the owner asked for.
+    final surgeActive =
+        state.activeEffects.isActive(ConsumableType.goldSurge, now);
+    // Effectively uncapped during a Surge; fuel bounds the real earnings.
+    const surgeLiftedCap = 1 << 30;
+    final effectiveCap = surgeActive ? surgeLiftedCap : dailyCap;
+
+    if (coinsToday >= effectiveCap) return 0;
 
     // Fuel gate: out of fuel = earnings paused (flight continues).
-    final now = DateTime.now().toUtc();
     if (gateFuel && !state.fuelTank.canEarn(now, capacity: fuelCapacity)) {
       return 0;
     }
 
-    // Clamp so we never exceed the daily cap.
+    // Clamp so we never exceed the (possibly surge-lifted) daily cap.
     final baseReward = (perClueReward * promoMultiplier).round();
-    final capped = baseReward.clamp(0, dailyCap - coinsToday);
+    final capped = baseReward.clamp(0, effectiveCap - coinsToday);
     if (capped <= 0) return 0;
 
     final earned = addCoins(capped, source: 'free_flight_clue');
@@ -1337,9 +1380,11 @@ class AccountNotifier extends StateNotifier<AccountState> {
       campaignProgress: {...state.campaignProgress, missionId: result},
     );
 
-    // Award XP and coins only on first completion.
+    // Award XP and coins only on first completion. Fixed one-time lump —
+    // the Gold/XP Surge multiplier is withheld ('campaign_mission' is a
+    // fixed-lump source; addXp opts out explicitly).
     if (existing == null) {
-      addXp(xpReward);
+      addXp(xpReward, applySurge: false);
       addCoins(coinReward, source: 'campaign_mission');
     }
 
@@ -1494,10 +1539,15 @@ class AccountNotifier extends StateNotifier<AccountState> {
     _syncAccountState();
   }
 
-  /// Add XP and handle level ups. An active XP Surge doubles the gain.
-  void addXp(int amount) {
-    final boosted =
-        amount * state.activeEffects.xpMultiplier(DateTime.now().toUtc());
+  /// Add XP and handle level ups. An active XP Surge (Log Book) doubles the
+  /// gain on ACTIVE earning. Fixed daily-puzzle lump completions pass
+  /// `applySurge: false` so the Surge multiplier is kept consistent with the
+  /// coin rule — it multiplies active earning, not guaranteed lump payouts.
+  void addXp(int amount, {bool applySurge = true}) {
+    final mult = applySurge
+        ? state.activeEffects.xpMultiplier(DateTime.now().toUtc())
+        : 1;
+    final boosted = amount * mult;
     var player = state.currentPlayer;
     var newXp = player.xp + boosted;
     var newLevel = player.level;
@@ -1607,6 +1657,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     required int score,
     required int roundsCompleted,
     int coinReward = 0,
+    bool fixedReward = false,
     String region = 'world',
     String? roundEmojis,
     List<Map<String, dynamic>>? roundDetails,
@@ -1646,10 +1697,19 @@ class AccountNotifier extends StateNotifier<AccountState> {
 
     // XP: base 50 + 10 per round + score/100
     final xpEarned = 50 + (roundsCompleted * 10) + (score ~/ 100);
-    addXp(xpEarned);
+    // Fixed daily-puzzle lump payouts must not be multiplied by the Gold/XP
+    // Surge. Daily scramble sets [fixedReward] from the daily screen; daily
+    // triangulation is detected by its region (its screen is out of scope for
+    // this change, so we key off the region string it already passes).
+    final isFixedLump = fixedReward || region == 'daily_triangulation';
+    addXp(xpEarned, applySurge: !isFixedLump);
 
     if (coinReward > 0) {
-      addCoins(coinReward, source: 'game_completion');
+      addCoins(
+        coinReward,
+        source: 'game_completion',
+        applySurge: !isFixedLump,
+      );
     }
 
     // Persist individual game result to scores table.
@@ -2129,10 +2189,23 @@ class AccountNotifier extends StateNotifier<AccountState> {
   double get levelGoldMultiplier =>
       1.0 + (state.currentPlayer.level - 1) * 0.005;
 
-  /// Combined total gold multiplier (license + level + Gold Surge).
+  /// Coin-earning multiplier from the equipped companion's distinct perk
+  /// (e.g. Parrot +8%, Charizard +15%). Applies to boost-affected earning
+  /// (dailies, free flight, normal completion) exactly like the licence coin
+  /// boost, and — like it — is naturally excluded from rated payouts, which
+  /// use `addCoins(applyBoost: false)`.
+  double get companionCoinMultiplier => state.avatar.companion.stats.coinBonus;
+
+  /// Gold multiplier EXCLUDING the Gold Surge consumable — licence coinBoost
+  /// (+ HOT pump + Licence Polish) × level bonus × companion coin bonus. Used
+  /// for fixed daily-puzzle lump sums so a Surge cannot double a guaranteed
+  /// payout while the legitimate performance boosts still apply.
+  double get nonSurgeGoldMultiplier =>
+      coinBoostMultiplier * levelGoldMultiplier * companionCoinMultiplier;
+
+  /// Combined total gold multiplier (licence + level + companion + Gold Surge).
   double get totalGoldMultiplier =>
-      coinBoostMultiplier *
-      levelGoldMultiplier *
+      nonSurgeGoldMultiplier *
       state.activeEffects.coinMultiplier(DateTime.now().toUtc());
 
   /// Get current fuel boost multiplier (for solo play). Includes the
@@ -2147,13 +2220,15 @@ class AccountNotifier extends StateNotifier<AccountState> {
             100.0;
   }
 
-  /// Effective clue chance including the hot-pump bonus and any active
-  /// License Polish. Boost-affected modes only — H2H/sortie sessions omit
-  /// clue-chance to stay in sync.
+  /// Effective clue chance including the hot-pump bonus, any active License
+  /// Polish, and the equipped companion's clue-chance perk (e.g. Eagle +6%).
+  /// Boost-affected modes only — H2H/sortie sessions omit clue-chance
+  /// entirely, so the companion bonus is likewise excluded in rated play.
   int get effectiveClueChance {
     final now = DateTime.now().toUtc();
     return state.license.effectiveClueChance(now) +
-        state.activeEffects.licenseStatBonus(now);
+        state.activeEffects.licenseStatBonus(now) +
+        state.avatar.companion.stats.clueChanceBonus;
   }
 }
 

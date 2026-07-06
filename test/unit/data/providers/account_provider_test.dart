@@ -263,6 +263,181 @@ void main() {
       notifier.dispose();
     });
 
+    test('Gold Surge multiplies ACTIVE grind but NOT fixed lump sums', () {
+      final notifier = fundedNotifier();
+      notifier.grantConsumable(ConsumableType.goldSurge);
+      notifier.activateConsumable(ConsumableType.goldSurge);
+      // The Surge doubles the non-surge multiplier (whatever the licence
+      // baseline is). Excluding it must therefore HALVE the payout.
+      final total = notifier.totalGoldMultiplier;
+      final nonSurge = notifier.nonSurgeGoldMultiplier;
+      expect(total, closeTo(nonSurge * 2, 1e-9));
+      expect(nonSurge, lessThan(total));
+
+      // Active grind (free-flight clue, ordinary game completion) gets surge.
+      expect(
+        notifier.addCoins(100, source: 'free_flight_clue'),
+        (100 * total).round(),
+      );
+      expect(
+        notifier.addCoins(100, source: 'game_completion'),
+        (100 * total).round(),
+      );
+      // Fixed lump payouts are NOT surged: explicit opt-out …
+      expect(
+        notifier.addCoins(100, source: 'game_completion', applySurge: false),
+        (100 * nonSurge).round(),
+      );
+      // … and the source-detected lumps (Flight School / Briefing, campaign).
+      expect(notifier.addCoins(100, source: 'flight_school'),
+          (100 * nonSurge).round());
+      expect(notifier.addCoins(100, source: 'campaign_mission'),
+          (100 * nonSurge).round());
+      notifier.dispose();
+    });
+
+    test('recordGameCompletion withholds surge from daily lumps', () async {
+      final notifier = fundedNotifier();
+      notifier.grantConsumable(ConsumableType.goldSurge);
+      notifier.activateConsumable(ConsumableType.goldSurge);
+
+      // Daily scramble: fixedReward flag → no surge on the 150 lump.
+      var nonSurge = notifier.nonSurgeGoldMultiplier;
+      var before = notifier.state.currentPlayer.coins;
+      await notifier.recordGameCompletion(
+        elapsed: Duration.zero,
+        score: 0,
+        roundsCompleted: 1,
+        coinReward: 150,
+        fixedReward: true,
+      );
+      expect(notifier.state.currentPlayer.coins - before,
+          (150 * nonSurge).round());
+
+      // Daily triangulation: detected by region, no flag needed.
+      nonSurge = notifier.nonSurgeGoldMultiplier;
+      before = notifier.state.currentPlayer.coins;
+      await notifier.recordGameCompletion(
+        elapsed: Duration.zero,
+        score: 0,
+        roundsCompleted: 1,
+        coinReward: 150,
+        region: 'daily_triangulation',
+      );
+      expect(notifier.state.currentPlayer.coins - before,
+          (150 * nonSurge).round());
+
+      // Ordinary region completion DOES get the surge (strictly more).
+      final total = notifier.totalGoldMultiplier;
+      before = notifier.state.currentPlayer.coins;
+      await notifier.recordGameCompletion(
+        elapsed: Duration.zero,
+        score: 0,
+        roundsCompleted: 1,
+        coinReward: 150,
+        region: 'world',
+      );
+      final surgedDelta = notifier.state.currentPlayer.coins - before;
+      expect(surgedDelta, (150 * total).round());
+      expect(surgedDelta, greaterThan((150 * nonSurge).round()));
+      notifier.dispose();
+    });
+
+    test('Gold Surge lifts the free-flight daily cap (count of clues)', () {
+      final notifier = fundedNotifier();
+      notifier.grantConsumable(ConsumableType.goldSurge);
+      notifier.activateConsumable(ConsumableType.goldSurge);
+
+      // Ungated (no fuel limit) isolates the CAP. Normally 150/15 = 10 clues
+      // max per day; with the cap lifted a focused grind blows past that.
+      var clues = 0;
+      for (var i = 0; i < 30; i++) {
+        if (notifier.awardFreeFlightClue(perClueReward: 15, dailyCap: 150) >
+            0) {
+          clues++;
+        }
+      }
+      expect(clues, greaterThan(10),
+          reason: 'surge should lift the free-flight daily cap');
+      notifier.dispose();
+    });
+
+    test('without a Surge the free-flight daily cap still binds at 10 clues',
+        () {
+      final notifier = fundedNotifier();
+      var clues = 0;
+      for (var i = 0; i < 30; i++) {
+        if (notifier.awardFreeFlightClue(perClueReward: 15, dailyCap: 150) >
+            0) {
+          clues++;
+        }
+      }
+      // Cap counts PRE-boost reward (15/clue) → exactly 10 earning clues.
+      expect(clues, 10, reason: 'no surge → hard 150/day cap (10 clues)');
+      notifier.dispose();
+    });
+
+    test('Gold Surge break-even is TIGHT (fuel bounds the grind)', () {
+      // A full base tank (100u) at 10u/clue = 10 fuel-limited clues in a
+      // focused window. The Surge's MARGINAL bonus is the doubled half
+      // (= perClueReward), so ~10 × 15 = 150 coins ≈ the 150-coin Surge cost.
+      // That is the wafer-thin gamble the owner asked for — not free money.
+      final notifier = fundedNotifier();
+      notifier.grantConsumable(ConsumableType.goldSurge);
+      notifier.activateConsumable(ConsumableType.goldSurge);
+
+      const perClue = 15;
+      var clues = 0;
+      var guard = 0;
+      while (notifier.canEarnFreeFlightCoins && guard < 100) {
+        final earned = notifier.awardFreeFlightClue(
+          perClueReward: perClue,
+          dailyCap: 150,
+          gateFuel: true,
+        );
+        if (earned > 0) clues++;
+        guard++;
+      }
+      expect(clues, 10, reason: 'full base tank = 10 fuel-limited clues');
+      final marginalSurgeBonus = clues * perClue; // doubled half per clue
+      expect(
+        marginalSurgeBonus,
+        closeTo(ConsumableType.goldSurge.baseCost.toDouble(), 1.0),
+      );
+      notifier.dispose();
+    });
+
+    test('equipped companion coin bonus rides boost-affected earning',
+        () async {
+      final notifier = fundedNotifier();
+      final before = notifier.nonSurgeGoldMultiplier;
+      await notifier.updateAvatar(
+        const AvatarConfig(companion: AvatarCompanion.charizard),
+      );
+      // Charizard = +15% coins, folded multiplicatively into the multiplier.
+      expect(notifier.companionCoinMultiplier, closeTo(1.15, 1e-9));
+      expect(notifier.nonSurgeGoldMultiplier, closeTo(before * 1.15, 1e-9));
+      // Boost-affected earning reflects the equipped companion …
+      expect(
+        notifier.addCoins(100, source: 'free_flight_clue'),
+        (100 * notifier.nonSurgeGoldMultiplier).round(),
+      );
+      // … but the rated payout path (applyBoost:false) excludes it entirely.
+      expect(notifier.addCoins(100, applyBoost: false), 100);
+      notifier.dispose();
+    });
+
+    test('equipped companion clue bonus feeds effectiveClueChance', () async {
+      final notifier = fundedNotifier();
+      final before = notifier.effectiveClueChance;
+      await notifier.updateAvatar(
+        const AvatarConfig(companion: AvatarCompanion.eagle),
+      );
+      // Eagle = +6 clue-chance points.
+      expect(notifier.effectiveClueChance, before + 6);
+      notifier.dispose();
+    });
+
     test('License Polish adds +3 to effective stats (stacks with HOT)', () {
       final notifier = fundedNotifier();
       final before = notifier.effectiveClueChance;

@@ -231,4 +231,34 @@ void main() {
       );
     });
   });
+
+  group('consumable item naming (display strings vs persistence ids)', () {
+    test('supplies read as ITEM names, not effect names', () {
+      // Owner spec: titles are collectible items; the effect is the subtitle.
+      expect(ConsumableType.xpSurge.displayName, 'Log Book');
+      expect(ConsumableType.goldSurge.displayName, 'Gold Rush');
+      expect(ConsumableType.licensePolish.displayName, 'License Polish');
+      expect(ConsumableType.refuelCanister.displayName, 'Refuel Canister');
+    });
+
+    test('effect labels describe what the item does', () {
+      expect(
+          ConsumableType.xpSurge.effectLabel, 'Doubles XP earned for 60 min');
+      expect(
+        ConsumableType.goldSurge.effectLabel,
+        'Doubles coins earned for 60 min',
+      );
+    });
+
+    test('persistence ids are UNCHANGED (saved data stays valid)', () {
+      // Renaming the human-facing strings must not touch the stable ids.
+      expect(ConsumableType.goldSurge.id, 'gold_surge');
+      expect(ConsumableType.xpSurge.id, 'xp_surge');
+      expect(ConsumableType.licensePolish.id, 'license_polish');
+      expect(ConsumableType.refuelCanister.id, 'refuel_canister');
+      // Round-trip through the id resolver still works.
+      expect(ConsumableTypeInfo.fromId('gold_surge'), ConsumableType.goldSurge);
+      expect(ConsumableTypeInfo.fromId('xp_surge'), ConsumableType.xpSurge);
+    });
+  });
 }
