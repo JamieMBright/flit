@@ -4,8 +4,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
+import '../../data/models/ad_config.dart';
 import '../../data/models/h2h_challenge.dart';
 import '../../data/providers/account_provider.dart';
+import '../../data/providers/subscription_provider.dart';
+import '../../data/services/ad_service.dart';
 import '../../data/services/challenge_service.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_difficulty.dart';
@@ -53,8 +56,25 @@ class _H2HResultsScreenState extends ConsumerState<H2HResultsScreen>
         curve: const Interval(0.2, 0.8, curve: Curves.elasticOut),
       ),
     );
-    _animController.forward();
+    // Gate the reveal animation behind a (frequency-capped) interstitial: the
+    // ad plays first, then the trophy/scale reveal fires. When ads are
+    // unavailable/capped/premium the gate is an instant no-op and the reveal
+    // plays immediately. Coin claiming is independent and runs right away.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _gateThenReveal());
     _claimCoins();
+  }
+
+  /// Show the pre-result interstitial (if eligible), then start the reveal.
+  Future<void> _gateThenReveal() async {
+    if (!mounted) return;
+    final adService = ref.read(adServiceProvider);
+    final tier = ref.read(adTierProvider);
+    await adService.showInterstitial(
+      context,
+      AdPlacement.preH2HResult,
+      tier: tier,
+    );
+    if (mounted) _animController.forward();
   }
 
   /// Credit the H2H coin reward to the player's balance.

@@ -28,6 +28,14 @@ enum AdPlacement {
 
   /// Opt-in rewarded ad: grants bonus coins.
   rewardedBonusCoins,
+
+  /// Opt-in rewarded ad: grants one free full fuel refill. Surfaced on the
+  /// out-of-fuel dialog / fuel card. Daily-limited (see [AdConfig.maxPerDay]).
+  rewardedFuelRefill,
+
+  /// Opt-in rewarded ad: daily supply/coin drop. Surfaced on the home screen
+  /// and the shop SUPPLIES tab. Once per UTC day (see [AdConfig.maxPerDay]).
+  rewardedDailyDrop,
 }
 
 // -----------------------------------------------------------------------------
@@ -60,7 +68,22 @@ class AdConfig {
   static const int maxInterstitialsPerSession = 3;
 
   /// Maximum number of rewarded ads a user may watch per calendar day.
+  /// Used as the fallback cap for any rewarded placement not listed in
+  /// [maxPerDay].
   static const int maxRewardedPerDay = 5;
+
+  /// Per-placement daily watch caps, keyed by UTC day. Placements not listed
+  /// fall back to [maxRewardedPerDay]. Enforced (and persisted) by AdService.
+  ///
+  /// Owner spec: free refuel ~2/day, daily supply drop 1/day.
+  static const Map<AdPlacement, int> maxPerDay = {
+    AdPlacement.rewardedFuelRefill: 2,
+    AdPlacement.rewardedDailyDrop: 1,
+  };
+
+  /// Daily cap for [placement] (falls back to [maxRewardedPerDay]).
+  static int dailyCap(AdPlacement placement) =>
+      maxPerDay[placement] ?? maxRewardedPerDay;
 
   // ---------------------------------------------------------------------------
   // Reward values
@@ -71,6 +94,10 @@ class AdConfig {
 
   /// Number of bonus coins granted for watching [AdPlacement.rewardedBonusCoins].
   static const int rewardedBonusCoinsAmount = 50;
+
+  /// Coins granted by the daily-drop ad when the drop roll lands on coins
+  /// (rather than a consumable).
+  static const int dailyDropCoins = 40;
 
   // ---------------------------------------------------------------------------
   // Placement helpers
@@ -85,6 +112,8 @@ class AdConfig {
         return AdType.interstitial;
       case AdPlacement.rewardedPlayAgain:
       case AdPlacement.rewardedBonusCoins:
+      case AdPlacement.rewardedFuelRefill:
+      case AdPlacement.rewardedDailyDrop:
         return AdType.rewarded;
     }
   }
@@ -116,5 +145,7 @@ class AdConfig {
     AdPlacement.preH2HResult: 'Pre-H2H Interstitial',
     AdPlacement.rewardedPlayAgain: 'Rewarded: Play Again',
     AdPlacement.rewardedBonusCoins: 'Rewarded: Bonus Coins',
+    AdPlacement.rewardedFuelRefill: 'Rewarded: Free Refuel',
+    AdPlacement.rewardedDailyDrop: 'Rewarded: Daily Drop',
   };
 }

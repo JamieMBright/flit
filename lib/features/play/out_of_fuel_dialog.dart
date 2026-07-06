@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../data/models/ad_config.dart';
 import '../../data/providers/account_provider.dart';
+import '../../data/providers/subscription_provider.dart';
+import '../../data/services/ad_service.dart';
 import '../../game/economy/fuel_tank.dart';
 
 /// Shown mid-flight the moment a free-flight EARNING session runs the meta
@@ -46,6 +49,24 @@ class _OutOfFuelDialog extends ConsumerWidget {
     final coins = account.currentPlayer.coins;
     final refuelCost = notifier.instantRefuelCost;
     final canisters = account.refuelCanisters;
+
+    // Opt-in rewarded ad: watch for a free full refuel. Hidden on web, for
+    // premium players, and once the daily cap is spent (AdService gates all).
+    final adService = ref.read(adServiceProvider);
+    final adTier = ref.watch(adTierProvider);
+    final canWatchAdRefuel =
+        adService.canOfferRewarded(AdPlacement.rewardedFuelRefill, adTier);
+
+    Future<void> watchAdForRefuel() async {
+      final granted = await adService.showRewarded(
+        context,
+        AdPlacement.rewardedFuelRefill,
+        tier: adTier,
+      );
+      if (!context.mounted || !granted) return;
+      notifier.grantFreeRefuel();
+      Navigator.of(context).pop(true);
+    }
 
     void refuel(bool Function() action, String failMessage) {
       final ok = action();
@@ -141,6 +162,27 @@ class _OutOfFuelDialog extends ConsumerWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: FlitColors.accent,
                   foregroundColor: FlitColors.textPrimary,
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          // Free option — watch a short ad for a full refuel.
+          if (canWatchAdRefuel) ...[
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: watchAdForRefuel,
+                icon: const Icon(Icons.smart_display_outlined, size: 16),
+                label: const Text('WATCH AD · FREE REFUEL'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: FlitColors.accent,
+                  side: const BorderSide(color: FlitColors.accent),
                   textStyle: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
