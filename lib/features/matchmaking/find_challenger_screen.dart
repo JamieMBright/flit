@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/flit_colors.dart';
+import '../../core/utils/network_timeout.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/models/challenge.dart';
 import '../../data/models/cosmetic.dart';
 import '../../data/models/seasonal_theme.dart';
 import '../../data/providers/account_provider.dart';
+import '../../data/services/block_service.dart';
 import '../../data/services/challenge_service.dart';
 import '../../data/services/matchmaking_service.dart';
 import '../../game/economy/rated_loadout.dart';
@@ -72,9 +74,29 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
+    // Refresh the block list so matched opponents can be filtered.
+    BlockService.instance.refreshBlockedIds();
     _loadPoolEntries();
     _loadRating();
   }
+
+  /// Puts the screen into its error state with a friendly, retryable message.
+  void _fail(Object error) {
+    if (!mounted) return;
+    final offline = error is NetworkTimeoutException;
+    setState(() {
+      _state = _MatchState.error;
+      _errorMessage = offline
+          ? "Couldn't reach the matchmaking server. Check your connection "
+              'and try again.'
+          : 'Something went wrong while matchmaking. Please try again.';
+    });
+  }
+
+  /// True if a match result names an opponent the user has blocked.
+  bool _isBlockedOpponent(MatchResult result) =>
+      result.opponentId != null &&
+      BlockService.instance.isBlocked(result.opponentId!);
 
   /// Fetch the real rating from player_ratings, falling back to the
   /// estimated (provisional) rating when no row exists yet.
@@ -82,14 +104,21 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
     final player = ref.read(accountProvider).currentPlayer;
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
-    final rating = await MatchmakingService.instance.fetchRating(
-      userId: userId,
-      gameMode: 'flight',
-      fallbackLevel: player.level,
-      fallbackBestScore: player.bestScore ?? 0,
-    );
-    if (!mounted) return;
-    setState(() => _rating = rating);
+    try {
+      final rating = await withNetworkTimeout(
+        MatchmakingService.instance.fetchRating(
+          userId: userId,
+          gameMode: 'flight',
+          fallbackLevel: player.level,
+          fallbackBestScore: player.bestScore ?? 0,
+        ),
+        label: 'fetchRating',
+      );
+      if (!mounted) return;
+      setState(() => _rating = rating);
+    } catch (_) {
+      // Non-fatal: the estimated ELO is used until the real rating loads.
+    }
   }
 
   /// The rating to use for pool submission and band matching — the real
@@ -111,16 +140,23 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
   }
 
   Future<void> _loadPoolEntries() async {
-    final entries = await MatchmakingService.instance.getMyPoolEntries();
-    if (!mounted) return;
-    setState(() {
-      _poolEntries = entries;
-      // If there are existing pool entries and we're in "ready" state,
-      // switch to "waiting" so the user sees them and can check/cancel.
-      if (_poolEntries.isNotEmpty && _state == _MatchState.ready) {
-        _state = _MatchState.waiting;
-      }
-    });
+    try {
+      final entries = await withNetworkTimeout(
+        MatchmakingService.instance.getMyPoolEntries(),
+        label: 'getMyPoolEntries',
+      );
+      if (!mounted) return;
+      setState(() {
+        _poolEntries = entries;
+        // If there are existing pool entries and we're in "ready" state,
+        // switch to "waiting" so the user sees them and can check/cancel.
+        if (_poolEntries.isNotEmpty && _state == _MatchState.ready) {
+          _state = _MatchState.waiting;
+        }
+      });
+    } catch (_) {
+      // Non-fatal on initial load — leave the current entries/state intact.
+    }
   }
 
   Future<void> _findChallenger() async {
@@ -137,36 +173,51 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
     // Generate a seed for the pool entry.
     final seed = DateTime.now().millisecondsSinceEpoch.toString();
 
-    // Submit an empty rounds entry — the actual rounds will be played
-    // after matching, using the challenge's round seeds.
-    final poolEntryId = await MatchmakingService.instance.submitToPool(
-      seed: seed,
-      rounds: [],
-      eloRating: elo,
-    );
+    try {
+      // Submit an empty rounds entry — the actual rounds will be played
+      // after matching, using the challenge's round seeds.
+      final poolEntryId = await withNetworkTimeout(
+        MatchmakingService.instance.submitToPool(
+          seed: seed,
+          rounds: [],
+          eloRating: elo,
+        ),
+        label: 'submitToPool',
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (poolEntryId == null) {
-      setState(() {
-        _state = _MatchState.error;
-        _errorMessage = 'Failed to submit to matchmaking pool.';
-      });
-      return;
+      if (poolEntryId == null) {
+        setState(() {
+          _state = _MatchState.error;
+          _errorMessage = 'Failed to submit to matchmaking pool.';
+        });
+        return;
+      }
+
+      // Now search for a match.
+      setState(() => _state = _MatchState.searching);
+
+      final result = await withNetworkTimeout(
+        MatchmakingService.instance.findMatch(
+          eloRating: elo,
+          playerName: playerName,
+          myPoolEntryId: poolEntryId,
+        ),
+        label: 'findMatch',
+      );
+
+      if (!mounted) return;
+      await _presentMatchResult(result);
+    } catch (e) {
+      _fail(e);
     }
+  }
 
-    // Now search for a match.
-    setState(() => _state = _MatchState.searching);
-
-    final result = await MatchmakingService.instance.findMatch(
-      eloRating: elo,
-      playerName: playerName,
-      myPoolEntryId: poolEntryId,
-    );
-
-    if (!mounted) return;
-
-    if (result.matched) {
+  /// Applies a match result: shows the opponent unless they are blocked, in
+  /// which case we stay in the pool (client-side opponent filtering, Apple 1.2).
+  Future<void> _presentMatchResult(MatchResult result) async {
+    if (result.matched && !_isBlockedOpponent(result)) {
       setState(() {
         _state = _MatchState.matched;
         _matchResult = result;
@@ -174,9 +225,7 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
     } else {
       await _loadPoolEntries();
       if (!mounted) return;
-      setState(() {
-        _state = _MatchState.waiting;
-      });
+      setState(() => _state = _MatchState.waiting);
     }
   }
 
@@ -186,43 +235,43 @@ class _FindChallengerScreenState extends ConsumerState<FindChallengerScreen>
   Future<void> _checkForMatches() async {
     setState(() => _state = _MatchState.searching);
 
-    // Phase 1: Check if someone already matched one of our entries.
-    final existingMatch =
-        await MatchmakingService.instance.checkForExistingMatches();
+    try {
+      // Phase 1: Check if someone already matched one of our entries.
+      final existingMatch = await withNetworkTimeout(
+        MatchmakingService.instance.checkForExistingMatches(),
+        label: 'checkForExistingMatches',
+      );
 
-    if (!mounted) return;
-
-    if (existingMatch.matched) {
-      setState(() {
-        _state = _MatchState.matched;
-        _matchResult = existingMatch;
-      });
-      return;
-    }
-
-    // Phase 2: Actively search for a new opponent.
-    final account = ref.read(accountProvider);
-    final player = account.currentPlayer;
-    final elo = _currentElo();
-
-    final result = await MatchmakingService.instance.findMatch(
-      eloRating: elo,
-      playerName: player.name,
-      myPoolEntryId:
-          _poolEntries.isNotEmpty ? _poolEntries.first['id'] as String? : null,
-    );
-
-    if (!mounted) return;
-
-    if (result.matched) {
-      setState(() {
-        _state = _MatchState.matched;
-        _matchResult = result;
-      });
-    } else {
-      await _loadPoolEntries();
       if (!mounted) return;
-      setState(() => _state = _MatchState.waiting);
+
+      if (existingMatch.matched && !_isBlockedOpponent(existingMatch)) {
+        setState(() {
+          _state = _MatchState.matched;
+          _matchResult = existingMatch;
+        });
+        return;
+      }
+
+      // Phase 2: Actively search for a new opponent.
+      final account = ref.read(accountProvider);
+      final player = account.currentPlayer;
+      final elo = _currentElo();
+
+      final result = await withNetworkTimeout(
+        MatchmakingService.instance.findMatch(
+          eloRating: elo,
+          playerName: player.name,
+          myPoolEntryId: _poolEntries.isNotEmpty
+              ? _poolEntries.first['id'] as String?
+              : null,
+        ),
+        label: 'findMatch',
+      );
+
+      if (!mounted) return;
+      await _presentMatchResult(result);
+    } catch (e) {
+      _fail(e);
     }
   }
 

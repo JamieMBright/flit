@@ -15,6 +15,7 @@ import '../../data/models/leaderboard_entry.dart';
 import '../../data/models/pilot_license.dart';
 import '../../data/providers/account_provider.dart';
 import '../../data/models/player_report.dart';
+import '../../data/services/block_service.dart';
 import '../../data/services/leaderboard_service.dart';
 import '../../data/services/matchmaking_service.dart';
 import '../../data/services/report_service.dart';
@@ -189,9 +190,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         timeframe: _timeframe,
       );
 
+      // Hide players the user has blocked (Apple 1.2). Feature-detects +
+      // degrades to a no-op if the blocked_users table isn't deployed yet.
+      await BlockService.instance.refreshBlockedIds();
+      final visible = BlockService.instance
+          .filterBlocked<LeaderboardEntry>(entries, (e) => e.playerId)
+          .toList();
+
       if (mounted) {
         setState(() {
-          _entries = entries;
+          _entries = visible;
           _loading = false;
         });
       }
@@ -359,6 +367,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                                     sort: _sort,
                                     proficiencyPct: _computeProficiencyPct(e),
                                     isCombined: _isCombined,
+                                    onBlocked: _loadData,
                                   );
                                 },
                               ),
@@ -578,9 +587,14 @@ class _LeaderboardRow extends StatelessWidget {
     this.sort = LeaderboardSort.score,
     this.proficiencyPct,
     this.isCombined = false,
+    this.onBlocked,
   });
 
   final LeaderboardEntry entry;
+
+  /// Called after the user blocks this player, so the parent can reload and
+  /// drop the now-hidden entry from the list.
+  final VoidCallback? onBlocked;
 
   /// Display rank for the current sort order (overrides entry.rank when set).
   final int? rank;
@@ -853,14 +867,16 @@ class _LeaderboardRow extends StatelessWidget {
       ).push(MaterialPageRoute<void>(builder: (_) => const LicenseScreen()));
       return;
     }
-    showModalBottomSheet<void>(
+    showModalBottomSheet<bool>(
       context: context,
       backgroundColor: FlitColors.backgroundMid,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => _PilotCardSheet(entry: entry, isCombined: isCombined),
-    );
+    ).then((blocked) {
+      if (blocked == true) onBlocked?.call();
+    });
   }
 
   void _showClueBreakdown(BuildContext context) {
@@ -1093,26 +1109,106 @@ class _PilotCardSheetState extends State<_PilotCardSheet>
             const SizedBox(height: 16),
             _MilestoneBar(score: entry.score),
           ],
-          // Report button
+          // Report + Block affordances (Apple Guideline 1.2 requires both).
           const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: () => _showReportDialog(entry),
-            icon: const Icon(
-              Icons.flag_outlined,
-              size: 16,
-              color: FlitColors.textMuted,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton.icon(
+                onPressed: () => _showReportDialog(entry),
+                icon: const Icon(
+                  Icons.flag_outlined,
+                  size: 16,
+                  color: FlitColors.textMuted,
+                ),
+                label: const Text(
+                  'Report',
+                  style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
+                ),
+                style: TextButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _confirmBlock,
+                icon: const Icon(
+                  Icons.block,
+                  size: 16,
+                  color: FlitColors.error,
+                ),
+                label: const Text(
+                  'Block',
+                  style: TextStyle(color: FlitColors.error, fontSize: 13),
+                ),
+                style: TextButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Confirms then blocks this player, hiding them from the blocker across
+  /// leaderboards, friends and matchmaking. Pops the sheet with `true` so the
+  /// list reloads. Degrades gracefully if blocking isn't deployed yet.
+  Future<void> _confirmBlock() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: FlitColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        title: Text(
+          'Block @${widget.entry.playerName}?',
+          style: const TextStyle(
+            color: FlitColors.textPrimary,
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: const Text(
+          "You won't see this player on leaderboards, in your friends list, "
+          'or as a challenge opponent. You can unblock them later.',
+          style: TextStyle(color: FlitColors.textSecondary, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: FlitColors.textSecondary),
             ),
-            label: const Text(
-              'Report Player',
-              style: TextStyle(color: FlitColors.textMuted, fontSize: 13),
-            ),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text(
+              'Block',
+              style: TextStyle(color: FlitColors.error),
             ),
           ),
         ],
       ),
     );
+    if (confirmed != true) return;
+
+    final ok = await BlockService.instance.blockUser(widget.entry.playerId);
+    if (!mounted) return;
+    if (ok) {
+      Navigator.of(context).pop(true); // signal the list to reload
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Blocking is unavailable right now. Try again later.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _showReportDialog(LeaderboardEntry entry) {
