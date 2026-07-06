@@ -40,7 +40,10 @@ import '../triangulation/daily_triangulation_screen.dart';
 import '../triangulation/triangulation_setup_screen.dart';
 import '../shop/shop_screen.dart';
 import '../campaign/campaign_screen.dart';
+import '../campaign/coach_portrait.dart';
+import '../training/training_screen.dart';
 import '../../game/tutorial/mode_requirements.dart';
+import '../../game/tutorial/training_missions.dart';
 import 'announcement_banner.dart';
 
 /// Home screen with animated map background and menu overlay.
@@ -292,8 +295,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           // Daily streak stats card
           const _DailyStreakCard(),
           const SizedBox(height: 10),
-          // Primary PLAY button with glow
-          _PlayButton(onTap: () => _showGameModes(context)),
+          // Primary play affordance. Until Basic Training is complete, the
+          // main button routes straight into the funnel (with a 0/3 → 3/3
+          // wing-notch indicator); the full mode sheet stays reachable via
+          // the secondary link so locked modes remain visible with reasons.
+          if (!ref.watch(accountProvider).basicTrainingComplete) ...[
+            _BasicTrainingButton(
+              completedCount:
+                  ref.watch(accountProvider).basicTrainingCompletedCount,
+              onTap: () => _navigateSafely(context, const TrainingScreen()),
+            ),
+            const SizedBox(height: 8),
+            _ViewAllModesLink(onTap: () => _showGameModes(context)),
+          ] else
+            // Primary PLAY button with glow
+            _PlayButton(onTap: () => _showGameModes(context)),
           const SizedBox(height: 10),
           // Secondary buttons in a 2x2 grid for variety
           Row(
@@ -447,6 +463,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // ── BASIC TRAINING — the new-pilot funnel, front and centre ──
+              if (!account.basicTrainingComplete) ...[
+                const _SectionLabel(
+                  icon: Icons.military_tech_rounded,
+                  label: 'BASIC TRAINING',
+                ),
+                const SizedBox(height: 12),
+                _GameModeCard(
+                  title: 'Basic Training',
+                  subtitle: 'Earn your wings — '
+                      '${account.basicTrainingCompletedCount}/3 missions',
+                  icon: Icons.school_rounded,
+                  isHighlighted: true,
+                  onTap: () => _closeSheetAndNavigate(
+                    ctx,
+                    const TrainingScreen(),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+
               // ── MISSION BOARD — daily challenges, same for all pilots ──
               const _SectionLabel(
                 icon: Icons.push_pin_rounded,
@@ -511,6 +548,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 subtitle: 'Learn to fly — progressive campaign missions',
                 icon: Icons.military_tech_rounded,
                 isHighlighted: true,
+                isLocked: _isLocked('campaign'),
+                unlockHint: _lockHint('campaign'),
                 onTap: () => _closeSheetAndNavigate(
                   ctx,
                   const CampaignScreen(),
@@ -521,6 +560,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 title: 'Free Flight',
                 subtitle: 'Explore the world at your own pace',
                 icon: Icons.flight_takeoff,
+                isLocked: _isLocked('free_flight'),
+                unlockHint: _lockHint('free_flight'),
                 onTap: () => _closeSheetAndNavigate(
                   ctx,
                   const FreeFlightSetupScreen(region: GameRegion.world),
@@ -529,9 +570,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               const SizedBox(height: 10),
               _GameModeCard(
                 title: 'Standard Sortie',
-                subtitle: 'Rated 5-round run — earn your wings',
+                subtitle: 'Rated 5-round run — climb the tiers',
                 icon: Icons.military_tech,
                 isHighlighted: true,
+                isLocked: _isLocked('standard_sortie'),
+                unlockHint: _lockHint('standard_sortie'),
                 onTap: () => _closeSheetAndNavigate(ctx, const SortieScreen()),
               ),
               const SizedBox(height: 10),
@@ -539,6 +582,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 title: 'Training Sortie',
                 subtitle: 'Practice without rank pressure',
                 icon: Icons.school_rounded,
+                isLocked: _isLocked('training_sortie'),
+                unlockHint: _lockHint('training_sortie'),
                 onTap: () =>
                     _closeSheetAndNavigate(ctx, const PracticeScreen()),
               ),
@@ -579,6 +624,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 title: 'Recon',
                 subtitle: 'Hunt hidden capitals by compass bearing',
                 icon: Icons.explore,
+                isLocked: _isLocked('triangulation'),
+                unlockHint: _lockHint('triangulation'),
                 onTap: () => _closeSheetAndNavigate(
                   ctx,
                   const TriangulationSetupScreen(),
@@ -599,6 +646,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 title: 'Uncharted',
                 subtitle: 'Type country names to reveal the map',
                 icon: Icons.explore,
+                isLocked: _isLocked('uncharted'),
+                unlockHint: _lockHint('uncharted'),
                 onTap: () => _closeSheetAndNavigate(
                   ctx,
                   const UnchartedSetupScreen(),
@@ -1490,6 +1539,144 @@ class _DailyStreakCard extends ConsumerWidget {
 }
 
 // ─── Menu widgets ─────────────────────────────────────────────────────────
+
+/// Primary affordance while Basic Training is incomplete: a gold call to
+/// action with the coach's portrait and a three-notch wing progress bar
+/// (one notch per Basic Training mission).
+class _BasicTrainingButton extends StatelessWidget {
+  const _BasicTrainingButton({
+    required this.completedCount,
+    required this.onTap,
+  });
+
+  /// Completed Basic Training missions (0-3).
+  final int completedCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: FlitColors.gold.withValues(alpha: 0.3),
+              blurRadius: 16,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Material(
+          color: FlitColors.gold,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+              child: Row(
+                children: [
+                  const CoachPortrait(coach: trainingCoachTata, size: 44),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'BASIC TRAINING',
+                          style: TextStyle(
+                            color: FlitColors.backgroundDark,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Earn your wings — $completedCount/3 missions',
+                          style: TextStyle(
+                            color: FlitColors.backgroundDark
+                                .withValues(alpha: 0.75),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        // Wing-notch progress: one segment per mission.
+                        Row(
+                          children: [
+                            for (var i = 0; i < 3; i++) ...[
+                              if (i > 0) const SizedBox(width: 4),
+                              Expanded(
+                                child: Container(
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: i < completedCount
+                                        ? FlitColors.backgroundDark
+                                        : FlitColors.backgroundDark
+                                            .withValues(alpha: 0.25),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Icon(
+                    Icons.play_arrow_rounded,
+                    color: FlitColors.backgroundDark,
+                    size: 30,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
+/// Secondary link under the Basic Training button — keeps the full mode
+/// sheet reachable at level 1 so locked modes stay visible with reasons.
+class _ViewAllModesLink extends StatelessWidget {
+  const _ViewAllModesLink({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.grid_view_rounded,
+                  color: FlitColors.textSecondary,
+                  size: 14,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'VIEW ALL MODES',
+                  style: TextStyle(
+                    color: FlitColors.textSecondary.withValues(alpha: 0.9),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
 
 /// Big PLAY button with a subtle glow effect.
 class _PlayButton extends StatelessWidget {

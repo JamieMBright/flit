@@ -23,6 +23,7 @@ library test_harness;
 
 import 'package:flit/data/models/player.dart';
 import 'package:flit/data/providers/account_provider.dart';
+import 'package:flit/game/tutorial/mode_requirements.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -85,10 +86,24 @@ class TestHarness {
   /// Riverpod overrides that put the app in a "logged-in" state. The
   /// [AccountNotifier] constructor is pure (no Supabase), so we just seed it
   /// with [fakePlayer] via `switchAccount`.
-  static List<Override> loggedInOverrides() => [
-        accountProvider.overrideWith(
-          (ref) => AccountNotifier()..switchAccount(fakePlayer),
-        ),
+  ///
+  /// By default the pilot is a veteran with Basic Training complete, so
+  /// every game mode is unlocked and launch screens render their full UI.
+  /// Pass [basicTrainingComplete] = false to render the level-1 funnel
+  /// state instead (Basic Training button, locked mode cards).
+  static List<Override> loggedInOverrides({
+    bool basicTrainingComplete = true,
+  }) =>
+      [
+        accountProvider.overrideWith((ref) {
+          final notifier = AccountNotifier()..switchAccount(fakePlayer);
+          if (basicTrainingComplete) {
+            for (final id in basicTrainingMissionIds) {
+              notifier.completeTrainingMission(id);
+            }
+          }
+          return notifier;
+        }),
       ];
 
   // ---------------------------------------------------------------------------
@@ -106,10 +121,14 @@ class TestHarness {
     Widget screen, {
     List<Override> extraOverrides = const [],
     int frames = 8,
+    bool basicTrainingComplete = true,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [...loggedInOverrides(), ...extraOverrides],
+        overrides: [
+          ...loggedInOverrides(basicTrainingComplete: basicTrainingComplete),
+          ...extraOverrides,
+        ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           home: screen,

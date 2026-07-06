@@ -380,7 +380,6 @@ const List<CampaignMission> campaignMissions = [
     fuelEnabled: true,
     xpReward: 200,
     coinReward: 150,
-    unlockMessage: 'Daily Briefing unlocked!',
     // Start over the Atlantic west of the Sahara, facing east.
     startLat: 25.0,
     startLng: -25.0,
@@ -583,7 +582,6 @@ const List<CampaignMission> campaignMissions = [
     fuelEnabled: true,
     xpReward: 125,
     coinReward: 100,
-    unlockMessage: 'Daily Challenge unlocked!',
     // Start over the southern US, facing south toward Mexico.
     startLat: 35.0,
     startLng: -95.0,
@@ -693,7 +691,6 @@ const List<CampaignMission> campaignMissions = [
     fuelEnabled: true,
     xpReward: 150,
     coinReward: 100,
-    unlockMessage: 'Dogfight unlocked!',
     // Start over the Bay of Bengal, facing east toward the Philippines.
     startLat: 15.0,
     startLng: 90.0,
@@ -804,7 +801,7 @@ const List<CampaignMission> campaignMissions = [
     fuelEnabled: true,
     xpReward: 250,
     coinReward: 200,
-    unlockMessage: 'All game modes unlocked! Fly safe, ace.',
+    unlockMessage: 'Campaign complete — fly safe, ace.',
     // Start over the open Caribbean, facing east toward Barbados.
     startLat: 15.0,
     startLng: -70.0,

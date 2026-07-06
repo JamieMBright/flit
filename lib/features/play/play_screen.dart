@@ -37,6 +37,8 @@ import '../../game/map/descent_map_view.dart';
 import '../../game/map/region.dart';
 import '../../game/session/game_session.dart';
 import '../../game/tutorial/campaign_mission.dart';
+import '../../game/tutorial/mode_requirements.dart'
+    show trainingFlightMissionId;
 import '../../game/ui/game_hud.dart';
 import '../../game/ui/ink_burst_overlay.dart';
 import '../campaign/coach_overlay.dart';
@@ -722,10 +724,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       _hintTier = 0;
       _revealedCountry = null;
 
-      // For Mission 1 (first_flight), hide the clue until the interactive
+      // For the first-ever flights (Basic Training's Training Flight and the
+      // campaign's first_flight), hide the clue until the interactive
       // tutorial finishes walking the player through all controls.
-      _tutorialActive =
-          widget.campaignMission?.id == 'first_flight' && _currentRound == 1;
+      _tutorialActive = (widget.campaignMission?.id == 'first_flight' ||
+              widget.campaignMission?.id == trainingFlightMissionId) &&
+          _currentRound == 1;
       _currentClue = _tutorialActive ? null : _session!.clue;
 
       _log.info(

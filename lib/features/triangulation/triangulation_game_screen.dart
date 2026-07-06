@@ -34,6 +34,7 @@ class TriangulationGameScreen extends ConsumerStatefulWidget {
     required this.config,
     this.daily,
     this.coinReward = 0,
+    this.onSessionComplete,
   });
 
   final TriangulationConfig config;
@@ -44,6 +45,10 @@ class TriangulationGameScreen extends ConsumerStatefulWidget {
 
   /// Coins awarded for completing the daily (0 for free play).
   final int coinReward;
+
+  /// Called once when the final round is resolved, with the total score.
+  /// Used by Basic Training to record mission completion.
+  final void Function(int totalScore)? onSessionComplete;
 
   @override
   ConsumerState<TriangulationGameScreen> createState() =>
@@ -241,6 +246,7 @@ class _TriangulationGameScreenState
         _showingRoundResult = false;
         _finished = true;
       });
+      widget.onSessionComplete?.call(_session.totalScore);
       // Rare supply drop: Recon's strong-performance gate is solving
       // >= 60% of the day's rounds. Deterministic — no re-rolls.
       final dropped = ref.read(accountProvider.notifier).rollSupplyDrop(

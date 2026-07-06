@@ -51,6 +51,13 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
     );
     // Pull latest server state so purchases made via RPC are reflected.
     ref.read(accountProvider.notifier).refreshFromServer();
+    // Advanced Training: browsing the shop completes Supply Line.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(accountProvider.notifier).completeTrainingObjective(
+            'adv_shop',
+          );
+    });
     // Fetch economy config for dynamic pricing and promotions.
     EconomyConfigService.instance.getConfig().then((config) {
       if (mounted) setState(() => _economyConfig = config);

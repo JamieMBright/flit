@@ -5,7 +5,9 @@ import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/providers/account_provider.dart';
 import '../../game/quiz/flight_school_level.dart';
+import '../../game/tutorial/training_missions.dart';
 import '../guide/gameplay_guide_screen.dart';
+import '../training/training_screen.dart';
 import 'h2h_challenge_screen.dart';
 import 'quiz_setup_screen.dart';
 
@@ -30,6 +32,13 @@ class _FlightSchoolScreenState extends ConsumerState<FlightSchoolScreen> {
     final playerLevel = accountState.currentPlayer.level;
     final playerCoins = accountState.currentPlayer.coins;
     final progressMap = accountState.flightSchoolProgress;
+
+    // Until Basic Training is complete, Flight School IS Basic Training —
+    // the level-1 playable surface. The regional quiz ladder below (levels
+    // 1-19, untouched) takes over once the pilot has earned their wings.
+    if (!accountState.basicTrainingComplete) {
+      return const TrainingScreen();
+    }
 
     return Scaffold(
       backgroundColor: FlitColors.backgroundDark,
@@ -109,6 +118,19 @@ class _FlightSchoolScreenState extends ConsumerState<FlightSchoolScreen> {
           child: Column(
             children: [
               _buildHeader(),
+              _TrainingMissionsBanner(
+                completed: allTrainingMissions
+                    .where(
+                      (m) => accountState.campaignProgress.containsKey(m.id),
+                    )
+                    .length,
+                total: allTrainingMissions.length,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const TrainingScreen(),
+                  ),
+                ),
+              ),
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -287,6 +309,77 @@ class _FlightSchoolScreenState extends ConsumerState<FlightSchoolScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Compact banner linking back to the Basic/Advanced Training missions
+/// after the pilot has earned their wings, with a visible progress trail.
+class _TrainingMissionsBanner extends StatelessWidget {
+  const _TrainingMissionsBanner({
+    required this.completed,
+    required this.total,
+    required this.onTap,
+  });
+
+  final int completed;
+  final int total;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Material(
+        color: FlitColors.gold.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: FlitColors.gold.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.military_tech_rounded,
+                  color: FlitColors.gold,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Training Missions',
+                    style: TextStyle(
+                      color: FlitColors.textPrimary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Text(
+                  '$completed/$total',
+                  style: const TextStyle(
+                    color: FlitColors.gold,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(
+                  Icons.chevron_right,
+                  color: FlitColors.gold,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
