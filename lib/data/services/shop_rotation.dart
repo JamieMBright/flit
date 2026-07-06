@@ -1,7 +1,12 @@
 import '../models/cosmetic.dart';
 import '../models/rating_tier.dart';
 
-/// One slot in the weekly rotating shop.
+/// One deal on the weekly deals board.
+///
+/// Every deal references an item that is ALSO available year-round in its
+/// category tab at full price — the weekly board is a discount showcase, not
+/// a gate. You never have to wait for the board to buy something; you come
+/// back for the savings.
 class ShopOffer {
   const ShopOffer({
     required this.cosmetic,
@@ -19,25 +24,40 @@ class ShopOffer {
 
   /// Coin price after the weekly discount.
   int get price => (cosmetic.price * (100 - discountPct) / 100).round();
+
+  /// Whether this is the week's headline deal (deepest discount).
+  bool get isFeatured => discountPct >= ShopRotation.featuredDiscountPct;
 }
 
-/// Deterministic weekly cosmetic shop rotation.
+/// Deterministic weekly DEALS board.
 ///
-/// The rotation is seeded by the ISO-8601 week key (e.g. `2026-W27`) so
-/// every player worldwide sees the same offers for the same week without a
-/// server round-trip — the same trick daily modes use with date seeds
+/// The board is seeded by the ISO-8601 week key (e.g. `2026-W27`) so every
+/// player worldwide sees the same deals for the same week without a server
+/// round-trip — the same trick daily modes use with date seeds
 /// (see DailyChallenge.forDate). Uses a Park-Miller LCG rather than
 /// `Random(seed)` so results are identical on VM and web.
+///
+/// Crucially, the board never gates AVAILABILITY: every item here is also
+/// sold at full price in its category tab all week long. The board only
+/// changes PRICE — a rotating mix of discounts (see [dealDiscounts]) with
+/// one headline deal at the deepest [featuredDiscountPct]. This keeps the
+/// "come back for deals" hook without turning the board into the only place
+/// to buy (which would just make players wait for the item they want).
 class ShopRotation {
   ShopRotation._();
 
-  /// Offers in a weekly rotation: 2 cheap, 2 mid, 2 prestige.
+  /// Deals on the board each week: 2 cheap, 2 mid, 2 prestige.
   static const int cheapSlots = 2;
   static const int midSlots = 2;
   static const int prestigeSlots = 2;
 
-  /// One rotation slot each week is "featured" at this discount.
-  static const int featuredDiscountPct = 25;
+  /// Non-featured deals draw their discount from this mix (deterministic per
+  /// slot). The headline deal uses the deeper [featuredDiscountPct].
+  static const List<int> dealDiscounts = [15, 25];
+
+  /// The week's single headline deal is discounted this deeply — the anchor
+  /// that rewards the weekly visit. Deeper than any [dealDiscounts] tier.
+  static const int featuredDiscountPct = 35;
 
   /// Price bands (coins).
   static const int cheapMax = 1000;
@@ -47,7 +67,8 @@ class ShopRotation {
   ///
   /// Rated tiers come from the per-mode `player_ratings` (Standard Sortie
   /// rating). These items always require the tier, whether bought from the
-  /// rotation or the prestige section.
+  /// deals board or the prestige section — a deal only changes price, never
+  /// the tier gate.
   static const Map<String, RatingTier> prestigeTierRequirements = {
     // The Ace-tier contrail: the game's flex item.
     'contrail_ace': RatingTier.ace,
@@ -94,14 +115,20 @@ class ShopRotation {
   }
 
   // ---------------------------------------------------------------------------
-  // Rotation
+  // Deals board
   // ---------------------------------------------------------------------------
 
-  /// The deterministic weekly offers for the week containing [date].
+  /// The deterministic weekly deals for the week containing [date].
   static List<ShopOffer> weeklyOffers(DateTime date) =>
       offersForWeek(isoWeekKey(date));
 
-  /// Offers for an explicit week key (testable without clock control).
+  /// Deals for an explicit week key (testable without clock control).
+  ///
+  /// Picks a stable weekly selection from the FULL catalog and puts every
+  /// pick on a discount: one headline deal at [featuredDiscountPct] and the
+  /// rest at a deterministic mix of [dealDiscounts]. Availability is never
+  /// affected — the same items are always sold at full price in their
+  /// category tabs.
   static List<ShopOffer> offersForWeek(String weekKey) {
     final pool = CosmeticCatalog.all
         .where((c) => c.price > 0) // Exclude free defaults.
@@ -120,14 +147,16 @@ class ShopRotation {
       ..._pick(prestige, prestigeSlots, rng),
     ];
 
-    // One featured (discounted) slot per week.
+    // Every deal is discounted; one headline slot gets the deepest cut.
     final featuredIndex = picks.isEmpty ? -1 : rng.nextInt(picks.length);
 
     return [
       for (var i = 0; i < picks.length; i++)
         ShopOffer(
           cosmetic: picks[i],
-          discountPct: i == featuredIndex ? featuredDiscountPct : 0,
+          discountPct: i == featuredIndex
+              ? featuredDiscountPct
+              : dealDiscounts[rng.nextInt(dealDiscounts.length)],
           requiredTier: prestigeTierRequirements[picks[i].id],
         ),
     ];

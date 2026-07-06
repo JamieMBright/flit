@@ -25,7 +25,7 @@ import '../../game/rendering/companion_art.dart';
 class ShopScreen extends ConsumerStatefulWidget {
   const ShopScreen({super.key, this.initialTabIndex = 0});
 
-  /// Which tab to show initially: 0 = Weekly, 1 = Planes, 2 = Contrails,
+  /// Which tab to show initially: 0 = Deals, 1 = Planes, 2 = Contrails,
   /// 3 = Companions, 4 = Supplies (consumables), 5 = Gold.
   final int initialTabIndex;
 
@@ -135,7 +135,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen>
             fontSize: 14,
           ),
           tabs: const [
-            Tab(text: 'Weekly'),
+            Tab(text: 'Deals'),
             Tab(text: 'Planes'),
             Tab(text: 'Contrails'),
             Tab(text: 'Companions'),
@@ -829,7 +829,12 @@ class _BundleBuyButton extends StatelessWidget {
 }
 
 // =============================================================================
-// Weekly rotating shop — deterministic ISO-week rotation (ShopRotation)
+// Weekly deals board — deterministic ISO-week discounts (ShopRotation)
+//
+// This tab is a DEALS board, NOT a gate: every item shown is also sold at
+// full price in its category tab all week. The board only changes PRICE —
+// a rotating mix of discounts with one headline deal — so pilots come back
+// for savings, never to unlock availability.
 // =============================================================================
 
 class _WeeklyShopTab extends StatelessWidget {
@@ -866,7 +871,7 @@ class _WeeklyShopTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // What this tab IS + live restock countdown.
+        // What this tab IS + live refresh countdown.
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -876,14 +881,14 @@ class _WeeklyShopTab extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(Icons.storefront, color: FlitColors.gold, size: 28),
+              const Icon(Icons.local_offer, color: FlitColors.gold, size: 28),
               const SizedBox(width: 12),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'WEEKLY HANGAR',
+                      'WEEKLY DEALS',
                       style: TextStyle(
                         color: FlitColors.textPrimary,
                         fontSize: 15,
@@ -893,9 +898,9 @@ class _WeeklyShopTab extends StatelessWidget {
                     ),
                     SizedBox(height: 3),
                     Text(
-                      'Rotating stock — 6 picks from the full catalog, one '
-                      'at 25% off. Restocks Monday 00:00 UTC, same lineup '
-                      'for every pilot.',
+                      'Discounts refresh Monday 00:00 UTC — same deals for '
+                      'every pilot. Everything here is also in the main shop '
+                      'at full price; come back for the savings.',
                       style: TextStyle(
                         color: FlitColors.textSecondary,
                         fontSize: 12,
@@ -909,7 +914,7 @@ class _WeeklyShopTab extends StatelessWidget {
               Column(
                 children: [
                   const Text(
-                    'RESTOCKS IN',
+                    'REFRESHES IN',
                     style: TextStyle(
                       color: FlitColors.textMuted,
                       fontSize: 8,
@@ -1010,13 +1015,32 @@ class _WeeklyOfferCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: FlitColors.cardBackground,
+        // Every board item is a deal; the headline deal gets a warm gradient
+        // wash + glow so the deepest cut anchors the visit.
+        gradient: offer.isFeatured
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  _SaleColors.cardGradientStart,
+                  _SaleColors.cardGradientEnd,
+                ],
+              )
+            : null,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: offer.discountPct > 0
-              ? _SaleColors.border
-              : rarity.withValues(alpha: 0.5),
-          width: offer.discountPct > 0 ? 2 : 1,
+          color: _SaleColors.border,
+          width: offer.isFeatured ? 2.5 : 2,
         ),
+        boxShadow: offer.isFeatured
+            ? [
+                const BoxShadow(
+                  color: _SaleColors.borderGlow,
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+              ]
+            : null,
       ),
       child: Row(
         children: [
@@ -1048,6 +1072,33 @@ class _WeeklyOfferCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
+                    if (offer.isFeatured) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              _SaleColors.bannerStart,
+                              _SaleColors.bannerEnd,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          '★ TOP DEAL',
+                          style: TextStyle(
+                            color: Color(0xFF1A1A1A),
+                            fontSize: 8,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
                     Flexible(
                       child: Text(
                         item.name,

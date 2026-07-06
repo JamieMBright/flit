@@ -102,19 +102,74 @@ void main() {
       expect(ids.toSet().length, ids.length);
     });
 
-    test('exactly one featured discount slot', () {
-      final discounted = offers.where((o) => o.discountPct > 0).toList();
-      expect(discounted.length, 1);
-      expect(discounted.single.discountPct, ShopRotation.featuredDiscountPct);
-      expect(
-        discounted.single.price,
-        lessThan(discounted.single.cosmetic.price),
-      );
+    test('every deal is discounted below full price', () {
+      // The board is deals-only: no full-price slots (that would just make it
+      // a shop). Every item is cheaper than its catalog price.
+      for (final o in offers) {
+        expect(o.discountPct, greaterThan(0));
+        expect(o.price, lessThan(o.cosmetic.price));
+      }
     });
 
-    test('undiscounted offers keep the catalog price', () {
-      for (final o in offers.where((o) => o.discountPct == 0)) {
-        expect(o.price, o.cosmetic.price);
+    test('exactly one headline deal at the deepest discount', () {
+      final featured = offers.where((o) => o.isFeatured).toList();
+      expect(featured.length, 1);
+      expect(featured.single.discountPct, ShopRotation.featuredDiscountPct);
+      // No non-featured deal ever cuts as deep as the headline.
+      for (final o in offers.where((o) => !o.isFeatured)) {
+        expect(o.discountPct, lessThan(ShopRotation.featuredDiscountPct));
+        expect(ShopRotation.dealDiscounts, contains(o.discountPct));
+      }
+    });
+
+    test('discounted price = round(catalog * (100 - pct) / 100)', () {
+      for (final o in offers) {
+        final expected =
+            (o.cosmetic.price * (100 - o.discountPct) / 100).round();
+        expect(o.price, expected);
+      }
+    });
+  });
+
+  group('deals never gate availability', () {
+    test('every deal item also exists in the permanent catalog', () {
+      // No rotation-exclusive items: a deal only ever references a cosmetic
+      // that is sold year-round at full price in its category tab. Scan a
+      // full year of weeks.
+      for (var w = 1; w <= 53; w++) {
+        final offers =
+            ShopRotation.offersForWeek('2026-W${w.toString().padLeft(2, '0')}');
+        for (final o in offers) {
+          final permanent = CosmeticCatalog.getById(o.cosmetic.id);
+          expect(
+            permanent,
+            isNotNull,
+            reason: '${o.cosmetic.id} must be buyable outside the deals board',
+          );
+          // The permanent listing is the FULL price the deal discounts from.
+          expect(permanent!.price, o.cosmetic.price);
+          expect(o.price, lessThanOrEqualTo(permanent.price));
+        }
+      }
+    });
+
+    test('the full purchasable catalog is never rotation-locked', () {
+      // The category tabs render CosmeticCatalog.planes/contrails/companions
+      // directly, so every non-free cosmetic is always available regardless
+      // of which few items happen to be discounted this week.
+      final purchasable =
+          CosmeticCatalog.all.where((c) => c.price > 0).toList();
+      expect(purchasable, isNotEmpty);
+      final thisWeek = ShopRotation.offersForWeek('2026-W27')
+          .map((o) => o.cosmetic.id)
+          .toSet();
+      // Most of the catalog is NOT on this week's board, yet all of it is
+      // still purchasable from its category tab.
+      final offBoard =
+          purchasable.where((c) => !thisWeek.contains(c.id)).toList();
+      expect(offBoard.length, greaterThan(thisWeek.length));
+      for (final c in offBoard) {
+        expect(CosmeticCatalog.getById(c.id), isNotNull);
       }
     });
   });
