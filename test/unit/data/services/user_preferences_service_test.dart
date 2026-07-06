@@ -3,7 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flit/data/models/avatar_config.dart';
 import 'package:flit/data/models/pilot_license.dart';
 import 'package:flit/data/models/player.dart';
+import 'package:flit/data/models/season.dart';
 import 'package:flit/data/services/user_preferences_service.dart';
+import 'package:flit/game/economy/consumables.dart';
+import 'package:flit/game/economy/fuel_tank.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -82,6 +85,25 @@ Map<String, dynamic> _accountStateWithLicense() {
     'last_daily_challenge_date': '2025-06-02',
   };
 }
+
+/// Account state map with a `license_data` blob carrying the client-owned
+/// economy extras (fuel/consumables/active_effects/trophy_case), mirroring
+/// how [AccountNotifier._syncAccountState] persists them in production.
+Map<String, dynamic> _accountStateWithLicenseExtras(
+  Map<String, dynamic> licenseData,
+) =>
+    {
+      'user_id': 'user-abc',
+      'license_data': licenseData,
+      'avatar_config': null,
+      'unlocked_regions': <String>[],
+      'owned_avatar_parts': <String>[],
+      'equipped_plane_id': 'plane_default',
+      'equipped_contrail_id': 'contrail_default',
+      'equipped_title_id': null,
+      'last_free_reroll_date': null,
+      'last_daily_challenge_date': null,
+    };
 
 /// Account state map containing a serialised AvatarConfig.
 Map<String, dynamic> _accountStateWithAvatar() {
@@ -695,5 +717,130 @@ void main() {
       expect(snapshot.notificationsEnabled, isFalse);
       expect(snapshot.hapticEnabled, isFalse);
     });
+  });
+
+  // -------------------------------------------------------------------------
+  // UserPreferencesSnapshot fuel/consumables/effects/trophy accessors
+  // (item B5 — malformed jsonb must hydrate to safe defaults, never throw)
+  // -------------------------------------------------------------------------
+
+  group('UserPreferencesSnapshot - toFuelTank()', () {
+    test('parses valid fuel data normally', () {
+      final snapshot = UserPreferencesSnapshot(
+        profile: _baseProfile(),
+        accountState: _accountStateWithLicenseExtras({
+          'fuel': {'fuel': 42.0, 'updated_at': '2026-01-01T00:00:00.000Z'},
+        }),
+      );
+
+      expect(snapshot.toFuelTank().storedFuel, closeTo(42.0, 0.001));
+    });
+
+    test(
+      'returns a default FuelTank when updated_at is a malformed jsonb type '
+      'instead of throwing',
+      () {
+        final snapshot = UserPreferencesSnapshot(
+          profile: _baseProfile(),
+          // `updated_at` as a number (not an ISO string) crashes a plain
+          // `as String` cast inside FuelTank.fromJson.
+          accountState: _accountStateWithLicenseExtras({
+            'fuel': {'fuel': 42.0, 'updated_at': 12345},
+          }),
+        );
+
+        expect(snapshot.toFuelTank(), equals(const FuelTank()));
+      },
+    );
+
+    test('returns a default FuelTank when license_data is absent', () {
+      final snapshot = UserPreferencesSnapshot(
+        profile: _baseProfile(),
+        accountState: null,
+      );
+      expect(snapshot.toFuelTank(), equals(const FuelTank()));
+    });
+  });
+
+  group('UserPreferencesSnapshot - toConsumableInventory()', () {
+    test(
+      'returns a default ConsumableInventory when the blob has non-string '
+      'keys instead of throwing',
+      () {
+        final malformed = <dynamic, dynamic>{123: 5};
+        final snapshot = UserPreferencesSnapshot(
+          profile: _baseProfile(),
+          accountState: _accountStateWithLicenseExtras({
+            'consumables': malformed,
+          }),
+        );
+
+        expect(
+          snapshot.toConsumableInventory(),
+          equals(const ConsumableInventory()),
+        );
+      },
+    );
+  });
+
+  group('UserPreferencesSnapshot - toActiveEffects()', () {
+    test(
+      'returns a default ActiveEffects when the blob has non-string keys '
+      'instead of throwing',
+      () {
+        final malformed = <dynamic, dynamic>{123: '2026-01-01T00:00:00Z'};
+        final snapshot = UserPreferencesSnapshot(
+          profile: _baseProfile(),
+          accountState: _accountStateWithLicenseExtras({
+            'active_effects': malformed,
+          }),
+        );
+
+        expect(snapshot.toActiveEffects(), equals(const ActiveEffects()));
+      },
+    );
+  });
+
+  group('UserPreferencesSnapshot - toTrophyCase()', () {
+    test('parses a jsonb-double rating without throwing (item B5)', () {
+      final snapshot = UserPreferencesSnapshot(
+        profile: _baseProfile(),
+        accountState: _accountStateWithLicenseExtras({
+          'trophy_case': [
+            {
+              'season_id': '2026-Q3',
+              'game_mode': 'sortie',
+              'tier': 'Gold Wings',
+              'rating': 1500.0,
+            },
+          ],
+        }),
+      );
+
+      final trophyCase = snapshot.toTrophyCase();
+      expect(trophyCase.trophies.single.rating, equals(1500));
+    });
+
+    test(
+      'returns a default TrophyCase when a trophy row has a non-numeric '
+      'rating instead of throwing',
+      () {
+        final snapshot = UserPreferencesSnapshot(
+          profile: _baseProfile(),
+          accountState: _accountStateWithLicenseExtras({
+            'trophy_case': [
+              {
+                'season_id': '2026-Q3',
+                'game_mode': 'sortie',
+                'tier': 'Gold Wings',
+                'rating': 'not-a-number',
+              },
+            ],
+          }),
+        );
+
+        expect(snapshot.toTrophyCase(), equals(const TrophyCase()));
+      },
+    );
   });
 }

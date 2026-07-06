@@ -61,4 +61,49 @@ void main() {
       expect(TrophyCase.fromJson(null).trophies, isEmpty);
     });
   });
+
+  group('Trophy.fromJson - numeric jsonb robustness (item B5)', () {
+    test('rating arriving as a jsonb double parses to int, not a crash', () {
+      final trophy = Trophy.fromJson({
+        'season_id': '2026-Q3',
+        'game_mode': 'sortie',
+        'tier': 'Gold Wings',
+        'rating': 1500.0,
+        'best_score': 41200.0,
+      });
+
+      expect(trophy.rating, equals(1500));
+      expect(trophy.rating, isA<int>());
+      expect(trophy.bestScore, equals(41200));
+      expect(trophy.bestScore, isA<int>());
+    });
+
+    test('missing numeric fields default to 0 instead of throwing', () {
+      final trophy = Trophy.fromJson({
+        'season_id': '2026-Q3',
+        'game_mode': 'sortie',
+        'tier': 'Bronze Wings',
+      });
+
+      expect(trophy.rating, equals(0));
+      expect(trophy.bestScore, equals(0));
+    });
+
+    test(
+      'a jsonb-double rating survives round-tripping through TrophyCase',
+      () {
+        final tc = TrophyCase.fromJson([
+          {
+            'season_id': '2026-Q3',
+            'game_mode': 'flight',
+            'tier': 'Silver Wings',
+            'rating': 1150.0,
+            'best_score': 8000.0,
+          },
+        ]);
+
+        expect(tc.trophies.single.rating, equals(1150));
+      },
+    );
+  });
 }

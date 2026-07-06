@@ -74,8 +74,10 @@ class Trophy {
         seasonId: json['season_id'] as String? ?? '',
         gameMode: json['game_mode'] as String? ?? '',
         tierName: json['tier'] as String? ?? '',
-        rating: json['rating'] as int? ?? 0,
-        bestScore: json['best_score'] as int? ?? 0,
+        // jsonb numeric columns can round-trip as a double (e.g. `1500.0`)
+        // rather than an int, which would throw with a plain `as int?` cast.
+        rating: (json['rating'] as num?)?.toInt() ?? 0,
+        bestScore: (json['best_score'] as num?)?.toInt() ?? 0,
       );
 }
 

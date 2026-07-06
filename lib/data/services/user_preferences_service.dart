@@ -1168,9 +1168,14 @@ class UserPreferencesSnapshot {
   /// Meta fuel tank persisted inside license_data (`fuel` key).
   FuelTank toFuelTank() {
     final json = _licenseData?['fuel'];
-    return FuelTank.fromJson(
-      json is Map ? Map<String, dynamic>.from(json) : null,
-    );
+    try {
+      return FuelTank.fromJson(
+        json is Map ? Map<String, dynamic>.from(json) : null,
+      );
+    } catch (e) {
+      debugPrint('[UserPreferencesService] toFuelTank parse error: $e');
+      return const FuelTank();
+    }
   }
 
   /// Owned refuel canisters persisted inside license_data.
@@ -1181,24 +1186,41 @@ class UserPreferencesSnapshot {
   /// (`consumables` key).
   ConsumableInventory toConsumableInventory() {
     final json = _licenseData?['consumables'];
-    return ConsumableInventory.fromJson(
-      json is Map ? Map<String, dynamic>.from(json) : null,
-    );
+    try {
+      return ConsumableInventory.fromJson(
+        json is Map ? Map<String, dynamic>.from(json) : null,
+      );
+    } catch (e) {
+      debugPrint(
+        '[UserPreferencesService] toConsumableInventory parse error: $e',
+      );
+      return const ConsumableInventory();
+    }
   }
 
   /// Active timed-effect expiries persisted inside license_data
   /// (`active_effects` key) — timed boosts survive restarts.
   ActiveEffects toActiveEffects() {
     final json = _licenseData?['active_effects'];
-    return ActiveEffects.fromJson(
-      json is Map ? Map<String, dynamic>.from(json) : null,
-    );
+    try {
+      return ActiveEffects.fromJson(
+        json is Map ? Map<String, dynamic>.from(json) : null,
+      );
+    } catch (e) {
+      debugPrint('[UserPreferencesService] toActiveEffects parse error: $e');
+      return const ActiveEffects();
+    }
   }
 
   /// Season trophy case persisted inside license_data.
   TrophyCase toTrophyCase() {
     final json = _licenseData?['trophy_case'];
-    return TrophyCase.fromJson(json is List ? json : null);
+    try {
+      return TrophyCase.fromJson(json is List ? json : null);
+    } catch (e) {
+      debugPrint('[UserPreferencesService] toTrophyCase parse error: $e');
+      return const TrophyCase();
+    }
   }
 
   Set<String> get unlockedRegions {

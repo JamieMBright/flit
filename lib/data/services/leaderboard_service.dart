@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/utils/network_timeout.dart';
 import '../models/leaderboard_entry.dart';
 import '../models/daily_challenge.dart';
 import 'combined_daily_scoring.dart';
@@ -101,10 +102,13 @@ class LeaderboardService {
           break;
       }
 
-      final data = await filtered
-          .order('score', ascending: false)
-          .order('time_ms', ascending: true)
-          .limit(limit);
+      final data = await withNetworkTimeout(
+        filtered
+            .order('score', ascending: false)
+            .order('time_ms', ascending: true)
+            .limit(limit),
+        label: 'fetchLeaderboard',
+      );
 
       // 2-step: batch-fetch profiles for all user IDs in the result set.
       final profiles = await _fetchProfiles(
@@ -134,14 +138,17 @@ class LeaderboardService {
       final now = DateTime.now().toUtc();
       final startOfDay = DateTime.utc(now.year, now.month, now.day);
 
-      final data = await _client
-          .from('scores')
-          .select('score, time_ms, user_id')
-          .eq('region', 'daily')
-          .gte('created_at', startOfDay.toIso8601String())
-          .order('score', ascending: false)
-          .order('time_ms', ascending: true)
-          .limit(limit);
+      final data = await withNetworkTimeout(
+        _client
+            .from('scores')
+            .select('score, time_ms, user_id')
+            .eq('region', 'daily')
+            .gte('created_at', startOfDay.toIso8601String())
+            .order('score', ascending: false)
+            .order('time_ms', ascending: true)
+            .limit(limit),
+        label: 'fetchDailyLeaderboard',
+      );
 
       // 2-step: batch-fetch profiles.
       final profiles = await _fetchProfiles(
@@ -183,14 +190,17 @@ class LeaderboardService {
       final now = DateTime.now().toUtc();
       final startDate = now.subtract(Duration(days: days));
 
-      final data = await _client
-          .from('scores')
-          .select('score, time_ms, created_at, user_id')
-          .eq('region', 'daily')
-          .gte('created_at', startDate.toIso8601String())
-          .order('score', ascending: false)
-          .order('time_ms', ascending: true)
-          .limit(100);
+      final data = await withNetworkTimeout(
+        _client
+            .from('scores')
+            .select('score, time_ms, created_at, user_id')
+            .eq('region', 'daily')
+            .gte('created_at', startDate.toIso8601String())
+            .order('score', ascending: false)
+            .order('time_ms', ascending: true)
+            .limit(100),
+        label: 'fetchHallOfFame',
+      );
 
       // Group by date, pick best per day.
       final byDate = <String, Map<String, dynamic>>{};
@@ -660,10 +670,13 @@ class LeaderboardService {
           break;
       }
 
-      final data = await filtered
-          .order('score', ascending: false)
-          .order('time_ms', ascending: true)
-          .limit(limit);
+      final data = await withNetworkTimeout(
+        filtered
+            .order('score', ascending: false)
+            .order('time_ms', ascending: true)
+            .limit(limit),
+        label: 'fetchModeLeaderboard',
+      );
 
       // Step 2: Batch-fetch profiles for all user IDs in the result.
       final userIds = data.map((r) => r['user_id'] as String).toSet().toList();
@@ -753,14 +766,17 @@ class LeaderboardService {
     try {
       // Single query for every daily-region score in the UTC day; grouping
       // and normalization happen client-side.
-      final data = await _client
-          .from('scores')
-          .select('score, region, user_id')
-          .inFilter('region', kCombinedDailyRegions)
-          .gte('created_at', startOfDay.toIso8601String())
-          .lt('created_at', endOfDay.toIso8601String())
-          .order('created_at', ascending: true)
-          .limit(5000);
+      final data = await withNetworkTimeout(
+        _client
+            .from('scores')
+            .select('score, region, user_id')
+            .inFilter('region', kCombinedDailyRegions)
+            .gte('created_at', startOfDay.toIso8601String())
+            .lt('created_at', endOfDay.toIso8601String())
+            .order('created_at', ascending: true)
+            .limit(5000),
+        label: 'fetchCombinedDailyLeaderboard',
+      );
 
       final combined = computeCombinedDailyScores(
         data.map(
