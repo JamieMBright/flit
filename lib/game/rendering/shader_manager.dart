@@ -376,9 +376,27 @@ class ShaderManager {
   /// hanging the entire shader initialization (and thus the game).
   static const _textureTimeout = Duration(seconds: 15);
 
+  /// Maximum decoded width for equirectangular globe textures (satellite,
+  /// city lights). Source assets ship at full satellite resolution
+  /// (blue_marble.png is 5400x2700, city_lights.png is 4096x2048), which
+  /// decodes to ~92MB of GPU texture memory for the pair. The globe is
+  /// rendered at a fraction of that resolution on screen (raymarched sphere,
+  /// not a flat map), so decoding above 2048px wide buys no visible detail
+  /// while risking OOM/texture-eviction on memory-constrained mobile GPUs.
+  /// Downscaling both textures to 2048px wide (1024px tall, preserving the
+  /// source 2:1 equirectangular aspect ratio) cuts memory to ~20MB total
+  /// while keeping acceptable visual fidelity for the globe.
+  static const _maxTextureWidth = 2048;
+  static const _maxTextureHeight = 1024;
+
   /// Load an image from the asset bundle, decode it, and return the first
   /// frame as a [ui.Image]. Times out after [_textureTimeout] to avoid
   /// hanging the game if a network request or decode stalls.
+  ///
+  /// Decodes at a capped resolution (see [_maxTextureWidth]) rather than the
+  /// source asset's full resolution, since both equirectangular textures
+  /// (satellite, city lights) share a 2:1 aspect ratio and the full-res
+  /// decode is far larger than the globe ever needs on screen.
   Future<ui.Image> _loadImage(String assetPath) async {
     _log.debug('shader', 'Loading texture: $assetPath');
     try {
@@ -392,14 +410,19 @@ class ShaderManager {
       final sizeBytes = data.lengthInBytes;
       _log.debug('shader', 'Texture loaded: $assetPath ($sizeBytes bytes)');
 
-      final codec =
-          await ui.instantiateImageCodec(data.buffer.asUint8List()).timeout(
-                _textureTimeout,
-                onTimeout: () => throw TimeoutException(
-                  'Texture decode timed out: $assetPath',
-                  _textureTimeout,
-                ),
-              );
+      final codec = await ui
+          .instantiateImageCodec(
+            data.buffer.asUint8List(),
+            targetWidth: _maxTextureWidth,
+            targetHeight: _maxTextureHeight,
+          )
+          .timeout(
+            _textureTimeout,
+            onTimeout: () => throw TimeoutException(
+              'Texture decode timed out: $assetPath',
+              _textureTimeout,
+            ),
+          );
       final frame = await codec.getNextFrame();
       final image = frame.image;
 

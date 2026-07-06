@@ -4,6 +4,11 @@ This directory should contain texture files for the GPU shader renderer. All tex
 
 ## Required Textures
 
+`globe.frag` currently samples only two textures (`uSatellite`, `uCityLights`). The
+previously-planned `heightmap.png` and `shore_distance.png` textures were never wired
+into the shader (no `uHeightmap`/`uShoreDist` samplers, no `texture()` calls) and have
+been removed from this directory — see "Removed Textures" below.
+
 ### 1. `blue_marble.png`
 - **Source**: [NASA Blue Marble](https://visibleearth.nasa.gov/collection/1484/blue-marble)
 - **License**: Public Domain
@@ -11,26 +16,22 @@ This directory should contain texture files for the GPU shader renderer. All tex
 - **Recommended Size**: 2048x1024 or 4096x2048
 - **Description**: Satellite imagery of Earth for terrain rendering
 
-### 2. `heightmap.png`
-- **Source**: [ETOPO1 or ETOPO2022](https://www.ncei.noaa.gov/products/etopo-global-relief-model)
-- **License**: Public Domain
-- **Format**: Equirectangular grayscale heightmap
-- **Recommended Size**: 2048x1024 or 4096x2048
-- **Description**: Terrain elevation and ocean depth data
-
-### 3. `shore_distance.png`
-- **Source**: Generated from coastline data (e.g., via Jump Flood Algorithm)
-- **License**: Derived from Natural Earth or OSM (Public Domain / ODbL)
-- **Format**: Equirectangular distance field
-- **Recommended Size**: 1024x512 or 2048x1024
-- **Description**: Distance to nearest coastline for foam rendering
-
-### 4. `city_lights.png`
+### 2. `city_lights.png`
 - **Source**: [NASA Earth at Night](https://earthobservatory.nasa.gov/features/NightLights)
 - **License**: Public Domain
 - **Format**: Equirectangular emission map
 - **Recommended Size**: 2048x1024 or 4096x2048
 - **Description**: City light emissions for night-side rendering
+
+## Removed Textures
+
+- **`heightmap.png`** (ETOPO1/ETOPO2022) and **`shore_distance.png`** (coastline
+  distance field) were removed — `globe.frag` never declared `uHeightmap` or
+  `uShoreDist` samplers or sampled them via `texture()`. Surface classification is
+  derived from the satellite color instead (see the "no heightmap" comment in
+  `globe.frag`). If terrain-relief shading or coastline foam is implemented in the
+  future, regenerate these textures (see `scripts/generate_shore_distance.dart`) and
+  re-add them here along with the corresponding shader samplers.
 
 ## Download Instructions
 

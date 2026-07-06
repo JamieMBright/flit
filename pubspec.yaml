@@ -85,7 +85,6 @@ flutter:
   assets:
     - assets/images/flags/
     - assets/textures/
-    - assets/audio/engines/
     - assets/audio/music/
     - assets/audio/sfx/
     - assets/images/coaches/
