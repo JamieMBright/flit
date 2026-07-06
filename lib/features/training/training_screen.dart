@@ -3,17 +3,13 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/services/game_settings.dart';
 import '../../core/theme/flit_colors.dart';
 import '../../core/widgets/menu_content_wrapper.dart';
 import '../../data/providers/account_provider.dart';
-import '../../game/clues/clue_types.dart';
 import '../../game/map/region.dart';
 import '../../game/quiz/quiz_category.dart';
 import '../../game/quiz/quiz_difficulty.dart';
 import '../../game/quiz/quiz_session.dart';
-import '../../game/triangulation/triangulation_session.dart';
-import '../../game/triangulation/triangulation_target.dart';
 import '../../game/tutorial/training_missions.dart';
 import '../campaign/coach_portrait.dart';
 import '../friends/friends_screen.dart';
@@ -22,7 +18,7 @@ import '../play/play_screen.dart';
 import '../quiz/quiz_game_screen.dart';
 import '../shop/shop_screen.dart';
 import '../sortie/sortie_screen.dart';
-import '../triangulation/triangulation_game_screen.dart';
+import '../triangulation/recon_tutorial_screen.dart';
 
 /// Basic + Advanced Training — the new-pilot school surface.
 ///
@@ -147,18 +143,14 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           ),
         );
       case TrainingMissionKind.recon:
+        // Fully guided, forgiving Recon lesson (find France by its
+        // neighbours) rather than a live timed round. Completion is recorded
+        // through the same campaign path, so Daily Recon still unlocks and
+        // Basic Training still progresses toward the pilot's wings.
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) => TriangulationGameScreen(
-              config: TriangulationConfig(
-                seed: Random().nextInt(1 << 31),
-                rounds: 1,
-                markerCount: 3,
-                clueTypes: {ClueType.flag},
-                labelTypes: {TriLabel.capital},
-                difficulty: GameDifficulty.easy,
-              ),
-              onSessionComplete: (totalScore) => ref
+            builder: (_) => ReconTutorialScreen(
+              onComplete: (totalScore) => ref
                   .read(accountProvider.notifier)
                   .completeTrainingMission(mission.id, score: totalScore),
             ),

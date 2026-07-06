@@ -137,6 +137,38 @@ const Coach trainingCoachTata = Coach(
   imageAsset: 'assets/images/coaches/Jrd tata.PNG',
 );
 
+/// Basic Training recon instructor — Antoine de Saint-Exupéry, who flew real
+/// reconnaissance sorties over France. His recon lesson (Training Recon) is a
+/// fully guided walkthrough, so his copy teaches the triangulation mechanic
+/// from first principles.
+const Coach trainingCoachSaintExuperyRecon = Coach(
+  id: 'saint_exupery_recon',
+  name: 'Antoine de Saint-Exupéry',
+  nationality: 'French',
+  countryCode: 'FR',
+  title: 'Recon Instructor',
+  bio: 'French aviator and author of The Little Prince, who flew wartime '
+      'reconnaissance missions over France and mail routes across the Sahara.',
+  introduction:
+      'I am Antoine de Saint-Exupéry. I flew reconnaissance over my own '
+      'France — reading the land below to fix where the enemy, and I, truly '
+      'were. Recon is exactly that: you cannot see the target, but you know '
+      'the directions to places you recognise. Follow those bearings to where '
+      'they cross. Come — I will walk you through every step.',
+  greeting: 'You read the bearings like a true reconnaissance pilot. France, '
+      'found without a single doubt.',
+  farewell: 'This reminds me of a dawn sortie over the Rhône valley — no map '
+      'in my lap, only the shapes of the land and the directions home. You '
+      'triangulated France today the way I once found my way back: by trusting '
+      'what the known places told you. Your Daily Recon clearance is through — '
+      'the compass is yours to command.',
+  nextCoachTeaser:
+      'One Basic Training mission remains: Lotfia El Nadi — the first woman in '
+      'Africa and the Arab world to earn her wings — will run your first '
+      'Briefing. Finish it and you earn your wings.',
+  imageAsset: 'assets/images/coaches/Antoine de Saint-Exupery.PNG',
+);
+
 /// Advanced Training hints instructor — Saint-Exupéry, teasing the license
 /// lesson next in the Advanced track.
 const Coach trainingCoachSaintExupery = Coach(
@@ -271,15 +303,16 @@ const List<TrainingMission> basicTrainingMissions = [
     id: trainingReconMissionId,
     order: 2,
     title: 'Training Recon',
-    subtitle: 'Fix a target by its bearings',
+    subtitle: 'Find France by its neighbours',
     description:
-        'In the cockpit you read instruments, terrain, and instinct all at '
-        'once. Recon works the same way: each marker on the map points a '
-        'compass bearing at one hidden target. Follow the bearings to where '
-        'they cross, and name what you find there. One easy round — '
-        'show me you can read a compass.',
-    objective: 'Solve 1 easy Recon round',
-    coach: coachSabiha,
+        'You cannot see the target — but you know the countries around it. '
+        'I will walk you through it, one clue at a time: Spain to the '
+        'south-west, the United Kingdom across the Channel, Algeria over the '
+        'sea, Germany and Belgium to the east. Follow those bearings to where '
+        'they cross and you will find France. A gentle, guided lesson — no '
+        'pressure, just learning to read the compass.',
+    objective: 'Learn recon — find France',
+    coach: trainingCoachSaintExuperyRecon,
     kind: TrainingMissionKind.recon,
     isBasic: true,
     xpReward: 40,
